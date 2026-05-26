@@ -1,0 +1,38 @@
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: firmengolf_wordpress
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: firmengolf
+      WORDPRESS_DB_PASSWORD: firmengolf_password
+      WORDPRESS_DB_NAME: firmengolf_wordpress
+    volumes:
+      - ./wordpress:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:latest
+    container_name: firmengolf_db
+    environment:
+      MYSQL_DATABASE: firmengolf_wordpress
+      MYSQL_USER: firmengolf
+      MYSQL_PASSWORD: firmengolf_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - ./db:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: firmengolf_phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: firmengolf
+      PMA_PASSWORD: firmengolf_password
+    depends_on:
+      - db
