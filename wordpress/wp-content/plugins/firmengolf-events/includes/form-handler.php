@@ -216,6 +216,8 @@ function fge_handle_anfrage_submit() {
 	$current_count = (int) get_post_meta( $event_id, '_fge_requests_count', true );
 	update_post_meta( $event_id, '_fge_requests_count', $current_count + 1 );
 
+	do_action( 'fge_request_created', $request_id );
+
 	wp_redirect( esc_url_raw( $redirect_base . '?anfrage=danke#event-anfrage' ), 303 );
 	exit;
 }
@@ -572,6 +574,8 @@ function fge_handle_general_anfrage_submit() {
 	update_post_meta( $request_id, '_fge_kit_opt_in', isset( $_POST['fge_kit_opt_in'] ) ? 1 : 0 );
 	update_post_meta( $request_id, '_fge_kit_status',     'not_sent' );
 	update_post_meta( $request_id, '_fge_hubspot_status', 'not_sent' );
+
+	do_action( 'fge_request_created', $request_id );
 
 	wp_redirect( esc_url_raw( $redirect_base . '?anfrage=danke#general-anfrage' ), 303 );
 	exit;

@@ -893,3 +893,384 @@
   .fg-badges               { gap: 4px; }
   .fg-badge                { font-size: 11px; padding: 4px 8px; }
 }
+
+/* ==========================================================================
+   21. PARTNER PORTAL
+   ========================================================================== */
+
+/* ── Page wrapper (wider than .fg-detail) ── */
+.fg-portal-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* ── Standalone notice (admin / no profile) ── */
+.fg-portal-standalone {
+  max-width: 560px;
+  margin: 48px auto;
+  padding: 32px;
+  background: var(--paper-100);
+  border: 1px solid var(--ink-200);
+  border-radius: 10px;
+}
+.fg-portal-standalone-title {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink-900);
+  margin: 0 0 8px;
+}
+.fg-portal-standalone p { margin: 0 0 8px; font-size: 15px; color: var(--ink-600); }
+
+/* ── Portal header ── */
+.fg-portal-header {
+  background: var(--fairway-700);
+  color: #fff;
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+.fg-portal-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.fg-portal-header-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.65);
+  margin: 0 0 4px;
+}
+.fg-portal-header-title {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: #fff;
+  margin: 0;
+}
+.fg-portal-header-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+  color: rgba(255,255,255,.8);
+  flex-shrink: 0;
+}
+.fg-portal-logout {
+  font-size: 13px;
+  color: rgba(255,255,255,.7);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.fg-portal-logout:hover { color: #fff; }
+
+/* ── Global notice ── */
+.fg-portal-global-notice {
+  padding: 14px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.fg-portal-global-notice--success {
+  background: #E6F4EA;
+  color: var(--success);
+  border: 1px solid #B7DCC1;
+}
+
+/* ── Tab nav ── */
+.fg-portal-nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--ink-200);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.fg-portal-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px 16px;
+  font-family: "Instrument Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-500);
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: color .15s, border-color .15s;
+}
+.fg-portal-tab:hover { color: var(--ink-900); }
+.fg-portal-tab--active {
+  color: var(--fairway-700);
+  border-bottom-color: var(--fairway-700);
+  font-weight: 600;
+}
+
+/* ── Section visibility ── */
+.fg-portal-section { min-height: 200px; }
+.fg-portal-section--hidden { display: none; }
+
+/* ── Section headings ── */
+.fg-portal-section-title {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--ink-900);
+  margin: 0 0 20px;
+}
+.fg-portal-section-sub {
+  font-size: 14px;
+  color: var(--ink-500);
+  margin: -12px 0 20px;
+}
+.fg-portal-subsection-title {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink-700);
+  margin: 32px 0 12px;
+}
+
+/* ── Profile card (dashboard) ── */
+.fg-portal-profile-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--paper-100);
+  border: 1px solid var(--ink-200);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.fg-portal-profile-card-name {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--ink-900);
+}
+.fg-portal-profile-card-sub {
+  font-size: 13px;
+  color: var(--ink-500);
+  margin-top: 2px;
+}
+
+/* ── Stats grid ── */
+.fg-portal-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.fg-portal-stat {
+  background: var(--paper-100);
+  border: 1px solid var(--ink-200);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.fg-portal-stat-value {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--fairway-700);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.fg-portal-stat-label {
+  font-size: 12px;
+  color: var(--ink-500);
+  font-weight: 500;
+}
+
+/* ── Status badges ── */
+.fg-portal-status {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+.fg-portal-status--green  { background: #E6F4EA; color: #2F6E45; }
+.fg-portal-status--orange { background: #FFF3E0; color: #B25C00; }
+.fg-portal-status--red    { background: #FDECEA; color: #B71C1C; }
+.fg-portal-status--gray   { background: var(--ink-100); color: var(--ink-600); }
+
+/* ── Profile groups (Profil tab) ── */
+.fg-portal-profile-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.fg-portal-profile-group {
+  background: var(--paper-100);
+  border: 1px solid var(--ink-200);
+  border-radius: 10px;
+  padding: 20px 24px;
+}
+.fg-portal-profile-group-title {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: 14px;
+}
+.fg-portal-profile-row {
+  display: flex;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--ink-100);
+  font-size: 14px;
+  align-items: baseline;
+}
+.fg-portal-profile-row:last-child { border-bottom: none; }
+.fg-portal-profile-key {
+  flex: 0 0 160px;
+  color: var(--ink-500);
+  font-weight: 500;
+}
+.fg-portal-profile-val {
+  color: var(--ink-900);
+  flex: 1;
+  word-break: break-word;
+}
+.fg-portal-profile-extra {
+  font-size: 13px;
+  color: var(--ink-600);
+  margin: 12px 0 0;
+  line-height: 1.5;
+}
+
+/* ── Tags ── */
+.fg-portal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fg-portal-tag {
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--fairway-100);
+  color: var(--fairway-700);
+  border-radius: 100px;
+  padding: 4px 10px;
+}
+
+/* ── Table ── */
+.fg-portal-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--ink-200);
+  border-radius: 10px;
+}
+.fg-portal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--ink-900);
+}
+.fg-portal-table thead tr {
+  background: var(--paper-200);
+  border-bottom: 1px solid var(--ink-200);
+}
+.fg-portal-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--ink-600);
+  padding: 10px 14px;
+  white-space: nowrap;
+}
+.fg-portal-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--ink-100);
+  vertical-align: middle;
+}
+.fg-portal-table tbody tr:last-child td { border-bottom: none; }
+.fg-portal-table tbody tr:hover { background: var(--paper-100); }
+
+.fg-portal-edit-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fairway-700);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.fg-portal-edit-link:hover { text-decoration: underline; }
+
+/* ── Back link ── */
+.fg-portal-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-600);
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+.fg-portal-back:hover { color: var(--ink-900); }
+
+/* ── Empty / error states ── */
+.fg-portal-empty-text {
+  font-size: 14px;
+  color: var(--ink-500);
+  margin: 0;
+}
+.fg-portal-error-text {
+  font-size: 14px;
+  color: #B71C1C;
+  margin: 0;
+}
+
+/* ── Weekday checkboxes ── */
+.fg-portal-weekdays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.fg-portal-weekday-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--paper-100);
+  border: 1px solid var(--ink-200);
+  border-radius: 6px;
+  padding: 5px 10px;
+  user-select: none;
+}
+.fg-portal-weekday-check input { margin: 0; }
+.fg-portal-weekday-check:has(input:checked) {
+  background: var(--fairway-100);
+  border-color: var(--fairway-400);
+  color: var(--fairway-700);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .fg-portal-page { padding: 20px 16px 48px; }
+  .fg-portal-header-inner { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .fg-portal-nav { gap: 0; }
+  .fg-portal-tab { padding: 10px 12px; font-size: 13px; }
+  .fg-portal-profile-key { flex: 0 0 120px; }
+  .fg-portal-stats { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .fg-portal-stats { grid-template-columns: repeat(2, 1fr); }
+  .fg-portal-profile-row { flex-direction: column; gap: 2px; }
+  .fg-portal-profile-key { flex: none; }
+}

@@ -13,6 +13,13 @@ services:
       - ./wordpress:/var/www/html
     depends_on:
       - db
+      - mailhog
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: firmengolf_mailhog
+    ports:
+      - "8025:8025"
 
   db:
     image: mariadb:latest
