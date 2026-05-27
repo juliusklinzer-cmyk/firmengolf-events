@@ -18,6 +18,7 @@ require_once FGE_DIR . 'includes/roles.php';
 require_once FGE_DIR . 'includes/statuses.php';
 require_once FGE_DIR . 'includes/helpers.php';
 require_once FGE_DIR . 'includes/event-fields.php';
+require_once FGE_DIR . 'includes/partner-fields.php';
 
 function fge_activate() {
 	fge_register_post_types();
