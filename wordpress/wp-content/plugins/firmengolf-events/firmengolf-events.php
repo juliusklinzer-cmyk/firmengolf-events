@@ -16,6 +16,8 @@ define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 require_once FGE_DIR . 'includes/post-types.php';
 require_once FGE_DIR . 'includes/roles.php';
 require_once FGE_DIR . 'includes/statuses.php';
+require_once FGE_DIR . 'includes/helpers.php';
+require_once FGE_DIR . 'includes/event-fields.php';
 
 function fge_activate() {
 	fge_register_post_types();
