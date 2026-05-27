@@ -27,3 +27,7 @@ wordpress/wp-content/backup*
 wordpress/wp-config.php
 .DS_Store
 Thumbs.db
+
+.agents/
+.claude/
+skills-lock.json
