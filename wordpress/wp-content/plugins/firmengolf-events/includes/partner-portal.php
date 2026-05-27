@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 add_action( 'init', 'fge_portal_handle_new_event', 10 );
 add_action( 'init', 'fge_portal_handle_edit_event', 10 );
+add_action( 'init', 'fge_portal_handle_profile_update', 10 );
 
 function fge_portal_handle_new_event(): void {
 	if ( ( $_POST['fge_action'] ?? '' ) !== 'portal_new_event' ) {
@@ -53,6 +54,16 @@ function fge_portal_handle_new_event(): void {
 	update_post_meta( $post_id, '_fge_provider_type',       'golfplatz_partner' );
 	update_post_meta( $post_id, '_fge_assigned_partner_id', $partner_id );
 	fge_portal_save_event_meta( $post_id );
+
+	if ( ! empty( $_FILES['fge_event_cover']['name'] ) ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		$cover_id = media_handle_upload( 'fge_event_cover', $post_id );
+		if ( ! is_wp_error( $cover_id ) ) {
+			update_post_meta( $post_id, '_fge_cover_attachment_id', $cover_id );
+		}
+	}
 
 	wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_saved' ), 303 );
 	exit;
@@ -101,7 +112,72 @@ function fge_portal_handle_edit_event(): void {
 	update_post_meta( $event_id, '_fge_event_status', $current_status === 'freigegeben' ? 'aenderung_in_pruefung' : 'zur_pruefung' );
 	fge_portal_save_event_meta( $event_id );
 
+	if ( ! empty( $_FILES['fge_event_cover']['name'] ) ) {
+		if ( ! function_exists( 'media_handle_upload' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+		}
+		$cover_id = media_handle_upload( 'fge_event_cover', $event_id );
+		if ( ! is_wp_error( $cover_id ) ) {
+			update_post_meta( $event_id, '_fge_cover_attachment_id', $cover_id );
+		}
+	}
+
 	wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_updated' ), 303 );
+	exit;
+}
+
+function fge_portal_handle_profile_update(): void {
+	if ( ( $_POST['fge_action'] ?? '' ) !== 'portal_profile_update' ) {
+		return;
+	}
+	if ( ! is_user_logged_in() ) {
+		wp_die( 'Nicht autorisiert.', '', [ 'response' => 403 ] );
+	}
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['fge_portal_nonce'] ?? '' ) ), 'fge_portal_profile_update' ) ) {
+		wp_die( 'Ungültige Sicherheitsüberprüfung.', '', [ 'response' => 403 ] );
+	}
+	$partner_id = fge_portal_get_partner_id();
+	if ( $partner_id <= 0 ) {
+		wp_die( 'Kein gültiges Partnerprofil.', '', [ 'response' => 403 ] );
+	}
+
+	// Text fields.
+	update_post_meta( $partner_id, '_fge_public_golfclub_name',    sanitize_text_field( wp_unslash( $_POST['fge_public_golfclub_name'] ?? '' ) ) );
+	update_post_meta( $partner_id, '_fge_city',                    sanitize_text_field( wp_unslash( $_POST['fge_city'] ?? '' ) ) );
+	update_post_meta( $partner_id, '_fge_federal_state',           sanitize_text_field( wp_unslash( $_POST['fge_federal_state'] ?? '' ) ) );
+	update_post_meta( $partner_id, '_fge_website_url',             esc_url_raw( wp_unslash( $_POST['fge_website_url'] ?? '' ) ) );
+	update_post_meta( $partner_id, '_fge_free_region',             sanitize_text_field( wp_unslash( $_POST['fge_free_region'] ?? '' ) ) );
+	update_post_meta( $partner_id, '_fge_public_short_description', sanitize_textarea_field( wp_unslash( $_POST['fge_public_short_description'] ?? '' ) ) );
+	update_post_meta( $partner_id, '_fge_event_contact_name',      sanitize_text_field( wp_unslash( $_POST['fge_event_contact_name'] ?? '' ) ) );
+	update_post_meta( $partner_id, '_fge_event_contact_email',     sanitize_email( wp_unslash( $_POST['fge_event_contact_email'] ?? '' ) ) );
+	update_post_meta( $partner_id, '_fge_event_contact_phone',     sanitize_text_field( wp_unslash( $_POST['fge_event_contact_phone'] ?? '' ) ) );
+
+	// Media uploads.
+	if ( ! empty( $_FILES['fge_partner_logo']['name'] ) ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		$logo_id = media_handle_upload( 'fge_partner_logo', $partner_id );
+		if ( ! is_wp_error( $logo_id ) ) {
+			update_post_meta( $partner_id, '_fge_logo_attachment_id', $logo_id );
+		}
+	}
+	if ( ! empty( $_FILES['fge_partner_cover']['name'] ) ) {
+		if ( ! function_exists( 'media_handle_upload' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+		}
+		$cover_id = media_handle_upload( 'fge_partner_cover', $partner_id );
+		if ( ! is_wp_error( $cover_id ) ) {
+			update_post_meta( $partner_id, '_fge_hero_image_attachment_id', $cover_id );
+		}
+	}
+
+	$base = fge_portal_page_url();
+	wp_redirect( esc_url_raw( $base . '?tab=platz&portal_success=profile_saved' ), 303 );
 	exit;
 }
 
@@ -414,6 +490,8 @@ function fge_portal_render(): void {
 					Dein Eventangebot wurde eingereicht und wird von Firmengolf geprüft.
 				<?php elseif ( $success === 'event_updated' ) : ?>
 					Das Event wurde aktualisiert und wird erneut geprüft.
+				<?php elseif ( $success === 'profile_saved' ) : ?>
+					Dein Profil wurde gespeichert.
 				<?php endif; ?>
 			</div>
 		<?php endif; ?>
@@ -515,11 +593,20 @@ function fge_portal_render_hero( int $partner_id ): void {
 	$city           = (string) get_post_meta( $partner_id, '_fge_city', true );
 	$partner_status = (string) get_post_meta( $partner_id, '_fge_partner_status', true );
 	$monogram       = fge_portal_make_monogram( $partner_name );
-	$hero_img       = fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
 	$base           = fge_portal_page_url();
 	$archive_url    = get_post_type_archive_link( 'firmengolf_event' ) ?: home_url( '/firmenevents/' );
 	$is_live        = in_array( $partner_status, [ 'aktiv', '' ], true );
-	$status_label   = $is_live ? 'Live auf Firmengolf' : fge_portal_format_partner_status( $partner_status );
+
+	$hero_img_id  = (int) get_post_meta( $partner_id, '_fge_hero_image_attachment_id', true );
+	$hero_img     = $hero_img_id > 0
+		? (string) wp_get_attachment_image_url( $hero_img_id, 'full' )
+		: fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
+
+	$post_date  = get_post_field( 'post_date', $partner_id );
+	$live_since = $post_date ? date_i18n( 'F Y', (int) strtotime( $post_date ) ) : '';
+	$status_label = $is_live
+		? ( $live_since ? 'Live auf Firmengolf · seit ' . $live_since : 'Live auf Firmengolf' )
+		: fge_portal_format_partner_status( $partner_status );
 	?>
 	<section class="fp-hero">
 		<div class="fp-hero-photo" style="background-image: url('<?php echo esc_url( $hero_img ); ?>')">
@@ -531,9 +618,11 @@ function fge_portal_render_hero( int $partner_id ): void {
 				</div>
 				<div class="fp-hero-actions">
 					<a href="<?php echo esc_url( $archive_url ); ?>" class="fp-hero-btn" target="_blank" rel="noopener">
+						<?php echo fge_icon_external(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 						Öffentliches Profil
 					</a>
 					<a href="<?php echo esc_url( $base . '?tab=platz' ); ?>" class="fp-hero-btn solid">
+						<?php echo fge_icon_edit_pencil(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 						Profil bearbeiten
 					</a>
 				</div>
@@ -670,7 +759,10 @@ function fge_portal_render_cat_card( WP_Post $event, string $type_label, string 
 	$price    = (string) get_post_meta( $event_id, '_fge_public_price_label', true );
 	$views    = (int)    get_post_meta( $event_id, '_fge_views_count', true );
 
-	$placeholder = fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
+	$cover_id    = (int) get_post_meta( $event_id, '_fge_cover_attachment_id', true );
+	$placeholder = $cover_id > 0
+		? (string) wp_get_attachment_image_url( $cover_id, 'large' )
+		: fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
 	$edit_url    = esc_url( $base . '?tab=angebote&portal_action=edit&event_id=' . $event_id );
 
 	$ampel_map = [
@@ -713,7 +805,7 @@ function fge_portal_render_cat_card( WP_Post $event, string $type_label, string 
 					<span class="fp-chip"><?php echo fge_icon_users(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $group ); ?> Pers.</span>
 				<?php endif; ?>
 				<?php if ( $status === 'freigegeben' && $views > 0 ) : ?>
-					<span class="fp-chip"><?php echo esc_html( number_format( $views, 0, ',', '.' ) ); ?> Aufrufe</span>
+					<span class="fp-chip"><?php echo fge_icon_eye(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( number_format( $views, 0, ',', '.' ) ); ?></span>
 				<?php endif; ?>
 			</div>
 			<div class="fp-cat-foot">
@@ -882,16 +974,8 @@ function fge_portal_section_angebote( int $partner_id ): void {
 				$saved[ 'fge_' . $key ] = $m( $key );
 			}
 		}
-		?>
-		<div style="padding-top:28px;">
-			<a href="<?php echo esc_url( $base . '?tab=angebote' ); ?>" class="fg-portal-back">
-				<?php echo fge_icon_arrow_left(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-				Zurück zu Meine Angebote
-			</a>
-			<h2 class="fg-portal-section-title">Event bearbeiten</h2>
-			<?php fge_portal_render_event_form( $partner_id, $saved, $errors, $event_id ); ?>
-		</div>
-		<?php
+
+		fge_portal_render_event_form( $partner_id, $saved, $errors, $event_id );
 		return;
 	}
 
@@ -901,17 +985,8 @@ function fge_portal_section_angebote( int $partner_id ): void {
 		if ( $preset_type !== '' && empty( $saved['fge_event_type'] ) ) {
 			$saved['fge_event_type'] = $preset_type;
 		}
-		?>
-		<div style="padding-top:28px;">
-			<a href="<?php echo esc_url( $base . '?tab=angebote' ); ?>" class="fg-portal-back">
-				<?php echo fge_icon_arrow_left(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-				Zurück zu Meine Angebote
-			</a>
-			<h2 class="fg-portal-section-title">Neues Eventangebot einreichen</h2>
-			<p class="fg-portal-section-sub">Dein Event wird nach dem Einreichen von Firmengolf geprüft und dann freigegeben.</p>
-			<?php fge_portal_render_event_form( $partner_id, $saved, $errors, 0 ); ?>
-		</div>
-		<?php
+
+		fge_portal_render_event_form( $partner_id, $saved, $errors, 0 );
 		return;
 	}
 
@@ -1007,27 +1082,15 @@ function fge_portal_section_kalender(): void {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function fge_portal_section_platz( int $partner_id ): void {
-	$m = static function( string $key ) use ( $partner_id ): string {
+	$m    = static function( string $key ) use ( $partner_id ): string {
 		return (string) get_post_meta( $partner_id, '_fge_' . $key, true );
 	};
+	$base = fge_portal_page_url();
 
-	$ausstattung = [
-		'has_driving_range' => 'Driving Range', 'has_short_game_area' => 'Kurzspielbereich',
-		'has_putting_green' => 'Putting Green',  'has_rental_clubs' => 'Leihschläger',
-		'has_range_balls' => 'Rangebälle',        'has_golf_teacher' => 'Golflehrer',
-		'has_meeting_room' => 'Meetingraum',       'has_gastronomy' => 'Gastronomie',
-		'has_breakfast' => 'Frühstück',            'has_lunch' => 'Lunch',
-		'has_dinner' => 'Abendessen',              'has_terrace' => 'Terrasse',
-		'has_parking' => 'Parkplätze',             'has_shuttle_access' => 'Shuttle',
-		'has_indoor_or_simulator' => 'Indoor/Simulator', 'has_branding_options' => 'Branding',
-		'has_tournament_organization' => 'Turniermodus', 'has_bad_weather_alternative' => 'Schlechtwetter-Alternative',
-	];
-	$active = [];
-	foreach ( $ausstattung as $key => $label ) {
-		if ( $m( $key ) === '1' ) {
-			$active[] = $label;
-		}
-	}
+	$logo_id  = (int) get_post_meta( $partner_id, '_fge_logo_attachment_id', true );
+	$cover_id = (int) get_post_meta( $partner_id, '_fge_hero_image_attachment_id', true );
+	$logo_url = $logo_id  > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
+	$cov_url  = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : '';
 	?>
 	<div style="padding-top:32px;">
 		<div class="fp-section-head">
@@ -1036,60 +1099,115 @@ function fge_portal_section_platz( int $partner_id ): void {
 				<h2>Mein <em>Platz</em></h2>
 			</div>
 		</div>
-		<p class="fg-portal-section-sub">Lesansicht — Profiländerungen bitte direkt bei Firmengolf anfragen.</p>
 
-		<div class="fg-portal-profile-groups">
+		<form method="post" action="<?php echo esc_url( $base ); ?>" enctype="multipart/form-data">
+			<input type="hidden" name="fge_action" value="portal_profile_update">
+			<?php wp_nonce_field( 'fge_portal_profile_update', 'fge_portal_nonce' ); ?>
 
-			<div class="fg-portal-profile-group">
-				<div class="fg-portal-profile-group-title">Golfplatz</div>
-				<?php
-				fge_portal_profile_row( 'Name öffentlich', $m('public_golfclub_name') );
-				fge_portal_profile_row( 'Betreiber', $m('legal_operator_name') );
-				fge_portal_profile_row( 'Ort', trim( $m('city') . ( $m('federal_state') ? ', ' . $m('federal_state') : '' ) ) );
-				fge_portal_profile_row( 'Region', $m('free_region') );
-				if ( $m('website_url') !== '' ) {
-					echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">Website</span><span class="fg-portal-profile-val"><a href="' . esc_url( $m('website_url') ) . '" target="_blank" rel="noopener">' . esc_html( $m('website_url') ) . '</a></span></div>';
-				}
-				?>
-			</div>
+			<div class="fp-profile-grid">
 
-			<div class="fg-portal-profile-group">
-				<div class="fg-portal-profile-group-title">Hauptansprechpartner</div>
-				<?php
-				fge_portal_profile_row( 'Name', $m('main_contact_name') );
-				if ( $m('main_contact_email') !== '' ) {
-					echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">E-Mail</span><span class="fg-portal-profile-val"><a href="mailto:' . esc_attr( $m('main_contact_email') ) . '">' . esc_html( $m('main_contact_email') ) . '</a></span></div>';
-				}
-				fge_portal_profile_row( 'Telefon', $m('main_contact_phone') );
-				?>
-			</div>
+				<!-- ─ Left: text fields ─ -->
+				<div>
+					<div class="fp-form-sec">
+						<h3>Golfplatz</h3>
+						<p class="fp-help">Diese Informationen erscheinen auf deinem öffentlichen Firmengolf-Profil.</p>
 
-			<div class="fg-portal-profile-group">
-				<div class="fg-portal-profile-group-title">Event Ansprechpartner</div>
-				<?php
-				fge_portal_profile_row( 'Name', $m('event_contact_name') );
-				if ( $m('event_contact_email') !== '' ) {
-					echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">E-Mail</span><span class="fg-portal-profile-val"><a href="mailto:' . esc_attr( $m('event_contact_email') ) . '">' . esc_html( $m('event_contact_email') ) . '</a></span></div>';
-				}
-				fge_portal_profile_row( 'Telefon', $m('event_contact_phone') );
-				?>
-			</div>
+						<div class="fg-form-row">
+							<label class="fg-form-label" for="fge_public_golfclub_name">Öffentlicher Name</label>
+							<input class="fg-form-input" type="text" id="fge_public_golfclub_name" name="fge_public_golfclub_name" value="<?php echo esc_attr( $m('public_golfclub_name') ); ?>">
+						</div>
+						<div class="fg-form-row fg-form-row--2col">
+							<div>
+								<label class="fg-form-label" for="fge_city">Stadt</label>
+								<input class="fg-form-input" type="text" id="fge_city" name="fge_city" value="<?php echo esc_attr( $m('city') ); ?>">
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_federal_state">Bundesland</label>
+								<input class="fg-form-input" type="text" id="fge_federal_state" name="fge_federal_state" value="<?php echo esc_attr( $m('federal_state') ); ?>">
+							</div>
+						</div>
+						<div class="fg-form-row fg-form-row--2col">
+							<div>
+								<label class="fg-form-label" for="fge_website_url">Website</label>
+								<input class="fg-form-input" type="url" id="fge_website_url" name="fge_website_url" value="<?php echo esc_attr( $m('website_url') ); ?>" placeholder="https://...">
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_free_region">Region</label>
+								<input class="fg-form-input" type="text" id="fge_free_region" name="fge_free_region" value="<?php echo esc_attr( $m('free_region') ); ?>" placeholder="z.B. München, Bayern">
+							</div>
+						</div>
+						<div class="fg-form-row">
+							<label class="fg-form-label" for="fge_public_short_description">Kurzbeschreibung</label>
+							<textarea class="fg-form-textarea" id="fge_public_short_description" name="fge_public_short_description" rows="3" placeholder="2–3 Sätze für dein öffentliches Profil"><?php echo esc_textarea( $m('public_short_description') ); ?></textarea>
+						</div>
+					</div>
 
-			<?php if ( ! empty( $active ) ) : ?>
-			<div class="fg-portal-profile-group">
-				<div class="fg-portal-profile-group-title">Ausstattung</div>
-				<div class="fg-portal-tags">
-					<?php foreach ( $active as $label ) : ?>
-						<span class="fg-portal-tag"><?php echo esc_html( $label ); ?></span>
-					<?php endforeach; ?>
+					<div class="fp-form-sec">
+						<h3>Event-Ansprechpartner</h3>
+						<p class="fp-help">Wird intern für Verfügbarkeitsanfragen genutzt.</p>
+
+						<div class="fg-form-row fg-form-row--3col">
+							<div>
+								<label class="fg-form-label" for="fge_event_contact_name">Name</label>
+								<input class="fg-form-input" type="text" id="fge_event_contact_name" name="fge_event_contact_name" value="<?php echo esc_attr( $m('event_contact_name') ); ?>">
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_event_contact_email">E-Mail</label>
+								<input class="fg-form-input" type="email" id="fge_event_contact_email" name="fge_event_contact_email" value="<?php echo esc_attr( $m('event_contact_email') ); ?>">
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_event_contact_phone">Telefon</label>
+								<input class="fg-form-input" type="tel" id="fge_event_contact_phone" name="fge_event_contact_phone" value="<?php echo esc_attr( $m('event_contact_phone') ); ?>">
+							</div>
+						</div>
+					</div>
 				</div>
-				<?php if ( $m('additional_equipment') !== '' ) : ?>
-					<p class="fg-portal-profile-extra"><?php echo esc_html( $m('additional_equipment') ); ?></p>
-				<?php endif; ?>
-			</div>
-			<?php endif; ?>
 
-		</div>
+				<!-- ─ Right: media uploads ─ -->
+				<div class="fp-profile-media">
+					<div>
+						<div class="fp-profile-media-lbl">Logo</div>
+						<label class="fp-logo-upload" title="Logo hochladen">
+							<?php if ( $logo_url !== '' ) : ?>
+								<img src="<?php echo esc_url( $logo_url ); ?>" alt="Logo">
+							<?php else : ?>
+								<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+								<span style="font-size:12px;">Hochladen</span>
+							<?php endif; ?>
+							<input type="file" name="fge_partner_logo" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
+						</label>
+						<p style="font-size:12px;color:var(--ink-400);margin-top:6px;">PNG · max. 4 MB</p>
+					</div>
+
+					<div>
+						<div class="fp-profile-media-lbl">Titelbild</div>
+						<label class="fp-cover-upload-profile" style="<?php echo $cov_url !== '' ? 'background-image:url(' . esc_url( $cov_url ) . ');background-size:cover;background-position:center;border-style:solid;' : ''; ?>" title="Titelbild hochladen">
+							<?php if ( $cov_url === '' ) : ?>
+								<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+								<span style="font-size:12px;">16:9 · mind. 1600 px breit</span>
+							<?php else : ?>
+								<span class="fp-cover-replace-hint">
+									<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+									<span style="font-size:12px;">Bild tauschen</span>
+								</span>
+							<?php endif; ?>
+							<input type="file" name="fge_partner_cover" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
+						</label>
+						<p style="font-size:12px;color:var(--ink-400);margin-top:6px;">JPG / PNG · max. 8 MB</p>
+					</div>
+				</div>
+
+			</div><!-- .fp-profile-grid -->
+
+			<div style="margin-top:28px;">
+				<button type="submit" class="fp-btn fp-btn-brand">
+					Profil speichern <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				</button>
+				<p style="font-size:13px;color:var(--ink-500);margin-top:10px;">
+					Name, Betreiber und Adresse können nur vom Firmengolf-Team geändert werden. Schreib uns unter <a href="mailto:events@firmen.golf" style="color:var(--fairway-700);">events@firmen.golf</a>.
+				</p>
+			</div>
+		</form>
 	</div>
 	<?php
 }
@@ -1183,7 +1301,7 @@ function fge_portal_section_stats( int $partner_id ): void {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// EVENT FORM (new + edit) — unchanged
+// EVENT FORM (new + edit)
 // ══════════════════════════════════════════════════════════════════════════════
 
 function fge_portal_render_event_form( int $partner_id, array $saved = [], array $errors = [], int $event_id = 0 ): void {
@@ -1208,149 +1326,280 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 		'gesundheitstag' => 'Gesundheitstag', 'offsite' => 'Offsite',
 		'firmenturnier' => 'Firmenturnier', 'anderes_event' => 'Anderes Event',
 	];
-	$weekdays        = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
-	$saved_weekdays  = (array) ( $saved['fge_available_weekdays'] ?? [] );
+	$weekdays       = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
+	$saved_weekdays = (array) ( $saved['fge_available_weekdays'] ?? [] );
 
-	if ( ! empty( $errors ) ) : ?>
-		<div class="fg-form-errors-banner" role="alert">
-			<strong>Bitte prüf deine Eingaben.</strong> Einige Felder sind noch nicht korrekt ausgefüllt.
-		</div>
-	<?php endif; ?>
+	$event_type       = $saved['fge_event_type'] ?? '';
+	$event_type_label = $event_types[ $event_type ] ?? '';
+	$event_title      = $saved['fge_post_title'] ?? '';
 
-	<form class="fg-anfrage-form" method="post" action="<?php echo esc_url( $base ); ?>" novalidate>
-		<input type="hidden" name="fge_action" value="<?php echo $is_edit ? 'portal_edit_event' : 'portal_new_event'; ?>">
-		<?php if ( $is_edit ) : ?><input type="hidden" name="fge_event_id" value="<?php echo esc_attr( $event_id ); ?>"><?php endif; ?>
-		<?php wp_nonce_field( $is_edit ? 'fge_portal_edit_event' : 'fge_portal_new_event', 'fge_portal_nonce' ); ?>
+	$cover_id  = $is_edit ? (int) get_post_meta( $event_id, '_fge_cover_attachment_id', true ) : 0;
+	$cover_url = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : '';
 
-		<div class="fg-form-block">
-			<p class="fg-form-block-title">Basisdaten</p>
-			<div class="fg-form-row">
-				<label class="fg-form-label" for="fge_post_title">Eventtitel <span class="fg-form-required" aria-label="Pflichtfeld">*</span></label>
-				<div class="fg-form-field">
-					<input class="fg-form-input<?php echo $has_err( 'fge_post_title' ); // phpcs:ignore ?>" type="text" id="fge_post_title" name="fge_post_title" value="<?php echo $v( 'fge_post_title' ); ?>" placeholder="z.B. Golfschnupperkurs für Firmenkunden">
-					<?php echo $err_html( 'fge_post_title' ); // phpcs:ignore ?>
+	$event_status = $is_edit ? (string) get_post_meta( $event_id, '_fge_event_status', true ) : 'entwurf';
+	$status_label = fge_portal_format_event_status( $event_status );
+	$status_class = fge_portal_status_class( $event_status );
+
+	$leistungen_labels = [
+		'has_golf_teacher'      => 'Golflehrer',
+		'has_range_usage'       => 'Range Nutzung inklusive',
+		'has_rental_clubs'      => 'Leihschläger inklusive',
+		'has_range_balls'       => 'Rangebälle inklusive',
+		'has_putting_shortgame' => 'Putting / Kurzspiel inklusive',
+		'has_meeting_room'      => 'Meetingraum',
+		'has_breakfast'         => 'Frühstück',
+		'has_lunch'             => 'Lunch',
+		'has_dinner'            => 'Abendessen',
+		'has_shuttle'           => 'Shuttle möglich',
+		'has_branding'          => 'Branding / individuelle Anpassung möglich',
+	];
+	?>
+	<div class="fp-edit-shell">
+
+		<div class="fp-edit-head">
+			<div class="fp-edit-head-left">
+				<span class="fp-edit-cat-chip">
+					<?php echo esc_html( $event_type_label ?: ( $is_edit ? 'Event' : 'Neues Angebot' ) ); ?>
+				</span>
+				<h1 class="fp-edit-title">
+					<?php echo esc_html( $event_title ?: ( $is_edit ? 'Event bearbeiten' : 'Neues Eventangebot' ) ); ?>
+				</h1>
+				<div class="fp-edit-status-row">
+					<span class="fp-pill <?php echo esc_attr( $status_class ); ?>">
+						<span class="dot"></span>
+						<?php echo esc_html( $status_label ); ?>
+					</span>
 				</div>
 			</div>
-			<div class="fg-form-row fg-form-row--2col">
+			<div class="fp-edit-actions">
+				<a href="<?php echo esc_url( $base . '?tab=angebote' ); ?>" class="fp-btn fp-btn-ghost">
+					<?php echo fge_icon_arrow_left(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					Zurück
+				</a>
+			</div>
+		</div>
+
+		<?php if ( ! empty( $errors ) ) : ?>
+			<div class="fg-form-errors-banner" role="alert">
+				<strong>Bitte prüf deine Eingaben.</strong> Einige Felder sind noch nicht korrekt ausgefüllt.
+			</div>
+		<?php endif; ?>
+
+		<form method="post" action="<?php echo esc_url( $base ); ?>" enctype="multipart/form-data" novalidate>
+			<input type="hidden" name="fge_action" value="<?php echo $is_edit ? 'portal_edit_event' : 'portal_new_event'; ?>">
+			<?php if ( $is_edit ) : ?><input type="hidden" name="fge_event_id" value="<?php echo esc_attr( $event_id ); ?>"><?php endif; ?>
+			<?php wp_nonce_field( $is_edit ? 'fge_portal_edit_event' : 'fge_portal_new_event', 'fge_portal_nonce' ); ?>
+
+			<div class="fp-edit-grid">
+
+				<!-- ── LEFT: form sections ── -->
 				<div>
-					<label class="fg-form-label" for="fge_event_type">Eventart <span class="fg-form-required" aria-label="Pflichtfeld">*</span></label>
-					<div class="fg-form-field">
-						<select class="fg-form-select<?php echo $has_err( 'fge_event_type' ); // phpcs:ignore ?>" id="fge_event_type" name="fge_event_type">
-							<option value="">— bitte wählen —</option>
-							<?php foreach ( $event_types as $val => $label ) : ?>
-								<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $saved['fge_event_type'] ?? '', $val ); ?>><?php echo esc_html( $label ); ?></option>
+
+					<!-- Cover -->
+					<div class="fp-form-sec">
+						<h3>Coverbild</h3>
+						<p class="fp-help">Quer-Format 16:9 oder 16:10, mind. 1600 px breit. Dieses Bild erscheint auf der Angebotskarte.</p>
+						<label class="fp-cover-upload<?php echo $cover_url !== '' ? ' has-image' : ''; ?>"
+						       style="<?php echo $cover_url !== '' ? 'background-image:url(' . esc_url( $cover_url ) . ');background-size:cover;background-position:center;' : ''; ?>"
+						       title="Coverbild hochladen">
+							<?php if ( $cover_url === '' ) : ?>
+								<div class="fp-cover-empty">
+									<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+									<span style="font-weight:500;color:var(--ink-900);">Foto hochladen oder hierher ziehen</span>
+									<span class="fp-cover-hint">JPG / PNG · max. 8 MB</span>
+								</div>
+							<?php else : ?>
+								<span class="fp-cover-replace-hint">
+									<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+									<span style="font-size:12px;">Foto tauschen</span>
+								</span>
+							<?php endif; ?>
+							<input type="file" name="fge_event_cover" accept="image/*" class="fp-cover-label">
+						</label>
+					</div>
+
+					<!-- Titel & Beschreibung -->
+					<div class="fp-form-sec">
+						<h3>Titel & Beschreibung</h3>
+						<p class="fp-help">Wir empfehlen einen Titel, der ein Gefühl verspricht — nicht nur ein Format beschreibt.</p>
+
+						<div class="fg-form-row">
+							<label class="fg-form-label" for="fge_post_title">Eventtitel <span class="fg-form-required" aria-label="Pflichtfeld">*</span></label>
+							<div class="fg-form-field">
+								<input class="fg-form-input<?php echo $has_err( 'fge_post_title' ); // phpcs:ignore ?>" type="text" id="fge_post_title" name="fge_post_title" value="<?php echo $v( 'fge_post_title' ); ?>" placeholder="z.B. Golfschnupperkurs für Firmenkunden">
+								<?php echo $err_html( 'fge_post_title' ); // phpcs:ignore ?>
+							</div>
+						</div>
+						<div class="fg-form-row">
+							<label class="fg-form-label" for="fge_card_description">Kurzbeschreibung</label>
+							<div class="fg-form-field">
+								<textarea class="fg-form-textarea" id="fge_card_description" name="fge_card_description" rows="2" placeholder="Kurzer Teaser (1–2 Sätze)"><?php echo esc_textarea( $saved['fge_card_description'] ?? '' ); ?></textarea>
+							</div>
+						</div>
+						<div class="fg-form-row">
+							<label class="fg-form-label" for="fge_post_content">Ausführliche Beschreibung</label>
+							<div class="fg-form-field">
+								<textarea class="fg-form-textarea" id="fge_post_content" name="fge_post_content" rows="6" placeholder="Detaillierter Ablauf, Besonderheiten, Programm …"><?php echo esc_textarea( $saved['fge_post_content'] ?? '' ); ?></textarea>
+							</div>
+						</div>
+					</div>
+
+					<!-- Preis, Dauer & Teilnehmer -->
+					<div class="fp-form-sec">
+						<h3>Preis, Dauer & Teilnehmer</h3>
+						<p class="fp-help">Diese Eckdaten erscheinen auf der Angebotskarte.</p>
+
+						<div class="fg-form-row fg-form-row--2col">
+							<div>
+								<label class="fg-form-label" for="fge_public_price_label">Preislabel öffentlich</label>
+								<input class="fg-form-input" type="text" id="fge_public_price_label" name="fge_public_price_label" value="<?php echo $v( 'fge_public_price_label' ); ?>" placeholder="z.B. ab 1.200 € netto">
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_price_note">Preis Hinweis</label>
+								<input class="fg-form-input" type="text" id="fge_price_note" name="fge_price_note" value="<?php echo $v( 'fge_price_note' ); ?>" placeholder="z.B. zzgl. Getränke">
+							</div>
+						</div>
+						<div class="fg-form-row fg-form-row--3col">
+							<div>
+								<label class="fg-form-label" for="fge_duration">Dauer</label>
+								<input class="fg-form-input" type="text" id="fge_duration" name="fge_duration" value="<?php echo $v( 'fge_duration' ); ?>" placeholder="z.B. 4 Stunden">
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_participants_min">Min. Teilnehmer</label>
+								<input class="fg-form-input" type="number" id="fge_participants_min" name="fge_participants_min" value="<?php echo esc_attr( $saved['fge_participants_min'] ?: '' ); ?>" min="1" placeholder="z.B. 8">
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_participants_max">Max. Teilnehmer</label>
+								<input class="fg-form-input" type="number" id="fge_participants_max" name="fge_participants_max" value="<?php echo esc_attr( $saved['fge_participants_max'] ?: '' ); ?>" min="1" placeholder="z.B. 40">
+							</div>
+						</div>
+					</div>
+
+					<!-- Enthaltene Leistungen -->
+					<div class="fp-form-sec">
+						<h3>Enthaltene Leistungen</h3>
+						<p class="fp-help">Was im Preis enthalten ist — Firmen filtern nach diesen Punkten.</p>
+						<div class="fg-form-checkgrid">
+							<?php foreach ( $leistungen_labels as $key => $label ) : ?>
+								<label class="fg-form-check">
+									<input type="checkbox" name="fge_<?php echo esc_attr( $key ); ?>" value="1" <?php checked( $checked( 'fge_' . $key ) ); ?>>
+									<span><?php echo esc_html( $label ); ?></span>
+								</label>
 							<?php endforeach; ?>
-						</select>
-						<?php echo $err_html( 'fge_event_type' ); // phpcs:ignore ?>
+						</div>
+						<div class="fg-form-row" style="margin-top:16px;">
+							<label class="fg-form-label" for="fge_additional_services">Weitere Leistungen</label>
+							<textarea class="fg-form-textarea" id="fge_additional_services" name="fge_additional_services" rows="2" placeholder="Sonstige enthaltene Leistungen"><?php echo esc_textarea( $saved['fge_additional_services'] ?? '' ); ?></textarea>
+						</div>
 					</div>
-				</div>
-				<div>
-					<label class="fg-form-label" for="fge_event_location">Ort</label>
-					<div class="fg-form-field">
-						<input class="fg-form-input" type="text" id="fge_event_location" name="fge_event_location" value="<?php echo $v( 'fge_event_location' ); ?>" placeholder="z.B. Golfclub Muster, München">
+
+					<!-- Verfügbarkeit & Kontakt -->
+					<div class="fp-form-sec">
+						<h3>Verfügbarkeit & Kontakt</h3>
+
+						<div class="fg-form-row fg-form-row--2col">
+							<div>
+								<label class="fg-form-label" for="fge_event_type">Eventart <span class="fg-form-required" aria-label="Pflichtfeld">*</span></label>
+								<div class="fg-form-field">
+									<select class="fg-form-select<?php echo $has_err( 'fge_event_type' ); // phpcs:ignore ?>" id="fge_event_type" name="fge_event_type">
+										<option value="">— bitte wählen —</option>
+										<?php foreach ( $event_types as $val => $label ) : ?>
+											<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $saved['fge_event_type'] ?? '', $val ); ?>><?php echo esc_html( $label ); ?></option>
+										<?php endforeach; ?>
+									</select>
+									<?php echo $err_html( 'fge_event_type' ); // phpcs:ignore ?>
+								</div>
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_event_location">Ort</label>
+								<input class="fg-form-input" type="text" id="fge_event_location" name="fge_event_location" value="<?php echo $v( 'fge_event_location' ); ?>" placeholder="z.B. GC München, Mainburg">
+							</div>
+						</div>
+
+						<div class="fg-form-row">
+							<label class="fg-form-label">Verfügbare Wochentage</label>
+							<div class="fg-portal-weekdays">
+								<?php foreach ( $weekdays as $val => $label ) : ?>
+									<label class="fg-portal-weekday-check">
+										<input type="checkbox" name="fge_available_weekdays[]" value="<?php echo esc_attr( $val ); ?>" <?php checked( in_array( $val, $saved_weekdays, true ) ); ?>>
+										<span><?php echo esc_html( $label ); ?></span>
+									</label>
+								<?php endforeach; ?>
+							</div>
+						</div>
+
+						<div class="fg-form-row fg-form-row--2col">
+							<div>
+								<label class="fg-form-label" for="fge_region">Region</label>
+								<input class="fg-form-input" type="text" id="fge_region" name="fge_region" value="<?php echo $v( 'fge_region' ); ?>" placeholder="z.B. München, Bayern">
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_season">Saison / Zeitraum</label>
+								<input class="fg-form-input" type="text" id="fge_season" name="fge_season" value="<?php echo $v( 'fge_season' ); ?>" placeholder="z.B. April bis Oktober">
+							</div>
+						</div>
+
+						<div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--ink-200);">
+							<p class="fg-form-label" style="margin-bottom:12px;font-weight:500;">Ansprechpartner für Verfügbarkeit</p>
+							<div class="fg-form-row fg-form-row--3col">
+								<div>
+									<label class="fg-form-label" for="fge_availability_contact_name">Name</label>
+									<input class="fg-form-input" type="text" id="fge_availability_contact_name" name="fge_availability_contact_name" value="<?php echo $v( 'fge_availability_contact_name' ); ?>" placeholder="Ansprechpartner">
+								</div>
+								<div>
+									<label class="fg-form-label" for="fge_availability_contact_email">E-Mail</label>
+									<input class="fg-form-input" type="email" id="fge_availability_contact_email" name="fge_availability_contact_email" value="<?php echo $v( 'fge_availability_contact_email' ); ?>">
+								</div>
+								<div>
+									<label class="fg-form-label" for="fge_availability_contact_phone">Telefon</label>
+									<input class="fg-form-input" type="tel" id="fge_availability_contact_phone" name="fge_availability_contact_phone" value="<?php echo $v( 'fge_availability_contact_phone' ); ?>">
+								</div>
+							</div>
+						</div>
 					</div>
-				</div>
-			</div>
-			<div class="fg-form-row">
-				<label class="fg-form-label" for="fge_card_description">Kurzbeschreibung</label>
-				<div class="fg-form-field">
-					<textarea class="fg-form-textarea" id="fge_card_description" name="fge_card_description" rows="2" placeholder="Kurzer Teaser (1–2 Sätze)"><?php echo esc_textarea( $saved['fge_card_description'] ?? '' ); ?></textarea>
-				</div>
-			</div>
-			<div class="fg-form-row">
-				<label class="fg-form-label" for="fge_post_content">Ausführliche Beschreibung</label>
-				<div class="fg-form-field">
-					<textarea class="fg-form-textarea" id="fge_post_content" name="fge_post_content" rows="6" placeholder="Detaillierter Ablauf, Besonderheiten, Programm …"><?php echo esc_textarea( $saved['fge_post_content'] ?? '' ); ?></textarea>
-				</div>
-			</div>
-		</div>
 
-		<div class="fg-form-block">
-			<p class="fg-form-block-title">Event Rahmen</p>
-			<div class="fg-form-row fg-form-row--2col">
-				<div>
-					<label class="fg-form-label" for="fge_participants_min">Teilnehmer Min.</label>
-					<input class="fg-form-input" type="number" id="fge_participants_min" name="fge_participants_min" value="<?php echo esc_attr( $saved['fge_participants_min'] ?: '' ); ?>" min="1" placeholder="z.B. 8">
-				</div>
-				<div>
-					<label class="fg-form-label" for="fge_participants_max">Teilnehmer Max.</label>
-					<input class="fg-form-input" type="number" id="fge_participants_max" name="fge_participants_max" value="<?php echo esc_attr( $saved['fge_participants_max'] ?: '' ); ?>" min="1" placeholder="z.B. 40">
-				</div>
-			</div>
-			<div class="fg-form-row fg-form-row--2col">
-				<div>
-					<label class="fg-form-label" for="fge_duration">Dauer</label>
-					<input class="fg-form-input" type="text" id="fge_duration" name="fge_duration" value="<?php echo $v( 'fge_duration' ); ?>" placeholder="z.B. halber Tag, 4 Stunden">
-				</div>
-				<div>
-					<label class="fg-form-label" for="fge_season">Saison / Zeitraum</label>
-					<input class="fg-form-input" type="text" id="fge_season" name="fge_season" value="<?php echo $v( 'fge_season' ); ?>" placeholder="z.B. April bis Oktober">
-				</div>
-			</div>
-			<div class="fg-form-row fg-form-row--2col">
-				<div>
-					<label class="fg-form-label" for="fge_region">Region</label>
-					<input class="fg-form-input" type="text" id="fge_region" name="fge_region" value="<?php echo $v( 'fge_region' ); ?>" placeholder="z.B. München, Bayern">
-				</div>
-				<div>
-					<label class="fg-form-label">Verfügbare Wochentage</label>
-					<div class="fg-portal-weekdays">
-						<?php foreach ( $weekdays as $val => $label ) : ?>
-							<label class="fg-portal-weekday-check">
-								<input type="checkbox" name="fge_available_weekdays[]" value="<?php echo esc_attr( $val ); ?>" <?php checked( in_array( $val, $saved_weekdays, true ) ); ?>>
-								<span><?php echo esc_html( $label ); ?></span>
-							</label>
-						<?php endforeach; ?>
+				</div><!-- /left -->
+
+				<!-- ── RIGHT: sticky rail ── -->
+				<div class="fp-edit-rail">
+
+					<div class="fp-rail-card">
+						<h4>Status</h4>
+						<span class="fp-pill <?php echo esc_attr( $status_class ); ?>">
+							<span class="dot"></span>
+							<?php echo esc_html( $status_label ); ?>
+						</span>
+						<p style="font-size:13px;color:var(--ink-500);margin-top:12px;line-height:1.5;">
+							<?php echo $is_edit
+								? 'Gespeicherte Änderungen gehen erneut in Prüfung.'
+								: 'Nach dem Einreichen wird dein Angebot von Firmengolf geprüft und dann freigegeben.'; ?>
+						</p>
 					</div>
-				</div>
+
+					<div class="fp-rail-card fp-rail-card--tip">
+						<h4>Tipp vom Team</h4>
+						<p style="font-size:14px;line-height:1.5;color:rgba(251,250,246,0.85);margin-bottom:0;">
+							Angebote mit eigenem Foto vom Platz erhalten <strong style="color:var(--paper-100);">3× mehr Anfragen</strong> als solche ohne Foto.
+						</p>
+					</div>
+
+				</div><!-- /rail -->
+
+			</div><!-- .fp-edit-grid -->
+
+			<div class="fp-edit-actionbar">
+				<span style="font-size:13px;color:var(--ink-500);display:inline-flex;align-items:center;gap:8px;">
+					<span style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none;display:inline-block;"></span>
+					<?php echo $is_edit ? 'Änderungen noch nicht gespeichert' : 'Noch nicht eingereicht'; ?>
+				</span>
+				<button type="submit" class="fp-btn fp-btn-brand">
+					<?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					<?php echo $is_edit ? 'Änderungen speichern' : 'Event einreichen'; ?>
+				</button>
 			</div>
-		</div>
 
-		<?php fge_portal_render_event_leistungen_block( $checked, $saved['fge_additional_services'] ?? '' ); ?>
-
-		<div class="fg-form-block">
-			<p class="fg-form-block-title">Preis</p>
-			<p class="fg-form-block-hint">Firmengolf berechnet den Verkaufspreis intern. Gib hier das öffentliche Preislabel an.</p>
-			<div class="fg-form-row fg-form-row--2col">
-				<div>
-					<label class="fg-form-label" for="fge_public_price_label">Preislabel öffentlich</label>
-					<input class="fg-form-input" type="text" id="fge_public_price_label" name="fge_public_price_label" value="<?php echo $v( 'fge_public_price_label' ); ?>" placeholder="z.B. ab 1.200 € netto">
-				</div>
-				<div>
-					<label class="fg-form-label" for="fge_price_note">Preis Hinweis</label>
-					<input class="fg-form-input" type="text" id="fge_price_note" name="fge_price_note" value="<?php echo $v( 'fge_price_note' ); ?>" placeholder="z.B. zzgl. Getränke">
-				</div>
-			</div>
-		</div>
-
-		<div class="fg-form-block">
-			<p class="fg-form-block-title">Ansprechpartner für Verfügbarkeit</p>
-			<div class="fg-form-row fg-form-row--3col">
-				<div>
-					<label class="fg-form-label" for="fge_availability_contact_name">Name</label>
-					<input class="fg-form-input" type="text" id="fge_availability_contact_name" name="fge_availability_contact_name" value="<?php echo $v( 'fge_availability_contact_name' ); ?>" placeholder="Ansprechpartner">
-				</div>
-				<div>
-					<label class="fg-form-label" for="fge_availability_contact_email">E-Mail</label>
-					<input class="fg-form-input" type="email" id="fge_availability_contact_email" name="fge_availability_contact_email" value="<?php echo $v( 'fge_availability_contact_email' ); ?>">
-				</div>
-				<div>
-					<label class="fg-form-label" for="fge_availability_contact_phone">Telefon</label>
-					<input class="fg-form-input" type="tel" id="fge_availability_contact_phone" name="fge_availability_contact_phone" value="<?php echo $v( 'fge_availability_contact_phone' ); ?>">
-				</div>
-			</div>
-		</div>
-
-		<div class="fg-form-submit">
-			<button type="submit" class="fg-btn fg-btn-brand fg-btn-lg">
-				<?php echo $is_edit ? 'Änderungen speichern' : 'Event einreichen'; ?> <?php echo fge_icon_arrow_right(); // phpcs:ignore ?>
-			</button>
-			<p class="fg-form-submit-note">
-				<?php echo $is_edit ? 'Das Event geht nach dem Speichern erneut in Prüfung.' : 'Dein Event wird von Firmengolf geprüft und dann freigegeben.'; ?>
-			</p>
-		</div>
-
-	</form>
+		</form>
+	</div><!-- .fp-edit-shell -->
 	<?php
 }
 

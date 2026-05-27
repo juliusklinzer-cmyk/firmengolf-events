@@ -5,6 +5,7 @@ wordpress/*
 wordpress/wp-content/*
 !wordpress/wp-content/plugins/
 !wordpress/wp-content/themes/
+!wordpress/wp-content/uploads/
 
 wordpress/wp-content/plugins/*
 wordpress/wp-content/themes/*
@@ -12,19 +13,13 @@ wordpress/wp-content/themes/*
 !wordpress/wp-content/plugins/firmengolf-events/
 !wordpress/wp-content/themes/firmengolf-child/
 
-wordpress/wp-content/uploads/
+wordpress/wp-content/uploads/*
+!wordpress/wp-content/uploads/.gitkeep
 wordpress/wp-content/cache/
 wordpress/wp-content/upgrade/
 wordpress/wp-content/backup*
 wordpress/wp-config.php
 
-.DS_Store
-Thumbs.dbdb/
-wordpress/wp-content/uploads/
-wordpress/wp-content/cache/
-wordpress/wp-content/upgrade/
-wordpress/wp-content/backup*
-wordpress/wp-config.php
 .DS_Store
 Thumbs.db
 
