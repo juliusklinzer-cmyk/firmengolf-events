@@ -34,6 +34,29 @@ function fge_filter_archive_query( WP_Query $q ) {
 }
 add_action( 'pre_get_posts', 'fge_filter_archive_query' );
 
+// ── 404 Guard for non-approved event detail pages ────────────────────────────
+
+add_action( 'template_redirect', 'fge_block_non_approved_events', 1 );
+
+function fge_block_non_approved_events(): void {
+	if ( ! is_singular( 'firmengolf_event' ) ) {
+		return;
+	}
+	if ( is_preview() || current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$status = (string) get_post_meta( get_the_ID(), '_fge_event_status', true );
+	if ( $status === 'freigegeben' ) {
+		return;
+	}
+	global $wp_query;
+	$wp_query->set_404();
+	status_header( 404 );
+	nocache_headers();
+	get_template_part( '404' );
+	exit;
+}
+
 // ── View Counter ──────────────────────────────────────────────────────────────
 
 function fge_maybe_increment_views() {

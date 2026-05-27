@@ -28,7 +28,21 @@ function fge_event_column_content( string $column, int $post_id ) {
 			echo esc_html( get_post_meta( $post_id, '_fge_event_type', true ) ?: '—' );
 			break;
 		case 'fge_event_status':
-			echo esc_html( get_post_meta( $post_id, '_fge_event_status', true ) ?: '—' );
+			$status_val    = (string) get_post_meta( $post_id, '_fge_event_status', true );
+			$status_labels = [
+				'entwurf'               => [ 'Entwurf',             'gray'   ],
+				'zur_pruefung'          => [ 'Zur Prüfung',         'orange' ],
+				'freigegeben'           => [ 'Freigegeben',         'green'  ],
+				'aenderung_in_pruefung' => [ 'Änd. in Prüfung',     'orange' ],
+				'pausiert'              => [ 'Pausiert',            'gray'   ],
+				'abgelehnt'             => [ 'Abgelehnt',           'red'    ],
+			];
+			if ( isset( $status_labels[ $status_val ] ) ) {
+				[ $label, $color ] = $status_labels[ $status_val ];
+				echo '<span class="fge-badge fge-badge--' . esc_attr( $color ) . '">' . esc_html( $label ) . '</span>';
+			} else {
+				echo $status_val !== '' ? esc_html( $status_val ) : '—';
+			}
 			break;
 		case 'fge_provider_type':
 			echo esc_html( get_post_meta( $post_id, '_fge_provider_type', true ) ?: '—' );

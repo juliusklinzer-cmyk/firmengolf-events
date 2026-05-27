@@ -16,6 +16,7 @@ function fge_register_event_metaboxes() {
 	add_meta_box( 'fge_mb_anfrage',    'Anfrage und Verfügbarkeit', 'fge_render_mb_anfrage',    $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_seo',        'SEO Basis',                 'fge_render_mb_seo',        $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_tracking',   'Tracking Basis',            'fge_render_mb_tracking',   $screen, 'side',   'default' );
+	add_meta_box( 'fge_mb_review',     'Interne Prüfnotiz',         'fge_render_mb_review',     $screen, 'side',   'high' );
 }
 add_action( 'add_meta_boxes', 'fge_register_event_metaboxes' );
 
@@ -449,6 +450,14 @@ function fge_render_mb_tracking( WP_Post $post ) {
 
 // ── Save ─────────────────────────────────────────────────────────────────────
 
+function fge_render_mb_review( WP_Post $post ) {
+	$note = (string) get_post_meta( $post->ID, '_fge_review_note', true );
+	?>
+	<p style="margin:0 0 6px;font-size:12px;color:#666;">Nur für Firmengolf Admin. Wird nicht öffentlich ausgegeben.</p>
+	<textarea name="fge_review_note" id="fge_review_note" rows="5" style="width:100%;box-sizing:border-box;"><?php echo esc_textarea( $note ); ?></textarea>
+	<?php
+}
+
 function fge_save_event_fields( int $post_id ) {
 	if ( ! isset( $_POST['fge_event_nonce'] ) ) {
 		return;
@@ -582,5 +591,8 @@ function fge_save_event_fields( int $post_id ) {
 	if ( get_post_meta( $post_id, '_fge_bookings_count', true ) === '' ) {
 		add_post_meta( $post_id, '_fge_bookings_count', 0, true );
 	}
+
+	// ── Metabox: Prüfnotiz (Admin only) ──
+	update_post_meta( $post_id, '_fge_review_note', sanitize_textarea_field( wp_unslash( $_POST['fge_review_note'] ?? '' ) ) );
 }
 add_action( 'save_post', 'fge_save_event_fields' );
