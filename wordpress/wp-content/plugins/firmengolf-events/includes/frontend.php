@@ -150,6 +150,18 @@ function fge_get_active_leistungen( int $post_id ): array {
 	return $active;
 }
 
+function fge_get_featured_events( int $count = 3 ): array {
+	return get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => 'publish',
+		'numberposts' => $count,
+		'meta_query'  => [
+			[ 'key' => '_fge_event_status', 'value' => 'freigegeben', 'compare' => '=' ],
+		],
+		'orderby' => 'rand',
+	] );
+}
+
 function fge_get_event_price_display( int $post_id ): string {
 	$label = get_post_meta( $post_id, '_fge_public_price_label', true );
 	if ( $label !== '' ) {
@@ -195,4 +207,20 @@ function fge_icon_users(): string {
 
 function fge_icon_clock(): string {
 	return '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+}
+
+function fge_icon_eye(): string {
+	return '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+}
+
+function fge_icon_external(): string {
+	return '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+}
+
+function fge_icon_edit_pencil(): string {
+	return '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+}
+
+function fge_icon_upload(): string {
+	return '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
 }

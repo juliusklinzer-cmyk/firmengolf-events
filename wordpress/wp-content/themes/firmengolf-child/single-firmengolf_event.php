@@ -45,7 +45,7 @@ $similar_query = new WP_Query( [
 	'orderby' => 'rand',
 ] );
 
-// SEO title/desc (used in wp_head via plugin).
+// SEO title/desc.
 $seo_title = fge_get_event_meta( $post_id, 'seo_title' );
 $seo_desc  = fge_get_event_meta( $post_id, 'meta_description' );
 if ( $seo_title || $seo_desc ) {
@@ -63,33 +63,19 @@ get_header();
 ?>
 <div class="fge-page">
 
-	<?php /* ── Top Nav ── */ ?>
-	<nav class="fg-topnav" aria-label="Hauptnavigation">
-		<div class="fg-topnav-inner">
-			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="fg-brand">
-				<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="120" height="24">
-			</a>
-			<div class="fg-nav-items">
-				<a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ); ?>">Firmenevents</a>
-			</div>
-			<div class="fg-nav-end">
-				<a href="#event-anfrage" class="fg-nav-cta">
-					Event anfragen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-				</a>
-			</div>
-		</div>
-	</nav>
+	<?php get_template_part( 'template-parts/fge-nav', null, [
+		'active_item' => 'firmenevents',
+		'cta_url'     => '#event-anfrage',
+	] ); ?>
 
 	<?php /* ── Detail Section ── */ ?>
 	<div class="fg-detail">
 
-		<?php /* Back link */ ?>
 		<a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ); ?>" class="fg-detail-back">
 			<?php echo fge_icon_arrow_left(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 			Alle Firmenevents
 		</a>
 
-		<?php /* Header */ ?>
 		<header class="fg-detail-header">
 			<?php if ( $event_type ) : ?>
 				<span class="fg-type-tag fg-type-tag-lg"><?php echo esc_html( $event_type ); ?></span>
@@ -117,7 +103,6 @@ get_header();
 			</div>
 		</header>
 
-		<?php /* Hero Image */ ?>
 		<div class="fg-detail-hero" style="background-image: url('<?php echo esc_url( $thumb_url ); ?>')">
 			<div class="fg-detail-hero-scrim" aria-hidden="true"></div>
 			<div class="fg-detail-hero-cta">
@@ -125,12 +110,10 @@ get_header();
 			</div>
 		</div>
 
-		<?php /* Body: main + rail */ ?>
 		<div class="fg-detail-body">
 
 			<main class="fg-detail-main">
 
-				<?php /* Kurzbeschreibung */ ?>
 				<?php if ( $description ) : ?>
 					<div>
 						<p class="fg-section-label">Über dieses Event</p>
@@ -138,7 +121,6 @@ get_header();
 					</div>
 				<?php endif; ?>
 
-				<?php /* Ausführliche Beschreibung */ ?>
 				<?php
 				$content = get_the_content();
 				if ( $content ) : ?>
@@ -147,7 +129,6 @@ get_header();
 					</div>
 				<?php endif; ?>
 
-				<?php /* Event Rahmen */ ?>
 				<?php if ( $p_min || $p_max || $duration || $season || $weekdays || $region || $location ) : ?>
 					<div>
 						<p class="fg-section-label">Event Rahmen</p>
@@ -200,7 +181,6 @@ get_header();
 					</div>
 				<?php endif; ?>
 
-				<?php /* Leistungen */ ?>
 				<?php if ( ! empty( $leistungen ) ) : ?>
 					<div>
 						<p class="fg-section-label">Leistungen inklusive</p>
@@ -220,7 +200,6 @@ get_header();
 
 			</main>
 
-			<?php /* ── Price Rail ── */ ?>
 			<aside class="fg-detail-rail" aria-label="Preisinfos und Anfrage">
 				<div class="fg-rail-card">
 
@@ -266,22 +245,20 @@ get_header();
 
 		</div><?php /* .fg-detail-body */ ?>
 
-		<?php /* ── Anfrage Form ── */ ?>
 		<section class="fg-anfrage" id="event-anfrage" aria-label="Event anfragen">
 			<?php fge_render_anfrage_form( $post_id ); ?>
 		</section>
 
 	</div><?php /* .fg-detail */ ?>
 
-	<?php /* ── Similar Events ── */ ?>
 	<?php if ( $similar_query->have_posts() ) : ?>
 		<section class="fg-similar" aria-label="Weitere Firmenevents">
 			<h2 class="fg-similar-title">Weitere Firmenevents</h2>
 			<div class="fg-similar-grid">
 				<?php while ( $similar_query->have_posts() ) : $similar_query->the_post();
-					$sid   = get_the_ID();
-					$stype = fge_format_event_type( fge_get_event_meta( $sid, 'event_type' ) );
-					$sreg  = fge_get_event_meta( $sid, 'region' );
+					$sid    = get_the_ID();
+					$stype  = fge_format_event_type( fge_get_event_meta( $sid, 'event_type' ) );
+					$sreg   = fge_get_event_meta( $sid, 'region' );
 					$sprice = fge_get_event_price_display( $sid );
 					$sthumb = has_post_thumbnail() ? get_the_post_thumbnail_url( $sid, 'large' ) : fge_get_placeholder_image_url( 'event-team.jpg' );
 				?>
@@ -319,42 +296,7 @@ get_header();
 		</section>
 	<?php endif; ?>
 
-	<?php /* ── Footer ── */ ?>
-	<footer class="fg-footer" aria-label="Seitenfooter">
-		<div class="fg-footer-inner">
-			<div class="fg-footer-top">
-				<div class="fg-footer-brand">
-					<img src="<?php echo esc_url( fge_get_logo_url( true ) ); ?>" alt="Firmengolf" width="110" height="26">
-					<p class="fg-footer-line">Golf als Firmenbenefit und Eventformat — offen, frisch und unkompliziert.</p>
-				</div>
-				<div class="fg-footer-cols">
-					<div>
-						<p class="fg-footer-col-head">Firmenevents</p>
-						<a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ); ?>">Alle Angebote</a>
-						<a href="#event-anfrage">Event anfragen</a>
-					</div>
-					<div>
-						<p class="fg-footer-col-head">Unternehmen</p>
-						<a href="#">Corporate Benefit</a>
-						<a href="#">Partner werden</a>
-					</div>
-					<div>
-						<p class="fg-footer-col-head">Firmengolf</p>
-						<a href="#">Über uns</a>
-						<a href="#">Kontakt</a>
-					</div>
-				</div>
-			</div>
-			<div class="fg-footer-base">
-				<span>© <?php echo esc_html( date( 'Y' ) ); ?> Firmengolf</span>
-				<span>
-					<a href="#" style="color:inherit;">Datenschutz</a>
-					&ensp;·&ensp;
-					<a href="#" style="color:inherit;">Impressum</a>
-				</span>
-			</div>
-		</div>
-	</footer>
+	<?php get_template_part( 'template-parts/fge-footer' ); ?>
 
 </div><?php /* .fge-page */ ?>
 <?php get_footer(); ?>

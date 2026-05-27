@@ -2,32 +2,19 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+$anfrage_page = get_page_by_path( 'event-anfrage' );
+$anfrage_url  = $anfrage_page ? (string) get_permalink( $anfrage_page->ID ) : home_url( '/event-anfrage/' );
+
 get_header();
 ?>
 <div class="fge-page">
 
-	<?php /* ── Top Nav ── */ ?>
-	<nav class="fg-topnav" aria-label="Hauptnavigation">
-		<div class="fg-topnav-inner">
-			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="fg-brand">
-				<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="120" height="24">
-			</a>
-			<div class="fg-nav-items">
-				<a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ); ?>" class="active">Firmenevents</a>
-			</div>
-			<div class="fg-nav-end">
-				<a href="#event-anfrage" class="fg-nav-cta">
-					Event anfragen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-				</a>
-			</div>
-		</div>
-	</nav>
+	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'firmenevents' ] ); ?>
 
 	<?php /* ── Hero ── */ ?>
 	<section class="fg-hero">
-		<?php
-		$hero_img = fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
-		?>
+		<?php $hero_img = fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' ); ?>
 		<div class="fg-hero-photo" style="background-image: url('<?php echo esc_url( $hero_img ); ?>')">
 			<div class="fg-hero-scrim" aria-hidden="true"></div>
 			<div class="fg-hero-content">
@@ -35,7 +22,7 @@ get_header();
 				<h1 class="fg-hero-title">Bring dein Team raus aus dem Büro.</h1>
 				<p class="fg-hero-sub">Firmenevents auf dem Golfplatz — für Teams, die mehr wollen als den nächsten Meeting&shy;raum.</p>
 				<div class="fg-hero-actions">
-					<a href="#event-anfrage" class="fg-btn fg-btn-brand fg-btn-lg">Event anfragen</a>
+					<a href="<?php echo esc_url( $anfrage_url ); ?>" class="fg-btn fg-btn-brand fg-btn-lg">Event anfragen</a>
 					<a href="#eventangebote" class="fg-btn fg-btn-glass fg-btn-lg">Eventangebote ansehen</a>
 				</div>
 			</div>
@@ -69,7 +56,7 @@ get_header();
 
 			<div class="fg-grid">
 				<?php while ( have_posts() ) : the_post();
-					$post_id   = get_the_ID();
+					$post_id     = get_the_ID();
 					$event_type  = fge_format_event_type( fge_get_event_meta( $post_id, 'event_type' ) );
 					$region      = fge_get_event_meta( $post_id, 'region' );
 					$location    = fge_get_event_meta( $post_id, 'event_location' );
@@ -158,13 +145,13 @@ get_header();
 			<div class="fg-empty" id="eventangebote">
 				<h2 class="fg-empty-title">Neue Firmenevents werden vorbereitet.</h2>
 				<p>Aktuell werden neue Eventangebote zusammengestellt.<br>Schau bald wieder vorbei oder stelle eine allgemeine Anfrage.</p>
-				<a href="#event-anfrage" class="fg-btn fg-btn-brand">Event anfragen</a>
+				<a href="<?php echo esc_url( $anfrage_url ); ?>" class="fg-btn fg-btn-brand">Event anfragen</a>
 			</div>
 
 		<?php endif; ?>
 	</section>
 
-	<?php /* ── How It Works ── */ ?>
+	<?php /* ── Wie es funktioniert ── */ ?>
 	<section class="fg-how" aria-label="So funktioniert es">
 		<div class="fg-how-inner">
 			<p class="fg-how-label">So funktioniert es</p>
@@ -172,10 +159,10 @@ get_header();
 			<div class="fg-steps">
 				<?php
 				$steps = [
-					[ '01', 'Eventangebot ansehen',        'Format, Leistungen und Preisrahmen prüfen — alles auf einen Blick.' ],
-					[ '02', 'Wunschtermin anfragen',       'Datum und Teilnehmerzahl mitgeben — ganz ohne Vorwissen.' ],
-					[ '03', 'Verfügbarkeit wird geprüft',  'Wir koordinieren mit dem Golfplatz und melden uns schnell zurück.' ],
-					[ '04', 'Angebot erhalten',            'Konkretes Angebot, klare Preise — und dann kann es losgehen.' ],
+					[ '01', 'Eventangebot ansehen',       'Format, Leistungen und Preisrahmen prüfen — alles auf einen Blick.' ],
+					[ '02', 'Wunschtermin anfragen',      'Datum und Teilnehmerzahl mitgeben — ganz ohne Vorwissen.' ],
+					[ '03', 'Verfügbarkeit wird geprüft', 'Wir koordinieren mit dem Golfplatz und melden uns schnell zurück.' ],
+					[ '04', 'Angebot erhalten',           'Konkretes Angebot, klare Preise — und dann kann es losgehen.' ],
 				];
 				foreach ( $steps as $step ) : ?>
 					<div>
@@ -188,51 +175,16 @@ get_header();
 		</div>
 	</section>
 
-	<?php /* ── Anfrage Placeholder ── */ ?>
+	<?php /* ── Kein passendes Angebot? ── */ ?>
 	<section class="fg-grid-section" id="event-anfrage" aria-label="Event anfragen">
 		<div class="fg-anfrage">
 			<h2 class="fg-anfrage-title">Kein passendes Angebot dabei?</h2>
 			<p class="fg-anfrage-sub">Schreib uns — wir finden das richtige Format und den passenden Golfplatz für euer Team.</p>
-			<button class="fg-btn fg-btn-disabled" aria-disabled="true">Anfragefunktion folgt im nächsten Schritt</button>
+			<a href="<?php echo esc_url( $anfrage_url ); ?>" class="fg-btn fg-btn-brand">Event anfragen <?php echo fge_icon_arrow_right(); // phpcs:ignore ?></a>
 		</div>
 	</section>
 
-	<?php /* ── Footer ── */ ?>
-	<footer class="fg-footer" aria-label="Seitenfooter">
-		<div class="fg-footer-inner">
-			<div class="fg-footer-top">
-				<div class="fg-footer-brand">
-					<img src="<?php echo esc_url( fge_get_logo_url( true ) ); ?>" alt="Firmengolf" width="110" height="26">
-					<p class="fg-footer-line">Golf als Firmenbenefit und Eventformat — offen, frisch und unkompliziert.</p>
-				</div>
-				<div class="fg-footer-cols">
-					<div>
-						<p class="fg-footer-col-head">Firmenevents</p>
-						<a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ); ?>">Alle Angebote</a>
-						<a href="#event-anfrage">Event anfragen</a>
-					</div>
-					<div>
-						<p class="fg-footer-col-head">Unternehmen</p>
-						<a href="#">Corporate Benefit</a>
-						<a href="#">Partner werden</a>
-					</div>
-					<div>
-						<p class="fg-footer-col-head">Firmengolf</p>
-						<a href="#">Über uns</a>
-						<a href="#">Kontakt</a>
-					</div>
-				</div>
-			</div>
-			<div class="fg-footer-base">
-				<span>© <?php echo esc_html( date( 'Y' ) ); ?> Firmengolf</span>
-				<span>
-					<a href="#" style="color:inherit;">Datenschutz</a>
-					&ensp;·&ensp;
-					<a href="#" style="color:inherit;">Impressum</a>
-				</span>
-			</div>
-		</div>
-	</footer>
+	<?php get_template_part( 'template-parts/fge-footer' ); ?>
 
 </div><?php /* .fge-page */ ?>
 <?php get_footer(); ?>

@@ -32,7 +32,7 @@ function fge_portal_handle_new_event(): void {
 	if ( ! empty( $errors ) ) {
 		$token = wp_generate_uuid4();
 		set_transient( 'fge_portal_err_' . $token, [ 'errors' => $errors, 'data' => wp_unslash( $_POST ) ], 300 );
-		wp_redirect( esc_url_raw( $base . '?tab=neues-event&portal_err=' . rawurlencode( $token ) ), 303 );
+		wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_action=new&portal_err=' . rawurlencode( $token ) ), 303 );
 		exit;
 	}
 
@@ -45,7 +45,7 @@ function fge_portal_handle_new_event(): void {
 	] );
 
 	if ( is_wp_error( $post_id ) || $post_id === 0 ) {
-		wp_redirect( esc_url_raw( $base . '?tab=neues-event&portal_err=save_failed' ), 303 );
+		wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_action=new&portal_err=save_failed' ), 303 );
 		exit;
 	}
 
@@ -54,7 +54,7 @@ function fge_portal_handle_new_event(): void {
 	update_post_meta( $post_id, '_fge_assigned_partner_id', $partner_id );
 	fge_portal_save_event_meta( $post_id );
 
-	wp_redirect( esc_url_raw( $base . '?tab=events&portal_success=event_saved' ), 303 );
+	wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_saved' ), 303 );
 	exit;
 }
 
@@ -87,7 +87,7 @@ function fge_portal_handle_edit_event(): void {
 	if ( ! empty( $errors ) ) {
 		$token = wp_generate_uuid4();
 		set_transient( 'fge_portal_err_' . $token, [ 'errors' => $errors, 'data' => wp_unslash( $_POST ) ], 300 );
-		wp_redirect( esc_url_raw( $base . '?tab=events&portal_action=edit&event_id=' . $event_id . '&portal_err=' . rawurlencode( $token ) ), 303 );
+		wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_action=edit&event_id=' . $event_id . '&portal_err=' . rawurlencode( $token ) ), 303 );
 		exit;
 	}
 
@@ -101,7 +101,7 @@ function fge_portal_handle_edit_event(): void {
 	update_post_meta( $event_id, '_fge_event_status', $current_status === 'freigegeben' ? 'aenderung_in_pruefung' : 'zur_pruefung' );
 	fge_portal_save_event_meta( $event_id );
 
-	wp_redirect( esc_url_raw( $base . '?tab=events&portal_success=event_updated' ), 303 );
+	wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_updated' ), 303 );
 	exit;
 }
 
@@ -143,9 +143,9 @@ function fge_portal_access_check(): void {
 }
 
 function fge_portal_get_active_tab(): string {
-	$allowed = [ 'dashboard', 'profil', 'events', 'neues-event', 'anfragen', 'kennzahlen' ];
-	$tab     = sanitize_key( $_GET['tab'] ?? 'dashboard' );
-	return in_array( $tab, $allowed, true ) ? $tab : 'dashboard';
+	$allowed = [ 'uebersicht', 'angebote', 'anfragen', 'kalender', 'platz', 'kennzahlen' ];
+	$tab     = sanitize_key( $_GET['tab'] ?? 'uebersicht' );
+	return in_array( $tab, $allowed, true ) ? $tab : 'uebersicht';
 }
 
 function fge_portal_validate_event_fields(): array {
@@ -177,7 +177,7 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	update_post_meta( $post_id, '_fge_region',           sanitize_text_field( wp_unslash( $_POST['fge_region'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_event_location',   sanitize_text_field( wp_unslash( $_POST['fge_event_location'] ?? '' ) ) );
 
-	$raw_days = array_map( 'sanitize_text_field', (array) ( $_POST['fge_available_weekdays'] ?? [] ) );
+	$raw_days   = array_map( 'sanitize_text_field', (array) ( $_POST['fge_available_weekdays'] ?? [] ) );
 	$clean_days = array_values( array_filter( $raw_days, static function( $v ) use ( $allowed_weekdays ) {
 		return in_array( $v, $allowed_weekdays, true );
 	} ) );
@@ -246,6 +246,79 @@ function fge_portal_format_event_type( string $type ): string {
 	][ $type ] ?? '';
 }
 
+// ── New Helpers ───────────────────────────────────────────────────────────────
+
+function fge_portal_make_monogram( string $title ): string {
+	$cleaned  = preg_replace( '/^\s*(Golfclub|Golf-Club|Golf Club|GC)\s+/i', '', trim( $title ) ) ?? $title;
+	$words    = preg_split( '/\s+/', $cleaned, -1, PREG_SPLIT_NO_EMPTY ) ?: [];
+	$initials = '';
+	foreach ( $words as $word ) {
+		$letter = strtoupper( mb_substr( $word, 0, 1 ) );
+		if ( $letter !== '' && ctype_alpha( $letter ) ) {
+			$initials .= $letter;
+			if ( mb_strlen( $initials ) >= 2 ) {
+				break;
+			}
+		}
+	}
+	if ( mb_strlen( $initials ) < 2 ) {
+		$initials = strtoupper( mb_substr( $title, 0, 2 ) );
+	}
+	return $initials;
+}
+
+function fge_portal_relative_time( string $datetime ): string {
+	$diff = time() - (int) strtotime( $datetime );
+	if ( $diff < 3600 ) {
+		$mins = max( 1, (int) round( $diff / 60 ) );
+		return "vor {$mins} Min.";
+	}
+	if ( $diff < 86400 ) {
+		$hours = (int) round( $diff / 3600 );
+		return "vor {$hours} Std.";
+	}
+	$days = (int) round( $diff / 86400 );
+	if ( $days === 1 ) {
+		return 'gestern';
+	}
+	return "vor {$days} Tagen";
+}
+
+function fge_portal_count_new_requests( int $partner_id ): int {
+	if ( $partner_id <= 0 ) {
+		return 0;
+	}
+	$cutoff   = gmdate( 'Y-m-d H:i:s', time() - 172800 );
+	$requests = get_posts( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'date_query'  => [ [ 'after' => $cutoff, 'inclusive' => true ] ],
+		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
+		'fields'      => 'ids',
+	] );
+	return count( $requests );
+}
+
+function fge_portal_avatar_color( int $index ): string {
+	return [ 'sand', 'green', 'clay' ][ $index % 3 ];
+}
+
+function fge_portal_name_initials( string $name ): string {
+	$words    = preg_split( '/\s+/', trim( $name ), -1, PREG_SPLIT_NO_EMPTY ) ?: [];
+	$initials = '';
+	foreach ( $words as $word ) {
+		$l = strtoupper( mb_substr( $word, 0, 1 ) );
+		if ( $l !== '' ) {
+			$initials .= $l;
+			if ( mb_strlen( $initials ) >= 2 ) {
+				break;
+			}
+		}
+	}
+	return $initials ?: strtoupper( mb_substr( $name, 0, 2 ) );
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN RENDER
 // ══════════════════════════════════════════════════════════════════════════════
@@ -275,34 +348,65 @@ function fge_portal_render(): void {
 		return;
 	}
 
-	$active_tab   = fge_portal_get_active_tab();
-	$partner_name = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
-	$user         = wp_get_current_user();
-	$success      = sanitize_key( $_GET['portal_success'] ?? '' );
+	$active_tab    = fge_portal_get_active_tab();
+	$partner_name  = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+	$success       = sanitize_key( $_GET['portal_success'] ?? '' );
+	$new_requests  = fge_portal_count_new_requests( $partner_id );
+	$user          = wp_get_current_user();
+	$user_initials = strtoupper( mb_substr( $user->first_name ?: $user->display_name, 0, 1 ) )
+	               . strtoupper( mb_substr( $user->last_name ?: '', 0, 1 ) );
+	$logo_url      = fge_get_logo_url();
+	$archive_url   = get_post_type_archive_link( 'firmengolf_event' );
 
 	$tabs = [
-		'dashboard'   => 'Dashboard',
-		'profil'      => 'Mein Profil',
-		'events'      => 'Meine Events',
-		'neues-event' => 'Neues Event',
-		'anfragen'    => 'Anfragen',
-		'kennzahlen'  => 'Kennzahlen',
+		'uebersicht' => 'Übersicht',
+		'angebote'   => 'Angebote',
+		'anfragen'   => 'Anfragen',
+		'kalender'   => 'Kalender',
+		'platz'      => 'Mein Platz',
 	];
 	?>
-	<div class="fg-portal">
+	<nav class="fp-nav">
+		<div class="fp-nav-inner">
+			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="fp-brand">
+				<img src="<?php echo esc_url( $logo_url ); ?>" alt="Firmengolf">
+				<span class="fp-brand-divider"></span>
+				<span class="fp-brand-context">
+					Partner-Portal
+					<span class="fp-pill">Live</span>
+				</span>
+			</a>
 
-		<div class="fg-portal-header">
-			<div class="fg-portal-header-inner">
-				<div>
-					<p class="fg-portal-header-label">Partnerportal</p>
-					<h1 class="fg-portal-header-title"><?php echo esc_html( $partner_name ); ?></h1>
+			<div class="fp-nav-tabs">
+				<?php foreach ( $tabs as $key => $label ) : ?>
+					<button
+						class="fp-nav-tab<?php echo $active_tab === $key ? ' active' : ''; ?>"
+						data-tab="<?php echo esc_attr( $key ); ?>"
+						type="button"
+					>
+						<?php echo esc_html( $label ); ?>
+						<?php if ( $key === 'anfragen' && $new_requests > 0 ) : ?>
+							<span class="fp-badge"><?php echo (int) $new_requests; ?></span>
+						<?php endif; ?>
+					</button>
+				<?php endforeach; ?>
+			</div>
+
+			<div class="fp-nav-end">
+				<?php if ( $archive_url ) : ?>
+					<a href="<?php echo esc_url( $archive_url ); ?>" class="fp-nav-link" target="_blank" rel="noopener">
+						Vorschau
+					</a>
+				<?php endif; ?>
+				<div class="fp-nav-avatar" title="<?php echo esc_attr( $user->display_name ); ?>">
+					<?php echo esc_html( $user_initials ?: 'P' ); ?>
 				</div>
-				<div class="fg-portal-header-user">
-					<span><?php echo esc_html( $user->display_name ); ?></span>
-					<a href="<?php echo esc_url( wp_logout_url( home_url( '/' ) ) ); ?>" class="fg-portal-logout">Abmelden</a>
-				</div>
+				<a href="<?php echo esc_url( wp_logout_url( home_url( '/' ) ) ); ?>" class="fp-nav-link">Abmelden</a>
 			</div>
 		</div>
+	</nav>
+
+	<div class="fp-page-wrap">
 
 		<?php if ( $success !== '' ) : ?>
 			<div class="fg-portal-global-notice fg-portal-global-notice--success" role="status">
@@ -314,40 +418,38 @@ function fge_portal_render(): void {
 			</div>
 		<?php endif; ?>
 
-		<nav class="fg-portal-nav" aria-label="Portalbereiche">
-			<?php foreach ( $tabs as $key => $label ) : ?>
-				<button
-					class="fg-portal-tab<?php echo $active_tab === $key ? ' fg-portal-tab--active' : ''; ?>"
-					data-tab="<?php echo esc_attr( $key ); ?>"
-					type="button"
-				><?php echo esc_html( $label ); ?></button>
-			<?php endforeach; ?>
-		</nav>
+		<div id="fp-tab-uebersicht"  class="fp-section<?php echo $active_tab !== 'uebersicht'  ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_uebersicht( $partner_id ); ?></div>
+		<div id="fp-tab-angebote"    class="fp-section<?php echo $active_tab !== 'angebote'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_angebote( $partner_id ); ?></div>
+		<div id="fp-tab-anfragen"    class="fp-section<?php echo $active_tab !== 'anfragen'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_requests( $partner_id ); ?></div>
+		<div id="fp-tab-kalender"    class="fp-section<?php echo $active_tab !== 'kalender'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_kalender(); ?></div>
+		<div id="fp-tab-platz"       class="fp-section<?php echo $active_tab !== 'platz'       ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_platz( $partner_id ); ?></div>
+		<div id="fp-tab-kennzahlen"  class="fp-section<?php echo $active_tab !== 'kennzahlen'  ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_stats( $partner_id ); ?></div>
 
-		<div class="fg-portal-content">
-			<div id="fg-tab-dashboard"   class="fg-portal-section<?php echo $active_tab !== 'dashboard'   ? ' fg-portal-section--hidden' : ''; ?>"><?php fge_portal_section_dashboard( $partner_id ); ?></div>
-			<div id="fg-tab-profil"      class="fg-portal-section<?php echo $active_tab !== 'profil'      ? ' fg-portal-section--hidden' : ''; ?>"><?php fge_portal_section_profile( $partner_id ); ?></div>
-			<div id="fg-tab-events"      class="fg-portal-section<?php echo $active_tab !== 'events'      ? ' fg-portal-section--hidden' : ''; ?>"><?php fge_portal_section_events( $partner_id ); ?></div>
-			<div id="fg-tab-neues-event" class="fg-portal-section<?php echo $active_tab !== 'neues-event' ? ' fg-portal-section--hidden' : ''; ?>"><?php fge_portal_section_new_event(); ?></div>
-			<div id="fg-tab-anfragen"    class="fg-portal-section<?php echo $active_tab !== 'anfragen'    ? ' fg-portal-section--hidden' : ''; ?>"><?php fge_portal_section_requests( $partner_id ); ?></div>
-			<div id="fg-tab-kennzahlen"  class="fg-portal-section<?php echo $active_tab !== 'kennzahlen'  ? ' fg-portal-section--hidden' : ''; ?>"><?php fge_portal_section_stats( $partner_id ); ?></div>
-		</div>
+		<footer class="fp-portal-foot">
+			<div>© <?php echo esc_html( gmdate( 'Y' ) ); ?> Firmengolf · Partner-Portal</div>
+			<div class="fp-portal-foot-links">
+				<a href="mailto:events@firmen.golf">Support</a>
+			</div>
+		</footer>
 
 	</div>
+
 	<script>
 	(function () {
-		var tabs     = document.querySelectorAll('.fg-portal-tab');
-		var sections = document.querySelectorAll('.fg-portal-section');
+		var tabs     = document.querySelectorAll('.fp-nav-tab');
+		var sections = document.querySelectorAll('.fp-section');
 		tabs.forEach(function (btn) {
 			btn.addEventListener('click', function () {
-				tabs.forEach(function (b) { b.classList.remove('fg-portal-tab--active'); });
-				sections.forEach(function (s) { s.classList.add('fg-portal-section--hidden'); });
-				btn.classList.add('fg-portal-tab--active');
-				var el = document.getElementById('fg-tab-' + btn.dataset.tab);
-				if (el) { el.classList.remove('fg-portal-section--hidden'); }
+				tabs.forEach(function (b) { b.classList.remove('active'); });
+				sections.forEach(function (s) { s.classList.add('fp-section--hidden'); });
+				btn.classList.add('active');
+				var el = document.getElementById('fp-tab-' + btn.dataset.tab);
+				if (el) { el.classList.remove('fp-section--hidden'); }
 				var url = new URL(window.location.href);
 				url.searchParams.set('tab', btn.dataset.tab);
-				['portal_action', 'event_id', 'portal_success', 'portal_err'].forEach(function (p) { url.searchParams.delete(p); });
+				['portal_action', 'event_id', 'portal_success', 'portal_err', 'preset_type'].forEach(function (p) {
+					url.searchParams.delete(p);
+				});
 				history.replaceState(null, '', url.toString());
 			});
 		});
@@ -357,161 +459,390 @@ function fge_portal_render(): void {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// SECTION: DASHBOARD
+// SECTION: ÜBERSICHT
 // ══════════════════════════════════════════════════════════════════════════════
 
-function fge_portal_section_dashboard( int $partner_id ): void {
-	$partner_name   = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
-	$partner_status = (string) get_post_meta( $partner_id, '_fge_partner_status', true );
-	$city           = (string) get_post_meta( $partner_id, '_fge_city', true );
+function fge_portal_section_uebersicht( int $partner_id ): void {
+	$base = fge_portal_page_url();
 
+	fge_portal_render_hero( $partner_id );
+	fge_portal_render_stats_row( $partner_id );
+	?>
+
+	<div class="fp-section-block">
+		<div class="fp-section-head">
+			<div>
+				<div class="fp-eyebrow">Pro Eventformat ein Angebot</div>
+				<h2>Deine <em>Event-Angebote</em></h2>
+				<p>Jede Kategorie bekommt eigene Konditionen und eigene Beschreibung.</p>
+			</div>
+			<div class="fp-actions">
+				<a href="<?php echo esc_url( $base . '?tab=angebote&portal_action=new' ); ?>" class="fp-btn fp-btn-brand">
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 5v14m-7-7h14"/></svg>
+					Neues Angebot
+				</a>
+			</div>
+		</div>
+		<?php fge_portal_render_cat_grid( $partner_id, $base ); ?>
+	</div>
+
+	<?php fge_portal_render_anfragen_preview( $partner_id ); ?>
+
+	<div class="fp-section-block">
+		<div class="fp-section-head">
+			<div>
+				<div class="fp-eyebrow">Was Firmen sagen</div>
+				<h2>Bewertungen</h2>
+			</div>
+		</div>
+		<div class="fp-placeholder">
+			<div class="fp-placeholder-icon">
+				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+			</div>
+			<div class="fp-placeholder-title">Bewertungen kommen bald</div>
+			<div class="fp-placeholder-sub">Firmen können deine Events nach dem Event bewerten. Das Feature wird demnächst freigeschaltet.</div>
+		</div>
+	</div>
+	<?php
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HERO + STATS
+// ══════════════════════════════════════════════════════════════════════════════
+
+function fge_portal_render_hero( int $partner_id ): void {
+	$partner_name   = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+	$city           = (string) get_post_meta( $partner_id, '_fge_city', true );
+	$partner_status = (string) get_post_meta( $partner_id, '_fge_partner_status', true );
+	$monogram       = fge_portal_make_monogram( $partner_name );
+	$hero_img       = fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
+	$base           = fge_portal_page_url();
+	$archive_url    = get_post_type_archive_link( 'firmengolf_event' ) ?: home_url( '/firmenevents/' );
+	$is_live        = in_array( $partner_status, [ 'aktiv', '' ], true );
+	$status_label   = $is_live ? 'Live auf Firmengolf' : fge_portal_format_partner_status( $partner_status );
+	?>
+	<section class="fp-hero">
+		<div class="fp-hero-photo" style="background-image: url('<?php echo esc_url( $hero_img ); ?>')">
+			<div class="fp-hero-scrim"></div>
+			<div class="fp-hero-top">
+				<div class="fp-hero-status">
+					<span class="dot"></span>
+					<?php echo esc_html( $status_label ); ?>
+				</div>
+				<div class="fp-hero-actions">
+					<a href="<?php echo esc_url( $archive_url ); ?>" class="fp-hero-btn" target="_blank" rel="noopener">
+						Öffentliches Profil
+					</a>
+					<a href="<?php echo esc_url( $base . '?tab=platz' ); ?>" class="fp-hero-btn solid">
+						Profil bearbeiten
+					</a>
+				</div>
+			</div>
+			<div class="fp-hero-body">
+				<div class="fp-hero-id">
+					<div class="fp-hero-monogram"><?php echo esc_html( $monogram ); ?></div>
+					<div class="fp-hero-text">
+						<div class="fp-hero-eyebrow">Dein Platz auf Firmengolf</div>
+						<h1 class="fp-hero-name"><?php echo esc_html( $partner_name ); ?></h1>
+						<?php if ( $city !== '' ) : ?>
+							<div class="fp-hero-meta">
+								<span><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $city ); ?></span>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+	<?php
+}
+
+function fge_portal_render_stats_row( int $partner_id ): void {
 	$events = get_posts( [
 		'post_type'   => 'firmengolf_event',
 		'post_status' => [ 'publish', 'draft' ],
 		'numberposts' => -1,
 		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
+		'fields'      => 'ids',
 	] );
 
-	$total = count( $events );
-	$published = $in_review = $views = $requests = $bookings = 0;
-
-	foreach ( $events as $ev ) {
-		$st = (string) get_post_meta( $ev->ID, '_fge_event_status', true );
-		if ( $st === 'freigegeben' ) $published++;
-		if ( in_array( $st, [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) ) $in_review++;
-		$views    += (int) get_post_meta( $ev->ID, '_fge_views_count', true );
-		$requests += (int) get_post_meta( $ev->ID, '_fge_requests_count', true );
-		$bookings += (int) get_post_meta( $ev->ID, '_fge_bookings_count', true );
+	$published      = 0;
+	$views          = 0;
+	$requests_total = 0;
+	$bookings       = 0;
+	foreach ( $events as $eid ) {
+		if ( get_post_meta( $eid, '_fge_event_status', true ) === 'freigegeben' ) {
+			$published++;
+		}
+		$views          += (int) get_post_meta( $eid, '_fge_views_count', true );
+		$requests_total += (int) get_post_meta( $eid, '_fge_requests_count', true );
+		$bookings       += (int) get_post_meta( $eid, '_fge_bookings_count', true );
 	}
+
+	$base = fge_portal_page_url();
 	?>
-	<h2 class="fg-portal-section-title">Übersicht</h2>
-
-	<div class="fg-portal-profile-card">
-		<div class="fg-portal-profile-card-body">
-			<div class="fg-portal-profile-card-name"><?php echo esc_html( $partner_name ); ?></div>
-			<?php if ( $city !== '' ) : ?><div class="fg-portal-profile-card-sub"><?php echo esc_html( $city ); ?></div><?php endif; ?>
+	<div class="fp-stats">
+		<div class="fp-stat">
+			<div class="fp-stat-lbl">Profilaufrufe</div>
+			<div class="fp-stat-val"><?php echo esc_html( number_format( $views, 0, ',', '.' ) ); ?></div>
+			<div class="fp-stat-foot">gesamt</div>
 		</div>
-		<span class="fg-portal-status fg-portal-status--<?php echo esc_attr( fge_portal_status_class( $partner_status ) ); ?>">
-			<?php echo esc_html( fge_portal_format_partner_status( $partner_status ) ); ?>
-		</span>
-	</div>
-
-	<div class="fg-portal-stats">
-		<?php
-		$stats = [
-			[ $total,     'Events gesamt' ],
-			[ $published, 'Freigegeben' ],
-			[ $in_review, 'In Prüfung' ],
-			[ $views,     'Aufrufe' ],
-			[ $requests,  'Anfragen' ],
-			[ $bookings,  'Buchungen' ],
-		];
-		foreach ( $stats as [ $val, $label ] ) :
-		?>
-			<div class="fg-portal-stat">
-				<div class="fg-portal-stat-value"><?php echo esc_html( $val ); ?></div>
-				<div class="fg-portal-stat-label"><?php echo esc_html( $label ); ?></div>
-			</div>
-		<?php endforeach; ?>
+		<div class="fp-stat">
+			<div class="fp-stat-lbl">Anfragen</div>
+			<div class="fp-stat-val"><?php echo esc_html( $requests_total ); ?></div>
+			<div class="fp-stat-foot">gesamt</div>
+		</div>
+		<div class="fp-stat">
+			<div class="fp-stat-lbl">Buchungen</div>
+			<div class="fp-stat-val"><?php echo esc_html( $bookings ); ?></div>
+			<div class="fp-stat-foot">gesamt</div>
+		</div>
+		<div class="fp-stat">
+			<div class="fp-stat-lbl">Veröffentlicht</div>
+			<div class="fp-stat-val"><?php echo esc_html( $published ); ?></div>
+			<div class="fp-stat-foot"><a href="<?php echo esc_url( $base . '?tab=kennzahlen' ); ?>">Details →</a></div>
+		</div>
 	</div>
 	<?php
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// SECTION: PROFIL
+// CATEGORY GRID
 // ══════════════════════════════════════════════════════════════════════════════
 
-function fge_portal_section_profile( int $partner_id ): void {
-	$m = static function( string $key ) use ( $partner_id ): string {
-		return (string) get_post_meta( $partner_id, '_fge_' . $key, true );
-	};
-
-	$ausstattung = [
-		'has_driving_range' => 'Driving Range', 'has_short_game_area' => 'Kurzspielbereich',
-		'has_putting_green' => 'Putting Green',  'has_rental_clubs' => 'Leihschläger',
-		'has_range_balls' => 'Rangebälle',        'has_golf_teacher' => 'Golflehrer',
-		'has_meeting_room' => 'Meetingraum',       'has_gastronomy' => 'Gastronomie',
-		'has_breakfast' => 'Frühstück',            'has_lunch' => 'Lunch',
-		'has_dinner' => 'Abendessen',              'has_terrace' => 'Terrasse',
-		'has_parking' => 'Parkplätze',             'has_shuttle_access' => 'Shuttle',
-		'has_indoor_or_simulator' => 'Indoor/Simulator', 'has_branding_options' => 'Branding',
-		'has_tournament_organization' => 'Turniermodus', 'has_bad_weather_alternative' => 'Schlechtwetter-Alternative',
+function fge_portal_render_cat_grid( int $partner_id, string $base ): void {
+	$types = [
+		'teamevent'      => 'Teamevent',
+		'kundenevent'    => 'Kundenevent',
+		'gesundheitstag' => 'Gesundheitstag',
+		'offsite'        => 'Offsite',
+		'firmenturnier'  => 'Firmenturnier',
+		'anderes_event'  => 'Anderes Event',
 	];
-	$active = [];
-	foreach ( $ausstattung as $key => $label ) {
-		if ( $m( $key ) === '1' ) $active[] = $label;
+	?>
+	<div class="fp-cat-grid">
+		<?php
+		$idx = 0;
+		foreach ( $types as $type_key => $type_label ) :
+			$events = get_posts( [
+				'post_type'   => 'firmengolf_event',
+				'post_status' => [ 'publish', 'draft' ],
+				'numberposts' => -1,
+				'meta_query'  => [
+					'relation' => 'AND',
+					[ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ],
+					[ 'key' => '_fge_event_type', 'value' => $type_key ],
+				],
+			] );
+
+			if ( empty( $events ) ) :
+				$new_url = esc_url( $base . '?tab=angebote&portal_action=new&preset_type=' . $type_key );
+				?>
+				<a href="<?php echo $new_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>" class="fp-cat is-empty">
+					<div class="fp-empty-icon">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14"/></svg>
+					</div>
+					<span class="fp-cat-chip"><?php echo esc_html( $type_label ); ?></span>
+					<div class="fp-cat-title">Noch kein Angebot</div>
+					<div class="fp-cat-sub">Lade ein Angebot hoch, damit Firmen dich in dieser Kategorie finden.</div>
+					<span class="fp-btn fp-btn-brand fp-btn-sm">+ Angebot erstellen</span>
+				</a>
+				<?php
+			else :
+				foreach ( $events as $event ) {
+					fge_portal_render_cat_card( $event, $type_label, $base, $idx );
+					$idx++;
+				}
+			endif;
+		endforeach;
+		?>
+	</div>
+	<?php
+}
+
+function fge_portal_render_cat_card( WP_Post $event, string $type_label, string $base, int $idx = 0 ): void {
+	$event_id = $event->ID;
+	$status   = (string) get_post_meta( $event_id, '_fge_event_status', true );
+	$desc     = (string) get_post_meta( $event_id, '_fge_card_description', true );
+	$duration = (string) get_post_meta( $event_id, '_fge_duration', true );
+	$pmin     = (int)    get_post_meta( $event_id, '_fge_participants_min', true );
+	$pmax     = (int)    get_post_meta( $event_id, '_fge_participants_max', true );
+	$price    = (string) get_post_meta( $event_id, '_fge_public_price_label', true );
+	$views    = (int)    get_post_meta( $event_id, '_fge_views_count', true );
+
+	$placeholder = fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
+	$edit_url    = esc_url( $base . '?tab=angebote&portal_action=edit&event_id=' . $event_id );
+
+	$ampel_map = [
+		'freigegeben'           => [ 'class' => 'published', 'label' => 'Veröffentlicht' ],
+		'zur_pruefung'          => [ 'class' => 'draft',     'label' => 'In Prüfung' ],
+		'aenderung_in_pruefung' => [ 'class' => 'draft',     'label' => 'In Prüfung' ],
+		'entwurf'               => [ 'class' => 'draft',     'label' => 'Entwurf' ],
+		'pausiert'              => [ 'class' => 'paused',    'label' => 'Pausiert' ],
+		'abgelehnt'             => [ 'class' => 'rejected',  'label' => 'Abgelehnt' ],
+	];
+	$ampel = $ampel_map[ $status ] ?? [ 'class' => 'draft', 'label' => 'Entwurf' ];
+
+	$group = '';
+	if ( $pmin > 0 && $pmax > 0 ) {
+		$group = "{$pmin}–{$pmax}";
+	} elseif ( $pmax > 0 ) {
+		$group = "bis {$pmax}";
+	} elseif ( $pmin > 0 ) {
+		$group = "ab {$pmin}";
 	}
 	?>
-	<h2 class="fg-portal-section-title">Mein Golfplatz</h2>
-	<p class="fg-portal-section-sub">Lesansicht — Profiländerungen bitte direkt bei Firmengolf anfragen.</p>
-
-	<div class="fg-portal-profile-groups">
-
-		<div class="fg-portal-profile-group">
-			<div class="fg-portal-profile-group-title">Golfplatz</div>
-			<?php
-			fge_portal_profile_row( 'Name öffentlich', $m('public_golfclub_name') );
-			fge_portal_profile_row( 'Betreiber', $m('legal_operator_name') );
-			fge_portal_profile_row( 'Ort', trim( $m('city') . ( $m('federal_state') ? ', ' . $m('federal_state') : '' ) ) );
-			fge_portal_profile_row( 'Region', $m('free_region') );
-			if ( $m('website_url') !== '' ) {
-				echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">Website</span><span class="fg-portal-profile-val"><a href="' . esc_url( $m('website_url') ) . '" target="_blank" rel="noopener">' . esc_html( $m('website_url') ) . '</a></span></div>';
-			}
-			?>
+	<a href="<?php echo $edit_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>" class="fp-cat">
+		<div class="fp-cat-photo" style="background-image: url('<?php echo esc_url( $placeholder ); ?>')">
+			<span class="fp-cat-chip"><?php echo esc_html( $type_label ); ?></span>
+			<span class="fp-cat-status <?php echo esc_attr( $ampel['class'] ); ?>">
+				<span class="dot"></span>
+				<?php echo esc_html( $ampel['label'] ); ?>
+			</span>
 		</div>
-
-		<div class="fg-portal-profile-group">
-			<div class="fg-portal-profile-group-title">Hauptansprechpartner</div>
-			<?php
-			fge_portal_profile_row( 'Name', $m('main_contact_name') );
-			if ( $m('main_contact_email') !== '' ) {
-				echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">E-Mail</span><span class="fg-portal-profile-val"><a href="mailto:' . esc_attr( $m('main_contact_email') ) . '">' . esc_html( $m('main_contact_email') ) . '</a></span></div>';
-			}
-			fge_portal_profile_row( 'Telefon', $m('main_contact_phone') );
-			?>
-		</div>
-
-		<div class="fg-portal-profile-group">
-			<div class="fg-portal-profile-group-title">Event Ansprechpartner</div>
-			<?php
-			fge_portal_profile_row( 'Name', $m('event_contact_name') );
-			if ( $m('event_contact_email') !== '' ) {
-				echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">E-Mail</span><span class="fg-portal-profile-val"><a href="mailto:' . esc_attr( $m('event_contact_email') ) . '">' . esc_html( $m('event_contact_email') ) . '</a></span></div>';
-			}
-			fge_portal_profile_row( 'Telefon', $m('event_contact_phone') );
-			?>
-		</div>
-
-		<?php if ( ! empty( $active ) ) : ?>
-		<div class="fg-portal-profile-group">
-			<div class="fg-portal-profile-group-title">Ausstattung</div>
-			<div class="fg-portal-tags">
-				<?php foreach ( $active as $label ) : ?>
-					<span class="fg-portal-tag"><?php echo esc_html( $label ); ?></span>
-				<?php endforeach; ?>
+		<div class="fp-cat-body">
+			<div class="fp-cat-title"><?php echo esc_html( $event->post_title ); ?></div>
+			<?php if ( $desc !== '' ) : ?>
+				<div class="fp-cat-sub"><?php echo esc_html( wp_trim_words( $desc, 15, '…' ) ); ?></div>
+			<?php endif; ?>
+			<div class="fp-cat-stats">
+				<?php if ( $duration !== '' ) : ?>
+					<span class="fp-chip"><?php echo fge_icon_clock(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $duration ); ?></span>
+				<?php endif; ?>
+				<?php if ( $group !== '' ) : ?>
+					<span class="fp-chip"><?php echo fge_icon_users(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $group ); ?> Pers.</span>
+				<?php endif; ?>
+				<?php if ( $status === 'freigegeben' && $views > 0 ) : ?>
+					<span class="fp-chip"><?php echo esc_html( number_format( $views, 0, ',', '.' ) ); ?> Aufrufe</span>
+				<?php endif; ?>
 			</div>
-			<?php if ( $m('additional_equipment') !== '' ) : ?>
-				<p class="fg-portal-profile-extra"><?php echo esc_html( $m('additional_equipment') ); ?></p>
+			<div class="fp-cat-foot">
+				<div class="fp-cat-price">
+					<?php if ( $price !== '' ) : ?>
+						<?php echo esc_html( $price ); ?>
+					<?php else : ?>
+						<span class="fp-cat-price-empty">Kein Preislabel</span>
+					<?php endif; ?>
+				</div>
+				<span class="fp-cat-edit">Bearbeiten <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+			</div>
+		</div>
+	</a>
+	<?php
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INBOX ROW + ANFRAGEN PREVIEW
+// ══════════════════════════════════════════════════════════════════════════════
+
+function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
+	$status  = (string) get_post_meta( $req->ID, '_fge_request_status', true );
+	$company = (string) get_post_meta( $req->ID, '_fge_company_name', true );
+	$first   = (string) get_post_meta( $req->ID, '_fge_contact_first_name', true );
+	$last    = (string) get_post_meta( $req->ID, '_fge_contact_last_name', true );
+	$ev_id   = (int)    get_post_meta( $req->ID, '_fge_assigned_event_id', true );
+	$ev_type = $ev_id > 0 ? (string) get_post_meta( $ev_id, '_fge_event_type', true ) : '';
+	$desc    = wp_trim_words( wp_strip_all_tags( $req->post_content ?: (string) get_post_meta( $req->ID, '_fge_message', true ) ), 12, '…' );
+
+	$name     = $company ?: trim( $first . ' ' . $last ) ?: 'Unbekannte Anfrage';
+	$initials = fge_portal_name_initials( $name );
+	$color    = fge_portal_avatar_color( $idx );
+	$time     = fge_portal_relative_time( $req->post_date );
+	$is_new   = ( time() - (int) strtotime( $req->post_date ) ) < 172800;
+
+	$status_labels = [
+		'neu'                           => 'Neu',
+		'eingangsbestaetigung_gesendet' => 'Bestätigt',
+		'verfuegbarkeit_wird_geprueft'  => 'In Prüfung',
+		'partner_angefragt'             => 'Angefragt',
+		'vollstaendig_verfuegbar'       => 'Verfügbar',
+		'nicht_verfuegbar'              => 'Nicht verfügbar',
+		'angebot_versendet'             => 'Angebot versendet',
+		'angebot_angenommen'            => 'Angenommen',
+		'event_durchgefuehrt'           => 'Durchgeführt',
+		'abgeschlossen'                 => 'Abgeschlossen',
+		'verloren'                      => 'Verloren',
+	];
+	$st_label      = $status_labels[ $status ] ?? ( $status ?: 'Neu' );
+	$is_new_status = $status === 'neu' || $status === '';
+	?>
+	<div class="fp-inbox-row">
+		<div class="fp-inbox-avatar <?php echo esc_attr( $color ); ?>"><?php echo esc_html( $initials ); ?></div>
+		<div class="fp-inbox-body">
+			<div class="fp-inbox-top">
+				<span><?php echo esc_html( $name ); ?></span>
+				<?php if ( $is_new ) : ?><span class="fp-new">Neu</span><?php endif; ?>
+				<?php if ( $ev_type !== '' ) : ?>
+					<span class="fp-inbox-dot">·</span>
+					<span class="fp-inbox-etype"><?php echo esc_html( fge_portal_format_event_type( $ev_type ) ); ?></span>
+				<?php endif; ?>
+			</div>
+			<?php if ( $desc !== '' ) : ?>
+				<div class="fp-inbox-sub"><?php echo esc_html( $desc ); ?></div>
 			<?php endif; ?>
 		</div>
-		<?php endif; ?>
-
+		<div class="fp-inbox-meta">
+			<span><?php echo esc_html( $time ); ?></span>
+			<span class="fp-pill<?php echo $is_new_status ? ' green' : ''; ?>">
+				<?php if ( $is_new_status ) : ?><span class="dot"></span><?php endif; ?>
+				<?php echo esc_html( $st_label ); ?>
+			</span>
+		</div>
 	</div>
 	<?php
 }
 
-function fge_portal_profile_row( string $key, string $val ): void {
-	if ( $val === '' ) return;
-	echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">' . esc_html( $key ) . '</span><span class="fg-portal-profile-val">' . esc_html( $val ) . '</span></div>';
+function fge_portal_render_anfragen_preview( int $partner_id ): void {
+	$requests = get_posts( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => 4,
+		'orderby'     => 'date',
+		'order'       => 'DESC',
+		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
+	] );
+
+	$base = fge_portal_page_url();
+	?>
+	<div class="fp-section-block">
+		<div class="fp-section-head">
+			<div>
+				<div class="fp-eyebrow">Letzte Aktivität</div>
+				<h2>Inbox & <em>Anfragen</em></h2>
+			</div>
+			<div class="fp-actions">
+				<a href="<?php echo esc_url( $base . '?tab=anfragen' ); ?>" class="fp-btn fp-btn-ghost">
+					Alle ansehen <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+				</a>
+			</div>
+		</div>
+
+		<?php if ( empty( $requests ) ) : ?>
+			<div class="fp-panel" style="color: var(--ink-500); font-size: 14px; padding: 28px 26px;">
+				Noch keine Anfragen eingegangen.
+			</div>
+		<?php else : ?>
+			<div class="fp-panel">
+				<div class="fp-inbox-list">
+					<?php foreach ( $requests as $i => $req ) : ?>
+						<?php fge_portal_render_inbox_row( $req, $i ); ?>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		<?php endif; ?>
+	</div>
+	<?php
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// SECTION: MEINE EVENTS
+// SECTION: ANGEBOTE
 // ══════════════════════════════════════════════════════════════════════════════
 
-function fge_portal_section_events( int $partner_id ): void {
+function fge_portal_section_angebote( int $partner_id ): void {
 	$portal_action = sanitize_key( $_GET['portal_action'] ?? '' );
 	$event_id      = absint( $_GET['event_id'] ?? 0 );
+	$preset_type   = sanitize_key( $_GET['preset_type'] ?? '' );
+	$base          = fge_portal_page_url();
 
 	if ( $portal_action === 'edit' && $event_id > 0 ) {
 		if ( (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true ) !== $partner_id ) {
@@ -551,77 +882,57 @@ function fge_portal_section_events( int $partner_id ): void {
 				$saved[ 'fge_' . $key ] = $m( $key );
 			}
 		}
-
-		$base = fge_portal_page_url();
 		?>
-		<a href="<?php echo esc_url( $base . '?tab=events' ); ?>" class="fg-portal-back">
-			<?php echo fge_icon_arrow_left(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-			Zurück zu Meine Events
-		</a>
-		<h2 class="fg-portal-section-title">Event bearbeiten</h2>
-		<?php fge_portal_render_event_form( $partner_id, $saved, $errors, $event_id );
+		<div style="padding-top:28px;">
+			<a href="<?php echo esc_url( $base . '?tab=angebote' ); ?>" class="fg-portal-back">
+				<?php echo fge_icon_arrow_left(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				Zurück zu Meine Angebote
+			</a>
+			<h2 class="fg-portal-section-title">Event bearbeiten</h2>
+			<?php fge_portal_render_event_form( $partner_id, $saved, $errors, $event_id ); ?>
+		</div>
+		<?php
 		return;
 	}
 
-	$events = get_posts( [
-		'post_type'   => 'firmengolf_event',
-		'post_status' => [ 'publish', 'draft' ],
-		'numberposts' => -1,
-		'orderby'     => 'title',
-		'order'       => 'ASC',
-		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
-	] );
+	if ( $portal_action === 'new' ) {
+		[ 'errors' => $errors, 'data' => $saved ] = fge_load_form_state( 'portal_err' );
 
-	$base = fge_portal_page_url();
-	?>
-	<h2 class="fg-portal-section-title">Meine Eventangebote</h2>
-
-	<?php if ( empty( $events ) ) : ?>
-		<p class="fg-portal-empty-text">Noch keine Eventangebote vorhanden. <a href="<?php echo esc_url( $base . '?tab=neues-event' ); ?>">Erstes Event einreichen →</a></p>
-	<?php else : ?>
-		<div class="fg-portal-table-wrap">
-			<table class="fg-portal-table">
-				<thead><tr>
-					<th>Event</th><th>Eventart</th><th>Status</th>
-					<th>Preislabel</th><th>Aufrufe</th><th>Anfragen</th><th>Buchungen</th><th></th>
-				</tr></thead>
-				<tbody>
-					<?php foreach ( $events as $ev ) :
-						$status   = (string) get_post_meta( $ev->ID, '_fge_event_status', true );
-						$etype    = (string) get_post_meta( $ev->ID, '_fge_event_type', true );
-						$plabel   = (string) get_post_meta( $ev->ID, '_fge_public_price_label', true );
-						$views    = (int)    get_post_meta( $ev->ID, '_fge_views_count', true );
-						$reqs     = (int)    get_post_meta( $ev->ID, '_fge_requests_count', true );
-						$books    = (int)    get_post_meta( $ev->ID, '_fge_bookings_count', true );
-					?>
-					<tr>
-						<td><strong><?php echo esc_html( $ev->post_title ); ?></strong></td>
-						<td><?php echo esc_html( fge_portal_format_event_type( $etype ) ); ?></td>
-						<td><span class="fg-portal-status fg-portal-status--<?php echo esc_attr( fge_portal_status_class( $status ) ); ?>"><?php echo esc_html( fge_portal_format_event_status( $status ) ); ?></span></td>
-						<td><?php echo esc_html( $plabel ?: '—' ); ?></td>
-						<td><?php echo esc_html( $views ); ?></td>
-						<td><?php echo esc_html( $reqs ); ?></td>
-						<td><?php echo esc_html( $books ); ?></td>
-						<td><a href="<?php echo esc_url( $base . '?tab=events&portal_action=edit&event_id=' . $ev->ID ); ?>" class="fg-portal-edit-link">Bearbeiten</a></td>
-					</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
+		if ( $preset_type !== '' && empty( $saved['fge_event_type'] ) ) {
+			$saved['fge_event_type'] = $preset_type;
+		}
+		?>
+		<div style="padding-top:28px;">
+			<a href="<?php echo esc_url( $base . '?tab=angebote' ); ?>" class="fg-portal-back">
+				<?php echo fge_icon_arrow_left(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				Zurück zu Meine Angebote
+			</a>
+			<h2 class="fg-portal-section-title">Neues Eventangebot einreichen</h2>
+			<p class="fg-portal-section-sub">Dein Event wird nach dem Einreichen von Firmengolf geprüft und dann freigegeben.</p>
+			<?php fge_portal_render_event_form( $partner_id, $saved, $errors, 0 ); ?>
 		</div>
-	<?php endif; ?>
-	<?php
-}
+		<?php
+		return;
+	}
 
-// ══════════════════════════════════════════════════════════════════════════════
-// SECTION: NEUES EVENT
-// ══════════════════════════════════════════════════════════════════════════════
-
-function fge_portal_section_new_event(): void {
-	[ 'errors' => $errors, 'data' => $saved ] = fge_load_form_state( 'portal_err' );
 	?>
-	<h2 class="fg-portal-section-title">Neues Eventangebot einreichen</h2>
-	<p class="fg-portal-section-sub">Dein Event wird nach dem Einreichen von Firmengolf geprüft und dann freigegeben.</p>
-	<?php fge_portal_render_event_form( 0, $saved, $errors, 0 );
+	<div style="padding-top:32px;">
+		<div class="fp-section-head">
+			<div>
+				<div class="fp-eyebrow">Pro Eventformat ein Angebot</div>
+				<h2>Deine <em>Event-Angebote</em></h2>
+				<p>Jede Kategorie eigene Konditionen, eigenes Foto, eigene Beschreibung.</p>
+			</div>
+			<div class="fp-actions">
+				<a href="<?php echo esc_url( $base . '?tab=angebote&portal_action=new' ); ?>" class="fp-btn fp-btn-brand">
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 5v14m-7-7h14"/></svg>
+					Neues Angebot
+				</a>
+			</div>
+		</div>
+		<?php fge_portal_render_cat_grid( $partner_id, $base ); ?>
+	</div>
+	<?php
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -637,62 +948,157 @@ function fge_portal_section_requests( int $partner_id ): void {
 		'order'       => 'DESC',
 		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
 	] );
-
-	$request_status_labels = [
-		'neu'                           => 'Neu',
-		'eingangsbestaetigung_gesendet' => 'Bestätigt',
-		'verfuegbarkeit_wird_geprueft'  => 'Prüfung',
-		'partner_angefragt'             => 'Angefragt',
-		'vollstaendig_verfuegbar'       => 'Verfügbar',
-		'nicht_verfuegbar'              => 'Nicht verfügbar',
-		'angebot_versendet'             => 'Angebot versendet',
-		'angebot_angenommen'            => 'Angenommen',
-		'event_durchgefuehrt'           => 'Durchgeführt',
-		'abgeschlossen'                 => 'Abgeschlossen',
-		'verloren'                      => 'Verloren',
-	];
 	?>
-	<h2 class="fg-portal-section-title">Meine Anfragen</h2>
-
-	<?php if ( empty( $requests ) ) : ?>
-		<p class="fg-portal-empty-text">Noch keine Anfragen vorhanden.</p>
-	<?php else : ?>
-		<div class="fg-portal-table-wrap">
-			<table class="fg-portal-table">
-				<thead><tr>
-					<th>Status</th><th>Unternehmen</th><th>Kontakt</th><th>Event</th>
-					<th>Teilnehmer</th><th>Wunschtermin</th><th>Quelle</th><th>Datum</th>
-				</tr></thead>
-				<tbody>
-					<?php foreach ( $requests as $req ) :
-						$status    = (string) get_post_meta( $req->ID, '_fge_request_status', true );
-						$company   = (string) get_post_meta( $req->ID, '_fge_company_name', true );
-						$first     = (string) get_post_meta( $req->ID, '_fge_contact_first_name', true );
-						$last      = (string) get_post_meta( $req->ID, '_fge_contact_last_name', true );
-						$ev_id     = (int)    get_post_meta( $req->ID, '_fge_assigned_event_id', true );
-						$parts     = (string) get_post_meta( $req->ID, '_fge_expected_participants', true );
-						$date_1    = (string) get_post_meta( $req->ID, '_fge_preferred_date_1', true );
-						$source    = (string) get_post_meta( $req->ID, '_fge_source', true );
-						$req_date  = (string) get_post_meta( $req->ID, '_fge_request_date', true );
-						$ev_title  = $ev_id > 0 ? get_the_title( $ev_id ) : '—';
-						$st_label  = $request_status_labels[ $status ] ?? $status;
-					?>
-					<tr>
-						<td><span class="fg-portal-status fg-portal-status--<?php echo esc_attr( fge_portal_status_class( $status ) ); ?>"><?php echo esc_html( $st_label ); ?></span></td>
-						<td><?php echo esc_html( $company ?: '—' ); ?></td>
-						<td><?php echo esc_html( trim( $first . ' ' . $last ) ?: '—' ); ?></td>
-						<td><?php echo esc_html( $ev_title ); ?></td>
-						<td><?php echo esc_html( $parts ?: '—' ); ?></td>
-						<td><?php echo esc_html( $date_1 ?: '—' ); ?></td>
-						<td><?php echo esc_html( $source ?: '—' ); ?></td>
-						<td><?php echo esc_html( $req_date ? substr( $req_date, 0, 10 ) : '—' ); ?></td>
-					</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
+	<div style="padding-top:32px;">
+		<div class="fp-section-head">
+			<div>
+				<div class="fp-eyebrow">Eingegangene Anfragen</div>
+				<h2>Meine <em>Anfragen</em></h2>
+			</div>
 		</div>
-	<?php endif; ?>
+
+		<?php if ( empty( $requests ) ) : ?>
+			<div class="fp-placeholder">
+				<div class="fp-placeholder-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+				</div>
+				<div class="fp-placeholder-title">Noch keine Anfragen</div>
+				<div class="fp-placeholder-sub">Sobald Firmen eine Anfrage stellen, erscheint sie hier.</div>
+			</div>
+		<?php else : ?>
+			<div class="fp-panel">
+				<div class="fp-inbox-list">
+					<?php foreach ( $requests as $i => $req ) : ?>
+						<?php fge_portal_render_inbox_row( $req, $i ); ?>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		<?php endif; ?>
+	</div>
 	<?php
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SECTION: KALENDER (PLACEHOLDER)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function fge_portal_section_kalender(): void {
+	?>
+	<div style="padding-top:32px;">
+		<div class="fp-section-head">
+			<div>
+				<div class="fp-eyebrow">Buchungen und Termine</div>
+				<h2>Kalender</h2>
+			</div>
+		</div>
+		<div class="fp-placeholder">
+			<div class="fp-placeholder-icon">
+				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+			</div>
+			<div class="fp-placeholder-title">Kalender kommt bald</div>
+			<div class="fp-placeholder-sub">Du wirst deine Buchungen und Verfügbarkeiten direkt im Portal verwalten können.</div>
+		</div>
+	</div>
+	<?php
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SECTION: MEIN PLATZ (umbenannt von Profil)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function fge_portal_section_platz( int $partner_id ): void {
+	$m = static function( string $key ) use ( $partner_id ): string {
+		return (string) get_post_meta( $partner_id, '_fge_' . $key, true );
+	};
+
+	$ausstattung = [
+		'has_driving_range' => 'Driving Range', 'has_short_game_area' => 'Kurzspielbereich',
+		'has_putting_green' => 'Putting Green',  'has_rental_clubs' => 'Leihschläger',
+		'has_range_balls' => 'Rangebälle',        'has_golf_teacher' => 'Golflehrer',
+		'has_meeting_room' => 'Meetingraum',       'has_gastronomy' => 'Gastronomie',
+		'has_breakfast' => 'Frühstück',            'has_lunch' => 'Lunch',
+		'has_dinner' => 'Abendessen',              'has_terrace' => 'Terrasse',
+		'has_parking' => 'Parkplätze',             'has_shuttle_access' => 'Shuttle',
+		'has_indoor_or_simulator' => 'Indoor/Simulator', 'has_branding_options' => 'Branding',
+		'has_tournament_organization' => 'Turniermodus', 'has_bad_weather_alternative' => 'Schlechtwetter-Alternative',
+	];
+	$active = [];
+	foreach ( $ausstattung as $key => $label ) {
+		if ( $m( $key ) === '1' ) {
+			$active[] = $label;
+		}
+	}
+	?>
+	<div style="padding-top:32px;">
+		<div class="fp-section-head">
+			<div>
+				<div class="fp-eyebrow">Dein Profil</div>
+				<h2>Mein <em>Platz</em></h2>
+			</div>
+		</div>
+		<p class="fg-portal-section-sub">Lesansicht — Profiländerungen bitte direkt bei Firmengolf anfragen.</p>
+
+		<div class="fg-portal-profile-groups">
+
+			<div class="fg-portal-profile-group">
+				<div class="fg-portal-profile-group-title">Golfplatz</div>
+				<?php
+				fge_portal_profile_row( 'Name öffentlich', $m('public_golfclub_name') );
+				fge_portal_profile_row( 'Betreiber', $m('legal_operator_name') );
+				fge_portal_profile_row( 'Ort', trim( $m('city') . ( $m('federal_state') ? ', ' . $m('federal_state') : '' ) ) );
+				fge_portal_profile_row( 'Region', $m('free_region') );
+				if ( $m('website_url') !== '' ) {
+					echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">Website</span><span class="fg-portal-profile-val"><a href="' . esc_url( $m('website_url') ) . '" target="_blank" rel="noopener">' . esc_html( $m('website_url') ) . '</a></span></div>';
+				}
+				?>
+			</div>
+
+			<div class="fg-portal-profile-group">
+				<div class="fg-portal-profile-group-title">Hauptansprechpartner</div>
+				<?php
+				fge_portal_profile_row( 'Name', $m('main_contact_name') );
+				if ( $m('main_contact_email') !== '' ) {
+					echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">E-Mail</span><span class="fg-portal-profile-val"><a href="mailto:' . esc_attr( $m('main_contact_email') ) . '">' . esc_html( $m('main_contact_email') ) . '</a></span></div>';
+				}
+				fge_portal_profile_row( 'Telefon', $m('main_contact_phone') );
+				?>
+			</div>
+
+			<div class="fg-portal-profile-group">
+				<div class="fg-portal-profile-group-title">Event Ansprechpartner</div>
+				<?php
+				fge_portal_profile_row( 'Name', $m('event_contact_name') );
+				if ( $m('event_contact_email') !== '' ) {
+					echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">E-Mail</span><span class="fg-portal-profile-val"><a href="mailto:' . esc_attr( $m('event_contact_email') ) . '">' . esc_html( $m('event_contact_email') ) . '</a></span></div>';
+				}
+				fge_portal_profile_row( 'Telefon', $m('event_contact_phone') );
+				?>
+			</div>
+
+			<?php if ( ! empty( $active ) ) : ?>
+			<div class="fg-portal-profile-group">
+				<div class="fg-portal-profile-group-title">Ausstattung</div>
+				<div class="fg-portal-tags">
+					<?php foreach ( $active as $label ) : ?>
+						<span class="fg-portal-tag"><?php echo esc_html( $label ); ?></span>
+					<?php endforeach; ?>
+				</div>
+				<?php if ( $m('additional_equipment') !== '' ) : ?>
+					<p class="fg-portal-profile-extra"><?php echo esc_html( $m('additional_equipment') ); ?></p>
+				<?php endif; ?>
+			</div>
+			<?php endif; ?>
+
+		</div>
+	</div>
+	<?php
+}
+
+function fge_portal_profile_row( string $key, string $val ): void {
+	if ( $val === '' ) {
+		return;
+	}
+	echo '<div class="fg-portal-profile-row"><span class="fg-portal-profile-key">' . esc_html( $key ) . '</span><span class="fg-portal-profile-val">' . esc_html( $val ) . '</span></div>';
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -709,7 +1115,9 @@ function fge_portal_section_stats( int $partner_id ): void {
 
 	$published = $views = $requests = $bookings = 0;
 	foreach ( $events as $ev ) {
-		if ( get_post_meta( $ev->ID, '_fge_event_status', true ) === 'freigegeben' ) $published++;
+		if ( get_post_meta( $ev->ID, '_fge_event_status', true ) === 'freigegeben' ) {
+			$published++;
+		}
 		$views    += (int) get_post_meta( $ev->ID, '_fge_views_count', true );
 		$requests += (int) get_post_meta( $ev->ID, '_fge_requests_count', true );
 		$bookings += (int) get_post_meta( $ev->ID, '_fge_bookings_count', true );
@@ -718,57 +1126,64 @@ function fge_portal_section_stats( int $partner_id ): void {
 	$cr_vr = $views    > 0 ? round( $requests / $views * 100, 1 ) : 0;
 	$cr_rb = $requests > 0 ? round( $bookings / $requests * 100, 1 ) : 0;
 	?>
-	<h2 class="fg-portal-section-title">Kennzahlen</h2>
-
-	<div class="fg-portal-stats">
-		<?php
-		foreach ( [
-			[ $published, 'Veröffentlichte Events' ],
-			[ $views,     'Aufrufe gesamt' ],
-			[ $requests,  'Anfragen gesamt' ],
-			[ $bookings,  'Buchungen gesamt' ],
-			[ $cr_vr . '%', 'Aufruf → Anfrage' ],
-			[ $cr_rb . '%', 'Anfrage → Buchung' ],
-		] as [ $val, $label ] ) :
-		?>
-			<div class="fg-portal-stat">
-				<div class="fg-portal-stat-value"><?php echo esc_html( $val ); ?></div>
-				<div class="fg-portal-stat-label"><?php echo esc_html( $label ); ?></div>
+	<div style="padding-top:32px;">
+		<div class="fp-section-head">
+			<div>
+				<div class="fp-eyebrow">Detaillierte Auswertung</div>
+				<h2>Kennzahlen</h2>
 			</div>
-		<?php endforeach; ?>
-	</div>
+		</div>
 
-	<?php if ( ! empty( $events ) ) : ?>
-	<h3 class="fg-portal-subsection-title">Events im Detail</h3>
-	<div class="fg-portal-table-wrap">
-		<table class="fg-portal-table">
-			<thead><tr><th>Event</th><th>Status</th><th>Aufrufe</th><th>Anfragen</th><th>Buchungen</th><th>CR Aufruf→Anfrage</th></tr></thead>
-			<tbody>
-				<?php foreach ( $events as $ev ) :
-					$st  = (string) get_post_meta( $ev->ID, '_fge_event_status', true );
-					$ev_v = (int) get_post_meta( $ev->ID, '_fge_views_count', true );
-					$ev_r = (int) get_post_meta( $ev->ID, '_fge_requests_count', true );
-					$ev_b = (int) get_post_meta( $ev->ID, '_fge_bookings_count', true );
-					$ev_cr = $ev_v > 0 ? round( $ev_r / $ev_v * 100, 1 ) . '%' : '—';
-				?>
-				<tr>
-					<td><?php echo esc_html( $ev->post_title ); ?></td>
-					<td><span class="fg-portal-status fg-portal-status--<?php echo esc_attr( fge_portal_status_class( $st ) ); ?>"><?php echo esc_html( fge_portal_format_event_status( $st ) ); ?></span></td>
-					<td><?php echo esc_html( $ev_v ); ?></td>
-					<td><?php echo esc_html( $ev_r ); ?></td>
-					<td><?php echo esc_html( $ev_b ); ?></td>
-					<td><?php echo esc_html( $ev_cr ); ?></td>
-				</tr>
-				<?php endforeach; ?>
-			</tbody>
-		</table>
+		<div class="fg-portal-stats">
+			<?php
+			foreach ( [
+				[ $published, 'Veröffentlichte Events' ],
+				[ $views,     'Aufrufe gesamt' ],
+				[ $requests,  'Anfragen gesamt' ],
+				[ $bookings,  'Buchungen gesamt' ],
+				[ $cr_vr . '%', 'Aufruf → Anfrage' ],
+				[ $cr_rb . '%', 'Anfrage → Buchung' ],
+			] as [ $val, $label ] ) :
+			?>
+				<div class="fg-portal-stat">
+					<div class="fg-portal-stat-value"><?php echo esc_html( $val ); ?></div>
+					<div class="fg-portal-stat-label"><?php echo esc_html( $label ); ?></div>
+				</div>
+			<?php endforeach; ?>
+		</div>
+
+		<?php if ( ! empty( $events ) ) : ?>
+		<h3 class="fg-portal-subsection-title" style="margin-top:40px;">Events im Detail</h3>
+		<div class="fg-portal-table-wrap">
+			<table class="fg-portal-table">
+				<thead><tr><th>Event</th><th>Status</th><th>Aufrufe</th><th>Anfragen</th><th>Buchungen</th><th>CR Aufruf→Anfrage</th></tr></thead>
+				<tbody>
+					<?php foreach ( $events as $ev ) :
+						$st   = (string) get_post_meta( $ev->ID, '_fge_event_status', true );
+						$ev_v = (int)    get_post_meta( $ev->ID, '_fge_views_count', true );
+						$ev_r = (int)    get_post_meta( $ev->ID, '_fge_requests_count', true );
+						$ev_b = (int)    get_post_meta( $ev->ID, '_fge_bookings_count', true );
+						$ev_cr = $ev_v > 0 ? round( $ev_r / $ev_v * 100, 1 ) . '%' : '—';
+					?>
+					<tr>
+						<td><?php echo esc_html( $ev->post_title ); ?></td>
+						<td><span class="fg-portal-status fg-portal-status--<?php echo esc_attr( fge_portal_status_class( $st ) ); ?>"><?php echo esc_html( fge_portal_format_event_status( $st ) ); ?></span></td>
+						<td><?php echo esc_html( $ev_v ); ?></td>
+						<td><?php echo esc_html( $ev_r ); ?></td>
+						<td><?php echo esc_html( $ev_b ); ?></td>
+						<td><?php echo esc_html( $ev_cr ); ?></td>
+					</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+		<?php endif; ?>
 	</div>
-	<?php endif; ?>
 	<?php
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// EVENT FORM (new + edit)
+// EVENT FORM (new + edit) — unchanged
 // ══════════════════════════════════════════════════════════════════════════════
 
 function fge_portal_render_event_form( int $partner_id, array $saved = [], array $errors = [], int $event_id = 0 ): void {
@@ -793,8 +1208,8 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 		'gesundheitstag' => 'Gesundheitstag', 'offsite' => 'Offsite',
 		'firmenturnier' => 'Firmenturnier', 'anderes_event' => 'Anderes Event',
 	];
-	$weekdays = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
-	$saved_weekdays = (array) ( $saved['fge_available_weekdays'] ?? [] );
+	$weekdays        = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
+	$saved_weekdays  = (array) ( $saved['fge_available_weekdays'] ?? [] );
 
 	if ( ! empty( $errors ) ) : ?>
 		<div class="fg-form-errors-banner" role="alert">
