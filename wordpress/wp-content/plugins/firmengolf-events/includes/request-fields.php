@@ -53,17 +53,23 @@ function fge_render_rmb_basis( WP_Post $post ) {
 		<tr>
 			<th scope="row"><label for="fge_assigned_event_id">Zugeordnetes Event</label></th>
 			<td>
-				<input type="number" id="fge_assigned_event_id" name="fge_assigned_event_id"
-				       value="<?php echo esc_attr( $assigned_event_id ); ?>" min="0" step="1" style="width:110px;">
-				<p class="description">Post-ID des Firmenevents. Später als Suche.</p>
+				<select id="fge_assigned_event_id" name="fge_assigned_event_id">
+					<option value="0">— kein Event zugeordnet —</option>
+					<?php foreach ( fge_get_posts_select_options( 'firmengolf_event' ) as $pid => $label ) : ?>
+						<option value="<?php echo esc_attr( $pid ); ?>" <?php selected( (int) $assigned_event_id, $pid ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
 			</td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_assigned_partner_id">Zugeordneter Golfplatz</label></th>
 			<td>
-				<input type="number" id="fge_assigned_partner_id" name="fge_assigned_partner_id"
-				       value="<?php echo esc_attr( $assigned_partner_id ); ?>" min="0" step="1" style="width:110px;">
-				<p class="description">Post-ID des Golfplatz-Partners. Optional.</p>
+				<select id="fge_assigned_partner_id" name="fge_assigned_partner_id">
+					<option value="0">— kein Golfplatz zugeordnet —</option>
+					<?php foreach ( fge_get_posts_select_options( 'firmengolf_partner' ) as $pid => $label ) : ?>
+						<option value="<?php echo esc_attr( $pid ); ?>" <?php selected( (int) $assigned_partner_id, $pid ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
 			</td>
 		</tr>
 		<tr>
@@ -613,8 +619,11 @@ function fge_save_request_fields( int $post_id ) {
 	$new_status = $san_select( 'fge_request_status', $allowed_request_statuses );
 
 	update_post_meta( $post_id, '_fge_request_type',        $san_select( 'fge_request_type', $allowed_request_types ) );
-	update_post_meta( $post_id, '_fge_assigned_event_id',   absint( $_POST['fge_assigned_event_id'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_assigned_partner_id', absint( $_POST['fge_assigned_partner_id'] ?? 0 ) );
+	$raw_event_id = absint( $_POST['fge_assigned_event_id'] ?? 0 );
+	update_post_meta( $post_id, '_fge_assigned_event_id', ( $raw_event_id > 0 && get_post_type( $raw_event_id ) === 'firmengolf_event' ) ? $raw_event_id : 0 );
+
+	$raw_partner_id = absint( $_POST['fge_assigned_partner_id'] ?? 0 );
+	update_post_meta( $post_id, '_fge_assigned_partner_id', ( $raw_partner_id > 0 && get_post_type( $raw_partner_id ) === 'firmengolf_partner' ) ? $raw_partner_id : 0 );
 	update_post_meta( $post_id, '_fge_request_status',      $new_status );
 
 	// ── Metabox 2: Unternehmen ──
@@ -702,3 +711,43 @@ function fge_save_request_fields( int $post_id ) {
 	}
 }
 add_action( 'save_post', 'fge_save_request_fields' );
+
+// ── Auto-Titel für Event Anfragen ─────────────────────────────────────────────
+
+function fge_auto_title_request( int $post_id ) {
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+	if ( wp_is_post_revision( $post_id ) ) {
+		return;
+	}
+	if ( get_post_type( $post_id ) !== 'firmengolf_request' ) {
+		return;
+	}
+
+	$post = get_post( $post_id );
+	if ( ! $post ) {
+		return;
+	}
+
+	$company_name = sanitize_text_field( wp_unslash( $_POST['fge_company_name'] ?? '' ) );
+	$last_name    = sanitize_text_field( wp_unslash( $_POST['fge_contact_last_name'] ?? '' ) );
+	$date         = current_datetime()->format( 'Y-m-d' );
+
+	if ( $company_name !== '' ) {
+		$title = 'Anfrage ' . $company_name . ' ' . $date;
+	} elseif ( $last_name !== '' ) {
+		$title = 'Anfrage ' . $last_name . ' ' . $date;
+	} else {
+		$title = 'Event Anfrage ' . $post_id . ' ' . $date;
+	}
+
+	remove_action( 'save_post', 'fge_auto_title_request', 20 );
+	wp_update_post( [
+		'ID'         => $post_id,
+		'post_title' => $title,
+		'post_name'  => sanitize_title( $title ),
+	] );
+	add_action( 'save_post', 'fge_auto_title_request', 20 );
+}
+add_action( 'save_post', 'fge_auto_title_request', 20 );

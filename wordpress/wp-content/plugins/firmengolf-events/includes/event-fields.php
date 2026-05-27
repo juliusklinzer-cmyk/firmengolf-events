@@ -70,9 +70,12 @@ function fge_render_mb_basisdaten( WP_Post $post ) {
 		<tr>
 			<th scope="row"><label for="fge_assigned_partner_id">Zugeordneter Golfplatz</label></th>
 			<td>
-				<input type="number" id="fge_assigned_partner_id" name="fge_assigned_partner_id"
-				       value="<?php echo esc_attr( $assigned_partner_id ); ?>" min="0" step="1" style="width:110px;">
-				<p class="description">Post-ID des zugeordneten Golfplatz-Partners (optional).</p>
+				<select id="fge_assigned_partner_id" name="fge_assigned_partner_id">
+					<option value="0">— kein Golfplatz zugeordnet —</option>
+					<?php foreach ( fge_get_posts_select_options( 'firmengolf_partner' ) as $pid => $label ) : ?>
+						<option value="<?php echo esc_attr( $pid ); ?>" <?php selected( (int) $assigned_partner_id, $pid ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
 			</td>
 		</tr>
 		<tr>
@@ -487,7 +490,8 @@ function fge_save_event_fields( int $post_id ) {
 	// ── Metabox 1: Basisdaten ──
 	update_post_meta( $post_id, '_fge_event_type',          $san_select( 'fge_event_type', $allowed_event_types ) );
 	update_post_meta( $post_id, '_fge_provider_type',       $san_select( 'fge_provider_type', $allowed_provider_types ) );
-	update_post_meta( $post_id, '_fge_assigned_partner_id', absint( $_POST['fge_assigned_partner_id'] ?? 0 ) );
+	$raw_partner_id = absint( $_POST['fge_assigned_partner_id'] ?? 0 );
+	update_post_meta( $post_id, '_fge_assigned_partner_id', ( $raw_partner_id > 0 && get_post_type( $raw_partner_id ) === 'firmengolf_partner' ) ? $raw_partner_id : 0 );
 	update_post_meta( $post_id, '_fge_event_status',        $san_select( 'fge_event_status', $allowed_event_statuses ) );
 	update_post_meta( $post_id, '_fge_card_description',    sanitize_textarea_field( wp_unslash( $_POST['fge_card_description'] ?? '' ) ) );
 

@@ -37,3 +37,25 @@ function fge_calculate_sale_price_net( array $meta ): float {
 
 	return round( $basis * ( 1 + $markup / 100 ), 2 );
 }
+
+/**
+ * Returns an array of post options for a given post type, keyed by post ID.
+ *
+ * @param string $post_type The post type to query.
+ * @return array<int, string> [ post_ID => 'Post Titel (#post_ID)' ]
+ */
+function fge_get_posts_select_options( string $post_type ): array {
+	$posts = get_posts( [
+		'post_type'   => $post_type,
+		'post_status' => [ 'publish', 'draft', 'pending' ],
+		'numberposts' => -1,
+		'orderby'     => 'title',
+		'order'       => 'ASC',
+	] );
+
+	$options = [];
+	foreach ( $posts as $p ) {
+		$options[ $p->ID ] = $p->post_title . ' (#' . $p->ID . ')';
+	}
+	return $options;
+}

@@ -42,7 +42,7 @@ function fge_register_post_types() {
 		'public'        => false,
 		'show_ui'       => true,
 		'has_archive'   => false,
-		'supports'      => [ 'title', 'editor' ],
+		'supports'      => [ 'editor' ],
 		'show_in_rest'  => true,
 		'menu_icon'     => 'dashicons-email-alt',
 		'menu_position' => 22,

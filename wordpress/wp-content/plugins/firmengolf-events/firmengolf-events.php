@@ -20,6 +20,7 @@ require_once FGE_DIR . 'includes/helpers.php';
 require_once FGE_DIR . 'includes/event-fields.php';
 require_once FGE_DIR . 'includes/partner-fields.php';
 require_once FGE_DIR . 'includes/request-fields.php';
+require_once FGE_DIR . 'includes/admin-columns.php';
 
 function fge_activate() {
 	fge_register_post_types();
