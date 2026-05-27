@@ -36,7 +36,7 @@ get_header();
 				<p class="fg-hero-sub">Firmenevents auf dem Golfplatz — für Teams, die mehr wollen als den nächsten Meeting&shy;raum.</p>
 				<div class="fg-hero-actions">
 					<a href="#event-anfrage" class="fg-btn fg-btn-brand fg-btn-lg">Event anfragen</a>
-					<a href="#eventangebote" class="fg-btn fg-btn-outline fg-btn-lg" style="color:var(--paper-100);border-color:rgba(255,255,255,0.4);">Eventangebote ansehen</a>
+					<a href="#eventangebote" class="fg-btn fg-btn-glass fg-btn-lg">Eventangebote ansehen</a>
 				</div>
 			</div>
 		</div>
@@ -93,7 +93,7 @@ get_header();
 						</div>
 						<div class="fg-event-body">
 							<?php if ( $event_type ) : ?>
-								<p class="fg-event-eyebrow"><?php echo esc_html( $event_type ); ?></p>
+								<span class="fg-type-tag"><?php echo esc_html( $event_type ); ?></span>
 							<?php endif; ?>
 							<h3 class="fg-event-title"><?php the_title(); ?></h3>
 							<?php if ( $description ) : ?>

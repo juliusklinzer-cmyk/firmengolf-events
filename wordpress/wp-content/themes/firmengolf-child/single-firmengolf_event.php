@@ -92,7 +92,7 @@ get_header();
 		<?php /* Header */ ?>
 		<header class="fg-detail-header">
 			<?php if ( $event_type ) : ?>
-				<p class="fg-detail-eyebrow"><?php echo esc_html( $event_type ); ?></p>
+				<span class="fg-type-tag fg-type-tag-lg"><?php echo esc_html( $event_type ); ?></span>
 			<?php endif; ?>
 			<h1 class="fg-detail-title"><?php the_title(); ?></h1>
 			<div class="fg-detail-meta">
@@ -120,11 +120,9 @@ get_header();
 		<?php /* Hero Image */ ?>
 		<div class="fg-detail-hero" style="background-image: url('<?php echo esc_url( $thumb_url ); ?>')">
 			<div class="fg-detail-hero-scrim" aria-hidden="true"></div>
-			<?php if ( $price ) : ?>
-				<div class="fg-detail-hero-cta">
-					<a href="#event-anfrage" class="fg-btn fg-btn-brand">Event anfragen</a>
-				</div>
-			<?php endif; ?>
+			<div class="fg-detail-hero-cta">
+				<a href="#event-anfrage" class="fg-btn fg-btn-glass">Event anfragen</a>
+			</div>
 		</div>
 
 		<?php /* Body: main + rail */ ?>
@@ -268,11 +266,9 @@ get_header();
 
 		</div><?php /* .fg-detail-body */ ?>
 
-		<?php /* ── Anfrage Placeholder ── */ ?>
+		<?php /* ── Anfrage Form ── */ ?>
 		<section class="fg-anfrage" id="event-anfrage" aria-label="Event anfragen">
-			<h2 class="fg-anfrage-title">Du interessierst dich für dieses Event?</h2>
-			<p class="fg-anfrage-sub">Im nächsten Schritt kannst du hier deinen Wunschtermin anfragen — unkompliziert und ohne Vorkenntnisse.</p>
-			<button class="fg-btn fg-btn-disabled" aria-disabled="true">Anfragefunktion folgt im nächsten Schritt</button>
+			<?php fge_render_anfrage_form( $post_id ); ?>
 		</section>
 
 	</div><?php /* .fg-detail */ ?>
@@ -300,7 +296,7 @@ get_header();
 						</div>
 						<div class="fg-event-body">
 							<?php if ( $stype ) : ?>
-								<p class="fg-event-eyebrow"><?php echo esc_html( $stype ); ?></p>
+								<span class="fg-type-tag"><?php echo esc_html( $stype ); ?></span>
 							<?php endif; ?>
 							<h3 class="fg-event-title"><?php the_title(); ?></h3>
 							<div class="fg-event-meta">

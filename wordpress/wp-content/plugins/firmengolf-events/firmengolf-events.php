@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Firmengolf Events
  * Description: Custom event marketplace and partner portal for Firmengolf.
- * Version: 0.1.0
+ * Version: 0.4.0
  * Author: Firmengolf
  */
 
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '0.1.0' );
+define( 'FGE_VERSION', '0.4.0' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -22,6 +22,7 @@ require_once FGE_DIR . 'includes/partner-fields.php';
 require_once FGE_DIR . 'includes/request-fields.php';
 require_once FGE_DIR . 'includes/admin-columns.php';
 require_once FGE_DIR . 'includes/frontend.php';
+require_once FGE_DIR . 'includes/form-handler.php';
 
 function fge_activate() {
 	fge_register_post_types();
