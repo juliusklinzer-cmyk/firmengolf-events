@@ -90,7 +90,19 @@ add_filter( 'manage_firmengolf_partner_posts_columns', 'fge_partner_columns' );
 function fge_partner_column_content( string $column, int $post_id ) {
 	switch ( $column ) {
 		case 'fge_partner_status':
-			echo esc_html( get_post_meta( $post_id, '_fge_partner_status', true ) ?: '—' );
+			$ps_val    = (string) get_post_meta( $post_id, '_fge_partner_status', true );
+			$ps_labels = [
+				'in_pruefung' => [ 'In Prüfung', 'orange' ],
+				'aktiv'       => [ 'Aktiv',       'green'  ],
+				'pausiert'    => [ 'Pausiert',    'gray'   ],
+				'abgelehnt'   => [ 'Abgelehnt',   'red'    ],
+			];
+			if ( isset( $ps_labels[ $ps_val ] ) ) {
+				[ $lbl, $col ] = $ps_labels[ $ps_val ];
+				echo '<span class="fge-badge fge-badge--' . esc_attr( $col ) . '">' . esc_html( $lbl ) . '</span>';
+			} else {
+				echo $ps_val !== '' ? esc_html( $ps_val ) : '—';
+			}
 			break;
 		case 'fge_city':
 			echo esc_html( get_post_meta( $post_id, '_fge_city', true ) ?: '—' );

@@ -201,6 +201,69 @@ function fge_send_partner_availability_email( int $request_id, array $data ): bo
 	return $sent;
 }
 
+function fge_send_onboarding_submitted_email( int $partner_id, string $temp_password = '' ): bool {
+	$name       = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+	$email      = (string) get_post_meta( $partner_id, '_fge_main_contact_email', true );
+	$contact    = (string) get_post_meta( $partner_id, '_fge_main_contact_name', true );
+	$portal_url = trailingslashit( home_url( '/partnerportal/' ) );
+	$admin_url  = admin_url( 'post.php?post=' . $partner_id . '&action=edit' );
+
+	if ( $email === '' ) {
+		return false;
+	}
+
+	$subject  = 'Dein Golfplatz wurde zur Prüfung eingereicht';
+	$greeting = $contact !== '' ? 'Hallo ' . esc_html( $contact ) . ',' : 'Hallo,';
+
+	$pw_notice = '';
+	if ( $temp_password !== '' ) {
+		$pw_notice = '<p>Deine Zugangsdaten für das Firmengolf Partner-Portal:<br>
+			<strong>E-Mail:</strong> ' . esc_html( $email ) . '<br>
+			<strong>Passwort:</strong> ' . esc_html( $temp_password ) . '</p>
+			<p>Bitte ändere dein Passwort nach dem ersten Login.</p>';
+	}
+
+	$content = '
+		<p>' . $greeting . '</p>
+		<p>Dein Golfplatz-Profil für <strong>' . esc_html( $name ) . '</strong> wurde erfolgreich zur Prüfung eingereicht.</p>
+		<p>Firmengolf prüft deine Angaben und meldet sich bei dir, sobald das Profil freigeschaltet ist oder noch Informationen fehlen.</p>
+		' . $pw_notice . '
+		<p style="margin-top:28px;">
+			<a href="' . esc_url( $portal_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
+		</p>
+		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:events@firmen.golf" style="color:#2a6e32;">events@firmen.golf</a>.</p>
+	';
+
+	$sent = wp_mail(
+		$email,
+		$subject,
+		fge_email_wrap( $subject, $content ),
+		[ 'Content-Type: text/html; charset=UTF-8' ]
+	);
+
+	// Internal notification to Firmengolf team.
+	$internal_to = apply_filters( 'fge_internal_email', 'events@firmen.golf' );
+	$int_content = '
+		<p>Neues Golfplatz-Profil eingereicht:</p>
+		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;">
+			<tr><td style="padding:6px 16px 6px 0;color:#555;width:130px;"><strong>Golfplatz</strong></td><td>' . esc_html( $name ) . '</td></tr>
+			<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>Kontakt</strong></td><td>' . esc_html( $contact ) . '</td></tr>
+			<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>E-Mail</strong></td><td><a href="mailto:' . esc_attr( $email ) . '" style="color:#2a6e32;">' . esc_html( $email ) . '</a></td></tr>
+		</table>
+		<p style="margin-top:28px;">
+			<a href="' . esc_url( $admin_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Im Admin öffnen</a>
+		</p>
+	';
+	wp_mail(
+		$internal_to,
+		'Neuer Partner eingereicht: ' . $name,
+		fge_email_wrap( 'Neuer Partner eingereicht', $int_content ),
+		[ 'Content-Type: text/html; charset=UTF-8' ]
+	);
+
+	return $sent;
+}
+
 function fge_format_request_admin_link( int $request_id ): string {
 	return admin_url( 'post.php?post=' . $request_id . '&action=edit' );
 }

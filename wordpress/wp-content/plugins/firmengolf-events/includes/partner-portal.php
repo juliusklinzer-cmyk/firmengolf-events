@@ -205,17 +205,57 @@ function fge_portal_get_partner_id(): int {
 }
 
 function fge_portal_access_check(): void {
-	if ( ! is_user_logged_in() ) {
-		auth_redirect();
+	if ( is_user_logged_in() ) {
+		$user = wp_get_current_user();
+		if ( ! current_user_can( 'manage_options' ) && ! in_array( 'firmengolf_partner', (array) $user->roles, true ) ) {
+			wp_die(
+				'<p>Du hast keine Berechtigung für diesen Bereich.</p><p><a href="' . esc_url( home_url( '/' ) ) . '">Zurück zur Startseite</a></p>',
+				'Kein Zugriff',
+				[ 'response' => 403 ]
+			);
+		}
 	}
-	$user = wp_get_current_user();
-	if ( ! current_user_can( 'manage_options' ) && ! in_array( 'firmengolf_partner', (array) $user->roles, true ) ) {
-		wp_die(
-			'<p>Du hast keine Berechtigung für diesen Bereich.</p><p><a href="' . esc_url( home_url( '/' ) ) . '">Zurück zur Startseite</a></p>',
-			'Kein Zugriff',
-			[ 'response' => 403 ]
-		);
-	}
+}
+
+function fge_portal_render_gate(): void {
+	$login_url     = wp_login_url( fge_portal_page_url() );
+	$onboarding_url = trailingslashit( home_url( '/partner-onboarding/' ) );
+	$logo_url      = fge_get_logo_url();
+	?>
+	<div class="fp-gate">
+		<div class="fp-gate-card">
+			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="fp-gate-logo">
+				<img src="<?php echo esc_url( $logo_url ); ?>" alt="Firmengolf" height="28">
+			</a>
+			<h1 class="fp-gate-title">Partner-Portal</h1>
+			<p class="fp-gate-sub">Melde dich mit deinen Zugangsdaten an, um dein Golfplatz-Profil zu verwalten.</p>
+
+			<?php
+			wp_login_form( [
+				'redirect'       => fge_portal_page_url(),
+				'label_username' => 'E-Mail-Adresse',
+				'label_password' => 'Passwort',
+				'label_log_in'   => 'Anmelden',
+				'id_username'    => 'fp_gate_user',
+				'id_password'    => 'fp_gate_pass',
+				'id_submit'      => 'fp_gate_submit',
+				'remember'       => true,
+				'label_remember' => 'Angemeldet bleiben',
+				'value_remember' => true,
+			] );
+			?>
+
+			<div class="fp-gate-divider"><span>Noch kein Konto?</span></div>
+
+			<a href="<?php echo esc_url( $onboarding_url ); ?>" class="fp-gate-cta">
+				Jetzt Golfplatz registrieren
+				<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+					<path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			</a>
+		</div>
+	</div>
+	<?php
 }
 
 function fge_portal_get_active_tab(): string {
@@ -400,6 +440,11 @@ function fge_portal_name_initials( string $name ): string {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function fge_portal_render(): void {
+	if ( ! is_user_logged_in() ) {
+		fge_portal_render_gate();
+		return;
+	}
+
 	fge_portal_access_check();
 
 	$partner_id = fge_portal_get_partner_id();
@@ -532,6 +577,83 @@ function fge_portal_render(): void {
 			});
 		});
 	})();
+
+	// Image upload previews
+	(function () {
+		// Logo: show image inside .fp-logo-upload, hide placeholder children
+		var logoInput = document.querySelector('input[name="fge_partner_logo"]');
+		if (logoInput) {
+			logoInput.addEventListener('change', function () {
+				if (!this.files[0]) return;
+				var label = this.closest('.fp-logo-upload');
+				var reader = new FileReader();
+				reader.onload = function (e) {
+					var img = label.querySelector('img');
+					if (!img) {
+						img = document.createElement('img');
+						label.insertBefore(img, label.firstChild);
+					}
+					img.src = e.target.result;
+					Array.from(label.children).forEach(function (el) {
+						if (el !== img && el !== logoInput) el.style.display = 'none';
+					});
+				};
+				reader.readAsDataURL(this.files[0]);
+			});
+		}
+
+		// Partner cover: set background-image on .fp-cover-upload-profile
+		var coverInput = document.querySelector('input[name="fge_partner_cover"]');
+		if (coverInput) {
+			coverInput.addEventListener('change', function () {
+				if (!this.files[0]) return;
+				var label = this.closest('.fp-cover-upload-profile');
+				var reader = new FileReader();
+				reader.onload = function (e) {
+					label.style.backgroundImage = 'url(' + e.target.result + ')';
+					label.style.backgroundSize = 'cover';
+					label.style.backgroundPosition = 'center';
+					label.style.borderStyle = 'solid';
+					Array.from(label.children).forEach(function (el) {
+						if (el !== coverInput) el.style.display = 'none';
+					});
+					var hint = document.createElement('span');
+					hint.className = 'fp-cover-replace-hint';
+					hint.innerHTML = '<span style="font-size:12px;">Bild tauschen</span>';
+					hint.style.display = 'flex';
+					label.insertBefore(hint, coverInput);
+				};
+				reader.readAsDataURL(this.files[0]);
+			});
+		}
+
+		// Event cover: set background-image on .fp-cover-upload
+		var eventCoverInput = document.querySelector('input[name="fge_event_cover"]');
+		if (eventCoverInput) {
+			eventCoverInput.addEventListener('change', function () {
+				if (!this.files[0]) return;
+				var label = this.closest('.fp-cover-upload');
+				var reader = new FileReader();
+				reader.onload = function (e) {
+					label.style.backgroundImage = 'url(' + e.target.result + ')';
+					label.style.backgroundSize = 'cover';
+					label.style.backgroundPosition = 'center';
+					label.classList.add('has-image');
+					var empty = label.querySelector('.fp-cover-empty');
+					if (empty) empty.style.display = 'none';
+					var hint = label.querySelector('.fp-cover-replace-hint');
+					if (!hint) {
+						hint = document.createElement('span');
+						hint.className = 'fp-cover-replace-hint';
+						hint.innerHTML = '<span style="font-size:12px;">Foto tauschen</span>';
+						label.insertBefore(hint, eventCoverInput);
+					}
+					hint.style.display = 'flex';
+				};
+				reader.readAsDataURL(this.files[0]);
+			});
+		}
+	})();
 	</script>
 	<?php
 }
@@ -602,6 +724,9 @@ function fge_portal_render_hero( int $partner_id ): void {
 		? (string) wp_get_attachment_image_url( $hero_img_id, 'full' )
 		: fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
 
+	$logo_id  = (int) get_post_meta( $partner_id, '_fge_logo_attachment_id', true );
+	$logo_img = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
+
 	$post_date  = get_post_field( 'post_date', $partner_id );
 	$live_since = $post_date ? date_i18n( 'F Y', (int) strtotime( $post_date ) ) : '';
 	$status_label = $is_live
@@ -629,7 +754,13 @@ function fge_portal_render_hero( int $partner_id ): void {
 			</div>
 			<div class="fp-hero-body">
 				<div class="fp-hero-id">
-					<div class="fp-hero-monogram"><?php echo esc_html( $monogram ); ?></div>
+					<div class="fp-hero-monogram">
+						<?php if ( $logo_img !== '' ) : ?>
+							<img src="<?php echo esc_url( $logo_img ); ?>" alt="<?php echo esc_attr( $partner_name ); ?>">
+						<?php else : ?>
+							<?php echo esc_html( $monogram ); ?>
+						<?php endif; ?>
+					</div>
 					<div class="fp-hero-text">
 						<div class="fp-hero-eyebrow">Dein Platz auf Firmengolf</div>
 						<h1 class="fp-hero-name"><?php echo esc_html( $partner_name ); ?></h1>

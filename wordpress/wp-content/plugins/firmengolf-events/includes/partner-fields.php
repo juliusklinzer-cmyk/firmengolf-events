@@ -4,6 +4,50 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function fge_get_event_format_options(): array {
+	return [
+		'schnuppergolf'          => 'Schnuppergolf',
+		'team_challenge'         => 'Team Challenge',
+		'putting_challenge'      => 'Putting Challenge',
+		'range_training'         => 'Range Training',
+		'kurzspiel_challenge'    => 'Kurzspiel Challenge',
+		'9hole_turnier'          => '9-Loch-Turnier',
+		'18hole_turnier'         => '18-Loch-Turnier',
+		'offsite_mit_meeting'    => 'Offsite mit Meeting',
+		'sommerfest'             => 'Sommerfest',
+		'kundenevent'            => 'Kundenevent',
+		'gesundheitstag'         => 'Gesundheitstag',
+		'azubi_event'            => 'Azubi-Event',
+		'individuelles_event'    => 'Individuelles Firmenevent',
+	];
+}
+
+function fge_get_infrastructure_options(): array {
+	return [
+		'has_driving_range'           => 'Driving Range',
+		'has_putting_green'           => 'Putting Green',
+		'has_short_game_area'         => 'Kurzspielbereich',
+		'has_short_course'            => 'Kurzplatz',
+		'has_9hole_course'            => '9-Loch-Platz',
+		'has_18hole_course'           => '18-Loch-Platz',
+		'has_rental_clubs'            => 'Leihschläger',
+		'has_range_balls'             => 'Rangebälle',
+		'has_golf_teacher'            => 'Golflehrer',
+		'has_meeting_room'            => 'Meetingraum',
+		'has_gastronomy'              => 'Restaurant',
+		'has_terrace'                 => 'Terrasse / Außenbereich',
+		'has_parking'                 => 'Parkplätze',
+		'has_shuttle_access'          => 'Shuttle möglich',
+		'has_indoor_or_simulator'     => 'Indoor / Simulator',
+		'has_bad_weather_alternative' => 'Schlechtwetter Alternative',
+		'has_branding_options'        => 'Branding Möglichkeiten',
+		'has_tournament_organization' => 'Turnierorganisation',
+		'has_locker_room'             => 'Umkleiden & Duschen',
+	];
+}
+
 // ── Registration ─────────────────────────────────────────────────────────────
 
 function fge_register_partner_metaboxes() {
@@ -221,24 +265,28 @@ function fge_render_pmb_ansprechpartner( WP_Post $post ) {
 
 function fge_render_pmb_ausstattung( WP_Post $post ) {
 	$checkboxes = [
-		'has_driving_range'          => 'Driving Range',
-		'has_short_game_area'        => 'Kurzspielbereich',
-		'has_putting_green'          => 'Putting Green',
-		'has_rental_clubs'           => 'Leihschläger',
-		'has_range_balls'            => 'Rangebälle',
-		'has_golf_teacher'           => 'Golflehrer',
-		'has_meeting_room'           => 'Meetingraum',
-		'has_gastronomy'             => 'Gastronomie',
-		'has_breakfast'              => 'Frühstück',
-		'has_lunch'                  => 'Lunch',
-		'has_dinner'                 => 'Abendessen',
-		'has_terrace'                => 'Terrasse / Außenbereich',
-		'has_parking'                => 'Parkplätze',
-		'has_shuttle_access'         => 'Shuttle Anfahrt',
-		'has_indoor_or_simulator'    => 'Indoor / Simulator',
-		'has_branding_options'       => 'Branding Möglichkeiten',
+		'has_driving_range'           => 'Driving Range',
+		'has_putting_green'           => 'Putting Green',
+		'has_short_game_area'         => 'Kurzspielbereich',
+		'has_short_course'            => 'Kurzplatz',
+		'has_9hole_course'            => '9-Loch-Platz',
+		'has_18hole_course'           => '18-Loch-Platz',
+		'has_rental_clubs'            => 'Leihschläger',
+		'has_range_balls'             => 'Rangebälle',
+		'has_golf_teacher'            => 'Golflehrer',
+		'has_meeting_room'            => 'Meetingraum',
+		'has_gastronomy'              => 'Restaurant / Gastronomie',
+		'has_breakfast'               => 'Frühstück',
+		'has_lunch'                   => 'Lunch',
+		'has_dinner'                  => 'Abendessen',
+		'has_terrace'                 => 'Terrasse / Außenbereich',
+		'has_parking'                 => 'Parkplätze',
+		'has_shuttle_access'          => 'Shuttle möglich',
+		'has_indoor_or_simulator'     => 'Indoor / Simulator',
+		'has_branding_options'        => 'Branding Möglichkeiten',
 		'has_tournament_organization' => 'Turnierorganisation',
 		'has_bad_weather_alternative' => 'Schlechtwetter Alternative',
+		'has_locker_room'             => 'Umkleiden & Duschen',
 	];
 	$additional_equipment = get_post_meta( $post->ID, '_fge_additional_equipment', true );
 	?>
@@ -268,15 +316,24 @@ function fge_render_pmb_ausstattung( WP_Post $post ) {
 // ── Render: Event Kapazitäten ─────────────────────────────────────────────────
 
 function fge_render_pmb_kapazitaeten( WP_Post $post ) {
-	$participants_min_general  = get_post_meta( $post->ID, '_fge_participants_min_general', true );
-	$participants_max_general  = get_post_meta( $post->ID, '_fge_participants_max_general', true );
-	$meeting_room_capacity     = get_post_meta( $post->ID, '_fge_meeting_room_capacity', true );
-	$gastro_capacity           = get_post_meta( $post->ID, '_fge_gastro_capacity', true );
-	$range_group_capacity      = get_post_meta( $post->ID, '_fge_range_group_capacity', true );
-	$golf_teacher_capacity     = get_post_meta( $post->ID, '_fge_golf_teacher_capacity', true );
-	$preferred_event_days      = (array) get_post_meta( $post->ID, '_fge_preferred_event_days', true );
-	$preferred_event_times     = (array) get_post_meta( $post->ID, '_fge_preferred_event_times', true );
-	$season                    = get_post_meta( $post->ID, '_fge_season', true );
+	$participants_min_general   = get_post_meta( $post->ID, '_fge_participants_min_general', true );
+	$participants_max_general   = get_post_meta( $post->ID, '_fge_participants_max_general', true );
+	$meeting_room_capacity      = get_post_meta( $post->ID, '_fge_meeting_room_capacity', true );
+	$gastro_capacity            = get_post_meta( $post->ID, '_fge_gastro_capacity', true );
+	$gastro_outdoor_capacity    = get_post_meta( $post->ID, '_fge_gastro_outdoor_capacity', true );
+	$range_group_capacity       = get_post_meta( $post->ID, '_fge_range_group_capacity', true );
+	$putting_green_capacity     = get_post_meta( $post->ID, '_fge_putting_green_capacity', true );
+	$short_game_capacity        = get_post_meta( $post->ID, '_fge_short_game_capacity', true );
+	$golf_teacher_capacity      = get_post_meta( $post->ID, '_fge_golf_teacher_capacity', true );
+	$parking_count              = get_post_meta( $post->ID, '_fge_parking_count', true );
+	$preferred_event_days       = (array) get_post_meta( $post->ID, '_fge_preferred_event_days', true );
+	$preferred_event_times      = (array) get_post_meta( $post->ID, '_fge_preferred_event_times', true );
+	$season                     = get_post_meta( $post->ID, '_fge_season', true );
+	$weekend_events_possible    = get_post_meta( $post->ID, '_fge_weekend_events_possible', true );
+	$evening_events_possible    = get_post_meta( $post->ID, '_fge_evening_events_possible', true );
+	$min_lead_time_days         = get_post_meta( $post->ID, '_fge_min_lead_time_days', true );
+	$individual_availability    = get_post_meta( $post->ID, '_fge_individual_availability_check', true );
+	$event_formats              = (array) get_post_meta( $post->ID, '_fge_event_formats', true );
 
 	$weekdays = [
 		'monday'    => 'Montag',
@@ -288,10 +345,10 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 		'sunday'    => 'Sonntag',
 	];
 	$event_times = [
-		'morning'   => 'Vormittag',
-		'afternoon' => 'Nachmittag',
+		'morning'    => 'Vormittag',
+		'afternoon'  => 'Nachmittag',
 		'after_work' => 'After Work',
-		'full_day'  => 'Ganztägig',
+		'full_day'   => 'Ganztägig',
 	];
 	$seasons = [
 		'year_round'       => 'Ganzjährig',
@@ -299,37 +356,58 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 		'april_to_october' => 'April bis Oktober',
 		'on_request'       => 'Auf Anfrage',
 	];
+	$all_event_formats = fge_get_event_format_options();
 	?>
 	<table class="form-table">
 		<tr>
-			<th scope="row"><label for="fge_participants_min_general">Teilnehmer Minimum allgemein</label></th>
+			<th scope="row"><label for="fge_participants_min_general">Teilnehmer Minimum</label></th>
 			<td><input type="number" id="fge_participants_min_general" name="fge_participants_min_general"
 			           value="<?php echo esc_attr( $participants_min_general ); ?>" min="0" step="1" style="width:110px;"></td>
 		</tr>
 		<tr>
-			<th scope="row"><label for="fge_participants_max_general">Teilnehmer Maximum allgemein</label></th>
+			<th scope="row"><label for="fge_participants_max_general">Teilnehmer Maximum</label></th>
 			<td><input type="number" id="fge_participants_max_general" name="fge_participants_max_general"
 			           value="<?php echo esc_attr( $participants_max_general ); ?>" min="0" step="1" style="width:110px;"></td>
 		</tr>
 		<tr>
-			<th scope="row"><label for="fge_meeting_room_capacity">Meetingraum Kapazität</label></th>
-			<td><input type="number" id="fge_meeting_room_capacity" name="fge_meeting_room_capacity"
-			           value="<?php echo esc_attr( $meeting_room_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_gastro_capacity">Gastro Kapazität</label></th>
-			<td><input type="number" id="fge_gastro_capacity" name="fge_gastro_capacity"
-			           value="<?php echo esc_attr( $gastro_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_range_group_capacity">Range Kapazität für Gruppen</label></th>
+			<th scope="row"><label for="fge_range_group_capacity">Kapazität Driving Range</label></th>
 			<td><input type="number" id="fge_range_group_capacity" name="fge_range_group_capacity"
 			           value="<?php echo esc_attr( $range_group_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
 		</tr>
 		<tr>
-			<th scope="row"><label for="fge_golf_teacher_capacity">Golflehrer Kapazität (gleichzeitig)</label></th>
+			<th scope="row"><label for="fge_putting_green_capacity">Kapazität Putting Green</label></th>
+			<td><input type="number" id="fge_putting_green_capacity" name="fge_putting_green_capacity"
+			           value="<?php echo esc_attr( $putting_green_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_short_game_capacity">Kapazität Kurzspielbereich</label></th>
+			<td><input type="number" id="fge_short_game_capacity" name="fge_short_game_capacity"
+			           value="<?php echo esc_attr( $short_game_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_meeting_room_capacity">Kapazität Meetingraum</label></th>
+			<td><input type="number" id="fge_meeting_room_capacity" name="fge_meeting_room_capacity"
+			           value="<?php echo esc_attr( $meeting_room_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_gastro_capacity">Kapazität Restaurant innen</label></th>
+			<td><input type="number" id="fge_gastro_capacity" name="fge_gastro_capacity"
+			           value="<?php echo esc_attr( $gastro_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_gastro_outdoor_capacity">Kapazität Restaurant außen</label></th>
+			<td><input type="number" id="fge_gastro_outdoor_capacity" name="fge_gastro_outdoor_capacity"
+			           value="<?php echo esc_attr( $gastro_outdoor_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_golf_teacher_capacity">Anzahl Golflehrer</label></th>
 			<td><input type="number" id="fge_golf_teacher_capacity" name="fge_golf_teacher_capacity"
 			           value="<?php echo esc_attr( $golf_teacher_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_parking_count">Anzahl Parkplätze</label></th>
+			<td><input type="number" id="fge_parking_count" name="fge_parking_count"
+			           value="<?php echo esc_attr( $parking_count ); ?>" min="0" step="1" style="width:110px;"></td>
 		</tr>
 		<tr>
 			<th scope="row">Bevorzugte Eventtage</th>
@@ -345,6 +423,16 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 			</td>
 		</tr>
 		<tr>
+			<th scope="row">Wochenend-Events möglich</th>
+			<td><label><input type="checkbox" name="fge_weekend_events_possible" value="1"
+			                  <?php checked( $weekend_events_possible, '1' ); ?>> Ja</label></td>
+		</tr>
+		<tr>
+			<th scope="row">Abend-Events möglich</th>
+			<td><label><input type="checkbox" name="fge_evening_events_possible" value="1"
+			                  <?php checked( $evening_events_possible, '1' ); ?>> Ja</label></td>
+		</tr>
+		<tr>
 			<th scope="row">Bevorzugte Eventzeiten</th>
 			<td>
 				<?php foreach ( $event_times as $val => $label ) : ?>
@@ -358,6 +446,11 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 			</td>
 		</tr>
 		<tr>
+			<th scope="row"><label for="fge_min_lead_time_days">Mindestvorlauf (Tage)</label></th>
+			<td><input type="number" id="fge_min_lead_time_days" name="fge_min_lead_time_days"
+			           value="<?php echo esc_attr( $min_lead_time_days ); ?>" min="0" step="1" style="width:110px;"></td>
+		</tr>
+		<tr>
 			<th scope="row"><label for="fge_season">Saison</label></th>
 			<td>
 				<select id="fge_season" name="fge_season">
@@ -366,6 +459,24 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $season, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
 				</select>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row">Individuelle Verfügbarkeitsprüfung</th>
+			<td><label><input type="checkbox" name="fge_individual_availability_check" value="1"
+			                  <?php checked( $individual_availability !== '0' ? '1' : '0', '1' ); ?>> Ja (Standard: aktiv)</label></td>
+		</tr>
+		<tr>
+			<th scope="row">Eventformate</th>
+			<td>
+				<?php foreach ( $all_event_formats as $val => $label ) : ?>
+					<label style="display:inline-block;margin-right:14px;margin-bottom:6px;">
+						<input type="checkbox" name="fge_event_formats[]"
+						       value="<?php echo esc_attr( $val ); ?>"
+						       <?php checked( in_array( $val, $event_formats, true ) ); ?>>
+						<?php echo esc_html( $label ); ?>
+					</label>
+				<?php endforeach; ?>
 			</td>
 		</tr>
 	</table>
@@ -655,11 +766,12 @@ function fge_save_partner_fields( int $post_id ) {
 
 	// ── Metabox 4: Ausstattung ──
 	$ausstattung_keys = [
-		'has_driving_range', 'has_short_game_area', 'has_putting_green', 'has_rental_clubs',
-		'has_range_balls', 'has_golf_teacher', 'has_meeting_room', 'has_gastronomy',
-		'has_breakfast', 'has_lunch', 'has_dinner', 'has_terrace', 'has_parking',
-		'has_shuttle_access', 'has_indoor_or_simulator', 'has_branding_options',
-		'has_tournament_organization', 'has_bad_weather_alternative',
+		'has_driving_range', 'has_putting_green', 'has_short_game_area', 'has_short_course',
+		'has_9hole_course', 'has_18hole_course', 'has_rental_clubs', 'has_range_balls',
+		'has_golf_teacher', 'has_meeting_room', 'has_gastronomy', 'has_breakfast', 'has_lunch',
+		'has_dinner', 'has_terrace', 'has_parking', 'has_shuttle_access',
+		'has_indoor_or_simulator', 'has_branding_options', 'has_tournament_organization',
+		'has_bad_weather_alternative', 'has_locker_room',
 	];
 	foreach ( $ausstattung_keys as $key ) {
 		update_post_meta( $post_id, '_fge_' . $key, isset( $_POST[ 'fge_' . $key ] ) ? 1 : 0 );
@@ -669,13 +781,23 @@ function fge_save_partner_fields( int $post_id ) {
 	// ── Metabox 5: Kapazitäten ──
 	update_post_meta( $post_id, '_fge_participants_min_general', absint( $_POST['fge_participants_min_general'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_participants_max_general', absint( $_POST['fge_participants_max_general'] ?? 0 ) );
+	update_post_meta( $post_id, '_fge_range_group_capacity',     absint( $_POST['fge_range_group_capacity'] ?? 0 ) );
+	update_post_meta( $post_id, '_fge_putting_green_capacity',   absint( $_POST['fge_putting_green_capacity'] ?? 0 ) );
+	update_post_meta( $post_id, '_fge_short_game_capacity',      absint( $_POST['fge_short_game_capacity'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_meeting_room_capacity',    absint( $_POST['fge_meeting_room_capacity'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_gastro_capacity',          absint( $_POST['fge_gastro_capacity'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_range_group_capacity',     absint( $_POST['fge_range_group_capacity'] ?? 0 ) );
+	update_post_meta( $post_id, '_fge_gastro_outdoor_capacity',  absint( $_POST['fge_gastro_outdoor_capacity'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_golf_teacher_capacity',    absint( $_POST['fge_golf_teacher_capacity'] ?? 0 ) );
+	update_post_meta( $post_id, '_fge_parking_count',            absint( $_POST['fge_parking_count'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_preferred_event_days',  $san_group( 'fge_preferred_event_days', $allowed_event_days ) );
+	update_post_meta( $post_id, '_fge_weekend_events_possible',  isset( $_POST['fge_weekend_events_possible'] ) ? 1 : 0 );
+	update_post_meta( $post_id, '_fge_evening_events_possible',  isset( $_POST['fge_evening_events_possible'] ) ? 1 : 0 );
 	update_post_meta( $post_id, '_fge_preferred_event_times', $san_group( 'fge_preferred_event_times', $allowed_event_times ) );
+	update_post_meta( $post_id, '_fge_min_lead_time_days',       absint( $_POST['fge_min_lead_time_days'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_season',                $san_select( 'fge_season', $allowed_seasons ) );
+	update_post_meta( $post_id, '_fge_individual_availability_check', isset( $_POST['fge_individual_availability_check'] ) ? 1 : 0 );
+	$allowed_formats = array_keys( fge_get_event_format_options() );
+	update_post_meta( $post_id, '_fge_event_formats', $san_group( 'fge_event_formats', $allowed_formats ) );
 
 	// ── Metabox 6: Preis ──
 	$markup_raw = trim( wp_unslash( $_POST['fge_default_markup_percent'] ?? '' ) );

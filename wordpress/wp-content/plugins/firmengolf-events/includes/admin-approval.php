@@ -254,3 +254,167 @@ function fge_event_status_notice(): void {
 		esc_html( $messages[ $key ] )
 	);
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PARTNER — FILTER, ROW ACTIONS, STATUS HANDLER
+// ══════════════════════════════════════════════════════════════════════════════
+
+add_action( 'admin_head', function() {
+	$screen = get_current_screen();
+	if ( ! $screen || $screen->id !== 'edit-firmengolf_partner' ) {
+		return;
+	}
+	echo '<style>
+	.fge-badge { display:inline-block; font-size:11px; font-weight:600; padding:2px 9px; border-radius:100px; white-space:nowrap; line-height:1.6; }
+	.fge-badge--green  { background:#E6F4EA; color:#1A6B38; }
+	.fge-badge--orange { background:#FFF3E0; color:#9A4E00; }
+	.fge-badge--red    { background:#FDECEA; color:#9B1C1C; }
+	.fge-badge--gray   { background:#F1F1F0; color:#555; }
+	</style>';
+} );
+
+add_action( 'restrict_manage_posts', 'fge_partner_list_filters' );
+
+function fge_partner_list_filters( string $post_type ): void {
+	if ( $post_type !== 'firmengolf_partner' ) {
+		return;
+	}
+	$cur = sanitize_key( $_GET['fge_filter_partner_status'] ?? '' );
+	$statuses = [
+		''            => 'Alle Status',
+		'in_pruefung' => 'In Prüfung',
+		'aktiv'       => 'Aktiv',
+		'pausiert'    => 'Pausiert',
+		'abgelehnt'   => 'Abgelehnt',
+	];
+	echo '<select name="fge_filter_partner_status">';
+	foreach ( $statuses as $val => $label ) {
+		printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $cur, $val, false ), esc_html( $label ) );
+	}
+	echo '</select>';
+}
+
+add_action( 'pre_get_posts', 'fge_apply_partner_list_filters' );
+
+function fge_apply_partner_list_filters( WP_Query $q ): void {
+	if ( ! is_admin() || ! $q->is_main_query() ) {
+		return;
+	}
+	if ( ( $q->get( 'post_type' ) ?: '' ) !== 'firmengolf_partner' ) {
+		return;
+	}
+	$status = sanitize_key( $_GET['fge_filter_partner_status'] ?? '' );
+	if ( $status !== '' ) {
+		$q->set( 'meta_query', [ [ 'key' => '_fge_partner_status', 'value' => $status ] ] );
+	}
+}
+
+add_filter( 'post_row_actions', 'fge_partner_row_actions', 10, 2 );
+
+function fge_partner_row_actions( array $actions, WP_Post $post ): array {
+	if ( $post->post_type !== 'firmengolf_partner' ) {
+		return $actions;
+	}
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return $actions;
+	}
+
+	$current = (string) get_post_meta( $post->ID, '_fge_partner_status', true );
+
+	$status_actions = [
+		'freigeben'  => [ 'label' => 'Freigeben',  'status' => 'aktiv'       ],
+		'pausieren'  => [ 'label' => 'Pausieren',  'status' => 'pausiert'    ],
+		'ablehnen'   => [ 'label' => 'Ablehnen',   'status' => 'abgelehnt'   ],
+		'in_pruefung' => [ 'label' => 'Zur Prüfung', 'status' => 'in_pruefung' ],
+	];
+
+	foreach ( $status_actions as $key => $cfg ) {
+		if ( $current === $cfg['status'] ) {
+			continue;
+		}
+		$url = wp_nonce_url(
+			add_query_arg(
+				[
+					'action'              => 'fge_set_partner_status',
+					'post_id'             => $post->ID,
+					'fge_new_partner_status' => $cfg['status'],
+				],
+				admin_url( 'admin.php' )
+			),
+			'fge_set_partner_status_' . $post->ID
+		);
+		$actions[ 'fge_partner_' . $key ] = '<a href="' . esc_url( $url ) . '">' . esc_html( $cfg['label'] ) . '</a>';
+	}
+
+	return $actions;
+}
+
+add_action( 'admin_action_fge_set_partner_status', 'fge_handle_set_partner_status' );
+
+function fge_handle_set_partner_status(): void {
+	$post_id = absint( $_GET['post_id'] ?? 0 );
+	if ( $post_id <= 0 ) {
+		wp_die( 'Ungültige Partner-ID.', '', [ 'response' => 400 ] );
+	}
+
+	check_admin_referer( 'fge_set_partner_status_' . $post_id );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
+	}
+	if ( get_post_type( $post_id ) !== 'firmengolf_partner' ) {
+		wp_die( 'Ungültiger Post-Typ.', '', [ 'response' => 400 ] );
+	}
+
+	$allowed    = [ 'aktiv', 'in_pruefung', 'pausiert', 'abgelehnt' ];
+	$new_status = sanitize_key( $_GET['fge_new_partner_status'] ?? '' );
+
+	if ( ! in_array( $new_status, $allowed, true ) ) {
+		wp_die( 'Ungültiger Status.', '', [ 'response' => 400 ] );
+	}
+
+	update_post_meta( $post_id, '_fge_partner_status', $new_status );
+
+	// When activating a partner, ensure portal is enabled and standard permissions are set.
+	if ( $new_status === 'aktiv' ) {
+		update_post_meta( $post_id, '_fge_partner_portal_enabled', 1 );
+		if ( get_post_meta( $post_id, '_fge_can_create_events', true ) === '' ) {
+			update_post_meta( $post_id, '_fge_can_create_events', 1 );
+			update_post_meta( $post_id, '_fge_can_edit_events', 1 );
+			update_post_meta( $post_id, '_fge_can_view_requests', 1 );
+			update_post_meta( $post_id, '_fge_can_view_statistics', 1 );
+		}
+	}
+
+	wp_redirect( esc_url_raw( add_query_arg(
+		[ 'post_type' => 'firmengolf_partner', 'fge_partner_notice' => $new_status ],
+		admin_url( 'edit.php' )
+	) ), 303 );
+	exit;
+}
+
+add_action( 'admin_notices', 'fge_partner_status_notice' );
+
+function fge_partner_status_notice(): void {
+	$screen = get_current_screen();
+	if ( ! $screen || $screen->id !== 'edit-firmengolf_partner' ) {
+		return;
+	}
+
+	$key = sanitize_key( $_GET['fge_partner_notice'] ?? '' );
+	$messages = [
+		'aktiv'       => 'Partner wurde freigegeben.',
+		'in_pruefung' => 'Partner wurde zur Prüfung gesetzt.',
+		'pausiert'    => 'Partner wurde pausiert.',
+		'abgelehnt'   => 'Partner wurde abgelehnt.',
+	];
+
+	if ( ! isset( $messages[ $key ] ) ) {
+		return;
+	}
+
+	printf(
+		'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+		esc_html( $messages[ $key ] )
+	);
+}
