@@ -64,7 +64,7 @@ get_header();
 <div class="fge-page">
 
 	<?php get_template_part( 'template-parts/fge-nav', null, [
-		'active_item' => 'firmenevents',
+		'active_item' => 'events',
 		'cta_url'     => '#event-anfrage',
 	] ); ?>
 

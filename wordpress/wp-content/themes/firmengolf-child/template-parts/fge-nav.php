@@ -5,25 +5,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $args        = $args ?? [];
 $active_item = (string) ( $args['active_item'] ?? '' );
-$cta_label   = (string) ( $args['cta_label']   ?? 'Event anfragen' );
-$cta_active  = (bool)   ( $args['cta_active']  ?? false );
 
-// CTA URL: allow explicit override, otherwise resolve event-anfrage page.
-if ( isset( $args['cta_url'] ) ) {
-	$cta_url = (string) $args['cta_url'];
-} else {
-	$anfrage_page = get_page_by_path( 'event-anfrage' );
-	$cta_url      = $anfrage_page ? (string) get_permalink( $anfrage_page->ID ) : home_url( '/event-anfrage/' );
-}
+// Resolve page URLs (graceful fallback if page not created yet).
+$get_page_url = static function( string $slug, string $fallback = '#' ): string {
+	$page = get_page_by_path( $slug );
+	return $page ? (string) get_permalink( $page->ID ) : $fallback;
+};
 
-// Resolve nav item URLs (graceful fallback if page not created yet).
-$ind_page = get_page_by_path( 'individuelle-events' );
-$ind_url  = $ind_page ? (string) get_permalink( $ind_page->ID ) : home_url( '/individuelle-events/' );
+$url_events    = (string) get_post_type_archive_link( 'firmengolf_event' );
+$url_ind       = $get_page_url( 'individuelle-events', home_url( '/individuelle-events/' ) );
+$url_blog      = home_url( '/blog/' );
+$url_ueber_uns = $get_page_url( 'ueber-uns', home_url( '/ueber-uns/' ) );
+$url_kontakt   = $get_page_url( 'kontakt', home_url( '/kontakt/' ) );
+$url_portal    = $get_page_url( 'partnerportal', home_url( '/partnerportal/' ) );
+$url_anfrage   = $get_page_url( 'individuelle-events', home_url( '/individuelle-events/' ) );
 
 $nav_items = [
-	[ 'key' => 'firmenevents',        'label' => 'Firmenevents',        'url' => (string) get_post_type_archive_link( 'firmengolf_event' ) ],
-	[ 'key' => 'individuelle-events', 'label' => 'Individuelle Events', 'url' => $ind_url ],
-	[ 'key' => 'blog',                'label' => 'Blog & Ratgeber',     'url' => home_url( '/blog/' ) ],
+	[ 'key' => 'events',              'label' => 'Events',              'url' => $url_events ],
+	[ 'key' => 'individuelle-events', 'label' => 'Individuelle Events', 'url' => $url_ind ],
+	[ 'key' => 'blog',                'label' => 'Blog',                'url' => $url_blog ],
+	[ 'key' => 'ueber-uns',           'label' => 'Über uns',            'url' => $url_ueber_uns ],
+	[ 'key' => 'kontakt',             'label' => 'Kontakt',             'url' => $url_kontakt ],
 ];
 ?>
 <nav class="fg-topnav" aria-label="Hauptnavigation">
@@ -34,20 +36,18 @@ $nav_items = [
 		<div class="fg-nav-items">
 			<?php foreach ( $nav_items as $item ) : ?>
 				<a href="<?php echo esc_url( $item['url'] ); ?>"
-				   <?php if ( $active_item === $item['key'] ) : ?>class="fg-nav-item--active"<?php endif; ?>
+				   <?php if ( $active_item === $item['key'] ) : ?>class="active"<?php endif; ?>
 				><?php echo esc_html( $item['label'] ); ?></a>
 			<?php endforeach; ?>
 		</div>
 		<div class="fg-nav-end">
-			<?php if ( $cta_active ) : ?>
-				<span class="fg-nav-cta fg-nav-cta--active">
-					<?php echo esc_html( $cta_label ); ?>
+			<a class="fg-nav-link" href="<?php echo esc_url( $url_portal ); ?>">Partnerportal</a>
+			<a class="fg-nav-cta" href="<?php echo esc_url( $url_anfrage ); ?>">
+				Jetzt anfragen
+				<span class="fg-arrow">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
 				</span>
-			<?php else : ?>
-				<a href="<?php echo esc_url( $cta_url ); ?>" class="fg-nav-cta">
-					<?php echo esc_html( $cta_label ); ?> <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-				</a>
-			<?php endif; ?>
+			</a>
 		</div>
 	</div>
 </nav>
