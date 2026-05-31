@@ -838,3 +838,73 @@ function fge_render_general_anfrage_form(): void {
 	</form>
 	<?php
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODAL ANFRAGE — AJAX handler (logged-out + logged-in)
+// ══════════════════════════════════════════════════════════════════════════════
+
+add_action( 'wp_ajax_fge_modal_anfrage',        'fge_ajax_modal_anfrage' );
+add_action( 'wp_ajax_nopriv_fge_modal_anfrage', 'fge_ajax_modal_anfrage' );
+
+function fge_ajax_modal_anfrage(): void {
+	check_ajax_referer( 'fge_modal_anfrage', 'nonce' );
+
+	$event_id  = absint( $_POST['event_id'] ?? 0 );
+	$date_pref = sanitize_text_field( wp_unslash( $_POST['date_pref'] ?? '' ) );
+	$group     = sanitize_text_field( wp_unslash( $_POST['group_size'] ?? '' ) );
+	$notes     = sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) );
+	$first     = sanitize_text_field( wp_unslash( $_POST['first_name'] ?? '' ) );
+	$last      = sanitize_text_field( wp_unslash( $_POST['last_name'] ?? '' ) );
+	$email     = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+	$company   = sanitize_text_field( wp_unslash( $_POST['company'] ?? '' ) );
+	$phone     = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
+
+	if ( ! $email || ! is_email( $email ) || ! $first || ! $last || ! $company ) {
+		wp_send_json_error( [ 'message' => 'Pflichtfelder fehlen.' ], 422 );
+	}
+
+	$event_title = $event_id > 0 ? get_the_title( $event_id ) : '–';
+	$ref         = 'FG-26-' . strtoupper( substr( wp_generate_uuid4(), 0, 6 ) );
+
+	// Save as request post
+	wp_insert_post( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => 'publish',
+		'post_title'  => $ref . ' · ' . $first . ' ' . $last,
+		'meta_input'  => [
+			'_fge_ref'        => $ref,
+			'_fge_event_id'   => $event_id,
+			'_fge_first_name' => $first,
+			'_fge_last_name'  => $last,
+			'_fge_email'      => $email,
+			'_fge_company'    => $company,
+			'_fge_phone'      => $phone,
+			'_fge_date_pref'  => $date_pref,
+			'_fge_group_size' => $group,
+			'_fge_notes'      => $notes,
+		],
+	] );
+
+	// Notify admin
+	wp_mail(
+		get_option( 'admin_email' ),
+		'Neue Event-Anfrage: ' . $ref . ' · ' . $event_title,
+		"Ref: $ref\nEvent: $event_title\nDatum: $date_pref\nGruppe: $group\nNotizen: $notes\n\n$first $last\n$company\n$email\n$phone"
+	);
+
+	// Confirm to requester
+	wp_mail(
+		$email,
+		'Deine Anfrage bei Firmengolf · ' . $ref,
+		"Hallo $first,\n\ndeine Anfrage für „$event_title“ ist bei uns eingegangen.\nWir melden uns innerhalb von 24 Stunden zurück.\n\nReferenznummer: $ref\n\nBis gleich,\nDein Firmengolf-Team"
+	);
+
+	wp_send_json_success( [
+		'ref'         => $ref,
+		'event_title' => $event_title,
+		'date_pref'   => $date_pref,
+		'group_size'  => $group,
+		'venue'       => get_post_meta( $event_id, '_fge_event_location', true ),
+		'format'      => get_post_meta( $event_id, '_fge_event_type', true ),
+	] );
+}

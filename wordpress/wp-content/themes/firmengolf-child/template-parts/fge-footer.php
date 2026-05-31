@@ -64,11 +64,13 @@ $url_impressum  = $get_page_url( 'impressum' );
 			</div>
 		</div>
 	</div>
-	<div class="fg-footer-bottom">
+	<div class="fg-footer-base">
 		<span>© <?php echo esc_html( (string) gmdate( 'Y' ) ); ?> Firmengolf GmbH · Hamburg</span>
-		<div class="fg-footer-legal">
+		<div class="fg-footer-links">
 			<a href="#">DE · EN</a>
+			<span aria-hidden="true">·</span>
 			<a href="#">Presse</a>
+			<span aria-hidden="true">·</span>
 			<a href="#">Karriere</a>
 		</div>
 	</div>

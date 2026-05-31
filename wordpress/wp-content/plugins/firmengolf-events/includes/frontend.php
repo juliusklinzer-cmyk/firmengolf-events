@@ -179,7 +179,7 @@ function fge_get_logo_url( bool $light = false ): string {
 	return plugins_url( 'assets/logo/' . $file, FGE_DIR . 'firmengolf-events.php' );
 }
 
-function fge_get_placeholder_image_url( string $name = 'hero-fairway-wide.jpg' ): string {
+function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahme.jpg' ): string {
 	return plugins_url( 'assets/imagery/' . $name, FGE_DIR . 'firmengolf-events.php' );
 }
 

@@ -12,30 +12,49 @@ $ind_url     = $ind_page ? (string) get_permalink( $ind_page->ID ) : home_url( '
 $kontakt_url = ( $kp = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( $kp->ID ) : home_url( '/kontakt/' );
 
 // ── Sanitize GET params ──────────────────────────────────────────────────────
-$active_format = sanitize_key( $_GET['format'] ?? 'all' );     // 'all' | slug
-$active_region = sanitize_text_field( $_GET['region'] ?? 'Ganz Deutschland' );
-$active_sort   = sanitize_key( $_GET['sort'] ?? 'curated' );
+$active_format = sanitize_key( $_GET['format'] ?? 'all' );        // phpcs:ignore WordPress.Security.NonceVerification
+$active_region = sanitize_text_field( $_GET['region'] ?? '' );    // phpcs:ignore WordPress.Security.NonceVerification
+$active_pax    = max( 0, (int) ( $_GET['pax'] ?? 10 ) );          // phpcs:ignore WordPress.Security.NonceVerification — default 10
+$active_sort   = sanitize_key( $_GET['sort'] ?? 'curated' );      // phpcs:ignore WordPress.Security.NonceVerification
 
 // ── Format list ─────────────────────────────────────────────────────────────
 $formats = [
-	'all'           => 'Alle Formate',
-	'schnupperkurs' => 'Schnupperkurs',
-	'firmenturnier' => 'Firmenturnier',
-	'team-building' => 'Team-Building',
-	'networking'    => 'Networking-Runde',
-	'incentive'     => 'Incentive',
-	'coaching'      => 'Coaching / Trainerstunde',
-	'gesundheitstag'=> 'Gesundheitstag',
-	'offsite'       => 'Offsite',
-	'kundenevent'   => 'Kundenevent',
+	'all'            => 'Alle Formate',
+	'schnupperkurs'  => 'Schnupperkurs',
+	'firmenturnier'  => 'Firmenturnier',
+	'team-building'  => 'Team-Building',
+	'networking'     => 'Networking-Runde',
+	'incentive'      => 'Incentive',
+	'coaching'       => 'Coaching / Trainerstunde',
+	'gesundheitstag' => 'Gesundheitstag',
+	'offsite'        => 'Offsite',
+	'kundenevent'    => 'Kundenevent',
 ];
-$regions = [ 'Ganz Deutschland', 'Nord', 'Ost', 'Süd', 'West' ];
+
+// ── Regions: only those with at least one published event ────────────────────
+global $wpdb;
+$available_regions = $wpdb->get_col( $wpdb->prepare(
+	"SELECT DISTINCT pm.meta_value
+	 FROM {$wpdb->postmeta} pm
+	 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+	 WHERE pm.meta_key = %s
+	   AND p.post_type = %s
+	   AND p.post_status = 'publish'
+	   AND pm.meta_value != ''
+	 ORDER BY pm.meta_value",
+	'_fge_region',
+	'firmengolf_event'
+) );
+if ( empty( $available_regions ) ) {
+	$available_regions = [ 'Nord', 'Ost', 'Süd', 'West' ]; // fallback
+}
 
 // ── Build chip URL (preserves other active params) ───────────────────────────
-$chip_url = static function( array $params ) use ( $archive_url, $active_format, $active_region, $active_sort ): string {
+$chip_url = static function( array $params ) use ( $archive_url, $active_format, $active_region, $active_pax, $active_sort ): string {
 	$base = [
 		'format' => $active_format,
 		'region' => $active_region,
+		'pax'    => $active_pax,
 		'sort'   => $active_sort,
 	];
 	return add_query_arg( array_merge( $base, $params ), $archive_url );
@@ -46,7 +65,7 @@ $query_args = [
 	'post_type'      => 'firmengolf_event',
 	'post_status'    => 'publish',
 	'posts_per_page' => 24,
-	'paged'          => max( 1, (int) ( $_GET['paged'] ?? get_query_var( 'paged' ) ) ),
+	'paged'          => max( 1, (int) ( $_GET['paged'] ?? get_query_var( 'paged' ) ) ),  // phpcs:ignore WordPress.Security.NonceVerification
 ];
 
 if ( $active_format !== 'all' ) {
@@ -56,11 +75,19 @@ if ( $active_format !== 'all' ) {
 		'compare' => '=',
 	];
 }
-if ( $active_region !== 'Ganz Deutschland' ) {
+if ( $active_region ) {
 	$query_args['meta_query'][] = [
 		'key'     => '_fge_region',
 		'value'   => $active_region,
 		'compare' => '=',
+	];
+}
+if ( $active_pax > 0 ) {
+	$query_args['meta_query'][] = [
+		'key'     => '_fge_participants_max',
+		'value'   => $active_pax,
+		'compare' => '>=',
+		'type'    => 'NUMERIC',
 	];
 }
 switch ( $active_sort ) {
@@ -87,9 +114,18 @@ switch ( $active_sort ) {
 $events_query = new WP_Query( $query_args );
 $total        = (int) $events_query->found_posts;
 
-$heading = ( $active_format === 'all' )
-	? 'Alle Firmenevents'
-	: ( $formats[ $active_format ] ?? 'Events' );
+// ── Heading ──────────────────────────────────────────────────────────────────
+$heading_parts = [];
+if ( $active_format !== 'all' ) {
+	$heading_parts[] = $formats[ $active_format ] ?? 'Events';
+}
+if ( $active_region ) {
+	$heading_parts[] = $active_region;
+}
+if ( $active_pax > 0 ) {
+	$heading_parts[] = $active_pax . '+ Pers.';
+}
+$heading = $heading_parts ? implode( ' · ', $heading_parts ) : 'Alle Firmenevents';
 
 // ── Arrow SVG ────────────────────────────────────────────────────────────────
 $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>';
@@ -100,7 +136,7 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 
 <?php /* ══════════════ HERO ══════════════ */ ?>
 <section class="ev-hero" aria-label="Events">
-	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( 'hero-meadow.jpg' ) ); ?>')">
+	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( 'golfplatz-panorama.jpg' ) ); ?>')">
 		<div class="ev-hero-scrim" aria-hidden="true"></div>
 		<div class="ev-hero-content">
 			<div class="ev-hero-eyebrow">Marketplace · Firmenevents</div>
@@ -113,50 +149,74 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 		</div>
 	</div>
 
-	<?php /* Search bar — submits as GET form */ ?>
+	<?php /* ── Search bar ── */ ?>
 	<form method="get" action="<?php echo esc_url( $archive_url ); ?>" class="fg-search-bar" role="search">
-		<label class="fg-search-cell">
+
+		<?php /* Cell 1: Format dropdown */ ?>
+		<div class="fg-search-cell fg-format-cell" id="fg-format-cell"
+		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Format wählen">
 			<div class="fg-cell-label">Format</div>
-			<div class="fg-cell-value">
-				<?php echo esc_html( $formats[ $active_format ] ?? 'Alle Formate' ); ?>
+			<div class="fg-cell-value" id="fg-format-display">
+				<span id="fg-format-text"><?php echo esc_html( $formats[ $active_format ] ?? 'Alle Formate' ); ?></span>
 			</div>
-			<select name="format" style="position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer">
+			<input type="hidden" name="format" id="fg-format-val" value="<?php echo esc_attr( $active_format ); ?>">
+			<div class="fg-search-panel" id="fg-format-panel" role="listbox">
 				<?php foreach ( $formats as $slug => $label ) : ?>
-					<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $active_format, $slug ); ?>>
+					<button type="button"
+					        class="fg-search-panel-opt<?php echo $active_format === $slug ? ' is-selected' : ''; ?>"
+					        data-value="<?php echo esc_attr( $slug ); ?>"
+					        data-label="<?php echo esc_attr( $label ); ?>"
+					        role="option"
+					        aria-selected="<?php echo $active_format === $slug ? 'true' : 'false'; ?>">
 						<?php echo esc_html( $label ); ?>
-					</option>
+					</button>
 				<?php endforeach; ?>
-			</select>
-		</label>
-
-		<div class="fg-cell-divider" aria-hidden="true"></div>
-
-		<label class="fg-search-cell">
-			<div class="fg-cell-label">Region</div>
-			<div class="fg-cell-value">
-				<?php echo esc_html( $active_region ); ?>
 			</div>
-			<select name="region" style="position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer">
-				<?php foreach ( $regions as $r ) : ?>
-					<option value="<?php echo esc_attr( $r ); ?>" <?php selected( $active_region, $r ); ?>>
-						<?php echo esc_html( $r ); ?>
-					</option>
-				<?php endforeach; ?>
-			</select>
-		</label>
-
-		<div class="fg-cell-divider" aria-hidden="true"></div>
-
-		<div class="fg-search-cell">
-			<div class="fg-cell-label">Wann</div>
-			<div class="fg-cell-value fg-muted">Zeitraum wählen</div>
 		</div>
 
 		<div class="fg-cell-divider" aria-hidden="true"></div>
 
-		<div class="fg-search-cell">
-			<div class="fg-cell-label">Gruppe</div>
-			<div class="fg-cell-value fg-muted">Personen</div>
+		<?php /* Cell 2: Region dropdown (only existing regions) */ ?>
+		<div class="fg-search-cell fg-region-cell" id="fg-region-cell"
+		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Region wählen">
+			<div class="fg-cell-label">Region</div>
+			<div class="fg-cell-value<?php echo ! $active_region ? ' fg-muted' : ''; ?>" id="fg-region-display">
+				<span id="fg-region-text"><?php echo $active_region ? esc_html( $active_region ) : 'Ganz Deutschland'; ?></span>
+			</div>
+			<input type="hidden" name="region" id="fg-region-val" value="<?php echo esc_attr( $active_region ); ?>">
+			<div class="fg-search-panel" id="fg-region-panel" role="listbox">
+				<button type="button"
+				        class="fg-search-panel-opt<?php echo ! $active_region ? ' is-selected' : ''; ?>"
+				        data-value="" data-label="Ganz Deutschland" role="option">
+					Ganz Deutschland
+				</button>
+				<?php foreach ( $available_regions as $region ) : ?>
+					<button type="button"
+					        class="fg-search-panel-opt<?php echo $active_region === $region ? ' is-selected' : ''; ?>"
+					        data-value="<?php echo esc_attr( $region ); ?>"
+					        data-label="<?php echo esc_attr( $region ); ?>"
+					        role="option"
+					        aria-selected="<?php echo $active_region === $region ? 'true' : 'false'; ?>">
+						<?php echo esc_html( $region ); ?>
+					</button>
+				<?php endforeach; ?>
+			</div>
+		</div>
+
+		<div class="fg-cell-divider" aria-hidden="true"></div>
+
+		<?php /* Cell 3: Personenzahl with +/− (default 10) */ ?>
+		<div class="fg-search-cell fg-pax-cell">
+			<div class="fg-cell-label">Personen</div>
+			<div class="fg-pax-ctrl">
+				<button type="button" class="fg-pax-btn" data-fn="dec" aria-label="Weniger Personen"
+				        <?php echo $active_pax <= 1 ? 'disabled' : ''; ?>>−</button>
+				<span class="fg-pax-num" id="fg-pax-display">
+					<?php echo esc_html( (string) $active_pax ); ?> Pers.
+				</span>
+				<button type="button" class="fg-pax-btn" data-fn="inc" aria-label="Mehr Personen">+</button>
+			</div>
+			<input type="hidden" name="pax" id="fg-pax-val" value="<?php echo esc_attr( (string) $active_pax ); ?>">
 		</div>
 
 		<input type="hidden" name="sort" value="<?php echo esc_attr( $active_sort ); ?>">
@@ -167,22 +227,13 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 	</form>
 </section>
 
-<?php /* ══════════════ FILTER CHIPS ══════════════ */ ?>
+<?php /* ══════════════ FORMAT CHIPS ══════════════ */ ?>
 <div class="fg-filter-rail">
 	<div class="fg-chip-row">
 		<?php foreach ( $formats as $slug => $label ) : ?>
 			<a href="<?php echo esc_url( $chip_url( [ 'format' => $slug ] ) ); ?>"
 			   class="fg-chip<?php echo $active_format === $slug ? ' active' : ''; ?>">
 				<?php echo esc_html( $label ); ?>
-			</a>
-		<?php endforeach; ?>
-	</div>
-	<div class="fg-region-row">
-		<span class="fg-region-label">Region</span>
-		<?php foreach ( $regions as $r ) : ?>
-			<a href="<?php echo esc_url( $chip_url( [ 'region' => $r ] ) ); ?>"
-			   class="fg-chip ghost<?php echo $active_region === $r ? ' active' : ''; ?>">
-				<?php echo esc_html( $r ); ?>
 			</a>
 		<?php endforeach; ?>
 	</div>
@@ -194,12 +245,13 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 		<h2 class="fg-grid-title"><?php echo esc_html( $heading ); ?></h2>
 		<div class="ev-grid-controls">
 			<span class="fg-grid-count">
-				<?php echo esc_html( $total . ' ' . ( $total === 1 ? 'Format' : 'Formate' ) . ' · ' . $active_region ); ?>
+				<?php echo esc_html( $total . ' ' . ( $total === 1 ? 'Format' : 'Formate' ) ); ?>
 			</span>
 			<form method="get" action="<?php echo esc_url( $archive_url ); ?>" class="ev-sort">
 				<span class="fg-cell-label">Sortieren</span>
 				<input type="hidden" name="format" value="<?php echo esc_attr( $active_format ); ?>">
 				<input type="hidden" name="region" value="<?php echo esc_attr( $active_region ); ?>">
+				<input type="hidden" name="pax"    value="<?php echo esc_attr( (string) $active_pax ); ?>">
 				<select name="sort" class="ev-select" onchange="this.form.submit()">
 					<option value="curated"   <?php selected( $active_sort, 'curated' ); ?>>Empfohlen</option>
 					<option value="price-asc" <?php selected( $active_sort, 'price-asc' ); ?>>Preis aufsteigend</option>
@@ -214,20 +266,20 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 
 		<div class="fg-grid">
 			<?php while ( $events_query->have_posts() ) : $events_query->the_post();
-				$pid       = get_the_ID();
-				$etype     = fge_get_event_meta( $pid, 'event_type' );
-				$elabel    = fge_format_event_type( $etype ) ?: ucfirst( $etype );
-				$venue     = fge_get_event_meta( $pid, 'event_location' );
-				$region_m  = fge_get_event_meta( $pid, 'region' );
-				$eyebrow   = trim( $elabel . ' · ' . fge_get_event_meta( $pid, 'duration' ), ' ·' );
-				$p_max     = fge_get_event_meta( $pid, 'participants_max' );
-				$duration  = fge_get_event_meta( $pid, 'duration' );
-				$price     = fge_get_event_price_display( $pid );
-				$rating    = fge_get_event_meta( $pid, 'rating' );
-				$reviews   = fge_get_event_meta( $pid, 'reviews_count' );
-				$featured  = fge_get_event_meta( $pid, 'featured' );
-				$thumb     = has_post_thumbnail() ? get_the_post_thumbnail_url( $pid, 'large' ) : fge_get_placeholder_image_url( 'event-team.jpg' );
-				$indoor    = in_array( 'Indoor-Backup', fge_get_active_leistungen( $pid ), true );
+				$pid      = get_the_ID();
+				$etype    = fge_get_event_meta( $pid, 'event_type' );
+				$elabel   = fge_format_event_type( $etype ) ?: ucfirst( $etype );
+				$venue    = fge_get_event_meta( $pid, 'event_location' );
+				$region_m = fge_get_event_meta( $pid, 'region' );
+				$eyebrow  = trim( $elabel . ' · ' . fge_get_event_meta( $pid, 'duration' ), ' ·' );
+				$p_max    = fge_get_event_meta( $pid, 'participants_max' );
+				$duration = fge_get_event_meta( $pid, 'duration' );
+				$price    = fge_get_event_price_display( $pid );
+				$rating   = fge_get_event_meta( $pid, 'rating' );
+				$reviews  = fge_get_event_meta( $pid, 'reviews_count' );
+				$featured = fge_get_event_meta( $pid, 'featured' );
+				$thumb    = has_post_thumbnail() ? get_the_post_thumbnail_url( $pid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
+				$indoor   = in_array( 'Indoor-Backup', fge_get_active_leistungen( $pid ), true );
 			?>
 			<article class="fg-event">
 				<a href="<?php the_permalink(); ?>" style="display:contents">
@@ -318,10 +370,10 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 	<div class="trust-inner">
 		<?php
 		$trust = [
-			[ '180+ Partnerplätze',   'Vom Stadtkurs bis zur Berg-Anlage.' ],
-			[ 'Ein Ansprechpartner',   'Vom Erstkontakt bis nach dem Event.' ],
-			[ 'Eine Rechnung',         'Sauber abgerechnet, BGM-konform wenn nötig.' ],
-			[ 'Antwort < 24 h',        'Werktags innerhalb eines Arbeitstags.' ],
+			[ '180+ Partnerplätze',  'Vom Stadtkurs bis zur Berg-Anlage.' ],
+			[ 'Ein Ansprechpartner', 'Vom Erstkontakt bis nach dem Event.' ],
+			[ 'Eine Rechnung',       'Sauber abgerechnet, BGM-konform wenn nötig.' ],
+			[ 'Antwort < 24 h',      'Werktags innerhalb eines Arbeitstags.' ],
 		];
 		foreach ( $trust as $t ) : ?>
 			<div class="trust-cell">
@@ -390,4 +442,70 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 <?php get_template_part( 'template-parts/fge-footer' ); ?>
 
 </div><?php /* .fge-page */ ?>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Generic dropdown factory ── */
+  function initDropdown(cellId, panelId, inputId, displayId) {
+    var cell    = document.getElementById(cellId);
+    var panel   = document.getElementById(panelId);
+    var input   = document.getElementById(inputId);
+    var display = document.getElementById(displayId);
+    if (!cell || !panel) return;
+
+    function open()  { panel.classList.add('is-open');    cell.setAttribute('aria-expanded', 'true'); }
+    function close() { panel.classList.remove('is-open'); cell.setAttribute('aria-expanded', 'false'); }
+
+    cell.addEventListener('click', function (e) {
+      if (panel.contains(e.target)) return;
+      panel.classList.contains('is-open') ? close() : open();
+    });
+    cell.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); panel.hidden ? open() : close(); }
+      if (e.key === 'Escape') close();
+    });
+
+    panel.querySelectorAll('.fg-search-panel-opt').forEach(function (opt) {
+      opt.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var val   = opt.dataset.value;
+        var label = opt.dataset.label;
+        if (input)   input.value = val;
+        if (display) display.textContent = label;
+        panel.querySelectorAll('.fg-search-panel-opt').forEach(function (o) {
+          o.classList.toggle('is-selected', o.dataset.value === val);
+          o.setAttribute('aria-selected', String(o.dataset.value === val));
+        });
+        close();
+      });
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!cell.contains(e.target)) close();
+    });
+  }
+
+  initDropdown('fg-format-cell', 'fg-format-panel', 'fg-format-val', 'fg-format-text');
+  initDropdown('fg-region-cell', 'fg-region-panel', 'fg-region-val', 'fg-region-text');
+
+  /* ── Pax +/− controls ── */
+  var paxDisplay = document.getElementById('fg-pax-display');
+  var paxVal     = document.getElementById('fg-pax-val');
+  var decBtn     = document.querySelector('.fg-pax-btn[data-fn="dec"]');
+  var incBtn     = document.querySelector('.fg-pax-btn[data-fn="inc"]');
+
+  function updatePax(next) {
+    next = Math.max(1, next);
+    paxVal.value           = next;
+    paxDisplay.textContent = next + ' Pers.';
+    if (decBtn) decBtn.disabled = next <= 1;
+  }
+
+  if (incBtn) incBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) + 1); });
+  if (decBtn) decBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) - 1); });
+}());
+</script>
+
 <?php get_footer(); ?>

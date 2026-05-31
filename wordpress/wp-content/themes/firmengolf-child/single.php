@@ -17,9 +17,8 @@ $cats       = get_the_category( $post_id );
 $cat        = $cats[0] ?? null;
 $thumb      = has_post_thumbnail( $post_id )
 	? get_the_post_thumbnail_url( $post_id, 'full' )
-	: fge_get_placeholder_image_url( 'event-team.jpg' );
+	: fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' );
 
-// Estimated reading time
 $word_count   = str_word_count( wp_strip_all_tags( $content ) );
 $read_minutes = max( 1, (int) ceil( $word_count / 200 ) );
 
@@ -37,6 +36,19 @@ if ( $cat ) {
 }
 $related_posts = get_posts( $related_args );
 
+// Fill up to 3 from all posts if category didn't yield enough
+if ( count( $related_posts ) < 3 ) {
+	$extra_args = [
+		'post_type'      => 'post',
+		'posts_per_page' => 3 - count( $related_posts ),
+		'post_status'    => 'publish',
+		'post__not_in'   => array_merge( [ $post_id ], array_column( $related_posts, 'ID' ) ),
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+	];
+	$related_posts = array_merge( $related_posts, get_posts( $extra_args ) );
+}
+
 get_header();
 ?>
 <div class="fge-page">
@@ -46,7 +58,7 @@ get_header();
 	<article class="blog-article">
 
 		<?php /* ── Back link ── */ ?>
-		<a href="<?php echo esc_url( home_url( '/blog/' ) ); ?>" class="ev-back">← Zurück zum Magazin</a>
+		<a href="<?php echo esc_url( home_url( '/blog/' ) ); ?>" class="ev-back">← Alle Artikel</a>
 
 		<?php /* ── Article Header ── */ ?>
 		<header class="blog-article-head">
@@ -57,7 +69,7 @@ get_header();
 				<?php endif; ?>
 				<span><?php echo esc_html( $date ); ?></span>
 				<span>·</span>
-				<span><?php echo esc_html( $read_minutes ); ?> Min. Lesezeit</span>
+				<span><?php echo esc_html( (string) $read_minutes ); ?> Min. Lesezeit</span>
 			</div>
 
 			<h1 class="blog-article-h"><?php echo esc_html( $title ); ?></h1>
@@ -68,13 +80,9 @@ get_header();
 
 			<div class="blog-article-byline">
 				<img src="<?php echo esc_url( $author_img ); ?>" alt="<?php echo esc_attr( $author ); ?>" width="44" height="44">
-				<div class="blog-author">
-					<span class="blog-author-n"><?php echo esc_html( $author ); ?></span>
-					<?php if ( $author_bio ) : ?>
-						<span class="blog-author-r"><?php echo esc_html( $author_bio ); ?></span>
-					<?php else : ?>
-						<span class="blog-author-r">Autor</span>
-					<?php endif; ?>
+				<div>
+					<div class="blog-author-n"><?php echo esc_html( $author ); ?></div>
+					<div class="blog-author-r"><?php echo esc_html( $author_bio ?: 'Autor' ); ?></div>
 				</div>
 			</div>
 		</header>
@@ -87,51 +95,55 @@ get_header();
 			<?php the_content(); ?>
 		</div>
 
-		<?php /* ── Related Posts ── */ ?>
-		<?php if ( $related_posts ) : ?>
-		<section class="blog-related" style="margin-top:80px;border-top:1px solid var(--ink-200);padding-top:48px;">
-			<h2 style="font-family:var(--font-display);font-size:28px;letter-spacing:-.02em;font-weight:500;margin-bottom:28px;">
-				Weitere Beiträge
-			</h2>
-			<div class="blog-grid">
-				<?php foreach ( $related_posts as $rp ) :
-					$rid   = $rp->ID;
-					$r_url = get_permalink( $rid );
-					$r_img = has_post_thumbnail( $rid )
-						? get_the_post_thumbnail_url( $rid, 'medium_large' )
-						: fge_get_placeholder_image_url( 'event-team.jpg' );
-					$r_cats = get_the_category( $rid );
-					$r_cat  = $r_cats[0] ?? null;
-					$r_date = get_the_date( 'd. M Y', $rid );
-					$r_exc  = wp_trim_words( get_the_excerpt( $rid ), 16 );
-					$r_auth = get_the_author_meta( 'display_name', (int) $rp->post_author );
-				?>
-				<article class="blog-card">
-					<a href="<?php echo esc_url( $r_url ); ?>" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1;">
-						<div class="blog-card-photo" style="background-image:url('<?php echo esc_url( $r_img ); ?>')"></div>
-						<div class="blog-card-body">
-							<div class="blog-meta-row">
-								<?php if ( $r_cat ) : ?>
-									<span class="blog-tag"><?php echo esc_html( $r_cat->name ); ?></span>
-									<span>·</span>
-								<?php endif; ?>
-								<span><?php echo esc_html( $r_date ); ?></span>
-							</div>
-							<h3 class="blog-card-h"><?php echo esc_html( get_the_title( $rid ) ); ?></h3>
-							<p class="blog-card-x"><?php echo esc_html( $r_exc ); ?></p>
-							<div class="blog-card-foot">
-								<span><?php echo esc_html( $r_auth ); ?></span>
-								<span style="color:var(--fairway-700);font-weight:500;">Weiterlesen →</span>
-							</div>
-						</div>
-					</a>
-				</article>
-				<?php endforeach; ?>
-			</div>
-		</section>
-		<?php endif; ?>
-
 	</article>
+
+	<?php /* ── Related Posts ── */ ?>
+	<?php if ( $related_posts ) : ?>
+	<section class="blog-related">
+		<div class="blog-related-head">
+			<h2 class="blog-related-h">Weiterlesen</h2>
+			<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/blog/' ) ); ?>">
+				Alle Artikel <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+			</a>
+		</div>
+		<div class="blog-grid">
+			<?php foreach ( $related_posts as $rp ) :
+				$rid    = $rp->ID;
+				$r_url  = get_permalink( $rid );
+				$r_img  = has_post_thumbnail( $rid )
+					? get_the_post_thumbnail_url( $rid, 'medium_large' )
+					: fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
+				$r_cats = get_the_category( $rid );
+				$r_cat  = $r_cats[0] ?? null;
+				$r_wc   = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $rid ) ) );
+				$r_read = max( 1, (int) ceil( $r_wc / 200 ) );
+				$r_date = get_the_date( 'd. M Y', $rid );
+				$r_auth = get_the_author_meta( 'display_name', (int) $rp->post_author );
+			?>
+			<article class="blog-card">
+				<a href="<?php echo esc_url( $r_url ); ?>" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1;">
+					<div class="blog-card-photo" style="background-image:url('<?php echo esc_url( $r_img ); ?>')"></div>
+					<div class="blog-card-body">
+						<div class="blog-meta-row">
+							<?php if ( $r_cat ) : ?>
+								<span class="blog-tag"><?php echo esc_html( $r_cat->name ); ?></span>
+								<span>·</span>
+							<?php endif; ?>
+							<span><?php echo esc_html( (string) $r_read ); ?> Min.</span>
+						</div>
+						<h3 class="blog-card-h"><?php echo esc_html( get_the_title( $rid ) ); ?></h3>
+						<p class="blog-card-x"><?php echo esc_html( wp_trim_words( get_the_excerpt( $rid ), 18 ) ); ?></p>
+						<div class="blog-card-foot">
+							<span class="blog-author-n"><?php echo esc_html( $r_auth ); ?></span>
+							<span class="blog-author-r"><?php echo esc_html( $r_date ); ?></span>
+						</div>
+					</div>
+				</a>
+			</article>
+			<?php endforeach; ?>
+		</div>
+	</section>
+	<?php endif; ?>
 
 	<?php get_template_part( 'template-parts/fge-footer' ); ?>
 

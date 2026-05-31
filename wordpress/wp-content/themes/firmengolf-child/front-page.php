@@ -16,6 +16,34 @@ $url_ind     = $get_page_url( 'individuelle-events', home_url( '/individuelle-ev
 $url_kontakt = $get_page_url( 'kontakt', home_url( '/kontakt/' ) );
 $url_blog    = home_url( '/blog/' );
 
+// ── Format list (shared with search bar) ────────────────────────────────────
+$formats = [
+	'all'            => 'Alle Formate',
+	'schnupperkurs'  => 'Schnupperkurs',
+	'firmenturnier'  => 'Firmenturnier',
+	'team-building'  => 'Team-Building',
+	'networking'     => 'Networking-Runde',
+	'incentive'      => 'Incentive',
+	'coaching'       => 'Coaching / Trainerstunde',
+	'gesundheitstag' => 'Gesundheitstag',
+	'offsite'        => 'Offsite',
+	'kundenevent'    => 'Kundenevent',
+];
+
+// ── Regions from DB ──────────────────────────────────────────────────────────
+global $wpdb;
+$available_regions = $wpdb->get_col( $wpdb->prepare(
+	"SELECT DISTINCT pm.meta_value
+	 FROM {$wpdb->postmeta} pm
+	 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+	 WHERE pm.meta_key = %s AND p.post_type = %s AND p.post_status = 'publish' AND pm.meta_value != ''
+	 ORDER BY pm.meta_value",
+	'_fge_region', 'firmengolf_event'
+) );
+if ( empty( $available_regions ) ) {
+	$available_regions = [ 'Nord', 'Ost', 'Süd', 'West' ];
+}
+
 // ── Featured events (up to 4 published) ────────────────────────────────────
 $featured_events = fge_get_featured_events( 4 );
 
@@ -44,7 +72,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 
 <?php /* ══════════════════ 1. HERO ══════════════════ */ ?>
 <section class="mk-hero" aria-label="Hero">
-	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'hero-fairway-wide.jpg' ) ); ?>')">
+	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-drohnenaufnahme.jpg' ) ); ?>')">
 		<div class="mk-hero-scrim" aria-hidden="true"></div>
 		<div class="mk-hero-content">
 			<div class="mk-hero-eyebrow">Firmenevents · Golf für Unternehmen</div>
@@ -68,37 +96,77 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 	</div>
 
 	<div class="mk-hero-floating" aria-hidden="true">
-		<div class="mk-floating-thumb" style="background-image:url('<?php echo esc_url( $img( 'event-team.jpg' ) ); ?>')"></div>
+		<div class="mk-floating-thumb" style="background-image:url('<?php echo esc_url( $img( 'golf-coaching-einzel.jpg' ) ); ?>')"></div>
 		<div>
 			<div class="mk-floating-chip">12 Sommer-Slots im Juni</div>
 			<div class="mk-floating-meta">Hamburg · München · Berlin · Köln</div>
 		</div>
 	</div>
 
-	<div class="home-quicksearch" role="search" aria-label="Events filtern">
-		<a class="home-qs-cell" href="<?php echo esc_url( $url_events ); ?>">
+	<form method="get" action="<?php echo esc_url( $url_events ); ?>" class="home-quicksearch fg-search-bar" role="search" aria-label="Events filtern">
+
+		<?php /* Format dropdown */ ?>
+		<div class="fg-search-cell fg-format-cell" id="qs-format-cell"
+		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Format wählen">
 			<div class="fg-cell-label">Format</div>
-			<div class="fg-cell-value">Alle Formate</div>
-		</a>
+			<div class="fg-cell-value" id="qs-format-display">
+				<span id="qs-format-text">Alle Formate</span>
+			</div>
+			<input type="hidden" name="format" id="qs-format-val" value="all">
+			<div class="fg-search-panel" id="qs-format-panel" role="listbox">
+				<?php foreach ( $formats as $slug => $label ) : ?>
+					<button type="button"
+					        class="fg-search-panel-opt<?php echo $slug === 'all' ? ' is-selected' : ''; ?>"
+					        data-value="<?php echo esc_attr( $slug ); ?>"
+					        data-label="<?php echo esc_attr( $label ); ?>"
+					        role="option">
+						<?php echo esc_html( $label ); ?>
+					</button>
+				<?php endforeach; ?>
+			</div>
+		</div>
+
 		<div class="fg-cell-divider" aria-hidden="true"></div>
-		<a class="home-qs-cell" href="<?php echo esc_url( $url_events ); ?>">
+
+		<?php /* Region dropdown */ ?>
+		<div class="fg-search-cell fg-region-cell" id="qs-region-cell"
+		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Region wählen">
 			<div class="fg-cell-label">Region</div>
-			<div class="fg-cell-value">Ganz Deutschland</div>
-		</a>
+			<div class="fg-cell-value fg-muted" id="qs-region-display">
+				<span id="qs-region-text">Ganz Deutschland</span>
+			</div>
+			<input type="hidden" name="region" id="qs-region-val" value="">
+			<div class="fg-search-panel" id="qs-region-panel" role="listbox">
+				<button type="button" class="fg-search-panel-opt is-selected"
+				        data-value="" data-label="Ganz Deutschland" role="option">Ganz Deutschland</button>
+				<?php foreach ( $available_regions as $region ) : ?>
+					<button type="button" class="fg-search-panel-opt"
+					        data-value="<?php echo esc_attr( $region ); ?>"
+					        data-label="<?php echo esc_attr( $region ); ?>"
+					        role="option">
+						<?php echo esc_html( $region ); ?>
+					</button>
+				<?php endforeach; ?>
+			</div>
+		</div>
+
 		<div class="fg-cell-divider" aria-hidden="true"></div>
-		<a class="home-qs-cell" href="<?php echo esc_url( $url_events ); ?>">
-			<div class="fg-cell-label">Wann</div>
-			<div class="fg-cell-value fg-muted">Zeitraum wählen</div>
-		</a>
-		<div class="fg-cell-divider" aria-hidden="true"></div>
-		<a class="home-qs-cell" href="<?php echo esc_url( $url_events ); ?>">
-			<div class="fg-cell-label">Gruppe</div>
-			<div class="fg-cell-value fg-muted">Personen</div>
-		</a>
-		<a class="fg-search-btn" href="<?php echo esc_url( $url_events ); ?>" aria-label="Events suchen">
+
+		<?php /* Personenzahl */ ?>
+		<div class="fg-search-cell fg-pax-cell">
+			<div class="fg-cell-label">Personen</div>
+			<div class="fg-pax-ctrl">
+				<button type="button" class="fg-pax-btn" data-fn="dec" aria-label="Weniger" disabled>−</button>
+				<span class="fg-pax-num" id="qs-pax-display">10 Pers.</span>
+				<button type="button" class="fg-pax-btn" data-fn="inc" aria-label="Mehr">+</button>
+			</div>
+			<input type="hidden" name="pax" id="qs-pax-val" value="10">
+		</div>
+
+		<button type="submit" class="fg-search-btn" aria-label="Events suchen">
 			<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-		</a>
-	</div>
+		</button>
+	</form>
 </section>
 
 <?php /* ══════════════════ 2. PARTNERS STRIP ══════════════════ */ ?>
@@ -159,7 +227,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 				$p_max       = (int) fge_get_event_meta( $eid, 'participants_max' );
 				$price       = fge_get_event_price_display( $eid );
 				$excerpt     = fge_get_event_meta( $eid, 'card_description', $event->post_excerpt );
-				$thumb       = has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : $img( 'event-team.jpg' );
+				$thumb       = has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : $img( 'golf-coaching-gruppe.jpg' );
 				$is_dark     = ( $i % 2 === 1 );
 			?>
 			<article class="mk-format<?php echo $is_dark ? ' is-dark' : ''; ?>">
@@ -189,10 +257,10 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 			<?php
 			// Fallback: static cards when no published events yet
 			$static_formats = [
-				[ 'label' => 'Schnupperkurs',  'title' => 'Schnupperkurs an einem Nachmittag',    'desc' => 'Einsteigerfreundlich. PGA-Coach, Schläger gestellt, Range-Bälle inklusive.',           'price' => 'ab €89 p.P.',       'img' => 'hero-fairway-wide.jpg', 'dark' => false ],
-				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',               'desc' => 'Shotgun-Start, Fotograf, Siegerehrung — wir kümmern uns um alles.',                   'price' => 'ab €320 p.P.',      'img' => 'event-corporate.jpg',  'dark' => true  ],
-				[ 'label' => 'Offsite',        'title' => 'Strategie-Offsite Schloss Lüdersburg',  'desc' => 'Workshops im Schloss, nachmittags 9 Loch. Übernachtung inklusive.',                   'price' => 'ab €540 p.P.',      'img' => 'venue-clubhouse.jpg',  'dark' => false ],
-				[ 'label' => 'Incentive',      'title' => 'Incentive-Reise Südtirol',              'desc' => 'Drei Tage Dolomiten — Bergblick, private Dinings, Wellness.',                         'price' => 'ab €1.480 p.P.',    'img' => 'hero-mountains.jpg',   'dark' => true  ],
+				[ 'label' => 'Schnupperkurs',  'title' => 'Schnupperkurs an einem Nachmittag',    'desc' => 'Einsteigerfreundlich. PGA-Coach, Schläger gestellt, Range-Bälle inklusive.',           'price' => 'ab €89 p.P.',       'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
+				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',               'desc' => 'Shotgun-Start, Fotograf, Siegerehrung — wir kümmern uns um alles.',                   'price' => 'ab €320 p.P.',      'img' => 'firmenevent-afterwork-golf.jpg',  'dark' => true  ],
+				[ 'label' => 'Offsite',        'title' => 'Strategie-Offsite Schloss Lüdersburg',  'desc' => 'Workshops im Schloss, nachmittags 9 Loch. Übernachtung inklusive.',                   'price' => 'ab €540 p.P.',      'img' => 'clubhaus-aussenansicht.jpg',      'dark' => false ],
+				[ 'label' => 'Incentive',      'title' => 'Incentive-Reise Südtirol',              'desc' => 'Drei Tage Dolomiten — Bergblick, private Dinings, Wellness.',                         'price' => 'ab €1.480 p.P.',    'img' => 'golfplatz-meerblick.jpg',         'dark' => true  ],
 			];
 			foreach ( $static_formats as $f ) : ?>
 				<article class="mk-format<?php echo $f['dark'] ? ' is-dark' : ''; ?>">
@@ -228,42 +296,42 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 				'title'   => 'Neue Mitarbeitende willkommen heißen.',
 				'body'    => 'Ein Halbtag Schnupperkurs, der Eis bricht.',
 				'url'     => add_query_arg( 'format', 'schnupperkurs', $url_events ),
-				'img'     => 'event-summer.jpg',
+				'img'     => 'golfer-gruppe-fairway.png',
 			],
 			[
 				'eyebrow' => 'Vertrieb',
 				'title'   => 'Kunden und Partner zusammenbringen.',
 				'body'    => 'Ganztägiges Firmenturnier oder Networking-Runde.',
 				'url'     => add_query_arg( 'format', 'firmenturnier', $url_events ),
-				'img'     => 'event-corporate.jpg',
+				'img'     => 'firmenevent-afterwork-golf.jpg',
 			],
 			[
 				'eyebrow' => 'Strategie',
 				'title'   => 'Raus aus dem Konferenzraum, rein ins Gespräch.',
 				'body'    => 'Mehrtägiges Offsite mit Workshop-Räumen.',
 				'url'     => add_query_arg( 'format', 'offsite', $url_events ),
-				'img'     => 'venue-clubhouse.jpg',
+				'img'     => 'clubhaus-aussenansicht.jpg',
 			],
 			[
 				'eyebrow' => 'HR & BGM',
 				'title'   => 'Bewegung in den Arbeitsalltag bringen.',
 				'body'    => 'Gesundheitstag, BGM-konform abrechenbar.',
 				'url'     => add_query_arg( 'format', 'gesundheitstag', $url_events ),
-				'img'     => 'hero-forest.jpg',
+				'img'     => 'work-life-balance-golf.jpg',
 			],
 			[
 				'eyebrow' => 'Top-Performer',
 				'title'   => 'Eure besten Leute besonders behandeln.',
 				'body'    => 'Incentive-Reise mit Übernachtung und privatem Dinner.',
 				'url'     => add_query_arg( 'format', 'incentive', $url_events ),
-				'img'     => 'hero-mountains.jpg',
+				'img'     => 'golfplatz-meerblick.jpg',
 			],
 			[
 				'eyebrow' => 'Team-Tag',
 				'title'   => 'Ein gemeinsamer Nachmittag draußen.',
 				'body'    => 'Team-Building mit gemischten Zweier-Teams.',
 				'url'     => add_query_arg( 'format', 'team-building', $url_events ),
-				'img'     => 'event-team.jpg',
+				'img'     => 'golfer-trio-spaziergang.png',
 			],
 		];
 		foreach ( $occasions as $occ ) : ?>
@@ -285,7 +353,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 <?php /* ══════════════════ 6. INDIVIDUAL TEASER ══════════════════ */ ?>
 <section class="mk-section home-individual" aria-label="Individuelle Events">
 	<div class="home-individual-grid">
-		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'event-corporate.jpg' ) ); ?>')"></div>
+		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'buero-dachterrasse-panorama.jpg' ) ); ?>')"></div>
 		<div class="home-ind-text">
 			<div class="mk-eyebrow">Individuelle Events</div>
 			<h2 class="mk-h2">
@@ -369,12 +437,12 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 <?php /* ══════════════════ 9. TESTIMONIAL ══════════════════ */ ?>
 <section class="mk-section mk-testimonial" aria-label="Kundenstimme">
 	<div class="mk-testimonial-grid">
-		<div class="mk-testimonial-photo" style="background-image:url('<?php echo esc_url( $img( 'event-team.jpg' ) ); ?>')"></div>
+		<div class="mk-testimonial-photo" style="background-image:url('<?php echo esc_url( $img( 'golf-coaching-gruppe.jpg' ) ); ?>')"></div>
 		<blockquote class="mk-testimonial-body">
 			<div class="mk-quote-mark" aria-hidden="true">&ldquo;</div>
 			<p>Das Team kam aufgeladen zurück, und drei Leute haben am Sonntag direkt wieder gespielt. Die Latte für nächstes Jahr liegt hoch.</p>
 			<footer>
-				<img src="<?php echo esc_url( $img( 'tile-people.jpg' ) ); ?>" alt="Lena Hoffmann" width="44" height="44">
+				<img src="<?php echo esc_url( $img( 'golfer-mann-lachend.png' ) ); ?>" alt="Lena Hoffmann" width="44" height="44">
 				<div>
 					<div class="mk-tm-name">Lena Hoffmann</div>
 					<div class="mk-tm-role">People Lead · Quartz Labs</div>
@@ -398,7 +466,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 	<div class="home-blog-grid">
 		<?php if ( ! empty( $blog_posts ) ) : ?>
 			<?php foreach ( $blog_posts as $post ) :
-				$thumb = has_post_thumbnail( $post->ID ) ? get_the_post_thumbnail_url( $post->ID, 'large' ) : $img( 'event-team.jpg' );
+				$thumb = has_post_thumbnail( $post->ID ) ? get_the_post_thumbnail_url( $post->ID, 'large' ) : $img( 'golf-coaching-gruppe.jpg' );
 				$tags  = wp_get_post_tags( $post->ID, [ 'fields' => 'names' ] );
 				$tag   = ! empty( $tags ) ? $tags[0] : '';
 				$words = str_word_count( wp_strip_all_tags( $post->post_content ) );
@@ -428,9 +496,9 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 		<?php else : ?>
 			<?php
 			$static_posts = [
-				[ 'Benefits', 'Warum Golf zum Corporate Benefit passt', 'event-team.jpg', '6 Min.', 'Lena Hoffmann', '14. Mai 2026', '50 € steuerfreier Sachbezug, fittere Mitarbeitende — wir erklären die wichtigsten Punkte.' ],
-				[ 'Praxis', 'Die 12-Punkte-Checkliste für dein erstes Firmen-Golfevent', 'event-corporate.jpg', '4 Min.', 'Jonas Bredow', '2. Mai 2026', 'Vom richtigen Zeitfenster bis zum Wetter-Backup — was du im Blick haben solltest.' ],
-				[ 'Einsteiger', '"Aber wir können doch alle nicht Golf spielen"', 'tile-grass.jpg', '5 Min.', 'Petra Sailer', '18. April 2026', 'Genau das ist der Punkt. Wie ein Schnupperkurs für absolute Einsteigende funktioniert.' ],
+				[ 'Benefits', 'Warum Golf zum Corporate Benefit passt', 'golf-coaching-gruppe.jpg', '6 Min.', 'Lena Hoffmann', '14. Mai 2026', '50 € steuerfreier Sachbezug, fittere Mitarbeitende — wir erklären die wichtigsten Punkte.' ],
+				[ 'Praxis', 'Die 12-Punkte-Checkliste für dein erstes Firmen-Golfevent', 'firmenevent-afterwork-golf.jpg', '4 Min.', 'Jonas Bredow', '2. Mai 2026', 'Vom richtigen Zeitfenster bis zum Wetter-Backup — was du im Blick haben solltest.' ],
+				[ 'Einsteiger', '"Aber wir können doch alle nicht Golf spielen"', 'golfplatz-rasen-qualitaet.jpg', '5 Min.', 'Petra Sailer', '18. April 2026', 'Genau das ist der Punkt. Wie ein Schnupperkurs für absolute Einsteigende funktioniert.' ],
 			];
 			foreach ( $static_posts as $p ) : ?>
 				<article class="home-blog-card">
@@ -479,4 +547,63 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 <?php get_template_part( 'template-parts/fge-footer' ); ?>
 
 </div><?php /* .fge-page */ ?>
+
+<script>
+(function () {
+  'use strict';
+
+  function initDropdown(cellId, panelId, inputId, displayId) {
+    var cell    = document.getElementById(cellId);
+    var panel   = document.getElementById(panelId);
+    var input   = document.getElementById(inputId);
+    var display = document.getElementById(displayId);
+    if (!cell || !panel) return;
+
+    function open()  { panel.classList.add('is-open');    cell.setAttribute('aria-expanded', 'true'); }
+    function close() { panel.classList.remove('is-open'); cell.setAttribute('aria-expanded', 'false'); }
+
+    cell.addEventListener('click', function (e) {
+      if (panel.contains(e.target)) return;
+      panel.classList.contains('is-open') ? close() : open();
+    });
+    cell.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); panel.classList.contains('is-open') ? close() : open(); }
+      if (e.key === 'Escape') close();
+    });
+    panel.querySelectorAll('.fg-search-panel-opt').forEach(function (opt) {
+      opt.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (input)   input.value = opt.dataset.value;
+        if (display) display.textContent = opt.dataset.label;
+        panel.querySelectorAll('.fg-search-panel-opt').forEach(function (o) {
+          o.classList.toggle('is-selected', o.dataset.value === opt.dataset.value);
+        });
+        close();
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (!cell.contains(e.target)) close();
+    });
+  }
+
+  initDropdown('qs-format-cell', 'qs-format-panel', 'qs-format-val', 'qs-format-text');
+  initDropdown('qs-region-cell', 'qs-region-panel', 'qs-region-val', 'qs-region-text');
+
+  var paxDisplay = document.getElementById('qs-pax-display');
+  var paxVal     = document.getElementById('qs-pax-val');
+  var decBtn     = document.querySelector('#qs-pax-display')?.closest('.fg-pax-cell')?.querySelector('[data-fn="dec"]');
+  var incBtn     = document.querySelector('#qs-pax-display')?.closest('.fg-pax-cell')?.querySelector('[data-fn="inc"]');
+
+  function updatePax(next) {
+    next = Math.max(1, next);
+    paxVal.value = next;
+    paxDisplay.textContent = next + ' Pers.';
+    if (decBtn) decBtn.disabled = next <= 1;
+  }
+
+  if (incBtn) incBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) + 1); });
+  if (decBtn) decBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) - 1); });
+}());
+</script>
+
 <?php get_footer(); ?>
