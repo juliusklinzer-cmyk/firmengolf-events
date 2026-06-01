@@ -220,15 +220,7 @@ function fge_render_rmb_rahmen( WP_Post $post ) {
 	$budget_range          = get_post_meta( $post->ID, '_fge_budget_range', true );
 	$message               = get_post_meta( $post->ID, '_fge_message', true );
 
-	$event_goals = [
-		'teamevent'       => 'Teamevent',
-		'kundenevent'     => 'Kundenevent',
-		'gesundheitstag'  => 'Gesundheitstag',
-		'offsite'         => 'Offsite',
-		'sommerfest'      => 'Sommerfest',
-		'weihnachtsfeier' => 'Weihnachtsfeier',
-		'anderes_event'   => 'Anderes Event',
-	];
+	$format_tiers = fge_get_event_formats();
 	?>
 	<table class="form-table">
 		<tr>
@@ -249,9 +241,16 @@ function fge_render_rmb_rahmen( WP_Post $post ) {
 			<td>
 				<select id="fge_event_goal" name="fge_event_goal">
 					<option value="">— bitte wählen —</option>
-					<?php foreach ( $event_goals as $val => $label ) : ?>
-						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $event_goal, $val ); ?>><?php echo esc_html( $label ); ?></option>
-					<?php endforeach; ?>
+					<optgroup label="Standard">
+						<?php foreach ( $format_tiers['standard'] as $val => $label ) : ?>
+							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $event_goal, $val ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</optgroup>
+					<optgroup label="Auf Anfrage">
+						<?php foreach ( $format_tiers['on_request'] as $val => $label ) : ?>
+							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $event_goal, $val ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</optgroup>
 				</select>
 			</td>
 		</tr>
@@ -603,7 +602,7 @@ function fge_save_request_fields( int $post_id ) {
 	$allowed_request_types      = [ 'specific_event', 'general_event_request' ];
 	$allowed_request_statuses   = fge_get_statuses( 'request' );
 	$allowed_contact_methods    = [ 'phone', 'email', 'any' ];
-	$allowed_event_goals        = [ 'teamevent', 'kundenevent', 'gesundheitstag', 'offsite', 'sommerfest', 'weihnachtsfeier', 'anderes_event' ];
+	$allowed_event_goals        = array_keys( fge_get_event_formats_flat( true ) );
 	$allowed_preferred_times    = [ 'morning', 'afternoon', 'after_work', 'full_day', 'open' ];
 	$allowed_integration_status = [ 'not_sent', 'sent', 'error' ];
 	$allowed_sources            = [ 'event_page', 'general_landingpage', 'partner_page', 'linkedin', 'google', 'manual', 'other' ];

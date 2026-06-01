@@ -7,21 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function fge_get_event_format_options(): array {
-	return [
-		'schnuppergolf'          => 'Schnuppergolf',
-		'team_challenge'         => 'Team Challenge',
-		'putting_challenge'      => 'Putting Challenge',
-		'range_training'         => 'Range Training',
-		'kurzspiel_challenge'    => 'Kurzspiel Challenge',
-		'9hole_turnier'          => '9-Loch-Turnier',
-		'18hole_turnier'         => '18-Loch-Turnier',
-		'offsite_mit_meeting'    => 'Offsite mit Meeting',
-		'sommerfest'             => 'Sommerfest',
-		'kundenevent'            => 'Kundenevent',
-		'gesundheitstag'         => 'Gesundheitstag',
-		'azubi_event'            => 'Azubi-Event',
-		'individuelles_event'    => 'Individuelles Firmenevent',
-	];
+	return fge_get_event_formats_flat( true );
 }
 
 function fge_get_infrastructure_options(): array {
@@ -356,7 +342,7 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 		'april_to_october' => 'April bis Oktober',
 		'on_request'       => 'Auf Anfrage',
 	];
-	$all_event_formats = fge_get_event_format_options();
+	$format_tiers = fge_get_event_formats();
 	?>
 	<table class="form-table">
 		<tr>
@@ -469,7 +455,17 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 		<tr>
 			<th scope="row">Eventformate</th>
 			<td>
-				<?php foreach ( $all_event_formats as $val => $label ) : ?>
+				<p style="margin:4px 0 6px;"><strong>Standard</strong></p>
+				<?php foreach ( $format_tiers['standard'] as $val => $label ) : ?>
+					<label style="display:inline-block;margin-right:14px;margin-bottom:6px;">
+						<input type="checkbox" name="fge_event_formats[]"
+						       value="<?php echo esc_attr( $val ); ?>"
+						       <?php checked( in_array( $val, $event_formats, true ) ); ?>>
+						<?php echo esc_html( $label ); ?>
+					</label>
+				<?php endforeach; ?>
+				<p style="margin:12px 0 6px;"><strong>Auf Anfrage</strong></p>
+				<?php foreach ( $format_tiers['on_request'] as $val => $label ) : ?>
 					<label style="display:inline-block;margin-right:14px;margin-bottom:6px;">
 						<input type="checkbox" name="fge_event_formats[]"
 						       value="<?php echo esc_attr( $val ); ?>"

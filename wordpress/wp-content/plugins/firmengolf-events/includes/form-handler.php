@@ -173,7 +173,7 @@ function fge_handle_anfrage_submit() {
 
 	$partner_id              = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
 	$allowed_contact_methods = [ 'phone', 'email', 'any' ];
-	$allowed_event_goals     = [ 'teamevent', 'kundenevent', 'gesundheitstag', 'offsite', 'sommerfest', 'weihnachtsfeier', 'anderes_event' ];
+	$allowed_event_goals     = array_keys( fge_get_event_formats_flat( true ) );
 	$allowed_preferred_times = [ 'morning', 'afternoon', 'after_work', 'full_day', 'open' ];
 
 	$san_select = static function( string $key, array $allowed ): string {
@@ -352,13 +352,17 @@ function fge_render_anfrage_form( int $event_id ): void {
 					<div class="fg-form-field">
 						<select class="fg-form-select" id="fge_event_goal" name="fge_event_goal">
 							<option value="">— bitte wählen —</option>
-							<option value="teamevent" <?php selected( $saved_data['fge_event_goal'] ?? '', 'teamevent' ); ?>>Teamevent</option>
-							<option value="kundenevent" <?php selected( $saved_data['fge_event_goal'] ?? '', 'kundenevent' ); ?>>Kundenevent</option>
-							<option value="gesundheitstag" <?php selected( $saved_data['fge_event_goal'] ?? '', 'gesundheitstag' ); ?>>Gesundheitstag</option>
-							<option value="offsite" <?php selected( $saved_data['fge_event_goal'] ?? '', 'offsite' ); ?>>Offsite / Retreat</option>
-							<option value="sommerfest" <?php selected( $saved_data['fge_event_goal'] ?? '', 'sommerfest' ); ?>>Sommerfest</option>
-							<option value="weihnachtsfeier" <?php selected( $saved_data['fge_event_goal'] ?? '', 'weihnachtsfeier' ); ?>>Weihnachtsfeier</option>
-							<option value="anderes_event" <?php selected( $saved_data['fge_event_goal'] ?? '', 'anderes_event' ); ?>>Anderes</option>
+							<?php $fge_goal_tiers = fge_get_event_formats(); $fge_goal_current = $saved_data['fge_event_goal'] ?? ''; ?>
+							<optgroup label="Standard">
+								<?php foreach ( $fge_goal_tiers['standard'] as $val => $label ) : ?>
+									<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $fge_goal_current, $val ); ?>><?php echo esc_html( $label ); ?></option>
+								<?php endforeach; ?>
+							</optgroup>
+							<optgroup label="Auf Anfrage">
+								<?php foreach ( $fge_goal_tiers['on_request'] as $val => $label ) : ?>
+									<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $fge_goal_current, $val ); ?>><?php echo esc_html( $label ); ?></option>
+								<?php endforeach; ?>
+							</optgroup>
 						</select>
 					</div>
 				</div>
@@ -524,7 +528,7 @@ function fge_handle_general_anfrage_submit() {
 	}
 
 	$allowed_contact_methods = [ 'phone', 'email', 'any' ];
-	$allowed_event_goals     = [ 'teamevent', 'kundenevent', 'gesundheitstag', 'offsite', 'sommerfest', 'weihnachtsfeier', 'anderes_event' ];
+	$allowed_event_goals     = array_keys( fge_get_event_formats_flat( true ) );
 	$allowed_preferred_times = [ 'morning', 'afternoon', 'after_work', 'full_day', 'open' ];
 
 	$san_select = static function( string $key, array $allowed ): string {
@@ -743,13 +747,17 @@ function fge_render_general_anfrage_form(): void {
 					<div class="fg-form-field">
 						<select class="fg-form-select" id="fge_event_goal" name="fge_event_goal">
 							<option value="">— bitte wählen —</option>
-							<option value="teamevent" <?php selected( $saved_data['fge_event_goal'] ?? '', 'teamevent' ); ?>>Teamevent</option>
-							<option value="kundenevent" <?php selected( $saved_data['fge_event_goal'] ?? '', 'kundenevent' ); ?>>Kundenevent</option>
-							<option value="gesundheitstag" <?php selected( $saved_data['fge_event_goal'] ?? '', 'gesundheitstag' ); ?>>Gesundheitstag</option>
-							<option value="offsite" <?php selected( $saved_data['fge_event_goal'] ?? '', 'offsite' ); ?>>Offsite / Retreat</option>
-							<option value="sommerfest" <?php selected( $saved_data['fge_event_goal'] ?? '', 'sommerfest' ); ?>>Sommerfest</option>
-							<option value="weihnachtsfeier" <?php selected( $saved_data['fge_event_goal'] ?? '', 'weihnachtsfeier' ); ?>>Weihnachtsfeier</option>
-							<option value="anderes_event" <?php selected( $saved_data['fge_event_goal'] ?? '', 'anderes_event' ); ?>>Anderes</option>
+							<?php $fge_goal_tiers = fge_get_event_formats(); $fge_goal_current = $saved_data['fge_event_goal'] ?? ''; ?>
+							<optgroup label="Standard">
+								<?php foreach ( $fge_goal_tiers['standard'] as $val => $label ) : ?>
+									<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $fge_goal_current, $val ); ?>><?php echo esc_html( $label ); ?></option>
+								<?php endforeach; ?>
+							</optgroup>
+							<optgroup label="Auf Anfrage">
+								<?php foreach ( $fge_goal_tiers['on_request'] as $val => $label ) : ?>
+									<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $fge_goal_current, $val ); ?>><?php echo esc_html( $label ); ?></option>
+								<?php endforeach; ?>
+							</optgroup>
 						</select>
 					</div>
 				</div>

@@ -276,7 +276,7 @@ function fge_portal_validate_event_fields(): array {
 }
 
 function fge_portal_save_event_meta( int $post_id ): void {
-	$allowed_types    = [ 'teamevent', 'kundenevent', 'gesundheitstag', 'offsite', 'firmenturnier', 'anderes_event' ];
+	$allowed_types    = array_keys( fge_get_event_formats()['standard'] );
 	$allowed_weekdays = [ 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday' ];
 
 	$san = static function( string $key, array $allowed ): string {
@@ -352,14 +352,7 @@ function fge_portal_status_class( string $status ): string {
 }
 
 function fge_portal_format_event_type( string $type ): string {
-	return [
-		'teamevent'      => 'Teamevent',
-		'kundenevent'    => 'Kundenevent',
-		'gesundheitstag' => 'Gesundheitstag',
-		'offsite'        => 'Offsite',
-		'firmenturnier'  => 'Firmenturnier',
-		'anderes_event'  => 'Anderes Event',
-	][ $type ] ?? '';
+	return fge_format_event_type( $type );
 }
 
 // ── New Helpers ───────────────────────────────────────────────────────────────
@@ -831,14 +824,7 @@ function fge_portal_render_stats_row( int $partner_id ): void {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function fge_portal_render_cat_grid( int $partner_id, string $base ): void {
-	$types = [
-		'teamevent'      => 'Teamevent',
-		'kundenevent'    => 'Kundenevent',
-		'gesundheitstag' => 'Gesundheitstag',
-		'offsite'        => 'Offsite',
-		'firmenturnier'  => 'Firmenturnier',
-		'anderes_event'  => 'Anderes Event',
-	];
+	$types = fge_get_event_formats()['standard'];
 	?>
 	<div class="fp-cat-grid">
 		<?php
@@ -1452,11 +1438,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 		return ! empty( $saved[ $key ] );
 	};
 
-	$event_types = [
-		'teamevent' => 'Teamevent', 'kundenevent' => 'Kundenevent',
-		'gesundheitstag' => 'Gesundheitstag', 'offsite' => 'Offsite',
-		'firmenturnier' => 'Firmenturnier', 'anderes_event' => 'Anderes Event',
-	];
+	$event_types = fge_get_event_formats()['standard'];
 	$weekdays       = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
 	$saved_weekdays = (array) ( $saved['fge_available_weekdays'] ?? [] );
 

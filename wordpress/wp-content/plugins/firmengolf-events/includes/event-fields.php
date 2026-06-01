@@ -31,14 +31,7 @@ function fge_render_mb_basisdaten( WP_Post $post ) {
 	$event_status        = get_post_meta( $post->ID, '_fge_event_status', true );
 	$card_description    = get_post_meta( $post->ID, '_fge_card_description', true );
 
-	$event_types = [
-		'teamevent'      => 'Teamevent',
-		'kundenevent'    => 'Kundenevent',
-		'gesundheitstag' => 'Gesundheitstag',
-		'offsite'        => 'Offsite',
-		'firmenturnier'  => 'Firmenturnier',
-		'anderes_event'  => 'Anderes Event',
-	];
+	$event_types = fge_get_event_formats()['standard'];
 	$provider_types = [
 		'firmengolf'        => 'Firmengolf',
 		'golfplatz_partner' => 'Golfplatz Partner',
@@ -479,7 +472,7 @@ function fge_save_event_fields( int $post_id ) {
 	}
 
 	// Allowed values for select / checkbox-group fields.
-	$allowed_event_types    = [ 'teamevent', 'kundenevent', 'gesundheitstag', 'offsite', 'firmenturnier', 'anderes_event' ];
+	$allowed_event_types    = array_keys( fge_get_event_formats()['standard'] );
 	$allowed_provider_types = [ 'firmengolf', 'golfplatz_partner' ];
 	$allowed_event_statuses = fge_get_statuses( 'event' );
 	$allowed_pricing_modes  = [ 'package', 'individual' ];

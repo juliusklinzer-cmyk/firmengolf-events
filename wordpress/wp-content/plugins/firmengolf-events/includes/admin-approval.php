@@ -84,15 +84,7 @@ function fge_event_list_filters( string $post_type ): void {
 	echo '</select> ';
 
 	// Eventart
-	$types = [
-		''               => 'Alle Eventarten',
-		'teamevent'      => 'Teamevent',
-		'kundenevent'    => 'Kundenevent',
-		'gesundheitstag' => 'Gesundheitstag',
-		'offsite'        => 'Offsite',
-		'firmenturnier'  => 'Firmenturnier',
-		'anderes_event'  => 'Anderes Event',
-	];
+	$types = [ '' => 'Alle Eventarten' ] + fge_get_event_formats()['standard'];
 	echo '<select name="fge_filter_type">';
 	foreach ( $types as $val => $label ) {
 		printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $cur_type, $val, false ), esc_html( $label ) );

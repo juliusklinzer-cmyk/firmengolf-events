@@ -86,18 +86,6 @@ function fge_get_event_meta( int $post_id, string $key, $default = '' ) {
 	return ( $val !== '' && $val !== false ) ? $val : $default;
 }
 
-function fge_format_event_type( string $val ): string {
-	$map = [
-		'teamevent'      => 'Teamevent',
-		'kundenevent'    => 'Kundenevent',
-		'gesundheitstag' => 'Gesundheitstag',
-		'offsite'        => 'Offsite',
-		'firmenturnier'  => 'Firmenturnier',
-		'anderes_event'  => 'Anderes Event',
-	];
-	return $map[ $val ] ?? '';
-}
-
 function fge_format_weekdays( array $days ): string {
 	$map = [
 		'monday'    => 'Mo',

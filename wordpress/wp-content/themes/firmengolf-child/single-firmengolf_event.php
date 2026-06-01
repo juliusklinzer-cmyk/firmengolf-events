@@ -29,21 +29,7 @@ $reviews        = (int) ( get_post_meta( $post_id, '_fge_reviews', true ) ?: 0 )
 $spots_left     = (int) ( get_post_meta( $post_id, '_fge_spots_left', true ) ?: 6 );
 $thumb_url      = has_post_thumbnail() ? get_the_post_thumbnail_url( $post_id, 'full' ) : fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' );
 
-// Format label (extended map)
-$format_map = [
-	'schnupperkurs'  => 'Schnupperkurs',
-	'firmenturnier'  => 'Firmenturnier',
-	'team-building'  => 'Team-Building',
-	'networking'     => 'Networking-Runde',
-	'incentive'      => 'Incentive',
-	'coaching'       => 'Coaching',
-	'gesundheitstag' => 'Gesundheitstag',
-	'offsite'        => 'Offsite',
-	'kundenevent'    => 'Kundenevent',
-	'teamevent'      => 'Teamevent',
-	'anderes_event'  => 'Event',
-];
-$format_label = $format_map[ $event_type_raw ] ?? fge_format_event_type( $event_type_raw ) ?: 'Event';
+$format_label = fge_format_event_type( $event_type_raw ) ?: 'Event';
 
 // Price display
 if ( $price_label ) {
