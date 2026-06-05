@@ -26,3 +26,6 @@ Thumbs.db
 .agents/
 .claude/
 skills-lock.json
+
+# React-Design-Export (nur lokale Referenz fürs Portieren, nicht tracken)
+_design/
