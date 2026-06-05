@@ -410,3 +410,45 @@ function fge_partner_status_notice(): void {
 		esc_html( $messages[ $key ] )
 	);
 }
+
+/**
+ * Pausieren-Kaskade: Wenn ein Partner pausiert wird, gehen seine freigegebenen
+ * Events offline; wird er wieder aktiv, kommen die automatisch pausierten zurück.
+ * Reagiert auf jede Änderung von _fge_partner_status (Row-Action, Metabox, CLI).
+ */
+function fge_cascade_partner_status_to_events( $meta_id, $post_id, $meta_key, $meta_value ) {
+	if ( $meta_key !== '_fge_partner_status' || get_post_type( $post_id ) !== 'firmengolf_partner' ) {
+		return;
+	}
+
+	$event_ids = get_posts( [
+		'post_type'      => 'firmengolf_event',
+		'post_status'    => 'any',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'meta_query'     => [
+			[ 'key' => '_fge_assigned_partner_id', 'value' => (int) $post_id, 'compare' => '=' ],
+		],
+	] );
+	if ( empty( $event_ids ) ) {
+		return;
+	}
+
+	if ( $meta_value === 'pausiert' ) {
+		foreach ( $event_ids as $eid ) {
+			if ( get_post_meta( $eid, '_fge_event_status', true ) === 'freigegeben' ) {
+				update_post_meta( $eid, '_fge_event_status', 'pausiert' );
+				update_post_meta( $eid, '_fge_paused_by_partner', 1 );
+			}
+		}
+	} elseif ( $meta_value === 'aktiv' ) {
+		foreach ( $event_ids as $eid ) {
+			if ( get_post_meta( $eid, '_fge_paused_by_partner', true ) == '1' ) {
+				update_post_meta( $eid, '_fge_event_status', 'freigegeben' );
+				delete_post_meta( $eid, '_fge_paused_by_partner' );
+			}
+		}
+	}
+}
+add_action( 'updated_post_meta', 'fge_cascade_partner_status_to_events', 10, 4 );
+add_action( 'added_post_meta',   'fge_cascade_partner_status_to_events', 10, 4 );

@@ -13,6 +13,7 @@ function fge_register_event_metaboxes() {
 	add_meta_box( 'fge_mb_rahmen',     'Event Rahmen',              'fge_render_mb_rahmen',     $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_leistungen', 'Leistungen',                'fge_render_mb_leistungen', $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_preislogik', 'Preislogik',                'fge_render_mb_preislogik', $screen, 'normal', 'default' );
+	add_meta_box( 'fge_mb_marktplatz', 'Marktplatz-Darstellung',    'fge_render_mb_marktplatz', $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_anfrage',    'Anfrage und Verfügbarkeit', 'fge_render_mb_anfrage',    $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_seo',        'SEO Basis',                 'fge_render_mb_seo',        $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_tracking',   'Tracking Basis',            'fge_render_mb_tracking',   $screen, 'side',   'default' );
@@ -441,6 +442,47 @@ function fge_render_mb_tracking( WP_Post $post ) {
 	<?php
 }
 
+function fge_render_mb_marktplatz( WP_Post $post ) {
+	$featured = get_post_meta( $post->ID, '_fge_featured', true );
+	$rating   = get_post_meta( $post->ID, '_fge_rating', true );
+	$reviews  = (int) get_post_meta( $post->ID, '_fge_reviews_count', true );
+	$tags     = (string) get_post_meta( $post->ID, '_fge_event_tags', true );
+	$gallery  = (string) get_post_meta( $post->ID, '_fge_event_gallery_ids', true );
+	?>
+	<table class="form-table">
+		<tr>
+			<th scope="row">Featured</th>
+			<td><label><input type="checkbox" name="fge_featured" value="1" <?php checked( $featured, '1' ); ?>> Auf Startseite / Marktplatz hervorheben</label></td>
+		</tr>
+		<tr>
+			<th scope="row">Bewertung (0–5)</th>
+			<td>
+				<input type="number" name="fge_rating" min="0" max="5" step="0.1" value="<?php echo esc_attr( $rating ); ?>" style="width:90px;">
+				<p class="description">z. B. 4.9 — leer lassen bzw. 0, wenn keine Bewertung angezeigt werden soll.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row">Anzahl Bewertungen</th>
+			<td><input type="number" name="fge_reviews_count" min="0" step="1" value="<?php echo esc_attr( (string) $reviews ); ?>" style="width:90px;"></td>
+		</tr>
+		<tr>
+			<th scope="row">Tags</th>
+			<td>
+				<input type="text" name="fge_event_tags" value="<?php echo esc_attr( $tags ); ?>" class="large-text" placeholder="Einsteigerfreundlich, Schläger gestellt, PGA-Coach">
+				<p class="description">Komma-getrennt. Werden im Frontend als Badges angezeigt.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row">Galerie (Bild-IDs)</th>
+			<td>
+				<input type="text" name="fge_event_gallery_ids" value="<?php echo esc_attr( $gallery ); ?>" class="large-text" placeholder="z. B. 123, 145, 167">
+				<p class="description">Komma-getrennte Medien-/Anhang-IDs. Werden auf der Detailseite als Galerie genutzt.</p>
+			</td>
+		</tr>
+	</table>
+	<?php
+}
+
 // ── Save ─────────────────────────────────────────────────────────────────────
 
 function fge_render_mb_review( WP_Post $post ) {
@@ -567,6 +609,15 @@ function fge_save_event_fields( int $post_id ) {
 	$raw_interfaces = is_array( $_POST['fge_required_interfaces'] ?? null ) ? $_POST['fge_required_interfaces'] : [];
 	$interfaces     = array_values( array_intersect( array_map( 'sanitize_text_field', $raw_interfaces ), $allowed_interfaces ) );
 	update_post_meta( $post_id, '_fge_required_interfaces', $interfaces );
+
+	// ── Metabox: Marktplatz-Darstellung ──
+	update_post_meta( $post_id, '_fge_featured',       isset( $_POST['fge_featured'] ) ? 1 : 0 );
+	update_post_meta( $post_id, '_fge_rating',         max( 0.0, min( 5.0, $san_decimal( 'fge_rating' ) ) ) );
+	update_post_meta( $post_id, '_fge_reviews_count',  absint( $_POST['fge_reviews_count'] ?? 0 ) );
+	update_post_meta( $post_id, '_fge_event_tags',     sanitize_text_field( wp_unslash( $_POST['fge_event_tags'] ?? '' ) ) );
+	$gallery_raw = sanitize_text_field( wp_unslash( $_POST['fge_event_gallery_ids'] ?? '' ) );
+	$gallery_ids = implode( ',', array_filter( array_map( 'absint', explode( ',', $gallery_raw ) ) ) );
+	update_post_meta( $post_id, '_fge_event_gallery_ids', $gallery_ids );
 
 	// ── Metabox 6: SEO ──
 	update_post_meta( $post_id, '_fge_seo_title',        sanitize_text_field( wp_unslash( $_POST['fge_seo_title'] ?? '' ) ) );

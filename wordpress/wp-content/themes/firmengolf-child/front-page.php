@@ -16,19 +16,8 @@ $url_ind     = $get_page_url( 'individuelle-events', home_url( '/individuelle-ev
 $url_kontakt = $get_page_url( 'kontakt', home_url( '/kontakt/' ) );
 $url_blog    = home_url( '/blog/' );
 
-// ── Format list (shared with search bar) ────────────────────────────────────
-$formats = [
-	'all'            => 'Alle Formate',
-	'schnupperkurs'  => 'Schnupperkurs',
-	'firmenturnier'  => 'Firmenturnier',
-	'team-building'  => 'Team-Building',
-	'networking'     => 'Networking-Runde',
-	'incentive'      => 'Incentive',
-	'coaching'       => 'Coaching / Trainerstunde',
-	'gesundheitstag' => 'Gesundheitstag',
-	'offsite'        => 'Offsite',
-	'kundenevent'    => 'Kundenevent',
-];
+// ── Format list (canonical — single source: event-formats.php) ───────────────
+$formats = array_merge( [ 'all' => 'Alle Veranstaltungstypen' ], fge_get_event_formats_flat( false ) );
 
 // ── Regions from DB ──────────────────────────────────────────────────────────
 global $wpdb;
@@ -295,14 +284,14 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 				'eyebrow' => 'Onboarding',
 				'title'   => 'Neue Mitarbeitende willkommen heißen.',
 				'body'    => 'Ein Halbtag Schnupperkurs, der Eis bricht.',
-				'url'     => add_query_arg( 'format', 'schnupperkurs', $url_events ),
+				'url'     => add_query_arg( 'format', 'after_work_golf', $url_events ),
 				'img'     => 'golfer-gruppe-fairway.png',
 			],
 			[
 				'eyebrow' => 'Vertrieb',
 				'title'   => 'Kunden und Partner zusammenbringen.',
 				'body'    => 'Ganztägiges Firmenturnier oder Networking-Runde.',
-				'url'     => add_query_arg( 'format', 'firmenturnier', $url_events ),
+				'url'     => add_query_arg( 'format', 'firmen_golfturnier', $url_events ),
 				'img'     => 'firmenevent-afterwork-golf.jpg',
 			],
 			[
@@ -330,7 +319,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 				'eyebrow' => 'Team-Tag',
 				'title'   => 'Ein gemeinsamer Nachmittag draußen.',
 				'body'    => 'Team-Building mit gemischten Zweier-Teams.',
-				'url'     => add_query_arg( 'format', 'team-building', $url_events ),
+				'url'     => add_query_arg( 'format', 'teamevent', $url_events ),
 				'img'     => 'golfer-trio-spaziergang.png',
 			],
 		];

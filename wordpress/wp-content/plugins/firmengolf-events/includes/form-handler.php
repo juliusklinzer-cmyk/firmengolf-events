@@ -861,58 +861,72 @@ function fge_ajax_modal_anfrage(): void {
 	$date_pref = sanitize_text_field( wp_unslash( $_POST['date_pref'] ?? '' ) );
 	$group     = sanitize_text_field( wp_unslash( $_POST['group_size'] ?? '' ) );
 	$notes     = sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) );
+	$add_wish  = sanitize_textarea_field( wp_unslash( $_POST['add_wishes'] ?? '' ) );
 	$first     = sanitize_text_field( wp_unslash( $_POST['first_name'] ?? '' ) );
 	$last      = sanitize_text_field( wp_unslash( $_POST['last_name'] ?? '' ) );
 	$email     = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 	$company   = sanitize_text_field( wp_unslash( $_POST['company'] ?? '' ) );
 	$phone     = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
+	$city      = sanitize_text_field( wp_unslash( $_POST['city'] ?? '' ) );
 
 	if ( ! $email || ! is_email( $email ) || ! $first || ! $last || ! $company ) {
 		wp_send_json_error( [ 'message' => 'Pflichtfelder fehlen.' ], 422 );
 	}
 
+	$partner_id  = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
 	$event_title = $event_id > 0 ? get_the_title( $event_id ) : '–';
 	$ref         = 'FG-26-' . strtoupper( substr( wp_generate_uuid4(), 0, 6 ) );
 
-	// Save as request post
-	wp_insert_post( [
+	$request_id = wp_insert_post( [
 		'post_type'   => 'firmengolf_request',
 		'post_status' => 'publish',
 		'post_title'  => $ref . ' · ' . $first . ' ' . $last,
-		'meta_input'  => [
-			'_fge_ref'        => $ref,
-			'_fge_event_id'   => $event_id,
-			'_fge_first_name' => $first,
-			'_fge_last_name'  => $last,
-			'_fge_email'      => $email,
-			'_fge_company'    => $company,
-			'_fge_phone'      => $phone,
-			'_fge_date_pref'  => $date_pref,
-			'_fge_group_size' => $group,
-			'_fge_notes'      => $notes,
-		],
 	] );
+	if ( is_wp_error( $request_id ) || ! $request_id ) {
+		wp_send_json_error( [ 'message' => 'Anfrage konnte nicht gespeichert werden.' ], 500 );
+	}
 
-	// Notify admin
-	wp_mail(
-		get_option( 'admin_email' ),
-		'Neue Event-Anfrage: ' . $ref . ' · ' . $event_title,
-		"Ref: $ref\nEvent: $event_title\nDatum: $date_pref\nGruppe: $group\nNotizen: $notes\n\n$first $last\n$company\n$email\n$phone"
-	);
+	// Core / routing (canonical request fields — same as the PRG handler)
+	update_post_meta( $request_id, '_fge_request_type',        'specific_event' );
+	update_post_meta( $request_id, '_fge_request_status',      'neu' );
+	update_post_meta( $request_id, '_fge_assigned_event_id',   $event_id );
+	update_post_meta( $request_id, '_fge_assigned_partner_id', $partner_id );
+	update_post_meta( $request_id, '_fge_source',              'event_page' );
+	update_post_meta( $request_id, '_fge_ref',                 $ref );
+	add_post_meta( $request_id, '_fge_request_date',      current_datetime()->format( 'Y-m-d H:i:s' ), true );
+	add_post_meta( $request_id, '_fge_consent_timestamp', current_datetime()->format( 'Y-m-d H:i:s' ), true );
 
-	// Confirm to requester
-	wp_mail(
-		$email,
-		'Deine Anfrage bei Firmengolf · ' . $ref,
-		"Hallo $first,\n\ndeine Anfrage für „$event_title“ ist bei uns eingegangen.\nWir melden uns innerhalb von 24 Stunden zurück.\n\nReferenznummer: $ref\n\nBis gleich,\nDein Firmengolf-Team"
-	);
+	// Company + contact
+	update_post_meta( $request_id, '_fge_company_name',       $company );
+	update_post_meta( $request_id, '_fge_company_city',       $city );
+	update_post_meta( $request_id, '_fge_contact_first_name', $first );
+	update_post_meta( $request_id, '_fge_contact_last_name',  $last );
+	update_post_meta( $request_id, '_fge_contact_email',      $email );
+	update_post_meta( $request_id, '_fge_contact_phone',      $phone );
+
+	// Event framework
+	update_post_meta( $request_id, '_fge_expected_participants', absint( preg_replace( '/\D/', '', $group ) ) );
+	update_post_meta( $request_id, '_fge_alternative_period',    $date_pref );
+	$message = trim( $notes . ( $add_wish !== '' ? "\n\nWeitere Wünsche: " . $add_wish : '' ) );
+	update_post_meta( $request_id, '_fge_message', $message );
+
+	// Finetuning (Step 1) → canonical wants_* fields
+	$allowed_wants = [ 'golf_teacher', 'meeting_room', 'breakfast', 'lunch', 'dinner', 'shuttle', 'branding', 'tournament_mode', 'bad_weather_alternative', 'individual_customization' ];
+	$selected      = array_filter( array_map( 'trim', explode( ',', sanitize_text_field( wp_unslash( $_POST['wants'] ?? '' ) ) ) ) );
+	foreach ( $allowed_wants as $w ) {
+		update_post_meta( $request_id, '_fge_wants_' . $w, in_array( $w, $selected, true ) ? 1 : 0 );
+	}
+
+	// Tracking + downstream (emails, status) via the shared hook
+	$current_count = (int) get_post_meta( $event_id, '_fge_requests_count', true );
+	update_post_meta( $event_id, '_fge_requests_count', $current_count + 1 );
+
+	do_action( 'fge_request_created', $request_id );
 
 	wp_send_json_success( [
 		'ref'         => $ref,
 		'event_title' => $event_title,
 		'date_pref'   => $date_pref,
 		'group_size'  => $group,
-		'venue'       => get_post_meta( $event_id, '_fge_event_location', true ),
-		'format'      => get_post_meta( $event_id, '_fge_event_type', true ),
 	] );
 }

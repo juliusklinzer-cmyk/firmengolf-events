@@ -17,19 +17,8 @@ $active_region = sanitize_text_field( $_GET['region'] ?? '' );    // phpcs:ignor
 $active_pax    = max( 0, (int) ( $_GET['pax'] ?? 10 ) );          // phpcs:ignore WordPress.Security.NonceVerification — default 10
 $active_sort   = sanitize_key( $_GET['sort'] ?? 'curated' );      // phpcs:ignore WordPress.Security.NonceVerification
 
-// ── Format list ─────────────────────────────────────────────────────────────
-$formats = [
-	'all'            => 'Alle Formate',
-	'schnupperkurs'  => 'Schnupperkurs',
-	'firmenturnier'  => 'Firmenturnier',
-	'team-building'  => 'Team-Building',
-	'networking'     => 'Networking-Runde',
-	'incentive'      => 'Incentive',
-	'coaching'       => 'Coaching / Trainerstunde',
-	'gesundheitstag' => 'Gesundheitstag',
-	'offsite'        => 'Offsite',
-	'kundenevent'    => 'Kundenevent',
-];
+// ── Format list (canonical — single source: event-formats.php) ───────────────
+$formats = array_merge( [ 'all' => 'Alle Veranstaltungstypen' ], fge_get_event_formats_flat( false ) );
 
 // ── Regions: only those with at least one published event ────────────────────
 global $wpdb;
@@ -92,7 +81,7 @@ if ( $active_pax > 0 ) {
 }
 switch ( $active_sort ) {
 	case 'price-asc':
-		$query_args['meta_key'] = '_fge_price_per_person';
+		$query_args['meta_key'] = '_fge_sale_price_net';
 		$query_args['orderby']  = 'meta_value_num';
 		$query_args['order']    = 'ASC';
 		break;
@@ -241,6 +230,33 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 
 <?php /* ══════════════ GRID ══════════════ */ ?>
 <section class="fg-grid-section" aria-label="Eventangebote">
+
+	<?php /* Active filter pills */ ?>
+	<?php $has_filters = ( $active_format !== 'all' ) || ( $active_region !== '' ) || ( $active_pax !== 10 ); ?>
+	<?php if ( $has_filters ) : ?>
+		<div class="fg-activefilters">
+			<?php if ( $active_format !== 'all' ) : ?>
+				<a class="fg-fpill" href="<?php echo esc_url( $chip_url( [ 'format' => 'all' ] ) ); ?>">
+					<?php echo esc_html( $formats[ $active_format ] ?? $active_format ); ?>
+					<span class="fg-fpill-x" aria-hidden="true">×</span>
+				</a>
+			<?php endif; ?>
+			<?php if ( $active_region !== '' ) : ?>
+				<a class="fg-fpill" href="<?php echo esc_url( $chip_url( [ 'region' => '' ] ) ); ?>">
+					<?php echo esc_html( $active_region ); ?>
+					<span class="fg-fpill-x" aria-hidden="true">×</span>
+				</a>
+			<?php endif; ?>
+			<?php if ( $active_pax !== 10 ) : ?>
+				<a class="fg-fpill" href="<?php echo esc_url( $chip_url( [ 'pax' => 10 ] ) ); ?>">
+					<?php echo esc_html( $active_pax . '+ Pers.' ); ?>
+					<span class="fg-fpill-x" aria-hidden="true">×</span>
+				</a>
+			<?php endif; ?>
+			<a class="fg-fclear" href="<?php echo esc_url( $archive_url ); ?>">Alle zurücksetzen</a>
+		</div>
+	<?php endif; ?>
+
 	<div class="fg-grid-head">
 		<h2 class="fg-grid-title"><?php echo esc_html( $heading ); ?></h2>
 		<div class="ev-grid-controls">
@@ -280,6 +296,7 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 				$featured = fge_get_event_meta( $pid, 'featured' );
 				$thumb    = has_post_thumbnail() ? get_the_post_thumbnail_url( $pid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
 				$indoor   = in_array( 'Indoor-Backup', fge_get_active_leistungen( $pid ), true );
+				$tags_arr = array_filter( array_map( 'trim', explode( ',', (string) fge_get_event_meta( $pid, 'event_tags' ) ) ) );
 			?>
 			<article class="fg-event">
 				<a href="<?php the_permalink(); ?>" style="display:contents">
@@ -314,6 +331,13 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 								<span><?php echo esc_html( $duration ); ?></span>
 							<?php endif; ?>
 						</div>
+						<?php if ( $tags_arr ) : ?>
+							<div class="fg-event-tags">
+								<?php foreach ( array_slice( $tags_arr, 0, 3 ) as $tag ) : ?>
+									<span class="fg-event-tag"><?php echo esc_html( $tag ); ?></span>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
 						<div class="fg-event-foot">
 							<div class="fg-event-price">
 								<?php if ( $price ) : ?>

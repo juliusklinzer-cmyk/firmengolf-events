@@ -65,7 +65,7 @@ $url_karriere   = $get_page_url( 'karriere' );
 				<div class="fg-footer-head">Für Plätze</div>
 				<a href="<?php echo esc_url( $url_portal ); ?>">Partnerportal</a>
 				<a href="<?php echo esc_url( $url_onboarding ); ?>">Platz anbieten</a>
-				<a href="#">Partner-FAQ</a>
+				<a href="<?php echo esc_url( $get_page_url( 'partner-faq', home_url( '/partner-faq/' ) ) ); ?>">Partner-FAQ</a>
 			</div>
 			<div>
 				<div class="fg-footer-head">Rechtliches</div>

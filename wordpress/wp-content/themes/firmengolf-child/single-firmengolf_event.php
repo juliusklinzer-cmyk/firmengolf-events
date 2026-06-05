@@ -24,12 +24,23 @@ $price_label    = get_post_meta( $post_id, '_fge_public_price_label', true );
 $leistungen     = fge_get_active_leistungen( $post_id );
 $partner_id     = (int) fge_get_event_meta( $post_id, 'assigned_partner_id', 0 );
 $partner        = fge_get_partner_info( $partner_id );
-$rating         = (float) ( get_post_meta( $post_id, '_fge_rating', true ) ?: 4.9 );
-$reviews        = (int) ( get_post_meta( $post_id, '_fge_reviews', true ) ?: 0 );
-$spots_left     = (int) ( get_post_meta( $post_id, '_fge_spots_left', true ) ?: 6 );
+$rating         = (float) get_post_meta( $post_id, '_fge_rating', true );
+$reviews        = (int) get_post_meta( $post_id, '_fge_reviews_count', true );
+$gallery_ids    = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $post_id, '_fge_event_gallery_ids', true ) ) ) );
 $thumb_url      = has_post_thumbnail() ? get_the_post_thumbnail_url( $post_id, 'full' ) : fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' );
 
 $format_label = fge_format_event_type( $event_type_raw ) ?: 'Event';
+
+// ── Location map: build a Google Maps embed from the assigned partner address ──
+$map_parts = [];
+foreach ( [ '_fge_street', '_fge_house_number', '_fge_postal_code', '_fge_city' ] as $mk ) {
+	$mv = trim( (string) get_post_meta( $partner_id, $mk, true ) );
+	if ( $mv !== '' ) {
+		$map_parts[] = $mv;
+	}
+}
+$map_query = $map_parts ? implode( ' ', $map_parts ) : trim( $location . ' ' . $region );
+$map_embed = $map_query !== '' ? 'https://www.google.com/maps?q=' . rawurlencode( $map_query ) . '&output=embed' : '';
 
 // Price display
 if ( $price_label ) {
@@ -84,9 +95,16 @@ if ( $duration ) {
 	$good_tags[] = $duration;
 }
 
-// Side gallery images
-$gallery_img_1 = fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
-$gallery_img_2 = fge_get_placeholder_image_url( 'clubhaus-aussenansicht.jpg' );
+// Side gallery images — from event gallery (attachment IDs) with placeholder fallback
+$gallery_urls = [];
+foreach ( $gallery_ids as $gid ) {
+	$gurl = wp_get_attachment_image_url( $gid, 'large' );
+	if ( $gurl ) {
+		$gallery_urls[] = $gurl;
+	}
+}
+$gallery_img_1 = $gallery_urls[0] ?? fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
+$gallery_img_2 = $gallery_urls[1] ?? fge_get_placeholder_image_url( 'clubhaus-aussenansicht.jpg' );
 
 // Related events
 $related_query = new WP_Query( [
@@ -152,11 +170,13 @@ get_header();
 						<?php echo esc_html( $guests_str ); ?>
 					</span>
 				<?php endif; ?>
-				<?php if ( $reviews > 0 ) : ?>
+				<?php if ( $rating > 0 ) : ?>
 					<span class="fg-detail-rating">
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="#C9B488" style="color:#C9B488;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
 						<?php echo esc_html( number_format( $rating, 1 ) ); ?>
-						<span class="muted">(<?php echo esc_html( (string) $reviews ); ?> Bewertungen)</span>
+						<?php if ( $reviews > 0 ) : ?>
+							<span class="muted">(<?php echo esc_html( (string) $reviews ); ?> Bewertungen)</span>
+						<?php endif; ?>
 					</span>
 				<?php endif; ?>
 			</div>
@@ -236,13 +256,11 @@ get_header();
 			<aside class="fg-detail-rail">
 				<div class="fg-rail-card">
 					<div>
+						<div class="fg-rail-live">Angebot live seit <?php echo esc_html( get_the_date( 'F Y' ) ); ?></div>
 						<div class="fg-rail-price">
 							<?php echo esc_html( $price_main ); ?>
 							<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
 						</div>
-						<?php if ( $spots_left > 0 ) : ?>
-							<div class="fg-rail-spots" style="margin-top:6px;"><?php echo esc_html( (string) $spots_left ); ?> freie Plätze in den nächsten 30 Tagen</div>
-						<?php endif; ?>
 					</div>
 
 					<div class="fg-rail-fields">
@@ -257,10 +275,12 @@ get_header();
 					</div>
 
 					<button class="fg-btn-brand block" id="open-modal-btn" type="button">
-						Diesen Termin anfragen
+						Dieses Event anfragen
 					</button>
-					<button class="fg-btn-ghost block" type="button">
-						Für später merken
+					<button class="fg-btn-ghost block" id="fg-share-btn" type="button"
+					        data-share-url="<?php echo esc_url( get_permalink() ); ?>"
+					        data-share-title="<?php echo esc_attr( get_the_title() ); ?>">
+						Event teilen
 					</button>
 
 					<div class="fg-rail-note">Anfrage ist kostenlos. Der Platz antwortet innerhalb von 24 h.</div>
@@ -296,14 +316,18 @@ get_header();
 					<div class="evd-poi"><div class="evd-poi-l">Hotel</div><div class="evd-poi-v">3 Partnerhotels in 10 Min.</div></div>
 				</div>
 			</div>
-			<div class="evd-map" role="img" aria-label="Ungefähre Lage des Platzes">
-				<div class="evd-map-grid"></div>
-				<div class="evd-map-pin"></div>
-				<div class="evd-map-tag">
-					<div class="evd-map-tag-l">Platz</div>
-					<div class="evd-map-tag-v"><?php echo esc_html( ( $region ? $region . ' · ' : '' ) . ( $venue ?: get_the_title() ) ); ?></div>
+			<?php if ( $map_embed ) : ?>
+				<iframe class="evd-map-frame" src="<?php echo esc_url( $map_embed ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $venue ?: get_the_title() ); ?>"></iframe>
+			<?php else : ?>
+				<div class="evd-map" role="img" aria-label="Ungefähre Lage des Platzes">
+					<div class="evd-map-grid"></div>
+					<div class="evd-map-pin"></div>
+					<div class="evd-map-tag">
+						<div class="evd-map-tag-l">Platz</div>
+						<div class="evd-map-tag-v"><?php echo esc_html( ( $region ? $region . ' · ' : '' ) . ( $venue ?: get_the_title() ) ); ?></div>
+					</div>
 				</div>
-			</div>
+			<?php endif; ?>
 		</div>
 	</section>
 
@@ -454,14 +478,49 @@ get_header();
 			</div>
 			<div class="fg-modal-foot">
 				<button class="fg-btn-ghost" id="fg-modal-cancel" type="button">Abbrechen</button>
-				<button class="fg-btn-brand" id="fg-step-0-next" type="button">
+				<button class="fg-btn-brand" data-modal-next="1" type="button">
 					Weiter <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 				</button>
 			</div>
 		</div>
 
-		<?php /* Step 1 */ ?>
+		<?php /* Step 1 — Feinschliff & Sonderwünsche */ ?>
 		<div id="fg-modal-step-1" style="display:none;">
+			<div class="fg-wants-grid">
+				<?php
+				$want_opts = [
+					'golf_teacher'             => 'Golflehrer / Coaching',
+					'meeting_room'             => 'Meetingraum',
+					'breakfast'                => 'Frühstück',
+					'lunch'                    => 'Mittagessen',
+					'dinner'                   => 'Abendessen',
+					'shuttle'                  => 'Shuttle-Service',
+					'branding'                 => 'Branding / Logo',
+					'tournament_mode'          => 'Turniermodus',
+					'bad_weather_alternative'  => 'Schlechtwetter-Alternative',
+					'individual_customization' => 'Individuelle Anpassung',
+				];
+				foreach ( $want_opts as $wkey => $wlabel ) : ?>
+					<label class="fg-want">
+						<input type="checkbox" class="fg-want-cb" value="<?php echo esc_attr( $wkey ); ?>">
+						<span><?php echo esc_html( $wlabel ); ?></span>
+					</label>
+				<?php endforeach; ?>
+			</div>
+			<div class="fg-field fg-field-full" style="margin-top:16px;">
+				<label class="fg-field-label" for="fg-add-wishes">Weitere Wünsche (optional)</label>
+				<textarea class="fg-input" id="fg-add-wishes" rows="2" placeholder="z.B. Fotograf, Welcome-Drink, Kaffee-Bar …"></textarea>
+			</div>
+			<div class="fg-modal-foot">
+				<button class="fg-btn-ghost" data-modal-back="0" type="button">Zurück</button>
+				<button class="fg-btn-brand" data-modal-next="2" type="button">
+					Weiter <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				</button>
+			</div>
+		</div>
+
+		<?php /* Step 2 — Kontakt */ ?>
+		<div id="fg-modal-step-2" style="display:none;">
 			<div class="fg-form-grid">
 				<div class="fg-field">
 					<label class="fg-field-label" for="fg-first-name">Vorname</label>
@@ -479,21 +538,25 @@ get_header();
 					<label class="fg-field-label" for="fg-company">Firma</label>
 					<input class="fg-input" id="fg-company" placeholder="Quartz Labs">
 				</div>
-				<div class="fg-field fg-field-full">
+				<div class="fg-field">
 					<label class="fg-field-label" for="fg-phone">Telefon (optional)</label>
 					<input class="fg-input" id="fg-phone" placeholder="+49 …">
 				</div>
+				<div class="fg-field">
+					<label class="fg-field-label" for="fg-city">Standort (Stadt)</label>
+					<input class="fg-input" id="fg-city" placeholder="z.B. München">
+				</div>
 			</div>
 			<div class="fg-modal-foot">
-				<button class="fg-btn-ghost" id="fg-step-1-back" type="button">Zurück</button>
-				<button class="fg-btn-brand" id="fg-step-1-submit" type="button">
+				<button class="fg-btn-ghost" data-modal-back="1" type="button">Zurück</button>
+				<button class="fg-btn-brand" id="fg-modal-submit" type="button">
 					Anfrage senden <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 				</button>
 			</div>
 		</div>
 
-		<?php /* Step 2 — success */ ?>
-		<div id="fg-modal-step-2" class="fg-modal-success" style="display:none;">
+		<?php /* Step 3 — success */ ?>
+		<div id="fg-modal-step-3" class="fg-modal-success" style="display:none;">
 			<div class="fg-success-mark"><?php echo fge_icon_check(); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<div class="mk-eyebrow" style="margin-top:12px;">Anfrage eingegangen</div>
 			<h2 class="fg-modal-title" style="max-width:360px;margin:6px auto 0;">Wir freuen uns auf euch.</h2>
@@ -515,113 +578,131 @@ get_header();
 
 <script>
 (function () {
-	var modal    = document.getElementById('fg-request-modal');
-	var openBtn  = document.getElementById('open-modal-btn');
-	var closeBtn = document.getElementById('fg-modal-close');
-	var cancelBtn = document.getElementById('fg-modal-cancel');
-	var doneBtn  = document.getElementById('fg-modal-done');
+	var modal   = document.getElementById('fg-request-modal');
+	var openBtn = document.getElementById('open-modal-btn');
+	if (modal && openBtn) {
+		var head  = document.getElementById('fg-modal-head');
+		var title = document.getElementById('fg-modal-title');
+		var sub   = document.getElementById('fg-modal-sub');
+		var steps = [0, 1, 2, 3].map(function (i) { return document.getElementById('fg-modal-step-' + i); });
+		var srail = [0, 1, 2].map(function (i) { return document.getElementById('fg-srail-' + i); });
 
-	var step0    = document.getElementById('fg-modal-step-0');
-	var step1    = document.getElementById('fg-modal-step-1');
-	var step2    = document.getElementById('fg-modal-step-2');
-	var head     = document.getElementById('fg-modal-head');
-	var title    = document.getElementById('fg-modal-title');
-	var sub      = document.getElementById('fg-modal-sub');
-	var srail    = [
-		document.getElementById('fg-srail-0'),
-		document.getElementById('fg-srail-1'),
-		document.getElementById('fg-srail-2'),
-	];
+		var COPY = [
+			{ t: 'Wann & wie groß?',            s: 'Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb eines Werktags zurück.' },
+			{ t: 'Feinschliff & Sonderwünsche', s: 'Alles optional — hilft uns, das passende Angebot zu schnüren.' },
+			{ t: 'Wer ist Ansprechpartner?',    s: 'Nur damit wir euch erreichen können — kein Newsletter, kein Spam.' }
+		];
 
-	function openModal() {
-		modal.classList.remove('is-hidden');
-		document.body.style.overflow = 'hidden';
-	}
-	function closeModal() {
-		modal.classList.add('is-hidden');
-		document.body.style.overflow = '';
-	}
-
-	openBtn.addEventListener('click', openModal);
-	closeBtn.addEventListener('click', closeModal);
-	cancelBtn.addEventListener('click', closeModal);
-	doneBtn.addEventListener('click', closeModal);
-	modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
-
-	// Step 0 → 1
-	document.getElementById('fg-step-0-next').addEventListener('click', function () {
-		step0.style.display = 'none';
-		step1.style.display = '';
-		title.textContent = 'Fast geschafft — wer ist Ansprechpartner?';
-		sub.textContent   = 'Nur damit wir dich erreichen können — keine Werbung, kein Newsletter.';
-		srail[1].classList.add('done');
-	});
-
-	// Step 1 back
-	document.getElementById('fg-step-1-back').addEventListener('click', function () {
-		step1.style.display = 'none';
-		step0.style.display = '';
-		title.textContent = 'Eure Anfrage zu diesem Event';
-		sub.textContent   = 'Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb eines Werktags zurück.';
-		srail[1].classList.remove('done');
-	});
-
-	// Step 1 submit
-	document.getElementById('fg-step-1-submit').addEventListener('click', function () {
-		var first   = document.getElementById('fg-first-name').value.trim();
-		var last    = document.getElementById('fg-last-name').value.trim();
-		var email   = document.getElementById('fg-email').value.trim();
-		var company = document.getElementById('fg-company').value.trim();
-		if (!first || !last || !email || !company) {
-			alert('Bitte fülle Vorname, Nachname, E-Mail und Firma aus.');
-			return;
+		function show(n) {
+			steps.forEach(function (el, i) { if (el) el.style.display = (i === n ? '' : 'none'); });
+			if (n < 3) {
+				head.style.display = '';
+				title.textContent = COPY[n].t;
+				sub.textContent   = COPY[n].s;
+				srail.forEach(function (d, i) { if (d) d.classList.toggle('done', i <= n); });
+			} else {
+				head.style.display = 'none';
+			}
 		}
 
-		var btn = document.getElementById('fg-step-1-submit');
-		btn.disabled = true;
-		btn.textContent = 'Wird gesendet …';
+		function openModal()  { modal.classList.remove('is-hidden'); document.body.style.overflow = 'hidden'; show(0); }
+		function closeModal() { modal.classList.add('is-hidden'); document.body.style.overflow = ''; }
 
-		var body = new URLSearchParams({
-			action:     'fge_modal_anfrage',
-			nonce:      '<?php echo esc_js( $modal_nonce ); ?>',
-			event_id:   '<?php echo esc_js( (string) $post_id ); ?>',
-			date_pref:  document.getElementById('fg-date-pref').value.trim(),
-			group_size: document.getElementById('fg-group-size').value.trim(),
-			notes:      document.getElementById('fg-notes').value.trim(),
-			first_name: first,
-			last_name:  last,
-			email:      email,
-			company:    company,
-			phone:      document.getElementById('fg-phone').value.trim(),
+		openBtn.addEventListener('click', openModal);
+		document.getElementById('fg-modal-close').addEventListener('click', closeModal);
+		document.getElementById('fg-modal-cancel').addEventListener('click', closeModal);
+		document.getElementById('fg-modal-done').addEventListener('click', closeModal);
+		modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+		modal.querySelectorAll('[data-modal-next]').forEach(function (b) {
+			b.addEventListener('click', function () { show(parseInt(b.getAttribute('data-modal-next'), 10)); });
+		});
+		modal.querySelectorAll('[data-modal-back]').forEach(function (b) {
+			b.addEventListener('click', function () { show(parseInt(b.getAttribute('data-modal-back'), 10)); });
 		});
 
-		fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString(),
-		})
-		.then(function (r) { return r.json(); })
-		.then(function (data) {
-			if (data.success) {
-				document.getElementById('fg-receipt-date').textContent  = document.getElementById('fg-date-pref').value.trim() || '–';
-				document.getElementById('fg-receipt-group').textContent = document.getElementById('fg-group-size').value.trim() || '–';
-				document.getElementById('fg-receipt-ref').textContent   = data.data.ref || '–';
-				step1.style.display = 'none';
-				head.style.display  = 'none';
-				step2.style.display = '';
-				srail[2].classList.add('done');
-			} else {
-				alert('Es ist ein Fehler aufgetreten. Bitte versuche es erneut.');
-				btn.disabled = false;
-				btn.innerHTML = 'Anfrage senden';
+		function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+		function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
+
+		document.getElementById('fg-modal-submit').addEventListener('click', function () {
+			var first = val('fg-first-name'), last = val('fg-last-name'),
+			    email = val('fg-email'), company = val('fg-company');
+			if (!first || !last || !email || !company) {
+				alert('Bitte fülle Vorname, Nachname, E-Mail und Firma aus.');
+				return;
 			}
-		})
-		.catch(function () {
-			alert('Verbindungsfehler. Bitte versuche es erneut.');
-			btn.disabled = false;
-			btn.innerHTML = 'Anfrage senden';
+			var btn = this;
+			btn.disabled = true;
+			btn.textContent = 'Wird gesendet …';
+
+			var wants = [];
+			modal.querySelectorAll('.fg-want-cb:checked').forEach(function (cb) { wants.push(cb.value); });
+
+			var body = new URLSearchParams({
+				action:     'fge_modal_anfrage',
+				nonce:      '<?php echo esc_js( $modal_nonce ); ?>',
+				event_id:   '<?php echo esc_js( (string) $post_id ); ?>',
+				date_pref:  val('fg-date-pref'),
+				group_size: val('fg-group-size'),
+				notes:      val('fg-notes'),
+				wants:      wants.join(','),
+				add_wishes: val('fg-add-wishes'),
+				first_name: first,
+				last_name:  last,
+				email:      email,
+				company:    company,
+				phone:      val('fg-phone'),
+				city:       val('fg-city')
+			});
+
+			fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: body.toString()
+			})
+			.then(function (r) { return r.json(); })
+			.then(function (data) {
+				if (data.success) {
+					setText('fg-receipt-date',  val('fg-date-pref')  || '–');
+					setText('fg-receipt-group', val('fg-group-size') || '–');
+					setText('fg-receipt-ref',   (data.data && data.data.ref) || '–');
+					show(3);
+				} else {
+					alert('Es ist ein Fehler aufgetreten. Bitte versuche es erneut.');
+					btn.disabled = false;
+					btn.textContent = 'Anfrage senden';
+				}
+			})
+			.catch(function () {
+				alert('Verbindungsfehler. Bitte versuche es erneut.');
+				btn.disabled = false;
+				btn.textContent = 'Anfrage senden';
+			});
 		});
-	});
+	}
+
+	// Share button (Web Share API → clipboard fallback)
+	var shareBtn = document.getElementById('fg-share-btn');
+	if (shareBtn) {
+		shareBtn.addEventListener('click', function () {
+			var url   = shareBtn.getAttribute('data-share-url') || window.location.href;
+			var title = shareBtn.getAttribute('data-share-title') || document.title;
+			if (navigator.share) {
+				navigator.share({ title: title, url: url }).catch(function () {});
+				return;
+			}
+			function feedback() {
+				var orig = shareBtn.textContent;
+				shareBtn.textContent = 'Link kopiert ✓';
+				setTimeout(function () { shareBtn.textContent = orig; }, 1800);
+			}
+			if (navigator.clipboard) {
+				navigator.clipboard.writeText(url).then(feedback, function () { window.prompt('Link kopieren:', url); });
+			} else {
+				window.prompt('Link kopieren:', url);
+			}
+		});
+	}
 
 	// FAQ accordion
 	document.querySelectorAll('.faq-q').forEach(function (btn) {

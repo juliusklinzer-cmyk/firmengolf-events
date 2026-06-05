@@ -58,6 +58,9 @@ function fge_is_on_request_format( string $key ): bool {
 function fge_get_event_format_legacy_map(): array {
 	return [
 		'firmenturnier'       => 'firmen_golfturnier',
+		'team-building'       => 'teamevent',
+		'schnupperkurs'       => 'teamevent',
+		'coaching'            => 'after_work_golf',
 		'anderes_event'       => 'andere',
 		'weihnachtsfeier'     => 'andere',
 		'schnuppergolf'       => 'after_work_golf',
