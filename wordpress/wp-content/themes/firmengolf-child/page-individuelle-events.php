@@ -288,26 +288,31 @@ get_header();
 	</section>
 
 	<?php /* ── FAQ ── */ ?>
-	<div class="ind-faq">
-		<div class="ind-faq-head">
-			<div class="mk-eyebrow">FAQ</div>
-			<h2 class="mk-h2" style="margin-top:8px;">Was wir oft gefragt werden.</h2>
-			<p class="mk-sub">Antworten auf das, was bei individuellen Events am häufigsten unklar ist.</p>
-		</div>
-		<div class="ind-faq-list">
-			<?php foreach ( $faqs as $i => $faq ) : ?>
-				<div class="ind-faq-item" id="faq-<?php echo esc_attr( (string) $i ); ?>">
-					<button type="button" class="ind-faq-q" aria-expanded="false" aria-controls="faq-a-<?php echo esc_attr( (string) $i ); ?>">
-						<span><?php echo esc_html( $faq['q'] ); ?></span>
-						<span class="ind-faq-icon" aria-hidden="true">+</span>
-					</button>
-					<div class="ind-faq-a" id="faq-a-<?php echo esc_attr( (string) $i ); ?>">
-						<?php echo esc_html( $faq['a'] ); ?>
-					</div>
+	<section class="mk-section faq-section">
+		<div class="faq-shell">
+			<div class="faq-aside">
+				<div class="mk-eyebrow">FAQ</div>
+				<h2 class="mk-h2" style="margin-top:8px;font-size:36px;">Was wir oft gefragt werden.</h2>
+				<p class="mk-sub">Antworten auf das, was bei individuellen Events am häufigsten unklar ist.</p>
+				<div class="faq-cta">
+					<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/kontakt/' ) ); ?>">
+						Etwas anderes fragen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</a>
 				</div>
-			<?php endforeach; ?>
+			</div>
+			<ul class="faq-list">
+				<?php foreach ( $faqs as $i => $faq ) : ?>
+					<li class="faq-item" id="faq-<?php echo esc_attr( (string) $i ); ?>">
+						<button class="faq-q" type="button" aria-expanded="false">
+							<span><?php echo esc_html( $faq['q'] ); ?></span>
+							<span class="faq-toggle" aria-hidden="true">+</span>
+						</button>
+						<div class="faq-a"><?php echo esc_html( $faq['a'] ); ?></div>
+					</li>
+				<?php endforeach; ?>
+			</ul>
 		</div>
-	</div>
+	</section>
 
 	<?php get_template_part( 'template-parts/fge-footer' ); ?>
 
@@ -316,17 +321,19 @@ get_header();
 <script>
 (function () {
 	// FAQ accordion
-	document.querySelectorAll('.ind-faq-q').forEach(function (btn) {
+	document.querySelectorAll('.faq-q').forEach(function (btn) {
 		btn.addEventListener('click', function () {
-			var item = btn.closest('.ind-faq-item');
+			var item = btn.closest('.faq-item');
 			var isOpen = item.classList.contains('open');
-			document.querySelectorAll('.ind-faq-item').forEach(function (el) {
+			document.querySelectorAll('.faq-item').forEach(function (el) {
 				el.classList.remove('open');
-				el.querySelector('.ind-faq-q').setAttribute('aria-expanded', 'false');
+				el.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
+				el.querySelector('.faq-toggle').textContent = '+';
 			});
 			if (!isOpen) {
 				item.classList.add('open');
 				btn.setAttribute('aria-expanded', 'true');
+				btn.querySelector('.faq-toggle').textContent = '–';
 			}
 		});
 	});
