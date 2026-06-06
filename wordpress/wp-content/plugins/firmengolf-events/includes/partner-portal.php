@@ -989,6 +989,17 @@ function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 			<?php if ( $desc !== '' ) : ?>
 				<div class="fp-inbox-sub"><?php echo esc_html( $desc ); ?></div>
 			<?php endif; ?>
+			<?php if ( function_exists( 'fge_sched_state' ) && get_post_meta( $req->ID, '_fge_sched_token_platz', true ) ) :
+				$sched   = fge_sched_state( $req->ID );
+				$plabels = fge_sched_parties();
+				$pcolors = [ 'pending' => '#C58A1D', 'zugesagt' => '#2F6E45', 'abgesagt' => '#B4332B', 'alternative' => '#3F6E8A' ];
+			?>
+				<div class="fp-inbox-sched" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+					<?php foreach ( $sched['by_party'] as $p => $ps ) : ?>
+						<span style="font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;background:<?php echo esc_attr( $pcolors[ $ps ] ?? '#666' ); ?>;"><?php echo esc_html( $plabels[ $p ] . ': ' . $ps ); ?></span>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
 		</div>
 		<div class="fp-inbox-meta">
 			<span><?php echo esc_html( $time ); ?></span>

@@ -930,3 +930,140 @@ function fge_ajax_modal_anfrage(): void {
 		'group_size'  => $group,
 	] );
 }
+
+// ── RequestWizard (Individuelle Events): allgemeine Anfrage per AJAX ─────────
+add_action( 'wp_ajax_fge_general_request',        'fge_ajax_general_request' );
+add_action( 'wp_ajax_nopriv_fge_general_request', 'fge_ajax_general_request' );
+
+function fge_ajax_general_request(): void {
+	check_ajax_referer( 'fge_general_request', 'nonce' );
+
+	$t = static fn( $k ) => sanitize_text_field( wp_unslash( $_POST[ $k ] ?? '' ) );
+
+	$occasion = $t( 'occasion' );
+	$first    = $t( 'first_name' );
+	$last     = $t( 'last_name' );
+	$email    = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+	$company  = $t( 'company' );
+
+	// Quick-Mode kommt mit „Vor- und Nachname" in einem Feld → splitten.
+	if ( $last === '' && strpos( $first, ' ' ) !== false ) {
+		$parts = preg_split( '/\s+/', $first, 2 );
+		$first = $parts[0];
+		$last  = $parts[1] ?? '';
+	}
+
+	if ( ! $email || ! is_email( $email ) || $first === '' || $occasion === '' ) {
+		wp_send_json_error( [ 'message' => 'Bitte Anlass, Name und gültige E-Mail angeben.' ], 422 );
+	}
+
+	$goal      = $t( 'goal' );
+	$size      = absint( preg_replace( '/\D/', '', (string) ( $_POST['size'] ?? '' ) ) );
+	$region    = $t( 'region' );
+	$budget    = $t( 'budget' );
+	$when      = $t( 'when' );
+	$flex      = $t( 'flex' );
+	$duration  = $t( 'duration' );
+	$role      = $t( 'role' );
+	$phone     = $t( 'phone' );
+	$city      = $t( 'city' );
+	$pref      = $t( 'contact_pref' );
+	$notes     = sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) );
+
+	$dates = array_filter( array_map( $t, [ 'date1', 'date2', 'date3' ] ) );
+
+	// Services kommen als kommaseparierte Wizard-Labels.
+	$services = array_filter( array_map( 'trim', explode( '||', (string) wp_unslash( $_POST['services'] ?? '' ) ) ) );
+	$services = array_map( 'sanitize_text_field', $services );
+
+	$ref = 'FG-26-' . strtoupper( substr( wp_generate_uuid4(), 0, 6 ) );
+
+	$request_id = wp_insert_post( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => 'publish',
+		'post_title'  => $ref . ' · ' . trim( $first . ' ' . $last ),
+	] );
+	if ( is_wp_error( $request_id ) || ! $request_id ) {
+		wp_send_json_error( [ 'message' => 'Anfrage konnte nicht gespeichert werden.' ], 500 );
+	}
+
+	// Core / routing
+	update_post_meta( $request_id, '_fge_request_type',   'general_event_request' );
+	update_post_meta( $request_id, '_fge_request_status', 'neu' );
+	update_post_meta( $request_id, '_fge_source',         'general_landingpage' );
+	update_post_meta( $request_id, '_fge_ref',            $ref );
+	add_post_meta( $request_id, '_fge_request_date',      current_datetime()->format( 'Y-m-d H:i:s' ), true );
+	add_post_meta( $request_id, '_fge_consent_timestamp', current_datetime()->format( 'Y-m-d H:i:s' ), true );
+
+	// Company + contact
+	update_post_meta( $request_id, '_fge_company_name',       $company );
+	update_post_meta( $request_id, '_fge_company_city',       $city );
+	update_post_meta( $request_id, '_fge_contact_first_name', $first );
+	update_post_meta( $request_id, '_fge_contact_last_name',  $last );
+	update_post_meta( $request_id, '_fge_contact_email',      $email );
+	update_post_meta( $request_id, '_fge_contact_phone',      $phone );
+	update_post_meta( $request_id, '_fge_contact_role',       $role );
+
+	// Event framework
+	update_post_meta( $request_id, '_fge_expected_participants', $size );
+	update_post_meta( $request_id, '_fge_desired_region',        $region );
+	update_post_meta( $request_id, '_fge_budget_range',          $budget );
+	$period = trim( $when . ( $flex !== '' ? ' · ' . $flex : '' ), ' ·' );
+	if ( $dates ) {
+		$period = trim( $period . ' · Wunschtermine: ' . implode( ', ', $dates ), ' ·' );
+	}
+	update_post_meta( $request_id, '_fge_alternative_period', $period );
+
+	// Services → kanonische wants_* Flags; unbekannte fließen in individual_customization.
+	$svc_map = [
+		'Golflehrer / Coaching'    => 'golf_teacher',
+		'Schnupperkurs'            => 'golf_teacher',
+		'Firmenturnier'            => 'tournament_mode',
+		'Putting-Challenge'        => 'tournament_mode',
+		'Frühstück'                => 'breakfast',
+		'Lunch'                    => 'lunch',
+		'Abendessen'               => 'dinner',
+		'Bar & Drinks'             => 'dinner',
+		'Meetingraum'              => 'meeting_room',
+		'Shuttle / Transport'      => 'shuttle',
+		'Branding & Banner'        => 'branding',
+		'Schlechtwetter-Alternative' => 'bad_weather_alternative',
+	];
+	$all_wants = [ 'golf_teacher', 'meeting_room', 'breakfast', 'lunch', 'dinner', 'shuttle', 'branding', 'tournament_mode', 'bad_weather_alternative', 'individual_customization' ];
+	$set_wants = [];
+	$has_other = false;
+	foreach ( $services as $label ) {
+		if ( isset( $svc_map[ $label ] ) ) {
+			$set_wants[ $svc_map[ $label ] ] = true;
+		} else {
+			$has_other = true;
+		}
+	}
+	if ( $has_other ) {
+		$set_wants['individual_customization'] = true;
+	}
+	foreach ( $all_wants as $w ) {
+		update_post_meta( $request_id, '_fge_wants_' . $w, isset( $set_wants[ $w ] ) ? 1 : 0 );
+	}
+
+	update_post_meta( $request_id, '_fge_additional_wishes', $services ? implode( ', ', $services ) : '' );
+
+	$message = 'Anlass: ' . $occasion
+		. ( $goal !== ''     ? "\nZiel: " . $goal : '' )
+		. ( $duration !== '' ? "\nDauer: " . $duration : '' )
+		. ( $pref !== ''     ? "\nKontakt bevorzugt: " . $pref : '' )
+		. ( $services        ? "\nGewünschte Leistungen: " . implode( ', ', $services ) : '' )
+		. ( $notes !== ''    ? "\n\n" . $notes : '' );
+	update_post_meta( $request_id, '_fge_message', trim( $message ) );
+
+	// Downstream: Mails + Status über den gemeinsamen Hook.
+	do_action( 'fge_request_created', $request_id );
+
+	wp_send_json_success( [
+		'ref'      => $ref,
+		'occasion' => $occasion,
+		'size'     => $size,
+		'company'  => $company,
+		'email'    => $email,
+	] );
+}

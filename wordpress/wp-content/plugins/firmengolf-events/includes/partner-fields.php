@@ -62,6 +62,7 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 	$partner_since             = get_post_meta( $post->ID, '_fge_partner_since', true );
 	$public_short_description  = get_post_meta( $post->ID, '_fge_public_short_description', true );
 	$internal_note             = get_post_meta( $post->ID, '_fge_internal_note', true );
+	$rating                    = get_post_meta( $post->ID, '_fge_rating', true );
 
 	$statuses = fge_get_statuses( 'partner' );
 	?>
@@ -70,6 +71,14 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 			<th scope="row"><label for="fge_public_golfclub_name">Golfplatz Name öffentlich</label></th>
 			<td><input type="text" id="fge_public_golfclub_name" name="fge_public_golfclub_name"
 			           value="<?php echo esc_attr( $public_golfclub_name ); ?>" class="regular-text"></td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_rating">Sterne-Bewertung</label></th>
+			<td>
+				<input type="number" id="fge_rating" name="fge_rating" min="0" max="5" step="0.1"
+				       value="<?php echo esc_attr( $rating ); ?>" style="width:90px;">
+				<p class="description">Statische Anzeige auf den Event-Karten (z. B. 4.8). Leer = keine Sterne.</p>
+			</td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_legal_operator_name">Rechtlicher Betreibername</label></th>
@@ -739,6 +748,7 @@ function fge_save_partner_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_partner_status',           $san_select( 'fge_partner_status', $allowed_statuses ) );
 	update_post_meta( $post_id, '_fge_partner_since',            sanitize_text_field( wp_unslash( $_POST['fge_partner_since'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_public_short_description', sanitize_textarea_field( wp_unslash( $_POST['fge_public_short_description'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_rating', max( 0.0, min( 5.0, (float) str_replace( ',', '.', (string) wp_unslash( $_POST['fge_rating'] ?? '' ) ) ) ) );
 	update_post_meta( $post_id, '_fge_internal_note',            sanitize_textarea_field( wp_unslash( $_POST['fge_internal_note'] ?? '' ) ) );
 
 	// ── Metabox 2: Standort ──

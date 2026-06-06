@@ -61,12 +61,12 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 
 <?php /* ══════════════════ 1. HERO ══════════════════ */ ?>
 <section class="mk-hero" aria-label="Hero">
-	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-drohnenaufnahme.jpg' ) ); ?>')">
+	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'hero-gruen-3.jpg' ) ); ?>')">
 		<div class="mk-hero-scrim" aria-hidden="true"></div>
 		<div class="mk-hero-content">
 			<div class="mk-hero-eyebrow">Firmenevents · Golf für Unternehmen</div>
 			<h1 class="mk-hero-title">
-				Bringt euer Team raus aus dem Büro und rein in <em class="mk-italic">Bewegung</em>.
+				Bringt euer Team raus aus dem Büro und rein in <span class="rot-wrap"><span class="rot-word mk-italic in" id="fg-rot-word">Bewegung</span><span class="rot-dot">.</span></span>
 			</h1>
 			<p class="mk-hero-sub">
 				Vom Schnupperkurs bis zum Firmenturnier — kuratierte Golf-Formate auf Partnerplätzen
@@ -80,6 +80,13 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $url_ind ); ?>">
 					Individuelles Event planen →
 				</a>
+			</div>
+			<div class="mk-hero-trust">
+				<span>Keine Mitgliedschaft nötig</span>
+				<span class="mk-hero-trust-dot" aria-hidden="true"></span>
+				<span>Schläger werden gestellt</span>
+				<span class="mk-hero-trust-dot" aria-hidden="true"></span>
+				<span>Antwort in 24 Stunden</span>
 			</div>
 		</div>
 	</div>
@@ -160,7 +167,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 
 <?php /* ══════════════════ 2. PARTNERS STRIP ══════════════════ */ ?>
 <div class="mk-partners" aria-label="Unsere Partner">
-	<div class="mk-eyebrow">Schon mit uns unterwegs</div>
+	<div class="mk-eyebrow">Schon mit uns draußen gewesen</div>
 	<div class="mk-partners-row">
 		<?php
 		$partners = [ 'Quartz Labs', 'North Studio', 'Hartmann GmbH', 'Steinblick', 'Halde & Co.', 'Werkstatt 4', 'Bauer & Söhne', 'Pixelhof' ];
@@ -171,8 +178,40 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 	</div>
 </div>
 
+<?php /* ══════════════════ 2b. EXPERIENCE — Warum Golf ══════════════════ */ ?>
+<section class="home-exp" aria-label="Warum Golf">
+	<div class="home-exp-inner">
+		<div class="home-exp-head">
+			<div class="mk-eyebrow">Warum Golf</div>
+			<h2 class="home-exp-h">Es geht nicht ums Golf. Es geht um das, was <span class="mk-italic">dabei</span> passiert.</h2>
+			<p class="home-exp-lead">
+				Niemand muss spielen können. Verbindet euer Meeting mit ein paar Stunden draußen —
+				und merkt, wie viel leichter Gespräche laufen, wenn zwischendurch Bewegung dazukommt.
+			</p>
+		</div>
+		<div class="home-exp-cards">
+			<?php
+			$exp_points = [
+				[ 'k' => 'Bewegung',      't' => 'Vier, fünf Kilometer an der frischen Luft — ohne dass es sich nach Sport anfühlt.',       'img' => 'driving-range-uebung.jpg' ],
+				[ 'k' => 'Natur',         't' => 'Grün, Weite, Himmel — die perfekte Ergänzung zu einem Tag voller Gespräche.',             'img' => 'golf-gruen-fahne.jpg' ],
+				[ 'k' => 'Konzentration', 't' => 'Ein Spiel, das ganz im Moment verlangt — und genau dadurch den Kopf frei macht.',         'img' => 'golf-sandbunker.jpg' ],
+				[ 'k' => 'Zusammenhalt',  't' => 'Vier Stunden Seite an Seite, ohne Bildschirm. Teams wachsen hier unangestrengt zusammen.', 'img' => 'golfer-gruppe-fairway.png' ],
+			];
+			foreach ( $exp_points as $p ) : ?>
+				<article class="home-exp-card">
+					<div class="home-exp-card-photo" style="background-image:url('<?php echo esc_url( $img( $p['img'] ) ); ?>')"></div>
+					<div class="home-exp-card-body">
+						<div class="home-exp-k"><?php echo esc_html( $p['k'] ); ?></div>
+						<p><?php echo esc_html( $p['t'] ); ?></p>
+					</div>
+				</article>
+			<?php endforeach; ?>
+		</div>
+	</div>
+</section>
+
 <?php /* ══════════════════ 3. HOW IT WORKS ══════════════════ */ ?>
-<section class="mk-section mk-steps" aria-label="So funktioniert es">
+<section class="mk-section mk-steps mk-band" aria-label="So funktioniert es">
 	<div class="mk-section-head">
 		<div class="mk-eyebrow">So funktioniert's</div>
 		<h2 class="mk-h2">Drei Schritte. Ein Ansprechpartner.</h2>
@@ -271,7 +310,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 </section>
 
 <?php /* ══════════════════ 5. OCCASIONS GRID ══════════════════ */ ?>
-<section class="mk-section" aria-label="Für welchen Anlass?">
+<section class="mk-section home-occasions-section" aria-label="Für welchen Anlass?">
 	<div class="mk-section-head">
 		<div class="mk-eyebrow">Für welchen Anlass?</div>
 		<h2 class="mk-h2">Sag uns, was ihr vorhabt — wir kennen das passende Format.</h2>
@@ -385,59 +424,40 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 			<a class="fg-btn-ink fg-btn-lg" href="https://firmen.golf" target="_blank" rel="noopener noreferrer"
 			   style="background:var(--paper-100);color:var(--fairway-900)">
 				Zum Benefit-Programm
-				<span class="fg-arrow" style="background:var(--fairway-200)"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				<span class="fg-arrow" style="background:var(--fairway-200)"><?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 			</a>
 			<span class="home-benefit-tag">firmen.golf ↗</span>
 		</div>
 	</div>
 </section>
 
-<?php /* ══════════════════ 8. NUMBERS ══════════════════ */ ?>
-<section class="home-numbers" aria-label="Firmengolf in Zahlen">
-	<div class="home-numbers-inner">
-		<div class="home-numbers-aside">
-			<div class="mk-eyebrow" style="color:var(--fairway-300)">In Zahlen</div>
-			<h2 class="home-numbers-h">
-				Was wir bisher <em class="mk-italic">gebaut</em> haben.
-			</h2>
-			<p class="home-numbers-p">
-				Drei Jahre, ein einziges Versprechen — Firmenevents auf Golfplätzen, die niemand vergisst.
-				Stand: Mai 2026.
-			</p>
-		</div>
-		<div class="home-numbers-grid">
-			<?php
-			$numbers = [
-				[ '180+',    'Partnerplätze in Deutschland' ],
-				[ '2.400',   'Mitarbeitende im Benefit-Programm' ],
-				[ '< 24 h',  'Antwortzeit auf jede Anfrage' ],
-				[ '4,9 ★',   'Durchschnittliche Bewertung' ],
-			];
-			foreach ( $numbers as $n ) : ?>
-				<div class="home-num">
-					<div class="home-num-v"><?php echo esc_html( $n[0] ); ?></div>
-					<div class="home-num-l"><?php echo esc_html( $n[1] ); ?></div>
-				</div>
-			<?php endforeach; ?>
-		</div>
+<?php /* ══════════════════ 8. TESTIMONIALS ══════════════════ */ ?>
+<section class="mk-section home-quotes" aria-label="Kundenstimmen">
+	<div class="mk-section-head">
+		<div class="mk-eyebrow">Was Teams sagen</div>
+		<h2 class="mk-h2">Der beste Beweis ist der Montag danach.</h2>
 	</div>
-</section>
-
-<?php /* ══════════════════ 9. TESTIMONIAL ══════════════════ */ ?>
-<section class="mk-section mk-testimonial" aria-label="Kundenstimme">
-	<div class="mk-testimonial-grid">
-		<div class="mk-testimonial-photo" style="background-image:url('<?php echo esc_url( $img( 'golf-coaching-gruppe.jpg' ) ); ?>')"></div>
-		<blockquote class="mk-testimonial-body">
-			<div class="mk-quote-mark" aria-hidden="true">&ldquo;</div>
-			<p>Das Team kam aufgeladen zurück, und drei Leute haben am Sonntag direkt wieder gespielt. Die Latte für nächstes Jahr liegt hoch.</p>
-			<footer>
-				<img src="<?php echo esc_url( $img( 'golfer-mann-lachend.png' ) ); ?>" alt="Lena Hoffmann" width="44" height="44">
-				<div>
-					<div class="mk-tm-name">Lena Hoffmann</div>
-					<div class="mk-tm-role">People Lead · Quartz Labs</div>
-				</div>
-			</footer>
-		</blockquote>
+	<div class="home-quotes-grid">
+		<?php
+		$star = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>';
+		$quotes = [
+			[ 'q' => 'Das Team kam aufgeladen zurück, und drei Leute haben am Sonntag direkt wieder gespielt. Die Latte für nächstes Jahr liegt hoch.', 'name' => 'Lena Hoffmann',  'role' => 'People Lead · Quartz Labs', 'img' => 'golferin-portrait.png' ],
+			[ 'q' => 'Wir hatten eine Sales-Offsite mit 22 Leuten gebucht. Ein Ansprechpartner, eine Rechnung — danach war ich überzeugt.',            'name' => 'Matthias Reuter', 'role' => 'VP Sales · Hartmann GmbH',  'img' => 'golfer-mann-lachend.png' ],
+			[ 'q' => 'Unser Gesundheitstag war zum dritten Mal in Folge mit Firmengolf. Buchung im Self-Service, BGM-konform, fertig.',              'name' => 'Sandra Klein',    'role' => 'HR-Direktorin · Werkstatt 4', 'img' => 'firmengolf-portrait.jpg' ],
+		];
+		foreach ( $quotes as $i => $q ) : ?>
+			<figure class="home-quote<?php echo $i === 0 ? ' is-lead' : ''; ?>">
+				<div class="home-quote-stars" aria-label="5 von 5"><?php echo str_repeat( $star, 5 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+				<blockquote><?php echo esc_html( $q['q'] ); ?></blockquote>
+				<figcaption>
+					<img src="<?php echo esc_url( $img( $q['img'] ) ); ?>" alt="" width="44" height="44">
+					<div>
+						<div class="home-quote-name"><?php echo esc_html( $q['name'] ); ?></div>
+						<div class="home-quote-role"><?php echo esc_html( $q['role'] ); ?></div>
+					</div>
+				</figcaption>
+			</figure>
+		<?php endforeach; ?>
 	</div>
 </section>
 
@@ -592,6 +612,23 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 
   if (incBtn) incBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) + 1); });
   if (decBtn) decBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) - 1); });
+
+  /* ── Hero rotating word ── */
+  var rotEl = document.getElementById('fg-rot-word');
+  if (rotEl) {
+    var rotWords = ['Bewegung', 'neue Energie', 'den Austausch', 'frische Luft'];
+    var rotI = 0;
+    setInterval(function () {
+      rotEl.classList.remove('in');
+      rotEl.classList.add('out');
+      setTimeout(function () {
+        rotI = (rotI + 1) % rotWords.length;
+        rotEl.textContent = rotWords[rotI];
+        rotEl.classList.remove('out');
+        rotEl.classList.add('in');
+      }, 380);
+    }, 3000);
+  }
 }());
 </script>
 
