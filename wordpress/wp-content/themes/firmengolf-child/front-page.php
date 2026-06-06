@@ -548,7 +548,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 				Event anfragen
 				<span class="fg-arrow" style="background:var(--fairway-200)"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 			</a>
-			<a class="mk-cta-mail" href="mailto:events@firmengolf.de">events@firmengolf.de</a>
+			<a class="mk-cta-mail" href="mailto:events@visionpunch.de">events@visionpunch.de</a>
 		</div>
 	</div>
 </section>

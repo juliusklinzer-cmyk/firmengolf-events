@@ -456,7 +456,7 @@ function fge_portal_render(): void {
 		?>
 		<div class="fg-portal-standalone">
 			<p class="fg-portal-standalone-title">Dein Partnerprofil ist noch nicht freigeschaltet.</p>
-			<p>Bitte wende dich an das Firmengolf Team: <a href="mailto:events@firmen.golf">events@firmen.golf</a></p>
+			<p>Bitte wende dich an das Firmengolf Team: <a href="mailto:events@visionpunch.de">events@visionpunch.de</a></p>
 		</div>
 		<?php
 		return;
@@ -544,7 +544,7 @@ function fge_portal_render(): void {
 		<footer class="fp-portal-foot">
 			<div>© <?php echo esc_html( gmdate( 'Y' ) ); ?> Firmengolf · Partner-Portal</div>
 			<div class="fp-portal-foot-links">
-				<a href="mailto:events@firmen.golf">Support</a>
+				<a href="mailto:events@visionpunch.de">Support</a>
 			</div>
 		</footer>
 
@@ -1332,7 +1332,7 @@ function fge_portal_section_platz( int $partner_id ): void {
 					Profil speichern <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 				</button>
 				<p style="font-size:13px;color:var(--ink-500);margin-top:10px;">
-					Name, Betreiber und Adresse können nur vom Firmengolf-Team geändert werden. Schreib uns unter <a href="mailto:events@firmen.golf" style="color:var(--fairway-700);">events@firmen.golf</a>.
+					Name, Betreiber und Adresse können nur vom Firmengolf-Team geändert werden. Schreib uns unter <a href="mailto:events@visionpunch.de" style="color:var(--fairway-700);">events@visionpunch.de</a>.
 				</p>
 			</div>
 		</form>

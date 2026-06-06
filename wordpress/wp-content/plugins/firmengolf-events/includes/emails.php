@@ -67,24 +67,26 @@ function fge_get_request_email_data( int $request_id ): array {
 }
 
 function fge_send_customer_confirmation_email( int $request_id, array $data ): bool {
-	$subject  = 'Deine Firmengolf Event Anfrage ist angekommen';
+	$subject  = 'Deine Anfrage bei Firmengolf ist eingegangen';
 	$greeting = $data['first_name'] !== '' ? 'Hallo ' . esc_html( $data['first_name'] ) . ',' : 'Hallo,';
+	$events_email = fge_company()['email_events'];
 
 	$event_line = '';
 	if ( $data['request_type'] === 'specific_event' && $data['event_title'] !== '' ) {
-		$event_line = '<p>Deine Anfrage bezieht sich auf: <strong>' . esc_html( $data['event_title'] ) . '</strong></p>';
+		$event_line = '<p style="margin:0 0 16px;">Deine Anfrage bezieht sich auf <strong>' . esc_html( $data['event_title'] ) . '</strong>.</p>';
 	}
 
 	$content = '
-		<p>' . $greeting . '</p>
-		<p>Deine Event-Anfrage bei Firmengolf ist eingegangen. Wir prüfen die Details und melden uns schnell bei dir zurück.</p>
+		<p style="margin:0 0 16px;">' . $greeting . '</p>
+		<p style="margin:0 0 16px;">vielen Dank für deine Anfrage — sie ist bei uns eingegangen und liegt bereits beim richtigen Ansprechpartner.</p>
 		' . $event_line . '
-		<p><strong>Was als Nächstes passiert:</strong></p>
-		<ul>
-			<li>Wir prüfen passende Angebote und Verfügbarkeiten.</li>
-			<li>Du erhältst innerhalb von 1–2 Werktagen eine persönliche Rückmeldung.</li>
+		<p style="margin:0 0 8px;"><strong>Wie es jetzt weitergeht</strong></p>
+		<ul style="margin:0 0 16px;padding-left:20px;">
+			<li style="margin-bottom:6px;">Wir sehen uns deine Angaben in Ruhe an und prüfen passende Optionen.</li>
+			<li style="margin-bottom:6px;">Innerhalb eines Werktags meldet sich ein:e echte:r Ansprechpartner:in persönlich bei dir.</li>
 		</ul>
-		<p>Bei Fragen erreichst du uns jederzeit unter <a href="mailto:events@firmen.golf" style="color:#2a6e32;">events@firmen.golf</a>.</p>
+		<p style="margin:0 0 16px;">Du musst nichts weiter tun. Fällt dir in der Zwischenzeit noch etwas ein, antworte einfach auf diese E-Mail oder schreib uns an <a href="mailto:' . esc_attr( $events_email ) . '" style="color:#2a6e32;">' . esc_html( $events_email ) . '</a>.</p>
+		<p style="margin:24px 0 0;">Sportliche Grüße<br><strong>Dein Firmengolf-Team</strong></p>
 	';
 
 	$sent = wp_mail(
@@ -105,7 +107,7 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 function fge_send_internal_request_email( int $request_id, array $data ): bool {
 	$company = $data['company_name'] !== '' ? $data['company_name'] : 'Unbekannt';
 	$subject = 'Neue Firmengolf Event Anfrage: ' . $company;
-	$to      = apply_filters( 'fge_internal_email', 'events@firmen.golf' );
+	$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 
 	$type_label = $data['request_type'] === 'specific_event' ? 'Konkretes Event' : 'Allgemeine Anfrage';
 
@@ -231,7 +233,7 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 		<p style="margin-top:28px;">
 			<a href="' . esc_url( $portal_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
 		</p>
-		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:events@firmen.golf" style="color:#2a6e32;">events@firmen.golf</a>.</p>
+		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
 	';
 
 	$sent = wp_mail(
@@ -242,7 +244,7 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 	);
 
 	// Internal notification to Firmengolf team.
-	$internal_to = apply_filters( 'fge_internal_email', 'events@firmen.golf' );
+	$internal_to = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 	$int_content = '
 		<p>Neues Golfplatz-Profil eingereicht:</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;">
@@ -287,7 +289,7 @@ function fge_email_wrap( string $title, string $body_html ): string {
     ' . $body_html . '
   </td></tr>
   <tr><td style="background:#f0f0ee;padding:16px 32px;font-size:12px;color:#888;border-top:1px solid #e4e4e0;">
-    <p style="margin:0;">Firmengolf &nbsp;·&nbsp; <a href="mailto:events@firmen.golf" style="color:#2a6e32;text-decoration:none;">events@firmen.golf</a></p>
+    <p style="margin:0;">Firmengolf &nbsp;·&nbsp; <a href="mailto:' . fge_company()['email_events'] . '" style="color:#2a6e32;text-decoration:none;">' . fge_company()['email_events'] . '</a></p>
   </td></tr>
 </table>
 </td></tr>

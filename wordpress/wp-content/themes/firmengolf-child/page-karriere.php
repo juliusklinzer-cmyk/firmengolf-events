@@ -80,7 +80,7 @@ $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12"
 		];
 		foreach ( $jobs as $j ) : ?>
 			<li class="faq-item">
-				<a class="faq-q" href="mailto:jobs@firmengolf.de?subject=<?php echo rawurlencode( $j[0] ); ?>" style="text-decoration:none;">
+				<a class="faq-q" href="mailto:jobs@visionpunch.de?subject=<?php echo rawurlencode( $j[0] ); ?>" style="text-decoration:none;">
 					<span><?php echo esc_html( $j[0] ); ?><br><span class="mk-tm-role"><?php echo esc_html( $j[1] ); ?></span></span>
 					<span class="faq-toggle" aria-hidden="true">→</span>
 				</a>
@@ -95,7 +95,7 @@ $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12"
 		<h2 class="mk-cta-h">Erzähl uns trotzdem <em class="mk-italic">von dir</em>.</h2>
 		<p class="mk-cta-sub">Wir wachsen schnell — und gute Leute finden bei uns fast immer einen Platz.</p>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="mailto:jobs@firmengolf.de" style="background:var(--paper-100);color:var(--fairway-900)">
+			<a class="fg-btn-ink fg-btn-lg" href="mailto:jobs@visionpunch.de" style="background:var(--paper-100);color:var(--fairway-900)">
 				Initiativ bewerben <?php echo $arrow; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 			</a>
 		</div>

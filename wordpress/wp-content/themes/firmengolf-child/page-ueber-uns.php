@@ -174,7 +174,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $url_kontakt ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">
 				Kontakt aufnehmen <span class="fg-arrow" style="background:var(--fairway-200)"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 			</a>
-			<a class="mk-cta-mail" href="mailto:hallo@firmengolf.de">hallo@firmengolf.de</a>
+			<a class="mk-cta-mail" href="mailto:hallo@visionpunch.de">hallo@visionpunch.de</a>
 		</div>
 	</div>
 </section>
