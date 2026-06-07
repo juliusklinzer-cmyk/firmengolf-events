@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Partnerportal · Firmengolf</title>
+  <meta name="description" content="Partnerportal — einloggen oder Partner werden bei Firmengolf.">
+
+  <link rel="stylesheet" href="css/colors_and_type.css">
+  <link rel="stylesheet" href="css/partner-login.css">
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body class="pl-body">
+  <div id="pl-app"></div>
+
+  <script type="text/babel">
+    /* eslint-disable */
+    const { useState } = React;
+
+    const Arrow = ({ size = 14 }) => (
+      <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor"
+           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12h14M13 5l7 7-7 7"/>
+      </svg>
+    );
+    const Eye = ({ on }) => (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        {on
+          ? <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></>
+          : <><path d="M3 3l18 18"/><path d="M10.6 6.1A10.6 10.6 0 0 1 12 6c6.5 0 10 6 10 6a18 18 0 0 1-3.2 3.7M6.6 6.6A18 18 0 0 0 2 12s3.5 6 10 6c1.5 0 2.8-.3 4-.7"/><path d="M9.5 9.5a3 3 0 0 0 4.2 4.2"/></>
+        }
+      </svg>
+    );
+
+    function TopBar() {
+      return (
+        <header className="pl-top">
+          <a className="pl-brand" href="index.html" aria-label="Zur Firmengolf-Startseite">
+            <img src="assets/logo/firmengolf-wordmark.png" alt="Firmengolf" />
+          </a>
+          <a className="pl-back" href="index.html">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            <span>Zurück zur Hauptseite</span>
+          </a>
+        </header>
+      );
+    }
+
+    function LoginCard() {
+      const [show, setShow] = useState(false);
+      const [busy, setBusy] = useState(false);
+      const [err, setErr] = useState(null);
+      const handle = (e) => {
+        e.preventDefault();
+        setBusy(true); setErr(null);
+        const data = new FormData(e.target);
+        const email = data.get('email'), pw = data.get('password');
+        setTimeout(() => {
+          if (!email || !pw) { setBusy(false); setErr('Bitte Mail-Adresse und Passwort eingeben.'); return; }
+          window.location.href = 'partner-portal/Profil.html';
+        }, 600);
+      };
+      return (
+        <article className="pl-card pl-card-login">
+          <div className="pl-card-eyebrow">Bereits Partner</div>
+          <h2 className="pl-card-h">
+            Schön, dass du <span className="pl-italic">wieder</span> da bist.
+          </h2>
+          <p className="pl-card-p">
+            Logg dich ein, um euer Partnerprofil zu pflegen, neue Anfragen anzunehmen und eure Events zu verwalten.
+          </p>
+
+          <form className="pl-form" onSubmit={handle}>
+            <div className="pl-field">
+              <label className="pl-label" htmlFor="email">E-Mail</label>
+              <input id="email" name="email" type="email" className="pl-input"
+                     placeholder="name@golfclub.de" autoComplete="email" required />
+            </div>
+            <div className="pl-field">
+              <div className="pl-label-row">
+                <label className="pl-label" htmlFor="password">Passwort</label>
+                <a className="pl-tiny" href="#">Vergessen?</a>
+              </div>
+              <div className="pl-input-wrap">
+                <input id="password" name="password" type={show ? 'text' : 'password'}
+                       className="pl-input" placeholder="••••••••"
+                       autoComplete="current-password" required />
+                <button type="button" className="pl-eye" onClick={() => setShow(s => !s)}
+                        aria-label={show ? 'Verbergen' : 'Anzeigen'}>
+                  <Eye on={show} />
+                </button>
+              </div>
+            </div>
+            <label className="pl-remember">
+              <input type="checkbox" defaultChecked />
+              <span>Eingeloggt bleiben</span>
+            </label>
+            {err && <div className="pl-error">{err}</div>}
+            <button className="pl-btn-ink" type="submit" disabled={busy}>
+              <span>{busy ? 'Einloggen…' : 'Einloggen'}</span>
+              <span className="pl-arrow"><Arrow /></span>
+            </button>
+          </form>
+        </article>
+      );
+    }
+
+    function JoinCard() {
+      return (
+        <article className="pl-card pl-card-join">
+          <div className="pl-card-photo" style={{ backgroundImage: "url('assets/imagery/event-team.jpg')" }}>
+            <span className="pl-photo-chip">Neu hier?</span>
+          </div>
+          <div className="pl-card-body">
+            <div className="pl-card-eyebrow">Werdet Partner</div>
+            <h2 className="pl-card-h">
+              Macht euren Platz zur <span className="pl-italic">Eventlocation</span>.
+            </h2>
+            <p className="pl-card-p">
+              In rund 10 Minuten erfassen wir die wichtigsten Daten über euren Platz —
+              dann melden wir uns persönlich für ein kurzes Onboarding-Gespräch.
+            </p>
+
+            <ul className="pl-points">
+              <li>
+                <span className="pl-point-dot" />
+                <span>Eure Plätze, Formate und Preise an einem Ort verwalten</span>
+              </li>
+              <li>
+                <span className="pl-point-dot" />
+                <span>Anfragen direkt von Firmen — wir bündeln und koordinieren</span>
+              </li>
+              <li>
+                <span className="pl-point-dot" />
+                <span>Eine saubere Abrechnung — kein eigener Vertriebsaufwand</span>
+              </li>
+            </ul>
+
+            <a className="pl-btn-brand" href="partner-onboarding.html">
+              <span>Profil einrichten</span>
+              <span className="pl-arrow pl-arrow-light"><Arrow /></span>
+            </a>
+            <div className="pl-card-meta">Kostenlos &amp; unverbindlich · ca. 10 Min.</div>
+          </div>
+        </article>
+      );
+    }
+
+    function App() {
+      return (
+        <div className="pl-shell">
+          <TopBar />
+
+          <main className="pl-main">
+            <section className="pl-intro">
+              <div className="pl-eyebrow">Partnerportal · Für Golfplätze</div>
+              <h1 className="pl-title">
+                Willkommen im <span className="pl-italic">Partnerportal</span>.
+              </h1>
+              <p className="pl-lead">
+                Verwaltet euer Firmengolf-Profil, eure Veranstaltungstypen und Buchungs-Anfragen.
+                Schon Partner? Loggt euch ein. Noch nicht? Werdet es in zehn Minuten.
+              </p>
+            </section>
+
+            <section className="pl-cards">
+              <LoginCard />
+              <JoinCard />
+            </section>
+
+            <footer className="pl-meta">
+              <span>Hilfe? <a href="mailto:partner@firmengolf.de">partner@firmengolf.de</a></span>
+              <span className="pl-meta-sep">·</span>
+              <a href="#">Datenschutz</a>
+              <span className="pl-meta-sep">·</span>
+              <a href="#">Impressum</a>
+            </footer>
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('pl-app')).render(<App />);
+  </script>
+  <script src="view-switcher.js"></script>
+</body>
+</html>

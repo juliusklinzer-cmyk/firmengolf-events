@@ -1,0 +1,126 @@
+/* =====================================================================
+   Firmengolf — Karriere / Careers (#/karriere)
+   Loads after site.css. Warm, energetic, on-brand.
+   ===================================================================== */
+
+.career { background: var(--paper-100); }
+
+/* ---------- hero (photo) ---------- */
+.car-hero { max-width: 1280px; margin: 16px auto 0; padding: 0 24px; }
+.car-hero-photo {
+  position: relative; border-radius: var(--radius-2xl); overflow: hidden;
+  min-height: 520px; display: flex; align-items: flex-end;
+  background-size: cover; background-position: center;
+}
+.car-hero-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,19,16,.15) 28%, rgba(14,19,16,.78) 100%); }
+.car-hero-inner { position: relative; padding: 52px; max-width: 760px; color: var(--paper-100); }
+.car-hero-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; opacity: .9; margin-bottom: 16px; }
+.car-hero h1 {
+  font-family: var(--font-display); font-weight: 500;
+  font-size: clamp(38px, 5.6vw, 68px); line-height: 0.99; letter-spacing: -0.035em;
+  text-wrap: balance; margin-bottom: 18px;
+}
+.car-hero h1 em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+.car-hero-sub { font-size: 19px; line-height: 1.55; max-width: 540px; opacity: .94; margin-bottom: 28px; text-wrap: pretty; }
+.car-hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* ---------- section scaffold ---------- */
+.car-section { max-width: 1280px; margin: 0 auto; padding: 84px 24px; }
+.car-section.tint { background: var(--paper-200); max-width: none; }
+.car-section.tint > .car-inner { max-width: 1280px; margin: 0 auto; }
+.car-section.ink { background: var(--ink-900); max-width: none; color: var(--paper-100); }
+.car-section.ink > .car-inner { max-width: 1280px; margin: 0 auto; }
+.car-head { max-width: 680px; margin-bottom: 40px; }
+.car-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--fairway-700); margin-bottom: 12px; }
+.car-section.ink .car-eyebrow { color: var(--fairway-300); }
+.car-h2 { font-family: var(--font-display); font-weight: 500; font-size: clamp(28px, 3.4vw, 42px); line-height: 1.06; letter-spacing: -0.025em; color: var(--ink-900); text-wrap: balance; }
+.car-section.ink .car-h2 { color: var(--paper-100); }
+.car-h2 em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+.car-lead { font-size: 17px; line-height: 1.6; color: var(--ink-600); margin-top: 14px; text-wrap: pretty; }
+.car-section.ink .car-lead { color: rgba(251,250,246,.78); }
+
+/* ---------- values ---------- */
+.car-values { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.car-value { background: var(--paper-50); border-radius: var(--radius-xl); padding: 26px; border: 1px solid var(--ink-200); }
+.car-value-n { font-family: var(--font-mono); font-size: 13px; color: var(--fairway-700); margin-bottom: 16px; }
+.car-value-t { font-family: var(--font-display); font-size: 21px; font-weight: 500; letter-spacing: -0.015em; color: var(--ink-900); margin-bottom: 8px; }
+.car-value-b { font-size: 14.5px; line-height: 1.55; color: var(--ink-600); }
+
+/* ---------- perks ---------- */
+.car-perks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.car-perk { display: flex; gap: 14px; align-items: flex-start; padding: 20px; background: var(--paper-50); border-radius: var(--radius-lg); }
+.car-perk-ic { width: 42px; height: 42px; border-radius: var(--radius-md); background: var(--fairway-100); color: var(--fairway-700); display: grid; place-items: center; flex: none; }
+.car-perk-ic svg { width: 22px; height: 22px; }
+.car-perk-t { font-size: 16px; font-weight: 600; color: var(--ink-900); }
+.car-perk-s { font-size: 13.5px; line-height: 1.5; color: var(--ink-600); margin-top: 3px; }
+
+/* ---------- big quote (ink) ---------- */
+.car-pull { max-width: 900px; }
+.car-pull-q { font-family: var(--font-serif); font-style: italic; font-size: clamp(24px, 3.4vw, 38px); line-height: 1.32; color: var(--paper-100); text-wrap: pretty; }
+.car-pull-by { font-size: 15px; font-weight: 600; color: var(--fairway-300); margin-top: 22px; }
+.car-pull-by span { color: rgba(251,250,246,.6); font-weight: 400; }
+
+/* ---------- gallery strip ---------- */
+.car-gallery { display: grid; grid-template-columns: 1.4fr 1fr 1fr; grid-template-rows: 180px 180px; gap: 14px; margin-top: 8px; }
+.car-gallery .g { border-radius: var(--radius-lg); background-size: cover; background-position: center; background-color: var(--paper-200); }
+.car-gallery .g1 { grid-row: span 2; }
+
+/* ---------- open positions ---------- */
+.car-jobs-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+.car-fbtn {
+  padding: 8px 15px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 500;
+  color: var(--ink-600); border: 1px solid var(--ink-200); background: var(--paper-50); cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.car-fbtn:hover { border-color: var(--ink-300); }
+.car-fbtn.on { background: var(--fairway-700); color: var(--paper-100); border-color: var(--fairway-700); }
+.car-jobs { display: flex; flex-direction: column; }
+.car-job {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 24px; align-items: center;
+  padding: 22px 4px; border-top: 1px solid var(--ink-200); text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-out), padding-left var(--dur-fast) var(--ease-out);
+}
+.car-job:last-child { border-bottom: 1px solid var(--ink-200); }
+.car-job:hover { background: var(--paper-50); padding-left: 14px; }
+.car-job-t { font-family: var(--font-display); font-size: 21px; font-weight: 500; letter-spacing: -0.015em; color: var(--ink-900); }
+.car-job-meta { font-size: 13.5px; color: var(--ink-500); margin-top: 4px; display: flex; gap: 14px; flex-wrap: wrap; }
+.car-job-tag { font-size: 12px; font-weight: 600; color: var(--fairway-700); background: var(--fairway-100); padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
+.car-job-arrow { width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--ink-200); display: grid; place-items: center; color: var(--ink-700); transition: all var(--dur-fast) var(--ease-out); }
+.car-job:hover .car-job-arrow { background: var(--fairway-700); border-color: var(--fairway-700); color: var(--paper-100); }
+.car-jobs-empty { padding: 40px 0; color: var(--ink-500); font-size: 15px; }
+
+/* ---------- hiring process ---------- */
+.car-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: step; }
+.car-step { position: relative; padding: 24px; background: var(--paper-50); border-radius: var(--radius-xl); }
+.car-step-n {
+  width: 34px; height: 34px; border-radius: 999px; background: var(--fairway-700); color: var(--paper-100);
+  display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: 15px; margin-bottom: 14px;
+}
+.car-step-t { font-size: 17px; font-weight: 600; color: var(--ink-900); margin-bottom: 6px; }
+.car-step-b { font-size: 14px; line-height: 1.5; color: var(--ink-600); }
+
+/* ---------- CTA ---------- */
+.car-cta { max-width: 1280px; margin: 0 auto 84px; padding: 0 24px; }
+.car-cta-card {
+  position: relative; border-radius: var(--radius-2xl); overflow: hidden; padding: 64px 48px;
+  background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+.car-cta-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,40,28,.62), rgba(14,19,16,.82)); }
+.car-cta-inner { position: relative; color: var(--paper-100); max-width: 620px; }
+.car-cta-h { font-family: var(--font-display); font-size: clamp(28px,3.6vw,42px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.05; margin-bottom: 14px; }
+.car-cta-p { font-size: 17px; line-height: 1.55; opacity: .94; margin-bottom: 26px; }
+
+@media (max-width: 1000px) {
+  .car-values { grid-template-columns: repeat(2, 1fr); }
+  .car-perks { grid-template-columns: repeat(2, 1fr); }
+  .car-steps { grid-template-columns: repeat(2, 1fr); }
+  .car-gallery { grid-template-columns: 1fr 1fr; grid-template-rows: 160px 160px; }
+}
+@media (max-width: 720px) {
+  .car-hero-inner { padding: 32px 22px; }
+  .car-section { padding: 56px 20px; }
+  .car-values, .car-perks, .car-steps { grid-template-columns: 1fr; }
+  .car-job { grid-template-columns: 1fr auto; }
+  .car-job-tag { display: none; }
+  .car-cta-card { padding: 44px 24px; }
+}

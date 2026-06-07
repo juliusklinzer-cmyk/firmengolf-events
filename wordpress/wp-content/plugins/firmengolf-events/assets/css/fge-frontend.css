@@ -3318,6 +3318,16 @@ button.fg-modal-close:hover { background: var(--paper-300); }
 .fg-want:hover { border-color: var(--border-strong); }
 .fg-want input { accent-color: var(--fairway-700); width: 16px; height: 16px; }
 .fg-want:has(input:checked) { border-color: var(--fairway-600); background: var(--fairway-100); }
+/* Im Event inkludierte Leistung — markiert & nicht abwählbar */
+.fg-want.is-included { border-color: var(--fairway-600); background: var(--fairway-50); cursor: default; }
+.fg-want.is-included input { cursor: default; }
+.fg-want.is-included > span { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fg-want-badge { font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--fairway-800); background: rgba(94,138,101,0.14); border-radius: 999px; padding: 2px 8px; }
+/* Fixer „Deine Auswahl"-Kontext im Anfrage-Modal */
+.fg-modal-context { margin: 14px 0 4px; padding: 12px 14px; background: var(--paper-100); border: 1px solid var(--ink-200); border-radius: var(--radius-md); }
+.fg-modal-context-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-500); margin-bottom: 8px; }
+.fg-modal-context-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.fg-modal-context-chip { font-size: 13px; font-weight: 500; color: var(--fairway-800); background: rgba(94,138,101,0.1); border: 1px solid rgba(94,138,101,0.25); border-radius: 999px; padding: 5px 12px; }
 .fg-modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--paper-300); }
 .fg-modal-foot.single { justify-content: center; border-top: none; padding-top: 0; }
 .fg-modal-success { text-align: center; padding: 8px 0; }
@@ -3796,6 +3806,8 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   display: flex; flex-direction: column;
   animation: rw-in var(--dur-slow) var(--ease-out);
 }
+/* Schließen: das [hidden]-Attribut muss display:flex überstimmen */
+.rw-overlay[hidden] { display: none; }
 @keyframes rw-in {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: none; }
@@ -3869,9 +3881,16 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   border-top: 1px solid var(--ink-100);
   background: var(--paper-50);
 }
-.rw-progress { display: flex; gap: 6px; }
-.rw-seg { flex: 1; height: 4px; background: var(--ink-100); overflow: hidden; }
+.rw-progress { display: flex; gap: 16px; max-width: 1100px; margin: 0 auto; padding: 18px 32px 0; }
+.rw-seg { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.rw-seg-bar { height: 4px; border-radius: 999px; background: var(--ink-100); overflow: hidden; }
 .rw-seg-fill { height: 100%; background: var(--fairway-700); transition: width var(--dur-slow) var(--ease-out); }
+.rw-seg-label { font-size: 13px; font-weight: 500; color: var(--ink-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rw-seg.is-active .rw-seg-label { color: var(--ink-900); }
+@media (max-width: 720px) {
+  .rw-progress { gap: 8px; padding: 14px 20px 0; }
+  .rw-seg-label { font-size: 11px; }
+}
 .rw-nav {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 32px;

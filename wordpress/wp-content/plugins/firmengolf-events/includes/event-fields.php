@@ -395,7 +395,7 @@ function fge_render_mb_seo( WP_Post $post ) {
 			<th scope="row"><label for="fge_faq_content">FAQ</label></th>
 			<td>
 				<textarea id="fge_faq_content" name="fge_faq_content" rows="5" class="large-text"><?php echo esc_textarea( $faq_content ); ?></textarea>
-				<p class="description">Fragen und Antworten als Freitext. Später strukturiert.</p>
+				<p class="description">Pro Frage ein Block: erste Zeile = Frage, folgende Zeile(n) = Antwort. Blöcke durch eine Leerzeile trennen. Leer = allgemeine Standard-FAQ.</p>
 			</td>
 		</tr>
 	</table>

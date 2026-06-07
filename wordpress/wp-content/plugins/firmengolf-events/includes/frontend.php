@@ -138,6 +138,73 @@ function fge_get_active_leistungen( int $post_id ): array {
 	return $active;
 }
 
+/**
+ * Kanonisches Mapping: Event-Leistung (has_*) → Anfrage-Wunsch (wants_*).
+ *
+ * Nur Leistungen mit einem echten Wunsch-Pendant. Event-only-Leistungen
+ * (range_usage, rental_clubs, range_balls, putting_shortgame) haben kein Ziel
+ * und werden im Anfrage-Formular nur als „inklusive" angezeigt, nicht als Wunsch gespeichert.
+ *
+ * @return array<string,string> has_-Schlüssel (ohne Präfix) => wants_-Schlüssel (ohne Präfix)
+ */
+function fge_leistung_to_want_map(): array {
+	return [
+		'golf_teacher' => 'golf_teacher',
+		'meeting_room' => 'meeting_room',
+		'breakfast'    => 'breakfast',
+		'lunch'        => 'lunch',
+		'dinner'       => 'dinner',
+		'shuttle'      => 'shuttle',
+		'branding'     => 'branding',
+	];
+}
+
+/**
+ * Öffentliche Golfplatz-Namen (für den „Konkreter Platz"-Dropdown im Anfrage-Wizard).
+ *
+ * @return string[] alphabetisch, dedupliziert
+ */
+function fge_get_public_place_names(): array {
+	$posts = get_posts( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => 'publish',
+		'numberposts' => -1,
+		'orderby'     => 'title',
+		'order'       => 'ASC',
+	] );
+	$names = [];
+	foreach ( $posts as $p ) {
+		$n = (string) get_post_meta( $p->ID, '_fge_public_golfclub_name', true );
+		if ( $n === '' ) {
+			$n = (string) get_the_title( $p );
+		}
+		if ( $n !== '' ) {
+			$names[] = $n;
+		}
+	}
+	sort( $names );
+	return array_values( array_unique( $names ) );
+}
+
+/**
+ * Liefert die im Event inkludierten Anfrage-Wünsche (wants_-Schlüssel ohne Präfix).
+ *
+ * @param int $event_id
+ * @return string[] z.B. [ 'golf_teacher', 'lunch', 'branding' ]
+ */
+function fge_event_included_wants( int $event_id ): array {
+	$active = fge_get_active_leistungen( $event_id ); // has_-Schlüssel => Label
+	$map    = fge_leistung_to_want_map();
+	$wants  = [];
+	foreach ( $active as $has_key => $label ) {
+		$short = preg_replace( '/^has_/', '', $has_key );
+		if ( isset( $map[ $short ] ) ) {
+			$wants[] = $map[ $short ];
+		}
+	}
+	return array_values( array_unique( $wants ) );
+}
+
 function fge_get_featured_events( int $count = 3 ): array {
 	return get_posts( [
 		'post_type'   => 'firmengolf_event',

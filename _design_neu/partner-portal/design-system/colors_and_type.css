@@ -1,0 +1,284 @@
+/* =========================================================================
+   FIRMENGOLF — Colors & Type Foundations
+   Single source of truth for the design system. Import this file in every
+   prototype, slide deck and UI kit. Webfonts loaded from Google Fonts.
+   ========================================================================= */
+
+/* ---------- 1. WEBFONTS ----------
+   All families are locally hosted in /fonts/. No external CDN requests.
+   Active brand stack: Bricolage Grotesque (display) + Instrument Sans
+   (body) + Instrument Serif italic (accent) + JetBrains Mono (IDs).
+   Be Vietnam Pro and Roboto Slab are declared but not wired into the
+   default --font-* vars — available as alternates if needed. */
+
+/* --- Bricolage Grotesque (display) --- */
+@font-face { font-family: "Bricolage Grotesque"; src: url("../../fonts/BricolageGrotesque-ExtraLight.ttf") format("truetype"); font-weight: 200; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../../fonts/BricolageGrotesque-Light.ttf")      format("truetype"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../../fonts/BricolageGrotesque-Regular.ttf")    format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../../fonts/BricolageGrotesque-Medium.ttf")     format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../../fonts/BricolageGrotesque-SemiBold.ttf")   format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../../fonts/BricolageGrotesque-Bold.ttf")       format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../../fonts/BricolageGrotesque-ExtraBold.ttf")  format("truetype"); font-weight: 800; font-style: normal; font-display: swap; }
+
+/* --- Instrument Sans (body / UI) --- */
+@font-face { font-family: "Instrument Sans"; src: url("../../fonts/InstrumentSans-Regular.ttf")        format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../../fonts/InstrumentSans-Italic.ttf")         format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../../fonts/InstrumentSans-Medium.ttf")         format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../../fonts/InstrumentSans-MediumItalic.ttf")   format("truetype"); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../../fonts/InstrumentSans-SemiBold.ttf")       format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../../fonts/InstrumentSans-SemiBoldItalic.ttf") format("truetype"); font-weight: 600; font-style: italic; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../../fonts/InstrumentSans-Bold.ttf")           format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../../fonts/InstrumentSans-BoldItalic.ttf")     format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
+
+/* --- Instrument Serif (italic accent only) --- */
+@font-face { font-family: "Instrument Serif"; src: url("../../fonts/InstrumentSerif-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("../../fonts/InstrumentSerif-Italic.ttf")  format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+
+/* --- JetBrains Mono (IDs, code) --- */
+@font-face { font-family: "JetBrains Mono"; src: url("../../fonts/JetBrainsMono-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("../../fonts/JetBrainsMono-Italic.ttf")  format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("../../fonts/JetBrainsMono-Medium.ttf")  format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("../../fonts/JetBrainsMono-Bold.ttf")    format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+
+/* --- Be Vietnam Pro (alternate, not wired by default) --- */
+@font-face { font-family: "Be Vietnam Pro"; src: url("../../fonts/BeVietnamPro-Regular.ttf")  format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Be Vietnam Pro"; src: url("../../fonts/BeVietnamPro-Italic.ttf")   format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Be Vietnam Pro"; src: url("../../fonts/BeVietnamPro-Medium.ttf")   format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Be Vietnam Pro"; src: url("../../fonts/BeVietnamPro-SemiBold.ttf") format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Be Vietnam Pro"; src: url("../../fonts/BeVietnamPro-Bold.ttf")     format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Be Vietnam Pro"; src: url("../../fonts/BeVietnamPro-ExtraBold.ttf") format("truetype"); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Be Vietnam Pro"; src: url("../../fonts/BeVietnamPro-Black.ttf")    format("truetype"); font-weight: 900; font-style: normal; font-display: swap; }
+
+/* --- Roboto Slab (alternate, not wired by default) --- */
+@font-face { font-family: "Roboto Slab"; src: url("../../fonts/RobotoSlab-Regular.ttf")   format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto Slab"; src: url("../../fonts/RobotoSlab-Medium.ttf")    format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto Slab"; src: url("../../fonts/RobotoSlab-SemiBold.ttf")  format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto Slab"; src: url("../../fonts/RobotoSlab-Bold.ttf")      format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+
+:root {
+
+  /* =====================================================================
+     2. COLOR — Brand palette
+     The palette is rooted in three material truths of a golf course:
+       INK     night air on the fairway, deep boardroom navy-black
+       CREAM   paper, sand, clubhouse linen, daylight
+       FAIRWAY freshly mowed grass — the only saturated brand colour
+     Accents (clay, sand, moss) appear in small amounts as warmth.
+     ===================================================================== */
+
+  /* Neutrals — ink to paper, slightly green-tinted */
+  --ink-900: #0E1310;      /* primary text, dark surfaces */
+  --ink-800: #1A201C;
+  --ink-700: #2B322D;
+  --ink-600: #4A514C;
+  --ink-500: #6C736E;      /* muted body text */
+  --ink-400: #8E938F;
+  --ink-300: #BFC3BF;      /* hairline dividers on light */
+  --ink-200: #E2E4E0;
+  --ink-100: #EFEFEA;      /* deeper cream */
+
+  /* Surface — warm paper whites */
+  --paper-50:  #FFFFFF;
+  --paper-100: #FBFAF6;    /* default page background */
+  --paper-200: #F4F1E9;    /* secondary block / card panel */
+  --paper-300: #ECE7DA;    /* deeper sand panel */
+
+  /* Brand — fairway greens (the only saturated hues) */
+  --fairway-900: #14241A;  /* dark mode hero, dark cards */
+  --fairway-800: #1F3826;
+  --fairway-700: #2C5036;  /* primary brand green */
+  --fairway-600: #3D6A47;
+  --fairway-500: #5E8A65;  /* mid green for borders/hover */
+  --fairway-400: #8AA98F;
+  --fairway-300: #B8CDB9;
+  --fairway-200: #D7E2D2;  /* meadow — tag/chip fill */
+  --fairway-100: #ECF1E6;  /* lightest meadow wash */
+
+  /* Accents — used sparingly */
+  --clay-600:  #B45A37;    /* warm terra — sale, accent badges */
+  --clay-500:  #C97A57;
+  --clay-100:  #F3E1D6;
+  --sand-500:  #C9B488;    /* warm bunker sand */
+  --sand-200:  #E8DEC6;
+  --flag-500:  #C24A3E;    /* flag red, very sparing */
+
+  /* Semantic — system feedback */
+  --success:   #2F6E45;
+  --warning:   #C58A1D;
+  --danger:    #B4332B;
+  --info:      #3F6E8A;
+
+  /* ---- Semantic tokens (the names components should reference) ---- */
+  --bg:            var(--paper-100);
+  --bg-elevated:   var(--paper-50);
+  --bg-sunken:     var(--paper-200);
+  --bg-panel:      var(--paper-200);
+  --bg-inverse:    var(--ink-900);
+  --bg-brand:      var(--fairway-700);
+
+  --fg:            var(--ink-900);
+  --fg-muted:      var(--ink-500);
+  --fg-subtle:     var(--ink-400);
+  --fg-on-brand:   var(--paper-50);
+  --fg-on-inverse: var(--paper-100);
+  --fg-link:       var(--fairway-700);
+
+  --border:        var(--ink-200);
+  --border-strong: var(--ink-300);
+  --border-brand:  var(--fairway-200);
+
+  /* =====================================================================
+     3. TYPE — Single-family system + accent + mono
+       Brand   : "Be Vietnam Pro" — humanist sans, weights 100–900, italics.
+                 Used for BOTH display (heavy weights) and body (regular/
+                 medium). Bundled in /fonts/ — see @font-face block above.
+       Accent  : "Instrument Serif" italic — substitute, pull-quotes only.
+       Mono    : "JetBrains Mono" — substitute, IDs / receipts only.
+     ===================================================================== */
+
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-body:    "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif:   "Instrument Serif", Georgia, serif;             /* italic accent */
+  --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-alt:     "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;  /* alternate, not active */
+  --font-slab:    "Roboto Slab", Georgia, serif;                  /* alternate, not active */
+
+  /* Weights */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold: 600;
+  --fw-bold:    700;
+
+  /* Type scale — 1.200 minor third, but display sizes break the ratio
+     intentionally for editorial impact. All in px (not rem) so prototypes
+     in fixed-size frames behave predictably. */
+  --fs-display-2xl: 96px;  --lh-display-2xl: 0.95;  --tr-display-2xl: -0.04em;
+  --fs-display-xl:  72px;  --lh-display-xl:  0.98;  --tr-display-xl:  -0.035em;
+  --fs-display-lg:  56px;  --lh-display-lg:  1.02;  --tr-display-lg:  -0.03em;
+  --fs-display-md:  44px;  --lh-display-md:  1.05;  --tr-display-md:  -0.025em;
+  --fs-display-sm:  32px;  --lh-display-sm:  1.1;   --tr-display-sm:  -0.02em;
+
+  --fs-h1:          28px;  --lh-h1: 1.15;  --tr-h1: -0.015em;
+  --fs-h2:          22px;  --lh-h2: 1.2;   --tr-h2: -0.01em;
+  --fs-h3:          18px;  --lh-h3: 1.3;   --tr-h3: -0.005em;
+
+  --fs-body-lg:     18px;  --lh-body-lg: 1.55;
+  --fs-body:        16px;  --lh-body:    1.55;
+  --fs-body-sm:     14px;  --lh-body-sm: 1.5;
+  --fs-caption:     13px;  --lh-caption: 1.4;
+  --fs-eyebrow:     12px;  --lh-eyebrow: 1.4;  --tr-eyebrow: 0.06em;
+
+  /* =====================================================================
+     4. SHAPE — Radii, shadow, spacing, motion
+     ===================================================================== */
+  --radius-xs:  4px;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  18px;   /* cards */
+  --radius-xl:  24px;   /* feature cards / hero blocks */
+  --radius-2xl: 32px;   /* full-bleed feature blocks */
+  --radius-pill: 999px;
+
+  /* Layered shadow system — based on soft natural daylight, not glow */
+  --shadow-xs:  0 1px 2px rgba(14, 19, 16, 0.04);
+  --shadow-sm:  0 1px 2px rgba(14, 19, 16, 0.05), 0 2px 6px rgba(14, 19, 16, 0.04);
+  --shadow-md:  0 2px 4px rgba(14, 19, 16, 0.05), 0 8px 24px rgba(14, 19, 16, 0.06);
+  --shadow-lg:  0 4px 8px rgba(14, 19, 16, 0.06), 0 18px 48px rgba(14, 19, 16, 0.10);
+  --shadow-xl:  0 8px 16px rgba(14, 19, 16, 0.08), 0 32px 80px rgba(14, 19, 16, 0.14);
+
+  /* Spacing — 4px base, named for intent */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Layout — content widths */
+  --width-prose:     680px;
+  --width-content:   1100px;
+  --width-page:      1280px;
+  --width-page-wide: 1440px;
+
+  /* Motion */
+  --ease-out:   cubic-bezier(0.22, 1, 0.36, 1);    /* default ease-out */
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);    /* navigation */
+  --ease-soft:  cubic-bezier(0.34, 1.16, 0.64, 1); /* gentle overshoot */
+  --dur-fast:   120ms;
+  --dur-base:   200ms;
+  --dur-slow:   360ms;
+  --dur-page:   520ms;
+}
+
+/* =========================================================================
+   5. SEMANTIC ELEMENT STYLES — for prose & components
+   Apply when writing free-form HTML; components compose their own variants.
+   ========================================================================= */
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, .h1, h2, .h2, h3, .h3, .display-2xl, .display-xl, .display-lg, .display-md, .display-sm {
+  font-family: var(--font-display);
+  font-weight: var(--fw-medium);
+  color: var(--fg);
+  text-wrap: balance;
+}
+
+.display-2xl { font-size: var(--fs-display-2xl); line-height: var(--lh-display-2xl); letter-spacing: var(--tr-display-2xl); font-weight: 500; }
+.display-xl  { font-size: var(--fs-display-xl);  line-height: var(--lh-display-xl);  letter-spacing: var(--tr-display-xl);  font-weight: 500; }
+.display-lg  { font-size: var(--fs-display-lg);  line-height: var(--lh-display-lg);  letter-spacing: var(--tr-display-lg);  font-weight: 500; }
+.display-md  { font-size: var(--fs-display-md);  line-height: var(--lh-display-md);  letter-spacing: var(--tr-display-md);  font-weight: 500; }
+.display-sm  { font-size: var(--fs-display-sm);  line-height: var(--lh-display-sm);  letter-spacing: var(--tr-display-sm);  font-weight: 500; }
+
+h1, .h1 { font-size: var(--fs-h1); line-height: var(--lh-h1); letter-spacing: var(--tr-h1); }
+h2, .h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); letter-spacing: var(--tr-h2); }
+h3, .h3 { font-size: var(--fs-h3); line-height: var(--lh-h3); letter-spacing: var(--tr-h3); font-weight: var(--fw-semibold); }
+
+p, .body { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--fg); text-wrap: pretty; }
+.body-lg { font-size: var(--fs-body-lg); line-height: var(--lh-body-lg); }
+.body-sm { font-size: var(--fs-body-sm); line-height: var(--lh-body-sm); }
+.muted   { color: var(--fg-muted); }
+.subtle  { color: var(--fg-subtle); }
+
+.caption { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--fg-muted); }
+
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  line-height: var(--lh-eyebrow);
+  letter-spacing: var(--tr-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: var(--fw-medium);
+}
+
+.serif-flourish {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+}
+
+code, kbd, samp, pre, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+
+a { color: var(--fg-link); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
+a:hover { color: var(--fairway-600); }
+
+hr { border: 0; border-top: 1px solid var(--border); margin: var(--space-8) 0; }
+
+::selection { background: var(--fairway-200); color: var(--ink-900); }

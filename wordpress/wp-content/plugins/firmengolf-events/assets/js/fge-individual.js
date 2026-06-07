@@ -194,7 +194,7 @@
 
 		function blank(preset) {
 			var f = {
-				occasion: 'Sommerfest', goal: '', size: '40', region: 'Süd',
+				occasion: 'Sommerfest', goal: '', size: '40', region: '', place: '',
 				budget: '€10.000 – €20.000', when: '', flex: 'flexibel', duration: 'Halbtag',
 				date1: '', date2: '', date3: '', services: ['Lunch', 'Golflehrer / Coaching'],
 				company: '', city: '', firstName: '', lastName: '', role: '', email: '', phone: '',
@@ -219,6 +219,16 @@
 			return '<span class="ind-flabel">' + esc(txt)
 				+ (req ? '<span class="ind-required">*</span>' : '')
 				+ (hint ? '<span class="ind-flabel-hint">' + esc(hint) + '</span>' : '') + '</span>';
+		}
+		// Optionaler „Konkreter Golfplatz"-Dropdown (nur wenn Plätze übergeben wurden).
+		function placeField() {
+			var places = CFG.places || [];
+			if (!places.length) return '';
+			var opts = '<option value="">Kein bestimmter Platz</option>' + places.map(function (p) {
+				return '<option value="' + esc(p) + '"' + (S.form.place === p ? ' selected' : '') + '>' + esc(p) + '</option>';
+			}).join('');
+			return '<div class="rw-field">' + label('Konkreter Golfplatz?', false, 'Optional')
+				+ '<select class="fg-input" data-field="place">' + opts + '</select></div>';
 		}
 
 		function topBar() {
@@ -288,7 +298,9 @@
 					+ '<div class="rw-row rw-row-3">' + input('date1', '', '1. Termin') + input('date2', '', '2. Termin') + input('date3', '', '3. Termin') + '</div></div>'
 					+ '<div class="rw-row"><div class="rw-field">' + label('Wie flexibel beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
 					+ '<div class="rw-field">' + label('Dauer') + chips('duration', ['Halbtag', 'Ganztag', '2 Tage', 'Mehrtägig']) + '</div></div>'
-					+ '<div class="rw-field">' + label('Region') + chips('region', ['Ganz Deutschland', 'Nord', 'Ost', 'Süd', 'West', 'International']) + '</div></div>';
+					+ '<div class="rw-field">' + label('Wo soll euer Event stattfinden?')
+					+ chips('region', ['In der Nähe / Bundesland', 'Mitte Deutschlands', 'In den Alpen', 'Stadtnah', 'Am Meer / Sylt', 'In Europa', 'An einem besonderen Ort', 'Noch offen'])
+					+ '</div>' + placeField() + '</div>';
 			}
 			if (step === 2) {
 				var groups = SERVICE_GROUPS.map(function (g) {
@@ -332,9 +344,11 @@
 		}
 
 		function screenFull() {
-			var segs = FULL_STEPS.map(function (_, i) {
-				var r = i < S.step ? 1 : (i === S.step ? 0.5 : 0);
-				return '<div class="rw-seg"><div class="rw-seg-fill" style="width:' + (r * 100) + '%"></div></div>';
+			var segs = FULL_STEPS.map(function (lbl, i) {
+				var active = i <= S.step;
+				return '<div class="rw-seg' + (active ? ' is-active' : '') + '">'
+					+ '<div class="rw-seg-bar"><div class="rw-seg-fill" style="width:' + (active ? 100 : 0) + '%"></div></div>'
+					+ '<span class="rw-seg-label">' + esc(lbl) + '</span></div>';
 			}).join('');
 			var isLast = S.step === FULL_STEPS.length - 1;
 			return '<div class="rw-stage"><div class="rw-screen">' + fullStepBody(S.step) + '</div></div>'
@@ -394,7 +408,7 @@
 			body.set('action', 'fge_general_request');
 			body.set('nonce', CFG.nonce || '');
 			body.set('occasion', f.occasion); body.set('goal', f.goal); body.set('size', f.size);
-			body.set('region', f.region); body.set('budget', f.budget); body.set('when', f.when);
+			body.set('region', f.region); body.set('place', f.place || ''); body.set('budget', f.budget); body.set('when', f.when);
 			body.set('flex', f.flex); body.set('duration', f.duration);
 			body.set('date1', f.date1); body.set('date2', f.date2); body.set('date3', f.date3);
 			body.set('company', f.company); body.set('city', f.city);
@@ -402,6 +416,7 @@
 			body.set('role', f.role); body.set('email', f.email); body.set('phone', f.phone);
 			body.set('contact_pref', f.contactPref); body.set('notes', f.notes);
 			body.set('services', (f.services || []).join('||'));
+			if (S.source) body.set('source', S.source);
 
 			fetch(CFG.ajaxUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
 				.then(function (r) { return r.json(); })
@@ -460,7 +475,7 @@
 
 		function onKey(e) { if (e.key === 'Escape') close(); }
 
-		function open(mode, preset, intro) {
+		function open(mode, preset, intro, source) {
 			if (!overlay) {
 				overlay = el('div', 'rw-overlay');
 				overlay.setAttribute('role', 'dialog');
@@ -468,7 +483,7 @@
 				document.body.appendChild(overlay);
 				overlay.addEventListener('click', onClick);
 			}
-			S = { mode: mode || 'full', phase: (intro && mode !== 'quick') ? 'intro' : 'form', step: 0, sending: false, form: blank(preset) };
+			S = { mode: mode || 'full', phase: (intro && mode !== 'quick') ? 'intro' : 'form', step: 0, sending: false, source: source || '', form: blank(preset) };
 			document.body.style.overflow = 'hidden';
 			window.addEventListener('keydown', onKey);
 			overlay.hidden = false;
@@ -500,7 +515,8 @@
 				var preset = null;
 				if (presetRaw) { try { preset = JSON.parse(presetRaw); } catch (err) { preset = null; } }
 				var intro = btn.hasAttribute('data-rw-intro');
-				Wizard.open(mode, preset, intro);
+				var source = btn.getAttribute('data-rw-source') || '';
+				Wizard.open(mode, preset, intro, source);
 			});
 		});
 	});

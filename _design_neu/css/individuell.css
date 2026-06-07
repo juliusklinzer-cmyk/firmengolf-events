@@ -1,0 +1,285 @@
+/* =====================================================================
+   Individuelle Events — rebuilt page (naboo-inspired, golf-themed)
+   Photo tiles · Budget-Rechner · Locations
+   Loads after site.css; reuses .ind-hero / .ind-night / .ind-launch.
+   ===================================================================== */
+
+/* ---------- shared centered section head ---------- */
+.iv-section { max-width: 1280px; margin: 0 auto; padding: 96px 24px; }
+.iv-head {
+  max-width: 660px; margin: 0 auto 44px;
+  display: flex; flex-direction: column; gap: 14px;
+  text-align: center; align-items: center;
+}
+.iv-head .mk-h2 { font-size: 44px; }
+.iv-head .mk-sub { text-align: center; max-width: 560px; }
+
+/* ---------- photo tiles (Veranstaltungsart + Locations) ---------- */
+.iv-tiles {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+}
+.iv-tile {
+  position: relative; display: block;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-lg);
+  overflow: hidden; cursor: pointer;
+  text-align: left;
+  isolation: isolate;
+}
+.iv-tile-img {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  z-index: -2;
+  transition: filter var(--dur-base) var(--ease-out);
+}
+.iv-tile-scrim {
+  position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, rgba(14,19,16,0) 38%, rgba(14,19,16,.78) 100%);
+}
+.iv-tile-label {
+  position: absolute; left: 18px; right: 18px; bottom: 16px;
+  color: var(--paper-100);
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;
+}
+.iv-tile-t {
+  font-family: var(--font-display);
+  font-size: 21px; font-weight: 500; letter-spacing: -0.015em;
+  line-height: 1.1; text-wrap: balance;
+}
+.iv-tile-sub { font-size: 13px; opacity: 0.82; margin-top: 3px; }
+.iv-tile-arrow {
+  flex: none; width: 30px; height: 30px; border-radius: 999px;
+  background: rgba(255,255,255,0.18); backdrop-filter: blur(6px);
+  display: grid; place-items: center; color: var(--paper-100);
+  opacity: 0; transform: translateY(4px);
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+.iv-tile:hover .iv-tile-img { filter: brightness(1.06); }
+.iv-tile:hover .iv-tile-arrow { opacity: 1; transform: translateY(0); }
+.iv-tile:focus-visible { outline: 2px solid var(--fairway-700); outline-offset: 2px; }
+
+/* locations get a slightly shorter aspect + are wrapped on a cream panel */
+.iv-locations { background: var(--paper-200); }
+.iv-locations .iv-tile { aspect-ratio: 4 / 5; }
+
+/* ---------- Golf-Erfahrung (experience levels) ---------- */
+.iv-exp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.iv-exp {
+  background: var(--paper-50);
+  border: 1px solid var(--ink-200);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.iv-exp-photo {
+  position: relative; aspect-ratio: 16 / 10;
+  background-size: cover; background-position: center;
+}
+.iv-exp-badge {
+  position: absolute; left: 14px; top: 14px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--ink-900);
+  background: rgba(251,250,246,0.92); backdrop-filter: blur(4px);
+  padding: 6px 12px; border-radius: var(--radius-pill);
+}
+.iv-exp-body { padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 11px; flex: 1; }
+.iv-exp-dots { display: flex; gap: 5px; }
+.iv-exp-dot {
+  width: 18px; height: 5px; border-radius: 999px; background: var(--ink-200);
+}
+.iv-exp-dot.on { background: var(--fairway-700); }
+.iv-exp-t {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.15;
+  color: var(--ink-900);
+}
+.iv-exp-b { font-size: 15px; line-height: 1.55; color: var(--ink-700); flex: 1; }
+.iv-exp-meta { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 2px; }
+.iv-exp-tag {
+  font-size: 12.5px; font-weight: 500; color: var(--fairway-700);
+  background: var(--fairway-100); border-radius: var(--radius-pill);
+  padding: 5px 11px;
+}
+
+/* ---------- request wizard: warm intro screen ---------- */
+.rw-intro { max-width: 600px; }
+.rw-intro .rw-h .mk-italic { color: var(--fairway-700); }
+.rw-intro-contact {
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 28px; padding: 18px 20px;
+  background: var(--paper-200); border-radius: var(--radius-lg);
+}
+.rw-intro-contact img {
+  width: 60px; height: 60px; border-radius: 999px; object-fit: cover; flex: none;
+}
+.rw-intro-c-name { font-family: var(--font-display); font-size: 17px; font-weight: 500; color: var(--ink-900); }
+.rw-intro-c-role { font-size: 13px; color: var(--ink-500); margin-top: 1px; }
+.rw-intro-c-note { font-size: 14px; color: var(--ink-700); font-style: italic; font-family: var(--font-serif); margin-top: 6px; }
+.rw-intro-steps {
+  list-style: none; padding: 0; margin: 26px 0 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.rw-intro-steps li {
+  display: flex; align-items: center; gap: 11px;
+  font-size: 15px; color: var(--ink-700);
+}
+.rw-intro-steps li::before {
+  content: ''; flex: none;
+  width: 20px; height: 20px; border-radius: 999px;
+  background: var(--fairway-100) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%232C5036' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+
+/* ======================================================================
+   BUDGET-RECHNER
+   ====================================================================== */
+.bcalc-wrap { background: var(--paper-200); padding: 96px 24px; }
+.bcalc { max-width: 1080px; margin: 0 auto; }
+.bcalc-head {
+  text-align: center; max-width: 620px; margin: 0 auto 36px;
+  display: flex; flex-direction: column; gap: 12px; align-items: center;
+}
+
+/* controls bar */
+.bc-controls {
+  background: var(--paper-50);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: stretch; gap: 4px;
+}
+.bc-field { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.bc-field + .bc-field { border-left: 1px solid var(--ink-200); }
+.bc-flabel {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--ink-500);
+}
+
+/* stepper */
+.bc-stepper { display: flex; align-items: center; gap: 6px; }
+.bc-step-btn {
+  width: 34px; height: 34px; border-radius: 999px;
+  border: 1px solid var(--ink-200); background: var(--paper-50);
+  color: var(--ink-700);
+  display: grid; place-items: center;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.bc-step-btn:hover { border-color: var(--fairway-400); background: var(--fairway-100); color: var(--fairway-700); }
+.bc-step-btn:active { transform: translateY(1px); }
+.bc-step-val {
+  min-width: 52px; text-align: center;
+  font-family: var(--font-display); font-weight: 600; font-size: 20px;
+  color: var(--ink-900); letter-spacing: -0.01em;
+}
+
+/* select */
+.bc-select {
+  appearance: none; -webkit-appearance: none;
+  font: inherit; font-size: 15px; font-weight: 500; color: var(--ink-900);
+  background: var(--paper-50);
+  border: 1px solid var(--ink-200); border-radius: var(--radius-md);
+  padding: 11px 38px 11px 14px; width: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236C736E' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.bc-select:hover { border-color: var(--ink-300); }
+.bc-select:focus-visible { outline: 2px solid var(--fairway-700); outline-offset: 1px; }
+
+/* segmented price range */
+.bc-seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--paper-200); border-radius: 999px; }
+.bc-seg-btn {
+  padding: 8px 14px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; color: var(--ink-500);
+  font-family: var(--font-display); letter-spacing: 0.02em;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.bc-seg-btn.on { background: var(--fairway-700); color: var(--paper-100); }
+
+/* services chips (full-width row under the bar) */
+.bc-services {
+  margin-top: 12px;
+  background: var(--paper-50);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 18px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+}
+.bc-services-l {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--ink-500); margin-right: 4px;
+}
+.bc-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 500; color: var(--ink-700);
+  padding: 9px 15px 9px 12px; border-radius: 999px;
+  border: 1px solid var(--ink-200); background: var(--paper-50);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.bc-chip:hover { border-color: var(--ink-300); }
+.bc-chip.on { background: var(--fairway-700); color: var(--paper-100); border-color: var(--fairway-700); }
+.bc-chip-ic { width: 18px; height: 18px; display: grid; place-items: center; opacity: 0.9; }
+
+/* result card */
+.bc-result {
+  margin-top: 18px;
+  background: var(--paper-50);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-md);
+  padding: 34px 38px;
+  display: grid;
+  grid-template-columns: 1.05fr auto 0.95fr;
+  gap: 36px; align-items: center;
+}
+.bc-break-h, .bc-total-h {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--ink-500); margin-bottom: 18px;
+}
+.bc-break-list { display: flex; flex-direction: column; gap: 13px; }
+.bc-break-row { display: flex; align-items: center; gap: 12px; }
+.bc-break-dot { width: 9px; height: 9px; border-radius: 999px; flex: none; }
+.bc-break-name { font-size: 15px; color: var(--ink-700); flex: 1; }
+.bc-break-amt { font-size: 15px; font-weight: 600; color: var(--ink-900); font-variant-numeric: tabular-nums; }
+
+/* donut */
+.bc-donut { display: grid; place-items: center; }
+.bc-donut svg { display: block; transform: rotate(-90deg); }
+.bc-donut-track { stroke: var(--paper-200); }
+
+/* total column */
+.bc-total { display: flex; flex-direction: column; align-items: flex-start; }
+.bc-total-num {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: var(--ink-900);
+  font-variant-numeric: tabular-nums;
+}
+.bc-total-meta { font-size: 14px; color: var(--ink-500); margin-top: 10px; }
+.bc-total-cta { margin-top: 22px; width: 100%; justify-content: center; }
+.bc-total-note { font-size: 12px; color: var(--ink-400); margin-top: 12px; line-height: 1.4; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .iv-tiles { grid-template-columns: repeat(2, 1fr); }
+  .iv-exp-grid { grid-template-columns: 1fr; }
+  .bc-controls { grid-template-columns: 1fr 1fr; }
+  .bc-field + .bc-field { border-left: 0; }
+  .bc-field:nth-child(odd) { border-right: 1px solid var(--ink-200); }
+  .bc-result { grid-template-columns: 1fr; gap: 26px; text-align: left; }
+  .bc-donut { order: -1; }
+}
+@media (max-width: 720px) {
+  .iv-section { padding: 60px 20px; }
+  .bcalc-wrap { padding: 60px 18px; }
+  .iv-head .mk-h2 { font-size: 32px; }
+  .bcalc-head .mk-h2 { font-size: 32px; }
+  .bc-controls { grid-template-columns: 1fr; }
+  .bc-field { border-left: 0 !important; border-right: 0 !important; }
+  .bc-field + .bc-field { border-top: 1px solid var(--ink-200); }
+  .bc-result { padding: 26px 22px; }
+  .bc-total-num { font-size: 44px; }
+}
+@media (max-width: 560px) {
+  .iv-tiles { grid-template-columns: 1fr 1fr; gap: 12px; }
+}

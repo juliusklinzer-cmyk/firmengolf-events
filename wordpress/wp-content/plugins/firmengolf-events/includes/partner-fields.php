@@ -62,6 +62,9 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 	$partner_since             = get_post_meta( $post->ID, '_fge_partner_since', true );
 	$public_short_description  = get_post_meta( $post->ID, '_fge_public_short_description', true );
 	$internal_note             = get_post_meta( $post->ID, '_fge_internal_note', true );
+	$review_quote              = get_post_meta( $post->ID, '_fge_review_quote', true );
+	$review_author             = get_post_meta( $post->ID, '_fge_review_author', true );
+	$review_role               = get_post_meta( $post->ID, '_fge_review_role', true );
 	$rating                    = get_post_meta( $post->ID, '_fge_rating', true );
 
 	$statuses = fge_get_statuses( 'partner' );
@@ -106,6 +109,15 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 			<td><textarea id="fge_public_short_description" name="fge_public_short_description" rows="3" class="large-text"><?php echo esc_textarea( $public_short_description ); ?></textarea></td>
 		</tr>
 		<tr>
+			<th scope="row"><label for="fge_review_quote">Kundenstimme (öffentlich)</label></th>
+			<td>
+				<textarea id="fge_review_quote" name="fge_review_quote" rows="2" class="large-text" placeholder="Zitat des Kunden …"><?php echo esc_textarea( $review_quote ); ?></textarea>
+				<input type="text" name="fge_review_author" value="<?php echo esc_attr( $review_author ); ?>" class="regular-text" placeholder="Name (z.B. Sandra Klein)" style="margin-top:6px;display:block;">
+				<input type="text" name="fge_review_role" value="<?php echo esc_attr( $review_role ); ?>" class="regular-text" placeholder="Rolle · Firma (z.B. HR-Direktorin · Werkstatt 4)" style="margin-top:6px;display:block;">
+				<p class="description">Wird auf den Event-Detailseiten dieses Platzes als Kundenstimme angezeigt. Leer = ausgeblendet.</p>
+			</td>
+		</tr>
+		<tr>
 			<th scope="row"><label for="fge_internal_note">Interne Notiz</label></th>
 			<td>
 				<textarea id="fge_internal_note" name="fge_internal_note" rows="3" class="large-text"><?php echo esc_textarea( $internal_note ); ?></textarea>
@@ -127,6 +139,11 @@ function fge_render_pmb_standort( WP_Post $post ) {
 	$free_region    = get_post_meta( $post->ID, '_fge_free_region', true );
 	$website_url    = get_post_meta( $post->ID, '_fge_website_url', true );
 	$google_maps_url = get_post_meta( $post->ID, '_fge_google_maps_url', true );
+	$directions_text = get_post_meta( $post->ID, '_fge_directions_text', true );
+	$poi_car        = get_post_meta( $post->ID, '_fge_poi_car', true );
+	$poi_train      = get_post_meta( $post->ID, '_fge_poi_train', true );
+	$poi_parking    = get_post_meta( $post->ID, '_fge_poi_parking', true );
+	$poi_hotel      = get_post_meta( $post->ID, '_fge_poi_hotel', true );
 
 	$federal_states = [
 		'baden_wuerttemberg'    => 'Baden-Württemberg',
@@ -198,6 +215,23 @@ function fge_render_pmb_standort( WP_Post $post ) {
 				<input type="url" id="fge_google_maps_url" name="fge_google_maps_url"
 				       value="<?php echo esc_attr( $google_maps_url ); ?>" class="regular-text">
 				<p class="description">Optional.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_directions_text">Anfahrt &amp; Lage (Text)</label></th>
+			<td>
+				<textarea id="fge_directions_text" name="fge_directions_text" rows="3" class="large-text" placeholder="z.B. Großzügige Anlage, Parkplätze direkt am Clubhaus, barrierearmer Zugang."><?php echo esc_textarea( $directions_text ); ?></textarea>
+				<p class="description">Erscheint im „Anfahrt &amp; Location"-Abschnitt der Event-Detailseiten. Leer = nur Adresse + Karte.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row">Anfahrt-Kacheln (POIs)</th>
+			<td>
+				<input type="text" name="fge_poi_car" value="<?php echo esc_attr( $poi_car ); ?>" class="regular-text" placeholder="Auto: z.B. 15 Min. ab Stadtzentrum" style="display:block;">
+				<input type="text" name="fge_poi_train" value="<?php echo esc_attr( $poi_train ); ?>" class="regular-text" placeholder="Bahn: z.B. Shuttle ab Hauptbahnhof" style="display:block;margin-top:6px;">
+				<input type="text" name="fge_poi_parking" value="<?php echo esc_attr( $poi_parking ); ?>" class="regular-text" placeholder="Parken: z.B. Kostenfrei vor Ort" style="display:block;margin-top:6px;">
+				<input type="text" name="fge_poi_hotel" value="<?php echo esc_attr( $poi_hotel ); ?>" class="regular-text" placeholder="Hotel: z.B. 3 Partnerhotels in 10 Min." style="display:block;margin-top:6px;">
+				<p class="description">Jede Kachel wird nur angezeigt, wenn ausgefüllt.</p>
 			</td>
 		</tr>
 	</table>
@@ -750,6 +784,9 @@ function fge_save_partner_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_public_short_description', sanitize_textarea_field( wp_unslash( $_POST['fge_public_short_description'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_rating', max( 0.0, min( 5.0, (float) str_replace( ',', '.', (string) wp_unslash( $_POST['fge_rating'] ?? '' ) ) ) ) );
 	update_post_meta( $post_id, '_fge_internal_note',            sanitize_textarea_field( wp_unslash( $_POST['fge_internal_note'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_review_quote',             sanitize_textarea_field( wp_unslash( $_POST['fge_review_quote'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_review_author',            sanitize_text_field( wp_unslash( $_POST['fge_review_author'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_review_role',              sanitize_text_field( wp_unslash( $_POST['fge_review_role'] ?? '' ) ) );
 
 	// ── Metabox 2: Standort ──
 	update_post_meta( $post_id, '_fge_street',        sanitize_text_field( wp_unslash( $_POST['fge_street'] ?? '' ) ) );
@@ -760,6 +797,11 @@ function fge_save_partner_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_free_region',   sanitize_text_field( wp_unslash( $_POST['fge_free_region'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_website_url',   esc_url_raw( wp_unslash( $_POST['fge_website_url'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_google_maps_url', esc_url_raw( wp_unslash( $_POST['fge_google_maps_url'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_directions_text', sanitize_textarea_field( wp_unslash( $_POST['fge_directions_text'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_poi_car',     sanitize_text_field( wp_unslash( $_POST['fge_poi_car'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_poi_train',   sanitize_text_field( wp_unslash( $_POST['fge_poi_train'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_poi_parking', sanitize_text_field( wp_unslash( $_POST['fge_poi_parking'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_poi_hotel',   sanitize_text_field( wp_unslash( $_POST['fge_poi_hotel'] ?? '' ) ) );
 
 	// ── Metabox 3: Ansprechpartner ──
 	$contact_prefixes = [ 'main', 'event', 'gastro', 'golf_school', 'billing' ];

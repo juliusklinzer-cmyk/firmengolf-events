@@ -1,0 +1,297 @@
+/* =========================================================================
+   FIRMENGOLF — Partner Login (editorial 2-card layout)
+   Matches the main-site visual language: cream paper, large display type,
+   serif italic accent, fairway-green CTAs, soft shadows.
+   ========================================================================= */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--paper-100);
+  color: var(--ink-900);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.pl-body { min-height: 100vh; }
+button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+a { color: inherit; text-decoration: none; cursor: pointer; }
+input { font: inherit; color: inherit; }
+.pl-italic { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+
+.pl-shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ===== Top bar ===== */
+.pl-top {
+  padding: 24px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--ink-100);
+  background: var(--paper-100);
+}
+.pl-brand img { height: 28px; display: block; }
+.pl-back {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink-700);
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--ink-200);
+  background: var(--paper-50);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.pl-back:hover { background: var(--paper-200); }
+
+/* ===== Main column ===== */
+.pl-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 80px 40px 64px;
+  display: flex; flex-direction: column;
+  gap: 56px;
+}
+
+/* ===== Intro / editorial heading ===== */
+.pl-intro {
+  display: flex; flex-direction: column; gap: 16px;
+  max-width: 760px;
+}
+.pl-eyebrow {
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--fairway-700);
+}
+.pl-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 80px; line-height: 0.98; letter-spacing: -0.04em;
+  color: var(--ink-900);
+  text-wrap: balance;
+}
+.pl-lead {
+  font-size: 18px; line-height: 1.55;
+  color: var(--ink-700);
+  max-width: 620px;
+  margin-top: 4px;
+  text-wrap: pretty;
+}
+
+/* ===== Two cards side by side ===== */
+.pl-cards {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+.pl-card {
+  background: var(--paper-50);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--ink-200);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow var(--dur-base) var(--ease-out);
+}
+.pl-card:hover { box-shadow: var(--shadow-md); }
+
+.pl-card-eyebrow {
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-500);
+}
+.pl-card-h {
+  font-family: var(--font-display);
+  font-size: 36px; line-height: 1.08; letter-spacing: -0.025em;
+  font-weight: 500;
+  color: var(--ink-900);
+  margin-top: 12px;
+  text-wrap: balance;
+}
+.pl-card-p {
+  font-size: 15px; line-height: 1.55;
+  color: var(--ink-700);
+  margin-top: 14px;
+  text-wrap: pretty;
+}
+
+/* ===== LOGIN card (left) — no photo, more form ===== */
+.pl-card-login {
+  padding: 40px 40px 36px;
+}
+
+/* Form */
+.pl-form {
+  margin-top: 28px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.pl-field { display: flex; flex-direction: column; gap: 8px; }
+.pl-label {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink-700);
+}
+.pl-label-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.pl-tiny {
+  font-size: 12px; font-weight: 500;
+  color: var(--fairway-700);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.pl-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--ink-200);
+  background: var(--paper-50);
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  color: var(--ink-900);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.pl-input:hover { border-color: var(--ink-300); }
+.pl-input:focus {
+  outline: none;
+  border-color: var(--fairway-700);
+  box-shadow: 0 0 0 3px var(--fairway-100);
+}
+.pl-input-wrap { position: relative; }
+.pl-input-wrap .pl-input { padding-right: 48px; }
+.pl-eye {
+  position: absolute; right: 8px; top: 50%;
+  transform: translateY(-50%);
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-500);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.pl-eye:hover { background: var(--paper-200); color: var(--ink-900); }
+
+.pl-remember {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; color: var(--ink-700);
+  cursor: pointer;
+}
+.pl-remember input { accent-color: var(--fairway-700); width: 16px; height: 16px; }
+
+.pl-error {
+  background: rgba(180,51,43,0.08);
+  border: 1px solid rgba(180,51,43,0.18);
+  color: var(--danger);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+/* Buttons in Firmengolf style — match index.html primary CTAs */
+.pl-btn-ink, .pl-btn-brand {
+  display: inline-flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 22px;
+  font-size: 15px; font-weight: 500;
+  border-radius: var(--radius-pill);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  text-align: left;
+}
+.pl-btn-ink {
+  background: var(--ink-900);
+  color: var(--paper-50);
+  margin-top: 6px;
+}
+.pl-btn-ink:hover:not(:disabled) { background: var(--ink-800); }
+.pl-btn-ink:active:not(:disabled) { transform: translateY(1px); }
+.pl-btn-ink:disabled { background: var(--ink-300); cursor: not-allowed; }
+
+.pl-btn-brand {
+  background: var(--fairway-700);
+  color: var(--paper-50);
+  margin-top: 8px;
+}
+.pl-btn-brand:hover { background: var(--fairway-800); }
+.pl-btn-brand:active { transform: translateY(1px); }
+
+.pl-arrow {
+  width: 30px; height: 30px;
+  border-radius: 999px;
+  background: var(--fairway-700);
+  color: var(--paper-50);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: none;
+}
+.pl-arrow-light {
+  background: var(--paper-50);
+  color: var(--fairway-800);
+}
+
+/* ===== JOIN card (right) — has photo on top ===== */
+.pl-card-join {
+  position: relative;
+}
+.pl-card-photo {
+  aspect-ratio: 16/8;
+  background-size: cover; background-position: center;
+  position: relative;
+  border-bottom: 1px solid var(--ink-100);
+}
+.pl-photo-chip {
+  position: absolute; left: 24px; top: 24px;
+  background: var(--paper-50);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12px; font-weight: 500;
+  color: var(--ink-900);
+  box-shadow: var(--shadow-sm);
+}
+.pl-card-body {
+  padding: 36px 40px 40px;
+  display: flex; flex-direction: column; flex: 1;
+}
+
+.pl-points {
+  list-style: none; padding: 0;
+  display: flex; flex-direction: column; gap: 12px;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+.pl-points li {
+  display: flex; gap: 14px; align-items: flex-start;
+  font-size: 15px; line-height: 1.5;
+  color: var(--ink-800);
+}
+.pl-point-dot {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--fairway-700);
+  flex: none;
+  margin-top: 9px;
+}
+
+.pl-card-meta {
+  margin-top: 12px;
+  font-size: 13px; color: var(--ink-500);
+  text-align: center;
+}
+
+/* ===== Footer meta ===== */
+.pl-meta {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-500);
+  margin-top: auto;
+}
+.pl-meta a { color: var(--ink-700); }
+.pl-meta a:hover { color: var(--ink-900); text-decoration: underline; text-underline-offset: 3px; }
+.pl-meta-sep { color: var(--ink-300); }
+
+/* ===== Responsive ===== */
+@media (max-width: 960px) {
+  .pl-main { padding: 56px 24px 40px; gap: 40px; }
+  .pl-title { font-size: 56px; }
+  .pl-cards { grid-template-columns: 1fr; gap: 16px; }
+  .pl-card-login, .pl-card-body { padding: 32px 28px; }
+  .pl-top { padding: 18px 24px; }
+}
+@media (max-width: 560px) {
+  .pl-title { font-size: 42px; }
+  .pl-card-h { font-size: 28px; }
+  .pl-back span { display: none; }
+}

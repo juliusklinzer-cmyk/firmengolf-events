@@ -61,6 +61,22 @@ if ( $price_label ) {
 // Venue string
 $venue = $location ?: $region ?: '';
 
+// Partner-Inhalte (Kundenstimme + Anfahrt) und abgeleitete Anzeige-Werte.
+$review_quote  = (string) get_post_meta( $partner_id, '_fge_review_quote', true );
+$review_author = (string) get_post_meta( $partner_id, '_fge_review_author', true );
+$review_role   = (string) get_post_meta( $partner_id, '_fge_review_role', true );
+$directions    = (string) get_post_meta( $partner_id, '_fge_directions_text', true );
+$pois = array_filter( [
+	'Auto'   => (string) get_post_meta( $partner_id, '_fge_poi_car', true ),
+	'Bahn'   => (string) get_post_meta( $partner_id, '_fge_poi_train', true ),
+	'Parken' => (string) get_post_meta( $partner_id, '_fge_poi_parking', true ),
+	'Hotel'  => (string) get_post_meta( $partner_id, '_fge_poi_hotel', true ),
+] );
+$pricing_mode  = (string) get_post_meta( $post_id, '_fge_pricing_mode', true );
+$booking_label = 'package' === $pricing_mode ? 'Als Paket — alles inklusive' : ( 'individual' === $pricing_mode ? 'Einzelpreise' : 'Auf Anfrage' );
+// Im Event inkludierte Anfrage-Wünsche (für „✓ inklusive"-Markierung im Anfrage-Modal).
+$included_wants = function_exists( 'fge_event_included_wants' ) ? fge_event_included_wants( $post_id ) : [];
+
 // Participants string
 if ( $p_min && $p_max ) {
 	$guests_str = $p_min . '–' . $p_max . ' Gäste';
@@ -238,12 +254,16 @@ get_header();
 				</section>
 				<?php endif; ?>
 
-				<?php /* Customer quote */ ?>
+				<?php /* Customer quote — nur wenn beim Golfplatz hinterlegt */ ?>
+				<?php if ( $review_quote !== '' ) : ?>
 				<section class="fg-quote">
 					<span class="fg-quote-mark">"</span>
-					<p>Wir haben mit Firmengolf zum dritten Mal in Folge unseren Team-Tag gebucht. Buchung im Self-Service, Ansprechpartner immer erreichbar, Rechnung sauber.</p>
-					<div class="fg-quote-attr">— Sandra Klein, HR-Direktorin · Werkstatt 4</div>
+					<p><?php echo esc_html( $review_quote ); ?></p>
+					<?php if ( $review_author !== '' || $review_role !== '' ) : ?>
+						<div class="fg-quote-attr">— <?php echo esc_html( trim( $review_author . ( $review_role !== '' ? ', ' . $review_role : '' ) ) ); ?></div>
+					<?php endif; ?>
 				</section>
+				<?php endif; ?>
 
 			</main>
 
@@ -268,7 +288,7 @@ get_header();
 						</div>
 						<div class="fg-rail-field">
 							<div class="fg-cell-label">Buchung</div>
-							<div class="fg-cell-value">Als Paket — alles inklusive</div>
+							<div class="fg-cell-value"><?php echo esc_html( $booking_label ); ?></div>
 						</div>
 					</div>
 
@@ -304,15 +324,15 @@ get_header();
 				<div class="mk-eyebrow">Anfahrt & Location</div>
 				<h2 class="mk-h2" style="font-size:36px;margin-top:8px;"><?php echo esc_html( $venue ?: get_the_title() ); ?></h2>
 				<p class="evd-location-p">
-					Großzügige Anlage, Parkplätze direkt am Clubhaus, barrierearmer Zugang.
-					Genaue Adresse und Anfahrtsbeschreibung schicken wir mit der Bestätigung.
+					<?php echo $directions !== '' ? esc_html( $directions ) : 'Genaue Adresse und Anfahrtsbeschreibung schicken wir mit der Bestätigung.'; ?>
 				</p>
+				<?php if ( $pois ) : ?>
 				<div class="evd-poi-grid">
-					<div class="evd-poi"><div class="evd-poi-l">Auto</div><div class="evd-poi-v">15 Min. ab Stadtzentrum</div></div>
-					<div class="evd-poi"><div class="evd-poi-l">Bahn</div><div class="evd-poi-v">Shuttle ab Hauptbahnhof</div></div>
-					<div class="evd-poi"><div class="evd-poi-l">Parken</div><div class="evd-poi-v">Kostenfrei vor Ort</div></div>
-					<div class="evd-poi"><div class="evd-poi-l">Hotel</div><div class="evd-poi-v">3 Partnerhotels in 10 Min.</div></div>
+					<?php foreach ( $pois as $poi_label => $poi_val ) : ?>
+						<div class="evd-poi"><div class="evd-poi-l"><?php echo esc_html( $poi_label ); ?></div><div class="evd-poi-v"><?php echo esc_html( $poi_val ); ?></div></div>
+					<?php endforeach; ?>
 				</div>
+				<?php endif; ?>
 			</div>
 			<?php if ( $map_embed ) : ?>
 				<iframe class="evd-map-frame" src="<?php echo esc_url( $map_embed ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $venue ?: get_the_title() ); ?>"></iframe>
@@ -331,7 +351,18 @@ get_header();
 
 	<?php /* ── FAQ ── */ ?>
 	<?php
-	$faq_items = [
+	// FAQ: aus dem Event-Feld (Block = Frage in Zeile 1, Antwort darunter; Blöcke per Leerzeile).
+	$faq_raw   = trim( (string) get_post_meta( $post_id, '_fge_faq_content', true ) );
+	$faq_items = [];
+	if ( $faq_raw !== '' ) {
+		foreach ( preg_split( '/\n\s*\n/', $faq_raw ) as $faq_block ) {
+			$flines = preg_split( '/\r?\n/', trim( $faq_block ) );
+			$fq = trim( (string) array_shift( $flines ) );
+			$fa = trim( implode( ' ', array_map( 'trim', $flines ) ) );
+			if ( $fq !== '' ) { $faq_items[] = [ 'q' => $fq, 'a' => $fa ]; }
+		}
+	}
+	if ( ! $faq_items ) { $faq_items = [
 		[
 			'q' => 'Was ist im Preis enthalten?',
 			'a' => 'Alle Punkte aus der Liste oben — Coaching, Ausrüstung, Green-Fee, Catering wo angegeben. Was nicht enthalten ist: persönliche Getränke an der Bar, optionale Add-ons (Fotograf, Trophäen), eventuelle Übernachtungen.',
@@ -352,7 +383,7 @@ get_header();
 			'q' => 'Gibt es einen Dresscode?',
 			'a' => 'Smart-Casual. Wir empfehlen Sportschuhe oder Golf-Spikes; Schläger und alles weitere werden gestellt. Keine Krawatten-Pflicht, kein Polo-Zwang.',
 		],
-	];
+	]; }
 	$kontakt_url = home_url( '/kontakt/' );
 	?>
 	<section class="mk-section faq-section">
@@ -448,6 +479,15 @@ get_header();
 		<?php /* Steps 0 + 1 share a header */ ?>
 		<div class="fg-modal-head" id="fg-modal-head">
 			<div class="fg-detail-eyebrow"><?php echo esc_html( $format_label . ( $venue ? ' · ' . $venue : '' ) ); ?></div>
+			<div class="fg-modal-context">
+				<span class="fg-modal-context-label">Deine Auswahl</span>
+				<div class="fg-modal-context-row">
+					<span class="fg-modal-context-chip"><?php echo esc_html( get_the_title() ); ?></span>
+					<?php if ( $venue ) : ?><span class="fg-modal-context-chip"><?php echo esc_html( $venue ); ?></span><?php endif; ?>
+					<span class="fg-modal-context-chip"><?php echo esc_html( trim( $price_main . $price_suffix ) ); ?></span>
+					<?php if ( $guests_str ) : ?><span class="fg-modal-context-chip"><?php echo esc_html( $guests_str ); ?></span><?php endif; ?>
+				</div>
+			</div>
 			<h2 class="fg-modal-title" id="fg-modal-title">Eure Anfrage zu diesem Event</h2>
 			<p class="fg-modal-sub" id="fg-modal-sub">Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb eines Werktags zurück.</p>
 			<div class="fg-step-rail">
@@ -484,6 +524,9 @@ get_header();
 
 		<?php /* Step 1 — Feinschliff & Sonderwünsche */ ?>
 		<div id="fg-modal-step-1" style="display:none;">
+			<?php if ( $included_wants ) : ?>
+				<p class="fg-field-help" style="margin:0 0 12px;">Im Event-Paket bereits enthaltene Leistungen sind als <strong>✓ inklusive</strong> markiert. Wähle zusätzlich, was ihr noch möchtet.</p>
+			<?php endif; ?>
 			<div class="fg-wants-grid">
 				<?php
 				$want_opts = [
@@ -498,10 +541,11 @@ get_header();
 					'bad_weather_alternative'  => 'Schlechtwetter-Alternative',
 					'individual_customization' => 'Individuelle Anpassung',
 				];
-				foreach ( $want_opts as $wkey => $wlabel ) : ?>
-					<label class="fg-want">
-						<input type="checkbox" class="fg-want-cb" value="<?php echo esc_attr( $wkey ); ?>">
-						<span><?php echo esc_html( $wlabel ); ?></span>
+				foreach ( $want_opts as $wkey => $wlabel ) :
+					$is_inc = in_array( $wkey, $included_wants, true ); ?>
+					<label class="fg-want<?php echo $is_inc ? ' is-included' : ''; ?>">
+						<input type="checkbox" class="fg-want-cb" value="<?php echo esc_attr( $wkey ); ?>"<?php echo $is_inc ? ' checked disabled data-included="1"' : ''; ?>>
+						<span><?php echo esc_html( $wlabel ); ?><?php echo $is_inc ? ' <em class="fg-want-badge">✓ inklusive</em>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 					</label>
 				<?php endforeach; ?>
 			</div>

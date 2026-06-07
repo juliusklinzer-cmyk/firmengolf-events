@@ -18,8 +18,8 @@ add_action( 'wp_enqueue_scripts', function() {
 		defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
 	);
 
-	// Individuelle-Events-Seite: Budget-Rechner + Anfrage-Wizard (JS-Insel).
-	if ( is_page( 'individuelle-events' ) && function_exists( 'fge_bc_config' ) ) {
+	// Anfrage-Wizard (JS-Insel) — auf Individuelle-Events (inkl. Budget-Rechner) und der allgemeinen Anfrage-Seite.
+	if ( is_page( [ 'individuelle-events', 'event-anfrage' ] ) ) {
 		wp_enqueue_script(
 			'fge-individual',
 			plugins_url( 'assets/js/fge-individual.js', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
@@ -30,7 +30,10 @@ add_action( 'wp_enqueue_scripts', function() {
 		wp_localize_script( 'fge-individual', 'FGE_IND', [
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'fge_general_request' ),
-			'bc'      => fge_bc_config(),
+			// Budget-Rechner-Config nur auf der Individuelle-Events-Seite; sonst null (Wizard läuft trotzdem).
+			'bc'      => ( is_page( 'individuelle-events' ) && function_exists( 'fge_bc_config' ) ) ? fge_bc_config() : null,
+			// Golfplatz-Namen für den optionalen „Konkreter Platz"-Dropdown.
+			'places'  => function_exists( 'fge_get_public_place_names' ) ? fge_get_public_place_names() : [],
 		] );
 	}
 } );
