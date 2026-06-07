@@ -17,7 +17,7 @@ $url_kontakt = $get_page_url( 'kontakt', home_url( '/kontakt/' ) );
 $url_blog    = home_url( '/blog/' );
 
 // ── Format list (canonical — single source: event-formats.php) ───────────────
-$formats = array_merge( [ 'all' => 'Alle Veranstaltungstypen' ], fge_get_event_formats_flat( false ) );
+$formats = array_merge( [ 'all' => 'Alle Typen' ], fge_get_event_formats_flat( false ) );
 
 // ── Regions from DB ──────────────────────────────────────────────────────────
 global $wpdb;
@@ -104,9 +104,9 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 		<?php /* Format dropdown */ ?>
 		<div class="fg-search-cell fg-format-cell" id="qs-format-cell"
 		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Format wählen">
-			<div class="fg-cell-label">Format</div>
+			<div class="fg-cell-label">Veranstaltungstyp</div>
 			<div class="fg-cell-value" id="qs-format-display">
-				<span id="qs-format-text">Alle Formate</span>
+				<span id="qs-format-text">Alle Typen</span>
 			</div>
 			<input type="hidden" name="format" id="qs-format-val" value="all">
 			<div class="fg-search-panel" id="qs-format-panel" role="listbox">
@@ -124,25 +124,35 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 
 		<div class="fg-cell-divider" aria-hidden="true"></div>
 
-		<?php /* Region dropdown */ ?>
-		<div class="fg-search-cell fg-region-cell" id="qs-region-cell"
-		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Region wählen">
-			<div class="fg-cell-label">Region</div>
-			<div class="fg-cell-value fg-muted" id="qs-region-display">
-				<span id="qs-region-text">Ganz Deutschland</span>
+		<?php /* Wo? — Ort/PLZ-Autocomplete + Standort + Umkreis (identisch zur Events-Seite) */ ?>
+		<div class="fg-search-cell fg-loc-cell" id="qs-loc-cell"
+		     tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort oder PLZ wählen">
+			<div class="fg-cell-label">Wo?</div>
+			<div class="fg-cell-value fg-muted" id="qs-loc-display">
+				<span id="qs-loc-text">Ort oder PLZ</span>
 			</div>
-			<input type="hidden" name="region" id="qs-region-val" value="">
-			<div class="fg-search-panel" id="qs-region-panel" role="listbox">
-				<button type="button" class="fg-search-panel-opt is-selected"
-				        data-value="" data-label="Ganz Deutschland" role="option">Ganz Deutschland</button>
-				<?php foreach ( $available_regions as $region ) : ?>
-					<button type="button" class="fg-search-panel-opt"
-					        data-value="<?php echo esc_attr( $region ); ?>"
-					        data-label="<?php echo esc_attr( $region ); ?>"
-					        role="option">
-						<?php echo esc_html( $region ); ?>
-					</button>
-				<?php endforeach; ?>
+			<input type="hidden" name="lat"    id="qs-lat"     value="">
+			<input type="hidden" name="lng"    id="qs-lng"     value="">
+			<input type="hidden" name="radius" id="qs-radius"  value="50">
+			<input type="hidden" name="loc"    id="qs-loc-val" value="">
+			<div class="fg-search-panel fg-loc-panel" id="qs-loc-panel" role="dialog" aria-label="Ort und Umkreis">
+				<div class="fg-loc-search">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+					<input type="text" id="qs-loc-input" placeholder="Ort oder PLZ" autocomplete="off" value="">
+				</div>
+				<button type="button" class="fg-loc-gps" id="qs-loc-gps">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+					Meinen Standort
+				</button>
+				<div class="fg-loc-suggest" id="qs-loc-suggest" role="listbox"></div>
+				<div class="fg-loc-radius">
+					<div class="fg-loc-radius-label">Umkreis</div>
+					<div class="fg-loc-radius-btns">
+						<?php foreach ( [ 25, 50, 100, 200 ] as $r ) : ?>
+							<button type="button" class="fg-loc-rb<?php echo 50 === $r ? ' active' : ''; ?>" data-r="<?php echo (int) $r; ?>"><?php echo (int) $r; ?> km</button>
+						<?php endforeach; ?>
+					</div>
+				</div>
 			</div>
 		</div>
 
@@ -160,6 +170,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 		</div>
 
 		<button type="submit" class="fg-search-btn" aria-label="Events suchen">
+			<span>Suchen</span>
 			<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
 		</button>
 	</form>
@@ -596,7 +607,86 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
   }
 
   initDropdown('qs-format-cell', 'qs-format-panel', 'qs-format-val', 'qs-format-text');
-  initDropdown('qs-region-cell', 'qs-region-panel', 'qs-region-val', 'qs-region-text');
+
+  /* ── Location picker (identisch zur Events-Seite) ── */
+  function initLocationPicker() {
+    var cell = document.getElementById('qs-loc-cell');
+    var panel = document.getElementById('qs-loc-panel');
+    if (!cell || !panel) return;
+    var input = document.getElementById('qs-loc-input');
+    var suggest = document.getElementById('qs-loc-suggest');
+    var gps = document.getElementById('qs-loc-gps');
+    var latEl = document.getElementById('qs-lat');
+    var lngEl = document.getElementById('qs-lng');
+    var radEl = document.getElementById('qs-radius');
+    var locEl = document.getElementById('qs-loc-val');
+    var textEl = document.getElementById('qs-loc-text');
+    var display = document.getElementById('qs-loc-display');
+    var form = cell.closest('form');
+    var ajax = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+
+    function open() { panel.classList.add('is-open'); cell.setAttribute('aria-expanded', 'true'); setTimeout(function () { input && input.focus(); }, 30); }
+    function close() { panel.classList.remove('is-open'); cell.setAttribute('aria-expanded', 'false'); }
+
+    cell.addEventListener('click', function (e) {
+      if (panel.contains(e.target)) return;
+      panel.classList.contains('is-open') ? close() : open();
+    });
+    document.addEventListener('click', function (e) { if (!cell.contains(e.target)) close(); });
+    cell.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+
+    function setLocation(lat, lng, label) {
+      latEl.value = lat; lngEl.value = lng; locEl.value = label;
+      if (textEl) textEl.textContent = label;
+      if (display) display.classList.remove('fg-muted');
+      close(); // Startseite: KEIN Auto-Submit — Weiterleitung erst bei Klick auf "Suchen".
+    }
+
+    var t = null;
+    if (input) input.addEventListener('input', function () {
+      var q = input.value.trim();
+      clearTimeout(t);
+      if (q.length < 2) { suggest.innerHTML = ''; return; }
+      t = setTimeout(function () {
+        fetch(ajax + '?action=fge_geo_suggest&q=' + encodeURIComponent(q))
+          .then(function (r) { return r.json(); })
+          .then(function (res) {
+            suggest.innerHTML = '';
+            if (!res || !res.success) return;
+            res.data.forEach(function (s) {
+              var b = document.createElement('button');
+              b.type = 'button';
+              b.className = 'fg-loc-opt';
+              b.textContent = s.label;
+              b.addEventListener('click', function () { suggest.innerHTML = ''; input.value = s.label; setLocation(s.lat, s.lng, s.label); });
+              suggest.appendChild(b);
+            });
+          })
+          .catch(function () { suggest.innerHTML = ''; });
+      }, 220);
+    });
+
+    if (gps) gps.addEventListener('click', function () {
+      if (!navigator.geolocation) { alert('Standort wird vom Browser nicht unterstützt.'); return; }
+      gps.disabled = true; gps.classList.add('is-loading');
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        gps.disabled = false; gps.classList.remove('is-loading');
+        setLocation(pos.coords.latitude.toFixed(5), pos.coords.longitude.toFixed(5), 'Mein Standort');
+      }, function () {
+        gps.disabled = false; gps.classList.remove('is-loading');
+        alert('Standort konnte nicht ermittelt werden. Bitte Freigabe erlauben oder Ort eingeben.');
+      }, { enableHighAccuracy: false, timeout: 8000 });
+    });
+
+    panel.querySelectorAll('.fg-loc-rb').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        panel.querySelectorAll('.fg-loc-rb').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        radEl.value = btn.getAttribute('data-r');
+      });
+    });
+  }
+  initLocationPicker();
 
   var paxDisplay = document.getElementById('qs-pax-display');
   var paxVal     = document.getElementById('qs-pax-val');

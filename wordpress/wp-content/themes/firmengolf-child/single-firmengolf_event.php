@@ -24,8 +24,12 @@ $price_label    = get_post_meta( $post_id, '_fge_public_price_label', true );
 $leistungen     = fge_get_active_leistungen( $post_id );
 $partner_id     = (int) fge_get_event_meta( $post_id, 'assigned_partner_id', 0 );
 $partner        = fge_get_partner_info( $partner_id );
-$rating         = (float) get_post_meta( $post_id, '_fge_rating', true );
-$reviews        = (int) get_post_meta( $post_id, '_fge_reviews_count', true );
+// Rating: gleiche Quelle wie die Eventsuche — primär Partner-Rating, Fallback Event-Meta.
+$rating         = $partner_id ? (float) get_post_meta( $partner_id, '_fge_rating', true ) : 0;
+if ( ! $rating ) {
+	$rating = (float) fge_get_event_meta( $post_id, 'rating' );
+}
+$reviews        = (int) fge_get_event_meta( $post_id, 'reviews_count' );
 $gallery_ids    = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $post_id, '_fge_event_gallery_ids', true ) ) ) );
 $thumb_url      = has_post_thumbnail() ? get_the_post_thumbnail_url( $post_id, 'full' ) : fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' );
 
@@ -185,15 +189,6 @@ get_header();
 		<?php /* ── Gallery ── */ ?>
 		<div class="fg-detail-gallery">
 			<div class="fg-gallery-main" style="background-image:url('<?php echo esc_url( $thumb_url ); ?>')">
-				<div class="fg-gallery-floating">
-					<div class="fg-floating-card">
-						<div class="fg-floating-thumb" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"></div>
-						<div class="fg-floating-body">
-							<div class="fg-floating-chip">Nächster freier Termin</div>
-							<div class="fg-floating-meta">Auf Anfrage · Plätze verfügbar</div>
-						</div>
-					</div>
-				</div>
 			</div>
 			<div class="fg-gallery-side">
 				<div class="fg-gallery-tile" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"></div>
@@ -256,7 +251,10 @@ get_header();
 			<aside class="fg-detail-rail">
 				<div class="fg-rail-card">
 					<div>
-						<div class="fg-rail-live">Angebot live seit <?php echo esc_html( get_the_date( 'F Y' ) ); ?></div>
+						<div class="fg-rail-live">
+							<span class="fg-live-dot" aria-hidden="true"></span>
+							<span>Angebot live seit <?php echo esc_html( get_the_date( 'F Y' ) ); ?></span>
+						</div>
 						<div class="fg-rail-price">
 							<?php echo esc_html( $price_main ); ?>
 							<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
@@ -265,12 +263,12 @@ get_header();
 
 					<div class="fg-rail-fields">
 						<div class="fg-rail-field">
-							<div class="fg-cell-label">Wann</div>
-							<div class="fg-cell-value">Auf Anfrage</div>
-						</div>
-						<div class="fg-rail-field">
 							<div class="fg-cell-label">Gruppe</div>
 							<div class="fg-cell-value"><?php echo esc_html( $guests_str ?: 'Nach Vereinbarung' ); ?></div>
+						</div>
+						<div class="fg-rail-field">
+							<div class="fg-cell-label">Buchung</div>
+							<div class="fg-cell-value">Als Paket — alles inklusive</div>
 						</div>
 					</div>
 
@@ -283,14 +281,14 @@ get_header();
 						Event teilen
 					</button>
 
-					<div class="fg-rail-note">Anfrage ist kostenlos. Der Platz antwortet innerhalb von 24 h.</div>
+					<div class="fg-rail-note">Anfrage ist kostenlos. Sie geht direkt an den Golfplatz zur Terminfreigabe und an uns — du bekommst eine Antwort innerhalb von 48 Stunden.</div>
+				</div>
 
-					<div class="fg-rail-host">
-						<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" class="fg-rail-host-photo" style="border-radius:8px;object-fit:contain;padding:4px;background:var(--paper-200);">
-						<div>
-							<div class="fg-rail-host-name">Gebucht über Firmengolf</div>
-							<div class="fg-rail-host-meta">Ein Ansprechpartner · eine Rechnung</div>
-						</div>
+				<div class="fg-rail-host">
+					<img src="<?php echo esc_url( fge_get_placeholder_image_url( 'gruender-julius-klinzer.jpg' ) ); ?>" alt="Julius Klinzer · Firmengolf" class="fg-rail-host-photo">
+					<div>
+						<div class="fg-rail-host-name">Gebucht über Firmengolf</div>
+						<div class="fg-rail-host-meta">Ein Ansprechpartner · eine Rechnung</div>
 					</div>
 				</div>
 			</aside>

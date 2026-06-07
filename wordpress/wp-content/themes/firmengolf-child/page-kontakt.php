@@ -62,7 +62,7 @@ $prefs = [ 'Egal', 'E-Mail', 'Telefon', 'WhatsApp' ];
 $faqs = [
 	[ 'Wie schnell antwortet ihr?', 'Werktags innerhalb eines Arbeitstags, per WhatsApp meist in Minuten. Anfragen von Freitagnachmittag bis Sonntag beantworten wir Montag früh.' ],
 	[ 'Ich rede lieber, als zu tippen — geht das?', 'Klar. Ruf direkt an, schreib uns auf WhatsApp, oder fordere oben einen Rückruf an — dann melden wir uns zur gewünschten Zeit bei dir.' ],
-	[ 'Ich bin Golfplatz und will Partner werden — wohin?', 'Schreib an partner@firmengolf.de oder starte direkt das Partner-Onboarding über „Partnerportal" oben. Bei größeren Anlagen kommen wir auch persönlich vorbei.' ],
+	[ 'Ich bin Golfplatz und will Partner werden — wohin?', 'Schreib an partner@visionpunch.de oder starte direkt das Partner-Onboarding über „Partnerportal" oben. Bei größeren Anlagen kommen wir auch persönlich vorbei.' ],
 	[ 'Ich habe eine Frage zum Benefit-Programm.', 'Das läuft über firmen.golf — schreib uns trotzdem hier, wir leiten weiter und sorgen, dass du eine Antwort bekommst.' ],
 	[ 'Brauche ich ein Konto, um euch zu kontaktieren?', 'Nein. Kein Login, keine Registrierung — Formular, Mail, Anruf oder WhatsApp genügen.' ],
 	[ 'Geht das auch auf Englisch?', 'Yes — wir antworten gerne auf Deutsch oder Englisch. Schreib einfach in deiner Sprache.' ],

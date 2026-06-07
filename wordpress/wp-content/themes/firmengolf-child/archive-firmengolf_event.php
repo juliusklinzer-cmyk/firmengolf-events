@@ -252,6 +252,7 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 		<input type="hidden" name="sort" value="<?php echo esc_attr( $active_sort ); ?>">
 
 		<button type="submit" class="fg-search-btn" aria-label="Events suchen">
+			<span>Suchen</span>
 			<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
 		</button>
 	</form>

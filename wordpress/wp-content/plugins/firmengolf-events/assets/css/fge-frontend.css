@@ -666,15 +666,38 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 }
 
 /* ---------- 15. PRICE RAIL ---------- */
-.fg-detail-rail { position: relative; }
+/* Rail: Karte + Host-Box kleben zusammen bis zum Ende des Inhalts (vor "Anfahrt & Location") */
+.fg-detail-rail { position: sticky; top: 100px; align-self: start; }
 .fg-rail-card {
   background: var(--paper-50);
   border-radius: 20px; padding: 24px;
   box-shadow: var(--shadow-md);
   display: flex; flex-direction: column; gap: 16px;
-  position: sticky; top: 100px;
 }
-.fg-rail-live { font-size: 12px; color: var(--ink-500); margin-bottom: 6px; }
+.fg-rail-live {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 500; color: var(--fairway-800);
+  background: rgba(94,138,101,0.1);
+  border: 1px solid rgba(94,138,101,0.3);
+  border-radius: 999px;
+  padding: 6px 13px;
+  margin-bottom: 10px;
+}
+.fg-live-dot {
+  width: 9px; height: 9px; border-radius: 999px;
+  background: var(--fairway-500);
+  box-shadow: 0 0 0 0 rgba(94,138,101,0.6);
+  animation: fg-live-pulse 2.4s var(--ease-out) infinite;
+  flex: none;
+}
+@keyframes fg-live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(94,138,101,0.55); }
+  70%  { box-shadow: 0 0 0 8px rgba(94,138,101,0); }
+  100% { box-shadow: 0 0 0 0 rgba(94,138,101,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-live-dot { animation: none; box-shadow: 0 0 8px 1px rgba(94,138,101,0.55); }
+}
 .fg-rail-price {
   font-family: var(--font-display); font-size: 30px;
   font-weight: var(--fw-medium); letter-spacing: -0.02em;
@@ -2397,7 +2420,8 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); }
 .fg-cell-value { font-size: 14px; font-weight: 500; color: var(--ink-900); margin-top: 4px; }
 .fg-cell-value.fg-muted { color: var(--ink-400); font-weight: 400; }
 .fg-cell-divider { width: 1px; height: 32px; background: var(--ink-200); flex: none; }
-.fg-search-btn, a.fg-search-btn { width: 56px; height: 56px; border-radius: 999px; background: var(--fairway-700); color: var(--paper-100); display: inline-flex; align-items: center; justify-content: center; flex: none; transition: background 160ms var(--ease-out); }
+.fg-search-btn, a.fg-search-btn { height: 56px; padding: 0 26px; border-radius: 999px; background: var(--fairway-700); color: var(--paper-100); display: inline-flex; align-items: center; justify-content: center; gap: 9px; flex: none; font-family: var(--font-body); font-size: 15px; font-weight: 500; cursor: pointer; border: 0; transition: background 160ms var(--ease-out); }
+.fg-search-btn span { white-space: nowrap; }
 .fg-search-btn:hover, a.fg-search-btn:hover { background: var(--fairway-600); color: var(--paper-100); }
 
 /* ── Shared marketing utilities ── */
@@ -2689,7 +2713,8 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); }
 
 /* ── Search bar: format + region dropdowns (shared panel style) ── */
 .fg-format-cell,
-.fg-region-cell { cursor: pointer; position: relative; }
+.fg-region-cell,
+.fg-loc-cell { cursor: pointer; position: relative; }
 
 .fg-search-panel {
   display: none; /* hidden by default; .is-open shows it */
@@ -3233,12 +3258,6 @@ a.ev-back:hover { background: var(--paper-200); }
 /* Gallery */
 .fg-detail-gallery { display: grid; grid-template-columns: 1.6fr 1fr; gap: 8px; border-radius: var(--radius-xl); overflow: hidden; margin-top: 24px; height: 440px; }
 .fg-gallery-main { position: relative; background-size: cover; background-position: center; height: 100%; }
-.fg-gallery-floating { position: absolute; bottom: 16px; left: 16px; }
-.fg-floating-card { background: rgba(251,250,246,.92); backdrop-filter: blur(12px) saturate(120%); border-radius: var(--radius-lg); padding: 10px 14px; display: flex; gap: 10px; align-items: center; box-shadow: var(--shadow-md); }
-.fg-floating-thumb { width: 40px; height: 40px; border-radius: var(--radius-sm); background-size: cover; background-position: center; flex: none; }
-.fg-floating-body { display: flex; flex-direction: column; gap: 2px; }
-.fg-floating-chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--fairway-700); }
-.fg-floating-meta { font-size: 13px; font-weight: 600; color: var(--ink-900); }
 .fg-gallery-side { display: flex; flex-direction: column; gap: 8px; height: 100%; }
 .fg-gallery-tile { flex: 1; background-size: cover; background-position: center; position: relative; }
 button.fg-gallery-more {
@@ -3255,7 +3274,7 @@ button.fg-gallery-more {
 
 /* Good-to-know tags */
 .fg-good-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.fg-good { background: var(--paper-200); border-radius: var(--radius-sm); padding: 8px 14px; font-size: 14px; font-weight: 500; color: var(--ink-800); }
+.fg-good { background: #fff; border: 1px solid var(--ink-200); border-radius: var(--radius-sm); padding: 8px 14px; font-size: 14px; font-weight: 500; color: var(--ink-800); }
 
 /* Customer quote */
 .fg-quote { background: var(--paper-200); border-radius: var(--radius-lg); padding: 32px 36px; }
@@ -3272,7 +3291,7 @@ button.fg-gallery-more {
 .fg-cell-value { font-size: 14px; color: var(--ink-900); font-weight: 500; margin-top: 3px; }
 .fg-detail-rating { display: inline-flex; align-items: center; gap: 5px; }
 .fg-detail-rating svg { color: #C9B488; }
-.fg-rail-host { display: flex; align-items: center; gap: 12px; padding-top: 16px; border-top: 1px solid var(--ink-200); margin-top: 4px; }
+.fg-rail-host { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 16px 18px; border: 1px solid var(--ink-200); border-radius: 16px; background: var(--paper-50); }
 .fg-rail-host-photo { width: 40px; height: 40px; border-radius: 999px; object-fit: cover; flex: none; }
 .fg-rail-host-name { font-size: 14px; font-weight: 600; color: var(--ink-900); }
 .fg-rail-host-meta { font-size: 12px; color: var(--ink-500); margin-top: 2px; }
