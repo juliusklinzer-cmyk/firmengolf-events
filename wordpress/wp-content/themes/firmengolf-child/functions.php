@@ -28,6 +28,15 @@ add_action( 'wp_enqueue_scripts', function() {
 		);
 	}
 
+	if ( get_query_var( 'fge_termin' ) ) {
+		wp_enqueue_style(
+			'fge-termin',
+			plugins_url( 'assets/css/fge-termin.css', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
+			[ 'fge-frontend' ],
+			defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
+		);
+	}
+
 	if ( is_page( 'partner-onboarding' ) ) {
 		wp_enqueue_style(
 			'fge-onboarding',

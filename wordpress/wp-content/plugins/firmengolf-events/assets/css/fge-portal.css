@@ -170,3 +170,235 @@
   .fgpp .hero-body { flex-direction: column; align-items: flex-start; gap: 18px; }
   .fgpp .hero-name { font-size: 40px; }
 }
+
+/* =========================================================================
+   ANSPRECHPARTNER (Team.html) — Liste + Add/Edit-Modal
+   ========================================================================= */
+.fgpp .page-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.fgpp .team-mgmt { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.fgpp .tm-row { display: grid; grid-template-columns: 48px 1fr auto; gap: 14px; align-items: center; background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-lg); padding: 14px 18px; }
+.fgpp .tm-av { width: 48px; height: 48px; border-radius: 999px; background: var(--fairway-700); color: var(--paper-50); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+.fgpp .tm-name { font-size: 16px; font-weight: 600; color: var(--ink-900); display: flex; align-items: center; gap: 10px; }
+.fgpp .tm-owner { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fairway-700); background: var(--fairway-100); padding: 3px 8px; border-radius: 999px; }
+.fgpp .tm-sub { font-size: 13px; color: var(--ink-500); margin-top: 2px; }
+.fgpp .tm-actions { display: flex; gap: 8px; align-items: center; }
+.fgpp .fgc-inline { display: inline; margin: 0; }
+.fgpp .btn-quiet { background: transparent; color: var(--ink-500); border: 1px solid transparent; }
+.fgpp .btn-quiet:hover { background: var(--paper-200); color: var(--clay-600); }
+.fgpp .tm-legal { font-size: 12px; line-height: 1.5; color: var(--ink-500); margin-top: 18px; max-width: 640px; }
+@media (max-width: 700px) { .fgpp .tm-row { grid-template-columns: 40px 1fr; } .fgpp .tm-actions { grid-column: 1 / -1; } }
+
+.fgpp .fgc-scrim { position: fixed; inset: 0; z-index: 100; background: rgba(14,19,16,0.45); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.fgpp .fgc-scrim[hidden] { display: none; }
+.fgpp .fgc-sheet { width: 100%; max-width: 440px; background: var(--paper-100); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; }
+.fgpp .fgc-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--ink-200); }
+.fgpp .fgc-bar .t { font-size: 13px; font-weight: 600; color: var(--ink-500); letter-spacing: 0.04em; text-transform: uppercase; }
+.fgpp .fgc-close { width: 30px; height: 30px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-500); background: transparent; border: 0; font-size: 19px; cursor: pointer; }
+.fgpp .fgc-close:hover { background: var(--paper-200); color: var(--ink-900); }
+.fgpp .fgc-body { padding: 22px; overflow-y: auto; }
+.fgpp .fgc-foot { padding: 14px 18px; border-top: 1px solid var(--ink-200); display: flex; justify-content: flex-end; gap: 10px; }
+.fgpp .fgc-field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+.fgpp .fgc-field > span { font-size: 13px; font-weight: 600; color: var(--ink-700); }
+.fgpp .fgc-input { width: 100%; font: inherit; font-size: 15px; color: var(--ink-900); background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-md); padding: 11px 13px; }
+.fgpp .fgc-input:focus { outline: none; border-color: var(--fairway-700); box-shadow: 0 0 0 3px var(--fairway-100); }
+.fgpp select.fgc-input { cursor: pointer; }
+
+/* Übersicht — Stat-Karten (design .stats/.stat) */
+.fgpp .stats { margin-top: 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.fgpp .stat { background: var(--paper-50); border-radius: var(--radius-lg); padding: 20px 22px 18px; display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden; border: 1px solid var(--ink-200); }
+.fgpp .stat-lbl { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-500); }
+.fgpp .stat-val { font-family: var(--font-display); font-weight: 500; font-size: 36px; line-height: 1.1; letter-spacing: -0.03em; color: var(--ink-900); margin-top: 6px; }
+.fgpp .stat-val .unit { font-family: var(--font-body); font-size: 18px; font-weight: 500; color: var(--ink-500); margin-left: 3px; }
+.fgpp .stat-foot { margin-top: 6px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; color: var(--ink-500); }
+.fgpp .stat-foot a { color: var(--fairway-700); }
+@media (max-width: 860px) { .fgpp .stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .fgpp .stats { grid-template-columns: 1fr; } }
+
+/* =========================================================================
+   ANFRAGEN — Liste + Detail + Termin×Person-Matrix (scoped .fgpp)
+   Port aus _design_neu/partner-portal/styles.css (Selektoren mit .fgpp gekapselt)
+   ========================================================================= */
+.fgpp .spill {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+  padding: 4px 10px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.fgpp .spill .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+.fgpp .spill.s-neu { background: var(--fairway-100); color: var(--fairway-700); }
+.fgpp .spill.s-bearbeitung { background: #FBEFD6; color: #9A6B12; }
+.fgpp .spill.s-bestaetigt { background: var(--sand-200); color: var(--ink-800); }
+.fgpp .spill.s-abgelehnt { background: var(--paper-200); color: var(--ink-500); }
+.fgpp .spill.s-option { background: #FBEFD6; color: #9A6B12; }
+.fgpp .spill.s-angefragt { background: var(--clay-100); color: var(--clay-600); }
+
+/* =========================================================================
+   ANFRAGEN — master / detail
+   ========================================================================= */
+.fgpp .req-layout {
+  display: grid; grid-template-columns: 1fr 1.15fr; gap: 20px;
+  margin-top: 24px; align-items: start;
+}
+.fgpp .req-list { display: flex; flex-direction: column; gap: 10px; }
+.fgpp .req-item {
+  text-align: left; width: 100%;
+  background: var(--paper-50); border: 1px solid var(--ink-200);
+  border-radius: var(--radius-lg); padding: 16px 18px;
+  display: grid; grid-template-columns: 44px 1fr auto; gap: 14px; align-items: start;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.fgpp .req-item:hover { border-color: var(--ink-300); }
+.fgpp .req-item.on { border-color: var(--fairway-700); box-shadow: 0 0 0 1px var(--fairway-700); }
+.fgpp .req-item .av {
+  width: 44px; height: 44px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 600; font-size: 15px;
+  background: var(--paper-200); color: var(--ink-700);
+}
+.fgpp .req-item .av.green { background: var(--fairway-200); color: var(--fairway-800); }
+.fgpp .req-item .av.clay { background: var(--clay-100); color: var(--clay-600); }
+.fgpp .req-item .av.sand { background: var(--sand-200); color: var(--ink-800); }
+.fgpp .req-item .ri-co { font-size: 15px; font-weight: 600; color: var(--ink-900); display: flex; align-items: center; gap: 8px; }
+.fgpp .req-item .ri-meta { font-size: 13px; color: var(--ink-500); margin-top: 3px; }
+.fgpp .req-item .ri-msg {
+  font-size: 13px; color: var(--ink-600); margin-top: 7px; line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.fgpp .req-item .ri-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.fgpp .req-item .ri-when { font-size: 12px; color: var(--ink-400); white-space: nowrap; }
+
+/* detail */
+.fgpp .req-detail {
+  position: sticky; top: 96px;
+  background: var(--paper-50); border: 1px solid var(--ink-200);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.fgpp .req-detail-head { padding: 24px 26px; border-bottom: 1px solid var(--ink-200); }
+.fgpp .req-no { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--ink-700); background: var(--paper-200); border-radius: var(--radius-pill); padding: 6px 12px; margin-bottom: 14px; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.fgpp .req-no:hover { background: var(--fairway-100); color: var(--fairway-700); }
+.fgpp .req-no svg { opacity: 0.7; }
+.fgpp .spill.s-abgeschlossen { background: var(--fairway-700); color: var(--paper-50); }
+.fgpp .req-detail-top { display: flex; align-items: center; gap: 14px; }
+.fgpp .req-detail-top .av {
+  width: 52px; height: 52px; border-radius: 999px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 600; font-size: 18px;
+  background: var(--paper-200); color: var(--ink-700);
+}
+.fgpp .req-detail-top .av.green { background: var(--fairway-200); color: var(--fairway-800); }
+.fgpp .req-detail-top .av.clay { background: var(--clay-100); color: var(--clay-600); }
+.fgpp .req-detail-top .av.sand { background: var(--sand-200); color: var(--ink-800); }
+.fgpp .req-detail-co { font-family: var(--font-display); font-size: 22px; font-weight: 500; letter-spacing: -0.015em; color: var(--ink-900); }
+.fgpp .req-detail-sub { font-size: 13px; color: var(--ink-500); margin-top: 2px; }
+.fgpp .req-detail-body { padding: 22px 26px; }
+.fgpp .req-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--ink-200); border: 1px solid var(--ink-200); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 20px; }
+.fgpp .req-fact { background: var(--paper-50); padding: 12px 16px; }
+.fgpp .req-fact .l { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-500); }
+.fgpp .req-fact .v { font-size: 15px; font-weight: 500; color: var(--ink-900); margin-top: 3px; display: inline-flex; align-items: center; gap: 6px; }
+.fgpp .req-msg-block {
+  background: var(--paper-200); border-radius: var(--radius-md);
+  padding: 16px 18px; font-size: 15px; line-height: 1.55; color: var(--ink-800);
+  font-family: var(--font-serif); font-style: italic; margin-bottom: 22px; text-wrap: pretty;
+}
+.fgpp .req-section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-500); margin-bottom: 12px; }
+.fgpp .req-timeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 22px; }
+.fgpp .req-tl { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding-bottom: 14px; position: relative; }
+.fgpp .req-tl:not(:last-child)::before { content: ""; position: absolute; left: 10px; top: 18px; bottom: -4px; width: 1.5px; background: var(--ink-200); }
+.fgpp .req-tl .node { width: 20px; height: 20px; border-radius: 999px; background: var(--fairway-100); color: var(--fairway-700); display: flex; align-items: center; justify-content: center; z-index: 1; }
+.fgpp .req-tl .node svg { width: 11px; height: 11px; stroke-width: 2.5; }
+.fgpp .req-tl .t { font-size: 14px; color: var(--ink-900); font-weight: 500; }
+.fgpp .req-tl .w { font-size: 12px; color: var(--ink-500); margin-top: 1px; }
+.fgpp .req-actions { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 4px; }
+
+/* dual-recipient banner */
+.fgpp .req-dual {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--fairway-100); color: var(--fairway-800);
+  border-radius: var(--radius-md); padding: 11px 14px;
+  font-size: 13px; line-height: 1.4; margin-bottom: 20px;
+}
+.fgpp .req-dual svg { flex: none; color: var(--fairway-700); }
+
+/* coordination progress */
+.fgpp .coord-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.fgpp .coord-prog { font-size: 13px; color: var(--ink-600); font-weight: 500; }
+.fgpp .coord-prog b { color: var(--ink-900); }
+.fgpp .coord-bar { height: 6px; border-radius: 999px; background: var(--paper-200); overflow: hidden; margin-bottom: 20px; }
+.fgpp .coord-bar-fill { height: 100%; border-radius: 999px; background: var(--fairway-700); transition: width var(--dur-base) var(--ease-out); }
+
+/* wish-date cards */
+.fgpp .wishdates { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+.fgpp .wishdate {
+  border: 1px solid var(--ink-200); border-radius: var(--radius-lg);
+  padding: 14px 16px; background: var(--paper-50);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.fgpp .wishdate.final { border-color: var(--fairway-700); box-shadow: 0 0 0 1px var(--fairway-700); background: var(--fairway-100); }
+.fgpp .wishdate.rejected { opacity: 0.7; }
+.fgpp .wishdate-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fgpp .wishdate-date { font-size: 15px; font-weight: 600; color: var(--ink-900); display: flex; align-items: center; gap: 8px; }
+.fgpp .wishdate-slot { font-size: 13px; color: var(--ink-500); margin-top: 2px; }
+.fgpp .wishdate-avail { font-size: 12px; font-weight: 600; white-space: nowrap; padding-top: 2px; }
+.fgpp .wishdate-avail.ok { color: var(--fairway-700); }
+.fgpp .wishdate-avail.mixed { color: #9A6B12; }
+.fgpp .wishdate-avail.no { color: var(--clay-600); }
+
+/* per-person vote chips inside a date */
+.fgpp .vote-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.fgpp .vote {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 500; padding: 5px 10px 5px 6px;
+  border-radius: 999px; border: 1px solid var(--ink-200); color: var(--ink-600);
+}
+.fgpp .vote .va { width: 20px; height: 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+.fgpp .vote .va.green { background: var(--fairway-200); color: var(--fairway-800); }
+.fgpp .vote .va.clay { background: var(--clay-100); color: var(--clay-600); }
+.fgpp .vote .va.sand { background: var(--sand-200); color: var(--ink-800); }
+.fgpp .vote.confirmed { border-color: var(--fairway-300); background: var(--fairway-100); color: var(--fairway-800); }
+.fgpp .vote.declined { border-color: #E7CFC6; background: #F7ECE7; color: var(--clay-600); }
+.fgpp .vote.pending { border-style: dashed; color: var(--ink-400); }
+.fgpp .vote .vmark { display: inline-flex; }
+
+/* the logged-in owner's own quick-vote on a date */
+.fgpp .wishdate-you { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ink-200); flex-wrap: wrap; }
+.fgpp .wishdate-you .lbl { font-size: 12px; color: var(--ink-500); margin-right: 2px; }
+.fgpp .minibtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--ink-200); color: var(--ink-600); background: var(--paper-50);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.fgpp .minibtn:hover { border-color: var(--ink-300); }
+.fgpp .minibtn.yes.on { background: var(--fairway-700); border-color: var(--fairway-700); color: var(--paper-50); }
+.fgpp .minibtn.no.on { background: var(--clay-600); border-color: var(--clay-600); color: var(--paper-50); }
+.fgpp .minibtn.confirm { margin-left: auto; background: var(--fairway-700); border-color: var(--fairway-700); color: var(--paper-50); }
+.fgpp .minibtn.confirm:hover { background: var(--fairway-800); }
+.fgpp .wishdate-final-tag { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--fairway-700); display: inline-flex; align-items: center; gap: 6px; }
+
+/* participants (Beteiligte) list */
+.fgpp .team-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+.fgpp .team-row {
+  display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center;
+  padding: 10px 12px; border: 1px solid var(--ink-200); border-radius: var(--radius-md); background: var(--paper-50);
+}
+.fgpp .team-row .av { width: 36px; height: 36px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 13px; background: var(--paper-200); color: var(--ink-700); }
+.fgpp .team-row .av.green { background: var(--fairway-200); color: var(--fairway-800); }
+.fgpp .team-row .av.clay { background: var(--clay-100); color: var(--clay-600); }
+.fgpp .team-row .av.sand { background: var(--sand-200); color: var(--ink-800); }
+.fgpp .team-name { font-size: 14px; font-weight: 500; color: var(--ink-900); display: flex; align-items: center; gap: 7px; }
+.fgpp .team-name .you-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fairway-700); background: var(--fairway-100); padding: 2px 6px; border-radius: 999px; }
+.fgpp .team-role { font-size: 12px; color: var(--ink-500); margin-top: 1px; }
+.fgpp .team-right { display: flex; align-items: center; gap: 10px; }
+.fgpp .team-link { font-size: 12px; color: var(--fairway-700); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.fgpp .team-link:hover { color: var(--fairway-600); }
+
+/* alternatives */
+.fgpp .alt-card {
+  border: 1px dashed var(--clay-500); border-radius: var(--radius-lg);
+  background: #FBF3EE; padding: 14px 16px; margin-bottom: 16px;
+}
+.fgpp .alt-by { font-size: 13px; font-weight: 600; color: var(--ink-900); display: flex; align-items: center; gap: 8px; }
+.fgpp .alt-date { font-size: 15px; font-weight: 600; color: var(--clay-600); margin: 6px 0 4px; }
+.fgpp .alt-note { font-size: 13px; color: var(--ink-600); font-style: italic; font-family: var(--font-serif); line-height: 1.45; }
+.fgpp .alt-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* mail preview modal */

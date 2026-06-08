@@ -20,6 +20,7 @@ require_once FGE_DIR . 'includes/helpers.php';
 require_once FGE_DIR . 'includes/company-info.php';
 require_once FGE_DIR . 'includes/catalogs.php';
 require_once FGE_DIR . 'includes/partner-contacts.php';
+require_once FGE_DIR . 'includes/request-responses.php';
 require_once FGE_DIR . 'includes/event-pricing.php';
 require_once FGE_DIR . 'includes/event-formats.php';
 require_once FGE_DIR . 'includes/event-fields.php';

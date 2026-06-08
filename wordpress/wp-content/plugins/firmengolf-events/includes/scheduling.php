@@ -1,137 +1,17 @@
 <?php
 /**
- * Mehr-Parteien-Terminabstimmung (multi-party scheduling).
+ * Termin-Routing + Admin-Sicht + Eskalation/Übernehmen.
  *
- * Pro Anfrage stimmen bis zu drei Parteien (Platz · Pro · Gastro) über die
- * Wunschtermine (_fge_preferred_date_1..3) ab. Jede Partei bekommt einen
- * persönlichen Token-Link (/termin/<token>/) und sagt zu / ab / schlägt eine
- * Alternative vor. Sobald alle beteiligten Parteien reagiert haben, wird der
- * Anfrage-Status automatisch fortgeschrieben.
+ * Das Datenmodell der Mehr-Parteien-Abstimmung liegt in request-responses.php
+ * (Tabelle fge_request_responses, Responder = vote-Kontakte aus fge_partner_contacts).
+ * Diese Datei hält nur noch: die /termin/<token>/-Route (genutzt vom Landing-Template),
+ * die Admin-Matrix der Anfrage und die Firmengolf-„Übernehmen"-Funktion.
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-function fge_sched_parties(): array {
-	return [
-		'platz'  => 'Golfplatz',
-		'pro'    => 'Golf-Pro',
-		'gastro' => 'Gastronomie',
-	];
-}
-
-/** Which parties are involved for a request (from the *_requested flags; default all three). */
-function fge_sched_involved_parties( int $request_id ): array {
-	$map = [
-		'platz'  => '_fge_golfplatz_requested',
-		'pro'    => '_fge_golfpro_requested',
-		'gastro' => '_fge_gastro_requested',
-	];
-	$involved = [];
-	foreach ( $map as $party => $flag ) {
-		if ( get_post_meta( $request_id, $flag, true ) == '1' ) {
-			$involved[] = $party;
-		}
-	}
-	return $involved ?: array_keys( fge_sched_parties() );
-}
-
-/** Generate per-party tokens for involved parties if missing. Returns party => token. */
-function fge_sched_ensure_tokens( int $request_id ): array {
-	$tokens = [];
-	foreach ( fge_sched_involved_parties( $request_id ) as $party ) {
-		$key = '_fge_sched_token_' . $party;
-		$tok = (string) get_post_meta( $request_id, $key, true );
-		if ( $tok === '' ) {
-			$tok = substr( md5( $request_id . $party . wp_generate_uuid4() ), 0, 24 );
-			update_post_meta( $request_id, $key, $tok );
-			if ( (string) get_post_meta( $request_id, '_fge_sched_' . $party . '_status', true ) === '' ) {
-				update_post_meta( $request_id, '_fge_sched_' . $party . '_status', 'pending' );
-			}
-		}
-		$tokens[ $party ] = $tok;
-	}
-	return $tokens;
-}
-
-function fge_sched_link( string $token ): string {
-	return home_url( '/termin/' . $token . '/' );
-}
-
-/** Resolve a token → [ 'request_id' => int, 'party' => string ] or null. */
-function fge_sched_resolve_token( string $token ): ?array {
-	if ( $token === '' ) {
-		return null;
-	}
-	foreach ( array_keys( fge_sched_parties() ) as $party ) {
-		$found = get_posts( [
-			'post_type'      => 'firmengolf_request',
-			'post_status'    => 'any',
-			'posts_per_page' => 1,
-			'fields'         => 'ids',
-			'meta_key'       => '_fge_sched_token_' . $party,
-			'meta_value'     => $token,
-		] );
-		if ( ! empty( $found ) ) {
-			return [ 'request_id' => (int) $found[0], 'party' => $party ];
-		}
-	}
-	return null;
-}
-
-/** Record a party's response and recompute the overall scheduling state. */
-function fge_sched_record_response( int $request_id, string $party, string $status, string $alt = '', string $note = '' ): void {
-	$allowed = [ 'zugesagt', 'abgesagt', 'alternative' ];
-	if ( ! in_array( $status, $allowed, true ) ) {
-		return;
-	}
-	update_post_meta( $request_id, '_fge_sched_' . $party . '_status', $status );
-	update_post_meta( $request_id, '_fge_sched_' . $party . '_alt', sanitize_text_field( $alt ) );
-	update_post_meta( $request_id, '_fge_sched_' . $party . '_note', sanitize_textarea_field( $note ) );
-	update_post_meta( $request_id, '_fge_sched_' . $party . '_at', current_datetime()->format( 'Y-m-d H:i:s' ) );
-	fge_sched_recompute_status( $request_id );
-}
-
-/** Compute the overall state from involved parties' responses. Returns the summary array. */
-function fge_sched_state( int $request_id ): array {
-	$involved = fge_sched_involved_parties( $request_id );
-	$by_party = [];
-	$counts   = [ 'pending' => 0, 'zugesagt' => 0, 'abgesagt' => 0, 'alternative' => 0 ];
-	foreach ( $involved as $party ) {
-		$st = (string) get_post_meta( $request_id, '_fge_sched_' . $party . '_status', true ) ?: 'pending';
-		$by_party[ $party ] = $st;
-		$counts[ $st ]      = ( $counts[ $st ] ?? 0 ) + 1;
-	}
-	$total = count( $involved );
-
-	if ( $counts['pending'] > 0 ) {
-		$overall = 'offen';
-	} elseif ( $counts['zugesagt'] === $total ) {
-		$overall = 'buchbar';
-	} elseif ( $counts['abgesagt'] === $total ) {
-		$overall = 'nicht_verfuegbar';
-	} else {
-		$overall = 'teilweise';
-	}
-
-	return [ 'involved' => $involved, 'by_party' => $by_party, 'counts' => $counts, 'overall' => $overall, 'all_responded' => $counts['pending'] === 0 ];
-}
-
-/** Map the overall scheduling state onto the canonical request status. */
-function fge_sched_recompute_status( int $request_id ): void {
-	$state = fge_sched_state( $request_id );
-	$map   = [
-		'buchbar'          => 'vollstaendig_verfuegbar',
-		'nicht_verfuegbar' => 'nicht_verfuegbar',
-		'teilweise'        => 'teilweise_verfuegbar',
-		'offen'            => 'partner_angefragt',
-	];
-	if ( isset( $map[ $state['overall'] ] ) ) {
-		update_post_meta( $request_id, '_fge_request_status', $map[ $state['overall'] ] );
-	}
-}
-
-// ── Routing: /termin/<token>/ ────────────────────────────────────────────────
+// ── Routing: /termin/<contact-token>/?req=<id> ───────────────────────────────
 add_action( 'init', static function () {
 	add_rewrite_rule( '^termin/([^/]+)/?$', 'index.php?fge_termin=$matches[1]', 'top' );
 } );
@@ -146,7 +26,6 @@ add_filter( 'template_include', static function ( $template ) {
 	}
 	return $template;
 } );
-
 // Self-heal rewrite rule.
 add_action( 'init', static function () {
 	$rules = get_option( 'rewrite_rules' );
@@ -155,76 +34,142 @@ add_action( 'init', static function () {
 	}
 }, 99 );
 
-// ── Response handler (PRG from the termin landing form) ──────────────────────
-add_action( 'init', static function () {
-	if ( ( $_POST['fge_termin_action'] ?? '' ) !== 'respond' ) {
-		return;
-	}
-	$token = sanitize_text_field( wp_unslash( $_POST['fge_termin_token'] ?? '' ) );
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['fge_termin_nonce'] ?? '' ) ), 'fge_termin_' . $token ) ) {
-		wp_die( 'Ungültige Sicherheitsprüfung.', '', [ 'response' => 403 ] );
-	}
-	$resolved = fge_sched_resolve_token( $token );
-	if ( ! $resolved ) {
-		wp_die( 'Link ungültig oder abgelaufen.', '', [ 'response' => 404 ] );
-	}
-	$status = sanitize_key( $_POST['fge_termin_status'] ?? '' );
-	$alt    = sanitize_text_field( wp_unslash( $_POST['fge_termin_alt'] ?? '' ) );
-	$note   = sanitize_textarea_field( wp_unslash( $_POST['fge_termin_note'] ?? '' ) );
-	fge_sched_record_response( $resolved['request_id'], $resolved['party'], $status, $alt, $note );
+// ── Eskalation / Übernehmen ──────────────────────────────────────────────────
 
-	wp_safe_redirect( fge_sched_link( $token ) . '?done=1' );
+/** Response deadline (timestamp) — created + N days (default 3, filterable). */
+function fge_request_response_deadline( int $request_id ): int {
+	$created = strtotime( (string) get_post_field( 'post_date', $request_id ) ?: 'now' );
+	$days    = (int) apply_filters( 'fge_request_response_days', 3 );
+	return $created + $days * DAY_IN_SECONDS;
+}
+
+function fge_request_is_taken_over( int $request_id ): bool {
+	return '1' === (string) get_post_meta( $request_id, '_fge_taken_over', true );
+}
+
+/** Overdue = responders exist, not all responded, not confirmed/taken-over, past deadline. */
+function fge_request_is_overdue( int $request_id ): bool {
+	if ( fge_request_is_taken_over( $request_id ) ) {
+		return false;
+	}
+	if ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $request_id ) > 0 ) {
+		return false;
+	}
+	if ( ! function_exists( 'fge_rr_matrix' ) ) {
+		return false;
+	}
+	$m = fge_rr_matrix( $request_id );
+	if ( empty( $m['responders'] ) || ! empty( $m['all_responded'] ) ) {
+		return false;
+	}
+	return time() > fge_request_response_deadline( $request_id );
+}
+
+// Admin action: Firmengolf takes over (or releases) the coordination.
+add_action( 'admin_post_fge_take_over', 'fge_handle_take_over' );
+function fge_handle_take_over(): void {
+	$req = absint( $_POST['request_id'] ?? 0 );
+	if ( $req <= 0 || ! current_user_can( 'edit_post', $req ) ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
+	}
+	check_admin_referer( 'fge_take_over_' . $req );
+	$on = ( 'on' === ( $_POST['mode'] ?? '' ) );
+	update_post_meta( $req, '_fge_taken_over', $on ? 1 : 0 );
+	if ( $on ) {
+		update_post_meta( $req, '_fge_request_status', 'in_uebernahme' );
+	}
+	wp_safe_redirect( get_edit_post_link( $req, 'raw' ) );
 	exit;
-}, 5 );
+}
 
-// ── Admin meta box: scheduling matrix + party links ──────────────────────────
+// ── Admin meta box: scheduling matrix (vote-contacts × wish dates) ────────────
 add_action( 'add_meta_boxes', static function () {
-	add_meta_box( 'fge_mb_scheduling', 'Terminabstimmung (Platz · Pro · Gastro)', 'fge_render_mb_scheduling', 'firmengolf_request', 'normal', 'high' );
+	add_meta_box( 'fge_mb_scheduling', 'Terminabstimmung', 'fge_render_mb_scheduling', 'firmengolf_request', 'normal', 'high' );
 } );
 
 function fge_render_mb_scheduling( WP_Post $post ): void {
-	$tokens = fge_sched_ensure_tokens( $post->ID );
-	$state  = fge_sched_state( $post->ID );
-	$labels = fge_sched_parties();
-	$badges = [
-		'pending'     => [ 'Offen', '#C58A1D' ],
-		'zugesagt'    => [ 'Zugesagt', '#2F6E45' ],
-		'abgesagt'    => [ 'Abgesagt', '#B4332B' ],
-		'alternative' => [ 'Alternative', '#3F6E8A' ],
-	];
-	$overall_label = [
-		'offen'            => 'Wartet auf Rückmeldungen',
-		'buchbar'          => '✓ Alle zugesagt — buchbar',
-		'teilweise'        => 'Teilweise verfügbar',
-		'nicht_verfuegbar' => 'Nicht verfügbar',
-	];
-	$dates = array_filter( [
-		get_post_meta( $post->ID, '_fge_preferred_date_1', true ),
-		get_post_meta( $post->ID, '_fge_preferred_date_2', true ),
-		get_post_meta( $post->ID, '_fge_preferred_date_3', true ),
-	] );
+	$req   = $post->ID;
+	$wish  = function_exists( 'fge_rr_wish_dates' ) ? fge_rr_wish_dates( $req ) : [];
+	$m     = function_exists( 'fge_rr_matrix' ) ? fge_rr_matrix( $req ) : [ 'dates' => [], 'responders' => [], 'all_responded' => false, 'final_index' => null ];
+	$resp  = $m['responders'];
+	$final = function_exists( 'fge_rr_final_index' ) ? fge_rr_final_index( $req ) : 0;
+	$total = count( $resp );
+
+	if ( empty( $resp ) ) {
+		echo '<p style="margin:0;color:#646970;">Für die Terminabstimmung sind keine Ansprechpartner mit „Terminabstimmung"-Recht hinterlegt. Lege sie beim zugewiesenen Partner an (Tab „Ansprechpartner" im Portal oder Partner-Profil).</p>';
+		return;
+	}
+
+	$overdue    = fge_request_is_overdue( $req );
+	$taken_over = fge_request_is_taken_over( $req );
+	$badges     = [ 'confirmed' => [ 'Zusage', '#2F6E45' ], 'declined' => [ 'Absage', '#B4332B' ], 'pending' => [ 'Offen', '#C58A1D' ] ];
+
+	if ( $taken_over ) {
+		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#EAF2EC;border-radius:6px;"><strong>Von Firmengolf übernommen.</strong> Koordination läuft direkt mit der Firma.</p>';
+	} elseif ( $overdue ) {
+		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#FBEFD6;border-radius:6px;"><strong>Überfällig</strong> — Reaktionsfrist überschritten, noch nicht alle haben reagiert.</p>';
+	}
 	?>
-	<p style="margin:0 0 8px;"><strong>Wunschtermine:</strong> <?php echo $dates ? esc_html( implode( ' · ', $dates ) ) : '—'; ?></p>
-	<p style="margin:0 0 12px;"><strong>Gesamtstatus:</strong> <?php echo esc_html( $overall_label[ $state['overall'] ] ?? $state['overall'] ); ?></p>
-	<table class="widefat striped" style="margin-top:4px;">
-		<thead><tr><th>Partei</th><th>Status</th><th>Alternative / Notiz</th><th>Persönlicher Link</th></tr></thead>
-		<tbody>
-		<?php foreach ( $state['involved'] as $party ) :
-			$st  = $state['by_party'][ $party ];
-			$b   = $badges[ $st ] ?? [ $st, '#666' ];
-			$alt = get_post_meta( $post->ID, '_fge_sched_' . $party . '_alt', true );
-			$nt  = get_post_meta( $post->ID, '_fge_sched_' . $party . '_note', true );
-			$lnk = fge_sched_link( $tokens[ $party ] ?? '' );
+	<p style="margin:0 0 12px;"><strong>Status:</strong>
+		<?php
+		if ( $final > 0 ) {
+			echo 'Termin bestätigt: <strong>' . esc_html( $wish[ $final ] ?? ('#' . $final) ) . '</strong>';
+		} elseif ( $m['all_responded'] ) {
+			echo 'Alle haben reagiert — Termin kann bestätigt werden.';
+		} else {
+			echo 'Wartet auf Rückmeldungen.';
+		}
 		?>
+	</p>
+
+	<?php if ( ! empty( $wish ) ) : ?>
+	<table class="widefat striped" style="margin-bottom:14px;">
+		<thead><tr><th>Wunschtermin</th><th>Verfügbar</th><th>Antworten</th></tr></thead>
+		<tbody>
+		<?php foreach ( $wish as $idx => $label ) :
+			$d = $m['dates'][ $idx ] ?? [ 'confirmed' => 0, 'responders' => [] ]; ?>
 			<tr>
-				<td><strong><?php echo esc_html( $labels[ $party ] ); ?></strong></td>
-				<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;color:#fff;font-size:12px;background:<?php echo esc_attr( $b[1] ); ?>;"><?php echo esc_html( $b[0] ); ?></span></td>
-				<td><?php echo esc_html( trim( $alt . ( $nt ? ' — ' . $nt : '' ) ) ?: '—' ); ?></td>
-				<td><input type="text" readonly value="<?php echo esc_attr( $lnk ); ?>" style="width:100%;" onclick="this.select();"></td>
+				<td><strong><?php echo esc_html( $label ); ?></strong><?php echo (int) $final === (int) $idx ? ' ✓' : ''; ?></td>
+				<td><?php echo (int) $d['confirmed']; ?>/<?php echo (int) $total; ?></td>
+				<td>
+					<?php foreach ( $resp as $c ) :
+						$st = $d['responders'][ (int) $c['id'] ]['response'] ?? 'pending';
+						$b  = $badges[ $st ]; ?>
+						<span title="<?php echo esc_attr( $c['name'] ); ?>" style="display:inline-block;margin:1px 3px 1px 0;padding:1px 7px;border-radius:9px;color:#fff;font-size:11px;background:<?php echo esc_attr( $b[1] ); ?>;"><?php echo esc_html( ( $c['name'] ?: $c['email'] ) . ': ' . $b[0] ); ?></span>
+					<?php endforeach; ?>
+				</td>
 			</tr>
 		<?php endforeach; ?>
 		</tbody>
 	</table>
-	<p class="description" style="margin-top:8px;">Schick jeder Partei ihren Link. Sobald alle reagiert haben, springt der Anfrage-Status automatisch (z. B. auf „vollständig verfügbar").</p>
+	<?php endif; ?>
+
+	<p style="margin:0 0 6px;"><strong>Persönliche Links</strong> (zum Nachsenden):</p>
+	<table class="widefat striped" style="margin-bottom:14px;">
+		<tbody>
+		<?php foreach ( $resp as $c ) :
+			$responded = fge_rr_contact_done( $req, (int) $c['id'] );
+			$link      = fge_termin_contact_link( $req, $c ); ?>
+			<tr>
+				<td style="width:38%;"><strong><?php echo esc_html( $c['name'] ?: $c['email'] ); ?></strong><br><span style="color:#646970;font-size:12px;"><?php echo esc_html( $c['role'] ?: 'Ansprechpartner' ); ?> · <?php echo $responded ? 'hat reagiert' : 'ausstehend'; ?></span></td>
+				<td><input type="text" readonly value="<?php echo esc_attr( $link ); ?>" style="width:100%;" onclick="this.select();"></td>
+			</tr>
+		<?php endforeach; ?>
+		</tbody>
+	</table>
+
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:0;">
+		<?php wp_nonce_field( 'fge_take_over_' . $req ); ?>
+		<input type="hidden" name="action" value="fge_take_over">
+		<input type="hidden" name="request_id" value="<?php echo (int) $req; ?>">
+		<?php if ( $taken_over ) : ?>
+			<input type="hidden" name="mode" value="off">
+			<button type="submit" class="button">Übernahme zurücknehmen</button>
+		<?php else : ?>
+			<input type="hidden" name="mode" value="on">
+			<button type="submit" class="button button-primary">Koordination übernehmen</button>
+			<span class="description" style="margin-left:8px;">Firmengolf koordiniert dann direkt mit der Firma.</span>
+		<?php endif; ?>
+	</form>
 	<?php
 }

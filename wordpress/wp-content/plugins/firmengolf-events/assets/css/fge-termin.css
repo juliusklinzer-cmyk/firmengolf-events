@@ -1,0 +1,62 @@
+/* =========================================================================
+   FIRMENGOLF — Termin-Landing (/termin/<contact-token>/?req=<id>)
+   Standalone Magic-Link-Seite. Tokens kommen von fge-frontend.css (Dependency).
+   ========================================================================= */
+.tl-page, .tl-page * { box-sizing: border-box; }
+.tl-page { font-family: var(--font-body); color: var(--ink-900); -webkit-font-smoothing: antialiased; }
+.tl-page h1, .tl-page h2, .tl-page p, .tl-page figure { margin: 0; }
+.tl-page button { font: inherit; cursor: pointer; }
+.tl-page a { color: inherit; text-decoration: none; }
+
+.tl-page { min-height: 100vh; background: var(--paper-100); }
+.tl-bar { height: 60px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--ink-200); background: var(--paper-50); }
+.tl-bar img { height: 22px; }
+.tl-bar .ctx { font-size: 13px; color: var(--ink-500); margin-left: 14px; padding-left: 14px; border-left: 1px solid var(--ink-200); }
+.tl-wrap { max-width: 640px; margin: 0 auto; padding: 40px 24px 80px; }
+.tl-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fairway-700); }
+.tl-h { font-family: var(--font-display); font-size: 36px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.05; color: var(--ink-900); margin: 12px 0 14px; }
+.tl-h em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+.tl-lead { font-size: 16px; line-height: 1.6; color: var(--ink-600); margin-bottom: 28px; }
+.tl-summary { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-xl); padding: 22px 24px; margin-bottom: 28px; }
+.tl-sum-co { font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--ink-900); }
+.tl-sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin-top: 16px; }
+.tl-sum-item .k { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-500); }
+.tl-sum-item .v { font-size: 15px; font-weight: 500; color: var(--ink-900); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+.tl-quote { background: var(--paper-200); border-radius: var(--radius-md); padding: 14px 16px; font-family: var(--font-serif); font-style: italic; font-size: 15px; line-height: 1.55; color: var(--ink-800); margin-top: 16px; }
+.tl-section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-500); margin-bottom: 14px; }
+.tl-date { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 12px; transition: border-color var(--dur-fast) var(--ease-out); }
+.tl-date.confirmed { border-color: var(--fairway-700); box-shadow: 0 0 0 1px var(--fairway-700); }
+.tl-date.declined { border-color: #E7CFC6; }
+.tl-date-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tl-date-d { font-size: 16px; font-weight: 600; color: var(--ink-900); }
+.tl-date-s { font-size: 13px; color: var(--ink-500); margin-top: 2px; }
+.tl-date-btns { display: flex; gap: 8px; }
+.tl-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--ink-200); color: var(--ink-600); background: var(--paper-50); transition: all var(--dur-fast) var(--ease-out); }
+.tl-btn:hover { border-color: var(--ink-300); }
+.tl-btn.yes.on { background: var(--fairway-700); border-color: var(--fairway-700); color: var(--paper-50); }
+.tl-btn.no.on  { background: var(--clay-600); border-color: var(--clay-600); color: var(--paper-50); }
+.tl-alt { margin-top: 28px; }
+.tl-alt textarea, .tl-alt input { width: 100%; font: inherit; font-size: 15px; color: var(--ink-900); background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-md); padding: 12px 14px; resize: vertical; }
+.tl-alt input { margin-bottom: 10px; }
+.tl-alt textarea:focus, .tl-alt input:focus { outline: 2px solid var(--fairway-700); outline-offset: 1px; border-color: transparent; }
+.tl-submit { margin-top: 32px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.tl-note { font-size: 13px; color: var(--ink-500); margin-top: 14px; line-height: 1.5; }
+.tl-done { text-align: center; padding: 60px 24px; }
+.tl-done-ic { width: 72px; height: 72px; border-radius: 999px; background: var(--fairway-100); color: var(--fairway-700); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; }
+.tl-done h2 { font-family: var(--font-display); font-size: 30px; font-weight: 500; letter-spacing: -0.02em; color: var(--ink-900); margin-bottom: 12px; }
+.tl-done p { font-size: 16px; color: var(--ink-600); line-height: 1.6; max-width: 420px; margin: 0 auto; }
+
+@media (max-width: 560px) {
+  .tl-sum-grid { grid-template-columns: 1fr; }
+  .tl-date-top { flex-direction: column; align-items: flex-start; }
+  .tl-h { font-size: 30px; }
+}
+
+/* No-JS radio selection (per Wunschtermin Ja/Nein als Radios in .tl-btn-Labels) */
+.tl-btn { position: relative; }
+.tl-btn input { position: absolute; opacity: 0; pointer-events: none; }
+.tl-btn.yes:has(input:checked) { background: var(--fairway-700); border-color: var(--fairway-700); color: var(--paper-50); }
+.tl-btn.no:has(input:checked)  { background: var(--clay-600); border-color: var(--clay-600); color: var(--paper-50); }
+.tl-date:has(.yes input:checked) { border-color: var(--fairway-700); box-shadow: 0 0 0 1px var(--fairway-700); }
+.tl-date:has(.no input:checked)  { border-color: #E7CFC6; }
+.tl-date-d .idx { color: var(--ink-400); font-weight: 600; margin-right: 8px; }

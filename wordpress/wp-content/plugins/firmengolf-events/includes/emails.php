@@ -20,8 +20,14 @@ function fge_send_request_emails( int $request_id ): void {
 	fge_send_customer_confirmation_email( $request_id, $data );
 	fge_send_internal_request_email( $request_id, $data );
 
-	if ( $data['request_type'] === 'specific_event' && $data['partner_email'] !== '' ) {
-		fge_send_partner_availability_email( $request_id, $data );
+	// Event-Anfrage (specific_event) → Platz koordiniert: jede vote-Person bekommt
+	// ihren persönlichen Termin-Link; der Manager wird zusätzlich informiert.
+	// Individuelles Event → nur Firmengolf (oben) + Kundenbestätigung.
+	if ( $data['request_type'] === 'specific_event' && $data['partner_id'] > 0 ) {
+		if ( $data['partner_email'] !== '' ) {
+			fge_send_partner_availability_email( $request_id, $data );
+		}
+		fge_send_contact_termin_emails( $request_id, $data );
 	}
 }
 
@@ -201,6 +207,89 @@ function fge_send_partner_availability_email( int $request_id, array $data ): bo
 	update_post_meta( $request_id, '_fge_partner_email_sent', $sent ? 1 : 0 );
 
 	return $sent;
+}
+
+/**
+ * Event-Anfrage: jede vote-Person des Platzes bekommt eine Mail mit ihrem
+ * persönlichen Termin-Link (ohne Login). Returns Anzahl gesendeter Mails.
+ */
+function fge_send_contact_termin_emails( int $request_id, array $data ): int {
+	if ( ! function_exists( 'fge_rr_responders' ) || ! function_exists( 'fge_termin_contact_link' ) ) {
+		return 0;
+	}
+	$responders = fge_rr_responders( $request_id );
+	if ( empty( $responders ) ) {
+		return 0;
+	}
+	$ref        = fge_request_number( $request_id );
+	$dates      = array_filter( [ $data['date_1'], $data['date_2'], $data['date_3'] ] );
+	$dates_html = '';
+	foreach ( $dates as $d ) {
+		$dates_html .= '<li style="margin-bottom:4px;">' . esc_html( $d ) . '</li>';
+	}
+	$venue = $data['event_title'] ?: ( $data['partner_title'] ?: 'euer Angebot' );
+	$sent  = 0;
+	foreach ( $responders as $c ) {
+		if ( '' === (string) ( $c['email'] ?? '' ) ) {
+			continue;
+		}
+		$first   = trim( explode( ' ', (string) $c['name'] )[0] );
+		$link    = fge_termin_contact_link( $request_id, $c );
+		$subject = 'Eine Firmenanfrage wartet auf deine Rückmeldung (' . $ref . ')';
+		$content = '
+			<p style="margin:0 0 16px;">Hallo ' . esc_html( $first ) . ',</p>
+			<p style="margin:0 0 16px;">für <strong>' . esc_html( $venue ) . '</strong> gibt es eine neue Anfrage von <strong>' . esc_html( $data['company_name'] ?: 'einem Unternehmen' ) . '</strong>' . ( $data['participants'] ? ' (ca. ' . esc_html( $data['participants'] ) . ' Personen)' : '' ) . '.</p>
+			<p style="margin:0 0 8px;"><strong>Mögliche Termine:</strong></p>
+			<ul style="margin:0 0 18px;padding-left:20px;">' . ( $dates_html ?: '<li>Nach Absprache</li>' ) . '</ul>
+			<p style="margin:0 0 22px;">Sag uns mit einem Klick, welche Termine bei dir gehen — kein Login nötig, der Link ist persönlich für dich.</p>
+			<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Jetzt Termine bestätigen</a></p>
+			<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
+		';
+		if ( wp_mail( $c['email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] ) ) {
+			$sent++;
+		}
+	}
+	update_post_meta( $request_id, '_fge_contact_emails_sent', $sent );
+	return $sent;
+}
+
+/** Alle Beteiligten haben reagiert → Platz-Manager soll im Portal den Termin bestätigen. */
+add_action( 'fge_request_all_responded', 'fge_notify_all_responded', 10 );
+function fge_notify_all_responded( int $request_id ): void {
+	$partner_id = (int) get_post_meta( $request_id, '_fge_assigned_partner_id', true );
+	$to         = (string) get_post_meta( $partner_id, '_fge_main_contact_email', true );
+	if ( '' === $to ) {
+		return;
+	}
+	$ref    = fge_request_number( $request_id );
+	$portal = trailingslashit( home_url( '/partnerportal/' ) ) . '?tab=anfragen&req=' . $request_id;
+	$subject = 'Alle Rückmeldungen da — Termin bestätigen (' . $ref . ')';
+	$content = '
+		<p style="margin:0 0 16px;">Hallo,</p>
+		<p style="margin:0 0 16px;">für die Anfrage <strong>' . esc_html( $ref ) . '</strong> haben alle Ansprechpartner reagiert. Du kannst jetzt im Portal den passenden Termin bestätigen.</p>
+		<p style="margin:0 0 22px;"><a href="' . esc_url( $portal ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Im Portal öffnen</a></p>
+	';
+	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+/** Ein Termin wurde bestätigt → Firmengolf benachrichtigen (Angebot & Buchung). */
+add_action( 'fge_request_date_confirmed', 'fge_notify_date_confirmed', 10, 2 );
+function fge_notify_date_confirmed( int $request_id, int $date_index ): void {
+	$data = fge_get_request_email_data( $request_id );
+	$ref  = fge_request_number( $request_id );
+	$date = (string) get_post_meta( $request_id, '_fge_preferred_date_' . $date_index, true );
+	$to   = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+	$subject = 'Termin bestätigt — ' . $ref . ( $data['partner_title'] ? ' (' . $data['partner_title'] . ')' : '' );
+	$content = '
+		<p style="margin:0 0 16px;">Für die Anfrage <strong>' . esc_html( $ref ) . '</strong> wurde ein Termin bestätigt — alle Beteiligten haben zugestimmt.</p>
+		<p style="margin:0 0 16px;"><strong>Termin:</strong> ' . esc_html( $date ?: '—' ) . '<br>
+		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: '—' ) . '<br>
+		<strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: '—' ) . '<br>
+		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: '—' ) . '</p>
+		<p style="margin:0 0 16px;">Bitte Angebot &amp; Buchung anstoßen.</p>
+		<p style="margin:0;"><a href="' . esc_url( fge_format_request_admin_link( $request_id ) ) . '">Anfrage im Admin öffnen</a></p>
+	';
+	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
 
 function fge_send_onboarding_submitted_email( int $partner_id, string $temp_password = '' ): bool {

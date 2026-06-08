@@ -1,116 +1,117 @@
 <?php
 /**
- * Termin-Landing — persönliche Abstimmungsseite einer Partei (Platz/Pro/Gastro).
- * Aufgerufen über /termin/<token>/ via scheduling.php. Token = Authentifizierung.
+ * Termin-Landing — persönliche Abstimmungsseite einer vote-Person.
+ * Aufruf: /termin/<contact-token>/?req=<request-id>  (siehe request-responses.php).
+ * Standalone-Seite im .tl-*-Design (kein Theme-Chrome).
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 $token    = (string) get_query_var( 'fge_termin' );
-$resolved = function_exists( 'fge_sched_resolve_token' ) ? fge_sched_resolve_token( $token ) : null;
+$req      = isset( $_GET['req'] ) ? absint( $_GET['req'] ) : 0;
+$resolved = function_exists( 'fge_rr_resolve_landing' ) ? fge_rr_resolve_landing( $token, $req ) : null;
+$done     = isset( $_GET['done'] );
 
-get_header();
-?>
-<div class="fge-page">
+?><!doctype html>
+<html <?php language_attributes(); ?>>
+<head>
+	<meta charset="<?php bloginfo( 'charset' ); ?>">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="robots" content="noindex, nofollow">
+	<?php wp_head(); ?>
+</head>
+<body class="tl-page">
+	<header class="tl-bar">
+		<span style="font-family:var(--font-display);font-weight:600;font-size:18px;letter-spacing:-0.02em;color:var(--ink-900);">Firmengolf</span>
+		<span class="ctx">Terminabstimmung</span>
+	</header>
 
-<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
+	<div class="tl-wrap">
+	<?php if ( ! $resolved ) : ?>
+		<div class="tl-eyebrow">Terminabstimmung</div>
+		<h1 class="tl-h">Dieser Link ist <em>ungültig</em> oder abgelaufen.</h1>
+		<p class="tl-lead">Bitte wende dich an deinen Firmengolf-Ansprechpartner für einen neuen Link.</p>
+	<?php else :
+		$contact  = $resolved['contact'];
+		$first    = trim( explode( ' ', (string) $contact['name'] )[0] );
+		$company  = (string) get_post_meta( $req, '_fge_company_name', true );
+		$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+		$event_t  = $event_id ? get_the_title( $event_id ) : ( (string) get_post_meta( $req, '_fge_event_type', true ) ?: 'Firmen-Event' );
+		$pax      = (int) get_post_meta( $req, '_fge_expected_participants', true );
+		$budget   = (string) get_post_meta( $req, '_fge_budget_range', true );
+		$city     = (string) get_post_meta( $req, '_fge_company_city', true );
+		$ref      = fge_request_number( $req );
+		$wish     = fge_rr_wish_dates( $req );
+		$rows     = fge_rr_get( $req );
+		$nonce    = wp_create_nonce( 'fge_termin_' . $token );
 
-<section class="mk-section" style="padding-top:56px;max-width:720px;margin:0 auto;">
-<?php if ( ! $resolved ) : ?>
+		if ( $done ) : ?>
+		<div class="tl-done">
+			<div class="tl-done-ic">
+				<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+			</div>
+			<h2>Danke, <?php echo esc_html( $first ?: 'dir' ); ?> — gespeichert.</h2>
+			<p>Deine Rückmeldung ist da. Sobald alle Beteiligten reagiert haben und ein Termin bestätigt ist, kümmert sich Firmengolf um Angebot und Buchung.</p>
+			<p style="margin-top:18px;"><a class="tl-btn" href="<?php echo esc_url( fge_termin_contact_link( $req, $contact ) ); ?>">Antwort ändern</a></p>
+		</div>
+		<?php else : ?>
+		<div class="tl-eyebrow">Anfrage <?php echo esc_html( $ref ); ?></div>
+		<h1 class="tl-h">Hallo <?php echo esc_html( $first ?: '' ); ?>, passt <em>einer dieser Termine</em>?</h1>
+		<p class="tl-lead">Eine Firmenanfrage wartet auf eure Rückmeldung. Sag einfach zu jedem Wunschtermin kurz zu oder ab — dauert keine Minute.</p>
 
-	<div class="mk-section-head">
-		<div class="mk-eyebrow">Terminabstimmung</div>
-		<h1 class="mk-h2">Dieser Link ist ungültig oder abgelaufen.</h1>
-		<p class="mk-sub">Bitte wende dich an deinen Firmengolf-Ansprechpartner für einen neuen Link.</p>
-	</div>
-
-<?php else :
-	$request_id = $resolved['request_id'];
-	$party      = $resolved['party'];
-	$labels     = fge_sched_parties();
-	$party_name = $labels[ $party ] ?? $party;
-	$company    = (string) get_post_meta( $request_id, '_fge_company_name', true );
-	$event_id   = (int) get_post_meta( $request_id, '_fge_assigned_event_id', true );
-	$event_t    = $event_id ? get_the_title( $event_id ) : 'Firmen-Event';
-	$pax        = (int) get_post_meta( $request_id, '_fge_expected_participants', true );
-	$dates      = array_filter( [
-		get_post_meta( $request_id, '_fge_preferred_date_1', true ),
-		get_post_meta( $request_id, '_fge_preferred_date_2', true ),
-		get_post_meta( $request_id, '_fge_preferred_date_3', true ),
-	] );
-	$alt_period = (string) get_post_meta( $request_id, '_fge_alternative_period', true );
-	$current    = (string) get_post_meta( $request_id, '_fge_sched_' . $party . '_status', true ) ?: 'pending';
-	$done       = isset( $_GET['done'] );
-?>
-
-	<div class="mk-section-head">
-		<div class="mk-eyebrow">Terminabstimmung · <?php echo esc_html( $party_name ); ?></div>
-		<h1 class="mk-h2">Passt einer dieser Termine?</h1>
-		<p class="mk-sub">
-			Anfrage von <strong><?php echo esc_html( $company ?: 'einem Unternehmen' ); ?></strong> für
-			<strong><?php echo esc_html( $event_t ); ?></strong><?php echo $pax ? ' · ca. ' . esc_html( (string) $pax ) . ' Personen' : ''; ?>.
-			Bitte gib als <strong><?php echo esc_html( $party_name ); ?></strong> kurz Rückmeldung.
-		</p>
-	</div>
-
-	<?php if ( $done ) : ?>
-		<div class="trust-strip" style="margin-top:8px;"><div class="trust-inner"><div class="trust-cell">
-			<div class="trust-t">Danke — gespeichert ✓</div>
-			<div class="trust-b">Deine Rückmeldung ist bei Firmengolf eingegangen. Du kannst sie unten jederzeit ändern.</div>
-		</div></div></div>
-	<?php endif; ?>
-
-	<div class="fg-rail-card" style="margin-top:24px;max-width:none;">
-		<div>
-			<div class="fg-section-eyebrow">Wunschtermine</div>
-			<ul style="margin:8px 0 0;padding-left:18px;">
-				<?php if ( $dates ) : foreach ( $dates as $d ) : ?>
-					<li style="margin:4px 0;"><?php echo esc_html( $d ); ?></li>
-				<?php endforeach; else : ?>
-					<li><?php echo esc_html( $alt_period ?: 'Zeitraum nach Absprache' ); ?></li>
-				<?php endif; ?>
-			</ul>
+		<div class="tl-summary">
+			<div class="tl-sum-co"><?php echo esc_html( $company ?: 'Ein Unternehmen' ); ?></div>
+			<div class="tl-sum-grid">
+				<div class="tl-sum-item"><div class="k">Veranstaltung</div><div class="v"><?php echo esc_html( $event_t ); ?></div></div>
+				<?php if ( $pax > 0 ) : ?><div class="tl-sum-item"><div class="k">Teilnehmer</div><div class="v">ca. <?php echo esc_html( (string) $pax ); ?> Personen</div></div><?php endif; ?>
+				<?php if ( '' !== $city ) : ?><div class="tl-sum-item"><div class="k">Region</div><div class="v"><?php echo esc_html( $city ); ?></div></div><?php endif; ?>
+				<?php if ( '' !== $budget ) : ?><div class="tl-sum-item"><div class="k">Budget</div><div class="v"><?php echo esc_html( $budget ); ?></div></div><?php endif; ?>
+			</div>
 		</div>
 
-		<form method="post" action="<?php echo esc_url( fge_sched_link( $token ) ); ?>" style="margin-top:20px;display:flex;flex-direction:column;gap:14px;">
-			<input type="hidden" name="fge_termin_action" value="respond">
+		<form method="post" action="<?php echo esc_url( fge_termin_contact_link( $req, $contact ) ); ?>">
+			<input type="hidden" name="fge_termin_action" value="respond_dates">
 			<input type="hidden" name="fge_termin_token" value="<?php echo esc_attr( $token ); ?>">
-			<?php wp_nonce_field( 'fge_termin_' . $token, 'fge_termin_nonce' ); ?>
+			<input type="hidden" name="fge_req" value="<?php echo (int) $req; ?>">
+			<input type="hidden" name="fge_termin_nonce" value="<?php echo esc_attr( $nonce ); ?>">
 
-			<div class="fg-field">
-				<label class="fg-field-label">Deine Rückmeldung</label>
-				<div class="ind-chip-group" role="radiogroup">
-					<?php
-					$opts = [ 'zugesagt' => 'Passt — zugesagt', 'alternative' => 'Alternative vorschlagen', 'abgesagt' => 'Leider nicht möglich' ];
-					foreach ( $opts as $val => $lab ) : ?>
-						<label class="ind-pchip<?php echo $current === $val ? ' on' : ''; ?>" style="cursor:pointer;">
-							<input type="radio" name="fge_termin_status" value="<?php echo esc_attr( $val ); ?>" <?php checked( $current, $val ); ?> style="margin-right:8px;">
-							<?php echo esc_html( $lab ); ?>
+			<div class="tl-section-label">Wunschtermine — bitte zu jedem zu- oder absagen</div>
+			<?php foreach ( $wish as $idx => $label ) :
+				$cur = $rows[ $idx . ':' . $contact['id'] ]['response'] ?? 'pending'; ?>
+			<div class="tl-date">
+				<div class="tl-date-top">
+					<div>
+						<div class="tl-date-d"><span class="idx"><?php echo (int) $idx; ?></span><?php echo esc_html( $label ); ?></div>
+					</div>
+					<div class="tl-date-btns">
+						<label class="tl-btn yes">
+							<input type="radio" name="vote[<?php echo (int) $idx; ?>]" value="confirmed" <?php checked( $cur, 'confirmed' ); ?>>
+							Passt
 						</label>
-					<?php endforeach; ?>
+						<label class="tl-btn no">
+							<input type="radio" name="vote[<?php echo (int) $idx; ?>]" value="declined" <?php checked( $cur, 'declined' ); ?>>
+							Geht nicht
+						</label>
+					</div>
 				</div>
 			</div>
+			<?php endforeach; ?>
 
-			<div class="fg-field">
-				<label class="fg-field-label" for="fg-termin-alt">Alternativer Termin (optional)</label>
-				<input class="fg-input" id="fg-termin-alt" name="fge_termin_alt" value="<?php echo esc_attr( get_post_meta( $request_id, '_fge_sched_' . $party . '_alt', true ) ); ?>" placeholder="z.B. KW 30 · vormittags">
-			</div>
-			<div class="fg-field">
-				<label class="fg-field-label" for="fg-termin-note">Anmerkung (optional)</label>
-				<textarea class="fg-input" id="fg-termin-note" name="fge_termin_note" rows="3" placeholder="z.B. nur nachmittags, Greenkeeper-Pflege am Vormittag …"><?php echo esc_textarea( get_post_meta( $request_id, '_fge_sched_' . $party . '_note', true ) ); ?></textarea>
+			<div class="tl-alt">
+				<div class="tl-section-label">Keiner passt? Schlag einen Alternativtermin vor (optional)</div>
+				<input type="text" name="fge_alt_date" value="<?php echo esc_attr( fge_rr_contact_alt( $rows, (int) $contact['id'] ) ); ?>" placeholder="z. B. Fr, 21. Juni 2026 oder KW 30">
+				<textarea name="fge_note" rows="3" placeholder="Anmerkung an Firmengolf (optional)"><?php echo esc_textarea( fge_rr_contact_note( $rows, (int) $contact['id'] ) ); ?></textarea>
 			</div>
 
-			<button type="submit" class="fg-btn-brand block">Rückmeldung speichern</button>
+			<div class="tl-submit">
+				<button type="submit" class="tl-btn yes" style="padding:12px 24px;">Rückmeldung speichern</button>
+			</div>
+			<p class="tl-note">Deine Angaben werden ausschließlich zur Bearbeitung dieser Firmenanfrage verwendet (Art. 6 Abs. 1 lit. b/f DSGVO).</p>
 		</form>
+		<?php endif; ?>
+	<?php endif; ?>
 	</div>
-
-	<p class="mk-sub" style="margin-top:16px;font-size:13px;">Dieser Link ist nur für dich bestimmt. Du kannst deine Rückmeldung jederzeit über denselben Link anpassen.</p>
-
-<?php endif; ?>
-</section>
-
-<?php get_template_part( 'template-parts/fge-footer' ); ?>
-
-</div><?php /* .fge-page */ ?>
-<?php get_footer();
+	<?php wp_footer(); ?>
+</body>
+</html>
