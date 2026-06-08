@@ -12,7 +12,8 @@ function fge_register_event_metaboxes() {
 	add_meta_box( 'fge_mb_basisdaten', 'Firmenevent Basisdaten',    'fge_render_mb_basisdaten', $screen, 'normal', 'high' );
 	add_meta_box( 'fge_mb_rahmen',     'Event Rahmen',              'fge_render_mb_rahmen',     $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_leistungen', 'Leistungen',                'fge_render_mb_leistungen', $screen, 'normal', 'default' );
-	add_meta_box( 'fge_mb_preislogik', 'Preislogik',                'fge_render_mb_preislogik', $screen, 'normal', 'default' );
+	add_meta_box( 'fge_mb_angebot_neu', 'Angebot — Preis & Inhalt (rev. 2)', 'fge_render_mb_angebot_neu', $screen, 'normal', 'high' );
+	add_meta_box( 'fge_mb_preislogik', 'Preislogik (alt)',          'fge_render_mb_preislogik', $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_marktplatz', 'Marktplatz-Darstellung',    'fge_render_mb_marktplatz', $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_anfrage',    'Anfrage und Verfügbarkeit', 'fge_render_mb_anfrage',    $screen, 'normal', 'default' );
 	add_meta_box( 'fge_mb_seo',        'SEO Basis',                 'fge_render_mb_seo',        $screen, 'normal', 'default' );
@@ -493,6 +494,88 @@ function fge_render_mb_review( WP_Post $post ) {
 	<?php
 }
 
+function fge_render_mb_angebot_neu( WP_Post $post ) {
+	$price_mode = get_post_meta( $post->ID, '_fge_price_mode', true ) ?: 'gesamt';
+	$amount     = get_post_meta( $post->ID, '_fge_price_amount', true );
+	$basis      = get_post_meta( $post->ID, '_fge_price_basis', true ) ?: 'person';
+	$items      = (array) get_post_meta( $post->ID, '_fge_line_items', true );
+	$includes   = (array) get_post_meta( $post->ID, '_fge_event_includes', true );
+	$dayflow    = (string) get_post_meta( $post->ID, '_fge_event_dayflow', true );
+	$release    = get_post_meta( $post->ID, '_fge_release_mode', true ) ?: 'us';
+	$owner      = get_post_meta( $post->ID, '_fge_owner', true ) ?: 'partner';
+	$items_text = implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ), $items ) );
+	$p          = fge_event_pricing( $post->ID );
+	?>
+	<p class="description">Neues Modell (Handoff rev. 2). Partner hinterlegt <strong>netto</strong>; Firmengolf-Aufschlag fix <?php echo (int) FGE_MARKUP_PERCENT; ?> % oben drauf.</p>
+	<table class="form-table">
+		<tr>
+			<th scope="row"><label for="fge_owner">Anbieter</label></th>
+			<td>
+				<select id="fge_owner" name="fge_owner">
+					<option value="partner"    <?php selected( $owner, 'partner' ); ?>>Golfplatz-Angebot (partner)</option>
+					<option value="firmengolf" <?php selected( $owner, 'firmengolf' ); ?>>Von Firmengolf geplant (firmengolf)</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_price_mode">Preislogik</label></th>
+			<td>
+				<select id="fge_price_mode" name="fge_price_mode">
+					<option value="gesamt" <?php selected( $price_mode, 'gesamt' ); ?>>Gesamtpreis</option>
+					<option value="einzel" <?php selected( $price_mode, 'einzel' ); ?>>Einzelauflistung</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_price_amount">Gesamtpreis netto (€)</label></th>
+			<td>
+				<input type="text" id="fge_price_amount" name="fge_price_amount" value="<?php echo esc_attr( $amount ); ?>" style="width:120px;" placeholder="2400">
+				&nbsp;Basis:
+				<label><input type="radio" name="fge_price_basis" value="person"   <?php checked( $basis, 'person' ); ?>> pro Person</label>
+				<label style="margin-left:10px;"><input type="radio" name="fge_price_basis" value="pauschal" <?php checked( $basis, 'pauschal' ); ?>> Pauschal</label>
+				<p class="description">Nur bei „Gesamtpreis". Bei „Einzelauflistung" werden die Posten unten summiert.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_line_items">Einzelposten</label></th>
+			<td>
+				<textarea id="fge_line_items" name="fge_line_items" rows="4" class="large-text" placeholder="Golflehrer | 80&#10;Meetingraum | 50"><?php echo esc_textarea( $items_text ); ?></textarea>
+				<p class="description">Pro Zeile: <code>Bezeichnung | Kosten netto</code>. Nur bei „Einzelauflistung" relevant.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row">Preis-Vorschau</th>
+			<td>
+				Netto <strong>€<?php echo esc_html( number_format_i18n( $p['net'], 2 ) ); ?></strong>
+				&nbsp;·&nbsp; Aufschlag <?php echo (int) FGE_MARKUP_PERCENT; ?> % <strong>€<?php echo esc_html( number_format_i18n( $p['markup'], 2 ) ); ?></strong>
+				&nbsp;·&nbsp; Brutto fürs Unternehmen <strong>€<?php echo esc_html( number_format_i18n( $p['gross'], 2 ) ); ?> <?php echo esc_html( $p['unit'] ); ?></strong>
+				<p class="description">Aktualisiert sich nach dem Speichern.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_event_includes">Inkludierte Leistungen</label></th>
+			<td>
+				<textarea id="fge_event_includes" name="fge_event_includes" rows="5" class="large-text" placeholder="90 Min. Coaching&#10;Leihschläger&#10;Lunch im Clubhaus"><?php echo esc_textarea( implode( "\n", $includes ) ); ?></textarea>
+				<p class="description">Eine Leistung pro Zeile. Erscheint als „Das ist dabei"-Liste im Angebot.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_event_dayflow">So läuft der Tag ab</label></th>
+			<td><textarea id="fge_event_dayflow" name="fge_event_dayflow" rows="4" class="large-text" placeholder="Ankunft & Begrüßung → Coaching → Lunch → Turnier → Ausklang"><?php echo esc_textarea( $dayflow ); ?></textarea></td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_release_mode">Termin-Freigabe</label></th>
+			<td>
+				<select id="fge_release_mode" name="fge_release_mode">
+					<option value="us"      <?php selected( $release, 'us' ); ?>>Nur der Platz selbst gibt Anfragen frei</option>
+					<option value="approve" <?php selected( $release, 'approve' ); ?>>Zusätzliche Personen stimmen Termine ab</option>
+				</select>
+			</td>
+		</tr>
+	</table>
+	<?php
+}
+
 function fge_save_event_fields( int $post_id ) {
 	if ( ! isset( $_POST['fge_event_nonce'] ) ) {
 		return;
@@ -624,6 +707,44 @@ function fge_save_event_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_meta_description', sanitize_textarea_field( wp_unslash( $_POST['fge_meta_description'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_focus_keyword',    sanitize_text_field( wp_unslash( $_POST['fge_focus_keyword'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_faq_content',      sanitize_textarea_field( wp_unslash( $_POST['fge_faq_content'] ?? '' ) ) );
+
+	// ── Angebot — Preis & Inhalt (rev. 2) ──
+	$price_mode = in_array( $_POST['fge_price_mode'] ?? '', [ 'gesamt', 'einzel' ], true ) ? $_POST['fge_price_mode'] : 'gesamt';
+	update_post_meta( $post_id, '_fge_price_mode', $price_mode );
+	$amount_raw = preg_replace( '/[^\d.,]/', '', (string) wp_unslash( $_POST['fge_price_amount'] ?? '' ) );
+	update_post_meta( $post_id, '_fge_price_amount', (float) str_replace( ',', '.', $amount_raw ) );
+	update_post_meta( $post_id, '_fge_price_basis', in_array( $_POST['fge_price_basis'] ?? '', [ 'person', 'pauschal' ], true ) ? $_POST['fge_price_basis'] : 'person' );
+
+	$line_items = [];
+	foreach ( preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_line_items'] ?? '' ) ) as $line ) {
+		$line = trim( $line );
+		if ( $line === '' ) {
+			continue;
+		}
+		$parts = explode( '|', $line, 2 );
+		$label = sanitize_text_field( trim( $parts[0] ?? '' ) );
+		$cost  = (float) str_replace( ',', '.', preg_replace( '/[^\d.,]/', '', $parts[1] ?? '' ) );
+		if ( $label !== '' ) {
+			$line_items[] = [ 'label' => $label, 'cost' => $cost ];
+		}
+	}
+	update_post_meta( $post_id, '_fge_line_items', $line_items );
+
+	$includes = array_values( array_filter( array_map(
+		static fn( $l ): string => sanitize_text_field( trim( $l ) ),
+		preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_event_includes'] ?? '' ) )
+	) ) );
+	update_post_meta( $post_id, '_fge_event_includes', $includes );
+	update_post_meta( $post_id, '_fge_event_dayflow', sanitize_textarea_field( wp_unslash( $_POST['fge_event_dayflow'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_release_mode', in_array( $_POST['fge_release_mode'] ?? '', [ 'us', 'approve' ], true ) ? $_POST['fge_release_mode'] : 'us' );
+	update_post_meta( $post_id, '_fge_owner', in_array( $_POST['fge_owner'] ?? '', [ 'partner', 'firmengolf' ], true ) ? $_POST['fge_owner'] : 'partner' );
+
+	// Öffentliche Preis-Felder aus dem neuen Modell spiegeln (eine Quelle: event-pricing.php).
+	$pr = fge_event_pricing( $post_id );
+	if ( $pr['gross'] > 0 ) {
+		update_post_meta( $post_id, '_fge_sale_price_net', $pr['gross'] );
+		update_post_meta( $post_id, '_fge_public_price_label', fge_event_price_label( $post_id ) );
+	}
 
 	// ── Tracking Defaults (set once on first save) ──
 	if ( get_post_meta( $post_id, '_fge_views_count', true ) === '' ) {

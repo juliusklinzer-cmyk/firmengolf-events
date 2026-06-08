@@ -41,6 +41,7 @@ function fge_register_partner_metaboxes() {
 
 	add_meta_box( 'fge_pmb_basisdaten',      'Golfplatz Basisdaten',          'fge_render_pmb_basisdaten',      $screen, 'normal', 'high' );
 	add_meta_box( 'fge_pmb_standort',         'Standort und Region',           'fge_render_pmb_standort',         $screen, 'normal', 'default' );
+	add_meta_box( 'fge_pmb_profil',           'Profil & Ausstattung (Onboarding-Modell)', 'fge_render_pmb_profil',  $screen, 'normal', 'default' );
 	add_meta_box( 'fge_pmb_ansprechpartner',  'Ansprechpartner',               'fge_render_pmb_ansprechpartner',  $screen, 'normal', 'default' );
 	add_meta_box( 'fge_pmb_ausstattung',      'Event Ausstattung',             'fge_render_pmb_ausstattung',      $screen, 'normal', 'default' );
 	add_meta_box( 'fge_pmb_kapazitaeten',     'Event Kapazitäten',             'fge_render_pmb_kapazitaeten',     $screen, 'normal', 'default' );
@@ -239,6 +240,76 @@ function fge_render_pmb_standort( WP_Post $post ) {
 }
 
 // ── Render: Ansprechpartner ───────────────────────────────────────────────────
+
+function fge_render_pmb_profil( WP_Post $post ) {
+	$golf_type     = (string) get_post_meta( $post->ID, '_fge_golf_type', true );
+	$infra         = (array) get_post_meta( $post->ID, '_fge_infra', true );
+	$cap           = (array) get_post_meta( $post->ID, '_fge_cap', true );
+	$poi_shuttle   = (string) get_post_meta( $post->ID, '_fge_poi_shuttle', true );
+	$estation      = (string) get_post_meta( $post->ID, '_fge_arrival_estation', true );
+	?>
+	<p class="description">Katalog-basiertes Profil-Modell (Handoff rev. 2). Quelle: <code>includes/catalogs.php</code>.</p>
+	<table class="form-table">
+		<tr>
+			<th scope="row"><label for="fge_golf_type">Golf-Angebot (Platztyp)</label></th>
+			<td>
+				<select id="fge_golf_type" name="fge_golf_type">
+					<option value="">— wählen —</option>
+					<?php foreach ( fge_catalog_golf_types() as $id => $label ) : ?>
+						<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $golf_type, $id ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</td>
+		</tr>
+	</table>
+
+	<h3 style="margin:18px 0 4px;">Infrastruktur &amp; Gastronomie</h3>
+	<?php foreach ( fge_catalog_infra_groups() as $group => $items ) : ?>
+		<p style="margin:14px 0 4px;"><strong><?php echo esc_html( $group ); ?></strong></p>
+		<div style="column-count:3;column-gap:24px;">
+			<?php foreach ( $items as $id => $label ) : ?>
+				<label style="display:block;break-inside:avoid;margin:2px 0;">
+					<input type="checkbox" name="fge_infra[]" value="<?php echo esc_attr( $id ); ?>" <?php checked( in_array( $id, $infra, true ) ); ?>>
+					<?php echo esc_html( $label ); ?>
+				</label>
+			<?php endforeach; ?>
+		</div>
+	<?php endforeach; ?>
+
+	<h3 style="margin:18px 0 4px;">Kapazitäten</h3>
+	<table class="form-table">
+		<tr>
+			<th scope="row">Teilnehmer min / max</th>
+			<td>
+				<input type="number" min="0" name="fge_cap[min]" value="<?php echo esc_attr( $cap['min'] ?? '' ); ?>" style="width:90px;"> –
+				<input type="number" min="0" name="fge_cap[max]" value="<?php echo esc_attr( $cap['max'] ?? '' ); ?>" style="width:90px;">
+			</td>
+		</tr>
+		<?php foreach ( fge_catalog_cap_rows() as $row ) :
+			$relevant = in_array( $row['infra'], $infra, true ); ?>
+			<tr<?php echo $relevant ? '' : ' style="opacity:.6;"'; ?>>
+				<th scope="row"><?php echo esc_html( $row['label'] ); ?></th>
+				<td>
+					<input type="number" min="0" name="fge_cap[<?php echo esc_attr( $row['key'] ); ?>]" value="<?php echo esc_attr( $cap[ $row['key'] ] ?? '' ); ?>" style="width:90px;">
+					<span class="description">Nur relevant, wenn „<?php echo esc_html( fge_catalog_infra_label( $row['infra'] ) ); ?>" gewählt. <?php echo esc_html( $row['hint'] ); ?></span>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+	</table>
+
+	<h3 style="margin:18px 0 4px;">Anfahrt-Zusatz</h3>
+	<table class="form-table">
+		<tr>
+			<th scope="row"><label for="fge_poi_shuttle">Shuttle</label></th>
+			<td><input type="text" id="fge_poi_shuttle" name="fge_poi_shuttle" value="<?php echo esc_attr( $poi_shuttle ); ?>" class="regular-text" placeholder="z.B. Abholung nach Absprache"></td>
+		</tr>
+		<tr>
+			<th scope="row">E-Ladestation</th>
+			<td><label><input type="checkbox" name="fge_arrival_estation" value="1" <?php checked( $estation, '1' ); ?>> Ladestation für E-Autos vorhanden</label></td>
+		</tr>
+	</table>
+	<?php
+}
 
 function fge_render_pmb_ansprechpartner( WP_Post $post ) {
 	$contact_groups = [
@@ -802,6 +873,26 @@ function fge_save_partner_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_poi_train',   sanitize_text_field( wp_unslash( $_POST['fge_poi_train'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_poi_parking', sanitize_text_field( wp_unslash( $_POST['fge_poi_parking'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_poi_hotel',   sanitize_text_field( wp_unslash( $_POST['fge_poi_hotel'] ?? '' ) ) );
+
+	// ── Profil & Ausstattung (Katalog-Modell, includes/catalogs.php) ──
+	$gt = sanitize_text_field( wp_unslash( $_POST['fge_golf_type'] ?? '' ) );
+	update_post_meta( $post_id, '_fge_golf_type', array_key_exists( $gt, fge_catalog_golf_types() ) ? $gt : '' );
+
+	$infra_in = is_array( $_POST['fge_infra'] ?? null ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['fge_infra'] ) ) : [];
+	update_post_meta( $post_id, '_fge_infra', array_values( array_intersect( $infra_in, fge_catalog_infra_ids() ) ) );
+
+	$cap_in  = is_array( $_POST['fge_cap'] ?? null ) ? wp_unslash( $_POST['fge_cap'] ) : [];
+	$cap_out = [];
+	foreach ( fge_catalog_cap_keys() as $ck ) {
+		$cv = isset( $cap_in[ $ck ] ) ? absint( $cap_in[ $ck ] ) : 0;
+		if ( $cv > 0 ) {
+			$cap_out[ $ck ] = $cv;
+		}
+	}
+	update_post_meta( $post_id, '_fge_cap', $cap_out );
+
+	update_post_meta( $post_id, '_fge_poi_shuttle',       sanitize_text_field( wp_unslash( $_POST['fge_poi_shuttle'] ?? '' ) ) );
+	update_post_meta( $post_id, '_fge_arrival_estation',  isset( $_POST['fge_arrival_estation'] ) ? '1' : '0' );
 
 	// ── Metabox 3: Ansprechpartner ──
 	$contact_prefixes = [ 'main', 'event', 'gastro', 'golf_school', 'billing' ];

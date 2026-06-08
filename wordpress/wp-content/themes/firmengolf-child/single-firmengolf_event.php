@@ -46,8 +46,12 @@ foreach ( [ '_fge_street', '_fge_house_number', '_fge_postal_code', '_fge_city' 
 $map_query = $map_parts ? implode( ' ', $map_parts ) : trim( $location . ' ' . $region );
 $map_embed = $map_query !== '' ? 'https://www.google.com/maps?q=' . rawurlencode( $map_query ) . '&output=embed' : '';
 
-// Price display
-if ( $price_label ) {
+// Price display — neues Preismodell (rev. 2) bevorzugt, sonst Altfelder.
+$pricing_new = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $post_id ) : null;
+if ( $pricing_new && $pricing_new['gross'] > 0 ) {
+	$price_main   = '€' . number_format( $pricing_new['gross'], 0, ',', '.' );
+	$price_suffix = $pricing_new['unit'] === 'pro Person' ? ' p.P.' : ' gesamt';
+} elseif ( $price_label ) {
 	$price_main   = $price_label;
 	$price_suffix = '';
 } elseif ( $price_raw > 0 ) {
@@ -76,6 +80,10 @@ $pricing_mode  = (string) get_post_meta( $post_id, '_fge_pricing_mode', true );
 $booking_label = 'package' === $pricing_mode ? 'Als Paket — alles inklusive' : ( 'individual' === $pricing_mode ? 'Einzelpreise' : 'Auf Anfrage' );
 // Im Event inkludierte Anfrage-Wünsche (für „✓ inklusive"-Markierung im Anfrage-Modal).
 $included_wants = function_exists( 'fge_event_included_wants' ) ? fge_event_included_wants( $post_id ) : [];
+
+// Inhalts-Felder (rev. 2): inkludierte Leistungen + Tagesablauf.
+$dayflow_new  = (string) get_post_meta( $post_id, '_fge_event_dayflow', true );
+$includes_new = (array) get_post_meta( $post_id, '_fge_event_includes', true );
 
 // Participants string
 if ( $p_min && $p_max ) {
@@ -219,20 +227,25 @@ get_header();
 
 			<main class="fg-detail-main">
 
-				<?php /* So läuft der Tag */ ?>
-				<?php if ( $description ) : ?>
+				<?php /* So läuft der Tag — Tagesablauf (rev. 2) bevorzugt, sonst Kurzbeschreibung */ ?>
+				<?php if ( $dayflow_new !== '' || $description ) : ?>
 				<section>
 					<div class="fg-section-eyebrow">So läuft der Tag</div>
-					<p class="fg-detail-summary"><?php echo esc_html( $description ); ?></p>
+					<?php if ( $dayflow_new !== '' ) : ?>
+						<div class="fg-detail-summary"><?php echo nl2br( esc_html( $dayflow_new ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+					<?php else : ?>
+						<p class="fg-detail-summary"><?php echo esc_html( $description ); ?></p>
+					<?php endif; ?>
 				</section>
 				<?php endif; ?>
 
-				<?php /* Im Preis enthalten */ ?>
-				<?php if ( $leistungen ) : ?>
+				<?php /* Im Preis enthalten — inkludierte Leistungen (rev. 2) bevorzugt, sonst Alt-Leistungen */ ?>
+				<?php $inc_list = $includes_new ?: array_values( $leistungen ); ?>
+				<?php if ( $inc_list ) : ?>
 				<section>
 					<div class="fg-section-eyebrow">Im Preis enthalten</div>
 					<ul class="fg-includes">
-						<?php foreach ( $leistungen as $label ) : ?>
+						<?php foreach ( $inc_list as $label ) : ?>
 							<li>
 								<span class="fg-includes-check"><?php echo fge_icon_check(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 								<span><?php echo esc_html( $label ); ?></span>

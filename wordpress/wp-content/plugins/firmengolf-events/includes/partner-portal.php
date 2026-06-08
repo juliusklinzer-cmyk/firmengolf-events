@@ -259,7 +259,7 @@ function fge_portal_render_gate(): void {
 }
 
 function fge_portal_get_active_tab(): string {
-	$allowed = [ 'uebersicht', 'angebote', 'anfragen', 'kalender', 'platz', 'kennzahlen' ];
+	$allowed = [ 'uebersicht', 'angebote', 'anfragen', 'kalender', 'platz', 'team', 'kennzahlen' ];
 	$tab     = sanitize_key( $_GET['tab'] ?? 'uebersicht' );
 	return in_array( $tab, $allowed, true ) ? $tab : 'uebersicht';
 }
@@ -472,53 +472,44 @@ function fge_portal_render(): void {
 	$logo_url      = fge_get_logo_url();
 	$archive_url   = get_post_type_archive_link( 'firmengolf_event' );
 
+	$svg = static function ( string $p ): string {
+		return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $p . '</svg>';
+	};
 	$tabs = [
-		'uebersicht' => 'Übersicht',
-		'angebote'   => 'Angebote',
-		'anfragen'   => 'Anfragen',
-		'kalender'   => 'Kalender',
-		'platz'      => 'Mein Platz',
+		'uebersicht' => [ 'Übersicht',       '<path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/>' ],
+		'angebote'   => [ 'Angebote',        '<path d="M5 22V4M5 4l13 3-13 3"/>' ],
+		'anfragen'   => [ 'Anfragen',        '<path d="M22 12h-5l-2 3h-6l-2-3H2"/><path d="M5 5h14l3 7v7H2v-7z"/>' ],
+		'platz'      => [ 'Platz',           '<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' ],
+		'team'       => [ 'Ansprechpartner', '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>' ],
 	];
 	?>
-	<nav class="fp-nav">
-		<div class="fp-nav-inner">
-			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="fp-brand">
+	<div class="fgpp">
+	<nav class="nav">
+		<div class="nav-inner">
+			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="brand">
 				<img src="<?php echo esc_url( $logo_url ); ?>" alt="Firmengolf">
-				<span class="fp-brand-divider"></span>
-				<span class="fp-brand-context">
-					Partner-Portal
-					<span class="fp-pill">Live</span>
-				</span>
+				<span class="brand-divider"></span>
+				<span class="brand-context">Partner-Portal <span class="pill">Live</span></span>
 			</a>
 
-			<div class="fp-nav-tabs">
-				<?php foreach ( $tabs as $key => $label ) : ?>
-					<button
-						class="fp-nav-tab<?php echo $active_tab === $key ? ' active' : ''; ?>"
-						data-tab="<?php echo esc_attr( $key ); ?>"
-						type="button"
-					>
-						<?php echo esc_html( $label ); ?>
-						<?php if ( $key === 'anfragen' && $new_requests > 0 ) : ?>
-							<span class="fp-badge"><?php echo (int) $new_requests; ?></span>
-						<?php endif; ?>
+			<div class="nav-tabs">
+				<?php foreach ( $tabs as $key => $t ) : ?>
+					<button class="nav-tab<?php echo $active_tab === $key ? ' active' : ''; ?>" data-tab="<?php echo esc_attr( $key ); ?>" type="button">
+						<?php echo $svg( $t[1] ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						<?php echo esc_html( $t[0] ); ?>
+						<?php if ( $key === 'anfragen' && $new_requests > 0 ) : ?><span class="badge"><?php echo (int) $new_requests; ?></span><?php endif; ?>
 					</button>
 				<?php endforeach; ?>
 			</div>
 
-			<div class="fp-nav-end">
-				<?php if ( $archive_url ) : ?>
-					<a href="<?php echo esc_url( $archive_url ); ?>" class="fp-nav-link" target="_blank" rel="noopener">
-						Vorschau
-					</a>
-				<?php endif; ?>
-				<div class="fp-nav-avatar" title="<?php echo esc_attr( $user->display_name ); ?>">
-					<?php echo esc_html( $user_initials ?: 'P' ); ?>
-				</div>
-				<a href="<?php echo esc_url( wp_logout_url( home_url( '/' ) ) ); ?>" class="fp-nav-link">Abmelden</a>
+			<div class="nav-end">
+				<?php if ( $archive_url ) : ?><a href="<?php echo esc_url( $archive_url ); ?>" class="nav-link" target="_blank" rel="noopener">Vorschau</a><?php endif; ?>
+				<a href="<?php echo esc_url( wp_logout_url( home_url( '/' ) ) ); ?>" class="nav-link">Abmelden</a>
+				<div class="nav-avatar" title="<?php echo esc_attr( $user->display_name ); ?>"><?php echo esc_html( $user_initials ?: 'P' ); ?></div>
 			</div>
 		</div>
 	</nav>
+	</div>
 
 	<div class="fp-page-wrap">
 
@@ -539,20 +530,19 @@ function fge_portal_render(): void {
 		<div id="fp-tab-anfragen"    class="fp-section<?php echo $active_tab !== 'anfragen'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_requests( $partner_id ); ?></div>
 		<div id="fp-tab-kalender"    class="fp-section<?php echo $active_tab !== 'kalender'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_kalender(); ?></div>
 		<div id="fp-tab-platz"       class="fp-section<?php echo $active_tab !== 'platz'       ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_platz( $partner_id ); ?></div>
+		<div id="fp-tab-team"        class="fp-section<?php echo $active_tab !== 'team'        ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_team( $partner_id ); ?></div>
 		<div id="fp-tab-kennzahlen"  class="fp-section<?php echo $active_tab !== 'kennzahlen'  ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_stats( $partner_id ); ?></div>
 
-		<footer class="fp-portal-foot">
+		<div class="fgpp"><footer class="foot">
 			<div>© <?php echo esc_html( gmdate( 'Y' ) ); ?> Firmengolf · Partner-Portal</div>
-			<div class="fp-portal-foot-links">
-				<a href="mailto:events@visionpunch.de">Support</a>
-			</div>
-		</footer>
+			<div class="links"><a href="mailto:<?php echo esc_attr( fge_company()['email_partner'] ); ?>">Support</a></div>
+		</footer></div>
 
 	</div>
 
 	<script>
 	(function () {
-		var tabs     = document.querySelectorAll('.fp-nav-tab');
+		var tabs     = document.querySelectorAll('.nav-tab');
 		var sections = document.querySelectorAll('.fp-section');
 		tabs.forEach(function (btn) {
 			btn.addEventListener('click', function () {
@@ -1209,7 +1199,211 @@ function fge_portal_section_kalender(): void {
 // SECTION: MEIN PLATZ (umbenannt von Profil)
 // ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Ansprechpartner/Team — Platzhalter (eigene Etappe: fge_partner_contacts-Tabelle).
+ */
+function fge_portal_section_team( int $partner_id ): void {
+	$edit = esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => '1' ], fge_portal_page_url() ) );
+	?>
+	<div class="fgpp"><div class="page-wide">
+		<section class="section">
+			<div class="section-head">
+				<div>
+					<div class="eyebrow">Team</div>
+					<h2>Eure <em>Ansprechpartner</em></h2>
+					<p>Mehrere Kontakte je Platz (z.B. Geschäftsführung, Head Pro, Gastronomie) — sie speisen später die Termin-Freigabe bei Anfragen.</p>
+				</div>
+			</div>
+			<div class="panel">
+				<p style="font-size:15px;color:var(--ink-500);line-height:1.6;">Die Ansprechpartner-Verwaltung wird gerade gebaut. Bis dahin pflegst du den Hauptkontakt im Tab <a href="<?php echo $edit; ?>" style="color:var(--fairway-700);">Platz → Bearbeiten</a>.</p>
+			</div>
+		</section>
+	</div></div>
+	<?php
+}
+
+/**
+ * Platz-Profil — neue Anzeige-View (Design rev. 2, gekapselt unter .fgpp).
+ * Liest die echten Partner-Daten inkl. Katalog-Modell (golf_type, infra, cap).
+ */
+function fge_portal_render_platz_profile( int $partner_id ): void {
+	$m    = static fn( string $k ): string => (string) get_post_meta( $partner_id, '_fge_' . $k, true );
+	$base = fge_portal_page_url();
+	$edit = esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => '1' ], $base ) );
+
+	$name       = $m( 'public_golfclub_name' ) ?: get_the_title( $partner_id );
+	$city       = $m( 'city' );
+	$region     = $m( 'free_region' ) ?: $m( 'federal_state' );
+	$loc        = trim( $city . ( ( $region && $region !== $city ) ? ' · ' . $region : '' ) );
+	$golf_label = ( $gt = $m( 'golf_type' ) ) ? ( fge_catalog_golf_types()[ $gt ] ?? $gt ) : '';
+	$since      = $m( 'partner_since' );
+	$rating     = (float) $m( 'rating' );
+	$status     = $m( 'partner_status' );
+	$desc       = $m( 'public_short_description' );
+	$infra      = (array) get_post_meta( $partner_id, '_fge_infra', true );
+	$cap        = (array) get_post_meta( $partner_id, '_fge_cap', true );
+	$formats    = (array) get_post_meta( $partner_id, '_fge_event_formats', true );
+	$gallery    = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $partner_id, '_fge_gallery_attachment_ids', true ) ) ) );
+	$cover_id   = (int) get_post_meta( $partner_id, '_fge_hero_image_attachment_id', true );
+	$cover      = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
+	$mono       = function_exists( 'fge_portal_make_monogram' ) ? fge_portal_make_monogram( $name ) : strtoupper( mb_substr( $name, 0, 2 ) );
+
+	$infra_index = [];
+	foreach ( fge_catalog_infra_groups() as $group => $items ) {
+		foreach ( $items as $id => $label ) {
+			$infra_index[ $id ] = [ 'label' => $label, 'group' => $group ];
+		}
+	}
+
+	$facts = [];
+	if ( $golf_label ) { $facts[] = [ 'Platztyp', $golf_label ]; }
+	if ( $loc )        { $facts[] = [ 'Standort', $loc ]; }
+	if ( ! empty( $cap['min'] ) || ! empty( $cap['max'] ) ) {
+		$facts[] = [ 'Gruppengröße', trim( ( $cap['min'] ?? '?' ) . '–' . ( $cap['max'] ?? '?' ) . ' Personen' ) ];
+	}
+	if ( $formats ) { $facts[] = [ 'Veranstaltungstypen', (string) count( $formats ) ]; }
+	if ( $since )   { $facts[] = [ 'Mitglied seit', $since ]; }
+	?>
+	<div class="fgpp">
+		<div class="page-wide">
+
+			<section class="hero">
+				<div class="hero-photo" style="background-image:url('<?php echo esc_url( $cover ); ?>')">
+					<div class="hero-scrim"></div>
+					<div class="hero-top">
+						<div class="hero-status"><span class="dot"></span> <?php echo $status === 'pausiert' ? 'Pausiert — nicht öffentlich sichtbar' : 'Öffentlich sichtbar auf Firmengolf'; ?></div>
+						<div class="hero-actions">
+							<a class="hero-btn solid" href="<?php echo $edit; ?>">Profil bearbeiten</a>
+						</div>
+					</div>
+					<div class="hero-body">
+						<div class="hero-id">
+							<div class="hero-monogram"><?php echo esc_html( $mono ); ?></div>
+							<div class="hero-text">
+								<div class="hero-eyebrow">Dein Platz auf Firmengolf</div>
+								<h1 class="hero-name"><?php echo esc_html( $name ); ?></h1>
+								<div class="hero-meta">
+									<?php if ( $loc ) : ?><span><?php echo esc_html( $loc ); ?></span><?php endif; ?>
+									<?php if ( $golf_label ) : ?><span class="dot">·</span><span><?php echo esc_html( $golf_label ); ?></span><?php endif; ?>
+									<?php if ( $since ) : ?><span class="dot">·</span><span>Mitglied seit <?php echo esc_html( $since ); ?></span><?php endif; ?>
+								</div>
+							</div>
+						</div>
+						<?php if ( $rating > 0 ) : ?>
+							<div class="hero-cta-card">
+								<div class="lbl">Bewertung</div>
+								<div class="val"><?php echo esc_html( number_format_i18n( $rating, 1 ) ); ?> ★</div>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+			</section>
+
+			<section class="section">
+				<div class="section-head">
+					<div>
+						<div class="eyebrow">So sehen dich Firmen</div>
+						<h2>Über deinen <em>Platz</em></h2>
+						<p>Beschreibung und Eckdaten erscheinen auf deinem öffentlichen Firmengolf-Profil.</p>
+					</div>
+					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit; ?>">Bearbeiten</a></div>
+				</div>
+				<div class="about">
+					<div class="about-main">
+						<?php if ( $desc !== '' ) : ?>
+							<?php foreach ( preg_split( '/\n\s*\n/', trim( $desc ) ) as $para ) : ?>
+								<p><?php echo esc_html( trim( $para ) ); ?></p>
+							<?php endforeach; ?>
+						<?php else : ?>
+							<p style="color:var(--ink-500);">Noch keine Beschreibung hinterlegt. <a href="<?php echo $edit; ?>">Jetzt ergänzen →</a></p>
+						<?php endif; ?>
+					</div>
+					<?php if ( $facts ) : ?>
+						<div class="facts">
+							<h4>Eckdaten</h4>
+							<?php foreach ( $facts as $f ) : ?>
+								<div class="fact-row"><span class="lbl"><?php echo esc_html( $f[0] ); ?></span><span class="val"><?php echo esc_html( $f[1] ); ?></span></div>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+				</div>
+			</section>
+
+			<?php if ( $infra ) : ?>
+			<section class="section">
+				<div class="section-head">
+					<div><div class="eyebrow">Ausstattung</div><h2>Was euch <em>erwartet</em></h2></div>
+					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit; ?>">Bearbeiten</a></div>
+				</div>
+				<div class="amenities">
+					<?php foreach ( $infra as $id ) :
+						$it = $infra_index[ $id ] ?? null;
+						if ( ! $it ) { continue; } ?>
+						<div class="amenity">
+							<span class="ic-wrap">✓</span>
+							<div>
+								<div class="l"><?php echo esc_html( $it['label'] ); ?></div>
+								<div class="s"><?php echo esc_html( $it['group'] ); ?></div>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</section>
+			<?php endif; ?>
+
+			<?php if ( $gallery ) : ?>
+			<section class="section" id="galerie">
+				<div class="section-head">
+					<div><div class="eyebrow">Bildergalerie</div><h2>Fotos deines <em>Platzes</em></h2></div>
+					<div class="actions"><a class="btn btn-brand btn-sm" href="<?php echo $edit; ?>">Fotos verwalten</a></div>
+				</div>
+				<div class="gallery-grid">
+					<?php foreach ( $gallery as $gid ) :
+						$gurl = (string) wp_get_attachment_image_url( $gid, 'large' );
+						if ( ! $gurl ) { continue; } ?>
+						<div class="gallery-item" style="background-image:url('<?php echo esc_url( $gurl ); ?>')"></div>
+					<?php endforeach; ?>
+				</div>
+			</section>
+			<?php endif; ?>
+
+			<section class="section" id="bewertungen">
+				<div class="two-col">
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Was Firmen sagen</h3></div>
+						<?php if ( $m( 'review_quote' ) !== '' ) : ?>
+							<div class="review">
+								<div class="review-head"><span class="review-company"><?php echo esc_html( $m( 'review_author' ) ?: 'Kunde' ); ?></span></div>
+								<p class="review-quote">„<?php echo esc_html( $m( 'review_quote' ) ); ?>"</p>
+								<?php if ( $m( 'review_role' ) !== '' ) : ?><div class="review-foot"><span><?php echo esc_html( $m( 'review_role' ) ); ?></span></div><?php endif; ?>
+							</div>
+						<?php else : ?>
+							<p style="font-size:14px;color:var(--ink-500);">Noch keine Bewertung hinterlegt.</p>
+						<?php endif; ?>
+					</div>
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Ansprechpartner</h3></div>
+						<div class="facts" style="background:var(--paper-200);">
+							<div class="fact-row"><span class="lbl">Name</span><span class="val"><?php echo esc_html( $m( 'main_contact_name' ) ?: '—' ); ?></span></div>
+							<div class="fact-row"><span class="lbl">E-Mail</span><span class="val"><?php echo esc_html( $m( 'main_contact_email' ) ?: '—' ); ?></span></div>
+							<div class="fact-row"><span class="lbl">Telefon</span><span class="val"><?php echo esc_html( $m( 'main_contact_phone' ) ?: '—' ); ?></span></div>
+						</div>
+						<a class="btn btn-ghost btn-sm" style="margin-top:14px;" href="<?php echo $edit; ?>">Kontaktdaten bearbeiten</a>
+					</div>
+				</div>
+			</section>
+
+		</div>
+	</div>
+	<?php
+}
+
 function fge_portal_section_platz( int $partner_id ): void {
+	// Standard: neue Profil-Anzeige. Mit ?edit=1: bestehendes Bearbeiten-Formular.
+	if ( ! isset( $_GET['edit'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		fge_portal_render_platz_profile( $partner_id );
+		return;
+	}
 	$m    = static function( string $key ) use ( $partner_id ): string {
 		return (string) get_post_meta( $partner_id, '_fge_' . $key, true );
 	};

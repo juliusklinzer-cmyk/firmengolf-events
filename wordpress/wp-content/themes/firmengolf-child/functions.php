@@ -18,6 +18,16 @@ add_action( 'wp_enqueue_scripts', function() {
 		defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
 	);
 
+	// Partner-Portal (neu): gekapseltes Stylesheet, nur auf der Portalseite.
+	if ( is_page( 'partnerportal' ) ) {
+		wp_enqueue_style(
+			'fge-portal',
+			plugins_url( 'assets/css/fge-portal.css', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
+			[ 'fge-frontend' ],
+			defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
+		);
+	}
+
 	// Anfrage-Wizard (JS-Insel) — auf Individuelle-Events (inkl. Budget-Rechner) und der allgemeinen Anfrage-Seite.
 	if ( is_page( [ 'individuelle-events', 'event-anfrage' ] ) ) {
 		wp_enqueue_script(
