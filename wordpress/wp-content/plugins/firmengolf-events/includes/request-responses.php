@@ -55,6 +55,18 @@ function fge_request_number( int $request_id ): string {
 	return '' !== $ref ? $ref : sprintf( 'FG-%06d', $request_id );
 }
 
+/**
+ * Generate the next sequential request reference: FG-<YY>-<NNN> (per-year counter).
+ * e.g. FG-26-001, FG-26-002 … Resets each calendar year.
+ */
+function fge_generate_request_ref(): string {
+	$yy  = (int) current_time( 'y' );
+	$opt = 'fge_request_seq_' . $yy;
+	$seq = (int) get_option( $opt, 0 ) + 1;
+	update_option( $opt, $seq, false );
+	return sprintf( 'FG-%02d-%03d', $yy, $seq );
+}
+
 /** Wish dates of a request as [index => label] (1..3, non-empty only). */
 function fge_rr_wish_dates( int $request_id ): array {
 	$out = [];
@@ -67,10 +79,18 @@ function fge_rr_wish_dates( int $request_id ): array {
 	return $out;
 }
 
-/** The responders for a request: the assigned partner's vote-permission contacts. */
+/**
+ * The responders for a request: the assigned partner's vote-permission contacts.
+ * Respects the assigned event's release_mode: `us` → the place confirms alone, so
+ * there are no multi-party responders (empty); `approve` (default) → the vote-contacts.
+ */
 function fge_rr_responders( int $request_id ): array {
 	$partner_id = (int) get_post_meta( $request_id, '_fge_assigned_partner_id', true );
 	if ( $partner_id <= 0 || ! function_exists( 'fge_contacts_get' ) ) {
+		return [];
+	}
+	$event_id = (int) get_post_meta( $request_id, '_fge_assigned_event_id', true );
+	if ( $event_id > 0 && 'us' === (string) get_post_meta( $event_id, '_fge_release_mode', true ) ) {
 		return [];
 	}
 	return array_values( array_filter( fge_contacts_get( $partner_id ), static function ( $c ) {

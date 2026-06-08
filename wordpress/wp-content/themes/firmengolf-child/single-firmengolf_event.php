@@ -514,13 +514,25 @@ get_header();
 		<div id="fg-modal-step-0">
 			<div class="fg-form-grid">
 				<div class="fg-field">
-					<label class="fg-field-label" for="fg-date-pref">Wann ungefähr?</label>
-					<input class="fg-input" id="fg-date-pref" placeholder="z.B. Juli 2026 · KW 28">
-					<span class="fg-field-help">Wir prüfen Verfügbarkeit auf benachbarten Plätzen.</span>
+					<label class="fg-field-label" for="fg-date-1">Wunschtermin 1</label>
+					<input class="fg-input" id="fg-date-1" placeholder="z.B. Do, 18. Juni 2026">
+					<span class="fg-field-help">Bis zu 3 Wunschtermine — wir stimmen sie mit dem Platz ab.</span>
 				</div>
 				<div class="fg-field">
 					<label class="fg-field-label" for="fg-group-size">Gruppengröße</label>
 					<input class="fg-input" id="fg-group-size" placeholder="z.B. 16 Personen">
+				</div>
+				<div class="fg-field">
+					<label class="fg-field-label" for="fg-date-2">Wunschtermin 2 (optional)</label>
+					<input class="fg-input" id="fg-date-2" placeholder="z.B. Fr, 19. Juni 2026">
+				</div>
+				<div class="fg-field">
+					<label class="fg-field-label" for="fg-date-3">Wunschtermin 3 (optional)</label>
+					<input class="fg-input" id="fg-date-3" placeholder="z.B. KW 30">
+				</div>
+				<div class="fg-field fg-field-full">
+					<label class="fg-field-label" for="fg-date-pref">Alternativer Zeitraum (optional)</label>
+					<input class="fg-input" id="fg-date-pref" placeholder="z.B. Juli 2026 · flexibel">
 				</div>
 				<div class="fg-field fg-field-full">
 					<label class="fg-field-label" for="fg-notes">Was wäre wichtig?</label>
@@ -697,6 +709,9 @@ get_header();
 				action:     'fge_modal_anfrage',
 				nonce:      '<?php echo esc_js( $modal_nonce ); ?>',
 				event_id:   '<?php echo esc_js( (string) $post_id ); ?>',
+				date1:      val('fg-date-1'),
+				date2:      val('fg-date-2'),
+				date3:      val('fg-date-3'),
 				date_pref:  val('fg-date-pref'),
 				group_size: val('fg-group-size'),
 				notes:      val('fg-notes'),

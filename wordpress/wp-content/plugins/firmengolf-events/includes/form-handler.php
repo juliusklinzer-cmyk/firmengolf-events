@@ -58,7 +58,7 @@ function fge_ajax_modal_anfrage(): void {
 
 	$partner_id  = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
 	$event_title = $event_id > 0 ? get_the_title( $event_id ) : '–';
-	$ref         = 'FG-26-' . strtoupper( substr( wp_generate_uuid4(), 0, 6 ) );
+	$ref = fge_generate_request_ref();
 
 	$request_id = wp_insert_post( [
 		'post_type'   => 'firmengolf_request',
@@ -90,6 +90,10 @@ function fge_ajax_modal_anfrage(): void {
 	// Event framework
 	update_post_meta( $request_id, '_fge_expected_participants', absint( preg_replace( '/\D/', '', $group ) ) );
 	update_post_meta( $request_id, '_fge_alternative_period',    $date_pref );
+	// Wunschtermine (1–3) → speisen die Termin-Abstimmung (fge_request_responses / scheduling).
+	update_post_meta( $request_id, '_fge_preferred_date_1', sanitize_text_field( wp_unslash( $_POST['date1'] ?? '' ) ) );
+	update_post_meta( $request_id, '_fge_preferred_date_2', sanitize_text_field( wp_unslash( $_POST['date2'] ?? '' ) ) );
+	update_post_meta( $request_id, '_fge_preferred_date_3', sanitize_text_field( wp_unslash( $_POST['date3'] ?? '' ) ) );
 	$message = trim( $notes . ( $add_wish !== '' ? "\n\nWeitere Wünsche: " . $add_wish : '' ) );
 	update_post_meta( $request_id, '_fge_message', $message );
 
@@ -163,7 +167,7 @@ function fge_ajax_general_request(): void {
 	$services = array_filter( array_map( 'trim', explode( '||', (string) wp_unslash( $_POST['services'] ?? '' ) ) ) );
 	$services = array_map( 'sanitize_text_field', $services );
 
-	$ref = 'FG-26-' . strtoupper( substr( wp_generate_uuid4(), 0, 6 ) );
+	$ref = fge_generate_request_ref();
 
 	$request_id = wp_insert_post( [
 		'post_type'   => 'firmengolf_request',

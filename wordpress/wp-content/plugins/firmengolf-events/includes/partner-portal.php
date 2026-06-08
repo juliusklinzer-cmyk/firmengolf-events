@@ -1538,9 +1538,28 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 						</div>
 						<?php endforeach; ?>
 					</div>
-				<?php elseif ( ! empty( $wish ) && 0 === $total ) : ?>
+				<?php elseif ( ! empty( $wish ) ) : ?>
 					<div class="req-section-label">Wunschtermine</div>
-					<div class="panel" style="color:var(--ink-500);font-size:14px;">Für die Terminabstimmung sind noch keine Ansprechpartner mit „Terminabstimmung"-Recht hinterlegt. Lege sie im Tab <a href="<?php echo esc_url( $base . '?tab=team' ); ?>" style="color:var(--fairway-700);">Ansprechpartner</a> an.</div>
+					<p style="font-size:13px;color:var(--ink-500);margin:-4px 0 12px;">Diese Anfrage gibst du selbst frei — bestätige den passenden Termin. (Du kannst im Tab <a href="<?php echo esc_url( $base . '?tab=team' ); ?>" style="color:var(--fairway-700);">Ansprechpartner</a> Personen mit „Terminabstimmung" hinterlegen, dann stimmen sie automatisch mit ab.)</p>
+					<div class="wishdates">
+						<?php foreach ( $wish as $idx => $label ) :
+							$is_final = ( (int) $final === (int) $idx ); ?>
+						<div class="wishdate<?php echo $is_final ? ' final' : ''; ?>">
+							<div class="wishdate-top">
+								<div><div class="wishdate-date"><?php echo $is_final ? '✓ ' : ''; ?><?php echo esc_html( $label ); ?></div></div>
+								<?php if ( ! $final ) : ?>
+								<form method="post" action="<?php echo esc_url( $base ); ?>" style="margin:0;">
+									<input type="hidden" name="fge_portal_nonce" value="<?php echo esc_attr( $nonce ); ?>">
+									<input type="hidden" name="portal_action" value="confirm_date">
+									<input type="hidden" name="req_id" value="<?php echo (int) $req; ?>">
+									<input type="hidden" name="date_index" value="<?php echo (int) $idx; ?>">
+									<button type="submit" class="minibtn confirm">✓ Diesen Termin bestätigen</button>
+								</form>
+								<?php else : ?><span class="wishdate-final-tag">✓ Bestätigt</span><?php endif; ?>
+							</div>
+						</div>
+						<?php endforeach; ?>
+					</div>
 				<?php endif; ?>
 			</div>
 		</div>
