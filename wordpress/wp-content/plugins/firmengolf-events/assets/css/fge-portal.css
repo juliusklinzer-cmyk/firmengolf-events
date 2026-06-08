@@ -38,6 +38,37 @@
   .fgpp .nav-tabs { margin: 0; order: 3; width: 100%; }
 }
 
+/* ── Angebote-Liste (cat grid) ── */
+.fgpp .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.fgpp .cat { background: var(--paper-50); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--ink-200); display: flex; flex-direction: column; transition: box-shadow var(--dur-base) var(--ease-out); }
+.fgpp .cat:hover { box-shadow: var(--shadow-md); }
+.fgpp .cat-photo { position: relative; aspect-ratio: 16/10; background-size: cover; background-position: center; background-color: var(--paper-300); }
+.fgpp .cat-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,19,16,0) 50%, rgba(14,19,16,0.45) 100%); }
+.fgpp .cat-cat-chip { position: absolute; left: 14px; top: 14px; background: rgba(255,255,255,0.88); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--ink-900); z-index: 1; display: inline-flex; align-items: center; gap: 6px; }
+.fgpp .cat-status { position: absolute; right: 14px; top: 14px; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; padding: 5px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; z-index: 1; text-transform: uppercase; background: var(--paper-100); }
+.fgpp .cat-status .dot { width: 6px; height: 6px; border-radius: 999px; }
+.fgpp .cat-status.published { color: var(--fairway-700); } .fgpp .cat-status.published .dot { background: #5BCB7E; }
+.fgpp .cat-status.draft { color: var(--warning, #C8932B); } .fgpp .cat-status.draft .dot { background: var(--warning, #C8932B); }
+.fgpp .cat-status.pruefung { color: #9A6B12; } .fgpp .cat-status.pruefung .dot { background: #C8932B; }
+.fgpp .cat-status.paused { color: var(--ink-500); } .fgpp .cat-status.paused .dot { background: var(--ink-400); }
+.fgpp .cat-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.fgpp .cat-title { font-family: var(--font-display); font-weight: 500; font-size: 20px; line-height: 1.2; letter-spacing: -0.015em; color: var(--ink-900); }
+.fgpp .cat-sub { font-size: 13px; color: var(--ink-500); line-height: 1.5; }
+.fgpp .cat-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.fgpp .cat-stats .chip { font-size: 12px; padding: 4px 10px; background: var(--paper-200); color: var(--ink-700); border-radius: 999px; }
+.fgpp .cat-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--ink-200); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fgpp .cat-price { font-family: var(--font-display); font-weight: 500; font-size: 18px; letter-spacing: -0.015em; color: var(--ink-900); }
+.fgpp .cat-price .from { font-family: var(--font-body); font-size: 11px; font-weight: 500; color: var(--ink-500); letter-spacing: 0.04em; text-transform: uppercase; margin-right: 6px; }
+.fgpp .cat-price .unit { font-family: var(--font-body); font-size: 12px; color: var(--ink-500); font-weight: 400; margin-left: 3px; }
+.fgpp .cat-edit { font-size: 13px; font-weight: 500; color: var(--ink-900); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
+.fgpp .cat-edit:hover { background: var(--paper-200); }
+.fgpp .cat.is-empty { background: transparent; border: 1.5px dashed var(--ink-300); align-items: center; justify-content: center; text-align: center; padding: 28px 24px; min-height: 280px; gap: 14px; text-decoration: none; }
+.fgpp .cat.is-empty:hover { border-color: var(--fairway-500); background: var(--fairway-100); }
+.fgpp .cat.is-empty .cat-cat-chip { position: static; background: var(--paper-200); }
+.fgpp .cat.is-empty .empty-icon { width: 56px; height: 56px; border-radius: 999px; background: var(--fairway-100); color: var(--fairway-700); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+@media (max-width: 900px) { .fgpp .cat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .fgpp .cat-grid { grid-template-columns: 1fr; } }
+
 /* ── Hero ── */
 .fgpp .hero { padding: 22px 0 0; }
 .fgpp .hero-photo {

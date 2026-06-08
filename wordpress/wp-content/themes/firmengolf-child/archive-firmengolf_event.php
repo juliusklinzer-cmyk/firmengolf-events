@@ -60,8 +60,11 @@ $chip_url = static function( array $params ) use ( $archive_url, $active_format,
 	return add_query_arg( $merged, $archive_url );
 };
 
-// ── Base meta filters (format / pax) ─────────────────────────────────────────
-$meta_query = [];
+// ── Base meta filters (Status + format / pax) ────────────────────────────────
+// Nur freigegebene Angebote öffentlich zeigen (Lifecycle). Pausierte Plätze → Nachfilter unten.
+$meta_query = [
+	[ 'key' => '_fge_event_status', 'value' => 'freigegeben', 'compare' => '=' ],
+];
 if ( $active_format !== 'all' ) {
 	$meta_query[] = [ 'key' => '_fge_event_type', 'value' => $active_format, 'compare' => '=' ];
 }
@@ -137,6 +140,14 @@ if ( $geo_active ) {
 		$event_items[] = [ 'id' => (int) $p->ID, 'dist' => null ];
 	}
 	$total = (int) $events_query->found_posts;
+}
+
+// ── Pausieren-Kaskade: Angebote pausierter Plätze ausblenden ──────────────────
+if ( function_exists( 'fge_event_is_public' ) ) {
+	$event_items = array_values( array_filter( $event_items, static fn( $it ) => fge_event_is_public( $it['id'] ) ) );
+	if ( $geo_active ) {
+		$total = count( $event_items );
+	}
 }
 
 // ── Heading ──────────────────────────────────────────────────────────────────

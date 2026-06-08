@@ -205,16 +205,43 @@ function fge_event_included_wants( int $event_id ): array {
 	return array_values( array_unique( $wants ) );
 }
 
+/**
+ * Ist ein Event öffentlich sichtbar/buchbar?
+ *
+ * Bedingung: Event-Status `freigegeben` UND der zugehörige Golfplatz ist NICHT pausiert
+ * (Pausieren-Kaskade, Handoff §1: Platz pausiert ⇒ alle seine Events offline).
+ */
+function fge_event_is_public( int $event_id ): bool {
+	if ( get_post_meta( $event_id, '_fge_event_status', true ) !== 'freigegeben' ) {
+		return false;
+	}
+	$partner_id = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
+	if ( $partner_id > 0 && get_post_meta( $partner_id, '_fge_partner_status', true ) === 'pausiert' ) {
+		return false;
+	}
+	return true;
+}
+
 function fge_get_featured_events( int $count = 3 ): array {
-	return get_posts( [
+	$candidates = get_posts( [
 		'post_type'   => 'firmengolf_event',
 		'post_status' => 'publish',
-		'numberposts' => $count,
+		'numberposts' => max( $count * 4, 12 ),
 		'meta_query'  => [
 			[ 'key' => '_fge_event_status', 'value' => 'freigegeben', 'compare' => '=' ],
 		],
 		'orderby' => 'rand',
 	] );
+	$out = [];
+	foreach ( $candidates as $p ) {
+		if ( fge_event_is_public( $p->ID ) ) {
+			$out[] = $p;
+			if ( count( $out ) >= $count ) {
+				break;
+			}
+		}
+	}
+	return $out;
 }
 
 function fge_get_event_price_display( int $post_id ): string {

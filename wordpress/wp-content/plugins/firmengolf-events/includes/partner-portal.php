@@ -11,6 +11,43 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action( 'init', 'fge_portal_handle_new_event', 10 );
 add_action( 'init', 'fge_portal_handle_edit_event', 10 );
 add_action( 'init', 'fge_portal_handle_profile_update', 10 );
+add_action( 'init', 'fge_portal_handle_lifecycle', 10 );
+
+/**
+ * Lifecycle-Aktion des Platzes: eigenes Angebot pausieren / reaktivieren (GET + Nonce).
+ * freigegeben → pausiert (Pausieren) · pausiert → freigegeben (Reaktivieren).
+ */
+function fge_portal_handle_lifecycle(): void {
+	$action = sanitize_key( $_GET['portal_action'] ?? '' );
+	if ( ! in_array( $action, [ 'pause', 'reactivate' ], true ) ) {
+		return;
+	}
+	$event_id = absint( $_GET['event_id'] ?? 0 );
+	if ( ! $event_id ) {
+		return;
+	}
+	if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'fge_portal_lifecycle_' . $event_id ) ) {
+		wp_die( 'Ungültige Sicherheitsüberprüfung.', '', [ 'response' => 403 ] );
+	}
+	$partner_id = fge_portal_get_partner_id();
+	if ( ! $partner_id || (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true ) !== $partner_id ) {
+		wp_die( 'Kein Zugriff auf dieses Angebot.', '', [ 'response' => 403 ] );
+	}
+	$current = (string) get_post_meta( $event_id, '_fge_event_status', true );
+	$base    = fge_portal_page_url();
+	if ( $action === 'pause' && $current === 'freigegeben' ) {
+		update_post_meta( $event_id, '_fge_event_status', 'pausiert' );
+		wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_paused' ), 303 );
+		exit;
+	}
+	if ( $action === 'reactivate' && $current === 'pausiert' ) {
+		update_post_meta( $event_id, '_fge_event_status', 'freigegeben' );
+		wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_reactivated' ), 303 );
+		exit;
+	}
+	wp_redirect( esc_url_raw( $base . '?tab=angebote' ), 303 );
+	exit;
+}
 
 function fge_portal_handle_new_event(): void {
 	if ( ( $_POST['fge_action'] ?? '' ) !== 'portal_new_event' ) {
@@ -309,8 +346,40 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	}
 
 	update_post_meta( $post_id, '_fge_additional_services',         sanitize_textarea_field( wp_unslash( $_POST['fge_additional_services'] ?? '' ) ) );
-	update_post_meta( $post_id, '_fge_public_price_label',          sanitize_text_field( wp_unslash( $_POST['fge_public_price_label'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_price_note',                  sanitize_textarea_field( wp_unslash( $_POST['fge_price_note'] ?? '' ) ) );
+
+	// ── Preismodell + Inhalt (rev. 2) ──
+	$price_mode = in_array( $_POST['fge_price_mode'] ?? '', [ 'gesamt', 'einzel' ], true ) ? $_POST['fge_price_mode'] : 'gesamt';
+	update_post_meta( $post_id, '_fge_price_mode', $price_mode );
+	update_post_meta( $post_id, '_fge_price_amount', (float) str_replace( ',', '.', preg_replace( '/[^\d.,]/', '', (string) wp_unslash( $_POST['fge_price_amount'] ?? '' ) ) ) );
+	update_post_meta( $post_id, '_fge_price_basis', in_array( $_POST['fge_price_basis'] ?? '', [ 'person', 'pauschal' ], true ) ? $_POST['fge_price_basis'] : 'person' );
+	$pli = [];
+	foreach ( preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_line_items'] ?? '' ) ) as $line ) {
+		$line = trim( $line );
+		if ( $line === '' ) {
+			continue;
+		}
+		$parts = explode( '|', $line, 2 );
+		$lbl   = sanitize_text_field( trim( $parts[0] ?? '' ) );
+		$cst   = (float) str_replace( ',', '.', preg_replace( '/[^\d.,]/', '', $parts[1] ?? '' ) );
+		if ( $lbl !== '' ) {
+			$pli[] = [ 'label' => $lbl, 'cost' => $cst ];
+		}
+	}
+	update_post_meta( $post_id, '_fge_line_items', $pli );
+	$pinc = array_values( array_filter( array_map(
+		static fn( $l ): string => sanitize_text_field( trim( $l ) ),
+		preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_event_includes'] ?? '' ) )
+	) ) );
+	update_post_meta( $post_id, '_fge_event_includes', $pinc );
+	update_post_meta( $post_id, '_fge_event_dayflow', sanitize_textarea_field( wp_unslash( $_POST['fge_event_dayflow'] ?? '' ) ) );
+
+	// Öffentlichen Preis aus dem Modell spiegeln (eine Quelle: event-pricing.php).
+	$pr = fge_event_pricing( $post_id );
+	if ( $pr['gross'] > 0 ) {
+		update_post_meta( $post_id, '_fge_sale_price_net', $pr['gross'] );
+		update_post_meta( $post_id, '_fge_public_price_label', fge_event_price_label( $post_id ) );
+	}
 	update_post_meta( $post_id, '_fge_availability_contact_name',   sanitize_text_field( wp_unslash( $_POST['fge_availability_contact_name'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_availability_contact_email',  sanitize_email( wp_unslash( $_POST['fge_availability_contact_email'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_availability_contact_phone',  sanitize_text_field( wp_unslash( $_POST['fge_availability_contact_phone'] ?? '' ) ) );
@@ -521,6 +590,10 @@ function fge_portal_render(): void {
 					Das Event wurde aktualisiert und wird erneut geprüft.
 				<?php elseif ( $success === 'profile_saved' ) : ?>
 					Dein Profil wurde gespeichert.
+				<?php elseif ( $success === 'event_paused' ) : ?>
+					Das Angebot wurde pausiert und ist nicht mehr öffentlich sichtbar.
+				<?php elseif ( $success === 'event_reactivated' ) : ?>
+					Das Angebot wurde reaktiviert und ist wieder öffentlich sichtbar.
 				<?php endif; ?>
 			</div>
 		<?php endif; ?>
@@ -816,7 +889,7 @@ function fge_portal_render_stats_row( int $partner_id ): void {
 function fge_portal_render_cat_grid( int $partner_id, string $base ): void {
 	$types = fge_get_event_formats()['standard'];
 	?>
-	<div class="fp-cat-grid">
+	<div class="fgpp"><div class="cat-grid">
 		<?php
 		$idx = 0;
 		foreach ( $types as $type_key => $type_label ) :
@@ -834,14 +907,14 @@ function fge_portal_render_cat_grid( int $partner_id, string $base ): void {
 			if ( empty( $events ) ) :
 				$new_url = esc_url( $base . '?tab=angebote&portal_action=new&preset_type=' . $type_key );
 				?>
-				<a href="<?php echo $new_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>" class="fp-cat is-empty">
-					<div class="fp-empty-icon">
+				<a href="<?php echo $new_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>" class="cat is-empty">
+					<div class="empty-icon">
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14"/></svg>
 					</div>
-					<span class="fp-cat-chip"><?php echo esc_html( $type_label ); ?></span>
-					<div class="fp-cat-title">Noch kein Angebot</div>
-					<div class="fp-cat-sub">Lade ein Angebot hoch, damit Firmen dich in dieser Kategorie finden.</div>
-					<span class="fp-btn fp-btn-brand fp-btn-sm">+ Angebot erstellen</span>
+					<span class="cat-cat-chip"><?php echo esc_html( $type_label ); ?></span>
+					<div class="cat-title">Noch kein Angebot</div>
+					<div class="cat-sub">Lade ein Angebot hoch, damit Firmen dich in dieser Kategorie finden.</div>
+					<span class="btn btn-brand btn-sm">+ Angebot erstellen</span>
 				</a>
 				<?php
 			else :
@@ -852,7 +925,7 @@ function fge_portal_render_cat_grid( int $partner_id, string $base ): void {
 			endif;
 		endforeach;
 		?>
-	</div>
+	</div></div>
 	<?php
 }
 
@@ -861,72 +934,62 @@ function fge_portal_render_cat_card( WP_Post $event, string $type_label, string 
 	$status   = (string) get_post_meta( $event_id, '_fge_event_status', true );
 	$desc     = (string) get_post_meta( $event_id, '_fge_card_description', true );
 	$duration = (string) get_post_meta( $event_id, '_fge_duration', true );
-	$pmin     = (int)    get_post_meta( $event_id, '_fge_participants_min', true );
-	$pmax     = (int)    get_post_meta( $event_id, '_fge_participants_max', true );
-	$price    = (string) get_post_meta( $event_id, '_fge_public_price_label', true );
-	$views    = (int)    get_post_meta( $event_id, '_fge_views_count', true );
+	$pmin     = (int) get_post_meta( $event_id, '_fge_participants_min', true );
+	$pmax     = (int) get_post_meta( $event_id, '_fge_participants_max', true );
+	$views    = (int) get_post_meta( $event_id, '_fge_views_count', true );
+	$cover_id = (int) get_post_meta( $event_id, '_fge_cover_attachment_id', true );
+	$cover    = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
+	$edit_url = esc_url( $base . '?tab=angebote&portal_action=edit&event_id=' . $event_id );
 
-	$cover_id    = (int) get_post_meta( $event_id, '_fge_cover_attachment_id', true );
-	$placeholder = $cover_id > 0
-		? (string) wp_get_attachment_image_url( $cover_id, 'large' )
-		: fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
-	$edit_url    = esc_url( $base . '?tab=angebote&portal_action=edit&event_id=' . $event_id );
-
-	$ampel_map = [
-		'freigegeben'           => [ 'class' => 'published', 'label' => 'Veröffentlicht' ],
-		'zur_pruefung'          => [ 'class' => 'draft',     'label' => 'In Prüfung' ],
-		'aenderung_in_pruefung' => [ 'class' => 'draft',     'label' => 'In Prüfung' ],
-		'entwurf'               => [ 'class' => 'draft',     'label' => 'Entwurf' ],
-		'pausiert'              => [ 'class' => 'paused',    'label' => 'Pausiert' ],
-		'abgelehnt'             => [ 'class' => 'rejected',  'label' => 'Abgelehnt' ],
+	$st_map = [
+		'freigegeben'           => [ 'published', 'Veröffentlicht' ],
+		'zur_pruefung'          => [ 'pruefung',  'In Prüfung' ],
+		'aenderung_in_pruefung' => [ 'pruefung',  'In Prüfung' ],
+		'entwurf'               => [ 'draft',     'Entwurf' ],
+		'pausiert'              => [ 'paused',    'Pausiert' ],
+		'abgelehnt'             => [ 'paused',    'Abgelehnt' ],
 	];
-	$ampel = $ampel_map[ $status ] ?? [ 'class' => 'draft', 'label' => 'Entwurf' ];
+	$st = $st_map[ $status ] ?? [ 'draft', 'Entwurf' ];
 
-	$group = '';
-	if ( $pmin > 0 && $pmax > 0 ) {
-		$group = "{$pmin}–{$pmax}";
-	} elseif ( $pmax > 0 ) {
-		$group = "bis {$pmax}";
-	} elseif ( $pmin > 0 ) {
-		$group = "ab {$pmin}";
+	$group = ( $pmin > 0 && $pmax > 0 ) ? "{$pmin}–{$pmax}" : ( $pmax > 0 ? "bis {$pmax}" : ( $pmin > 0 ? "ab {$pmin}" : '' ) );
+	$pr    = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $event_id ) : [ 'gross' => 0.0, 'unit' => '' ];
+
+	$lc = null;
+	if ( $status === 'freigegeben' || $status === 'pausiert' ) {
+		$lc = [
+			'label' => $status === 'freigegeben' ? 'Pausieren' : 'Reaktivieren',
+			'url'   => wp_nonce_url( add_query_arg( [ 'tab' => 'angebote', 'portal_action' => ( $status === 'freigegeben' ? 'pause' : 'reactivate' ), 'event_id' => $event_id ], $base ), 'fge_portal_lifecycle_' . $event_id ),
+		];
 	}
 	?>
-	<a href="<?php echo $edit_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>" class="fp-cat">
-		<div class="fp-cat-photo" style="background-image: url('<?php echo esc_url( $placeholder ); ?>')">
-			<span class="fp-cat-chip"><?php echo esc_html( $type_label ); ?></span>
-			<span class="fp-cat-status <?php echo esc_attr( $ampel['class'] ); ?>">
-				<span class="dot"></span>
-				<?php echo esc_html( $ampel['label'] ); ?>
-			</span>
+	<div class="cat">
+		<div class="cat-photo" style="background-image:url('<?php echo esc_url( $cover ); ?>')">
+			<span class="cat-cat-chip"><?php echo esc_html( $type_label ); ?></span>
+			<span class="cat-status <?php echo esc_attr( $st[0] ); ?>"><span class="dot"></span><?php echo esc_html( $st[1] ); ?></span>
 		</div>
-		<div class="fp-cat-body">
-			<div class="fp-cat-title"><?php echo esc_html( $event->post_title ); ?></div>
-			<?php if ( $desc !== '' ) : ?>
-				<div class="fp-cat-sub"><?php echo esc_html( wp_trim_words( $desc, 15, '…' ) ); ?></div>
-			<?php endif; ?>
-			<div class="fp-cat-stats">
-				<?php if ( $duration !== '' ) : ?>
-					<span class="fp-chip"><?php echo fge_icon_clock(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $duration ); ?></span>
-				<?php endif; ?>
-				<?php if ( $group !== '' ) : ?>
-					<span class="fp-chip"><?php echo fge_icon_users(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $group ); ?> Pers.</span>
-				<?php endif; ?>
-				<?php if ( $status === 'freigegeben' && $views > 0 ) : ?>
-					<span class="fp-chip"><?php echo fge_icon_eye(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( number_format( $views, 0, ',', '.' ) ); ?></span>
-				<?php endif; ?>
+		<div class="cat-body">
+			<div class="cat-title"><?php echo esc_html( $event->post_title ); ?></div>
+			<?php if ( $desc !== '' ) : ?><div class="cat-sub"><?php echo esc_html( wp_trim_words( $desc, 16, '…' ) ); ?></div><?php endif; ?>
+			<div class="cat-stats">
+				<?php if ( $duration !== '' ) : ?><span class="chip"><?php echo esc_html( $duration ); ?></span><?php endif; ?>
+				<?php if ( $group !== '' ) : ?><span class="chip"><?php echo esc_html( $group ); ?> Pers.</span><?php endif; ?>
+				<?php if ( $status === 'freigegeben' && $views > 0 ) : ?><span class="chip"><?php echo esc_html( number_format( $views, 0, ',', '.' ) ); ?> Aufrufe</span><?php endif; ?>
 			</div>
-			<div class="fp-cat-foot">
-				<div class="fp-cat-price">
-					<?php if ( $price !== '' ) : ?>
-						<?php echo esc_html( $price ); ?>
+			<div class="cat-foot">
+				<div class="cat-price">
+					<?php if ( $pr['gross'] > 0 ) : ?>
+						<span class="from">ab</span>€<?php echo esc_html( number_format( $pr['gross'], 0, ',', '.' ) ); ?><span class="unit"><?php echo $pr['unit'] === 'pro Person' ? '/Pers.' : ''; ?></span>
 					<?php else : ?>
-						<span class="fp-cat-price-empty">Kein Preislabel</span>
+						<span class="from">Preis</span>offen
 					<?php endif; ?>
 				</div>
-				<span class="fp-cat-edit">Bearbeiten <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				<div style="display:flex;gap:2px;align-items:center;">
+					<?php if ( $lc ) : ?><a class="cat-edit" href="<?php echo esc_url( $lc['url'] ); ?>"><?php echo esc_html( $lc['label'] ); ?></a><?php endif; ?>
+					<a class="cat-edit" href="<?php echo $edit_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>">Bearbeiten →</a>
+				</div>
 			</div>
 		</div>
-	</a>
+	</div>
 	<?php
 }
 
@@ -1767,15 +1830,44 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<h3>Preis, Dauer & Teilnehmer</h3>
 						<p class="fp-help">Diese Eckdaten erscheinen auf der Angebotskarte.</p>
 
+						<?php
+						$pmode      = $event_id ? ( get_post_meta( $event_id, '_fge_price_mode', true ) ?: 'gesamt' ) : 'gesamt';
+						$pamount    = $event_id ? get_post_meta( $event_id, '_fge_price_amount', true ) : '';
+						$pbasis     = $event_id ? ( get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person' ) : 'person';
+						$pitems     = $event_id ? (array) get_post_meta( $event_id, '_fge_line_items', true ) : [];
+						$pitems_txt = implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ), $pitems ) );
+						?>
+						<p class="fp-help">Hinterlege deine <strong>Netto</strong>-Preise — der Firmengolf-Aufschlag (20 %) kommt automatisch oben drauf.</p>
 						<div class="fg-form-row fg-form-row--2col">
 							<div>
-								<label class="fg-form-label" for="fge_public_price_label">Preislabel öffentlich</label>
-								<input class="fg-form-input" type="text" id="fge_public_price_label" name="fge_public_price_label" value="<?php echo $v( 'fge_public_price_label' ); ?>" placeholder="z.B. ab 1.200 € netto">
+								<label class="fg-form-label" for="fge_price_mode">Preislogik</label>
+								<select class="fg-form-input" id="fge_price_mode" name="fge_price_mode">
+									<option value="gesamt" <?php selected( $pmode, 'gesamt' ); ?>>Gesamtpreis netto</option>
+									<option value="einzel" <?php selected( $pmode, 'einzel' ); ?>>Einzelauflistung netto</option>
+								</select>
 							</div>
 							<div>
-								<label class="fg-form-label" for="fge_price_note">Preis Hinweis</label>
+								<label class="fg-form-label" for="fge_price_note">Preis-Hinweis (optional)</label>
 								<input class="fg-form-input" type="text" id="fge_price_note" name="fge_price_note" value="<?php echo $v( 'fge_price_note' ); ?>" placeholder="z.B. zzgl. Getränke">
 							</div>
+						</div>
+						<div class="fg-form-row fg-form-row--2col">
+							<div>
+								<label class="fg-form-label" for="fge_price_amount">Gesamtpreis netto (€)</label>
+								<input class="fg-form-input" type="text" id="fge_price_amount" name="fge_price_amount" value="<?php echo esc_attr( $pamount ); ?>" placeholder="z.B. 2400">
+							</div>
+							<div>
+								<label class="fg-form-label" for="fge_price_basis">Basis</label>
+								<select class="fg-form-input" id="fge_price_basis" name="fge_price_basis">
+									<option value="person" <?php selected( $pbasis, 'person' ); ?>>pro Person</option>
+									<option value="pauschal" <?php selected( $pbasis, 'pauschal' ); ?>>Pauschal</option>
+								</select>
+							</div>
+						</div>
+						<div class="fg-form-row">
+							<label class="fg-form-label" for="fge_line_items">Einzelposten (nur bei „Einzelauflistung")</label>
+							<textarea class="fg-form-textarea" id="fge_line_items" name="fge_line_items" rows="3" placeholder="Golflehrer | 80&#10;Meetingraum | 50"><?php echo esc_textarea( $pitems_txt ); ?></textarea>
+							<p class="fp-help">Pro Zeile: <code>Bezeichnung | Kosten netto</code>.</p>
 						</div>
 						<div class="fg-form-row fg-form-row--3col">
 							<div>
@@ -1808,6 +1900,15 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<div class="fg-form-row" style="margin-top:16px;">
 							<label class="fg-form-label" for="fge_additional_services">Weitere Leistungen</label>
 							<textarea class="fg-form-textarea" id="fge_additional_services" name="fge_additional_services" rows="2" placeholder="Sonstige enthaltene Leistungen"><?php echo esc_textarea( $saved['fge_additional_services'] ?? '' ); ?></textarea>
+						</div>
+						<div class="fg-form-row" style="margin-top:16px;">
+							<label class="fg-form-label" for="fge_event_includes">Im Preis enthalten — Liste</label>
+							<textarea class="fg-form-textarea" id="fge_event_includes" name="fge_event_includes" rows="4" placeholder="90 Min. Coaching&#10;Leihschläger&#10;Lunch im Clubhaus"><?php echo esc_textarea( $event_id ? implode( "\n", (array) get_post_meta( $event_id, '_fge_event_includes', true ) ) : '' ); ?></textarea>
+							<p class="fp-help">Eine Leistung pro Zeile — erscheint als „Im Preis enthalten" auf der Angebotsseite.</p>
+						</div>
+						<div class="fg-form-row" style="margin-top:16px;">
+							<label class="fg-form-label" for="fge_event_dayflow">So läuft der Tag ab</label>
+							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="3" placeholder="Ankunft &amp; Begrüßung → Coaching → Lunch → Turnier → Ausklang"><?php echo esc_textarea( $event_id ? (string) get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ); ?></textarea>
 						</div>
 					</div>
 
@@ -1892,6 +1993,15 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 								? 'Gespeicherte Änderungen gehen erneut in Prüfung.'
 								: 'Nach dem Einreichen wird dein Angebot von Firmengolf geprüft und dann freigegeben.'; ?>
 						</p>
+						<?php
+						$lc_status = $event_id ? (string) get_post_meta( $event_id, '_fge_event_status', true ) : '';
+						if ( $is_edit && in_array( $lc_status, [ 'freigegeben', 'pausiert' ], true ) ) :
+							$lc_action = $lc_status === 'freigegeben' ? 'pause' : 'reactivate';
+							$lc_label  = $lc_status === 'freigegeben' ? 'Angebot pausieren' : 'Angebot reaktivieren';
+							$lc_url    = wp_nonce_url( add_query_arg( [ 'tab' => 'angebote', 'portal_action' => $lc_action, 'event_id' => $event_id ], fge_portal_page_url() ), 'fge_portal_lifecycle_' . $event_id );
+						?>
+						<a href="<?php echo esc_url( $lc_url ); ?>" class="fp-btn fp-btn-ghost fp-btn-sm" style="margin-top:14px;display:inline-flex;"><?php echo esc_html( $lc_label ); ?></a>
+						<?php endif; ?>
 					</div>
 
 					<div class="fp-rail-card fp-rail-card--tip">
