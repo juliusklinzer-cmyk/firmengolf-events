@@ -212,10 +212,27 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			break;
 
 		case 5:
-			foreach ( [ 'event', 'gastro', 'golf_school', 'billing' ] as $prefix ) {
-				update_post_meta( $partner_id, '_fge_' . $prefix . '_contact_name',  $s( 'fge_' . $prefix . '_contact_name' ) );
-				update_post_meta( $partner_id, '_fge_' . $prefix . '_contact_email', sanitize_email( wp_unslash( $post[ 'fge_' . $prefix . '_contact_email' ] ?? '' ) ) );
-				update_post_meta( $partner_id, '_fge_' . $prefix . '_contact_phone', $s( 'fge_' . $prefix . '_contact_phone' ) );
+			// Rebuild the partner's no-account contacts (fge_partner_contacts) from the submitted arrays.
+			$c_names = is_array( $post['fge_contact_name'] ?? null ) ? $post['fge_contact_name'] : [];
+			$c_mails = is_array( $post['fge_contact_email'] ?? null ) ? $post['fge_contact_email'] : [];
+			$c_roles = is_array( $post['fge_contact_role'] ?? null ) ? $post['fge_contact_role'] : [];
+			$c_perms = is_array( $post['fge_contact_permission'] ?? null ) ? $post['fge_contact_permission'] : [];
+			foreach ( fge_contacts_get( $partner_id, true ) as $existing ) {
+				if ( (int) $existing['user_id'] === 0 ) {
+					fge_contact_delete( (int) $existing['id'], true );
+				}
+			}
+			foreach ( $c_names as $i => $cn ) {
+				$cm = sanitize_email( wp_unslash( $c_mails[ $i ] ?? '' ) );
+				if ( '' === $cm || ! is_email( $cm ) ) {
+					continue;
+				}
+				fge_contact_add( $partner_id, [
+					'name'       => sanitize_text_field( wp_unslash( $cn ) ),
+					'email'      => $cm,
+					'role'       => sanitize_text_field( wp_unslash( $c_roles[ $i ] ?? '' ) ),
+					'permission' => sanitize_text_field( wp_unslash( $c_perms[ $i ] ?? '' ) ),
+				] );
 			}
 			break;
 
@@ -241,11 +258,11 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 
 		case 9:
 			update_post_meta( $partner_id, '_fge_preferred_event_days',         $san_group( 'fge_preferred_event_days', $allowed_days ) );
-			update_post_meta( $partner_id, '_fge_weekend_events_possible',       isset( $post['fge_weekend_events_possible'] ) ? 1 : 0 );
-			update_post_meta( $partner_id, '_fge_evening_events_possible',       isset( $post['fge_evening_events_possible'] ) ? 1 : 0 );
+			update_post_meta( $partner_id, '_fge_weekend_events_possible',       ( ( $post['fge_weekend_events_possible'] ?? '' ) === '1' ) ? 1 : 0 );
+			update_post_meta( $partner_id, '_fge_evening_events_possible',       ( ( $post['fge_evening_events_possible'] ?? '' ) === '1' ) ? 1 : 0 );
 			update_post_meta( $partner_id, '_fge_min_lead_time_days',            absint( $post['fge_min_lead_time_days'] ?? 14 ) );
 			update_post_meta( $partner_id, '_fge_season',                        $san_select( 'fge_season', $allowed_seasons ) );
-			update_post_meta( $partner_id, '_fge_individual_availability_check', isset( $post['fge_individual_availability_check'] ) ? 1 : 0 );
+			update_post_meta( $partner_id, '_fge_individual_availability_check', ( ( $post['fge_individual_availability_check'] ?? '1' ) !== '0' ) ? 1 : 0 );
 			break;
 
 		case 10:
@@ -1034,35 +1051,94 @@ function fge_onboarding_render_step_4( int $partner_id, string $token, array $v,
 }
 
 function fge_onboarding_render_step_5( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 5, 'Weitere Ansprechpartner (optional)', 'Hast du separate Ansprechpartner für Events, Gastronomie, Golfschule oder Abrechnung? Dieser Schritt ist optional.' );
+	fge_onboarding_render_step_header( 5, 'Möchtest du weitere Ansprechpartner hinzufügen?', 'Optional — du kannst jederzeit später ergänzen. Diese Personen brauchen keinen eigenen Account; sie werden nur per E-Mail informiert oder können bei der Termin-Freigabe abstimmen.' );
 	fge_onboarding_form_open( 5, $partner_id, $token );
 
-	$contacts = [
-		'event'       => 'Event-Ansprechpartner',
-		'gastro'      => 'Gastronomie-Ansprechpartner',
-		'golf_school' => 'Golflehrer / Golfschule',
-		'billing'     => 'Abrechnung',
-	];
+	$existing = $partner_id > 0 ? fge_contacts_get( $partner_id ) : [];
+	// Only the no-account contacts (user_id 0) are managed here.
+	$existing = array_values( array_filter( $existing, static function ( $c ) {
+		return (int) $c['user_id'] === 0;
+	} ) );
+	?>
+	<div class="ob-contacts-list" id="ob-contacts-list">
+		<?php foreach ( $existing as $c ) {
+			fge_onboarding_contact_card( $c );
+		} ?>
+	</div>
 
-	foreach ( $contacts as $prefix => $label ) : ?>
-	<div class="ob-contact-group">
-		<h3 class="ob-group-title"><?php echo esc_html( $label ); ?></h3>
-		<?php fge_onboarding_input( 'fge_' . $prefix . '_contact_name', 'fge_' . $prefix . '_contact_name', 'Name', $v[ $prefix . '_contact_name' ] ?? '', 'text', false, 'Vor- und Nachname' ); ?>
-		<div class="ob-field-row">
-			<?php fge_onboarding_input( 'fge_' . $prefix . '_contact_email', 'fge_' . $prefix . '_contact_email', 'E-Mail', $v[ $prefix . '_contact_email' ] ?? '', 'email' ); ?>
-			<?php fge_onboarding_input( 'fge_' . $prefix . '_contact_phone', 'fge_' . $prefix . '_contact_phone', 'Telefon', $v[ $prefix . '_contact_phone' ] ?? '', 'tel' ); ?>
+	<button type="button" class="ob-add-contact" id="ob-add-contact">
+		<span class="ob-add-contact-ic">+</span> Ansprechpartner hinzufügen
+	</button>
+
+	<template id="ob-contact-template"><?php fge_onboarding_contact_card( null ); ?></template>
+
+	<script>
+	(function(){
+		var list = document.getElementById('ob-contacts-list');
+		var tpl  = document.getElementById('ob-contact-template');
+		var add  = document.getElementById('ob-add-contact');
+		if (!list || !tpl || !add) return;
+		function wire(card){
+			var rm = card.querySelector('[data-ob-remove]');
+			if (rm) rm.addEventListener('click', function(){ card.remove(); });
+			var role = card.querySelector('[data-ob-role]');
+			var tag  = card.querySelector('.ob-contact-tag');
+			if (role && tag) role.addEventListener('change', function(){ tag.textContent = role.value || 'Ansprechpartner'; });
+		}
+		list.querySelectorAll('.ob-contact-card').forEach(wire);
+		add.addEventListener('click', function(){
+			var node = tpl.content.firstElementChild.cloneNode(true);
+			list.appendChild(node); wire(node);
+			var n = node.querySelector('input'); if (n) n.focus();
+		});
+	})();
+	</script>
+	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
+	echo '</form>';
+}
+
+/** One contact card (array-named inputs) for the onboarding contacts step. $c null = empty template. */
+function fge_onboarding_contact_card( ?array $c ): void {
+	$name = $c['name'] ?? '';
+	$role = $c['role'] ?? '';
+	$mail = $c['email'] ?? '';
+	$perm = $c['permission'] ?? '';
+	?>
+	<div class="ob-contact-card">
+		<div class="ob-contact-head">
+			<span class="ob-contact-tag"><?php echo esc_html( '' !== $role ? $role : 'Ansprechpartner' ); ?></span>
+			<button type="button" class="ob-contact-remove" data-ob-remove>Entfernen</button>
+		</div>
+		<div class="ob-field full">
+			<label class="ob-field-label">Name</label>
+			<input type="text" class="ob-input" name="fge_contact_name[]" value="<?php echo esc_attr( $name ); ?>" placeholder="Vor- und Nachname">
+		</div>
+		<div class="ob-row">
+			<div class="ob-field">
+				<label class="ob-field-label">Rolle</label>
+				<select class="ob-input" name="fge_contact_role[]" data-ob-role>
+					<option value="">Rolle wählen …</option>
+					<?php foreach ( fge_catalog_contact_roles() as $r ) : ?>
+					<option value="<?php echo esc_attr( $r ); ?>" <?php selected( $role, $r ); ?>><?php echo esc_html( $r ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</div>
+			<div class="ob-field">
+				<label class="ob-field-label">E-Mail</label>
+				<input type="email" class="ob-input" name="fge_contact_email[]" value="<?php echo esc_attr( $mail ); ?>" placeholder="name@golfclub.de">
+			</div>
+		</div>
+		<div class="ob-field full">
+			<label class="ob-field-label">Berechtigung</label>
+			<span class="ob-field-hint">„Nur informieren" bekommt Status-Mails. „Terminabstimmung" kann zusätzlich Wunschtermine per Link bestätigen.</span>
+			<select class="ob-input" name="fge_contact_permission[]">
+				<option value="" <?php selected( $perm, '' ); ?>>Standard nach Rolle</option>
+				<option value="notify" <?php selected( $perm, 'notify' ); ?>>Nur informieren</option>
+				<option value="vote" <?php selected( $perm, 'vote' ); ?>>Terminabstimmung</option>
+			</select>
 		</div>
 	</div>
-	<?php endforeach;
-
-	?>
-	<div class="ob-actions">
-		<button type="submit" name="fge_ob_save_exit" value="1" class="ob-btn ob-btn-ghost">Speichern &amp; beenden</button>
-		<a href="<?php echo esc_url( fge_onboarding_step_url( 6 ) ); ?>" class="ob-btn ob-btn-ghost">Überspringen</a>
-		<button type="submit" class="ob-btn ob-btn-primary">Weiter →</button>
-	</div>
 	<?php
-	echo '</form>';
 }
 
 function fge_onboarding_render_step_6( int $partner_id, string $token, array $v, array $errors ): void {
@@ -1146,6 +1222,26 @@ function fge_onboarding_render_step_7( int $partner_id, string $token, array $v,
 	echo '</form>';
 }
 
+/** Ja/Nein radio field in the design's `.ob-radio-row` look (value 1/0). */
+function fge_onboarding_yesno( string $name, string $label, string $hint, bool $is_yes ): void {
+	?>
+	<div class="ob-field full">
+		<label class="ob-field-label"><?php echo esc_html( $label ); ?></label>
+		<?php if ( '' !== $hint ) : ?><span class="ob-field-hint"><?php echo esc_html( $hint ); ?></span><?php endif; ?>
+		<div class="ob-radio-row">
+			<label class="ob-radio<?php echo $is_yes ? ' on' : ''; ?>">
+				<input type="radio" name="<?php echo esc_attr( $name ); ?>" value="1" <?php checked( $is_yes ); ?> style="position:absolute;opacity:0">
+				<span class="ob-radio-dot" aria-hidden="true"></span> Ja
+			</label>
+			<label class="ob-radio<?php echo $is_yes ? '' : ' on'; ?>">
+				<input type="radio" name="<?php echo esc_attr( $name ); ?>" value="0" <?php checked( ! $is_yes ); ?> style="position:absolute;opacity:0">
+				<span class="ob-radio-dot" aria-hidden="true"></span> Nein
+			</label>
+		</div>
+	</div>
+	<?php
+}
+
 /** Single capacity stepper row in the design's `.ob-cap-row` look. */
 function fge_onboarding_cap_stepper( string $key, string $label, string $hint, $value, bool $required ): void {
 	$val = ( '' === (string) $value ) ? '' : (string) absint( $value );
@@ -1168,25 +1264,21 @@ function fge_onboarding_render_step_8( int $partner_id, string $token, array $v,
 	fge_onboarding_render_step_header( 8, 'Welche Eventformate bietest du an?', 'Wähle alle passenden Formate. Dieser Schritt ist optional.' );
 	fge_onboarding_form_open( 8, $partner_id, $token );
 
-	$formats      = fge_get_event_format_options();
+	$formats       = fge_get_event_format_options();
 	$saved_formats = (array) ( $v['event_formats'] ?? [] );
 	?>
-	<div class="ob-card-grid">
+	<div class="ob-cards">
 		<?php foreach ( $formats as $key => $label ) :
-			$checked = in_array( $key, $saved_formats, true ); ?>
-			<label class="ob-card<?php echo $checked ? ' is-selected' : ''; ?>">
-				<input type="checkbox" name="fge_event_formats[]" value="<?php echo esc_attr( $key ); ?>"
-				       <?php checked( $checked ); ?> class="ob-card-input">
-				<span class="ob-card-label"><?php echo esc_html( $label ); ?></span>
-			</label>
+			$on = in_array( $key, $saved_formats, true ); ?>
+		<label class="ob-card<?php echo $on ? ' on' : ''; ?>">
+			<input type="checkbox" class="ob-card-input" name="fge_event_formats[]" value="<?php echo esc_attr( $key ); ?>" <?php checked( $on ); ?>>
+			<span class="ob-card-check" aria-hidden="true">✓</span>
+			<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
+		</label>
 		<?php endforeach; ?>
 	</div>
-	<div class="ob-actions">
-		<button type="submit" name="fge_ob_save_exit" value="1" class="ob-btn ob-btn-ghost">Speichern &amp; beenden</button>
-		<a href="<?php echo esc_url( fge_onboarding_step_url( 9 ) ); ?>" class="ob-btn ob-btn-ghost">Überspringen</a>
-		<button type="submit" class="ob-btn ob-btn-primary">Weiter →</button>
-	</div>
-	<?php echo '</form>';
+	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
+	echo '</form>';
 }
 
 function fge_onboarding_render_step_9( int $partner_id, string $token, array $v, array $errors ): void {
@@ -1199,57 +1291,53 @@ function fge_onboarding_render_step_9( int $partner_id, string $token, array $v,
 	];
 	$saved_days = (array) ( $v['preferred_event_days'] ?? [] );
 	$seasons = [
+		''                 => 'Bitte wählen …',
 		'year_round'       => 'Ganzjährig',
 		'march_to_october' => 'März – Oktober',
 		'april_to_october' => 'April – Oktober',
 		'on_request'       => 'Auf Anfrage',
 	];
+	$lead  = ( '' !== (string) ( $v['min_lead_time_days'] ?? '' ) ) ? $v['min_lead_time_days'] : '14';
+	$indiv = ( (string) ( $v['individual_availability_check'] ?? '1' ) !== '0' );
 	?>
-	<div class="ob-field">
-		<label class="ob-label">Bevorzugte Wochentage</label>
-		<div class="ob-weekday-row">
-			<?php foreach ( $weekdays as $val => $label ) : ?>
-				<label class="ob-weekday<?php echo in_array( $val, $saved_days, true ) ? ' is-selected' : ''; ?>">
-					<input type="checkbox" name="fge_preferred_event_days[]" value="<?php echo esc_attr( $val ); ?>"
-					       <?php checked( in_array( $val, $saved_days, true ) ); ?> class="ob-card-input">
+	<div class="ob-form">
+		<div class="ob-field full">
+			<span class="ob-field-label">Bevorzugte Event-Wochentage</span>
+			<div class="ob-day-row">
+				<?php foreach ( $weekdays as $val => $label ) :
+					$on = in_array( $val, $saved_days, true ); ?>
+				<label class="ob-day<?php echo $on ? ' on' : ''; ?>">
+					<input type="checkbox" name="fge_preferred_event_days[]" value="<?php echo esc_attr( $val ); ?>" <?php checked( $on ); ?>>
 					<?php echo esc_html( $label ); ?>
 				</label>
-			<?php endforeach; ?>
+				<?php endforeach; ?>
+			</div>
+			<span class="ob-field-hint">Mehrfachauswahl. Du kannst jederzeit weitere Tage freischalten.</span>
 		</div>
-	</div>
-	<div class="ob-field-row">
-		<div class="ob-field">
-			<label class="ob-label">Wochenend-Events möglich</label>
-			<label class="ob-toggle">
-				<input type="checkbox" name="fge_weekend_events_possible" value="1"
-				       <?php checked( $v['weekend_events_possible'] ?? '', '1' ); ?>>
-				<span class="ob-toggle-track"><span class="ob-toggle-thumb"></span></span>
-				<span>Ja</span>
-			</label>
+
+		<?php
+		fge_onboarding_yesno( 'fge_weekend_events_possible', 'Wochenend-Events möglich?', 'Samstag und/oder Sonntag, ggf. mit Aufschlag.', ( (string) ( $v['weekend_events_possible'] ?? '' ) === '1' ) );
+		fge_onboarding_yesno( 'fge_evening_events_possible', 'Abend-Events möglich?', 'Z. B. Flutlicht-Putting oder Tasting-Abend.', ( (string) ( $v['evening_events_possible'] ?? '' ) === '1' ) );
+		?>
+
+		<div class="ob-row">
+			<div class="ob-field">
+				<label class="ob-field-label" for="fge_min_lead_time_days">Mindest-Vorlauf in Tagen</label>
+				<span class="ob-field-hint">So weit im Voraus müssen Anfragen mindestens kommen.</span>
+				<input type="number" inputmode="numeric" min="0" class="ob-input" id="fge_min_lead_time_days" name="fge_min_lead_time_days" value="<?php echo esc_attr( $lead ); ?>" placeholder="14">
+			</div>
+			<div class="ob-field">
+				<label class="ob-field-label" for="fge_season">Saison / Verfügbarkeitszeitraum</label>
+				<span class="ob-field-hint">Grober Zeitraum für Events bei euch.</span>
+				<select class="ob-input" id="fge_season" name="fge_season">
+					<?php foreach ( $seasons as $sk => $sl ) : ?>
+					<option value="<?php echo esc_attr( $sk ); ?>" <?php selected( (string) ( $v['season'] ?? '' ), $sk ); ?>><?php echo esc_html( $sl ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</div>
 		</div>
-		<div class="ob-field">
-			<label class="ob-label">Abend-Events möglich</label>
-			<label class="ob-toggle">
-				<input type="checkbox" name="fge_evening_events_possible" value="1"
-				       <?php checked( $v['evening_events_possible'] ?? '', '1' ); ?>>
-				<span class="ob-toggle-track"><span class="ob-toggle-thumb"></span></span>
-				<span>Ja</span>
-			</label>
-		</div>
-	</div>
-	<?php
-	fge_onboarding_input( 'fge_min_lead_time_days', 'fge_min_lead_time_days', 'Mindestvorlauf in Tagen', $v['min_lead_time_days'] !== '' ? $v['min_lead_time_days'] : '14', 'number', false, '14' );
-	fge_onboarding_select( 'fge_season', 'fge_season', 'Saison / Verfügbarkeitszeitraum', $v['season'] ?? '', $seasons );
-	?>
-	<div class="ob-field">
-		<label class="ob-label">Individuelle Verfügbarkeitsprüfung erforderlich</label>
-		<label class="ob-toggle">
-			<input type="checkbox" name="fge_individual_availability_check" value="1"
-			       <?php checked( $v['individual_availability_check'] ?? '1', '1' ); ?>>
-			<span class="ob-toggle-track"><span class="ob-toggle-thumb"></span></span>
-			<span>Ja (empfohlen)</span>
-		</label>
-		<p class="ob-hint">Im MVP ist die individuelle Prüfung standardmäßig aktiv.</p>
+
+		<?php fge_onboarding_yesno( 'fge_individual_availability_check', 'Individuelle Verfügbarkeitsprüfung erforderlich?', 'Standardmäßig ja. Wir fragen jede Anfrage individuell bei euch ab — kein Auto-Booking.', $indiv ); ?>
 	</div>
 	<?php
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
@@ -1302,49 +1390,73 @@ function fge_onboarding_render_step_11( int $partner_id, string $token, array $v
 	$logo_url  = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
 	$cover_id  = (int) ( $v['hero_image_attachment_id'] ?? 0 );
 	$cover_url = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : '';
+	$gallery   = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $partner_id, '_fge_gallery_attachment_ids', true ) ) ) );
+	$rights_on = ( (string) ( $v['image_rights_confirmed'] ?? '' ) === '1' );
 	?>
-	<div class="ob-media-row">
-		<div class="ob-media-block">
-			<div class="ob-media-lbl">Logo</div>
-			<label class="ob-logo-upload<?php echo $logo_url !== '' ? ' has-image' : ''; ?>" title="Logo hochladen">
-				<?php if ( $logo_url !== '' ) : ?>
-					<img src="<?php echo esc_url( $logo_url ); ?>" alt="Logo">
+	<div class="ob-uploads">
+		<div class="ob-upload-row">
+			<div class="ob-upload-text">
+				<div class="ob-upload-l">Logo</div>
+				<div class="ob-upload-h">PNG mit transparentem Hintergrund, ca. 400×400 px. Erscheint in der Trefferliste.</div>
+			</div>
+			<label class="ob-upload-dropzone a-logo<?php echo '' !== $logo_url ? ' filled' : ''; ?>">
+				<?php if ( '' !== $logo_url ) : ?>
+					<span class="ob-upload-preview" style="background-image:url('<?php echo esc_url( $logo_url ); ?>');background-size:contain;background-position:center;background-repeat:no-repeat;background-color:var(--paper-50);"></span>
+					<span class="ob-upload-meta"><span class="ob-upload-name">Logo hochgeladen</span><span class="ob-upload-remove">Tauschen</span></span>
 				<?php else : ?>
-					<span class="ob-upload-icon">↑</span>
-					<span class="ob-upload-hint">PNG · 400×400 empfohlen</span>
+					<span class="ob-upload-cta">↑ Logo wählen</span>
 				<?php endif; ?>
 				<input type="file" name="fge_partner_logo" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
 			</label>
 		</div>
-		<div class="ob-media-block ob-media-block--wide">
-			<div class="ob-media-lbl">Titelbild</div>
-			<label class="ob-cover-upload<?php echo $cover_url !== '' ? ' has-image' : ''; ?>"
-			       style="<?php echo $cover_url !== '' ? 'background-image:url(' . esc_url( $cover_url ) . ');background-size:cover;background-position:center;' : ''; ?>"
-			       title="Titelbild hochladen">
-				<?php if ( $cover_url === '' ) : ?>
-					<span class="ob-upload-icon">↑</span>
-					<span class="ob-upload-hint">16:9 · mind. 1600 px · JPG/PNG</span>
+
+		<div class="ob-upload-row">
+			<div class="ob-upload-text">
+				<div class="ob-upload-l">Titelbild</div>
+				<div class="ob-upload-h">16:9, mind. 1600 px breit (JPG/PNG). Das große Bild oben auf deiner Platz-Seite.</div>
+			</div>
+			<label class="ob-upload-dropzone a-hero<?php echo '' !== $cover_url ? ' filled' : ''; ?>">
+				<?php if ( '' !== $cover_url ) : ?>
+					<span class="ob-upload-preview" style="background-image:url('<?php echo esc_url( $cover_url ); ?>');background-size:cover;background-position:center;"></span>
+					<span class="ob-upload-meta"><span class="ob-upload-name">Titelbild hochgeladen</span><span class="ob-upload-remove">Tauschen</span></span>
 				<?php else : ?>
-					<span class="ob-cover-replace">Bild tauschen</span>
+					<span class="ob-upload-cta">↑ Titelbild wählen</span>
 				<?php endif; ?>
 				<input type="file" name="fge_partner_cover" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
 			</label>
 		</div>
-	</div>
-	<div class="ob-media-block ob-media-block--gallery">
-		<div class="ob-media-lbl">Galerie (optional, mehrere Fotos möglich)</div>
-		<input type="file" name="fge_gallery[]" accept="image/*" multiple class="ob-gallery-input">
+
+		<div class="ob-upload-row">
+			<div class="ob-upload-text">
+				<div class="ob-upload-l">Galerie</div>
+				<div class="ob-upload-h">Optional, mehrere Fotos. Spielbahnen, Clubhaus, Eventflächen, Gastronomie.</div>
+			</div>
+			<div>
+				<label class="ob-upload-dropzone a-gallery">
+					<span class="ob-upload-cta">↑ Fotos hinzufügen</span>
+					<input type="file" name="fge_gallery[]" accept="image/*" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;">
+				</label>
+				<?php if ( ! empty( $gallery ) ) : ?>
+				<div class="ob-gallery-list">
+					<?php foreach ( $gallery as $gid ) :
+						$gurl = wp_get_attachment_image_url( $gid, 'thumbnail' ); ?>
+					<div class="ob-gallery-item">
+						<span class="ob-gallery-thumb" style="<?php echo $gurl ? 'background-image:url(' . esc_url( $gurl ) . ');background-size:cover;background-position:center;' : ''; ?>"></span>
+						<span class="ob-gallery-name">Foto #<?php echo (int) $gid; ?></span>
+					</div>
+					<?php endforeach; ?>
+				</div>
+				<?php endif; ?>
+			</div>
+		</div>
 	</div>
 
-	<div class="ob-field ob-field--rights">
-		<label class="ob-checkbox-label">
-			<input type="checkbox" name="fge_image_rights_confirmed" value="1"
-			       <?php checked( $v['image_rights_confirmed'] ?? '', '1' ); ?> required>
-			<span>Ich bestätige, dass ich das Recht habe, die hochgeladenen Bilder zu verwenden und auf Firmengolf zu veröffentlichen.</span>
-		</label>
-		<?php fge_onboarding_error( $errors, 'fge_image_rights_confirmed' ); ?>
-	</div>
-	<?php fge_onboarding_textarea( 'fge_image_rights_note', 'fge_image_rights_note', 'Hinweis zu Bildrechten (optional)', $v['image_rights_note'] ?? '' );
+	<label class="ob-consent">
+		<input type="checkbox" name="fge_image_rights_confirmed" value="1" <?php checked( $rights_on ); ?> required>
+		<span>Ich bestätige, dass ich das Recht habe, die hochgeladenen Bilder zu verwenden und auf Firmengolf zu veröffentlichen.</span>
+	</label>
+	<?php fge_onboarding_error( $errors, 'fge_image_rights_confirmed' );
+	fge_onboarding_textarea( 'fge_image_rights_note', 'fge_image_rights_note', 'Hinweis zu Bildrechten (optional)', $v['image_rights_note'] ?? '' );
 	fge_onboarding_next_btn( 'Weiter zur Zusammenfassung', 'fge_ob_save_exit' );
 	echo '</form>';
 }
@@ -1380,6 +1492,20 @@ function fge_onboarding_render_step_12( int $partner_id, string $token, array $v
 			'Telefon' => $v['main_contact_phone'],
 			'Rolle'   => $v['main_contact_role'],
 		] ); ?>
+
+		<?php
+		$further = fge_contacts_get( $partner_id );
+		$further = array_values( array_filter( $further, static function ( $c ) { return (int) $c['user_id'] === 0; } ) );
+		if ( ! empty( $further ) ) {
+			$perm_labels = fge_contact_permissions();
+			$rows = [];
+			foreach ( $further as $c ) {
+				$label = trim( ( $c['name'] ?: $c['email'] ) . ( $c['role'] ? ' · ' . $c['role'] : '' ) );
+				$rows[ $label ] = ( $perm_labels[ $c['permission'] ] ?? $c['permission'] ) . ' · ' . $c['email'];
+			}
+			fge_onboarding_summary_section( 'Weitere Ansprechpartner', $rows );
+		}
+		?>
 
 		<?php
 		$infra_labels = fge_get_infrastructure_options();

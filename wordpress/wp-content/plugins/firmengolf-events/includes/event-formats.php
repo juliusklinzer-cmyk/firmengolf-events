@@ -9,11 +9,13 @@ function fge_get_event_formats(): array {
 		'standard' => [
 			'teamevent'          => 'Teamevent',
 			'after_work_golf'    => 'After-Work Golf',
+			'schnupperkurs'      => 'Schnupperkurs',
 			'kundenevent'        => 'Kundenevent',
 			'gesundheitstag'     => 'Gesundheitstag',
 			'offsite'            => 'Offsite',
 			'networking'         => 'Networking',
 			'firmen_golfturnier' => 'Firmen-Golfturnier',
+			'nacht_event'        => 'Nacht-Event',
 			'andere'             => 'Andere',
 		],
 		'on_request' => [
