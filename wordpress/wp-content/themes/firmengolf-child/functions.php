@@ -28,6 +28,15 @@ add_action( 'wp_enqueue_scripts', function() {
 		);
 	}
 
+	if ( is_page( 'partner-onboarding' ) ) {
+		wp_enqueue_style(
+			'fge-onboarding',
+			plugins_url( 'assets/css/fge-onboarding.css', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
+			[ 'fge-frontend' ],
+			defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
+		);
+	}
+
 	// Anfrage-Wizard (JS-Insel) — auf Individuelle-Events (inkl. Budget-Rechner) und der allgemeinen Anfrage-Seite.
 	if ( is_page( [ 'individuelle-events', 'event-anfrage' ] ) ) {
 		wp_enqueue_script(

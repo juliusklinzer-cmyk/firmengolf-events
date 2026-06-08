@@ -116,6 +116,7 @@ function fge_onboarding_is_submittable( int $partner_id ): bool {
 
 	if ( $m( 'public_golfclub_name' ) === '' )     { return false; }
 	if ( $m( 'legal_operator_name' ) === '' )      { return false; }
+	if ( ! in_array( $m( 'golf_type' ), array_keys( fge_catalog_golf_types() ), true ) ) { return false; }
 	if ( $m( 'main_contact_name' ) === '' )        { return false; }
 	if ( ! is_email( $m( 'main_contact_email' ) ) ) { return false; }
 	if ( $m( 'street' ) === '' )                   { return false; }
@@ -123,15 +124,21 @@ function fge_onboarding_is_submittable( int $partner_id ): bool {
 	if ( $m( 'city' ) === '' )                     { return false; }
 	if ( $m( 'federal_state' ) === '' )            { return false; }
 	if ( $m( 'free_region' ) === '' )              { return false; }
-	if ( (int) $m( 'participants_min_general' ) <= 0 ) { return false; }
-	if ( (int) $m( 'participants_max_general' ) < (int) $m( 'participants_min_general' ) ) { return false; }
+
+	// Capacities (new model: _fge_cap array).
+	$cap = get_post_meta( $partner_id, '_fge_cap', true );
+	$cap = is_array( $cap ) ? $cap : [];
+	$cap_min = (int) ( $cap['min'] ?? 0 );
+	$cap_max = (int) ( $cap['max'] ?? 0 );
+	if ( $cap_min <= 0 )            { return false; }
+	if ( $cap_max < $cap_min )      { return false; }
+
 	if ( $m( 'image_rights_confirmed' ) !== '1' ) { return false; }
 
-	$infra_keys = array_keys( fge_get_infrastructure_options() );
-	foreach ( $infra_keys as $key ) {
-		if ( $m( $key ) === '1' ) { return true; } // at least one infra item
-	}
-	return false;
+	// Infrastructure (new model: _fge_infra array, ≥1 from catalog).
+	$infra = get_post_meta( $partner_id, '_fge_infra', true );
+	$infra = is_array( $infra ) ? array_intersect( $infra, fge_catalog_infra_ids() ) : [];
+	return ! empty( $infra );
 }
 
 // ── Save step data ────────────────────────────────────────────────────────────
@@ -169,6 +176,7 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 
 	switch ( $step ) {
 		case 2:
+			update_post_meta( $partner_id, '_fge_golf_type',               $san_select( 'fge_golf_type', array_keys( fge_catalog_golf_types() ) ) );
 			update_post_meta( $partner_id, '_fge_public_golfclub_name',    $s( 'fge_public_golfclub_name' ) );
 			update_post_meta( $partner_id, '_fge_legal_operator_name',     $s( 'fge_legal_operator_name' ) );
 			update_post_meta( $partner_id, '_fge_website_url',             $su( 'fge_website_url' ) );
@@ -186,6 +194,12 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			update_post_meta( $partner_id, '_fge_federal_state', $san_select( 'fge_federal_state', $allowed_states ) );
 			update_post_meta( $partner_id, '_fge_free_region',   $s( 'fge_free_region' ) );
 			update_post_meta( $partner_id, '_fge_google_maps_url', $su( 'fge_google_maps_url' ) );
+			// Anfahrt & Location (same keys as admin meta box / Platz view).
+			update_post_meta( $partner_id, '_fge_poi_car',         $s( 'fge_poi_car' ) );
+			update_post_meta( $partner_id, '_fge_poi_parking',     $s( 'fge_poi_parking' ) );
+			update_post_meta( $partner_id, '_fge_poi_train',       $s( 'fge_poi_train' ) );
+			update_post_meta( $partner_id, '_fge_poi_shuttle',     $s( 'fge_poi_shuttle' ) );
+			update_post_meta( $partner_id, '_fge_arrival_estation', ( ( $post['fge_arrival_estation'] ?? '' ) === '1' ) ? 1 : 0 );
 			break;
 
 		case 4:
@@ -206,23 +220,19 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			break;
 
 		case 6:
-			foreach ( $allowed_infra as $key ) {
-				update_post_meta( $partner_id, '_fge_' . $key, isset( $post[ 'fge_' . $key ] ) ? 1 : 0 );
-			}
+			// New catalog model: single `_fge_infra` array (52 ids incl. Gastronomie group).
+			update_post_meta( $partner_id, '_fge_infra', $san_group( 'fge_infra', fge_catalog_infra_ids() ) );
 			update_post_meta( $partner_id, '_fge_additional_equipment', $sa( 'fge_additional_equipment' ) );
 			break;
 
 		case 7:
-			update_post_meta( $partner_id, '_fge_participants_min_general', absint( $post['fge_participants_min_general'] ?? 0 ) );
-			update_post_meta( $partner_id, '_fge_participants_max_general', absint( $post['fge_participants_max_general'] ?? 0 ) );
-			update_post_meta( $partner_id, '_fge_range_group_capacity',     absint( $post['fge_range_group_capacity'] ?? 0 ) );
-			update_post_meta( $partner_id, '_fge_putting_green_capacity',   absint( $post['fge_putting_green_capacity'] ?? 0 ) );
-			update_post_meta( $partner_id, '_fge_short_game_capacity',      absint( $post['fge_short_game_capacity'] ?? 0 ) );
-			update_post_meta( $partner_id, '_fge_meeting_room_capacity',    absint( $post['fge_meeting_room_capacity'] ?? 0 ) );
-			update_post_meta( $partner_id, '_fge_gastro_capacity',          absint( $post['fge_gastro_capacity'] ?? 0 ) );
-			update_post_meta( $partner_id, '_fge_gastro_outdoor_capacity',  absint( $post['fge_gastro_outdoor_capacity'] ?? 0 ) );
-			update_post_meta( $partner_id, '_fge_golf_teacher_capacity',    absint( $post['fge_golf_teacher_capacity'] ?? 0 ) );
-			update_post_meta( $partner_id, '_fge_parking_count',            absint( $post['fge_parking_count'] ?? 0 ) );
+			// New catalog model: single `_fge_cap` array keyed by cap_keys (min, max + conditional rows).
+			$cap_in  = is_array( $post['fge_cap'] ?? null ) ? $post['fge_cap'] : [];
+			$cap_out = [];
+			foreach ( fge_catalog_cap_keys() as $ck ) {
+				$cap_out[ $ck ] = absint( $cap_in[ $ck ] ?? 0 );
+			}
+			update_post_meta( $partner_id, '_fge_cap', $cap_out );
 			break;
 
 		case 8:
@@ -239,13 +249,8 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			break;
 
 		case 10:
-			$markup_raw = trim( wp_unslash( $post['fge_default_markup_percent'] ?? '' ) );
-			$markup     = ( $markup_raw !== '' ) ? (float) str_replace( ',', '.', $markup_raw ) : 20.0;
-			update_post_meta( $partner_id, '_fge_default_markup_percent',  $markup );
-			update_post_meta( $partner_id, '_fge_vat_required',            isset( $post['fge_vat_required'] ) ? 1 : 0 );
-			update_post_meta( $partner_id, '_fge_billing_method_internal', $san_select( 'fge_billing_method_internal', $allowed_billing ) );
-			update_post_meta( $partner_id, '_fge_bank_details_available',  isset( $post['fge_bank_details_available'] ) ? 1 : 0 );
-			update_post_meta( $partner_id, '_fge_internal_billing_note',   $sa( 'fge_internal_billing_note' ) );
+			// Pricing step is info-only now (net stays net; markup added by Firmengolf;
+			// actual net prices are set per event in the portal). Nothing to persist.
 			break;
 
 		case 11:
@@ -462,10 +467,14 @@ function fge_onboarding_validate_step( int $step, array $post ): array {
 
 	switch ( $step ) {
 		case 2:
-			return fge_onboarding_validate(
+			$errors = fge_onboarding_validate(
 				[ 'fge_public_golfclub_name' => $s( 'fge_public_golfclub_name' ), 'fge_legal_operator_name' => $s( 'fge_legal_operator_name' ) ],
 				[ 'fge_public_golfclub_name' => 'Golfplatz Name', 'fge_legal_operator_name' => 'Rechtlicher Betreibername' ]
 			);
+			if ( ! in_array( $s( 'fge_golf_type' ), array_keys( fge_catalog_golf_types() ), true ) ) {
+				$errors['fge_golf_type'] = 'Bitte wähle aus, was dein Golfangebot am besten beschreibt.';
+			}
+			return $errors;
 
 		case 3:
 			return fge_onboarding_validate(
@@ -500,13 +509,20 @@ function fge_onboarding_validate_step( int $step, array $post ): array {
 			return $errors;
 
 		case 7:
-			$min = absint( $post['fge_participants_min_general'] ?? 0 );
-			$max = absint( $post['fge_participants_max_general'] ?? 0 );
+			$cap = is_array( $post['fge_cap'] ?? null ) ? $post['fge_cap'] : [];
+			$min = absint( $cap['min'] ?? 0 );
+			$max = absint( $cap['max'] ?? 0 );
 			$errors = [];
-			if ( $min <= 0 ) { $errors['fge_participants_min_general'] = 'Teilnehmer Minimum muss > 0 sein.'; }
-			if ( $max <= 0 ) { $errors['fge_participants_max_general'] = 'Teilnehmer Maximum muss > 0 sein.'; }
-			if ( $max > 0 && $min > 0 && $max < $min ) { $errors['fge_participants_max_general'] = 'Maximum muss ≥ Minimum sein.'; }
+			if ( $min <= 0 ) { $errors['fge_cap_min'] = 'Teilnehmer-Minimum muss > 0 sein.'; }
+			if ( $max <= 0 ) { $errors['fge_cap_max'] = 'Teilnehmer-Maximum muss > 0 sein.'; }
+			if ( $max > 0 && $min > 0 && $max < $min ) { $errors['fge_cap_max'] = 'Maximum muss ≥ Minimum sein.'; }
 			return $errors;
+
+		case 6:
+			$infra = is_array( $post['fge_infra'] ?? null ) ? array_intersect( array_map( 'sanitize_text_field', $post['fge_infra'] ), fge_catalog_infra_ids() ) : [];
+			return empty( $infra )
+				? [ 'fge_infra' => 'Bitte wähle mindestens eine Ausstattung aus.' ]
+				: [];
 
 		default:
 			return [];
@@ -550,9 +566,10 @@ function fge_onboarding_render(): void {
 		? add_query_arg( [ 'ob_saved' => '1', 'ob_step' => $step, 'ob_token' => $token ], fge_onboarding_page_url() )
 		: trailingslashit( home_url( '/partnerportal/' ) );
 	?>
-	<div class="ob-wizard">
-		<?php fge_onboarding_render_header( $save_exit_url ); ?>
-		<div class="ob-body">
+	<div class="ob-shell">
+		<?php fge_onboarding_render_topbar( $save_exit_url, $step ); ?>
+		<main class="ob-stage<?php echo ( 1 === $step ) ? ' is-intro' : ''; ?>">
+			<div class="ob-step<?php echo in_array( $step, [ 6, 8, 12 ], true ) ? ' ob-step-wide' : ''; ?>">
 			<?php
 			switch ( $step ) {
 				case 1:  fge_onboarding_render_step_1( $token ); break;
@@ -569,10 +586,10 @@ function fge_onboarding_render(): void {
 				case 12: fge_onboarding_render_step_12( $partner_id, $token, $vals ); break;
 			}
 			?>
-		</div>
-		<?php if ( $step > 1 ) : ?>
-		<?php fge_onboarding_render_footer( $step, $token ); ?>
-		<?php endif; ?>
+			</div>
+		</main>
+		<?php if ( $step > 1 ) { fge_onboarding_render_footer( $step, $token ); } ?>
+		<?php fge_onboarding_render_help(); ?>
 	</div>
 	<?php
 }
@@ -641,40 +658,132 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'hero_image_attachment_id'      => (int) $m( 'hero_image_attachment_id' ),
 		'image_rights_confirmed'        => (string) $m( 'image_rights_confirmed' ),
 		'image_rights_note'             => (string) $m( 'image_rights_note' ),
+		'infra'                         => is_array( $m( 'infra' ) ) ? $m( 'infra' ) : [],
+		'additional_equipment'          => (string) $m( 'additional_equipment' ),
+		'cap'                           => is_array( $m( 'cap' ) ) ? $m( 'cap' ) : [],
+		'golf_type'                     => (string) $m( 'golf_type' ),
+		'poi_car'                       => (string) $m( 'poi_car' ),
+		'poi_parking'                   => (string) $m( 'poi_parking' ),
+		'poi_train'                     => (string) $m( 'poi_train' ),
+		'poi_shuttle'                   => (string) $m( 'poi_shuttle' ),
+		'arrival_estation'              => (string) $m( 'arrival_estation' ),
 	];
 }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
 
-function fge_onboarding_render_header( string $save_exit_url ): void { ?>
-<header class="ob-header">
-	<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="ob-header-logo">
-		<span class="ob-logo-mark">⛳</span> Firmengolf
-	</a>
-	<a href="<?php echo esc_url( $save_exit_url ); ?>" class="ob-save-exit">Speichern &amp; beenden</a>
+function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void { ?>
+<header class="ob-topbar">
+	<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="ob-brand" aria-label="Firmengolf Startseite">Firmengolf</a>
+	<div class="ob-top-actions">
+		<button type="button" class="ob-top-pill" data-ob-help>Noch Fragen?</button>
+		<?php if ( $step > 1 ) : ?>
+		<a class="ob-top-pill" href="<?php echo esc_url( $save_exit_url ); ?>">Speichern &amp; beenden</a>
+		<?php endif; ?>
+	</div>
 </header>
 <?php }
 
+/**
+ * Footer with the 3-chapter progress (mirrors the Event-Anfrage stepper) + Zurück.
+ * The per-step "Weiter" submit stays inside each step's <form> (server-rendered PRG).
+ */
 function fge_onboarding_render_footer( int $step, string $token ): void {
-	$total    = 12;
-	$progress = round( ( $step - 1 ) / ( $total - 1 ) * 100 );
+	$chapters = [
+		1 => [ 'label' => 'Dein Platz',             'steps' => [ 2, 3, 4, 5 ] ],
+		2 => [ 'label' => 'Dein Angebot',           'steps' => [ 6, 7, 8 ] ],
+		3 => [ 'label' => 'Verfügbarkeit & Preis',  'steps' => [ 9, 10, 11 ] ],
+	];
+	$segments    = [];
+	$active_label = '';
+	foreach ( $chapters as $c ) {
+		$total  = count( $c['steps'] );
+		$done   = 0;
+		$active = false;
+		foreach ( $c['steps'] as $s ) {
+			if ( $s < $step ) { $done++; }
+			elseif ( $s === $step ) { $active = true; }
+		}
+		$ratio = $total ? ( $active ? ( $done + 0.5 ) / $total : $done / $total ) : 0;
+		$ratio = max( 0, min( 1, $ratio ) );
+		$segments[] = [ 'label' => $c['label'], 'ratio' => $ratio, 'done' => $ratio >= 1, 'active' => $active ];
+		if ( $active ) { $active_label = $c['label']; }
+	}
+	if ( '' === $active_label ) {
+		foreach ( array_reverse( $segments ) as $seg ) { if ( $seg['done'] ) { $active_label = $seg['label']; break; } }
+	}
+
 	$back_step = $step - 1;
-	$back_url = $back_step >= 1 ? fge_onboarding_step_url( $back_step, ( $back_step < 4 ) ? $token : '' ) : '';
+	$back_url  = $back_step >= 1 ? fge_onboarding_step_url( $back_step, ( $back_step < 4 ) ? $token : '' ) : '';
 	?>
 <footer class="ob-footer">
-	<div class="ob-footer-back">
-		<?php if ( $back_url !== '' ) : ?>
-			<a href="<?php echo esc_url( $back_url ); ?>" class="ob-back-link">← Zurück</a>
-		<?php endif; ?>
-	</div>
-	<div class="ob-progress-wrap">
-		<div class="ob-progress-bar">
-			<div class="ob-progress-fill" style="width:<?php echo esc_attr( $progress ); ?>%"></div>
+	<div class="ob-foot-inner">
+		<div class="ob-prog" aria-label="Fortschritt">
+			<?php foreach ( $segments as $seg ) : ?>
+			<div class="ob-prog-seg<?php echo $seg['done'] ? ' done' : ''; echo $seg['active'] ? ' on' : ''; ?>">
+				<span class="ob-prog-bar"><span class="ob-prog-fill" style="width:<?php echo esc_attr( number_format( $seg['ratio'] * 100, 1, '.', '' ) ); ?>%"></span></span>
+				<span class="ob-prog-label"><?php echo esc_html( $seg['label'] ); ?></span>
+			</div>
+			<?php endforeach; ?>
 		</div>
-		<div class="ob-progress-label"><?php echo esc_html( $step ); ?> von <?php echo esc_html( $total ); ?></div>
+		<?php if ( '' !== $active_label ) : ?>
+		<div class="ob-prog-count"><?php echo esc_html( $active_label ); ?></div>
+		<?php endif; ?>
+		<div class="ob-nav">
+			<?php if ( '' !== $back_url ) : ?>
+			<a class="ob-btn-text" href="<?php echo esc_url( $back_url ); ?>">Zurück</a>
+			<?php else : ?>
+			<span class="ob-btn-text" aria-disabled="true" style="visibility:hidden">Zurück</span>
+			<?php endif; ?>
+			<div class="ob-nav-right"></div>
+		</div>
 	</div>
-	<div class="ob-footer-spacer"></div>
 </footer>
+<?php }
+
+/**
+ * Help drawer (toggled via [data-ob-help]). Contact data comes from fge_company()
+ * — Partner-Team-Mail + Telefon, NEVER the design's placeholder firmengolf.de.
+ */
+function fge_onboarding_render_help(): void {
+	$co        = function_exists( 'fge_company' ) ? fge_company() : [];
+	$email     = $co['email_partner'] ?? 'partner@visionpunch.de';
+	$phone     = $co['phone_display'] ?? '+49 (0) 89 1225 1010';
+	$phone_tel = $co['phone_tel'] ?? '+498912251010';
+	?>
+<div class="ob-help-scrim" id="ob-help" hidden>
+	<aside class="ob-help" role="dialog" aria-modal="true" aria-label="Hilfe">
+		<button type="button" class="ob-help-close" data-ob-help-close aria-label="Schließen">×</button>
+		<div class="ob-help-eyebrow">Hilfe</div>
+		<h2 class="ob-help-h">Wir sind erreichbar.</h2>
+		<p class="ob-help-p">Wenn du an einer Stelle hängen bleibst — schreib uns kurz oder ruf an. Wir helfen dir durch den Prozess und beantworten alle Fragen zur Partnerschaft.</p>
+		<div class="ob-help-channels">
+			<a href="mailto:<?php echo esc_attr( $email ); ?>" class="ob-help-channel">
+				<span class="ob-help-l">Partner-Team</span>
+				<span class="ob-help-v"><?php echo esc_html( $email ); ?></span>
+			</a>
+			<a href="tel:<?php echo esc_attr( $phone_tel ); ?>" class="ob-help-channel">
+				<span class="ob-help-l">Telefon</span>
+				<span class="ob-help-v"><?php echo esc_html( $phone ); ?></span>
+			</a>
+		</div>
+		<div class="ob-help-foot">
+			<span class="ob-help-l">Antwortzeit</span>
+			<span class="ob-help-v-sm">Innerhalb eines Werktags · Mo–Fr 09–18 Uhr</span>
+		</div>
+	</aside>
+</div>
+<script>
+(function(){
+	var h = document.getElementById('ob-help');
+	if (!h) return;
+	function open(){ h.hidden = false; }
+	function close(){ h.hidden = true; }
+	document.querySelectorAll('[data-ob-help]').forEach(function(b){ b.addEventListener('click', open); });
+	h.addEventListener('click', function(e){ if (e.target === h || e.target.closest('[data-ob-help-close]')) close(); });
+	document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+})();
+</script>
 <?php }
 
 function fge_onboarding_render_step_header( int $step, string $title, string $subtitle = '' ): void { ?>
@@ -782,6 +891,27 @@ function fge_onboarding_render_step_1( string $token ): void { ?>
 function fge_onboarding_render_step_2( int $partner_id, string $token, array $v, array $errors ): void {
 	fge_onboarding_render_step_header( 2, 'Erzähl uns von deinem Golfplatz', 'Diese Informationen sind öffentlich auf Firmengolf sichtbar.' );
 	fge_onboarding_form_open( 2, $partner_id, $token );
+
+	// Golfangebot (single-select) — maps to _fge_golf_type (catalog of 10).
+	$golf_types = fge_catalog_golf_types();
+	$gt_current = (string) ( $v['golf_type'] ?? '' );
+	?>
+	<div class="ob-field full">
+		<label class="ob-field-label">Was beschreibt dein Golfangebot am besten? <span class="ob-required">*</span></label>
+		<span class="ob-field-hint">Wähl die Art, die euren Platz am besten beschreibt.</span>
+	</div>
+	<div class="ob-cards">
+		<?php foreach ( $golf_types as $id => $label ) :
+			$on = ( $gt_current === $id ); ?>
+		<label class="ob-card<?php echo $on ? ' on' : ''; ?>">
+			<input type="radio" class="ob-card-input" name="fge_golf_type" value="<?php echo esc_attr( $id ); ?>" <?php checked( $on ); ?>>
+			<span class="ob-card-check" aria-hidden="true">✓</span>
+			<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
+		</label>
+		<?php endforeach; ?>
+	</div>
+	<?php fge_onboarding_error( $errors, 'fge_golf_type' );
+
 	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', 'Öffentlicher Golfplatzname', $v['public_golfclub_name'] ?? '', 'text', true, 'z.B. Golfclub Königsfeld', $errors );
 	fge_onboarding_input( 'fge_legal_operator_name', 'fge_legal_operator_name', 'Rechtlicher Betreibername', $v['legal_operator_name'] ?? '', 'text', true, 'z.B. GC Königsfeld GmbH & Co. KG', $errors );
 	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website (optional)', $v['website_url'] ?? '', 'url', false, 'https://' );
@@ -837,7 +967,46 @@ function fge_onboarding_render_step_3( int $partner_id, string $token, array $v,
 	fge_onboarding_select( 'fge_federal_state', 'fge_federal_state', 'Bundesland', $v['federal_state'] ?? '', $states, true, $errors );
 	fge_onboarding_select( 'fge_free_region', 'fge_free_region', 'Region', $v['free_region'] ?? '', $regions, true, $errors );
 	fge_onboarding_input( 'fge_google_maps_url', 'fge_google_maps_url', 'Google Maps Link (optional)', $v['google_maps_url'] ?? '', 'url', false, 'https://maps.google.com/...' );
-	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
+
+	// Anfahrt & Location — maps to _fge_poi_* / _fge_arrival_estation (same keys as admin/Platz view).
+	$estation = ( (string) ( $v['arrival_estation'] ?? '' ) === '1' );
+	?>
+	<div class="ob-cat-h" style="margin-top:8px">Anfahrt &amp; Location</div>
+	<div class="ob-field full">
+		<label class="ob-field-label" for="fge_poi_car">Mit dem Auto</label>
+		<span class="ob-field-hint">Fahrzeit ab Stadtzentrum oder Autobahn.</span>
+		<input type="text" class="ob-input" id="fge_poi_car" name="fge_poi_car" value="<?php echo esc_attr( (string) ( $v['poi_car'] ?? '' ) ); ?>" placeholder="z. B. 15 Min ab Stadtzentrum">
+	</div>
+	<div class="ob-field full">
+		<label class="ob-field-label" for="fge_poi_parking">Parken</label>
+		<span class="ob-field-hint">Anzahl und Art der Parkplätze.</span>
+		<input type="text" class="ob-input" id="fge_poi_parking" name="fge_poi_parking" value="<?php echo esc_attr( (string) ( $v['poi_parking'] ?? '' ) ); ?>" placeholder="z. B. 100 kostenfreie Parkplätze">
+	</div>
+	<div class="ob-field full">
+		<label class="ob-field-label">Ladestation für E-Autos vorhanden?</label>
+		<span class="ob-field-hint">Wird Gästen mit E-Auto als Hinweis angezeigt.</span>
+		<div class="ob-radio-row">
+			<label class="ob-radio<?php echo $estation ? ' on' : ''; ?>">
+				<input type="radio" name="fge_arrival_estation" value="1" <?php checked( $estation ); ?> style="position:absolute;opacity:0">
+				<span class="ob-radio-dot" aria-hidden="true"></span> Ja
+			</label>
+			<label class="ob-radio<?php echo $estation ? '' : ' on'; ?>">
+				<input type="radio" name="fge_arrival_estation" value="0" <?php checked( ! $estation ); ?> style="position:absolute;opacity:0">
+				<span class="ob-radio-dot" aria-hidden="true"></span> Nein
+			</label>
+		</div>
+	</div>
+	<div class="ob-field full">
+		<label class="ob-field-label" for="fge_poi_train">Mit der Bahn</label>
+		<span class="ob-field-hint">Nächste Station und Gehweg.</span>
+		<input type="text" class="ob-input" id="fge_poi_train" name="fge_poi_train" value="<?php echo esc_attr( (string) ( $v['poi_train'] ?? '' ) ); ?>" placeholder="z. B. S2 Riem, 10 Gehminuten">
+	</div>
+	<div class="ob-field full">
+		<label class="ob-field-label" for="fge_poi_shuttle">Shuttle-Service</label>
+		<span class="ob-field-hint">Falls ihr einen Transfer anbietet.</span>
+		<input type="text" class="ob-input" id="fge_poi_shuttle" name="fge_poi_shuttle" value="<?php echo esc_attr( (string) ( $v['poi_shuttle'] ?? '' ) ); ?>" placeholder="z. B. Abholung nach Absprache">
+	</div>
+	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
 
@@ -897,61 +1066,102 @@ function fge_onboarding_render_step_5( int $partner_id, string $token, array $v,
 }
 
 function fge_onboarding_render_step_6( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 6, 'Was bietet dein Golfplatz?', 'Wähle alles aus, was bei dir verfügbar ist.' );
+	fge_onboarding_render_step_header( 6, 'Was bietet dein Golfplatz?', 'Wähle alles aus, was bei dir verfügbar ist. Diese Ausstattung erscheint später auf deiner Platz-Seite.' );
 	fge_onboarding_form_open( 6, $partner_id, $token );
 
-	$options = fge_get_infrastructure_options();
+	$groups   = fge_catalog_infra_groups();
+	$selected = is_array( $v['infra'] ?? null ) ? $v['infra'] : [];
+	fge_onboarding_error( $errors, 'fge_infra' );
 	?>
-	<div class="ob-card-grid">
-		<?php foreach ( $options as $key => $label ) :
-			$checked = ( ( $v[ $key ] ?? '' ) === '1' || ( $v[ $key ] ?? '' ) == 1 ); ?>
-			<label class="ob-card<?php echo $checked ? ' is-selected' : ''; ?>">
-				<input type="checkbox" name="fge_<?php echo esc_attr( $key ); ?>" value="1"
-				       <?php checked( $checked ); ?> class="ob-card-input">
-				<span class="ob-card-label"><?php echo esc_html( $label ); ?></span>
-			</label>
+	<div class="ob-form">
+		<?php foreach ( $groups as $group_label => $items ) : ?>
+		<div class="ob-cat">
+			<div class="ob-cat-h"><?php echo esc_html( $group_label ); ?></div>
+			<div class="ob-cards">
+				<?php foreach ( $items as $id => $label ) :
+					$on = in_array( $id, $selected, true ); ?>
+				<label class="ob-card<?php echo $on ? ' on' : ''; ?>">
+					<input type="checkbox" class="ob-card-input" name="fge_infra[]" value="<?php echo esc_attr( $id ); ?>" <?php checked( $on ); ?>>
+					<span class="ob-card-check" aria-hidden="true">✓</span>
+					<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
+				</label>
+				<?php endforeach; ?>
+			</div>
+		</div>
 		<?php endforeach; ?>
+		<div class="ob-field full">
+			<label class="ob-field-label" for="fge_additional_equipment">Weitere Ausstattung (optional)</label>
+			<span class="ob-field-hint">Etwas, das oben fehlt? Trag es hier frei ein.</span>
+			<textarea class="ob-input" id="fge_additional_equipment" name="fge_additional_equipment" placeholder="z. B. E-Trolleys, Cart-Flotte, Wellness-Bereich …"><?php echo esc_textarea( (string) ( $v['additional_equipment'] ?? '' ) ); ?></textarea>
+		</div>
 	</div>
 	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
 
 function fge_onboarding_render_step_7( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 7, 'Wie viele Teilnehmer können kommen?', 'Diese Angaben helfen Unternehmen, passende Events zu finden.' );
+	fge_onboarding_render_step_header( 7, 'Wie viele Gäste passen wo?', 'Mindest- und Maximal-Teilnehmerzahl sind Pflicht. Für die in Schritt 6 gewählten Bereiche fragen wir zusätzlich die Kapazität ab.' );
 	fge_onboarding_form_open( 7, $partner_id, $token );
+
+	$cap   = is_array( $v['cap'] ?? null ) ? $v['cap'] : [];
+	$infra = is_array( $v['infra'] ?? null ) ? $v['infra'] : [];
+	$rows  = array_filter( fge_catalog_cap_rows(), static function ( $r ) use ( $infra ) {
+		return in_array( $r['infra'], $infra, true );
+	} );
 	?>
-	<div class="ob-field-row">
+	<div class="ob-cap-list">
 		<?php
-		fge_onboarding_input( 'fge_participants_min_general', 'fge_participants_min_general', 'Minimum Teilnehmer', $v['participants_min_general'] ?? '', 'number', true, '10', $errors );
-		fge_onboarding_input( 'fge_participants_max_general', 'fge_participants_max_general', 'Maximum Teilnehmer', $v['participants_max_general'] ?? '', 'number', true, '100', $errors );
+		fge_onboarding_cap_stepper( 'min', 'Teilnehmer-Minimum', 'Ab wie vielen Gästen lohnt sich ein Event?', $cap['min'] ?? '', true );
+		fge_onboarding_error( $errors, 'fge_cap_min' );
+		fge_onboarding_cap_stepper( 'max', 'Teilnehmer-Maximum', 'Größte Gruppe, die ihr realistisch betreuen könnt.', $cap['max'] ?? '', true );
+		fge_onboarding_error( $errors, 'fge_cap_max' );
 		?>
+
+		<?php if ( ! empty( $rows ) ) : ?>
+			<div class="ob-cap-divider">Kapazitäten deiner Bereiche</div>
+			<?php foreach ( $rows as $r ) {
+				fge_onboarding_cap_stepper( $r['key'], $r['label'], $r['hint'], $cap[ $r['key'] ] ?? '', false );
+			} ?>
+		<?php endif; ?>
 	</div>
-	<div class="ob-field-row">
-		<?php
-		fge_onboarding_input( 'fge_range_group_capacity', 'fge_range_group_capacity', 'Driving Range Kapazität', $v['range_group_capacity'] ?? '', 'number', false, '0' );
-		fge_onboarding_input( 'fge_putting_green_capacity', 'fge_putting_green_capacity', 'Putting Green Kapazität', $v['putting_green_capacity'] ?? '', 'number', false, '0' );
-		?>
-	</div>
-	<div class="ob-field-row">
-		<?php
-		fge_onboarding_input( 'fge_short_game_capacity', 'fge_short_game_capacity', 'Kurzspielbereich Kapazität', $v['short_game_capacity'] ?? '', 'number', false, '0' );
-		fge_onboarding_input( 'fge_meeting_room_capacity', 'fge_meeting_room_capacity', 'Meetingraum Kapazität', $v['meeting_room_capacity'] ?? '', 'number', false, '0' );
-		?>
-	</div>
-	<div class="ob-field-row">
-		<?php
-		fge_onboarding_input( 'fge_gastro_capacity', 'fge_gastro_capacity', 'Restaurant innen Kapazität', $v['gastro_capacity'] ?? '', 'number', false, '0' );
-		fge_onboarding_input( 'fge_gastro_outdoor_capacity', 'fge_gastro_outdoor_capacity', 'Restaurant außen Kapazität', $v['gastro_outdoor_capacity'] ?? '', 'number', false, '0' );
-		?>
-	</div>
-	<div class="ob-field-row">
-		<?php
-		fge_onboarding_input( 'fge_golf_teacher_capacity', 'fge_golf_teacher_capacity', 'Anzahl Golflehrer', $v['golf_teacher_capacity'] ?? '', 'number', false, '0' );
-		fge_onboarding_input( 'fge_parking_count', 'fge_parking_count', 'Anzahl Parkplätze (optional)', $v['parking_count'] ?? '', 'number', false, '0' );
-		?>
-	</div>
+
+	<?php if ( empty( $rows ) ) : ?>
+		<p class="ob-cap-note">Du hast in Schritt 6 noch keine Bereiche mit eigener Kapazität gewählt (z. B. Driving Range, Meetingraum, Restaurant). Geh einen Schritt zurück, falls du welche ergänzen möchtest.</p>
+	<?php endif; ?>
+
+	<script>
+	(function(){
+		document.querySelectorAll('.ob-stepper-btn[data-step]').forEach(function(b){
+			b.addEventListener('click', function(){
+				var inp = b.parentNode.querySelector('.ob-stepper-input');
+				if (!inp) return;
+				var n = parseInt(inp.value || '0', 10); if (isNaN(n)) n = 0;
+				n = Math.max(0, n + parseInt(b.getAttribute('data-step'), 10));
+				inp.value = n;
+			});
+		});
+	})();
+	</script>
 	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
+}
+
+/** Single capacity stepper row in the design's `.ob-cap-row` look. */
+function fge_onboarding_cap_stepper( string $key, string $label, string $hint, $value, bool $required ): void {
+	$val = ( '' === (string) $value ) ? '' : (string) absint( $value );
+	?>
+	<div class="ob-cap-row">
+		<div class="ob-cap-text">
+			<span class="ob-cap-l"><?php echo esc_html( $label ); ?><?php echo $required ? ' <span class="ob-required">*</span>' : ''; ?></span>
+			<span class="ob-cap-h"><?php echo esc_html( $hint ); ?></span>
+		</div>
+		<div class="ob-stepper">
+			<button type="button" class="ob-stepper-btn" data-step="-1" aria-label="weniger">−</button>
+			<input type="number" inputmode="numeric" min="0" class="ob-stepper-input" name="fge_cap[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( $val ); ?>" placeholder="0"<?php echo $required ? ' required' : ''; ?>>
+			<button type="button" class="ob-stepper-btn" data-step="1" aria-label="mehr">+</button>
+		</div>
+	</div>
+	<?php
 }
 
 function fge_onboarding_render_step_8( int $partner_id, string $token, array $v, array $errors ): void {
@@ -1047,42 +1257,40 @@ function fge_onboarding_render_step_9( int $partner_id, string $token, array $v,
 }
 
 function fge_onboarding_render_step_10( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 10, 'Preise und Abrechnung', 'Diese Daten sind nicht öffentlich und nur für Firmengolf sichtbar.' );
+	fge_onboarding_render_step_header( 10, 'Preis und Abrechnung', 'Du hinterlegst deine Netto-Preise später pro Event im Portal. Auf dieser Basis berechnet Firmengolf den Verkaufspreis für das Unternehmen.' );
 	fge_onboarding_form_open( 10, $partner_id, $token );
-
-	$billing_methods = [
-		'manual_clarification'                  => 'Manuelle Klärung',
-		'invoice_from_partner_to_firmengolf'    => 'Rechnung vom Partner an Firmengolf',
-		'credit_note'                           => 'Gutschrift',
-		'other'                                 => 'Sonstiges',
-	];
-	$markup = $v['default_markup_percent'] !== '' ? $v['default_markup_percent'] : '20';
-	fge_onboarding_input( 'fge_default_markup_percent', 'fge_default_markup_percent', 'Standard Firmengolf Aufschlag (%)', $markup, 'number', false, '20' );
+	$portal_url = trailingslashit( home_url( '/partnerportal/' ) );
 	?>
-	<div class="ob-field-row">
-		<div class="ob-field">
-			<label class="ob-label">Umsatzsteuerpflichtig</label>
-			<label class="ob-toggle">
-				<input type="checkbox" name="fge_vat_required" value="1"
-				       <?php checked( $v['vat_required'] ?? '', '1' ); ?>>
-				<span class="ob-toggle-track"><span class="ob-toggle-thumb"></span></span>
-				<span>Ja</span>
-			</label>
+	<div class="ob-form">
+		<div class="ob-fixed full">
+			<div class="ob-fixed-head">
+				<span class="ob-fixed-l">Dein Netto-Preis bleibt dein Netto-Preis</span>
+			</div>
+			<p class="ob-fixed-body">Dein hinterlegter Netto-Preis ist der Betrag, den du nach Durchführung des Events an Firmengolf abrechnest. Der Firmengolf-Aufschlag wird zusätzlich kalkuliert und <strong>nicht</strong> von deinem Anteil abgezogen.</p>
 		</div>
-		<div class="ob-field">
-			<label class="ob-label">Bankdaten vorhanden</label>
-			<label class="ob-toggle">
-				<input type="checkbox" name="fge_bank_details_available" value="1"
-				       <?php checked( $v['bank_details_available'] ?? '', '1' ); ?>>
-				<span class="ob-toggle-track"><span class="ob-toggle-thumb"></span></span>
-				<span>Ja</span>
-			</label>
+		<div class="ob-fixed full">
+			<div class="ob-fixed-head">
+				<span class="ob-fixed-l">So läuft die Abrechnung</span>
+			</div>
+			<p class="ob-fixed-body">Nach dem Event stellst du deine Leistung direkt an Firmengolf in Rechnung. Das Unternehmen erhält die Gesamtrechnung von Firmengolf.</p>
+		</div>
+		<div class="ob-portal-note full">
+			<span class="ob-portal-note-ic" aria-hidden="true">⛳</span>
+			<div>
+				<div class="ob-portal-note-h">Unsere Rechnungsdaten findest du im Portal</div>
+				<p>Sobald dein Profil bestätigt ist, findest du im Partner-Portal alle Rechnungsdaten von Firmengolf.</p>
+			</div>
+			<a class="ob-portal-note-btn" href="<?php echo esc_url( $portal_url ); ?>">Im Portal ansehen</a>
+		</div>
+		<div class="ob-fixed full">
+			<div class="ob-fixed-head">
+				<span class="ob-fixed-l">Bitte immer angeben</span>
+				<span class="ob-fixed-badge">Pflicht</span>
+			</div>
+			<p class="ob-fixed-body">Gib auf jeder Rechnung die jeweilige <strong>Anfragenummer</strong> an, zum Beispiel FG-26-001. So können wir deine Rechnung eindeutig dem richtigen Event zuordnen.</p>
 		</div>
 	</div>
-	<?php
-	fge_onboarding_select( 'fge_billing_method_internal', 'fge_billing_method_internal', 'Abrechnungsmethode', $v['billing_method_internal'] ?? '', $billing_methods );
-	fge_onboarding_textarea( 'fge_internal_billing_note', 'fge_internal_billing_note', 'Interne Abrechnungsnotiz (optional)', $v['internal_billing_note'] ?? '' );
-	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
+	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
 
@@ -1205,10 +1413,10 @@ function fge_onboarding_render_step_12( int $partner_id, string $token, array $v
 			'Individuelle Prüfung' => $v['individual_availability_check'] === '1' ? 'Ja' : 'Nein',
 		] ); ?>
 
-		<?php fge_onboarding_summary_section( 'Abrechnung', [
-			'Aufschlag'         => $v['default_markup_percent'] . ' %',
-			'USt-pflichtig'     => $v['vat_required'] === '1' ? 'Ja' : 'Nein',
-			'Abrechnungsmethode' => $v['billing_method_internal'],
+		<?php fge_onboarding_summary_section( 'Preis & Abrechnung', [
+			'Modell'      => 'Netto-Preise pro Event im Portal',
+			'Aufschlag'   => 'Firmengolf-Aufschlag wird zusätzlich kalkuliert',
+			'Abrechnung'  => 'Rechnung an Firmengolf mit Anfragenummer',
 		] ); ?>
 
 		<?php fge_onboarding_summary_section( 'Medien', [
