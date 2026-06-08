@@ -131,7 +131,17 @@ function fge_rr_get( int $request_id ): array {
 	return $out;
 }
 
-/** Has a contact answered every wish date of a request? */
+/** Has a contact answered at least one wish date? (= "hat reagiert" für Anzeige/Erinnerung) */
+function fge_rr_contact_answered_any( int $request_id, int $contact_id ): bool {
+	foreach ( fge_rr_get( $request_id ) as $r ) {
+		if ( (int) $r['contact_id'] === $contact_id ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/** Has a contact answered every wish date of a request? (= vollständig, für „buchbar") */
 function fge_rr_contact_done( int $request_id, int $contact_id ): bool {
 	$dates = fge_rr_wish_dates( $request_id );
 	if ( empty( $dates ) ) {
@@ -241,6 +251,119 @@ function fge_rr_contact_note( array $rows, int $contact_id ): string {
 		}
 	}
 	return '';
+}
+
+/**
+ * Eignungs-Matching für (Individual-)Anfragen: passende Plätze nach Kapazität,
+ * Region und angebotenen Formaten. Schließt klare Nicht-Treffer (Teilnehmer außerhalb
+ * der Kapazität) aus, sortiert nach Score. Rückgabe: Liste [id,name,city,cap,score,why,fits].
+ */
+function fge_match_partners_for_request( int $req, int $limit = 8 ): array {
+	$pax    = (int) get_post_meta( $req, '_fge_expected_participants', true );
+	$region = (string) get_post_meta( $req, '_fge_desired_region', true );
+	if ( '' === $region ) { $region = (string) get_post_meta( $req, '_fge_company_city', true ); }
+	$fmt    = (string) get_post_meta( $req, '_fge_event_type', true );
+	if ( '' === $fmt ) { $fmt = (string) get_post_meta( $req, '_fge_event_goal', true ); }
+
+	$partners = get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => 'publish', 'numberposts' => -1 ] );
+	$out = [];
+	foreach ( $partners as $p ) {
+		if ( 'pausiert' === (string) get_post_meta( $p->ID, '_fge_partner_status', true ) ) {
+			continue;
+		}
+		$cap = get_post_meta( $p->ID, '_fge_cap', true );
+		$cap = is_array( $cap ) ? $cap : [];
+		$min = (int) ( $cap['min'] ?? 0 );
+		$max = (int) ( $cap['max'] ?? 0 );
+		$fits = ( $pax > 0 && $min > 0 && $max > 0 ) ? ( $pax >= $min && $pax <= $max ) : null;
+		if ( false === $fits ) {
+			continue; // Teilnehmerzahl liegt klar außerhalb → raus.
+		}
+		$score = 0;
+		$why   = [];
+		if ( true === $fits ) { $score += 3; $why[] = "Kapazität {$min}–{$max} passt"; }
+		$pcity   = (string) get_post_meta( $p->ID, '_fge_city', true );
+		$pregion = (string) get_post_meta( $p->ID, '_fge_free_region', true );
+		if ( '' !== $region && ( false !== stripos( $pcity, $region ) || false !== stripos( $pregion, $region ) || false !== stripos( $region, $pcity ) ) ) {
+			$score += 2; $why[] = 'Region passt';
+		}
+		$pf = (array) get_post_meta( $p->ID, '_fge_event_formats', true );
+		if ( '' !== $fmt && in_array( $fmt, $pf, true ) ) {
+			$score += 2; $why[] = 'bietet dieses Format';
+		}
+		$out[] = [ 'id' => $p->ID, 'name' => get_the_title( $p->ID ), 'city' => $pcity, 'cap' => ( $min || $max ) ? "{$min}–{$max}" : '—', 'score' => $score, 'why' => $why, 'fits' => $fits ];
+	}
+	usort( $out, static function ( $a, $b ) { return $b['score'] <=> $a['score']; } );
+	return array_slice( $out, 0, $limit );
+}
+
+// Admin-Metabox: passende Plätze (v. a. für individuelle Anfragen ohne festen Platz).
+add_action( 'add_meta_boxes', static function () {
+	add_meta_box( 'fge_mb_match', 'Passende Plätze (Eignung)', 'fge_render_mb_match', 'firmengolf_request', 'side', 'default' );
+} );
+
+function fge_render_mb_match( WP_Post $post ): void {
+	$pax = (int) get_post_meta( $post->ID, '_fge_expected_participants', true );
+	$matches = fge_match_partners_for_request( $post->ID );
+	echo '<p style="margin:0 0 8px;color:#646970;font-size:12px;">Teilnehmer: ' . ( $pax ?: '—' ) . ' · Vorschläge nach Kapazität, Region &amp; Format.</p>';
+	if ( empty( $matches ) ) {
+		echo '<p style="margin:0;">Keine passenden Plätze gefunden.</p>';
+		return;
+	}
+	echo '<ul style="margin:0;list-style:none;padding:0;">';
+	foreach ( $matches as $mm ) {
+		$edit = get_edit_post_link( $mm['id'] );
+		echo '<li style="padding:8px 0;border-bottom:1px solid #f0f0f1;">';
+		echo '<a href="' . esc_url( $edit ) . '" style="font-weight:600;">' . esc_html( $mm['name'] ) . '</a>';
+		if ( $mm['city'] ) { echo ' <span style="color:#646970;">· ' . esc_html( $mm['city'] ) . '</span>'; }
+		echo '<br><span style="font-size:12px;color:#646970;">Kap. ' . esc_html( $mm['cap'] ) . ( $mm['why'] ? ' · ' . esc_html( implode( ', ', $mm['why'] ) ) : '' ) . '</span>';
+		echo '</li>';
+	}
+	echo '</ul>';
+}
+
+/** Parse a German free-text date ("Do, 18. Juni 2026") → "Ymd" or null if not parseable. */
+function fge_parse_german_date( string $s ): ?string {
+	$months = [ 'januar' => 1, 'februar' => 2, 'märz' => 3, 'maerz' => 3, 'april' => 4, 'mai' => 5, 'juni' => 6, 'juli' => 7, 'august' => 8, 'september' => 9, 'oktober' => 10, 'november' => 11, 'dezember' => 12 ];
+	if ( preg_match( '/(\d{1,2})\.\s*([A-Za-zäöüÄÖÜ]+)\.?\s*(\d{4})/u', $s, $m ) ) {
+		$mon = $months[ mb_strtolower( $m[2] ) ] ?? 0;
+		if ( $mon ) {
+			return sprintf( '%04d%02d%02d', (int) $m[3], $mon, (int) $m[1] );
+		}
+	}
+	return null;
+}
+
+/** Build an .ics (single all-day VEVENT) for a request's confirmed date, or null. */
+function fge_request_ics( int $request_id ): ?string {
+	$idx = fge_rr_final_index( $request_id );
+	if ( $idx <= 0 ) {
+		return null;
+	}
+	$ymd = fge_parse_german_date( (string) get_post_meta( $request_id, '_fge_preferred_date_' . $idx, true ) );
+	if ( ! $ymd ) {
+		return null;
+	}
+	$next    = gmdate( 'Ymd', strtotime( $ymd . ' +1 day' ) );
+	$company = (string) get_post_meta( $request_id, '_fge_company_name', true );
+	$eid     = (int) get_post_meta( $request_id, '_fge_assigned_event_id', true );
+	$etype   = $eid ? get_the_title( $eid ) : (string) get_post_meta( $request_id, '_fge_event_type', true );
+	$esc     = static function ( string $t ): string {
+		return str_replace( [ '\\', ';', ',', "\n" ], [ '\\\\', '\\;', '\\,', '\\n' ], $t );
+	};
+	$summary = $esc( 'Firmenevent: ' . $company . ( $etype ? ' (' . $etype . ')' : '' ) );
+	$host    = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+	$lines   = [
+		'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Firmengolf//Termin//DE', 'CALSCALE:GREGORIAN',
+		'BEGIN:VEVENT',
+		'UID:fge-' . $request_id . '@' . $host,
+		'DTSTART;VALUE=DATE:' . $ymd,
+		'DTEND;VALUE=DATE:' . $next,
+		'SUMMARY:' . $summary,
+		'DESCRIPTION:' . $esc( 'Anfrage ' . fge_request_number( $request_id ) ),
+		'END:VEVENT', 'END:VCALENDAR',
+	];
+	return implode( "\r\n", $lines ) . "\r\n";
 }
 
 /** Personal magic-link for a contact to respond to a request's wish dates. */

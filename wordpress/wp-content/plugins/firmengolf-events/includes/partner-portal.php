@@ -14,6 +14,31 @@ add_action( 'init', 'fge_portal_handle_profile_update', 10 );
 add_action( 'init', 'fge_portal_handle_lifecycle', 10 );
 add_action( 'init', 'fge_portal_handle_contacts', 10 );
 add_action( 'init', 'fge_portal_handle_request', 10 );
+add_action( 'init', 'fge_portal_handle_ics', 9 );
+
+/** .ics-Download eines bestätigten Termins (GET ?fge_ics=<req> + Nonce + Ownership). */
+function fge_portal_handle_ics(): void {
+	if ( ! isset( $_GET['fge_ics'] ) ) {
+		return;
+	}
+	$req = absint( $_GET['fge_ics'] );
+	if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'fge_ics_' . $req ) ) {
+		return;
+	}
+	$partner_id = fge_portal_get_partner_id();
+	if ( $partner_id <= 0 || (int) get_post_meta( $req, '_fge_assigned_partner_id', true ) !== $partner_id ) {
+		return;
+	}
+	$ics = function_exists( 'fge_request_ics' ) ? fge_request_ics( $req ) : null;
+	if ( ! $ics ) {
+		wp_die( 'Für diesen Termin ist kein Kalender-Export möglich (Datum nicht eindeutig).', '', [ 'response' => 404 ] );
+	}
+	nocache_headers();
+	header( 'Content-Type: text/calendar; charset=utf-8' );
+	header( 'Content-Disposition: attachment; filename="firmengolf-' . sanitize_file_name( fge_request_number( $req ) ) . '.ics"' );
+	echo $ics; // phpcs:ignore WordPress.Security.EscapeOutput
+	exit;
+}
 
 /** PRG handler for the Anfragen tab — confirm a final wish date. Nonce + ownership. */
 function fge_portal_handle_request(): void {
@@ -651,6 +676,7 @@ function fge_portal_render(): void {
 		'uebersicht' => [ 'Übersicht',       '<path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/>' ],
 		'angebote'   => [ 'Angebote',        '<path d="M5 22V4M5 4l13 3-13 3"/>' ],
 		'anfragen'   => [ 'Anfragen',        '<path d="M22 12h-5l-2 3h-6l-2-3H2"/><path d="M5 5h14l3 7v7H2v-7z"/>' ],
+		'kalender'   => [ 'Kalender',        '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>' ],
 		'platz'      => [ 'Platz',           '<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' ],
 		'team'       => [ 'Ansprechpartner', '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>' ],
 	];
@@ -710,7 +736,7 @@ function fge_portal_render(): void {
 		<div id="fp-tab-uebersicht"  class="fp-section<?php echo $active_tab !== 'uebersicht'  ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_uebersicht( $partner_id ); ?></div>
 		<div id="fp-tab-angebote"    class="fp-section<?php echo $active_tab !== 'angebote'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_angebote( $partner_id ); ?></div>
 		<div id="fp-tab-anfragen"    class="fp-section<?php echo $active_tab !== 'anfragen'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_requests( $partner_id ); ?></div>
-		<div id="fp-tab-kalender"    class="fp-section<?php echo $active_tab !== 'kalender'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_kalender(); ?></div>
+		<div id="fp-tab-kalender"    class="fp-section<?php echo $active_tab !== 'kalender'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_kalender( $partner_id ); ?></div>
 		<div id="fp-tab-platz"       class="fp-section<?php echo $active_tab !== 'platz'       ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_platz( $partner_id ); ?></div>
 		<div id="fp-tab-team"        class="fp-section<?php echo $active_tab !== 'team'        ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_team( $partner_id ); ?></div>
 		<div id="fp-tab-kennzahlen"  class="fp-section<?php echo $active_tab !== 'kennzahlen'  ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_stats( $partner_id ); ?></div>
@@ -1151,7 +1177,7 @@ function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 				if ( ! empty( $rr_resp ) ) :
 					$rr_done = 0;
 					foreach ( $rr_resp as $rr_c ) {
-						if ( fge_rr_contact_done( $req->ID, (int) $rr_c['id'] ) ) {
+						if ( fge_rr_contact_answered_any( $req->ID, (int) $rr_c['id'] ) ) {
 							$rr_done++;
 						}
 					}
@@ -1416,7 +1442,7 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 	$final    = function_exists( 'fge_rr_final_index' ) ? fge_rr_final_index( $req ) : 0;
 	$done_cnt = 0;
 	foreach ( $resp as $c ) {
-		if ( fge_rr_contact_done( $req, (int) $c['id'] ) ) {
+		if ( fge_rr_contact_answered_any( $req, (int) $c['id'] ) ) {
 			$done_cnt++;
 		}
 	}
@@ -1522,7 +1548,7 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 					<div class="req-section-label">Beteiligte Ansprechpartner</div>
 					<div class="team-list">
 						<?php foreach ( $resp as $c ) :
-							$responded = fge_rr_contact_done( $req, (int) $c['id'] );
+							$responded = fge_rr_contact_answered_any( $req, (int) $c['id'] );
 							$link      = fge_termin_contact_link( $req, $c ); ?>
 						<div class="team-row">
 							<span class="av green"><?php echo esc_html( fge_portal_initials( $c['name'] ?: $c['email'] ) ); ?></span>
@@ -1581,23 +1607,57 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 // SECTION: KALENDER (PLACEHOLDER)
 // ══════════════════════════════════════════════════════════════════════════════
 
-function fge_portal_section_kalender(): void {
+function fge_portal_section_kalender( int $partner_id ): void {
+	$base     = fge_portal_page_url();
+	$bookings = get_posts( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'meta_query'  => [
+			'relation' => 'AND',
+			[ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ],
+			[ 'key' => '_fge_final_date_index', 'value' => 0, 'compare' => '>', 'type' => 'NUMERIC' ],
+		],
+	] );
 	?>
-	<div style="padding-top:32px;">
-		<div class="fp-section-head">
-			<div>
-				<div class="fp-eyebrow">Buchungen und Termine</div>
-				<h2>Kalender</h2>
+	<div class="fgpp"><div class="page-wide">
+		<section class="section">
+			<div class="section-head">
+				<div><div class="eyebrow">Buchungen &amp; Termine</div><h2>Dein <em>Kalender</em></h2><p>Bestätigte Firmenevents. Lade dir einen Termin als Kalendereintrag (.ics) herunter.</p></div>
 			</div>
-		</div>
-		<div class="fp-placeholder">
-			<div class="fp-placeholder-icon">
-				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-			</div>
-			<div class="fp-placeholder-title">Kalender kommt bald</div>
-			<div class="fp-placeholder-sub">Du wirst deine Buchungen und Verfügbarkeiten direkt im Portal verwalten können.</div>
-		</div>
-	</div>
+			<?php if ( empty( $bookings ) ) : ?>
+				<div class="panel" style="text-align:center;color:var(--ink-500);">Noch keine bestätigten Termine. Sobald du in einer Anfrage einen Termin bestätigst, erscheint er hier.</div>
+			<?php else : ?>
+				<div class="team-mgmt">
+					<?php foreach ( $bookings as $b ) :
+						$idx   = (int) get_post_meta( $b->ID, '_fge_final_date_index', true );
+						$label = (string) get_post_meta( $b->ID, '_fge_preferred_date_' . $idx, true );
+						$comp  = (string) get_post_meta( $b->ID, '_fge_company_name', true ) ?: 'Unternehmen';
+						$eid   = (int) get_post_meta( $b->ID, '_fge_assigned_event_id', true );
+						$etype = $eid ? get_the_title( $eid ) : (string) get_post_meta( $b->ID, '_fge_event_type', true );
+						$pax   = (int) get_post_meta( $b->ID, '_fge_expected_participants', true );
+						$ics_ok = function_exists( 'fge_parse_german_date' ) && null !== fge_parse_german_date( $label );
+						$ics_url = wp_nonce_url( add_query_arg( [ 'tab' => 'kalender', 'fge_ics' => $b->ID ], $base ), 'fge_ics_' . $b->ID ); ?>
+					<div class="tm-row">
+						<span class="tm-av"><?php echo esc_html( fge_portal_initials( $comp ) ); ?></span>
+						<div class="tm-main">
+							<div class="tm-name"><?php echo esc_html( $label ?: 'Termin' ); ?></div>
+							<div class="tm-sub"><?php echo esc_html( trim( $comp . ( $etype ? ' · ' . $etype : '' ) . ( $pax ? ' · ' . $pax . ' Pers.' : '' ) ) ); ?></div>
+						</div>
+						<div class="tm-actions">
+							<a class="btn btn-ghost btn-sm" href="<?php echo esc_url( $base . '?tab=anfragen&req=' . $b->ID ); ?>">Anfrage</a>
+							<?php if ( $ics_ok ) : ?>
+								<a class="btn btn-brand btn-sm" href="<?php echo esc_url( $ics_url ); ?>">.ics</a>
+							<?php else : ?>
+								<span class="btn btn-quiet btn-sm" title="Datum nicht eindeutig — kein Export" style="cursor:default;">kein .ics</span>
+							<?php endif; ?>
+						</div>
+					</div>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
+		</section>
+	</div></div>
 	<?php
 }
 

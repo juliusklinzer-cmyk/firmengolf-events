@@ -253,6 +253,41 @@ function fge_send_contact_termin_emails( int $request_id, array $data ): int {
 	return $sent;
 }
 
+/** Erinnerung an eine einzelne vote-Person, die noch nicht reagiert hat. */
+function fge_send_contact_reminder( int $request_id, array $contact ): bool {
+	if ( '' === (string) ( $contact['email'] ?? '' ) || ! function_exists( 'fge_termin_contact_link' ) ) {
+		return false;
+	}
+	$data    = fge_get_request_email_data( $request_id );
+	$ref     = fge_request_number( $request_id );
+	$first   = trim( explode( ' ', (string) $contact['name'] )[0] );
+	$link    = fge_termin_contact_link( $request_id, $contact );
+	$venue   = $data['event_title'] ?: ( $data['partner_title'] ?: 'euer Angebot' );
+	$subject = 'Erinnerung: kurze Rückmeldung zu einer Firmenanfrage (' . $ref . ')';
+	$content = '
+		<p style="margin:0 0 16px;">Hallo ' . esc_html( $first ) . ',</p>
+		<p style="margin:0 0 16px;">die Anfrage von <strong>' . esc_html( $data['company_name'] ?: 'einem Unternehmen' ) . '</strong> für <strong>' . esc_html( $venue ) . '</strong> wartet noch auf deine Rückmeldung. Es dauert nur einen Moment.</p>
+		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Jetzt Termine bestätigen</a></p>
+		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
+	';
+	return (bool) wp_mail( $contact['email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+/** Eskalation: Anfrage überfällig → Firmengolf soll übernehmen. */
+function fge_notify_overdue( int $request_id ): void {
+	$data    = fge_get_request_email_data( $request_id );
+	$ref     = fge_request_number( $request_id );
+	$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+	$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $request_id ) : admin_url();
+	$subject = 'Überfällig: Anfrage ' . $ref . ' braucht Aufmerksamkeit';
+	$content = '
+		<p style="margin:0 0 16px;">Die Anfrage <strong>' . esc_html( $ref ) . '</strong> (' . esc_html( $data['company_name'] ?: '—' ) . ' · ' . esc_html( $data['partner_title'] ?: '—' ) . ') hat die Reaktionsfrist überschritten — noch nicht alle Beteiligten haben reagiert.</p>
+		<p style="margin:0 0 16px;">Bitte nachfassen oder die Koordination übernehmen (direkt mit der Firma einen Termin festlegen).</p>
+		<p style="margin:0;"><a href="' . esc_url( $admin ) . '">Anfrage im Admin öffnen</a></p>
+	';
+	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
 /** Alle Beteiligten haben reagiert → Platz-Manager soll im Portal den Termin bestätigen. */
 add_action( 'fge_request_all_responded', 'fge_notify_all_responded', 10 );
 function fge_notify_all_responded( int $request_id ): void {
