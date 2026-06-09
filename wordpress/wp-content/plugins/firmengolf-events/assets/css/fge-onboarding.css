@@ -23,7 +23,10 @@
   min-height: 100vh;
   display: grid;
   grid-template-rows: 80px 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
 }
+/* The footer's primary button submits via a slim button-only form. */
+.ob-foot-form { display: inline-flex; margin: 0; }
 
 /* ====================================================
    TOPBAR
@@ -36,7 +39,9 @@
 }
 .ob-brand img { height: 28px; display: block; }
 .ob-top-actions { display: flex; gap: 12px; }
-.ob-top-pill {
+/* .ob-shell prefix raises specificity above the frontend's
+   `.fge-page button` reset (0,1,1), which would otherwise strip the pill. */
+.ob-shell .ob-top-pill {
   font-size: 14px; font-weight: 500;
   padding: 10px 20px;
   border-radius: var(--radius-pill);
@@ -45,7 +50,7 @@
   color: var(--ink-900);
   transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.ob-top-pill:hover { background: var(--paper-200); border-color: var(--ink-300); }
+.ob-shell .ob-top-pill:hover { background: var(--paper-200); border-color: var(--ink-300); }
 
 /* ====================================================
    STAGE
@@ -115,6 +120,18 @@
   font-size: 0.875rem; color: var(--ink-500);
   line-height: 1.45;
 }
+
+/* Google Maps location picker */
+.ob-map {
+  height: 320px; width: 100%;
+  margin-top: 10px;
+  border: 1px solid var(--ink-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--paper-200);
+}
+/* Places autocomplete dropdown must clear the sticky footer/topbar. */
+.pac-container { z-index: 200; }
 
 .ob-input {
   width: 100%;
@@ -307,10 +324,15 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
    FOOTER NAV (progress + Zurück/Weiter)
    ==================================================== */
 .ob-footer {
+  /* Neutralise the legacy `.ob-footer` in fge-frontend.css (flex / 72px height /
+     padding) — that rule turns this into a flex row and squashes the progress bar. */
+  display: block; height: auto; padding: 0; gap: 0;
   border-top: 1px solid var(--ink-100);
   background: var(--paper-50);
   position: sticky; bottom: 0; z-index: 10;
 }
+/* Constant width on every slide so the progress bar looks identical
+   from the intro through to submission. */
 .ob-foot-inner { max-width: 1100px; margin: 0 auto; padding: 0 40px; }
 .ob-prog { display: flex; gap: 10px; padding-top: 18px; }
 .ob-prog-seg { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -338,8 +360,18 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 }
 .ob-nav-right { display: flex; align-items: center; gap: 8px; }
 
-.ob-btn-text {
+/* All onboarding buttons are prefixed with .ob-shell so they beat the
+   frontend's `.fge-page button` reset (0,1,1), which would otherwise strip
+   their background/border and render them as plain text. */
+.ob-shell .ob-btn-text, .ob-shell .ob-btn-primary {
+  border: 0; margin: 0; cursor: pointer;
+  font-family: inherit; line-height: 1.2;
+  -webkit-appearance: none; appearance: none;
+}
+
+.ob-shell .ob-btn-text {
   font-size: 15px; font-weight: 500;
+  background: transparent;
   color: var(--ink-900);
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -347,10 +379,10 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   border-radius: var(--radius-sm);
   transition: background var(--dur-fast) var(--ease-out);
 }
-.ob-btn-text:hover:not(:disabled) { background: var(--paper-200); }
-.ob-btn-text:disabled { color: var(--ink-300); cursor: not-allowed; text-decoration: none; }
+.ob-shell .ob-btn-text:hover:not(:disabled) { background: var(--paper-200); }
+.ob-shell .ob-btn-text:disabled { color: var(--ink-300); cursor: not-allowed; text-decoration: none; }
 
-.ob-btn-primary {
+.ob-shell .ob-btn-primary {
   font-size: 15px; font-weight: 500;
   background: var(--ink-900);
   color: var(--paper-50);
@@ -358,9 +390,9 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   border-radius: var(--radius-md);
   transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
-.ob-btn-primary:hover:not(:disabled) { background: var(--ink-800); }
-.ob-btn-primary:active:not(:disabled) { transform: translateY(1px); }
-.ob-btn-primary:disabled {
+.ob-shell .ob-btn-primary:hover:not(:disabled) { background: var(--ink-800); }
+.ob-shell .ob-btn-primary:active:not(:disabled) { transform: translateY(1px); }
+.ob-shell .ob-btn-primary:disabled {
   background: var(--ink-200);
   color: var(--ink-400);
   cursor: not-allowed;
@@ -910,6 +942,7 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   display: flex; justify-content: flex-end;
   animation: ob-fade-scrim var(--dur-base) var(--ease-out);
 }
+.ob-help-scrim[hidden] { display: none; }
 @keyframes ob-fade-scrim {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -1087,6 +1120,8 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   background: var(--paper-200);
   box-shadow: inset 0 0 0 1px var(--ink-900);
 }
+/* Selected icon boxes keep their colour: the design glyph turns fairway-green. */
+.ob-card:has(.ob-card-input:checked) .ob-card-ico { color: var(--fairway-700); }
 .ob-card .ob-card-check {
   width: 20px; height: 20px; border-radius: 999px;
   border: 1.5px solid var(--ink-300);

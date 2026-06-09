@@ -10,6 +10,103 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 add_action( 'init', 'fge_onboarding_handle_step', 5 );
 
+// ── Slide manifest ────────────────────────────────────────────────────────────
+// The wizard mirrors _design_neu/partner-onboarding (STEPS array): 3 chapters,
+// each opened by an intro slide. Navigation is by 1-based ordinal; field logic
+// (render/save/validate) is dispatched by slide id, so order changes stay safe.
+
+function fge_onboarding_manifest(): array {
+	return [
+		1  => [ 'id' => 'intro-1',  'chapter' => 1, 'kind' => 'intro' ],
+		2  => [ 'id' => 'golftype', 'chapter' => 1, 'kind' => 'form', 'wide' => true ],
+		3  => [ 'id' => 'basics',   'chapter' => 1, 'kind' => 'form' ],
+		4  => [ 'id' => 'location', 'chapter' => 1, 'kind' => 'form' ],
+		5  => [ 'id' => 'arrival',  'chapter' => 1, 'kind' => 'form' ],
+		6  => [ 'id' => 'main',     'chapter' => 1, 'kind' => 'form' ],
+		7  => [ 'id' => 'contacts', 'chapter' => 1, 'kind' => 'form', 'skippable' => true ],
+		8  => [ 'id' => 'intro-2',  'chapter' => 2, 'kind' => 'intro' ],
+		9  => [ 'id' => 'infra',    'chapter' => 2, 'kind' => 'form', 'wide' => true ],
+		10 => [ 'id' => 'gastro',   'chapter' => 2, 'kind' => 'form', 'wide' => true ],
+		11 => [ 'id' => 'capacity', 'chapter' => 2, 'kind' => 'form' ],
+		12 => [ 'id' => 'formats',  'chapter' => 2, 'kind' => 'form', 'wide' => true ],
+		13 => [ 'id' => 'intro-3',  'chapter' => 3, 'kind' => 'intro' ],
+		14 => [ 'id' => 'avail',    'chapter' => 3, 'kind' => 'form' ],
+		15 => [ 'id' => 'pricing',  'chapter' => 3, 'kind' => 'form' ],
+		16 => [ 'id' => 'media',    'chapter' => 3, 'kind' => 'form' ],
+		17 => [ 'id' => 'review',   'chapter' => 3, 'kind' => 'review' ],
+	];
+}
+
+function fge_onboarding_total_slides(): int {
+	return count( fge_onboarding_manifest() );
+}
+
+function fge_onboarding_slide( int $ordinal ): array {
+	$m = fge_onboarding_manifest();
+	return $m[ $ordinal ] ?? [];
+}
+
+function fge_onboarding_ordinal_of( string $id ): int {
+	foreach ( fge_onboarding_manifest() as $ord => $slide ) {
+		if ( $slide['id'] === $id ) {
+			return $ord;
+		}
+	}
+	return 0;
+}
+
+/** Ordinal at which the WP account is created (the main-contact slide). */
+function fge_onboarding_account_ordinal(): int {
+	return fge_onboarding_ordinal_of( 'main' );
+}
+
+/** Slides before account creation are addressed by URL token (no login yet). */
+function fge_onboarding_uses_token( int $ordinal ): bool {
+	return $ordinal < fge_onboarding_account_ordinal();
+}
+
+// ── Google Maps (location picker) ─────────────────────────────────────────────
+
+/**
+ * Google Maps JavaScript API key. Define FGE_GMAPS_API_KEY in wp-config.php
+ * (or filter fge_gmaps_api_key). Empty = map disabled, plain fields remain.
+ */
+function fge_gmaps_api_key(): string {
+	$key = defined( 'FGE_GMAPS_API_KEY' ) ? (string) FGE_GMAPS_API_KEY : '';
+	return (string) apply_filters( 'fge_gmaps_api_key', $key );
+}
+
+/** Loads the Maps API + picker init only on the onboarding location slide. */
+add_action( 'wp_enqueue_scripts', 'fge_onboarding_enqueue_map' );
+function fge_onboarding_enqueue_map(): void {
+	if ( ! is_page( 'partner-onboarding' ) ) {
+		return;
+	}
+	$key = fge_gmaps_api_key();
+	if ( '' === $key ) {
+		return;
+	}
+	$step = max( 1, absint( $_GET['ob_step'] ?? 1 ) );
+	if ( ( fge_onboarding_slide( $step )['id'] ?? '' ) !== 'location' ) {
+		return;
+	}
+
+	$src = plugins_url( 'assets/js/fge-onboarding-map.js', FGE_DIR . 'firmengolf-events.php' );
+	wp_enqueue_script( 'fge-ob-map', $src, [], FGE_VERSION, true );
+
+	$pid = fge_onboarding_get_current_partner_id();
+	wp_localize_script( 'fge-ob-map', 'FGE_OB_MAP', [
+		'lat' => $pid > 0 ? (float) get_post_meta( $pid, '_fge_latitude', true ) : 0,
+		'lng' => $pid > 0 ? (float) get_post_meta( $pid, '_fge_longitude', true ) : 0,
+	] );
+
+	$maps_url = add_query_arg(
+		[ 'key' => rawurlencode( $key ), 'libraries' => 'places', 'callback' => 'fgeObMapInit', 'loading' => 'async', 'language' => 'de', 'region' => 'DE' ],
+		'https://maps.googleapis.com/maps/api/js'
+	);
+	wp_enqueue_script( 'google-maps', $maps_url, [ 'fge-ob-map' ], null, true );
+}
+
 // ── URL / Routing helpers ─────────────────────────────────────────────────────
 
 function fge_onboarding_page_url(): string {
@@ -123,7 +220,6 @@ function fge_onboarding_is_submittable( int $partner_id ): bool {
 	if ( $m( 'postal_code' ) === '' )              { return false; }
 	if ( $m( 'city' ) === '' )                     { return false; }
 	if ( $m( 'federal_state' ) === '' )            { return false; }
-	if ( $m( 'free_region' ) === '' )              { return false; }
 
 	// Capacities (new model: _fge_cap array).
 	$cap = get_post_meta( $partner_id, '_fge_cap', true );
@@ -143,7 +239,7 @@ function fge_onboarding_is_submittable( int $partner_id ): bool {
 
 // ── Save step data ────────────────────────────────────────────────────────────
 
-function fge_onboarding_save_step( int $partner_id, int $step, array $post ): void {
+function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): void {
 	$s  = static function( string $k ) use ( $post ): string {
 		return sanitize_text_field( wp_unslash( $post[ $k ] ?? '' ) );
 	};
@@ -174,9 +270,18 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 		return in_array( $val, $allowed, true ) ? $val : '';
 	};
 
-	switch ( $step ) {
-		case 2:
-			update_post_meta( $partner_id, '_fge_golf_type',               $san_select( 'fge_golf_type', array_keys( fge_catalog_golf_types() ) ) );
+	// Infrastructure / Gastronomy share one `_fge_infra` array; each slide only
+	// owns its group's ids, so saving one must not wipe the other's selections.
+	$gastro_ids    = array_keys( fge_catalog_infra_groups()['Gastronomie'] ?? [] );
+	$all_infra_ids = fge_catalog_infra_ids();
+	$nongastro_ids = array_values( array_diff( $all_infra_ids, $gastro_ids ) );
+
+	switch ( $id ) {
+		case 'golftype':
+			update_post_meta( $partner_id, '_fge_golf_type', $san_select( 'fge_golf_type', array_keys( fge_catalog_golf_types() ) ) );
+			break;
+
+		case 'basics':
 			update_post_meta( $partner_id, '_fge_public_golfclub_name',    $s( 'fge_public_golfclub_name' ) );
 			update_post_meta( $partner_id, '_fge_legal_operator_name',     $s( 'fge_legal_operator_name' ) );
 			update_post_meta( $partner_id, '_fge_website_url',             $su( 'fge_website_url' ) );
@@ -186,15 +291,27 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			wp_update_post( [ 'ID' => $partner_id, 'post_title' => $s( 'fge_public_golfclub_name' ) ] );
 			break;
 
-		case 3:
+		case 'location':
 			update_post_meta( $partner_id, '_fge_street',        $s( 'fge_street' ) );
 			update_post_meta( $partner_id, '_fge_house_number',  $s( 'fge_house_number' ) );
 			update_post_meta( $partner_id, '_fge_postal_code',   $s( 'fge_postal_code' ) );
 			update_post_meta( $partner_id, '_fge_city',          $s( 'fge_city' ) );
 			update_post_meta( $partner_id, '_fge_federal_state', $san_select( 'fge_federal_state', $allowed_states ) );
-			update_post_meta( $partner_id, '_fge_free_region',   $s( 'fge_free_region' ) );
-			update_post_meta( $partner_id, '_fge_google_maps_url', $su( 'fge_google_maps_url' ) );
-			// Anfahrt & Location (same keys as admin meta box / Platz view).
+			// Map pin coordinates (set by the Google Maps picker).
+			if ( isset( $post['fge_latitude'], $post['fge_longitude'] ) ) {
+				$lat = (float) $post['fge_latitude'];
+				$lng = (float) $post['fge_longitude'];
+				update_post_meta( $partner_id, '_fge_latitude',  ( $lat >= -90 && $lat <= 90 && 0.0 !== $lat ) ? $lat : '' );
+				update_post_meta( $partner_id, '_fge_longitude', ( $lng >= -180 && $lng <= 180 && 0.0 !== $lng ) ? $lng : '' );
+			}
+			// Manual link only used as fallback when the map is disabled.
+			if ( isset( $post['fge_google_maps_url'] ) ) {
+				update_post_meta( $partner_id, '_fge_google_maps_url', $su( 'fge_google_maps_url' ) );
+			}
+			break;
+
+		case 'arrival':
+			// Same keys as admin meta box / Platz view.
 			update_post_meta( $partner_id, '_fge_poi_car',         $s( 'fge_poi_car' ) );
 			update_post_meta( $partner_id, '_fge_poi_parking',     $s( 'fge_poi_parking' ) );
 			update_post_meta( $partner_id, '_fge_poi_train',       $s( 'fge_poi_train' ) );
@@ -202,7 +319,7 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			update_post_meta( $partner_id, '_fge_arrival_estation', ( ( $post['fge_arrival_estation'] ?? '' ) === '1' ) ? 1 : 0 );
 			break;
 
-		case 4:
+		case 'main':
 			$first = $s( 'fge_contact_first_name' );
 			$last  = $s( 'fge_contact_last_name' );
 			update_post_meta( $partner_id, '_fge_main_contact_name',  trim( $first . ' ' . $last ) );
@@ -211,7 +328,7 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			update_post_meta( $partner_id, '_fge_main_contact_role',  $s( 'fge_contact_role' ) );
 			break;
 
-		case 5:
+		case 'contacts':
 			// Rebuild the partner's no-account contacts (fge_partner_contacts) from the submitted arrays.
 			$c_names = is_array( $post['fge_contact_name'] ?? null ) ? $post['fge_contact_name'] : [];
 			$c_mails = is_array( $post['fge_contact_email'] ?? null ) ? $post['fge_contact_email'] : [];
@@ -236,13 +353,24 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			}
 			break;
 
-		case 6:
-			// New catalog model: single `_fge_infra` array (52 ids incl. Gastronomie group).
-			update_post_meta( $partner_id, '_fge_infra', $san_group( 'fge_infra', fge_catalog_infra_ids() ) );
+		case 'infra':
+			// Replace only the non-gastro ids; keep any Gastronomie selections.
+			$existing = (array) get_post_meta( $partner_id, '_fge_infra', true );
+			$kept     = array_intersect( $existing, $gastro_ids );
+			$submit   = array_intersect( $san_group( 'fge_infra', $all_infra_ids ), $nongastro_ids );
+			update_post_meta( $partner_id, '_fge_infra', array_values( array_unique( array_merge( $kept, $submit ) ) ) );
 			update_post_meta( $partner_id, '_fge_additional_equipment', $sa( 'fge_additional_equipment' ) );
 			break;
 
-		case 7:
+		case 'gastro':
+			// Replace only the Gastronomie ids; keep all other infrastructure.
+			$existing = (array) get_post_meta( $partner_id, '_fge_infra', true );
+			$kept     = array_intersect( $existing, $nongastro_ids );
+			$submit   = array_intersect( $san_group( 'fge_infra', $all_infra_ids ), $gastro_ids );
+			update_post_meta( $partner_id, '_fge_infra', array_values( array_unique( array_merge( $kept, $submit ) ) ) );
+			break;
+
+		case 'capacity':
 			// New catalog model: single `_fge_cap` array keyed by cap_keys (min, max + conditional rows).
 			$cap_in  = is_array( $post['fge_cap'] ?? null ) ? $post['fge_cap'] : [];
 			$cap_out = [];
@@ -252,11 +380,11 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			update_post_meta( $partner_id, '_fge_cap', $cap_out );
 			break;
 
-		case 8:
+		case 'formats':
 			update_post_meta( $partner_id, '_fge_event_formats', $san_group( 'fge_event_formats', $allowed_formats ) );
 			break;
 
-		case 9:
+		case 'avail':
 			update_post_meta( $partner_id, '_fge_preferred_event_days',         $san_group( 'fge_preferred_event_days', $allowed_days ) );
 			update_post_meta( $partner_id, '_fge_weekend_events_possible',       ( ( $post['fge_weekend_events_possible'] ?? '' ) === '1' ) ? 1 : 0 );
 			update_post_meta( $partner_id, '_fge_evening_events_possible',       ( ( $post['fge_evening_events_possible'] ?? '' ) === '1' ) ? 1 : 0 );
@@ -265,12 +393,12 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			update_post_meta( $partner_id, '_fge_individual_availability_check', ( ( $post['fge_individual_availability_check'] ?? '1' ) !== '0' ) ? 1 : 0 );
 			break;
 
-		case 10:
-			// Pricing step is info-only now (net stays net; markup added by Firmengolf;
-			// actual net prices are set per event in the portal). Nothing to persist.
+		case 'pricing':
+			// Info-only (net stays net; markup added by Firmengolf; per-event net
+			// prices are set in the portal). Nothing to persist.
 			break;
 
-		case 11:
+		case 'media':
 			update_post_meta( $partner_id, '_fge_image_rights_confirmed', isset( $post['fge_image_rights_confirmed'] ) ? 1 : 0 );
 			update_post_meta( $partner_id, '_fge_image_rights_note',      $sa( 'fge_image_rights_note' ) );
 
@@ -317,8 +445,6 @@ function fge_onboarding_save_step( int $partner_id, int $step, array $post ): vo
 			}
 			break;
 	}
-
-	update_post_meta( $partner_id, '_fge_onboarding_step', max( fge_onboarding_get_progress( $partner_id ), $step ) );
 }
 
 // ── User creation / assignment ────────────────────────────────────────────────
@@ -381,8 +507,9 @@ function fge_onboarding_handle_step(): void {
 		return;
 	}
 
-	$step = absint( $_POST['ob_step'] ?? 0 );
-	if ( $step < 1 || $step > 12 ) {
+	$total = fge_onboarding_total_slides();
+	$step  = absint( $_POST['ob_step'] ?? 0 );
+	if ( $step < 1 || $step > $total ) {
 		return;
 	}
 
@@ -390,18 +517,28 @@ function fge_onboarding_handle_step(): void {
 		wp_die( 'Sicherheitsüberprüfung fehlgeschlagen.', '', [ 'response' => 403 ] );
 	}
 
-	// Step 1: create draft partner.
-	if ( $step === 1 ) {
+	$slide = fge_onboarding_slide( $step );
+	$id    = $slide['id'] ?? '';
+	$kind  = $slide['kind'] ?? 'form';
+	// Whether the *next* URL still needs the token depends on the CURRENT slide:
+	// the token carries forward until the account exists (main-contact submit).
+	$next  = static function ( int $cur ) use ( $total ) {
+		return [ min( $cur + 1, $total ), fge_onboarding_uses_token( $cur ) ];
+	};
+
+	// First intro slide: create the draft partner, then advance.
+	if ( 'intro-1' === $id ) {
 		$partner_id = fge_onboarding_create_draft_partner();
 		if ( $partner_id <= 0 ) {
 			wp_die( 'Fehler beim Erstellen des Profils.', '', [ 'response' => 500 ] );
 		}
 		$token = (string) get_post_meta( $partner_id, '_fge_onboarding_token', true );
-		wp_redirect( fge_onboarding_step_url( 2, $token ) );
+		[ $n ] = $next( $step );
+		wp_redirect( fge_onboarding_step_url( $n, $token ) );
 		exit;
 	}
 
-	// All other steps: find existing partner.
+	// All other slides: find existing partner.
 	$partner_id = fge_onboarding_get_current_partner_id();
 	if ( $partner_id <= 0 ) {
 		wp_redirect( fge_onboarding_page_url() );
@@ -410,18 +547,25 @@ function fge_onboarding_handle_step(): void {
 
 	$token = (string) get_post_meta( $partner_id, '_fge_onboarding_token', true );
 
-	// Validate step-specific required fields.
-	$errors = fge_onboarding_validate_step( $step, $_POST );
+	// Chapter intro slides (intro-2/3): nothing to save, just advance.
+	if ( 'intro' === $kind ) {
+		update_post_meta( $partner_id, '_fge_onboarding_step', max( fge_onboarding_get_progress( $partner_id ), $step ) );
+		[ $n, $ntok ] = $next( $step );
+		wp_redirect( fge_onboarding_step_url( $n, $ntok ? $token : '' ) );
+		exit;
+	}
+
+	// Validate slide-specific required fields.
+	$errors = fge_onboarding_validate_slide( $id, $_POST );
 	if ( ! empty( $errors ) ) {
-		// Re-render with errors via GET redirect with error transient.
 		$trans_key = 'fge_ob_err_' . $partner_id . '_' . $step;
 		set_transient( $trans_key, $errors, 120 );
 		wp_redirect( add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) ) );
 		exit;
 	}
 
-	// Step 4: create/assign user.
-	if ( $step === 4 ) {
+	// Main-contact slide: create/assign the WP account.
+	if ( 'main' === $id ) {
 		$email = sanitize_email( wp_unslash( $_POST['fge_contact_email'] ?? '' ) );
 		$first = sanitize_text_field( wp_unslash( $_POST['fge_contact_first_name'] ?? '' ) );
 		$last  = sanitize_text_field( wp_unslash( $_POST['fge_contact_last_name'] ?? '' ) );
@@ -434,18 +578,18 @@ function fge_onboarding_handle_step(): void {
 				wp_set_auth_cookie( $user_id );
 			}
 		} else {
-			// Admin flow: just save contact data.
-			fge_onboarding_save_step( $partner_id, 4, $_POST );
+			fge_onboarding_save_slide( $partner_id, 'main', $_POST );
 		}
-		update_post_meta( $partner_id, '_fge_onboarding_step', max( fge_onboarding_get_progress( $partner_id ), 4 ) );
-		wp_redirect( fge_onboarding_step_url( 5 ) );
+		update_post_meta( $partner_id, '_fge_onboarding_step', max( fge_onboarding_get_progress( $partner_id ), $step ) );
+		[ $n ] = $next( $step );
+		wp_redirect( fge_onboarding_step_url( $n ) );
 		exit;
 	}
 
-	// Step 12: submit.
-	if ( $step === 12 ) {
+	// Review slide: submit.
+	if ( 'review' === $id ) {
 		if ( ! fge_onboarding_is_submittable( $partner_id ) ) {
-			wp_redirect( add_query_arg( 'ob_missing', '1', fge_onboarding_step_url( 12 ) ) );
+			wp_redirect( add_query_arg( 'ob_missing', '1', fge_onboarding_step_url( $step ) ) );
 			exit;
 		}
 		fge_onboarding_submit( $partner_id );
@@ -453,12 +597,13 @@ function fge_onboarding_handle_step(): void {
 		exit;
 	}
 
-	// All other steps: save data.
-	fge_onboarding_save_step( $partner_id, $step, $_POST );
+	// All other form slides: save data.
+	fge_onboarding_save_slide( $partner_id, $id, $_POST );
+	update_post_meta( $partner_id, '_fge_onboarding_step', max( fge_onboarding_get_progress( $partner_id ), $step ) );
 
-	// "Save & exit" button.
+	// "Speichern & beenden".
 	if ( isset( $_POST['fge_ob_save_exit'] ) ) {
-		if ( $step >= 4 ) {
+		if ( ! fge_onboarding_uses_token( $step ) ) {
 			wp_redirect( trailingslashit( home_url( '/partnerportal/' ) ) );
 		} else {
 			wp_redirect( add_query_arg(
@@ -469,49 +614,48 @@ function fge_onboarding_handle_step(): void {
 		exit;
 	}
 
-	// Advance to next step.
-	$next_token = ( $step < 4 ) ? $token : '';
-	wp_redirect( fge_onboarding_step_url( $step + 1, $next_token ) );
+	// Advance to next slide.
+	[ $n, $ntok ] = $next( $step );
+	wp_redirect( fge_onboarding_step_url( $n, $ntok ? $token : '' ) );
 	exit;
 }
 
 // ── Per-step validation ───────────────────────────────────────────────────────
 
-function fge_onboarding_validate_step( int $step, array $post ): array {
+function fge_onboarding_validate_slide( string $id, array $post ): array {
 	$s = static function( string $k ) use ( $post ): string {
 		return trim( sanitize_text_field( wp_unslash( $post[ $k ] ?? '' ) ) );
 	};
 
-	switch ( $step ) {
-		case 2:
-			$errors = fge_onboarding_validate(
+	switch ( $id ) {
+		case 'golftype':
+			return in_array( $s( 'fge_golf_type' ), array_keys( fge_catalog_golf_types() ), true )
+				? []
+				: [ 'fge_golf_type' => 'Bitte wähle aus, was dein Golfangebot am besten beschreibt.' ];
+
+		case 'basics':
+			return fge_onboarding_validate(
 				[ 'fge_public_golfclub_name' => $s( 'fge_public_golfclub_name' ), 'fge_legal_operator_name' => $s( 'fge_legal_operator_name' ) ],
 				[ 'fge_public_golfclub_name' => 'Golfplatz Name', 'fge_legal_operator_name' => 'Rechtlicher Betreibername' ]
 			);
-			if ( ! in_array( $s( 'fge_golf_type' ), array_keys( fge_catalog_golf_types() ), true ) ) {
-				$errors['fge_golf_type'] = 'Bitte wähle aus, was dein Golfangebot am besten beschreibt.';
-			}
-			return $errors;
 
-		case 3:
+		case 'location':
 			return fge_onboarding_validate(
 				[
 					'fge_street'       => $s( 'fge_street' ),
 					'fge_postal_code'  => $s( 'fge_postal_code' ),
 					'fge_city'         => $s( 'fge_city' ),
 					'fge_federal_state' => $s( 'fge_federal_state' ),
-					'fge_free_region'  => $s( 'fge_free_region' ),
 				],
 				[
 					'fge_street'       => 'Straße',
 					'fge_postal_code'  => 'PLZ',
 					'fge_city'         => 'Ort',
 					'fge_federal_state' => 'Bundesland',
-					'fge_free_region'  => 'Region',
 				]
 			);
 
-		case 4:
+		case 'main':
 			$errors = fge_onboarding_validate(
 				[
 					'fge_contact_first_name' => $s( 'fge_contact_first_name' ),
@@ -525,7 +669,7 @@ function fge_onboarding_validate_step( int $step, array $post ): array {
 			}
 			return $errors;
 
-		case 7:
+		case 'capacity':
 			$cap = is_array( $post['fge_cap'] ?? null ) ? $post['fge_cap'] : [];
 			$min = absint( $cap['min'] ?? 0 );
 			$max = absint( $cap['max'] ?? 0 );
@@ -535,9 +679,10 @@ function fge_onboarding_validate_step( int $step, array $post ): array {
 			if ( $max > 0 && $min > 0 && $max < $min ) { $errors['fge_cap_max'] = 'Maximum muss ≥ Minimum sein.'; }
 			return $errors;
 
-		case 6:
-			$infra = is_array( $post['fge_infra'] ?? null ) ? array_intersect( array_map( 'sanitize_text_field', $post['fge_infra'] ), fge_catalog_infra_ids() ) : [];
-			return empty( $infra )
+		case 'infra':
+			$nongastro = array_values( array_diff( fge_catalog_infra_ids(), array_keys( fge_catalog_infra_groups()['Gastronomie'] ?? [] ) ) );
+			$chosen    = is_array( $post['fge_infra'] ?? null ) ? array_intersect( array_map( 'sanitize_text_field', $post['fge_infra'] ), $nongastro ) : [];
+			return empty( $chosen )
 				? [ 'fge_infra' => 'Bitte wähle mindestens eine Ausstattung aus.' ]
 				: [];
 
@@ -562,8 +707,14 @@ function fge_onboarding_render(): void {
 		return;
 	}
 
-	$step = max( 1, absint( $_GET['ob_step'] ?? 1 ) );
-	if ( $step > 12 ) { $step = 12; }
+	$total = fge_onboarding_total_slides();
+	$step  = max( 1, absint( $_GET['ob_step'] ?? 1 ) );
+	if ( $step > $total ) { $step = $total; }
+
+	$slide = fge_onboarding_slide( $step );
+	$id    = $slide['id'] ?? 'intro-1';
+	$kind  = $slide['kind'] ?? 'form';
+	$wide  = ! empty( $slide['wide'] );
 
 	$partner_id = fge_onboarding_get_current_partner_id();
 	$token      = $partner_id > 0 ? (string) get_post_meta( $partner_id, '_fge_onboarding_token', true ) : '';
@@ -579,36 +730,48 @@ function fge_onboarding_render(): void {
 		delete_transient( $trans_key );
 	}
 
-	$save_exit_url = ( $step < 4 && $token !== '' )
+	$save_exit_url = ( fge_onboarding_uses_token( $step ) && $token !== '' )
 		? add_query_arg( [ 'ob_saved' => '1', 'ob_step' => $step, 'ob_token' => $token ], fge_onboarding_page_url() )
 		: trailingslashit( home_url( '/partnerportal/' ) );
 	?>
 	<div class="ob-shell">
 		<?php fge_onboarding_render_topbar( $save_exit_url, $step ); ?>
-		<main class="ob-stage<?php echo ( 1 === $step ) ? ' is-intro' : ''; ?>">
-			<div class="ob-step<?php echo in_array( $step, [ 6, 8, 12 ], true ) ? ' ob-step-wide' : ''; ?>">
-			<?php
-			switch ( $step ) {
-				case 1:  fge_onboarding_render_step_1( $token ); break;
-				case 2:  fge_onboarding_render_step_2( $partner_id, $token, $vals, $errors ); break;
-				case 3:  fge_onboarding_render_step_3( $partner_id, $token, $vals, $errors ); break;
-				case 4:  fge_onboarding_render_step_4( $partner_id, $token, $vals, $errors ); break;
-				case 5:  fge_onboarding_render_step_5( $partner_id, $token, $vals, $errors ); break;
-				case 6:  fge_onboarding_render_step_6( $partner_id, $token, $vals, $errors ); break;
-				case 7:  fge_onboarding_render_step_7( $partner_id, $token, $vals, $errors ); break;
-				case 8:  fge_onboarding_render_step_8( $partner_id, $token, $vals, $errors ); break;
-				case 9:  fge_onboarding_render_step_9( $partner_id, $token, $vals, $errors ); break;
-				case 10: fge_onboarding_render_step_10( $partner_id, $token, $vals, $errors ); break;
-				case 11: fge_onboarding_render_step_11( $partner_id, $token, $vals, $errors ); break;
-				case 12: fge_onboarding_render_step_12( $partner_id, $token, $vals ); break;
-			}
-			?>
+		<?php if ( 'intro' === $kind ) : ?>
+		<main class="ob-stage is-intro">
+			<?php fge_onboarding_render_intro( $id ); ?>
+		</main>
+		<?php fge_onboarding_render_footer( $step, $token ); ?>
+		<?php else : ?>
+		<main class="ob-stage">
+			<div class="ob-step<?php echo $wide ? ' ob-step-wide' : ''; ?>">
+			<?php fge_onboarding_render_slide_form( $id, $step, $partner_id, $token, $vals, $errors ); ?>
 			</div>
 		</main>
-		<?php if ( $step > 1 ) { fge_onboarding_render_footer( $step, $token ); } ?>
+		<?php fge_onboarding_render_footer( $step, $token ); ?>
+		<?php endif; ?>
 		<?php fge_onboarding_render_help(); ?>
 	</div>
 	<?php
+}
+
+/** Dispatches a form/review slide to its renderer by id. */
+function fge_onboarding_render_slide_form( string $id, int $step, int $partner_id, string $token, array $vals, array $errors ): void {
+	switch ( $id ) {
+		case 'golftype': fge_onboarding_render_golftype( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'basics':   fge_onboarding_render_basics( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'location': fge_onboarding_render_location( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'arrival':  fge_onboarding_render_arrival( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'main':     fge_onboarding_render_step_4( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'contacts': fge_onboarding_render_step_5( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'infra':    fge_onboarding_render_infra( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'gastro':   fge_onboarding_render_gastro( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'capacity': fge_onboarding_render_step_7( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'formats':  fge_onboarding_render_step_8( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'avail':    fge_onboarding_render_step_9( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'pricing':  fge_onboarding_render_step_10( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'media':    fge_onboarding_render_step_11( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'review':   fge_onboarding_render_step_12( $step, $partner_id, $token, $vals ); break;
+	}
 }
 
 // ── Saved vals loader ─────────────────────────────────────────────────────────
@@ -631,8 +794,9 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'postal_code'                   => (string) $m( 'postal_code' ),
 		'city'                          => (string) $m( 'city' ),
 		'federal_state'                 => (string) $m( 'federal_state' ),
-		'free_region'                   => (string) $m( 'free_region' ),
 		'google_maps_url'               => (string) $m( 'google_maps_url' ),
+		'latitude'                      => (string) $m( 'latitude' ),
+		'longitude'                     => (string) $m( 'longitude' ),
 		'main_contact_name'             => (string) $m( 'main_contact_name' ),
 		'main_contact_email'            => (string) $m( 'main_contact_email' ),
 		'main_contact_phone'            => (string) $m( 'main_contact_phone' ),
@@ -689,12 +853,19 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
 
-function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void { ?>
+function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void {
+	$kind = fge_onboarding_slide( $step )['kind'] ?? 'form';
+	?>
 <header class="ob-topbar">
-	<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="ob-brand" aria-label="Firmengolf Startseite">Firmengolf</a>
+	<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="ob-brand" aria-label="Firmengolf Startseite">
+		<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="120" height="24">
+	</a>
 	<div class="ob-top-actions">
 		<button type="button" class="ob-top-pill" data-ob-help>Noch Fragen?</button>
-		<?php if ( $step > 1 ) : ?>
+		<?php if ( 'form' === $kind ) : ?>
+		<?php // Saves the current slide (via the content form) and exits — handler redirects. ?>
+		<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-top-pill">Speichern &amp; beenden</button>
+		<?php elseif ( 'review' === $kind ) : ?>
 		<a class="ob-top-pill" href="<?php echo esc_url( $save_exit_url ); ?>">Speichern &amp; beenden</a>
 		<?php endif; ?>
 	</div>
@@ -707,9 +878,9 @@ function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void 
  */
 function fge_onboarding_render_footer( int $step, string $token ): void {
 	$chapters = [
-		1 => [ 'label' => 'Dein Platz',             'steps' => [ 2, 3, 4, 5 ] ],
-		2 => [ 'label' => 'Dein Angebot',           'steps' => [ 6, 7, 8 ] ],
-		3 => [ 'label' => 'Verfügbarkeit & Preis',  'steps' => [ 9, 10, 11 ] ],
+		1 => [ 'label' => 'Dein Platz',             'steps' => [ 2, 3, 4, 5, 6, 7 ] ],
+		2 => [ 'label' => 'Dein Angebot',           'steps' => [ 9, 10, 11, 12 ] ],
+		3 => [ 'label' => 'Verfügbarkeit & Preis',  'steps' => [ 14, 15, 16, 17 ] ],
 	];
 	$segments    = [];
 	$active_label = '';
@@ -730,8 +901,19 @@ function fge_onboarding_render_footer( int $step, string $token ): void {
 		foreach ( array_reverse( $segments ) as $seg ) { if ( $seg['done'] ) { $active_label = $seg['label']; break; } }
 	}
 
+	$kind      = fge_onboarding_slide( $step )['kind'] ?? 'form';
 	$back_step = $step - 1;
-	$back_url  = $back_step >= 1 ? fge_onboarding_step_url( $back_step, ( $back_step < 4 ) ? $token : '' ) : '';
+	$back_url  = $back_step >= 1 ? fge_onboarding_step_url( $back_step, fge_onboarding_uses_token( $back_step ) ? $token : '' ) : '';
+
+	// Same button everywhere; only the wording changes by slide kind.
+	$primary_label = ( 'intro' === $kind ) ? 'Start' : ( ( 'review' === $kind ) ? 'Zur Prüfung einreichen' : 'Weiter' );
+
+	// The review slide can only be submitted once all required data is present.
+	$review_ready = true;
+	if ( 'review' === $kind ) {
+		$pid          = fge_onboarding_get_current_partner_id();
+		$review_ready = $pid > 0 && fge_onboarding_is_submittable( $pid );
+	}
 	?>
 <footer class="ob-footer">
 	<div class="ob-foot-inner">
@@ -752,7 +934,22 @@ function fge_onboarding_render_footer( int $step, string $token ): void {
 			<?php else : ?>
 			<span class="ob-btn-text" aria-disabled="true" style="visibility:hidden">Zurück</span>
 			<?php endif; ?>
-			<div class="ob-nav-right"></div>
+			<div class="ob-nav-right">
+				<?php if ( 'intro' === $kind ) : ?>
+				<form method="post" class="ob-foot-form">
+					<?php wp_nonce_field( 'fge_onboarding_step_' . $step, 'fge_ob_nonce' ); ?>
+					<input type="hidden" name="fge_ob_action" value="step_submit">
+					<input type="hidden" name="ob_step" value="<?php echo esc_attr( (string) $step ); ?>">
+					<?php if ( '' !== $token ) : ?><input type="hidden" name="ob_token" value="<?php echo esc_attr( $token ); ?>"><?php endif; ?>
+					<button type="submit" class="ob-btn-primary"><?php echo esc_html( $primary_label ); ?></button>
+				</form>
+				<?php elseif ( 'review' === $kind && ! $review_ready ) : ?>
+				<button type="button" class="ob-btn-primary" disabled><?php echo esc_html( $primary_label ); ?></button>
+				<?php else : ?>
+				<?php // Steps 2–12 submit their content form (id="ob-step-form") via the form attribute. ?>
+				<button type="submit" form="ob-step-form" class="ob-btn-primary"><?php echo esc_html( $primary_label ); ?></button>
+				<?php endif; ?>
+			</div>
 		</div>
 	</div>
 </footer>
@@ -804,28 +1001,25 @@ function fge_onboarding_render_help(): void {
 <?php }
 
 function fge_onboarding_render_step_header( int $step, string $title, string $subtitle = '' ): void { ?>
-<div class="ob-step-header">
-	<div class="ob-step-chip">Schritt <?php echo esc_html( $step ); ?> von 12</div>
-	<h1 class="ob-title"><?php echo esc_html( $title ); ?></h1>
+<header class="ob-step-head">
+	<h1 class="ob-step-title"><?php echo esc_html( $title ); ?></h1>
 	<?php if ( $subtitle !== '' ) : ?>
-		<p class="ob-subtitle"><?php echo esc_html( $subtitle ); ?></p>
+		<p class="ob-step-lead"><?php echo esc_html( $subtitle ); ?></p>
 	<?php endif; ?>
-</div>
+</header>
 <?php }
 
-function fge_onboarding_next_btn( string $label = 'Weiter', string $extra_name = '' ): void { ?>
-<div class="ob-actions">
-	<?php if ( $extra_name !== '' ) : ?>
-		<button type="submit" name="<?php echo esc_attr( $extra_name ); ?>" value="1" class="ob-btn ob-btn-ghost">Speichern &amp; beenden</button>
-	<?php endif; ?>
-	<button type="submit" class="ob-btn ob-btn-primary"><?php echo esc_html( $label ); ?> →</button>
-</div>
-<?php }
+/**
+ * Per-step primary/save buttons now live in the sticky footer (and the topbar
+ * "Speichern & beenden"), submitting the content form via the form attribute.
+ * Kept as a no-op so existing step renderers don't need to drop their calls.
+ */
+function fge_onboarding_next_btn( string $label = 'Weiter', string $extra_name = '' ): void {}
 
 function fge_onboarding_form_open( int $step, int $partner_id, string $token ): void {
 	$enc = ( $step === 11 ) ? ' enctype="multipart/form-data"' : '';
 	printf(
-		'<form method="post"%s class="ob-form">',
+		'<form method="post"%s id="ob-step-form" class="ob-form">',
 		$enc // phpcs:ignore WordPress.Security.EscapeOutput
 	);
 	wp_nonce_field( 'fge_onboarding_step_' . $step, 'fge_ob_nonce' );
@@ -881,66 +1075,225 @@ function fge_onboarding_select( string $id, string $name, string $label, string 
 	<?php
 }
 
+// ── Selectable icon cards ─────────────────────────────────────────────────────
+
+/**
+ * Inline SVG icon (Lucide-style line glyphs, ported 1:1 from the design's Icon
+ * component in _design_neu/partner-onboarding/Steps.jsx). stroke=currentColor so
+ * the card's CSS colour (ink → fairway-green when selected) drives it.
+ */
+function fge_onboarding_card_icon( string $name ): string {
+	$p = [
+		'driving-range'   => '<path d="M3 21h18"/><path d="M9 21V8l5-5 5 5v13"/><path d="M5 21V13l4-2"/>',
+		'putting'         => '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/>',
+		'short-game'      => '<path d="M4 20h16"/><path d="M8 20l4-12 4 12"/><circle cx="12" cy="8" r="1.5"/>',
+		'short-course'    => '<path d="M3 12c4-6 14-6 18 0"/><path d="M3 20h18"/><circle cx="6" cy="20" r="1"/><circle cx="18" cy="20" r="1"/>',
+		'course-9'        => '<path d="M4 18h16"/><path d="M8 18V8l4-4 4 4v10"/>',
+		'course-18'       => '<path d="M3 18h18"/><path d="M7 18V9l3-3 3 3v9"/><path d="M14 18v-6l3-3"/>',
+		'course-27'       => '<path d="M2 19h20"/><path d="M5 19v-5l2.5-2.5 2.5 2.5v5"/><path d="M12 19v-7l2.5-2.5 2.5 2.5v7"/><path d="M19 19v-4l1-1"/>',
+		'leading-course'  => '<path d="M7 21V4l8 2.6L7 9.2"/><path d="M4 21h7"/><path d="M17.4 3.2l.7 1.5 1.6.2-1.2 1.1.3 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.2z"/>',
+		'links-course'    => '<path d="M3 20h18"/><path d="M3 16c2.5-2.2 5-2.2 7.5 0s5 2.2 7.5 0"/><path d="M14 16V7l4 1.4L14 9.8"/>',
+		'pitch-putt'      => '<path d="M3 20h18"/><path d="M16 20V8l4 1.4L16 11"/><path d="M4 17c2-5.5 6-6.5 9-4" stroke-dasharray="0.5 2.4"/><circle cx="4" cy="17" r="1.3"/>',
+		'mini-golf'       => '<path d="M12 21V10"/><path d="M9 21h6"/><circle cx="12" cy="8.6" r="1.2"/><path d="M12 8.6l4.6-2.6M12 8.6l-4.6 2.6M12 8.6l2.6 4.6M12 8.6L9.4 4"/><circle cx="6" cy="20" r="1"/>',
+		'clubs'           => '<path d="M6 21l6-14"/><path d="M14 21l4-10"/><circle cx="12" cy="5" r="2"/><circle cx="18" cy="9" r="1.6"/>',
+		'balls'           => '<circle cx="8" cy="14" r="3"/><circle cx="16" cy="14" r="3"/><circle cx="12" cy="9" r="3"/>',
+		'coach'           => '<circle cx="12" cy="7" r="3"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/>',
+		'meeting'         => '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 18v2M16 18v2"/>',
+		'restaurant'      => '<path d="M7 3v6c0 1 1 2 2 2v10"/><path d="M5 3h4M15 3v18M17 3c0 4-2 6-2 8"/>',
+		'terrace'         => '<path d="M3 18h18"/><path d="M5 18V8h14v10"/><path d="M9 18V12h6v6"/>',
+		'parking'         => '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V8h4a3 3 0 1 1 0 6H9"/>',
+		'shuttle'         => '<rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 12h18"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/>',
+		'indoor'          => '<rect x="3" y="4" width="18" height="14" rx="1"/><path d="M3 18v2M21 18v2M9 8l6 6M15 8l-6 6"/>',
+		'weather'         => '<path d="M8 16a4 4 0 1 1 0-8 5 5 0 0 1 10 1 3 3 0 0 1 0 6H8z"/><path d="M9 19l-1 2M12 19l-1 2M15 19l-1 2"/>',
+		'branding'        => '<path d="M4 21V7a2 2 0 0 1 2-2h8l4 4v12"/><path d="M14 5v4h4"/>',
+		'tournament'      => '<path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M12 13v4M9 21h6"/>',
+		'shower'          => '<path d="M12 4v3"/><circle cx="12" cy="9" r="2"/><path d="M8 13l-1 4M12 13l-1 4M16 13l-1 4"/>',
+		'cart'            => '<path d="M3 17h11l3-5h4"/><path d="M3 7h6v5"/><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/>',
+		'trolley'         => '<path d="M6 21V5a2 2 0 0 1 4 0v16"/><path d="M10 8l8 1.5L10 12"/><circle cx="6" cy="21" r="1.4"/>',
+		'wifi'            => '<path d="M4.5 12.5a10 10 0 0 1 15 0"/><path d="M8 16a5 5 0 0 1 8 0"/><circle cx="12" cy="19" r="1"/>',
+		'pro-shop'        => '<path d="M4 9h16l-1 11H5z"/><path d="M8 9a4 4 0 0 1 8 0"/>',
+		'coffee'          => '<path d="M5 8h11v4a5 5 0 0 1-10 0z"/><path d="M16 9h2a2 2 0 0 1 0 4h-2"/><path d="M5 21h12"/>',
+		'drinks'          => '<path d="M5 4h14l-7 8z"/><path d="M12 12v6"/><path d="M8 21h8"/>',
+		'grill'           => '<circle cx="12" cy="9" r="6"/><path d="M8.5 15l-2 5M15.5 15l2 5M12 15v5"/>',
+		'accessible'      => '<circle cx="12" cy="4" r="1.6"/><path d="M7 8h7"/><path d="M11 8v5h3l3 6"/><path d="M14 13a4.5 4.5 0 1 1-5-4.3"/>',
+		'beamer'          => '<rect x="3" y="8" width="14" height="9" rx="2"/><circle cx="9" cy="12.5" r="2.5"/><path d="M17 11l4-2v6l-4-2"/>',
+		'screen'          => '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 20h8"/>',
+		'mic'             => '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
+		'flipchart'       => '<path d="M5 3h14M6 4v12M18 4v12M5 16h14"/><path d="M12 16v5"/>',
+		'plate'           => '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+		'wine'            => '<path d="M8 3h8l-1 6a3 3 0 0 1-6 0z"/><path d="M12 12v6M9 21h6"/>',
+		'intro-golf'      => '<circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>',
+		'team-challenge'  => '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 21c0-3 3-5 6-5s6 2 6 5"/><path d="M13 21c0-2 2-3 4-3s4 1 4 3"/>',
+		'putting-challenge' => '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 4v2M12 18v2M4 12h2M18 12h2"/>',
+		'range-training'  => '<path d="M3 18h18"/><path d="M7 18v-6M11 18V8M15 18v-4M19 18v-9"/>',
+		'short-challenge' => '<path d="M5 18l5-8 4 4 5-6"/><circle cx="19" cy="8" r="1.5"/>',
+		'turnier-9'       => '<path d="M9 3h6v4a3 3 0 0 1-6 0z"/><path d="M12 11v6M8 19h8"/>',
+		'turnier-18'      => '<path d="M8 3h8v4a4 4 0 0 1-8 0z"/><path d="M12 11v6M7 19h10"/>',
+		'offsite'         => '<rect x="3" y="9" width="18" height="11" rx="1"/><path d="M9 9V5h6v4"/><path d="M8 14h8"/>',
+		'sommerfest'      => '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.5 5.5l2 2M16.5 16.5l2 2M5.5 18.5l2-2M16.5 7.5l2-2"/>',
+		'kunden'          => '<circle cx="12" cy="8" r="3"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/><path d="M16 4h4v4"/>',
+		'health'          => '<path d="M12 21s-7-4-7-10a4 4 0 0 1 7-3 4 4 0 0 1 7 3c0 6-7 10-7 10z"/>',
+		'azubi'           => '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 12v4c0 2 3 4 6 4s6-2 6-4v-4"/>',
+		'custom'          => '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+		'networking'      => '<circle cx="7" cy="8" r="3"/><circle cx="17" cy="8" r="3"/><path d="M2.5 20c0-2.8 2-4.5 4.5-4.5s4.5 1.7 4.5 4.5"/><path d="M12.5 20c0-2.8 2-4.5 4.5-4.5s4.5 1.7 4.5 4.5"/>',
+		'afterwork'       => '<path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 4v3M5.2 7.2l1.6 1.6M18.8 7.2l-1.6 1.6M3 12h2M19 12h2"/>',
+		'charity'         => '<path d="M12 9.2c-1.1-2.1-4.2-1.5-4.2 1 0 2.1 4.2 4.3 4.2 4.3s4.2-2.2 4.2-4.3c0-2.5-3.1-3.1-4.2-1z"/><path d="M3 20c2-1.8 4.6-1.8 6.5-.8l2.5.9 6-2.3"/>',
+		'nacht-event'     => '<path d="M20 13.5A8 8 0 1 1 10.5 4a6.2 6.2 0 0 0 9.5 9.5z"/><path d="M18 3.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/>',
+	];
+	$inner = $p[ $name ] ?? '<circle cx="12" cy="12" r="9"/>';
+	return '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $inner . '</svg>';
+}
+
+/**
+ * Maps catalog ids (golf types, infrastructure incl. gastronomy) to icon glyph
+ * names — taken verbatim from the design's item lists.
+ */
+function fge_onboarding_icon_map(): array {
+	return [
+		// Golf offering types
+		'course-18' => 'course-18', 'course-27' => 'course-27', 'leading' => 'leading-course',
+		'links' => 'links-course', 'course-9' => 'course-9', 'indoor-sim' => 'indoor',
+		'range' => 'driving-range', 'short' => 'short-course', 'pitch-putt' => 'pitch-putt',
+		'mini-golf' => 'mini-golf',
+		// Infrastructure
+		'abc-platz' => 'course-27', 'short-course' => 'short-course', 'driving-range' => 'driving-range',
+		'range-covered' => 'driving-range', 'range-heated' => 'driving-range', 'range-flood' => 'nacht-event',
+		'trackman' => 'indoor', 'toptracer' => 'indoor', 'short-game' => 'short-game', 'indoor' => 'indoor',
+		'barrierefrei' => 'accessible', 'meeting-room' => 'meeting', 'seminar' => 'meeting',
+		'conference' => 'meeting', 'workshop' => 'meeting', 'eventroom' => 'meeting', 'golf-shop' => 'pro-shop',
+		'shower' => 'shower', 'beamer' => 'beamer', 'screen' => 'screen', 'mic' => 'mic', 'wifi' => 'wifi',
+		'flipchart' => 'flipchart', 'whiteboard' => 'flipchart', 'moderation' => 'branding',
+		'catering-area' => 'plate', 'coach' => 'coach', 'trial-course' => 'intro-golf',
+		'platzreife' => 'intro-golf', 'company-course' => 'team-challenge', 'advanced-course' => 'range-training',
+		'rental-clubs' => 'clubs', 'range-balls' => 'balls',
+		// Gastronomy
+		'restaurant' => 'restaurant', 'club-restaurant' => 'restaurant', 'bistro' => 'coffee', 'cafe' => 'coffee',
+		'bar' => 'drinks', 'halfway' => 'restaurant', 'terrace' => 'terrace', 'outdoor' => 'terrace',
+		'lounge' => 'drinks', 'catering' => 'restaurant', 'breakfast' => 'coffee', 'lunch' => 'restaurant',
+		'dinner' => 'restaurant', 'bbq' => 'grill', 'drinks-flat' => 'drinks', 'coffee-break' => 'coffee',
+		// Event formats (canonical ids from event-formats.php)
+		'teamevent' => 'team-challenge', 'after_work_golf' => 'afterwork', 'schnupperkurs' => 'intro-golf',
+		'kundenevent' => 'kunden', 'gesundheitstag' => 'health', 'offsite' => 'offsite',
+		'networking' => 'networking', 'firmen_golfturnier' => 'turnier-18', 'nacht_event' => 'nacht-event',
+		'andere' => 'custom', 'sommerfest' => 'sommerfest', 'tagung' => 'meeting',
+		'firmenjubilaeum' => 'sommerfest', 'kickoff' => 'offsite', 'incentive' => 'offsite',
+		'charity_csr' => 'charity', 'sponsoring' => 'branding',
+	];
+}
+
+/**
+ * Renders one selectable icon card (design `.ob-card`). The hidden input keeps
+ * the choice for the server POST and drives the no-JS `:has(:checked)` styling;
+ * the design icon turns fairway-green and the box keeps its colour when selected.
+ */
+function fge_onboarding_card( string $type, string $name, string $id, string $label, bool $checked ): void {
+	static $map = null;
+	if ( null === $map ) {
+		$map = fge_onboarding_icon_map();
+	}
+	$icon = fge_onboarding_card_icon( $map[ $id ] ?? '' );
+	?>
+	<label class="ob-card<?php echo $checked ? ' on' : ''; ?>">
+		<input type="<?php echo esc_attr( $type ); ?>" class="ob-card-input" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $id ); ?>" <?php checked( $checked ); ?>>
+		<span class="ob-card-ico" aria-hidden="true"><?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput — static, trusted SVG ?></span>
+		<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
+	</label>
+	<?php
+}
+
 // ── Step renderers ────────────────────────────────────────────────────────────
 
-function fge_onboarding_render_step_1( string $token ): void { ?>
-<div class="ob-welcome">
-	<div class="ob-welcome-icon">⛳</div>
-	<h1 class="ob-title">Richte deinen Golfplatz als Eventlocation ein</h1>
-	<p class="ob-subtitle">In wenigen Schritten erfassen wir die wichtigsten Informationen, damit Unternehmen deinen Golfplatz für Firmenevents anfragen können.</p>
-	<ul class="ob-welcome-list">
-		<li>✔ Standort und Kontaktdaten</li>
-		<li>✔ Event-Infrastruktur und Kapazitäten</li>
-		<li>✔ Verfügbarkeit und Preise</li>
-		<li>✔ Logo und Bilder</li>
-	</ul>
-	<form method="post" class="ob-form">
-		<?php wp_nonce_field( 'fge_onboarding_step_1', 'fge_ob_nonce' ); ?>
-		<input type="hidden" name="fge_ob_action" value="step_submit">
-		<input type="hidden" name="ob_step" value="1">
-		<div class="ob-actions ob-actions--center">
-			<button type="submit" class="ob-btn ob-btn-primary ob-btn-lg">Jetzt einrichten →</button>
+/**
+ * Chapter intro slides (intro-1/2/3) — the design's split intro layout
+ * (eyebrow, big serif title, lead, bullet list, photo). Content per chapter.
+ */
+function fge_onboarding_render_intro( string $id ): void {
+	$img = static function ( string $file ): string {
+		return function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( $file ) : '';
+	};
+	$intros = [
+		'intro-1' => [
+			'eyebrow' => 'Schritt 1 · Erzähl uns von deinem Platz',
+			'title'   => 'Richte deinen Golfplatz als <span class="ob-italic">Eventlocation</span> ein.',
+			'lead'    => 'In ein paar Schritten erfassen wir die wichtigsten Informationen, damit Unternehmen deinen Golfplatz für Firmenevents anfragen können. Du kannst zwischendurch jederzeit speichern und später weitermachen.',
+			'list'    => [ 'Basisdaten und Standort', 'Hauptkontakt + dein Login fürs Partnerportal', 'Was ihr für Firmenevents anbieten könnt', 'Verfügbarkeit, Preis &amp; Medien' ],
+			'meta'    => 'Dauer ungefähr 10 Minuten · keine Verpflichtung',
+			'photo'   => $img( 'onboarding-abschlag.jpg' ),
+		],
+		'intro-2' => [
+			'eyebrow' => 'Schritt 2 · Was du anbieten kannst',
+			'title'   => 'Was macht euren Platz zur <span class="ob-italic">Eventlocation</span>?',
+			'lead'    => 'Wir möchten Unternehmen genau passende Vorschläge machen. Dazu erfassen wir, welche Infrastruktur ihr habt, wie groß die Gruppen sein können und welche Veranstaltungstypen ihr abdeckt.',
+			'list'    => [ 'Infrastruktur (Range, Greens, Clubhaus, Räume)', 'Kapazitäten pro Bereich', 'Veranstaltungstypen, die ihr unterstützt' ],
+			'meta'    => '',
+			'photo'   => $img( 'onboarding-chapter-2.jpg' ),
+		],
+		'intro-3' => [
+			'eyebrow' => 'Schritt 3 · Verfügbarkeit, Preis &amp; Medien',
+			'title'   => 'Fast geschafft — jetzt die <span class="ob-italic">Rahmenbedingungen</span>.',
+			'lead'    => 'Verfügbarkeit, Aufschlag und Bilder — danach prüfst du alles und reichst dein Profil bei uns ein. Wir melden uns innerhalb eines Werktags zurück.',
+			'list'    => [ 'Verfügbarkeit &amp; Vorlauf', 'Preis-Aufschlag &amp; Abrechnung', 'Logo, Titelbild &amp; Galerie', 'Zusammenfassung &amp; Einreichung' ],
+			'meta'    => '',
+			'photo'   => $img( 'onboarding-chapter-3.jpg' ),
+		],
+	];
+	$d = $intros[ $id ] ?? $intros['intro-1'];
+	?>
+<div class="ob-intro">
+	<div class="ob-intro-text">
+		<div class="ob-eyebrow"><?php echo wp_kses_post( $d['eyebrow'] ); ?></div>
+		<h1 class="ob-step-title big"><?php echo wp_kses_post( $d['title'] ); ?></h1>
+		<p class="ob-intro-lead"><?php echo esc_html( $d['lead'] ); ?></p>
+		<ul class="ob-intro-list">
+			<?php foreach ( $d['list'] as $item ) : ?>
+			<li><span class="ob-intro-dot"></span> <?php echo wp_kses_post( $item ); ?></li>
+			<?php endforeach; ?>
+		</ul>
+		<?php if ( '' !== $d['meta'] ) : ?>
+		<div class="ob-intro-meta"><?php echo esc_html( $d['meta'] ); ?></div>
+		<?php endif; ?>
+	</div>
+	<div class="ob-intro-art" aria-hidden="true">
+		<?php if ( '' !== $d['photo'] ) : ?>
+		<div class="ob-art-photo">
+			<img src="<?php echo esc_url( $d['photo'] ); ?>" alt="">
 		</div>
-	</form>
+		<?php endif; ?>
+	</div>
 </div>
 <?php }
 
-function fge_onboarding_render_step_2( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 2, 'Erzähl uns von deinem Golfplatz', 'Diese Informationen sind öffentlich auf Firmengolf sichtbar.' );
-	fge_onboarding_form_open( 2, $partner_id, $token );
+function fge_onboarding_render_golftype( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Was beschreibt dein Golfangebot am besten?', 'Wähl die Art, die euren Platz am besten beschreibt. Anlagen und Veranstaltungstypen erfassen wir gleich noch im Detail.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 
-	// Golfangebot (single-select) — maps to _fge_golf_type (catalog of 10).
 	$golf_types = fge_catalog_golf_types();
 	$gt_current = (string) ( $v['golf_type'] ?? '' );
 	?>
-	<div class="ob-field full">
-		<label class="ob-field-label">Was beschreibt dein Golfangebot am besten? <span class="ob-required">*</span></label>
-		<span class="ob-field-hint">Wähl die Art, die euren Platz am besten beschreibt.</span>
-	</div>
 	<div class="ob-cards">
 		<?php foreach ( $golf_types as $id => $label ) :
-			$on = ( $gt_current === $id ); ?>
-		<label class="ob-card<?php echo $on ? ' on' : ''; ?>">
-			<input type="radio" class="ob-card-input" name="fge_golf_type" value="<?php echo esc_attr( $id ); ?>" <?php checked( $on ); ?>>
-			<span class="ob-card-check" aria-hidden="true">✓</span>
-			<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
-		</label>
-		<?php endforeach; ?>
+			fge_onboarding_card( 'radio', 'fge_golf_type', (string) $id, (string) $label, ( $gt_current === $id ) );
+		endforeach; ?>
 	</div>
 	<?php fge_onboarding_error( $errors, 'fge_golf_type' );
+	echo '</form>';
+}
+
+function fge_onboarding_render_basics( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Wie heißt euer Golfplatz?', 'Diese Angaben erscheinen später öffentlich auf deinem Partnerprofil. Du kannst alles jederzeit ändern.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', 'Öffentlicher Golfplatzname', $v['public_golfclub_name'] ?? '', 'text', true, 'z.B. Golfclub Königsfeld', $errors );
 	fge_onboarding_input( 'fge_legal_operator_name', 'fge_legal_operator_name', 'Rechtlicher Betreibername', $v['legal_operator_name'] ?? '', 'text', true, 'z.B. GC Königsfeld GmbH & Co. KG', $errors );
 	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website (optional)', $v['website_url'] ?? '', 'url', false, 'https://' );
 	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Kurzbeschreibung (optional)', $v['public_short_description'] ?? '', 'Was macht deinen Golfplatz besonders für Firmenevents?' );
 	fge_onboarding_textarea( 'fge_internal_note', 'fge_internal_note', 'Interne Notiz für Firmengolf (optional)', $v['internal_note'] ?? '' );
-	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
 
-function fge_onboarding_render_step_3( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 3, 'Wo liegt dein Golfplatz?', 'Wir zeigen deinen Standort in der Suche und auf der Profilseite.' );
-	fge_onboarding_form_open( 3, $partner_id, $token );
+function fge_onboarding_render_location( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Wo befindet sich dein Platz?', 'Wir nutzen die Adresse für die Karte und die Anfahrtsbeschreibung. Genaue Anfahrt geht erst nach Bestätigung an Kunden raus.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$states = [
 		'baden_wuerttemberg'   => 'Baden-Württemberg',
@@ -960,16 +1313,6 @@ function fge_onboarding_render_step_3( int $partner_id, string $token, array $v,
 		'schleswig_holstein'   => 'Schleswig-Holstein',
 		'thueringen'           => 'Thüringen',
 	];
-	$regions = [
-		'nord'      => 'Nord (Hamburg, Bremen, Schleswig-Holstein)',
-		'nordost'   => 'Nordost (Berlin, Brandenburg, MV)',
-		'ost'       => 'Ost (Sachsen, Sachsen-Anhalt, Thüringen)',
-		'mitte'     => 'Mitte (Hessen, NRW, Rheinland-Pfalz)',
-		'sued'      => 'Süd (Bayern, Baden-Württemberg)',
-		'suedwest'  => 'Südwest (Saarland, Rheinland-Pfalz)',
-		'west'      => 'West (NRW)',
-		'sonstige'  => 'Sonstige',
-	];
 
 	?>
 	<div class="ob-field-row">
@@ -982,13 +1325,34 @@ function fge_onboarding_render_step_3( int $partner_id, string $token, array $v,
 	</div>
 	<?php
 	fge_onboarding_select( 'fge_federal_state', 'fge_federal_state', 'Bundesland', $v['federal_state'] ?? '', $states, true, $errors );
-	fge_onboarding_select( 'fge_free_region', 'fge_free_region', 'Region', $v['free_region'] ?? '', $regions, true, $errors );
-	fge_onboarding_input( 'fge_google_maps_url', 'fge_google_maps_url', 'Google Maps Link (optional)', $v['google_maps_url'] ?? '', 'url', false, 'https://maps.google.com/...' );
 
-	// Anfahrt & Location — maps to _fge_poi_* / _fge_arrival_estation (same keys as admin/Platz view).
+	if ( fge_gmaps_api_key() !== '' ) :
+		$lat = (string) ( $v['latitude'] ?? '' );
+		$lng = (string) ( $v['longitude'] ?? '' );
+		?>
+		<div class="ob-field full">
+			<label class="ob-field-label" for="fge_map_search">Standort auf der Karte</label>
+			<span class="ob-field-hint">Such deine Adresse und zieh den Pin genau auf euren Eingang oder Parkplatz.</span>
+			<input type="text" id="fge_map_search" class="ob-input" placeholder="Adresse oder Platzname suchen…" autocomplete="off">
+			<div id="fge_map" class="ob-map"></div>
+		</div>
+		<input type="hidden" id="fge_latitude"  name="fge_latitude"  value="<?php echo esc_attr( $lat ); ?>">
+		<input type="hidden" id="fge_longitude" name="fge_longitude" value="<?php echo esc_attr( $lng ); ?>">
+		<?php
+	else :
+		// No API key configured — keep the manual link as a fallback.
+		fge_onboarding_input( 'fge_google_maps_url', 'fge_google_maps_url', 'Google Maps Link (optional)', $v['google_maps_url'] ?? '', 'url', false, 'https://maps.google.com/...' );
+	endif;
+	echo '</form>';
+}
+
+function fge_onboarding_render_arrival( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Anfahrt & Location', 'Wie kommen Gäste zu euch? Diese Angaben helfen Firmen bei der Planung — du kannst sie jederzeit anpassen.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
+
+	// Maps to _fge_poi_* / _fge_arrival_estation (same keys as admin/Platz view).
 	$estation = ( (string) ( $v['arrival_estation'] ?? '' ) === '1' );
 	?>
-	<div class="ob-cat-h" style="margin-top:8px">Anfahrt &amp; Location</div>
 	<div class="ob-field full">
 		<label class="ob-field-label" for="fge_poi_car">Mit dem Auto</label>
 		<span class="ob-field-hint">Fahrzeit ab Stadtzentrum oder Autobahn.</span>
@@ -1027,13 +1391,13 @@ function fge_onboarding_render_step_3( int $partner_id, string $token, array $v,
 	echo '</form>';
 }
 
-function fge_onboarding_render_step_4( int $partner_id, string $token, array $v, array $errors ): void {
+function fge_onboarding_render_step_4( int $step, int $partner_id, string $token, array $v, array $errors ): void {
 	$name_parts = explode( ' ', $v['main_contact_name'] ?? '', 2 );
 	$saved_first = $name_parts[0] ?? '';
 	$saved_last  = $name_parts[1] ?? '';
 
-	fge_onboarding_render_step_header( 4, 'Wer ist der Hauptansprechpartner?', 'Diese Person erhält die Login-Zugangsdaten für das Partner-Portal.' );
-	fge_onboarding_form_open( 4, $partner_id, $token );
+	fge_onboarding_render_step_header( $step, 'Wer ist der Hauptkontakt?', 'Diese Person wird mit dem Platz verknüpft und bekommt einen Login fürs Partnerportal. Wenn die E-Mail-Adresse bereits existiert, verbinden wir das bestehende Konto.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 	?>
 	<div class="ob-field-row">
 		<?php fge_onboarding_input( 'fge_contact_first_name', 'fge_contact_first_name', 'Vorname', $saved_first, 'text', true, 'Max', $errors ); ?>
@@ -1050,9 +1414,9 @@ function fge_onboarding_render_step_4( int $partner_id, string $token, array $v,
 	echo '</form>';
 }
 
-function fge_onboarding_render_step_5( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 5, 'Möchtest du weitere Ansprechpartner hinzufügen?', 'Optional — du kannst jederzeit später ergänzen. Diese Personen brauchen keinen eigenen Account; sie werden nur per E-Mail informiert oder können bei der Termin-Freigabe abstimmen.' );
-	fge_onboarding_form_open( 5, $partner_id, $token );
+function fge_onboarding_render_step_5( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Möchtest du weitere Ansprechpartner hinzufügen?', 'Du kannst diesen Schritt überspringen und später ergänzen. Diese Personen kannst du später bei der Termin-Freigabe für ein Event einbinden.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$existing = $partner_id > 0 ? fge_contacts_get( $partner_id ) : [];
 	// Only the no-account contacts (user_id 0) are managed here.
@@ -1141,11 +1505,12 @@ function fge_onboarding_contact_card( ?array $c ): void {
 	<?php
 }
 
-function fge_onboarding_render_step_6( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 6, 'Was bietet dein Golfplatz?', 'Wähle alles aus, was bei dir verfügbar ist. Diese Ausstattung erscheint später auf deiner Platz-Seite.' );
-	fge_onboarding_form_open( 6, $partner_id, $token );
+function fge_onboarding_render_infra( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Was ist auf eurem Platz alles vorhanden und möglich?', 'Wähl alles aus, was vor Ort verfügbar ist. Du kannst die Auswahl später jederzeit anpassen.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$groups   = fge_catalog_infra_groups();
+	unset( $groups['Gastronomie'] ); // Gastronomie has its own slide.
 	$selected = is_array( $v['infra'] ?? null ) ? $v['infra'] : [];
 	fge_onboarding_error( $errors, 'fge_infra' );
 	?>
@@ -1155,13 +1520,8 @@ function fge_onboarding_render_step_6( int $partner_id, string $token, array $v,
 			<div class="ob-cat-h"><?php echo esc_html( $group_label ); ?></div>
 			<div class="ob-cards">
 				<?php foreach ( $items as $id => $label ) :
-					$on = in_array( $id, $selected, true ); ?>
-				<label class="ob-card<?php echo $on ? ' on' : ''; ?>">
-					<input type="checkbox" class="ob-card-input" name="fge_infra[]" value="<?php echo esc_attr( $id ); ?>" <?php checked( $on ); ?>>
-					<span class="ob-card-check" aria-hidden="true">✓</span>
-					<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
-				</label>
-				<?php endforeach; ?>
+					fge_onboarding_card( 'checkbox', 'fge_infra[]', (string) $id, (string) $label, in_array( $id, $selected, true ) );
+				endforeach; ?>
 			</div>
 		</div>
 		<?php endforeach; ?>
@@ -1171,13 +1531,29 @@ function fge_onboarding_render_step_6( int $partner_id, string $token, array $v,
 			<textarea class="ob-input" id="fge_additional_equipment" name="fge_additional_equipment" placeholder="z. B. E-Trolleys, Cart-Flotte, Wellness-Bereich …"><?php echo esc_textarea( (string) ( $v['additional_equipment'] ?? '' ) ); ?></textarea>
 		</div>
 	</div>
-	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
+	<?php
 	echo '</form>';
 }
 
-function fge_onboarding_render_step_7( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 7, 'Wie viele Gäste passen wo?', 'Mindest- und Maximal-Teilnehmerzahl sind Pflicht. Für die in Schritt 6 gewählten Bereiche fragen wir zusätzlich die Kapazität ab.' );
-	fge_onboarding_form_open( 7, $partner_id, $token );
+function fge_onboarding_render_gastro( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Was bietet ihr gastronomisch an?', 'Wähl alles aus, was ihr für Firmenevents bereitstellen könnt. Du kannst die Auswahl später jederzeit anpassen.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
+
+	$gastro   = fge_catalog_infra_groups()['Gastronomie'] ?? [];
+	$selected = is_array( $v['infra'] ?? null ) ? $v['infra'] : [];
+	?>
+	<div class="ob-cards">
+		<?php foreach ( $gastro as $id => $label ) :
+			fge_onboarding_card( 'checkbox', 'fge_infra[]', (string) $id, (string) $label, in_array( $id, $selected, true ) );
+		endforeach; ?>
+	</div>
+	<?php
+	echo '</form>';
+}
+
+function fge_onboarding_render_step_7( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Wie viele Gäste passen wo?', 'Wie groß sind eure Bereiche? Das hilft uns, bei individuellen Anfragen sofort zu erkennen, ob ihr dafür in Frage kommt. Mindest- und Maximal-Teilnehmerzahl sind Pflicht — für eure ausgewählten Bereiche fragen wir die Kapazität ab.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$cap   = is_array( $v['cap'] ?? null ) ? $v['cap'] : [];
 	$infra = is_array( $v['infra'] ?? null ) ? $v['infra'] : [];
@@ -1260,30 +1636,25 @@ function fge_onboarding_cap_stepper( string $key, string $label, string $hint, $
 	<?php
 }
 
-function fge_onboarding_render_step_8( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 8, 'Welche Eventformate bietest du an?', 'Wähle alle passenden Formate. Dieser Schritt ist optional.' );
-	fge_onboarding_form_open( 8, $partner_id, $token );
+function fge_onboarding_render_step_8( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Welche Veranstaltungstypen könnt ihr abdecken?', 'Wähle alles, was ihr regelmäßig oder bei Bedarf anbieten könnt. Mehr Veranstaltungstypen = mehr passende Anfragen.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$formats       = fge_get_event_format_options();
 	$saved_formats = (array) ( $v['event_formats'] ?? [] );
 	?>
 	<div class="ob-cards">
 		<?php foreach ( $formats as $key => $label ) :
-			$on = in_array( $key, $saved_formats, true ); ?>
-		<label class="ob-card<?php echo $on ? ' on' : ''; ?>">
-			<input type="checkbox" class="ob-card-input" name="fge_event_formats[]" value="<?php echo esc_attr( $key ); ?>" <?php checked( $on ); ?>>
-			<span class="ob-card-check" aria-hidden="true">✓</span>
-			<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
-		</label>
-		<?php endforeach; ?>
+			fge_onboarding_card( 'checkbox', 'fge_event_formats[]', (string) $key, (string) $label, in_array( $key, $saved_formats, true ) );
+		endforeach; ?>
 	</div>
 	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
 
-function fge_onboarding_render_step_9( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 9, 'Wann sind Events bei dir möglich?', 'Diese Angaben helfen uns bei der Suche und Empfehlung.' );
-	fge_onboarding_form_open( 9, $partner_id, $token );
+function fge_onboarding_render_step_9( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Wann sind Events bei euch möglich?', 'Die exakte Verfügbarkeit prüfen wir später bei jeder Anfrage einzeln. Hier reichen Grundlagen, damit wir Anfragen vorfiltern können.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$weekdays = [
 		'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi',
@@ -1344,9 +1715,9 @@ function fge_onboarding_render_step_9( int $partner_id, string $token, array $v,
 	echo '</form>';
 }
 
-function fge_onboarding_render_step_10( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 10, 'Preis und Abrechnung', 'Du hinterlegst deine Netto-Preise später pro Event im Portal. Auf dieser Basis berechnet Firmengolf den Verkaufspreis für das Unternehmen.' );
-	fge_onboarding_form_open( 10, $partner_id, $token );
+function fge_onboarding_render_step_10( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Preis und Abrechnung', 'Du hinterlegst deine Netto-Preise für das Event. Auf dieser Basis berechnet Firmengolf den Verkaufspreis für das Unternehmen.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 	$portal_url = trailingslashit( home_url( '/partnerportal/' ) );
 	?>
 	<div class="ob-form">
@@ -1382,9 +1753,9 @@ function fge_onboarding_render_step_10( int $partner_id, string $token, array $v
 	echo '</form>';
 }
 
-function fge_onboarding_render_step_11( int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( 11, 'Logo und Bilder', 'Ein gutes Foto macht deinen Golfplatz sofort erkennbar.' );
-	fge_onboarding_form_open( 11, $partner_id, $token );
+function fge_onboarding_render_step_11( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Bilder, die euren Platz zeigen.', 'Logo und Titelbild sind wichtig, aber du kannst auch ohne weitermachen — wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$logo_id   = (int) ( $v['logo_attachment_id'] ?? 0 );
 	$logo_url  = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
@@ -1461,11 +1832,11 @@ function fge_onboarding_render_step_11( int $partner_id, string $token, array $v
 	echo '</form>';
 }
 
-function fge_onboarding_render_step_12( int $partner_id, string $token, array $v ): void {
+function fge_onboarding_render_step_12( int $step, int $partner_id, string $token, array $v ): void {
 	$can_submit = fge_onboarding_is_submittable( $partner_id );
 	$missing    = isset( $_GET['ob_missing'] );
 
-	fge_onboarding_render_step_header( 12, 'Alles bereit?', 'Prüfe deine Angaben und reiche das Profil zur Überprüfung ein.' );
+	fge_onboarding_render_step_header( $step, 'Prüf deine Angaben — dann reichen wir ein.', 'Sieh nochmal über alles drüber, was du eingegeben hast. Korrigieren kannst du jeden Bereich mit „Zurück".' );
 
 	if ( $missing ) { ?>
 		<div class="ob-notice ob-notice--warn">Einige Pflichtangaben fehlen noch. Bitte gehe zurück und ergänze die markierten Felder.</div>
@@ -1483,7 +1854,6 @@ function fge_onboarding_render_step_12( int $partner_id, string $token, array $v
 		<?php fge_onboarding_summary_section( 'Standort', [
 			'Adresse'   => trim( $v['street'] . ' ' . $v['house_number'] . ', ' . $v['postal_code'] . ' ' . $v['city'] ),
 			'Bundesland' => $v['federal_state'],
-			'Region'    => $v['free_region'],
 		] ); ?>
 
 		<?php fge_onboarding_summary_section( 'Hauptkontakt', [
@@ -1554,20 +1924,14 @@ function fge_onboarding_render_step_12( int $partner_id, string $token, array $v
 	</div>
 
 	<?php if ( $can_submit ) : ?>
-	<form method="post" class="ob-form">
-		<?php wp_nonce_field( 'fge_onboarding_step_12', 'fge_ob_nonce' ); ?>
+	<?php // Submit button lives in the footer ("Zur Prüfung einreichen") and targets this form. ?>
+	<form method="post" id="ob-step-form" class="ob-form">
+		<?php wp_nonce_field( 'fge_onboarding_step_' . $step, 'fge_ob_nonce' ); ?>
 		<input type="hidden" name="fge_ob_action" value="step_submit">
-		<input type="hidden" name="ob_step" value="12">
-		<div class="ob-actions">
-			<a href="<?php echo esc_url( fge_onboarding_step_url( 2 ) ); ?>" class="ob-btn ob-btn-ghost">Zurück zum Bearbeiten</a>
-			<button type="submit" class="ob-btn ob-btn-primary">Jetzt zur Prüfung einreichen →</button>
-		</div>
+		<input type="hidden" name="ob_step" value="<?php echo esc_attr( (string) $step ); ?>">
 	</form>
 	<?php else : ?>
-	<div class="ob-notice ob-notice--warn">Bitte ergänze die fehlenden Pflichtangaben, bevor du das Profil einreichst.</div>
-	<div class="ob-actions">
-		<a href="<?php echo esc_url( fge_onboarding_step_url( 2 ) ); ?>" class="ob-btn ob-btn-primary">Fehlende Daten ergänzen</a>
-	</div>
+	<div class="ob-notice ob-notice--warn">Bitte ergänze die fehlenden Pflichtangaben, bevor du das Profil einreichst. Geh mit „Zurück" durch die Schritte und fülle die markierten Felder aus.</div>
 	<?php endif; ?>
 	<?php
 }
