@@ -40,6 +40,56 @@ class FGE_CLI_Migrations {
 		) );
 	}
 
+	/**
+	 * Merge the legacy partner cover (_fge_hero_image_attachment_id) into the gallery as Titelfoto (position 0).
+	 * Idempotent: re-running normalizes the gallery + cover mirror through fge_partner_set_gallery().
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--dry-run]
+	 * : Print what would change, without writing.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp firmengolf migrate-cover-to-gallery --dry-run
+	 *     wp firmengolf migrate-cover-to-gallery
+	 */
+	public function migrate_cover_to_gallery( $args, $assoc_args ) {
+		$dry_run = isset( $assoc_args['dry-run'] );
+		WP_CLI::line( $dry_run ? '[DRY RUN] No data will be written.' : 'Running migration…' );
+
+		$partners = get_posts( [
+			'post_type'      => 'firmengolf_partner',
+			'post_status'    => 'any',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+		] );
+
+		$changed = 0;
+		foreach ( $partners as $pid ) {
+			$hero    = (int) get_post_meta( $pid, '_fge_hero_image_attachment_id', true );
+			$gallery = fge_partner_gallery_ids( $pid );
+			$before  = $gallery;
+
+			if ( $hero > 0 ) {
+				$gallery = array_values( array_filter( $gallery, static fn( $id ) => $id !== $hero ) );
+				array_unshift( $gallery, $hero );
+			}
+			$gallery = array_values( array_unique( $gallery ) );
+
+			if ( $gallery === $before ) {
+				continue;
+			}
+			WP_CLI::line( sprintf( '  partner #%d: [%s] → [%s]', $pid, implode( ',', $before ), implode( ',', $gallery ) ) );
+			if ( ! $dry_run ) {
+				fge_partner_set_gallery( $pid, $gallery );
+			}
+			$changed++;
+		}
+
+		WP_CLI::success( sprintf( 'Done. Partners updated: %d %s', $changed, $dry_run ? '(dry-run, not written)' : '' ) );
+	}
+
 	private function migrate_single_meta( string $post_type, string $meta_key, array $map, bool $dry_run ): int {
 		$posts = get_posts( [
 			'post_type'      => $post_type,
@@ -98,3 +148,4 @@ class FGE_CLI_Migrations {
 }
 
 WP_CLI::add_command( 'firmengolf migrate-formats', [ new FGE_CLI_Migrations(), 'migrate_formats' ] );
+WP_CLI::add_command( 'firmengolf migrate-cover-to-gallery', [ new FGE_CLI_Migrations(), 'migrate_cover_to_gallery' ] );

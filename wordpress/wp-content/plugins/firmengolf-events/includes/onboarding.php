@@ -107,6 +107,38 @@ function fge_onboarding_enqueue_map(): void {
 	wp_enqueue_script( 'google-maps', $maps_url, [ 'fge-ob-map' ], null, true );
 }
 
+/**
+ * Allowed formats + size/count limits for the onboarding media uploads.
+ * Single source of truth — used by server validation, the JS preview/checks and the hint texts.
+ */
+function fge_onboarding_media_limits(): array {
+	return [
+		'mimes'           => [ 'image/jpeg', 'image/png', 'image/webp' ],
+		'exts'            => 'JPG, PNG oder WebP',
+		'logo'            => 1 * 1024 * 1024, // 1 MB
+		'cover'           => 5 * 1024 * 1024, // 5 MB
+		'gallery'         => 5 * 1024 * 1024, // 5 MB pro Foto
+		'gallery_max'     => 6,
+		'cover_min_width' => 1600,
+	];
+}
+
+/** Loads the async Airbnb-style gallery widget only on the onboarding media slide. */
+add_action( 'wp_enqueue_scripts', 'fge_onboarding_enqueue_media' );
+function fge_onboarding_enqueue_media(): void {
+	if ( ! is_page( 'partner-onboarding' ) ) {
+		return;
+	}
+	$step = max( 1, absint( $_GET['ob_step'] ?? 1 ) );
+	if ( ( fge_onboarding_slide( $step )['id'] ?? '' ) !== 'media' ) {
+		return;
+	}
+	$pid = fge_onboarding_get_current_partner_id();
+	if ( $pid > 0 ) {
+		fge_media_enqueue( $pid );
+	}
+}
+
 // ── URL / Routing helpers ─────────────────────────────────────────────────────
 
 function fge_onboarding_page_url(): string {
@@ -386,7 +418,6 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 
 		case 'avail':
 			update_post_meta( $partner_id, '_fge_preferred_event_days',         $san_group( 'fge_preferred_event_days', $allowed_days ) );
-			update_post_meta( $partner_id, '_fge_weekend_events_possible',       ( ( $post['fge_weekend_events_possible'] ?? '' ) === '1' ) ? 1 : 0 );
 			update_post_meta( $partner_id, '_fge_evening_events_possible',       ( ( $post['fge_evening_events_possible'] ?? '' ) === '1' ) ? 1 : 0 );
 			update_post_meta( $partner_id, '_fge_min_lead_time_days',            absint( $post['fge_min_lead_time_days'] ?? 14 ) );
 			update_post_meta( $partner_id, '_fge_season',                        $san_select( 'fge_season', $allowed_seasons ) );
@@ -399,50 +430,10 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'media':
+			// Photos + logo are uploaded asynchronously via the firmengolf/v1 REST routes
+			// (fge-media-gallery.js). Here we only persist the rights confirmation + note.
 			update_post_meta( $partner_id, '_fge_image_rights_confirmed', isset( $post['fge_image_rights_confirmed'] ) ? 1 : 0 );
 			update_post_meta( $partner_id, '_fge_image_rights_note',      $sa( 'fge_image_rights_note' ) );
-
-			if ( ! empty( $_FILES['fge_partner_logo']['name'] ) ) {
-				require_once ABSPATH . 'wp-admin/includes/file.php';
-				require_once ABSPATH . 'wp-admin/includes/image.php';
-				require_once ABSPATH . 'wp-admin/includes/media.php';
-				$logo_id = media_handle_upload( 'fge_partner_logo', $partner_id );
-				if ( ! is_wp_error( $logo_id ) ) {
-					update_post_meta( $partner_id, '_fge_logo_attachment_id', $logo_id );
-				}
-			}
-			if ( ! empty( $_FILES['fge_partner_cover']['name'] ) ) {
-				require_once ABSPATH . 'wp-admin/includes/file.php';
-				require_once ABSPATH . 'wp-admin/includes/image.php';
-				require_once ABSPATH . 'wp-admin/includes/media.php';
-				$hero_id = media_handle_upload( 'fge_partner_cover', $partner_id );
-				if ( ! is_wp_error( $hero_id ) ) {
-					update_post_meta( $partner_id, '_fge_hero_image_attachment_id', $hero_id );
-				}
-			}
-			if ( ! empty( $_FILES['fge_gallery']['name'][0] ) ) {
-				require_once ABSPATH . 'wp-admin/includes/file.php';
-				require_once ABSPATH . 'wp-admin/includes/image.php';
-				require_once ABSPATH . 'wp-admin/includes/media.php';
-				$existing = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $partner_id, '_fge_gallery_attachment_ids', true ) ) ) );
-				foreach ( array_keys( $_FILES['fge_gallery']['name'] ) as $idx ) {
-					if ( $_FILES['fge_gallery']['error'][ $idx ] !== UPLOAD_ERR_OK ) {
-						continue;
-					}
-					$_FILES['fge_gallery_item'] = [
-						'name'     => $_FILES['fge_gallery']['name'][ $idx ],
-						'type'     => $_FILES['fge_gallery']['type'][ $idx ],
-						'tmp_name' => $_FILES['fge_gallery']['tmp_name'][ $idx ],
-						'error'    => $_FILES['fge_gallery']['error'][ $idx ],
-						'size'     => $_FILES['fge_gallery']['size'][ $idx ],
-					];
-					$gid = media_handle_upload( 'fge_gallery_item', $partner_id );
-					if ( ! is_wp_error( $gid ) ) {
-						$existing[] = $gid;
-					}
-				}
-				update_post_meta( $partner_id, '_fge_gallery_attachment_ids', implode( ',', $existing ) );
-			}
 			break;
 	}
 }
@@ -825,7 +816,6 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'parking_count'                 => (string) $m( 'parking_count' ),
 		'event_formats'                 => (array) $m( 'event_formats' ),
 		'preferred_event_days'          => (array) $m( 'preferred_event_days' ),
-		'weekend_events_possible'       => (string) $m( 'weekend_events_possible' ),
 		'evening_events_possible'       => (string) $m( 'evening_events_possible' ),
 		'min_lead_time_days'            => (string) $m( 'min_lead_time_days' ),
 		'season'                        => (string) $m( 'season' ),
@@ -1367,11 +1357,11 @@ function fge_onboarding_render_arrival( int $step, int $partner_id, string $toke
 		<label class="ob-field-label">Ladestation für E-Autos vorhanden?</label>
 		<span class="ob-field-hint">Wird Gästen mit E-Auto als Hinweis angezeigt.</span>
 		<div class="ob-radio-row">
-			<label class="ob-radio<?php echo $estation ? ' on' : ''; ?>">
+			<label class="ob-radio">
 				<input type="radio" name="fge_arrival_estation" value="1" <?php checked( $estation ); ?> style="position:absolute;opacity:0">
 				<span class="ob-radio-dot" aria-hidden="true"></span> Ja
 			</label>
-			<label class="ob-radio<?php echo $estation ? '' : ' on'; ?>">
+			<label class="ob-radio">
 				<input type="radio" name="fge_arrival_estation" value="0" <?php checked( ! $estation ); ?> style="position:absolute;opacity:0">
 				<span class="ob-radio-dot" aria-hidden="true"></span> Nein
 			</label>
@@ -1605,11 +1595,11 @@ function fge_onboarding_yesno( string $name, string $label, string $hint, bool $
 		<label class="ob-field-label"><?php echo esc_html( $label ); ?></label>
 		<?php if ( '' !== $hint ) : ?><span class="ob-field-hint"><?php echo esc_html( $hint ); ?></span><?php endif; ?>
 		<div class="ob-radio-row">
-			<label class="ob-radio<?php echo $is_yes ? ' on' : ''; ?>">
+			<label class="ob-radio">
 				<input type="radio" name="<?php echo esc_attr( $name ); ?>" value="1" <?php checked( $is_yes ); ?> style="position:absolute;opacity:0">
 				<span class="ob-radio-dot" aria-hidden="true"></span> Ja
 			</label>
-			<label class="ob-radio<?php echo $is_yes ? '' : ' on'; ?>">
+			<label class="ob-radio">
 				<input type="radio" name="<?php echo esc_attr( $name ); ?>" value="0" <?php checked( ! $is_yes ); ?> style="position:absolute;opacity:0">
 				<span class="ob-radio-dot" aria-hidden="true"></span> Nein
 			</label>
@@ -1687,7 +1677,6 @@ function fge_onboarding_render_step_9( int $step, int $partner_id, string $token
 		</div>
 
 		<?php
-		fge_onboarding_yesno( 'fge_weekend_events_possible', 'Wochenend-Events möglich?', 'Samstag und/oder Sonntag, ggf. mit Aufschlag.', ( (string) ( $v['weekend_events_possible'] ?? '' ) === '1' ) );
 		fge_onboarding_yesno( 'fge_evening_events_possible', 'Abend-Events möglich?', 'Z. B. Flutlicht-Putting oder Tasting-Abend.', ( (string) ( $v['evening_events_possible'] ?? '' ) === '1' ) );
 		?>
 
@@ -1757,70 +1746,9 @@ function fge_onboarding_render_step_11( int $step, int $partner_id, string $toke
 	fge_onboarding_render_step_header( $step, 'Bilder, die euren Platz zeigen.', 'Logo und Titelbild sind wichtig, aber du kannst auch ohne weitermachen — wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
-	$logo_id   = (int) ( $v['logo_attachment_id'] ?? 0 );
-	$logo_url  = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
-	$cover_id  = (int) ( $v['hero_image_attachment_id'] ?? 0 );
-	$cover_url = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : '';
-	$gallery   = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $partner_id, '_fge_gallery_attachment_ids', true ) ) ) );
 	$rights_on = ( (string) ( $v['image_rights_confirmed'] ?? '' ) === '1' );
+	fge_media_gallery_render( [ 'show_logo' => true ] );
 	?>
-	<div class="ob-uploads">
-		<div class="ob-upload-row">
-			<div class="ob-upload-text">
-				<div class="ob-upload-l">Logo</div>
-				<div class="ob-upload-h">PNG mit transparentem Hintergrund, ca. 400×400 px. Erscheint in der Trefferliste.</div>
-			</div>
-			<label class="ob-upload-dropzone a-logo<?php echo '' !== $logo_url ? ' filled' : ''; ?>">
-				<?php if ( '' !== $logo_url ) : ?>
-					<span class="ob-upload-preview" style="background-image:url('<?php echo esc_url( $logo_url ); ?>');background-size:contain;background-position:center;background-repeat:no-repeat;background-color:var(--paper-50);"></span>
-					<span class="ob-upload-meta"><span class="ob-upload-name">Logo hochgeladen</span><span class="ob-upload-remove">Tauschen</span></span>
-				<?php else : ?>
-					<span class="ob-upload-cta">↑ Logo wählen</span>
-				<?php endif; ?>
-				<input type="file" name="fge_partner_logo" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
-			</label>
-		</div>
-
-		<div class="ob-upload-row">
-			<div class="ob-upload-text">
-				<div class="ob-upload-l">Titelbild</div>
-				<div class="ob-upload-h">16:9, mind. 1600 px breit (JPG/PNG). Das große Bild oben auf deiner Platz-Seite.</div>
-			</div>
-			<label class="ob-upload-dropzone a-hero<?php echo '' !== $cover_url ? ' filled' : ''; ?>">
-				<?php if ( '' !== $cover_url ) : ?>
-					<span class="ob-upload-preview" style="background-image:url('<?php echo esc_url( $cover_url ); ?>');background-size:cover;background-position:center;"></span>
-					<span class="ob-upload-meta"><span class="ob-upload-name">Titelbild hochgeladen</span><span class="ob-upload-remove">Tauschen</span></span>
-				<?php else : ?>
-					<span class="ob-upload-cta">↑ Titelbild wählen</span>
-				<?php endif; ?>
-				<input type="file" name="fge_partner_cover" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
-			</label>
-		</div>
-
-		<div class="ob-upload-row">
-			<div class="ob-upload-text">
-				<div class="ob-upload-l">Galerie</div>
-				<div class="ob-upload-h">Optional, mehrere Fotos. Spielbahnen, Clubhaus, Eventflächen, Gastronomie.</div>
-			</div>
-			<div>
-				<label class="ob-upload-dropzone a-gallery">
-					<span class="ob-upload-cta">↑ Fotos hinzufügen</span>
-					<input type="file" name="fge_gallery[]" accept="image/*" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;">
-				</label>
-				<?php if ( ! empty( $gallery ) ) : ?>
-				<div class="ob-gallery-list">
-					<?php foreach ( $gallery as $gid ) :
-						$gurl = wp_get_attachment_image_url( $gid, 'thumbnail' ); ?>
-					<div class="ob-gallery-item">
-						<span class="ob-gallery-thumb" style="<?php echo $gurl ? 'background-image:url(' . esc_url( $gurl ) . ');background-size:cover;background-position:center;' : ''; ?>"></span>
-						<span class="ob-gallery-name">Foto #<?php echo (int) $gid; ?></span>
-					</div>
-					<?php endforeach; ?>
-				</div>
-				<?php endif; ?>
-			</div>
-		</div>
-	</div>
 
 	<label class="ob-consent">
 		<input type="checkbox" name="fge_image_rights_confirmed" value="1" <?php checked( $rights_on ); ?> required>

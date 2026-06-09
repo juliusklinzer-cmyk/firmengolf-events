@@ -1,0 +1,203 @@
+/* Airbnb-style partner photo gallery widget. Tokens come from fge-frontend.css. */
+
+.fge-media { display: flex; flex-direction: column; gap: 28px; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.fge-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-size: 15px; font-weight: 600;
+  padding: 12px 22px; border: 0; border-radius: var(--radius-pill, 999px);
+  cursor: pointer; transition: all var(--dur-fast, .15s) var(--ease-out, ease);
+}
+.fge-btn:disabled { opacity: .5; cursor: default; }
+.fge-btn-light { background: var(--paper-200); color: var(--ink-900); }
+.fge-btn-light:not(:disabled):hover { background: var(--paper-300); }
+.fge-btn-dark  { background: var(--ink-900); color: var(--paper-50); }
+.fge-btn-dark:not(:disabled):hover { filter: brightness(1.15); }
+.fge-btn-quiet { background: transparent; color: var(--ink-700); text-decoration: underline; padding: 12px 8px; }
+
+/* ── Logo uploader ─────────────────────────────────────────────────────────── */
+.fge-logo-label { font-size: 16px; font-weight: 600; color: var(--ink-900); }
+.fge-logo-hint  { font-size: 13px; color: var(--ink-500); margin-top: 4px; line-height: 1.5; }
+.fge-logo-zone {
+  display: flex; align-items: center; gap: 18px; margin-top: 12px;
+  padding: 16px; border: 1px solid var(--ink-200); border-radius: var(--radius-lg, 16px);
+  background: var(--paper-50);
+}
+.fge-logo-preview {
+  width: 72px; height: 72px; flex: none; border-radius: var(--radius-md, 12px);
+  background-size: contain; background-position: center; background-repeat: no-repeat;
+  background-color: var(--paper-100);
+}
+
+/* ── Empty state ───────────────────────────────────────────────────────────── */
+.fge-gallery-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+  min-height: 360px; padding: 40px;
+  border: 1.5px dashed var(--ink-300); border-radius: var(--radius-lg, 20px);
+  background: var(--paper-100);
+}
+.fge-gallery-empty-ico { width: 72px; height: 72px; color: var(--ink-500); }
+.fge-gallery-empty-ico svg { width: 100%; height: 100%; }
+
+/* ── Hints ─────────────────────────────────────────────────────────────────── */
+.fge-gallery-hints { margin-bottom: 16px; }
+.fge-gallery-hint { font-size: 14px; color: var(--ink-600, var(--ink-500)); margin: 0; }
+.fge-gallery-rec  { font-size: 13px; margin: 6px 0 0; font-weight: 500; }
+.fge-gallery-rec[data-kind="warn"] { color: #b45309; }
+.fge-gallery-rec[data-kind="ok"]   { color: var(--fairway-700); }
+.fge-gallery-loading { font-size: 14px; color: var(--ink-500); padding: 24px; text-align: center; }
+
+/* ── Filled grid ───────────────────────────────────────────────────────────── */
+.fge-gallery-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.fge-gallery-item {
+  position: relative; aspect-ratio: 3/2; border-radius: var(--radius-md, 12px);
+  background-size: cover; background-position: center; background-color: var(--paper-200);
+  cursor: grab; overflow: visible;
+}
+.fge-gallery-item.is-cover { grid-column: 1 / -1; aspect-ratio: 16/9; }
+.fge-gallery-item.dragging { opacity: .4; }
+.fge-gallery-badge {
+  position: absolute; top: 12px; left: 12px;
+  background: var(--paper-50); color: var(--ink-900);
+  font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: var(--radius-pill, 999px);
+  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+}
+.fge-gallery-menu-btn {
+  position: absolute; top: 10px; right: 10px;
+  width: 32px; height: 32px; border: 0; border-radius: 999px;
+  background: var(--paper-50); color: var(--ink-900); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.fge-gallery-menu-btn svg { width: 18px; height: 18px; }
+.fge-gallery-menu-btn:hover { background: #fff; }
+.fge-gallery-pop {
+  position: absolute; top: 46px; right: 10px; z-index: 5;
+  background: var(--paper-50); border-radius: var(--radius-md, 12px);
+  box-shadow: 0 6px 24px rgba(0,0,0,.18); padding: 6px; min-width: 200px;
+  display: flex; flex-direction: column;
+}
+.fge-gallery-pop-item {
+  text-align: left; background: transparent; border: 0; cursor: pointer;
+  font: inherit; font-size: 14px; padding: 10px 12px; border-radius: 8px; color: var(--ink-900);
+}
+.fge-gallery-pop-item:hover { background: var(--paper-200); }
+.fge-gallery-pop-item.is-danger { color: var(--danger, #c0392b); }
+.fge-gallery-add {
+  aspect-ratio: 3/2; border: 1.5px dashed var(--ink-300); border-radius: var(--radius-md, 12px);
+  background: var(--paper-100); cursor: pointer; color: var(--ink-700);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-size: 14px; font-weight: 500;
+}
+.fge-gallery-add:hover { border-color: var(--ink-700); }
+.fge-gallery-add-plus { font-size: 28px; font-weight: 300; line-height: 1; }
+
+/* ── Upload modal ──────────────────────────────────────────────────────────── */
+.fge-gm-backdrop {
+  position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.fge-gm-modal {
+  background: var(--paper-50, #fff); border-radius: var(--radius-lg, 20px);
+  width: 100%; max-width: 480px; max-height: 88vh; display: flex; flex-direction: column;
+  overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+.fge-gm-head {
+  display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid var(--ink-200);
+}
+.fge-gm-x, .fge-gm-add {
+  width: 36px; height: 36px; border: 0; border-radius: 999px; background: transparent;
+  cursor: pointer; font-size: 20px; color: var(--ink-900);
+}
+.fge-gm-x:hover, .fge-gm-add:hover { background: var(--paper-200); }
+.fge-gm-title { text-align: center; font-size: 15px; color: var(--ink-900); }
+.fge-gm-sub { display: block; font-size: 12px; color: var(--ink-500); font-weight: 400; }
+.fge-gm-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding: 16px; overflow-y: auto;
+}
+.fge-gm-item {
+  position: relative; aspect-ratio: 1/1; border-radius: var(--radius-md, 12px);
+  background-size: cover; background-position: center; background-color: var(--paper-200);
+}
+.fge-gm-item.is-error { outline: 2px solid var(--danger, #c0392b); }
+.fge-gm-rm {
+  position: absolute; top: 8px; right: 8px; width: 30px; height: 30px;
+  border: 0; border-radius: 999px; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; font-size: 14px;
+}
+.fge-gm-err {
+  position: absolute; left: 6px; right: 6px; bottom: 6px;
+  background: var(--danger, #c0392b); color: #fff; font-size: 11px; padding: 4px 6px; border-radius: 6px;
+}
+.fge-gm-status {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 36px; height: 36px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+}
+.fge-gm-check { background: var(--fairway-700, #2f6b3a); color: #fff; font-size: 18px; }
+.fge-gm-spin {
+  border: 3px solid rgba(255,255,255,.5); border-top-color: #fff;
+  background: rgba(0,0,0,.25); animation: fge-gm-rot .8s linear infinite;
+}
+@keyframes fge-gm-rot { to { transform: translate(-50%,-50%) rotate(360deg); } }
+.fge-gm-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-top: 1px solid var(--ink-200);
+}
+
+@media (max-width: 600px) {
+  .fge-gallery-item.is-cover { aspect-ratio: 4/3; }
+}
+
+/* ── Event image picker ────────────────────────────────────────────────────── */
+.fge-picker-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.fge-picker-empty {
+  grid-column: 1 / -1; margin: 0; padding: 16px;
+  font-size: 14px; color: var(--ink-500); background: var(--paper-100);
+  border-radius: var(--radius-md, 12px);
+}
+.fge-picker-item {
+  position: relative; aspect-ratio: 1/1; border-radius: var(--radius-md, 12px);
+  background-size: cover; background-position: center; background-color: var(--paper-200);
+  cursor: pointer; border: 2px solid transparent; transition: border-color var(--dur-fast,.15s) var(--ease-out,ease);
+}
+.fge-picker-item.is-selected { border-color: var(--ink-900); }
+.fge-picker-item::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: rgba(0,0,0,0); transition: background var(--dur-fast,.15s);
+}
+.fge-picker-item.is-selected::after { background: rgba(0,0,0,.12); }
+.fge-picker-check {
+  position: absolute; top: 8px; left: 8px; z-index: 2;
+  width: 24px; height: 24px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+  background: var(--paper-50); color: transparent; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.fge-picker-item.is-selected .fge-picker-check { background: var(--ink-900); color: #fff; }
+.fge-picker-badge {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  background: var(--paper-50); color: var(--ink-900);
+  font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.fge-picker-setcover {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 2;
+  border: 0; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 11px; font-weight: 600; padding: 5px 8px;
+  background: rgba(255,255,255,.92); color: var(--ink-900);
+}
+.fge-picker-setcover:hover { background: #fff; }
+.fge-picker-add {
+  aspect-ratio: 1/1; border: 1.5px dashed var(--ink-300); border-radius: var(--radius-md, 12px);
+  background: var(--paper-100); cursor: pointer; color: var(--ink-700);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  font: inherit; font-size: 12px; font-weight: 500;
+}
+.fge-picker-add:hover { border-color: var(--ink-700); }
+.fge-picker-add-plus { font-size: 24px; font-weight: 300; line-height: 1; }

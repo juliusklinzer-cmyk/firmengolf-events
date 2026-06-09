@@ -10,6 +10,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 add_action( 'init', 'fge_portal_handle_new_event', 10 );
 add_action( 'init', 'fge_portal_handle_edit_event', 10 );
+
+/** Load the async gallery widget on the portal "Platz" edit form. */
+add_action( 'wp_enqueue_scripts', 'fge_portal_enqueue_media' );
+function fge_portal_enqueue_media(): void {
+	if ( ! is_page( 'partnerportal' ) ) {
+		return;
+	}
+	if ( ( $_GET['tab'] ?? '' ) !== 'platz' || ! isset( $_GET['edit'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		return;
+	}
+	$pid = fge_portal_get_partner_id();
+	if ( $pid > 0 ) {
+		fge_media_enqueue( $pid );
+	}
+}
 add_action( 'init', 'fge_portal_handle_profile_update', 10 );
 add_action( 'init', 'fge_portal_handle_lifecycle', 10 );
 add_action( 'init', 'fge_portal_handle_contacts', 10 );
@@ -319,27 +334,8 @@ function fge_portal_handle_profile_update(): void {
 	update_post_meta( $partner_id, '_fge_event_contact_email',     sanitize_email( wp_unslash( $_POST['fge_event_contact_email'] ?? '' ) ) );
 	update_post_meta( $partner_id, '_fge_event_contact_phone',     sanitize_text_field( wp_unslash( $_POST['fge_event_contact_phone'] ?? '' ) ) );
 
-	// Media uploads.
-	if ( ! empty( $_FILES['fge_partner_logo']['name'] ) ) {
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		$logo_id = media_handle_upload( 'fge_partner_logo', $partner_id );
-		if ( ! is_wp_error( $logo_id ) ) {
-			update_post_meta( $partner_id, '_fge_logo_attachment_id', $logo_id );
-		}
-	}
-	if ( ! empty( $_FILES['fge_partner_cover']['name'] ) ) {
-		if ( ! function_exists( 'media_handle_upload' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-			require_once ABSPATH . 'wp-admin/includes/image.php';
-			require_once ABSPATH . 'wp-admin/includes/media.php';
-		}
-		$cover_id = media_handle_upload( 'fge_partner_cover', $partner_id );
-		if ( ! is_wp_error( $cover_id ) ) {
-			update_post_meta( $partner_id, '_fge_hero_image_attachment_id', $cover_id );
-		}
-	}
+	// Logo + photos are managed asynchronously via the firmengolf/v1 REST routes
+	// (fge-media-gallery.js); nothing to persist here.
 
 	$base = fge_portal_page_url();
 	wp_redirect( esc_url_raw( $base . '?tab=platz&portal_success=profile_saved' ), 303 );
@@ -2006,11 +2002,6 @@ function fge_portal_section_platz( int $partner_id ): void {
 		return (string) get_post_meta( $partner_id, '_fge_' . $key, true );
 	};
 	$base = fge_portal_page_url();
-
-	$logo_id  = (int) get_post_meta( $partner_id, '_fge_logo_attachment_id', true );
-	$cover_id = (int) get_post_meta( $partner_id, '_fge_hero_image_attachment_id', true );
-	$logo_url = $logo_id  > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
-	$cov_url  = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : '';
 	?>
 	<div style="padding-top:32px;">
 		<div class="fp-section-head">
@@ -2024,7 +2015,7 @@ function fge_portal_section_platz( int $partner_id ): void {
 			<input type="hidden" name="fge_action" value="portal_profile_update">
 			<?php wp_nonce_field( 'fge_portal_profile_update', 'fge_portal_nonce' ); ?>
 
-			<div class="fp-profile-grid">
+			<div class="fp-profile-edit">
 
 				<!-- ─ Left: text fields ─ -->
 				<div>
@@ -2083,41 +2074,14 @@ function fge_portal_section_platz( int $partner_id ): void {
 					</div>
 				</div>
 
-				<!-- ─ Right: media uploads ─ -->
-				<div class="fp-profile-media">
-					<div>
-						<div class="fp-profile-media-lbl">Logo</div>
-						<label class="fp-logo-upload" title="Logo hochladen">
-							<?php if ( $logo_url !== '' ) : ?>
-								<img src="<?php echo esc_url( $logo_url ); ?>" alt="Logo">
-							<?php else : ?>
-								<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-								<span style="font-size:12px;">Hochladen</span>
-							<?php endif; ?>
-							<input type="file" name="fge_partner_logo" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
-						</label>
-						<p style="font-size:12px;color:var(--ink-400);margin-top:6px;">PNG · max. 4 MB</p>
-					</div>
-
-					<div>
-						<div class="fp-profile-media-lbl">Titelbild</div>
-						<label class="fp-cover-upload-profile" style="<?php echo $cov_url !== '' ? 'background-image:url(' . esc_url( $cov_url ) . ');background-size:cover;background-position:center;border-style:solid;' : ''; ?>" title="Titelbild hochladen">
-							<?php if ( $cov_url === '' ) : ?>
-								<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-								<span style="font-size:12px;">16:9 · mind. 1600 px breit</span>
-							<?php else : ?>
-								<span class="fp-cover-replace-hint">
-									<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-									<span style="font-size:12px;">Bild tauschen</span>
-								</span>
-							<?php endif; ?>
-							<input type="file" name="fge_partner_cover" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
-						</label>
-						<p style="font-size:12px;color:var(--ink-400);margin-top:6px;">JPG / PNG · max. 8 MB</p>
-					</div>
+				<!-- Photos + logo (async, REST-backed) -->
+				<div class="fp-form-sec" style="margin-top:32px;">
+					<h3>Fotos &amp; Logo</h3>
+					<p class="fp-help">Das erste Foto ist dein Titelbild. Ziehe per Drag &amp; Drop, um die Reihenfolge zu ändern.</p>
+					<?php fge_media_gallery_render( [ 'show_logo' => true ] ); ?>
 				</div>
 
-			</div><!-- .fp-profile-grid -->
+			</div><!-- .fp-profile-edit -->
 
 			<div style="margin-top:28px;">
 				<button type="submit" class="fp-btn fp-btn-brand">
@@ -2250,7 +2214,6 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 	$event_title      = $saved['fge_post_title'] ?? '';
 
 	$cover_id  = $is_edit ? (int) get_post_meta( $event_id, '_fge_cover_attachment_id', true ) : 0;
-	$cover_url = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : '';
 
 	$event_status = $is_edit ? (string) get_post_meta( $event_id, '_fge_event_status', true ) : 'entwurf';
 	$status_label = fge_portal_format_event_status( $event_status );
@@ -2311,27 +2274,15 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 				<!-- ── LEFT: form sections ── -->
 				<div>
 
-					<!-- Cover -->
+					<!-- Eventbilder: Auswahl aus der Platz-Galerie -->
 					<div class="fp-form-sec">
-						<h3>Coverbild</h3>
-						<p class="fp-help">Quer-Format 16:9 oder 16:10, mind. 1600 px breit. Dieses Bild erscheint auf der Angebotskarte.</p>
-						<label class="fp-cover-upload<?php echo $cover_url !== '' ? ' has-image' : ''; ?>"
-						       style="<?php echo $cover_url !== '' ? 'background-image:url(' . esc_url( $cover_url ) . ');background-size:cover;background-position:center;' : ''; ?>"
-						       title="Coverbild hochladen">
-							<?php if ( $cover_url === '' ) : ?>
-								<div class="fp-cover-empty">
-									<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-									<span style="font-weight:500;color:var(--ink-900);">Foto hochladen oder hierher ziehen</span>
-									<span class="fp-cover-hint">JPG / PNG · max. 8 MB</span>
-								</div>
-							<?php else : ?>
-								<span class="fp-cover-replace-hint">
-									<?php echo fge_icon_upload(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-									<span style="font-size:12px;">Foto tauschen</span>
-								</span>
-							<?php endif; ?>
-							<input type="file" name="fge_event_cover" accept="image/*" class="fp-cover-label">
-						</label>
+						<h3>Eventbilder</h3>
+						<p class="fp-help">Wähle Bilder aus deiner Platz-Galerie. Das Titelbild erscheint auf der Angebotskarte; weitere Fotos auf der Detailseite.</p>
+						<?php
+						$rest_ids     = $is_edit ? array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $event_id, '_fge_event_gallery_ids', true ) ) ) ) : [];
+						$selected_ids = $cover_id > 0 ? array_merge( [ $cover_id ], $rest_ids ) : $rest_ids;
+						fge_event_picker_render( $cover_id, implode( ',', $selected_ids ) );
+						?>
 					</div>
 
 					<!-- Titel & Beschreibung -->

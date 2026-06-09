@@ -11,6 +11,7 @@ services:
       WORDPRESS_DB_NAME: firmengolf_wordpress
     volumes:
       - ./wordpress:/var/www/html
+      - ./config/php-uploads.ini:/usr/local/etc/php/conf.d/zz-firmengolf-uploads.ini:ro
     depends_on:
       - db
       - mailhog
