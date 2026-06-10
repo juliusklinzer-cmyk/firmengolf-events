@@ -46,6 +46,15 @@ add_action( 'wp_enqueue_scripts', function() {
 		);
 	}
 
+	if ( is_singular( 'firmengolf_partner' ) ) {
+		wp_enqueue_style(
+			'fge-golfplatz',
+			plugins_url( 'assets/css/fge-golfplatz.css', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
+			[ 'fge-frontend' ],
+			defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
+		);
+	}
+
 	// Anfrage-Wizard (JS-Insel) — auf Individuelle-Events (inkl. Budget-Rechner) und der allgemeinen Anfrage-Seite.
 	if ( is_page( [ 'individuelle-events', 'event-anfrage' ] ) ) {
 		wp_enqueue_script(

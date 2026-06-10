@@ -133,6 +133,12 @@
 .fgpp .fact-row .val { color: var(--ink-900); font-weight: 500; }
 
 /* ── Gallery ── */
+.fgpp .fgpp-map { aspect-ratio: 16/6; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--ink-200); background: var(--paper-200); }
+.fgpp .fgpp-map iframe { width: 100%; height: 100%; border: 0; display: block; }
+.fgpp .fgpp-map-addr { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: var(--ink-600, var(--ink-500)); }
+.fgpp .fgpp-map-addr svg { width: 16px; height: 16px; flex: none; }
+@media (max-width: 640px) { .fgpp .fgpp-map { aspect-ratio: 4/3; } }
+
 .fgpp .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .fgpp .gallery-item { position: relative; aspect-ratio: 4/3; border-radius: var(--radius-lg); overflow: hidden; background-size: cover; background-position: center; border: 0; cursor: pointer; }
 .fgpp .gallery-item::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,19,16,0) 55%, rgba(14,19,16,0.5) 100%); opacity: 0; transition: opacity var(--dur-base) var(--ease-out); }

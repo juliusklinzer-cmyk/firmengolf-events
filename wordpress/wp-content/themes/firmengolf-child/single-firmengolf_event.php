@@ -35,15 +35,21 @@ $thumb_url      = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url
 
 $format_label = fge_format_event_type( $event_type_raw ) ?: 'Event';
 
-// ── Location map: build a Google Maps embed from the assigned partner address ──
-$map_parts = [];
-foreach ( [ '_fge_street', '_fge_house_number', '_fge_postal_code', '_fge_city' ] as $mk ) {
-	$mv = trim( (string) get_post_meta( $partner_id, $mk, true ) );
-	if ( $mv !== '' ) {
-		$map_parts[] = $mv;
+// ── Location map: prefer the partner's exact pin (lat/lng from the picker), else its address ──
+$p_lat = $partner_id ? (float) get_post_meta( $partner_id, '_fge_latitude', true ) : 0.0;
+$p_lng = $partner_id ? (float) get_post_meta( $partner_id, '_fge_longitude', true ) : 0.0;
+if ( $p_lat && $p_lng ) {
+	$map_query = $p_lat . ',' . $p_lng;
+} else {
+	$map_parts = [];
+	foreach ( [ '_fge_street', '_fge_house_number', '_fge_postal_code', '_fge_city' ] as $mk ) {
+		$mv = trim( (string) get_post_meta( $partner_id, $mk, true ) );
+		if ( $mv !== '' ) {
+			$map_parts[] = $mv;
+		}
 	}
+	$map_query = $map_parts ? implode( ' ', $map_parts ) : trim( $location . ' ' . $region );
 }
-$map_query = $map_parts ? implode( ' ', $map_parts ) : trim( $location . ' ' . $region );
 $map_embed = $map_query !== '' ? 'https://www.google.com/maps?q=' . rawurlencode( $map_query ) . '&output=embed' : '';
 
 // Price display — neues Preismodell (rev. 2) bevorzugt, sonst Altfelder.
@@ -345,6 +351,11 @@ get_header();
 						<div class="evd-poi"><div class="evd-poi-l"><?php echo esc_html( $poi_label ); ?></div><div class="evd-poi-v"><?php echo esc_html( $poi_val ); ?></div></div>
 					<?php endforeach; ?>
 				</div>
+				<?php endif; ?>
+				<?php if ( $partner_id && function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) ) : ?>
+				<a class="fg-btn-ghost evd-venue-link" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" style="margin-top:20px;">
+					Mehr zum Golfplatz <?php echo esc_html( $venue ?: get_the_title( $partner_id ) ); ?> →
+				</a>
 				<?php endif; ?>
 			</div>
 			<?php if ( $map_embed ) : ?>

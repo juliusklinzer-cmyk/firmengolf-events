@@ -234,6 +234,63 @@ function fge_event_is_public( int $event_id ): bool {
 	return true;
 }
 
+/** Published, public-visible event IDs hosted by a partner (newest first). */
+function fge_partner_public_event_ids( int $partner_id ): array {
+	if ( $partner_id <= 0 ) {
+		return [];
+	}
+	return get_posts( [
+		'post_type'      => 'firmengolf_event',
+		'post_status'    => 'publish',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'meta_query'     => [
+			'relation' => 'AND',
+			[ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id ],
+			[ 'key' => '_fge_event_status', 'value' => fge_public_event_statuses(), 'compare' => 'IN' ],
+		],
+	] );
+}
+
+/**
+ * Is a golf-course (partner) page publicly visible?
+ * Condition: published + status `aktiv` + at least one publicly visible event.
+ */
+function fge_partner_is_public( int $partner_id ): bool {
+	if ( $partner_id <= 0 || get_post_type( $partner_id ) !== 'firmengolf_partner' ) {
+		return false;
+	}
+	if ( get_post_status( $partner_id ) !== 'publish' ) {
+		return false;
+	}
+	if ( (string) get_post_meta( $partner_id, '_fge_partner_status', true ) !== 'aktiv' ) {
+		return false;
+	}
+	return ! empty( fge_partner_public_event_ids( $partner_id ) );
+}
+
+// ── 404 Guard for non-public golf-course pages ───────────────────────────────
+
+add_action( 'template_redirect', 'fge_block_non_public_partners', 1 );
+
+function fge_block_non_public_partners(): void {
+	if ( ! is_singular( 'firmengolf_partner' ) ) {
+		return;
+	}
+	if ( is_preview() || current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	if ( fge_partner_is_public( (int) get_the_ID() ) ) {
+		return;
+	}
+	global $wp_query;
+	$wp_query->set_404();
+	status_header( 404 );
+	nocache_headers();
+	get_template_part( '404' );
+	exit;
+}
+
 function fge_get_featured_events( int $count = 3 ): array {
 	$candidates = get_posts( [
 		'post_type'   => 'firmengolf_event',
@@ -323,18 +380,24 @@ function fge_placeholder_category( string $name ): string {
 }
 
 /**
- * Placeholder image URL. Picks a fitting image from the stock pool (assets/imagery/pool/) by the
- * legacy $name's category; $seed (e.g. a post ID) makes the pick stable-but-varied per item.
- * Falls back to the single legacy file when the pool for that category is empty.
+ * Image URL for the given asset name.
+ *
+ * With NO $seed (default) this returns the EXACT named file — used for fixed brand assets:
+ * page heroes (home, events, city), static pages and the founder photo. These never vary.
+ *
+ * With a $seed > 0 (a post ID) it instead picks a fitting, stable-but-varied image from the stock
+ * pool (assets/imagery/pool/) by the name's category. This is only for golf-course / event items
+ * that have no own image — so empty events/places show varied golf photos instead of one repeat.
  */
 function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahme.jpg', int $seed = 0 ): string {
-	$cat  = fge_placeholder_category( $name );
-	$pool = fge_placeholder_pool();
-	$list = ! empty( $pool[ $cat ] ) ? $pool[ $cat ] : ( $pool['all'] ?? [] );
-	if ( ! empty( $list ) ) {
-		$key  = $seed > 0 ? (string) $seed : $name;
-		$idx  = abs( crc32( $cat . '|' . $key ) ) % count( $list );
-		return plugins_url( 'assets/imagery/pool/' . $list[ $idx ], FGE_DIR . 'firmengolf-events.php' );
+	if ( $seed > 0 ) {
+		$cat  = fge_placeholder_category( $name );
+		$pool = fge_placeholder_pool();
+		$list = ! empty( $pool[ $cat ] ) ? $pool[ $cat ] : ( $pool['all'] ?? [] );
+		if ( ! empty( $list ) ) {
+			$idx = abs( crc32( $cat . '|' . $seed ) ) % count( $list );
+			return plugins_url( 'assets/imagery/pool/' . $list[ $idx ], FGE_DIR . 'firmengolf-events.php' );
+		}
 	}
 	return plugins_url( 'assets/imagery/' . $name, FGE_DIR . 'firmengolf-events.php' );
 }

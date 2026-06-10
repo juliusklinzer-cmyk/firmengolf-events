@@ -1945,6 +1945,24 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 			</section>
 			<?php endif; ?>
 
+			<?php
+			$plat = (float) get_post_meta( $partner_id, '_fge_latitude', true );
+			$plng = (float) get_post_meta( $partner_id, '_fge_longitude', true );
+			$paddr = trim( $m( 'street' ) . ' ' . $m( 'house_number' ) . ', ' . $m( 'postal_code' ) . ' ' . $m( 'city' ), ' ,' );
+			$pmq  = ( $plat && $plng ) ? $plat . ',' . $plng : $paddr;
+			if ( $pmq !== '' ) : ?>
+			<section class="section" id="standort">
+				<div class="section-head">
+					<div><div class="eyebrow">Standort</div><h2>Wo ihr uns <em>findet</em></h2></div>
+					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit; ?>">Bearbeiten</a></div>
+				</div>
+				<div class="fgpp-map">
+					<iframe src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
+				</div>
+				<?php if ( $paddr !== '' ) : ?><p class="fgpp-map-addr"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $paddr ); ?></p><?php endif; ?>
+			</section>
+			<?php endif; ?>
+
 			<section class="section" id="bewertungen">
 				<div class="two-col">
 					<div class="panel">

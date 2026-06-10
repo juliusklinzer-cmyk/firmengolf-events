@@ -300,23 +300,25 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   background: var(--paper-200);
   padding: 32px;
 }
-.ob-art-photo {
+/* Decorative media-scene tiles — scoped to .ob-art-media so they don't clobber the
+   real intro welcome photo (.ob-art-photo at the top of this file). */
+.ob-art-media .ob-art-photo {
   position: absolute;
   background: linear-gradient(135deg, var(--fairway-400), var(--fairway-700));
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
 }
-.ob-art-photo.big { left: 20%; top: 18%; width: 60%; height: 64%;
+.ob-art-media .ob-art-photo.big { left: 20%; top: 18%; width: 60%; height: 64%;
   background:
     radial-gradient(circle at 30% 70%, var(--fairway-300) 0%, transparent 50%),
     linear-gradient(135deg, var(--fairway-500), var(--fairway-800));
 }
-.ob-art-photo.sm  { width: 26%; aspect-ratio: 1; }
-.ob-art-photo.s1  { left: 10%; top: 14%;
+.ob-art-media .ob-art-photo.sm  { width: 26%; aspect-ratio: 1; }
+.ob-art-media .ob-art-photo.s1  { left: 10%; top: 14%;
   background: linear-gradient(135deg, var(--sand-200), var(--clay-500)); transform: rotate(-6deg); }
-.ob-art-photo.s2  { right: 8%; top: 26%;
+.ob-art-media .ob-art-photo.s2  { right: 8%; top: 26%;
   background: linear-gradient(135deg, var(--fairway-300), var(--fairway-600)); transform: rotate(8deg); }
-.ob-art-photo.s3  { left: 14%; bottom: 12%;
+.ob-art-media .ob-art-photo.s3  { left: 14%; bottom: 12%;
   background: linear-gradient(135deg, var(--paper-200), var(--sand-500)); transform: rotate(4deg); }
 
 
@@ -418,18 +420,12 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   border-color: var(--ink-400);
   background: var(--paper-100);
 }
-.ob-card.on {
-  border-color: var(--ink-900);
-  background: var(--paper-200);
-  box-shadow: inset 0 0 0 1px var(--ink-900);
-}
 .ob-card-ico {
   color: var(--ink-800);
   width: 28px; height: 28px;
   flex: none;
   display: inline-flex; align-items: center; justify-content: center;
 }
-.ob-card.on .ob-card-ico { color: var(--fairway-700); }
 .ob-card-l {
   font-size: 14px; font-weight: 500;
   color: var(--ink-900);
@@ -936,8 +932,8 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
    ==================================================== */
 .ob-help-scrim {
   position: fixed; inset: 0; z-index: 100;
-  background: rgba(14,19,16,0.4);
-  display: flex; justify-content: flex-end;
+  background: var(--paper-50);
+  display: flex; justify-content: center;
   animation: ob-fade-scrim var(--dur-base) var(--ease-out);
 }
 .ob-help-scrim[hidden] { display: none; }
@@ -947,23 +943,23 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 }
 .ob-help {
   position: relative;
-  width: 460px; max-width: 95vw;
+  width: 100%; max-width: 100%;
+  min-height: 100vh;
+  overflow-y: auto;
   background: var(--paper-50);
-  padding: 56px 40px 40px;
-  display: flex; flex-direction: column; gap: 16px;
-  box-shadow: var(--shadow-xl);
-  animation: ob-slide-in var(--dur-slow) var(--ease-out);
+  padding: 96px 24px 48px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  animation: ob-fade var(--dur-base) var(--ease-out);
 }
-@keyframes ob-slide-in {
-  from { transform: translateX(40px); opacity: 0; }
-  to   { transform: none; opacity: 1; }
-}
+/* Constrain the content column while the panel itself is full-bleed. */
+.ob-help > *:not(.ob-help-close) { width: 100%; max-width: 560px; }
 .ob-help-close {
-  position: absolute; top: 24px; right: 24px;
-  width: 36px; height: 36px;
+  position: fixed; top: 24px; right: 24px;
+  width: 40px; height: 40px;
   border-radius: 999px;
-  background: var(--paper-200);
-  color: var(--ink-700);
+  border: 1px solid var(--ink-900);
+  background: var(--paper-50);
+  color: var(--ink-900);
   font-size: 22px;
   display: inline-flex; align-items: center; justify-content: center;
 }
@@ -1034,6 +1030,17 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 /* ====================================================
    RESPONSIVE
    ==================================================== */
+/* Intro: stack early so the photo + text never crowd into each other on tablets.
+   Order: photo first, then text — full row, no overlap. Top-align so tall stacked content
+   flows from the top instead of being vertically centered (which clipped/overlapped the title). */
+@media (max-width: 1024px) {
+  .ob-stage { align-items: flex-start; }
+  .ob-intro { grid-template-columns: 1fr; gap: 28px; align-items: start; }
+  .ob-intro-art { order: -1; }
+  .ob-art-photo, .ob-art-platz, .ob-art-club, .ob-art-media { width: 100%; max-width: none; margin-inline: 0; }
+  .ob-intro-lead { max-width: none; }
+}
+
 @media (max-width: 960px) {
   .ob-topbar  { padding: 16px 20px; }
   .ob-foot-inner { padding: 0 20px; }
@@ -1041,8 +1048,6 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   .ob-prog-count { display: block; }
   .ob-stage   { padding: 36px 20px 80px; }
 
-  .ob-intro { grid-template-columns: 1fr; gap: 32px; }
-  .ob-intro-art { order: -1; }
   .ob-art-platz, .ob-art-club, .ob-art-media { max-width: 320px; }
 
   .ob-rev-grid { grid-template-columns: 1fr; }
@@ -1052,7 +1057,7 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   .ob-cards { grid-template-columns: repeat(2, 1fr) !important; }
   .ob-step-title { font-size: 30px; }
   .ob-step-title.big { font-size: 38px; }
-  .ob-help { width: 100%; padding: 56px 24px 32px; }
+  .ob-help { padding: 88px 20px 40px; }
   .ob-top-pill { padding: 8px 14px; font-size: 13px; }
 }
 @media (max-width: 560px) {

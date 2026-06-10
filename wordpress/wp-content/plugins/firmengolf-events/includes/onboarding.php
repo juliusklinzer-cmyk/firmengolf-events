@@ -1183,7 +1183,7 @@ function fge_onboarding_card( string $type, string $name, string $id, string $la
 	}
 	$icon = fge_onboarding_card_icon( $map[ $id ] ?? '' );
 	?>
-	<label class="ob-card<?php echo $checked ? ' on' : ''; ?>">
+	<label class="ob-card">
 		<input type="<?php echo esc_attr( $type ); ?>" class="ob-card-input" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $id ); ?>" <?php checked( $checked ); ?>>
 		<span class="ob-card-ico" aria-hidden="true"><?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput — static, trusted SVG ?></span>
 		<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>

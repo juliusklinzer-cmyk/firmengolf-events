@@ -25,13 +25,16 @@ function fge_register_post_types() {
 			'name'          => __( 'Golfplatz Partner', 'firmengolf-events' ),
 			'singular_name' => __( 'Golfplatz Partner', 'firmengolf-events' ),
 		],
-		'public'        => false,
-		'show_ui'       => true,
-		'has_archive'   => false,
-		'supports'      => [ 'title', 'editor', 'thumbnail' ],
-		'show_in_rest'  => true,
-		'menu_icon'     => 'dashicons-location-alt',
-		'menu_position' => 21,
+		'public'             => false,
+		'publicly_queryable' => true,                          // public single page (gated in fge_block_non_public_partners)
+		'exclude_from_search' => true,
+		'show_ui'            => true,
+		'has_archive'        => false,
+		'rewrite'            => [ 'slug' => 'golfplatz', 'with_front' => false ],
+		'supports'           => [ 'title', 'editor', 'thumbnail' ],
+		'show_in_rest'       => true,
+		'menu_icon'          => 'dashicons-location-alt',
+		'menu_position'      => 21,
 	] );
 
 	register_post_type( 'firmengolf_request', [
