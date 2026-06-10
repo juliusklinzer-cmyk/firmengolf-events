@@ -2,26 +2,59 @@
    Event cards reuse the global .fg-event/.ev-card2/.ev-grid4 styles (fge-frontend.css) so they
    look identical to the events archive everywhere. */
 
-/* ── Galerie-Button im Hero + Lightbox ─────────────────────────────────────── */
-.fgpp .gp-gallery-btn { position: absolute; top: 20px; right: 20px; z-index: 3; }
-
-.gp-lightbox { position: fixed; inset: 0; z-index: 99999; background: rgba(14,19,16,0.93); display: flex; align-items: center; justify-content: center; }
-.gp-lightbox[hidden] { display: none; }
-.gp-lb-img { max-width: 90vw; max-height: 86vh; border-radius: 10px; object-fit: contain; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
-.gp-lb-btn {
-  position: absolute; width: 48px; height: 48px; border-radius: 999px; cursor: pointer;
-  background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.28); color: #fff;
-  font-size: 26px; line-height: 1; display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(8px); transition: background .15s ease;
+/* ── Galerie-Button im Hero (gleicher Stil wie .hero-cta-card) + Lightbox ───── */
+.fgpp .gp-gallery-btn {
+  position: absolute; top: 20px; right: 20px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.14); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.22); border-radius: var(--radius-lg);
+  padding: 14px 18px; color: var(--paper-100); cursor: pointer;
+  font-size: 14px; font-weight: 600; min-height: 0;
+  transition: background var(--dur-fast, .15s) var(--ease-out, ease);
 }
-.gp-lb-btn:hover { background: rgba(255,255,255,0.26); }
-.gp-lb-close { top: 24px; right: 24px; font-size: 20px; }
-.gp-lb-prev { left: 24px; top: 50%; transform: translateY(-50%); }
-.gp-lb-next { right: 24px; top: 50%; transform: translateY(-50%); }
-.gp-lb-count { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.85); font-size: 14px; letter-spacing: .03em; }
+.fgpp .gp-gallery-btn:hover { background: rgba(255,255,255,0.24); color: var(--paper-100); }
+.fgpp .gp-gallery-btn svg { width: 18px; height: 18px; }
+
+.gp-lightbox {
+  position: fixed; inset: 0; z-index: 99999;
+  background: rgba(14,19,16,0.45);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: center;
+}
+.gp-lightbox[hidden] { display: none; }
+.gp-lb-img { max-width: 88vw; max-height: 78vh; border-radius: 12px; object-fit: contain; box-shadow: 0 24px 70px rgba(0,0,0,.55); }
+
+/* Round controls — `.gp-lightbox` prefix beats the `.fge-page button` reset (0,1,1). */
+.gp-lightbox .gp-lb-icon {
+  position: absolute; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  border-radius: 999px; color: #fff;
+  background: #ffffff40; border: 1px solid rgba(255,255,255,0.28);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  transition: background var(--dur-fast, .15s) var(--ease-out, ease), transform var(--dur-fast, .15s) var(--ease-out, ease);
+}
+.gp-lightbox .gp-lb-icon:hover { background: #ffffff66; }
+.gp-lb-icon:active { transform: scale(0.94); }
+.gp-lb-close { top: 24px; right: 24px; width: 46px; height: 46px; }
+.gp-lb-close svg { width: 20px; height: 20px; }
+.gp-lb-nav { top: 50%; transform: translateY(-50%); width: 52px; height: 52px; }
+.gp-lb-nav:active { transform: translateY(-50%) scale(0.94); }
+.gp-lb-nav svg { width: 24px; height: 24px; }
+.gp-lb-prev { left: 24px; }
+.gp-lb-next { right: 24px; }
+
+/* Caption under the image: name + counter. */
+.gp-lb-caption {
+  position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 16px; max-width: 88vw;
+  color: #fff; font-size: 14px;
+}
+.gp-lb-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gp-lb-count { color: rgba(255,255,255,0.65); letter-spacing: .03em; flex: none; }
+
 @media (max-width: 560px) {
   .gp-lb-prev { left: 12px; } .gp-lb-next { right: 12px; }
-  .gp-lb-btn { width: 42px; height: 42px; }
+  .gp-lb-nav { width: 44px; height: 44px; }
+  .gp-lb-img { max-height: 70vh; }
 }
 
 /* ── Events am Platz: 3er-Grid (Content ist schmaler als das Event-Archiv) ────── */

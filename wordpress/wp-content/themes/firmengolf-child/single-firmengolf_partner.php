@@ -62,7 +62,7 @@ if ( $season )  { $facts[] = [ 'Saison', $season ]; }
 					<?php if ( $gallery ) : ?>
 						<button type="button" class="fg-btn fg-btn-glass gp-gallery-btn" data-gp-open>
 							<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-							Galerie · <?php echo (int) count( $gallery ); ?>
+							Galerie
 						</button>
 					<?php endif; ?>
 					<div class="hero-body">
@@ -185,18 +185,28 @@ if ( $season )  { $facts[] = [ 'Saison', $season ]; }
 
 	<?php
 	if ( $gallery ) :
-		$gallery_urls = [];
+		$gallery_items = [];
 		foreach ( $gallery as $gid ) {
 			$u = wp_get_attachment_image_url( $gid, 'large' );
-			if ( $u ) { $gallery_urls[] = $u; }
+			if ( $u ) {
+				$gallery_items[] = [ 'url' => $u, 'name' => get_the_title( $gid ) ];
+			}
 		}
-		if ( $gallery_urls ) : ?>
-		<div class="gp-lightbox" data-gp-lightbox data-images="<?php echo esc_attr( wp_json_encode( $gallery_urls ) ); ?>" hidden>
-			<button type="button" class="gp-lb-btn gp-lb-close" data-gp-close aria-label="Schließen">✕</button>
-			<button type="button" class="gp-lb-btn gp-lb-prev" data-gp-prev aria-label="Vorheriges Bild">‹</button>
-			<img class="gp-lb-img" alt="Galeriefoto" data-gp-img>
-			<button type="button" class="gp-lb-btn gp-lb-next" data-gp-next aria-label="Nächstes Bild">›</button>
-			<div class="gp-lb-count"><span data-gp-cur>1</span> / <?php echo (int) count( $gallery_urls ); ?></div>
+		if ( $gallery_items ) : ?>
+		<div class="gp-lightbox" data-gp-lightbox data-images="<?php echo esc_attr( wp_json_encode( $gallery_items ) ); ?>" hidden>
+			<button type="button" class="gp-lb-icon gp-lb-close" data-gp-close aria-label="Galerie schließen">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+			</button>
+			<button type="button" class="gp-lb-icon gp-lb-nav gp-lb-prev" data-gp-prev aria-label="Vorheriges Bild">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+			</button>
+			<img class="gp-lb-img" alt="" data-gp-img>
+			<button type="button" class="gp-lb-icon gp-lb-nav gp-lb-next" data-gp-next aria-label="Nächstes Bild">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+			</button>
+			<div class="gp-lb-caption">
+				<span class="gp-lb-count"><span data-gp-cur>1</span> / <?php echo (int) count( $gallery_items ); ?></span>
+			</div>
 		</div>
 	<?php endif; endif; ?>
 

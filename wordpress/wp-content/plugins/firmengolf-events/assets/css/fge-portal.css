@@ -95,7 +95,7 @@
 .fgpp .hero-id { display: flex; gap: 22px; align-items: flex-end; max-width: 760px; }
 .fgpp .hero-monogram { width: 96px; height: 96px; border-radius: var(--radius-lg); background: var(--paper-100); color: var(--fairway-800); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 36px; letter-spacing: -0.02em; flex: none; box-shadow: 0 8px 24px rgba(14,19,16,0.25); }
 /* Logo shown in place of the monogram; transparent bg + rounded so transparent-PNG and white-bg logos both look clean. */
-.fgpp .hero-monogram.hero-logo { background-color: transparent; background-size: contain; background-position: center; background-repeat: no-repeat; box-shadow: none; overflow: hidden; color: transparent; font-size: 0; }
+.fgpp .hero-monogram.hero-logo { background-color: var(--paper-50); background-size: contain; background-position: center; background-repeat: no-repeat; background-origin: content-box; padding: 12px; overflow: hidden; color: transparent; font-size: 0; }
 .fgpp .hero-text { padding-bottom: 6px; }
 .fgpp .hero-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(251,250,246,0.78); }
 .fgpp .hero-name { font-family: var(--font-display); font-weight: 500; font-size: 56px; line-height: 1.0; letter-spacing: -0.03em; margin-top: 10px; color: var(--paper-100); }

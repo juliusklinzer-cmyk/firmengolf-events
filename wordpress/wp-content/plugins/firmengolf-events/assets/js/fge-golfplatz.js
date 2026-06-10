@@ -1,4 +1,4 @@
-/* Golf-course page gallery lightbox. Opened by [data-gp-open]; images from the lightbox's data-images. */
+/* Golf-course page gallery lightbox. Opened by [data-gp-open]; images from data-images. */
 ( function () {
 	'use strict';
 	var box = document.querySelector( '[data-gp-lightbox]' );
@@ -9,13 +9,18 @@
 	try { images = JSON.parse( box.getAttribute( 'data-images' ) || '[]' ); } catch ( e ) {}
 	if ( ! images.length ) { return; }
 
-	var img = box.querySelector( '[data-gp-img]' );
-	var cur = box.querySelector( '[data-gp-cur]' );
+	var img  = box.querySelector( '[data-gp-img]' );
+	var cur  = box.querySelector( '[data-gp-cur]' );
+	var name = box.querySelector( '[data-gp-name]' );
 	var i = 0;
 
 	function show( n ) {
 		i = ( n + images.length ) % images.length;
-		img.src = images[ i ];
+		var it = images[ i ];
+		var url = ( it && typeof it === 'object' ) ? it.url : it;
+		img.src = url;
+		img.alt = ( it && it.name ) ? it.name : '';
+		if ( name ) { name.textContent = ( it && it.name ) ? it.name : ''; }
 		if ( cur ) { cur.textContent = String( i + 1 ); }
 	}
 	function open( start ) {
