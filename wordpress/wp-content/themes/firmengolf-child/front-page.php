@@ -266,7 +266,7 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 				$p_max       = (int) fge_get_event_meta( $eid, 'participants_max' );
 				$price       = fge_get_event_price_display( $eid );
 				$excerpt     = fge_get_event_meta( $eid, 'card_description', $event->post_excerpt );
-				$thumb       = has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : $img( 'golf-coaching-gruppe.jpg' );
+				$thumb       = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $eid, 'large' ) : ( has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : $img( 'golf-coaching-gruppe.jpg' ) );
 				$is_dark     = ( $i % 2 === 1 );
 			?>
 			<article class="mk-format<?php echo $is_dark ? ' is-dark' : ''; ?>">

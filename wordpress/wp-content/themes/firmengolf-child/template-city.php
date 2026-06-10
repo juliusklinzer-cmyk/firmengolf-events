@@ -134,7 +134,7 @@ get_header();
 			$dur    = fge_get_event_meta( $eid, 'duration' );
 			$pmax   = (int) fge_get_event_meta( $eid, 'participants_max' );
 			$price  = fge_get_event_price_display( $eid );
-			$thumb  = has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
+			$thumb  = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $eid, 'large' ) : ( has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' ) );
 		?>
 		<article class="fg-event">
 			<a href="<?php echo esc_url( get_permalink( $eid ) ); ?>" style="display:contents">

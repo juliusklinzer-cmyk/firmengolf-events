@@ -30,8 +30,8 @@ if ( ! $rating ) {
 	$rating = (float) fge_get_event_meta( $post_id, 'rating' );
 }
 $reviews        = (int) fge_get_event_meta( $post_id, 'reviews_count' );
-$gallery_ids    = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $post_id, '_fge_event_gallery_ids', true ) ) ) );
-$thumb_url      = has_post_thumbnail() ? get_the_post_thumbnail_url( $post_id, 'full' ) : fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' );
+$gallery_ids    = function_exists( 'fge_event_gallery_ids' ) ? fge_event_gallery_ids( $post_id ) : array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $post_id, '_fge_event_gallery_ids', true ) ) ) );
+$thumb_url      = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $post_id, 'full' ) : ( has_post_thumbnail() ? get_the_post_thumbnail_url( $post_id, 'full' ) : fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' ) );
 
 $format_label = fge_format_event_type( $event_type_raw ) ?: 'Event';
 
@@ -131,8 +131,8 @@ foreach ( $gallery_ids as $gid ) {
 		$gallery_urls[] = $gurl;
 	}
 }
-$gallery_img_1 = $gallery_urls[0] ?? fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
-$gallery_img_2 = $gallery_urls[1] ?? fge_get_placeholder_image_url( 'clubhaus-aussenansicht.jpg' );
+$gallery_img_1 = $gallery_urls[0] ?? fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg', $post_id );
+$gallery_img_2 = $gallery_urls[1] ?? fge_get_placeholder_image_url( 'clubhaus-aussenansicht.jpg', $post_id );
 
 // Related events
 $related_query = new WP_Query( [
@@ -443,7 +443,7 @@ get_header();
 				$rreg   = fge_get_event_meta( $rid, 'region' );
 				$rloc   = fge_get_event_meta( $rid, 'event_location' );
 				$rprice = fge_get_event_price_display( $rid );
-				$rthumb = has_post_thumbnail() ? get_the_post_thumbnail_url( $rid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
+				$rthumb = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $rid, 'large' ) : ( has_post_thumbnail( $rid ) ? get_the_post_thumbnail_url( $rid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' ) );
 				$rdur   = fge_get_event_meta( $rid, 'duration' );
 			?>
 			<article class="fg-event">

@@ -11,18 +11,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action( 'init', 'fge_portal_handle_new_event', 10 );
 add_action( 'init', 'fge_portal_handle_edit_event', 10 );
 
-/** Load the async gallery widget on the portal "Platz" edit form. */
+/** Load the async media widgets on the portal: gallery on "Platz" edit, picker on the event form. */
 add_action( 'wp_enqueue_scripts', 'fge_portal_enqueue_media' );
 function fge_portal_enqueue_media(): void {
 	if ( ! is_page( 'partnerportal' ) ) {
 		return;
 	}
-	if ( ( $_GET['tab'] ?? '' ) !== 'platz' || ! isset( $_GET['edit'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+	$tab    = $_GET['tab'] ?? ''; // phpcs:ignore WordPress.Security.NonceVerification
+	$action = $_GET['portal_action'] ?? ''; // phpcs:ignore WordPress.Security.NonceVerification
+	$pid    = fge_portal_get_partner_id();
+	if ( $pid <= 0 ) {
 		return;
 	}
-	$pid = fge_portal_get_partner_id();
-	if ( $pid > 0 ) {
+
+	if ( 'platz' === $tab && isset( $_GET['edit'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
 		fge_media_enqueue( $pid );
+	} elseif ( 'angebote' === $tab && in_array( $action, [ 'new', 'edit' ], true ) ) {
+		fge_event_picker_enqueue( $pid );
 	}
 }
 add_action( 'init', 'fge_portal_handle_profile_update', 10 );
@@ -234,16 +239,7 @@ function fge_portal_handle_new_event(): void {
 	update_post_meta( $post_id, '_fge_provider_type',       'golfplatz_partner' );
 	update_post_meta( $post_id, '_fge_assigned_partner_id', $partner_id );
 	fge_portal_save_event_meta( $post_id );
-
-	if ( ! empty( $_FILES['fge_event_cover']['name'] ) ) {
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		$cover_id = media_handle_upload( 'fge_event_cover', $post_id );
-		if ( ! is_wp_error( $cover_id ) ) {
-			update_post_meta( $post_id, '_fge_cover_attachment_id', $cover_id );
-		}
-	}
+	fge_event_save_images( $post_id, $partner_id, wp_unslash( $_POST ) );
 
 	wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_saved' ), 303 );
 	exit;
@@ -291,18 +287,7 @@ function fge_portal_handle_edit_event(): void {
 	$current_status = (string) get_post_meta( $event_id, '_fge_event_status', true );
 	update_post_meta( $event_id, '_fge_event_status', $current_status === 'freigegeben' ? 'aenderung_in_pruefung' : 'zur_pruefung' );
 	fge_portal_save_event_meta( $event_id );
-
-	if ( ! empty( $_FILES['fge_event_cover']['name'] ) ) {
-		if ( ! function_exists( 'media_handle_upload' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-			require_once ABSPATH . 'wp-admin/includes/image.php';
-			require_once ABSPATH . 'wp-admin/includes/media.php';
-		}
-		$cover_id = media_handle_upload( 'fge_event_cover', $event_id );
-		if ( ! is_wp_error( $cover_id ) ) {
-			update_post_meta( $event_id, '_fge_cover_attachment_id', $cover_id );
-		}
-	}
+	fge_event_save_images( $event_id, $partner_id, wp_unslash( $_POST ) );
 
 	wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_updated' ), 303 );
 	exit;
@@ -904,7 +889,7 @@ function fge_portal_render_hero( int $partner_id ): void {
 	$hero_img_id  = (int) get_post_meta( $partner_id, '_fge_hero_image_attachment_id', true );
 	$hero_img     = $hero_img_id > 0
 		? (string) wp_get_attachment_image_url( $hero_img_id, 'full' )
-		: fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
+		: fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $partner_id );
 
 	$logo_id  = (int) get_post_meta( $partner_id, '_fge_logo_attachment_id', true );
 	$logo_img = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
@@ -1063,8 +1048,7 @@ function fge_portal_render_cat_card( WP_Post $event, string $type_label, string 
 	$pmin     = (int) get_post_meta( $event_id, '_fge_participants_min', true );
 	$pmax     = (int) get_post_meta( $event_id, '_fge_participants_max', true );
 	$views    = (int) get_post_meta( $event_id, '_fge_views_count', true );
-	$cover_id = (int) get_post_meta( $event_id, '_fge_cover_attachment_id', true );
-	$cover    = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
+	$cover    = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $event_id, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
 	$edit_url = esc_url( $base . '?tab=angebote&portal_action=edit&event_id=' . $event_id );
 
 	$st_map = [
@@ -1839,7 +1823,7 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 	$formats    = (array) get_post_meta( $partner_id, '_fge_event_formats', true );
 	$gallery    = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $partner_id, '_fge_gallery_attachment_ids', true ) ) ) );
 	$cover_id   = (int) get_post_meta( $partner_id, '_fge_hero_image_attachment_id', true );
-	$cover      = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
+	$cover      = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $partner_id );
 	$mono       = function_exists( 'fge_portal_make_monogram' ) ? fge_portal_make_monogram( $name ) : strtoupper( mb_substr( $name, 0, 2 ) );
 
 	$infra_index = [];

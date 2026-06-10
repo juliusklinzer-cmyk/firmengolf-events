@@ -134,6 +134,58 @@ function fge_event_save_images( int $event_id, int $partner_id, array $post ): v
 	}
 }
 
+/** Assigned partner id for an event (0 if none). */
+function fge_event_partner_id( int $event_id ): int {
+	return (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
+}
+
+/**
+ * Effective cover attachment id for an event: the event's own cover, else its featured image,
+ * else — as a fallback — the assigned partner's Titelfoto. 0 if nothing is available.
+ */
+function fge_event_cover_id( int $event_id ): int {
+	$cover = (int) get_post_meta( $event_id, '_fge_cover_attachment_id', true );
+	if ( $cover > 0 ) {
+		return $cover;
+	}
+	$thumb = (int) get_post_thumbnail_id( $event_id );
+	if ( $thumb > 0 ) {
+		return $thumb;
+	}
+	$pid = fge_event_partner_id( $event_id );
+	return $pid > 0 ? fge_partner_cover_id( $pid ) : 0;
+}
+
+/** Cover image URL for an event (with partner-library fallback), or a placeholder file when none. */
+function fge_event_cover_url( int $event_id, string $size = 'large', string $placeholder = 'golf-coaching-gruppe.jpg' ): string {
+	$id = fge_event_cover_id( $event_id );
+	if ( $id > 0 ) {
+		$url = wp_get_attachment_image_url( $id, $size );
+		if ( $url ) {
+			return (string) $url;
+		}
+	}
+	return fge_get_placeholder_image_url( $placeholder, $event_id );
+}
+
+/**
+ * Effective gallery attachment ids for an event (the photo strip, cover excluded). Falls back to
+ * the assigned partner's library when the event has no own selection — so an event always shows
+ * the golf course's photos unless the partner picked specific ones.
+ */
+function fge_event_gallery_ids( int $event_id ): array {
+	$own = array_values( array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $event_id, '_fge_event_gallery_ids', true ) ) ) ) );
+	if ( ! empty( $own ) ) {
+		return $own;
+	}
+	$pid = fge_event_partner_id( $event_id );
+	if ( $pid <= 0 ) {
+		return [];
+	}
+	$cover = fge_event_cover_id( $event_id );
+	return array_values( array_filter( fge_partner_gallery_ids( $pid ), static fn( $id ) => $id !== $cover ) );
+}
+
 /**
  * Output the widget container. JS (fge-media-gallery.js) fills it from FGE_MEDIA.
  *

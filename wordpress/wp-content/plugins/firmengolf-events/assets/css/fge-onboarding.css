@@ -408,10 +408,10 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   background: var(--paper-50);
   border: 1px solid var(--ink-200);
   border-radius: var(--radius-md);
-  padding: 18px 16px;
-  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px;
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
   text-align: left;
-  min-height: 96px;
+  min-height: 64px;
   transition: all var(--dur-fast) var(--ease-out);
 }
 .ob-card:hover {
@@ -425,8 +425,9 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 }
 .ob-card-ico {
   color: var(--ink-800);
-  width: 32px; height: 32px;
-  display: inline-flex; align-items: center;
+  width: 28px; height: 28px;
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 .ob-card.on .ob-card-ico { color: var(--fairway-700); }
 .ob-card-l {

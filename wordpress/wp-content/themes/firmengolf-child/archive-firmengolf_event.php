@@ -14,7 +14,7 @@ $kontakt_url = ( $kp = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink(
 // ── Sanitize GET params ──────────────────────────────────────────────────────
 $active_format = sanitize_key( $_GET['format'] ?? 'all' );        // phpcs:ignore WordPress.Security.NonceVerification
 $active_region = sanitize_text_field( $_GET['region'] ?? '' );    // phpcs:ignore WordPress.Security.NonceVerification
-$active_pax    = max( 0, (int) ( $_GET['pax'] ?? 10 ) );          // phpcs:ignore WordPress.Security.NonceVerification — default 10
+$active_pax    = max( 0, (int) ( $_GET['pax'] ?? 0 ) );           // phpcs:ignore WordPress.Security.NonceVerification — default 0 = kein Filter (alle anzeigen)
 $active_sort   = sanitize_key( $_GET['sort'] ?? 'curated' );      // phpcs:ignore WordPress.Security.NonceVerification
 
 // ── Geo (Umkreissuche) params ────────────────────────────────────────────────
@@ -61,9 +61,11 @@ $chip_url = static function( array $params ) use ( $archive_url, $active_format,
 };
 
 // ── Base meta filters (Status + format / pax) ────────────────────────────────
-// Nur freigegebene Angebote öffentlich zeigen (Lifecycle). Pausierte Plätze → Nachfilter unten.
+// Öffentlich sichtbare Angebote (freigegeben + zuvor freigegeben mit anstehender Änderung).
+// Pausierte Plätze → Nachfilter unten via fge_event_is_public().
+$public_statuses = function_exists( 'fge_public_event_statuses' ) ? fge_public_event_statuses() : [ 'freigegeben' ];
 $meta_query = [
-	[ 'key' => '_fge_event_status', 'value' => 'freigegeben', 'compare' => '=' ],
+	[ 'key' => '_fge_event_status', 'value' => $public_statuses, 'compare' => 'IN' ],
 ];
 if ( $active_format !== 'all' ) {
 	$meta_query[] = [ 'key' => '_fge_event_type', 'value' => $active_format, 'compare' => '=' ];
@@ -251,9 +253,9 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 			<div class="fg-cell-label">Personen</div>
 			<div class="fg-pax-ctrl">
 				<button type="button" class="fg-pax-btn" data-fn="dec" aria-label="Weniger Personen"
-				        <?php echo $active_pax <= 1 ? 'disabled' : ''; ?>>−</button>
+				        <?php echo $active_pax <= 0 ? 'disabled' : ''; ?>>−</button>
 				<span class="fg-pax-num" id="fg-pax-display">
-					<?php echo esc_html( (string) $active_pax ); ?> Pers.
+					<?php echo $active_pax > 0 ? esc_html( $active_pax . ' Pers.' ) : 'Alle'; ?>
 				</span>
 				<button type="button" class="fg-pax-btn" data-fn="inc" aria-label="Mehr Personen">+</button>
 			</div>
@@ -285,7 +287,7 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 <section class="fg-grid-section" aria-label="Eventangebote">
 
 	<?php /* Active filter pills */ ?>
-	<?php $has_filters = ( $active_format !== 'all' ) || $geo_active || ( $active_pax !== 10 ); ?>
+	<?php $has_filters = ( $active_format !== 'all' ) || $geo_active || ( $active_pax > 0 ); ?>
 	<?php if ( $has_filters ) : ?>
 		<div class="fg-activefilters">
 			<?php if ( $active_format !== 'all' ) : ?>
@@ -300,8 +302,8 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 					<span class="fg-fpill-x" aria-hidden="true">×</span>
 				</a>
 			<?php endif; ?>
-			<?php if ( $active_pax !== 10 ) : ?>
-				<a class="fg-fpill" href="<?php echo esc_url( $chip_url( [ 'pax' => 10 ] ) ); ?>">
+			<?php if ( $active_pax > 0 ) : ?>
+				<a class="fg-fpill" href="<?php echo esc_url( $chip_url( [ 'pax' => '' ] ) ); ?>">
 					<?php echo esc_html( $active_pax . '+ Pers.' ); ?>
 					<span class="fg-fpill-x" aria-hidden="true">×</span>
 				</a>
@@ -371,7 +373,7 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 				if ( ! $rating ) { $rating = (float) fge_get_event_meta( $pid, 'rating' ); }
 				$reviews  = fge_get_event_meta( $pid, 'reviews_count' );
 				$featured = fge_get_event_meta( $pid, 'featured' );
-				$thumb    = has_post_thumbnail() ? get_the_post_thumbnail_url( $pid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
+				$thumb     = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $pid, 'large' ) : ( has_post_thumbnail( $pid ) ? get_the_post_thumbnail_url( $pid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' ) );
 				$indoor   = in_array( 'Indoor-Backup', fge_get_active_leistungen( $pid ), true );
 				$tags_arr = array_filter( array_map( 'trim', explode( ',', (string) fge_get_event_meta( $pid, 'event_tags' ) ) ) );
 			?>
@@ -596,14 +598,14 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
   var incBtn     = document.querySelector('.fg-pax-btn[data-fn="inc"]');
 
   function updatePax(next) {
-    next = Math.max(1, next);
+    next = Math.max(0, next); // 0 = Alle (kein Filter)
     paxVal.value           = next;
-    paxDisplay.textContent = next + ' Pers.';
-    if (decBtn) decBtn.disabled = next <= 1;
+    paxDisplay.textContent = next > 0 ? next + ' Pers.' : 'Alle';
+    if (decBtn) decBtn.disabled = next <= 0;
   }
 
-  if (incBtn) incBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) + 1); });
-  if (decBtn) decBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) - 1); });
+  if (incBtn) incBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 0) + 1); });
+  if (decBtn) decBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 0) - 1); });
 
   /* ── Custom sort dropdown ── */
   var sortDd = document.getElementById('fg-sort-dd');

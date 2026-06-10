@@ -19,6 +19,17 @@ function fge_enqueue_frontend_assets() {
 }
 add_action( 'wp_enqueue_scripts', 'fge_enqueue_frontend_assets' );
 
+// ── Public visibility ─────────────────────────────────────────────────────────
+
+/**
+ * Event statuses that count as publicly visible. `aenderung_in_pruefung` is included so a
+ * previously approved event stays online while a partner edit waits for re-review — instead of
+ * vanishing from the marketplace until an admin re-approves it.
+ */
+function fge_public_event_statuses(): array {
+	return [ 'freigegeben', 'aenderung_in_pruefung' ];
+}
+
 // ── Archive Query Filter ──────────────────────────────────────────────────────
 
 function fge_filter_archive_query( WP_Query $q ) {
@@ -28,8 +39,9 @@ function fge_filter_archive_query( WP_Query $q ) {
 	if ( ! $q->is_post_type_archive( 'firmengolf_event' ) ) {
 		return;
 	}
-	$q->set( 'meta_key',   '_fge_event_status' );
-	$q->set( 'meta_value', 'freigegeben' );
+	$q->set( 'meta_query', [
+		[ 'key' => '_fge_event_status', 'value' => fge_public_event_statuses(), 'compare' => 'IN' ],
+	] );
 	$q->set( 'posts_per_page', 24 );
 }
 add_action( 'pre_get_posts', 'fge_filter_archive_query' );
@@ -46,7 +58,7 @@ function fge_block_non_approved_events(): void {
 		return;
 	}
 	$status = (string) get_post_meta( get_the_ID(), '_fge_event_status', true );
-	if ( $status === 'freigegeben' ) {
+	if ( in_array( $status, fge_public_event_statuses(), true ) ) {
 		return;
 	}
 	global $wp_query;
@@ -70,8 +82,8 @@ function fge_maybe_increment_views() {
 		return;
 	}
 	$post_id = get_the_ID();
-	$status  = get_post_meta( $post_id, '_fge_event_status', true );
-	if ( $status !== 'freigegeben' ) {
+	$status  = (string) get_post_meta( $post_id, '_fge_event_status', true );
+	if ( ! in_array( $status, fge_public_event_statuses(), true ) ) {
 		return;
 	}
 	$current = (int) get_post_meta( $post_id, '_fge_views_count', true );
@@ -212,7 +224,7 @@ function fge_event_included_wants( int $event_id ): array {
  * (Pausieren-Kaskade, Handoff §1: Platz pausiert ⇒ alle seine Events offline).
  */
 function fge_event_is_public( int $event_id ): bool {
-	if ( get_post_meta( $event_id, '_fge_event_status', true ) !== 'freigegeben' ) {
+	if ( ! in_array( (string) get_post_meta( $event_id, '_fge_event_status', true ), fge_public_event_statuses(), true ) ) {
 		return false;
 	}
 	$partner_id = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
@@ -228,7 +240,7 @@ function fge_get_featured_events( int $count = 3 ): array {
 		'post_status' => 'publish',
 		'numberposts' => max( $count * 4, 12 ),
 		'meta_query'  => [
-			[ 'key' => '_fge_event_status', 'value' => 'freigegeben', 'compare' => '=' ],
+			[ 'key' => '_fge_event_status', 'value' => fge_public_event_statuses(), 'compare' => 'IN' ],
 		],
 		'orderby' => 'rand',
 	] );
@@ -261,7 +273,69 @@ function fge_get_logo_url( bool $light = false ): string {
 	return plugins_url( 'assets/logo/' . $file, FGE_DIR . 'firmengolf-events.php' );
 }
 
-function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahme.jpg' ): string {
+/**
+ * Categorised placeholder pool: buckets assets/imagery/pool/*.jpg by filename keyword.
+ * Cached per request. Lets fallbacks pick a *fitting, varied* stock image instead of one fixed file.
+ *
+ * @return array<string,string[]> category => list of pool filenames
+ */
+function fge_placeholder_pool(): array {
+	static $buckets = null;
+	if ( $buckets !== null ) {
+		return $buckets;
+	}
+	$buckets = [ 'event' => [], 'course' => [], 'range' => [], 'clubhouse' => [], 'founder' => [], 'misc' => [], 'all' => [] ];
+	$dir     = FGE_DIR . 'assets/imagery/pool';
+	foreach ( glob( $dir . '/*.jpg' ) ?: [] as $path ) {
+		$file = basename( $path );
+		$buckets['all'][] = $file;
+		if ( strpos( $file, 'gruender' ) !== false ) {
+			$cat = 'founder';
+		} elseif ( preg_match( '/hund|tennis|ubahn|pilot|cockpit|handgepaeck|burnout|buerodach/', $file ) ) {
+			$cat = 'misc'; // off-topic marketing/blog imagery — not used for event/course covers
+		} elseif ( preg_match( '/range|korb|driving/', $file ) ) {
+			$cat = 'range';
+		} elseif ( strpos( $file, 'club' ) !== false ) {
+			$cat = 'clubhouse';
+		} elseif ( preg_match( '/golfplatz|golfloch|gruen|inselgruen|rasen|sand|meer|eagle|panorama|greenkeeper|uebungsgruen|puttinggruen|annaeherung/', $file ) ) {
+			$cat = 'course';
+		} else {
+			$cat = 'event';
+		}
+		$buckets[ $cat ][] = $file;
+	}
+	return $buckets;
+}
+
+/** Map a legacy placeholder filename to a pool category. */
+function fge_placeholder_category( string $name ): string {
+	$map = [
+		'golf-coaching-gruppe.jpg'       => 'event',
+		'golfplatz-drohnenaufnahme.jpg'  => 'course',
+		'hero-fairway-wide.jpg'          => 'course',
+		'golfplatz-rasen-qualitaet.jpg'  => 'course',
+		'golfplatz-panorama.jpg'         => 'course',
+		'hero-range.jpg'                 => 'range',
+		'clubhaus-aussenansicht.jpg'     => 'clubhouse',
+		'gruender-julius-klinzer.jpg'    => 'founder',
+	];
+	return $map[ $name ] ?? 'event';
+}
+
+/**
+ * Placeholder image URL. Picks a fitting image from the stock pool (assets/imagery/pool/) by the
+ * legacy $name's category; $seed (e.g. a post ID) makes the pick stable-but-varied per item.
+ * Falls back to the single legacy file when the pool for that category is empty.
+ */
+function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahme.jpg', int $seed = 0 ): string {
+	$cat  = fge_placeholder_category( $name );
+	$pool = fge_placeholder_pool();
+	$list = ! empty( $pool[ $cat ] ) ? $pool[ $cat ] : ( $pool['all'] ?? [] );
+	if ( ! empty( $list ) ) {
+		$key  = $seed > 0 ? (string) $seed : $name;
+		$idx  = abs( crc32( $cat . '|' . $key ) ) % count( $list );
+		return plugins_url( 'assets/imagery/pool/' . $list[ $idx ], FGE_DIR . 'firmengolf-events.php' );
+	}
 	return plugins_url( 'assets/imagery/' . $name, FGE_DIR . 'firmengolf-events.php' );
 }
 
