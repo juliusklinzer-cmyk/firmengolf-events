@@ -47,10 +47,17 @@ add_action( 'wp_enqueue_scripts', function() {
 	}
 
 	if ( is_singular( 'firmengolf_partner' ) ) {
+		// Reuses the portal "Platz" design (.fgpp) so the public page matches it 1:1.
+		wp_enqueue_style(
+			'fge-portal',
+			plugins_url( 'assets/css/fge-portal.css', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
+			[ 'fge-frontend' ],
+			defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
+		);
 		wp_enqueue_style(
 			'fge-golfplatz',
 			plugins_url( 'assets/css/fge-golfplatz.css', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
-			[ 'fge-frontend' ],
+			[ 'fge-portal' ],
 			defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
 		);
 	}

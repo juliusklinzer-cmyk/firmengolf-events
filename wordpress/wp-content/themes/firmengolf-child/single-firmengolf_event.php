@@ -353,7 +353,7 @@ get_header();
 				</div>
 				<?php endif; ?>
 				<?php if ( $partner_id && function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) ) : ?>
-				<a class="fg-btn-ghost evd-venue-link" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" style="margin-top:20px;">
+				<a class="fg-btn fg-btn-outline evd-venue-link" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" style="margin-top:20px;">
 					Mehr zum Golfplatz <?php echo esc_html( $venue ?: get_the_title( $partner_id ) ); ?> →
 				</a>
 				<?php endif; ?>
@@ -447,44 +447,10 @@ get_header();
 				Alle Events <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 			</a>
 		</div>
-		<div class="fg-grid">
-			<?php while ( $related_query->have_posts() ) : $related_query->the_post();
-				$rid    = get_the_ID();
-				$rtype  = $format_map[ fge_get_event_meta( $rid, 'event_type' ) ] ?? fge_format_event_type( fge_get_event_meta( $rid, 'event_type' ) );
-				$rreg   = fge_get_event_meta( $rid, 'region' );
-				$rloc   = fge_get_event_meta( $rid, 'event_location' );
-				$rprice = fge_get_event_price_display( $rid );
-				$rthumb = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $rid, 'large' ) : ( has_post_thumbnail( $rid ) ? get_the_post_thumbnail_url( $rid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' ) );
-				$rdur   = fge_get_event_meta( $rid, 'duration' );
-			?>
-			<article class="fg-event">
-				<a href="<?php the_permalink(); ?>">
-					<div class="fg-event-photo" style="background-image:url('<?php echo esc_url( $rthumb ); ?>')">
-						<?php if ( $rtype ) : ?>
-							<div class="fg-event-chips"><span class="fg-photo-chip"><?php echo esc_html( $rtype ); ?></span></div>
-						<?php endif; ?>
-					</div>
-					<div class="fg-event-body">
-						<?php if ( $rtype ) : ?><span class="fg-type-tag"><?php echo esc_html( $rtype ); ?></span><?php endif; ?>
-						<h3 class="fg-event-title"><?php the_title(); ?></h3>
-						<div class="fg-event-meta">
-							<?php if ( $rloc || $rreg ) : ?>
-								<?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-								<span><?php echo esc_html( $rloc ?: $rreg ); ?></span>
-							<?php endif; ?>
-							<?php if ( $rdur ) : ?>
-								<?php echo fge_icon_clock(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-								<span><?php echo esc_html( $rdur ); ?></span>
-							<?php endif; ?>
-						</div>
-						<div class="fg-event-foot">
-							<?php if ( $rprice ) : ?><span class="fg-event-price"><?php echo esc_html( $rprice ); ?></span><?php endif; ?>
-							<span class="fg-event-cta">Details <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-						</div>
-					</div>
-				</a>
-			</article>
-			<?php endwhile; wp_reset_postdata(); ?>
+		<div class="fg-grid ev-grid4">
+			<?php foreach ( $related_query->posts as $rp ) {
+				get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $rp->ID ] );
+			} wp_reset_postdata(); ?>
 		</div>
 	</section>
 	<?php endif; ?>

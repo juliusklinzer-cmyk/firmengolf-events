@@ -1,104 +1,34 @@
-/* Public golf-course (partner) detail page. Tokens from fge-frontend.css. */
+/* Public golf-course page — additions on top of the shared portal "Platz" design (.fgpp).
+   Event cards reuse the global .fg-event/.ev-card2/.ev-grid4 styles (fge-frontend.css) so they
+   look identical to the events archive everywhere. */
 
-.gp-hero {
-  position: relative;
-  min-height: 460px;
-  display: flex; align-items: flex-end;
-  background-size: cover; background-position: center;
-  color: #fff;
+/* ── Ausstattung: grouped cards (same grouping as the onboarding infra step) ──── */
+.fgpp .gp-amenity-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.fgpp .gp-amenity-card {
+  background: var(--paper-50); border: 1px solid var(--ink-200);
+  border-radius: var(--radius-lg, 16px); padding: 20px 20px 18px;
 }
-.gp-hero-scrim {
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(14,19,16,0.15) 0%, rgba(14,19,16,0.2) 45%, rgba(14,19,16,0.78) 100%);
+.fgpp .gp-amenity-group {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink-500); margin-bottom: 12px;
 }
-.gp-hero-inner {
-  position: relative; z-index: 1;
-  width: 100%; max-width: 1140px; margin: 0 auto;
-  padding: 40px 24px 48px;
-}
-.gp-hero-back {
-  display: inline-block; margin-bottom: 20px;
-  color: rgba(255,255,255,0.9); font-size: 14px; font-weight: 500;
-}
-.gp-hero-back:hover { color: #fff; }
-.gp-hero-eyebrow {
-  font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
-  color: rgba(255,255,255,0.85); margin-bottom: 10px;
-}
-.gp-hero-title {
-  font-family: var(--font-display); font-weight: 500;
-  font-size: clamp(34px, 5vw, 56px); line-height: 1.04; letter-spacing: -0.03em;
-  color: #fff; margin: 0;
-}
-.gp-hero-meta {
-  display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px;
-  font-size: 15px; color: rgba(255,255,255,0.92);
-}
-.gp-hero-meta span { display: inline-flex; align-items: center; }
+.fgpp .gp-amenity-card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.fgpp .gp-amenity-card li { font-size: 14px; color: var(--ink-800); line-height: 1.35; padding-left: 22px; position: relative; }
+.fgpp .gp-amenity-card li::before { content: "✓"; position: absolute; left: 0; color: var(--fairway-700); font-weight: 700; }
 
-.gp-wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px 96px; }
-
-.gp-about {
-  display: grid; grid-template-columns: 1fr 320px; gap: 48px;
-  padding: 64px 0 8px; align-items: start;
+/* ── Maßgeschneidert CTA banner ────────────────────────────────────────────── */
+.fgpp .gp-cta {
+  display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap;
+  background: var(--paper-200); border-radius: var(--radius-xl, 24px); padding: 40px 44px;
 }
-.gp-about-main h2,
-.gp-sec h2 {
-  font-family: var(--font-display); font-weight: 500;
-  font-size: 28px; letter-spacing: -0.02em; color: var(--ink-900); margin: 0 0 18px;
-}
-.gp-about-main p { font-size: 17px; line-height: 1.65; color: var(--ink-700); margin: 0 0 14px; max-width: 60ch; }
+.fgpp .gp-cta .eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-500); }
+.fgpp .gp-cta h2 { font-family: var(--font-display); font-weight: 500; font-size: 30px; letter-spacing: -0.02em; color: var(--ink-900); margin: 8px 0 0; }
+.fgpp .gp-cta h2 em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+.fgpp .gp-cta p { font-size: 15px; color: var(--ink-600, var(--ink-500)); margin: 10px 0 0; max-width: 560px; }
+.fgpp .gp-cta .btn { flex: none; }
 
-.gp-facts {
-  background: var(--paper-100); border: 1px solid var(--ink-200);
-  border-radius: var(--radius-lg, 16px); padding: 22px 22px 18px;
-}
-.gp-facts h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-500); margin: 0 0 14px; }
-.gp-fact { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--ink-200); font-size: 14px; }
-.gp-fact:first-of-type { border-top: 0; }
-.gp-fact span { color: var(--ink-500); }
-.gp-fact strong { color: var(--ink-900); font-weight: 600; text-align: right; }
-.gp-web { display: inline-block; margin-top: 16px; font-size: 14px; font-weight: 600; color: var(--fairway-700); }
-
-.gp-sec { padding: 48px 0 0; }
-
-.gp-tags { display: flex; flex-wrap: wrap; gap: 10px; }
-.gp-tag {
-  padding: 8px 16px; border-radius: var(--radius-pill, 999px);
-  background: var(--paper-200); color: var(--ink-900); font-size: 14px; font-weight: 500;
-}
-
-.gp-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.gp-gallery-item { aspect-ratio: 4/3; border-radius: var(--radius-md, 12px); background-size: cover; background-position: center; background-color: var(--paper-200); }
-
-.gp-infra { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px 32px; }
-.gp-infra-group h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-500); margin: 0 0 10px; }
-.gp-infra-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
-.gp-infra-group li { font-size: 15px; color: var(--ink-800); padding-left: 22px; position: relative; }
-.gp-infra-group li::before { content: "✓"; position: absolute; left: 0; color: var(--fairway-700); font-weight: 700; }
-
-.gp-map { width: 100%; aspect-ratio: 16/6; border: 0; border-radius: var(--radius-lg, 16px); background: var(--paper-200); }
-
-.gp-event-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.gp-event-card {
-  display: flex; flex-direction: column;
-  border: 1px solid var(--ink-200); border-radius: var(--radius-lg, 16px); overflow: hidden;
-  background: var(--paper-50); transition: box-shadow var(--dur-fast, .15s) var(--ease-out, ease), transform var(--dur-fast, .15s) var(--ease-out, ease);
-}
-.gp-event-card:hover { box-shadow: 0 10px 30px rgba(0,0,0,.1); transform: translateY(-2px); }
-.gp-event-thumb { aspect-ratio: 16/10; background-size: cover; background-position: center; background-color: var(--paper-200); }
-.gp-event-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; }
-.gp-event-type { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fairway-700); }
-.gp-event-title { font-size: 17px; font-weight: 600; color: var(--ink-900); line-height: 1.25; }
-.gp-event-price { font-size: 14px; color: var(--ink-600, var(--ink-500)); margin-top: 2px; }
-
-@media (max-width: 920px) {
-  .gp-about { grid-template-columns: 1fr; gap: 28px; }
-  .gp-infra { grid-template-columns: repeat(2, 1fr); }
-  .gp-gallery, .gp-event-grid { grid-template-columns: repeat(2, 1fr); }
-}
+@media (max-width: 920px) { .fgpp .gp-amenity-cards { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) {
-  .gp-hero { min-height: 360px; }
-  .gp-infra, .gp-gallery, .gp-event-grid { grid-template-columns: 1fr; }
-  .gp-map { aspect-ratio: 4/3; }
+  .fgpp .gp-amenity-cards { grid-template-columns: 1fr; }
+  .fgpp .gp-cta { padding: 28px 24px; }
 }

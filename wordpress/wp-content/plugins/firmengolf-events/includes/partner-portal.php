@@ -1851,12 +1851,23 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 					<div class="hero-top">
 						<div class="hero-status"><span class="dot"></span> <?php echo $status === 'pausiert' ? 'Pausiert — nicht öffentlich sichtbar' : 'Öffentlich sichtbar auf Firmengolf'; ?></div>
 						<div class="hero-actions">
+							<?php if ( function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) ) : ?>
+								<a class="hero-btn" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" target="_blank" rel="noopener">Öffentliches Profil ansehen&nbsp;↗</a>
+							<?php endif; ?>
 							<a class="hero-btn solid" href="<?php echo $edit; ?>">Profil bearbeiten</a>
 						</div>
 					</div>
 					<div class="hero-body">
 						<div class="hero-id">
-							<div class="hero-monogram"><?php echo esc_html( $mono ); ?></div>
+							<?php
+							$logo_id  = (int) $m( 'logo_attachment_id' );
+							$logo_url = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
+							?>
+							<?php if ( $logo_url !== '' ) : ?>
+								<div class="hero-monogram hero-logo" style="background-image:url('<?php echo esc_url( $logo_url ); ?>')" role="img" aria-label="<?php echo esc_attr( $name ); ?> Logo"></div>
+							<?php else : ?>
+								<div class="hero-monogram"><?php echo esc_html( $mono ); ?></div>
+							<?php endif; ?>
 							<div class="hero-text">
 								<div class="hero-eyebrow">Dein Platz auf Firmengolf</div>
 								<h1 class="hero-name"><?php echo esc_html( $name ); ?></h1>

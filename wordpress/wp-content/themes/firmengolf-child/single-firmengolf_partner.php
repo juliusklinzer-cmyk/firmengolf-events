@@ -1,160 +1,203 @@
 <?php
 /**
- * Public golf-course (partner) detail page. Visibility is gated in
- * fge_block_non_public_partners() — only active partners with ≥1 public event reach here.
+ * Public golf-course (partner) detail page. Mirrors the portal "Platz" design (.fgpp) so it
+ * looks 1:1 like the in-portal view — but with neutral headings, no edit controls, plus the
+ * events list + CTA. Visibility gated in fge_block_non_public_partners().
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 get_header();
 
-$pid      = (int) get_the_ID();
-$name     = (string) ( get_post_meta( $pid, '_fge_public_golfclub_name', true ) ?: get_the_title() );
-$city     = (string) get_post_meta( $pid, '_fge_city', true );
-$state    = (string) get_post_meta( $pid, '_fge_federal_state', true );
-$region   = (string) get_post_meta( $pid, '_fge_free_region', true );
-$loc      = trim( $city . ( $state ? ', ' . $state : '' ) );
-$desc     = (string) get_post_meta( $pid, '_fge_public_short_description', true );
-$gt       = (string) get_post_meta( $pid, '_fge_golf_type', true );
-$gt_label = $gt && function_exists( 'fge_catalog_golf_types' ) ? ( fge_catalog_golf_types()[ $gt ] ?? $gt ) : '';
-$rating   = (float) get_post_meta( $pid, '_fge_rating', true );
-$cap      = (array) get_post_meta( $pid, '_fge_cap', true );
-$formats  = (array) get_post_meta( $pid, '_fge_event_formats', true );
-$season   = (string) get_post_meta( $pid, '_fge_season', true );
-$website  = (string) get_post_meta( $pid, '_fge_website_url', true );
-$infra    = array_map( 'strval', (array) get_post_meta( $pid, '_fge_infra', true ) );
-$lat      = (float) get_post_meta( $pid, '_fge_latitude', true );
-$lng      = (float) get_post_meta( $pid, '_fge_longitude', true );
+$pid = (int) get_the_ID();
+$m   = static fn( string $k ): string => (string) get_post_meta( $pid, '_fge_' . $k, true );
 
+$name      = $m( 'public_golfclub_name' ) ?: get_the_title();
+$city      = $m( 'city' );
+$state     = $m( 'federal_state' );
+$loc       = trim( $city . ( $state ? ', ' . $state : '' ) );
+$golf      = $m( 'golf_type' );
+$golf_lbl  = $golf && function_exists( 'fge_catalog_golf_types' ) ? ( fge_catalog_golf_types()[ $golf ] ?? $golf ) : '';
+$rating    = (float) $m( 'rating' );
+$desc      = $m( 'public_short_description' );
+$cap       = (array) get_post_meta( $pid, '_fge_cap', true );
+$formats   = (array) get_post_meta( $pid, '_fge_event_formats', true );
+$season    = $m( 'season' );
+$website   = $m( 'website_url' );
+$infra     = array_map( 'strval', (array) get_post_meta( $pid, '_fge_infra', true ) );
 $gallery   = function_exists( 'fge_partner_gallery_ids' ) ? fge_partner_gallery_ids( $pid ) : [];
 $cover_att = function_exists( 'fge_partner_cover_id' ) ? fge_partner_cover_id( $pid ) : 0;
-$cover_url = $cover_att > 0 ? (string) wp_get_attachment_image_url( $cover_att, 'full' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $pid );
+$cover     = $cover_att > 0 ? (string) wp_get_attachment_image_url( $cover_att, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $pid );
+$mono      = function_exists( 'fge_portal_make_monogram' ) ? fge_portal_make_monogram( $name ) : strtoupper( mb_substr( $name, 0, 2 ) );
 $events    = function_exists( 'fge_partner_public_event_ids' ) ? fge_partner_public_event_ids( $pid ) : [];
 $fmt_lbl   = function_exists( 'fge_get_event_formats_flat' ) ? fge_get_event_formats_flat( false ) : [];
+$ind_url   = ( $ip = get_page_by_path( 'individuelle-events' ) ) ? get_permalink( $ip->ID ) : home_url( '/individuelle-events/' );
+
+$infra_index = [];
+foreach ( fge_catalog_infra_groups() as $group => $items ) {
+	foreach ( $items as $id => $label ) {
+		$infra_index[ (string) $id ] = [ 'label' => $label, 'group' => $group ];
+	}
+}
+
+$facts = [];
+if ( $golf_lbl ) { $facts[] = [ 'Platztyp', $golf_lbl ]; }
+if ( $loc )      { $facts[] = [ 'Standort', $loc ]; }
+if ( ! empty( $cap['min'] ) || ! empty( $cap['max'] ) ) {
+	$facts[] = [ 'Gruppengröße', trim( ( $cap['min'] ?? '?' ) . '–' . ( $cap['max'] ?? '?' ) . ' Personen' ) ];
+}
+if ( $formats ) { $facts[] = [ 'Veranstaltungstypen', (string) count( $formats ) ]; }
+if ( $season )  { $facts[] = [ 'Saison', $season ]; }
 ?>
 <div class="fge-page">
 
 	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] ); ?>
 
-	<section class="gp-hero" style="background-image:url('<?php echo esc_url( $cover_url ); ?>')">
-		<div class="gp-hero-scrim" aria-hidden="true"></div>
-		<div class="gp-hero-inner">
-			<a class="gp-hero-back" href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ); ?>">← Alle Events</a>
-			<?php if ( $gt_label ) : ?><div class="gp-hero-eyebrow"><?php echo esc_html( $gt_label ); ?></div><?php endif; ?>
-			<h1 class="gp-hero-title"><?php echo esc_html( $name ); ?></h1>
-			<div class="gp-hero-meta">
-				<?php if ( $loc ) : ?><span><?php echo esc_html( $loc ); ?></span><?php endif; ?>
-				<?php if ( $rating ) : ?><span>★ <?php echo esc_html( number_format( $rating, 1 ) ); ?></span><?php endif; ?>
-				<?php if ( $events ) : ?><span><?php echo (int) count( $events ); ?> Event<?php echo count( $events ) === 1 ? '' : 's'; ?> hier</span><?php endif; ?>
-			</div>
-		</div>
-	</section>
+	<div class="fgpp">
+		<div class="page-wide">
 
-	<div class="gp-wrap">
+			<section class="hero">
+				<div class="hero-photo" style="background-image:url('<?php echo esc_url( $cover ); ?>')">
+					<div class="hero-scrim"></div>
+					<div class="hero-body">
+						<div class="hero-id">
+							<?php
+							$logo_id  = (int) $m( 'logo_attachment_id' );
+							$logo_url = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
+							?>
+							<?php if ( $logo_url !== '' ) : ?>
+								<div class="hero-monogram hero-logo" style="background-image:url('<?php echo esc_url( $logo_url ); ?>')" role="img" aria-label="<?php echo esc_attr( $name ); ?> Logo"></div>
+							<?php else : ?>
+								<div class="hero-monogram"><?php echo esc_html( $mono ); ?></div>
+							<?php endif; ?>
+							<div class="hero-text">
+								<div class="hero-eyebrow">Golfplatz auf Firmengolf</div>
+								<h1 class="hero-name"><?php echo esc_html( $name ); ?></h1>
+								<div class="hero-meta">
+									<?php if ( $loc ) : ?><span><?php echo esc_html( $loc ); ?></span><?php endif; ?>
+									<?php if ( $golf_lbl ) : ?><span class="dot">·</span><span><?php echo esc_html( $golf_lbl ); ?></span><?php endif; ?>
+									<?php if ( $events ) : ?><span class="dot">·</span><span><?php echo (int) count( $events ); ?> Event<?php echo count( $events ) === 1 ? '' : 's'; ?></span><?php endif; ?>
+								</div>
+							</div>
+						</div>
+						<?php if ( $rating > 0 ) : ?>
+							<div class="hero-cta-card"><div class="lbl">Bewertung</div><div class="val"><?php echo esc_html( number_format_i18n( $rating, 1 ) ); ?> ★</div></div>
+						<?php endif; ?>
+					</div>
+				</div>
+			</section>
 
-		<section class="gp-about">
-			<div class="gp-about-main">
-				<h2>Über den Platz</h2>
-				<?php if ( $desc !== '' ) : ?>
-					<?php foreach ( preg_split( '/\n\s*\n/', trim( $desc ) ) as $para ) : ?>
-						<p><?php echo esc_html( trim( $para ) ); ?></p>
+			<section class="section">
+				<div class="section-head"><div><div class="eyebrow">Über den Platz</div><h2>Über den <em>Platz</em></h2></div></div>
+				<div class="about">
+					<div class="about-main">
+						<?php if ( $desc !== '' ) : ?>
+							<?php foreach ( preg_split( '/\n\s*\n/', trim( $desc ) ) as $para ) : ?><p><?php echo esc_html( trim( $para ) ); ?></p><?php endforeach; ?>
+						<?php else : ?>
+							<p>Ein Golfplatz, der sich hervorragend für Firmenevents eignet.</p>
+						<?php endif; ?>
+					</div>
+					<?php if ( $facts ) : ?>
+						<div class="facts">
+							<h4>Eckdaten</h4>
+							<?php foreach ( $facts as $f ) : ?><div class="fact-row"><span class="lbl"><?php echo esc_html( $f[0] ); ?></span><span class="val"><?php echo esc_html( $f[1] ); ?></span></div><?php endforeach; ?>
+							<?php if ( $website ) : ?><a class="btn btn-ghost btn-sm" style="margin-top:14px;" href="<?php echo esc_url( $website ); ?>" target="_blank" rel="noopener">Website&nbsp;↗</a><?php endif; ?>
+						</div>
+					<?php endif; ?>
+				</div>
+			</section>
+
+			<?php if ( $infra ) : ?>
+			<section class="section">
+				<div class="section-head"><div><div class="eyebrow">Ausstattung</div><h2>Was euch <em>erwartet</em></h2></div></div>
+				<div class="gp-amenity-cards">
+					<?php foreach ( fge_catalog_infra_groups() as $group => $items ) :
+						$hits = array_filter( $items, static fn( $l, $id ) => in_array( (string) $id, $infra, true ), ARRAY_FILTER_USE_BOTH );
+						if ( ! $hits ) { continue; } ?>
+						<div class="gp-amenity-card">
+							<div class="gp-amenity-group"><?php echo esc_html( $group ); ?></div>
+							<ul>
+								<?php foreach ( $hits as $label ) : ?><li><?php echo esc_html( $label ); ?></li><?php endforeach; ?>
+							</ul>
+						</div>
 					<?php endforeach; ?>
-				<?php else : ?>
-					<p>Ein Golfplatz, der sich für Firmenevents bestens eignet.</p>
-				<?php endif; ?>
-			</div>
-			<aside class="gp-facts">
-				<h3>Eckdaten</h3>
-				<?php
-				$facts = [];
-				if ( $gt_label ) { $facts['Platztyp'] = $gt_label; }
-				if ( ! empty( $cap['min'] ) || ! empty( $cap['max'] ) ) { $facts['Gruppengröße'] = trim( ( $cap['min'] ?? '?' ) . '–' . ( $cap['max'] ?? '?' ) . ' Personen' ); }
-				if ( $formats ) { $facts['Veranstaltungstypen'] = (string) count( $formats ); }
-				if ( $season ) { $facts['Saison'] = $season; }
-				if ( $loc ) { $facts['Standort'] = $loc; }
-				foreach ( $facts as $k => $val ) : ?>
-					<div class="gp-fact"><span><?php echo esc_html( $k ); ?></span><strong><?php echo esc_html( $val ); ?></strong></div>
-				<?php endforeach; ?>
-				<?php if ( $website ) : ?><a class="gp-web" href="<?php echo esc_url( $website ); ?>" target="_blank" rel="noopener">Website&nbsp;↗</a><?php endif; ?>
-			</aside>
-		</section>
+				</div>
+			</section>
+			<?php endif; ?>
 
-		<?php if ( $formats ) : ?>
-		<section class="gp-sec">
-			<h2>Veranstaltungstypen</h2>
-			<div class="gp-tags">
-				<?php foreach ( $formats as $f ) : ?><span class="gp-tag"><?php echo esc_html( $fmt_lbl[ $f ] ?? $f ); ?></span><?php endforeach; ?>
-			</div>
-		</section>
-		<?php endif; ?>
+			<?php if ( $gallery ) : ?>
+			<section class="section">
+				<div class="section-head"><div><div class="eyebrow">Bildergalerie</div><h2>Bilder der <em>Location</em></h2></div></div>
+				<div class="gallery-grid">
+					<?php foreach ( $gallery as $gid ) :
+						$gurl = (string) wp_get_attachment_image_url( $gid, 'large' );
+						if ( $gurl === '' ) { continue; } ?>
+						<div class="gallery-item" style="background-image:url('<?php echo esc_url( $gurl ); ?>')"></div>
+					<?php endforeach; ?>
+				</div>
+			</section>
+			<?php endif; ?>
 
-		<?php if ( $gallery ) : ?>
-		<section class="gp-sec">
-			<h2>Bilder</h2>
-			<div class="gp-gallery">
-				<?php foreach ( $gallery as $gid ) :
-					$gurl = (string) wp_get_attachment_image_url( $gid, 'large' );
-					if ( $gurl === '' ) { continue; } ?>
-					<div class="gp-gallery-item" style="background-image:url('<?php echo esc_url( $gurl ); ?>')"></div>
-				<?php endforeach; ?>
-			</div>
-		</section>
-		<?php endif; ?>
+			<?php if ( $events ) : ?>
+			<section class="section">
+				<div class="section-head"><div><div class="eyebrow">Veranstaltungen</div><h2>Alle Formate auf <em><?php echo esc_html( $name ); ?></em></h2></div></div>
+				<div class="fg-grid ev-grid4">
+					<?php foreach ( $events as $eid ) {
+						get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $eid ] );
+					} ?>
+				</div>
+			</section>
+			<?php endif; ?>
 
-		<?php
-		$infra_groups = function_exists( 'fge_catalog_infra_groups' ) ? fge_catalog_infra_groups() : [];
-		$infra_set    = array_flip( $infra );
-		$infra_html   = '';
-		foreach ( $infra_groups as $group => $items ) {
-			$hits = array_filter( $items, static fn( $l, $id ) => isset( $infra_set[ (string) $id ] ), ARRAY_FILTER_USE_BOTH );
-			if ( ! $hits ) { continue; }
-			$infra_html .= '<div class="gp-infra-group"><h4>' . esc_html( $group ) . '</h4><ul>';
-			foreach ( $hits as $l ) { $infra_html .= '<li>' . esc_html( $l ) . '</li>'; }
-			$infra_html .= '</ul></div>';
-		}
-		if ( $infra_html !== '' ) : ?>
-		<section class="gp-sec">
-			<h2>Ausstattung</h2>
-			<div class="gp-infra"><?php echo $infra_html; // phpcs:ignore WordPress.Security.EscapeOutput — built with esc_html above ?></div>
-		</section>
-		<?php endif; ?>
+			<?php
+			$plat  = (float) $m( 'latitude' );
+			$plng  = (float) $m( 'longitude' );
+			$paddr = trim( $m( 'street' ) . ' ' . $m( 'house_number' ) . ', ' . $m( 'postal_code' ) . ' ' . $city, ' ,' );
+			$pmq   = ( $plat && $plng ) ? $plat . ',' . $plng : $paddr;
+			if ( $pmq !== '' ) : ?>
+			<section class="section">
+				<div class="section-head"><div><div class="eyebrow">Standort</div><h2>Wo ihr uns <em>findet</em></h2></div></div>
+				<div class="fgpp-map">
+					<iframe src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
+				</div>
+				<?php if ( $paddr !== '' ) : ?><p class="fgpp-map-addr"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $paddr ); ?></p><?php endif; ?>
+			</section>
+			<?php endif; ?>
 
-		<?php
-		$mq = ( $lat && $lng ) ? $lat . ',' . $lng : trim( implode( ' ', array_filter( [
-			get_post_meta( $pid, '_fge_street', true ),
-			get_post_meta( $pid, '_fge_house_number', true ),
-			get_post_meta( $pid, '_fge_postal_code', true ),
-			$city,
-		] ) ) );
-		if ( $mq !== '' ) : ?>
-		<section class="gp-sec">
-			<h2>Standort</h2>
-			<iframe class="gp-map" src="https://www.google.com/maps?q=<?php echo rawurlencode( $mq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
-		</section>
-		<?php endif; ?>
+			<section class="section">
+				<div class="two-col">
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Was Firmen sagen</h3></div>
+						<?php if ( $m( 'review_quote' ) !== '' ) : ?>
+							<div class="review">
+								<div class="review-head"><span class="review-company"><?php echo esc_html( $m( 'review_author' ) ?: 'Kunde' ); ?></span></div>
+								<p class="review-quote">„<?php echo esc_html( $m( 'review_quote' ) ); ?>"</p>
+								<?php if ( $m( 'review_role' ) !== '' ) : ?><div class="review-foot"><span><?php echo esc_html( $m( 'review_role' ) ); ?></span></div><?php endif; ?>
+							</div>
+						<?php else : ?>
+							<p style="font-size:14px;color:var(--ink-500);">Noch keine Bewertung vorhanden.</p>
+						<?php endif; ?>
+					</div>
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Anfrage an diesen Platz</h3></div>
+						<p style="font-size:14px;color:var(--ink-600,var(--ink-500));margin:0 0 16px;">Plant euer Firmenevent bei <?php echo esc_html( $name ); ?> — wir holen Verfügbarkeit &amp; Angebot direkt beim Platz ein.</p>
+						<a class="btn btn-brand" href="<?php echo esc_url( $ind_url ); ?>">Anfrage an diesen Platz</a>
+					</div>
+				</div>
+			</section>
 
-		<?php if ( $events ) : ?>
-		<section class="gp-sec">
-			<h2>Events an diesem Platz</h2>
-			<div class="gp-event-grid">
-				<?php foreach ( $events as $eid ) :
-					$ethumb = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $eid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg', $eid );
-					$etype  = $fmt_lbl[ (string) get_post_meta( $eid, '_fge_event_type', true ) ] ?? '';
-					$eprice = function_exists( 'fge_get_event_price_display' ) ? fge_get_event_price_display( $eid ) : '';
-					?>
-					<a class="gp-event-card" href="<?php echo esc_url( get_permalink( $eid ) ); ?>">
-						<span class="gp-event-thumb" style="background-image:url('<?php echo esc_url( $ethumb ); ?>')"></span>
-						<span class="gp-event-body">
-							<?php if ( $etype ) : ?><span class="gp-event-type"><?php echo esc_html( $etype ); ?></span><?php endif; ?>
-							<span class="gp-event-title"><?php echo esc_html( get_the_title( $eid ) ); ?></span>
-							<?php if ( $eprice ) : ?><span class="gp-event-price"><?php echo esc_html( $eprice ); ?></span><?php endif; ?>
-						</span>
-					</a>
-				<?php endforeach; ?>
-			</div>
-		</section>
-		<?php endif; ?>
+			<section class="section">
+				<div class="gp-cta">
+					<div>
+						<div class="eyebrow">Maßgeschneidert</div>
+						<h2>Etwas Eigenes<?php echo $city ? ' in ' . esc_html( $city ) : ''; ?>?</h2>
+						<p>Sag uns, was ihr vorhabt — Sommerfest, Incentive, Kundentag oder Turnier. Wir stellen euch ein Event genau nach euren Wünschen zusammen.</p>
+					</div>
+					<a class="btn btn-brand" href="<?php echo esc_url( $ind_url ); ?>">Individuelles Event anfragen</a>
+				</div>
+			</section>
 
+		</div>
 	</div>
 
 	<?php get_template_part( 'template-parts/fge-footer' ); ?>

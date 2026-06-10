@@ -279,13 +279,25 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   transition: background var(--dur-fast) var(--ease-out), transform 80ms var(--ease-out);
 }
 .fg-btn-ink:hover, a.fg-btn-ink:hover { background: #000; color: var(--paper-100); transform: translateY(-1px); }
-.fg-btn-ghost { color: var(--ink-900); background: transparent; }
-.fg-btn-ghost:hover { background: var(--paper-200); }
-.fg-btn-outline {
-  background: transparent; color: var(--ink-900);
-  border: 1.5px solid var(--ink-300);
+/* Self-contained so they look like proper buttons even without the .fg-btn base class. */
+.fg-btn-ghost, a.fg-btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 24px; min-height: 44px; border-radius: var(--radius-pill);
+  font-family: var(--font-body); font-size: 15px; font-weight: var(--fw-medium);
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  color: var(--ink-900); background: transparent; border: 1px solid var(--ink-300);
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.fg-btn-outline:hover { background: var(--paper-200); }
+.fg-btn-ghost:hover, a.fg-btn-ghost:hover { background: var(--paper-200); border-color: var(--ink-400); }
+.fg-btn-outline, a.fg-btn-outline {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 24px; min-height: 44px; border-radius: var(--radius-pill);
+  font-family: var(--font-body); font-size: 15px; font-weight: var(--fw-medium);
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  background: transparent; color: var(--ink-900); border: 1.5px solid var(--ink-300);
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.fg-btn-outline:hover, a.fg-btn-outline:hover { background: var(--paper-200); border-color: var(--ink-400); }
 .fg-btn-disabled {
   background: var(--ink-200); color: var(--ink-500);
   cursor: not-allowed; pointer-events: none;
@@ -294,8 +306,12 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 .fg-btn-lg { font-size: 16px; padding: 15px 30px; }
 .fg-btn-block { width: 100%; justify-content: center; }
 
-/* Liquid glass — for buttons that sit directly on a photo */
-.fg-btn-glass {
+/* Liquid glass — for buttons that sit directly on a photo / dark section. Self-contained. */
+.fg-btn-glass, a.fg-btn-glass {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 24px; min-height: 44px; border-radius: var(--radius-pill);
+  font-family: var(--font-body); font-size: 15px;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
   background: rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
@@ -303,6 +319,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   color: var(--paper-50);
   font-weight: var(--fw-semibold);
   text-shadow: 0 1px 3px rgba(14,19,16,0.25);
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 .fg-btn-glass:hover {
   background: rgba(255, 255, 255, 0.26);
@@ -2411,9 +2428,9 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 .fg-nav-items a.active::before { content: ""; width: 5px; height: 5px; border-radius: 999px; background: currentColor; flex: none; }
 .fg-arrow { width: 22px; height: 22px; border-radius: 999px; background: rgba(255,255,255,.14); display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .fg-btn-ghost-light,
-button.fg-btn-ghost-light { color: var(--paper-100); background: transparent; padding: 14px 18px; border-radius: 999px; font-weight: 500; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; transition: background var(--dur-fast) var(--ease-out); }
+button.fg-btn-ghost-light { color: var(--paper-100); background: transparent; padding: 13px 20px; border-radius: 999px; border: 1px solid rgba(255,255,255,.34); font-weight: 500; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-decoration: none; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
 .fg-btn-ghost-light:hover,
-button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); }
+button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); }
 
 /* Search rail cells */
 .fg-cell-label { font-size: 11px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-500); }
