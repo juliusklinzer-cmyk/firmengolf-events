@@ -59,6 +59,12 @@ if ( $season )  { $facts[] = [ 'Saison', $season ]; }
 			<section class="hero">
 				<div class="hero-photo" style="background-image:url('<?php echo esc_url( $cover ); ?>')">
 					<div class="hero-scrim"></div>
+					<?php if ( $gallery ) : ?>
+						<button type="button" class="fg-btn fg-btn-glass gp-gallery-btn" data-gp-open>
+							<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+							Galerie · <?php echo (int) count( $gallery ); ?>
+						</button>
+					<?php endif; ?>
 					<div class="hero-body">
 						<div class="hero-id">
 							<?php
@@ -110,38 +116,15 @@ if ( $season )  { $facts[] = [ 'Saison', $season ]; }
 			<?php if ( $infra ) : ?>
 			<section class="section">
 				<div class="section-head"><div><div class="eyebrow">Ausstattung</div><h2>Was euch <em>erwartet</em></h2></div></div>
-				<div class="gp-amenity-cards">
-					<?php foreach ( fge_catalog_infra_groups() as $group => $items ) :
-						$hits = array_filter( $items, static fn( $l, $id ) => in_array( (string) $id, $infra, true ), ARRAY_FILTER_USE_BOTH );
-						if ( ! $hits ) { continue; } ?>
-						<div class="gp-amenity-card">
-							<div class="gp-amenity-group"><?php echo esc_html( $group ); ?></div>
-							<ul>
-								<?php foreach ( $hits as $label ) : ?><li><?php echo esc_html( $label ); ?></li><?php endforeach; ?>
-							</ul>
-						</div>
-					<?php endforeach; ?>
-				</div>
+				<?php fge_render_amenities_grid( $pid ); ?>
 			</section>
 			<?php endif; ?>
 
-			<?php if ( $gallery ) : ?>
-			<section class="section">
-				<div class="section-head"><div><div class="eyebrow">Bildergalerie</div><h2>Bilder der <em>Location</em></h2></div></div>
-				<div class="gallery-grid">
-					<?php foreach ( $gallery as $gid ) :
-						$gurl = (string) wp_get_attachment_image_url( $gid, 'large' );
-						if ( $gurl === '' ) { continue; } ?>
-						<div class="gallery-item" style="background-image:url('<?php echo esc_url( $gurl ); ?>')"></div>
-					<?php endforeach; ?>
-				</div>
-			</section>
-			<?php endif; ?>
 
 			<?php if ( $events ) : ?>
 			<section class="section">
 				<div class="section-head"><div><div class="eyebrow">Veranstaltungen</div><h2>Alle Formate auf <em><?php echo esc_html( $name ); ?></em></h2></div></div>
-				<div class="fg-grid ev-grid4">
+				<div class="gp-events">
 					<?php foreach ( $events as $eid ) {
 						get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $eid ] );
 					} ?>
@@ -199,6 +182,23 @@ if ( $season )  { $facts[] = [ 'Saison', $season ]; }
 
 		</div>
 	</div>
+
+	<?php
+	if ( $gallery ) :
+		$gallery_urls = [];
+		foreach ( $gallery as $gid ) {
+			$u = wp_get_attachment_image_url( $gid, 'large' );
+			if ( $u ) { $gallery_urls[] = $u; }
+		}
+		if ( $gallery_urls ) : ?>
+		<div class="gp-lightbox" data-gp-lightbox data-images="<?php echo esc_attr( wp_json_encode( $gallery_urls ) ); ?>" hidden>
+			<button type="button" class="gp-lb-btn gp-lb-close" data-gp-close aria-label="Schließen">✕</button>
+			<button type="button" class="gp-lb-btn gp-lb-prev" data-gp-prev aria-label="Vorheriges Bild">‹</button>
+			<img class="gp-lb-img" alt="Galeriefoto" data-gp-img>
+			<button type="button" class="gp-lb-btn gp-lb-next" data-gp-next aria-label="Nächstes Bild">›</button>
+			<div class="gp-lb-count"><span data-gp-cur>1</span> / <?php echo (int) count( $gallery_urls ); ?></div>
+		</div>
+	<?php endif; endif; ?>
 
 	<?php get_template_part( 'template-parts/fge-footer' ); ?>
 </div>

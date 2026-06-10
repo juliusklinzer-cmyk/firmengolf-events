@@ -308,19 +308,49 @@ function fge_portal_handle_profile_update(): void {
 		wp_die( 'Kein gültiges Partnerprofil.', '', [ 'response' => 403 ] );
 	}
 
-	// Text fields.
-	update_post_meta( $partner_id, '_fge_public_golfclub_name',    sanitize_text_field( wp_unslash( $_POST['fge_public_golfclub_name'] ?? '' ) ) );
-	update_post_meta( $partner_id, '_fge_city',                    sanitize_text_field( wp_unslash( $_POST['fge_city'] ?? '' ) ) );
-	update_post_meta( $partner_id, '_fge_federal_state',           sanitize_text_field( wp_unslash( $_POST['fge_federal_state'] ?? '' ) ) );
-	update_post_meta( $partner_id, '_fge_website_url',             esc_url_raw( wp_unslash( $_POST['fge_website_url'] ?? '' ) ) );
-	update_post_meta( $partner_id, '_fge_free_region',             sanitize_text_field( wp_unslash( $_POST['fge_free_region'] ?? '' ) ) );
-	update_post_meta( $partner_id, '_fge_public_short_description', sanitize_textarea_field( wp_unslash( $_POST['fge_public_short_description'] ?? '' ) ) );
-	update_post_meta( $partner_id, '_fge_event_contact_name',      sanitize_text_field( wp_unslash( $_POST['fge_event_contact_name'] ?? '' ) ) );
-	update_post_meta( $partner_id, '_fge_event_contact_email',     sanitize_email( wp_unslash( $_POST['fge_event_contact_email'] ?? '' ) ) );
-	update_post_meta( $partner_id, '_fge_event_contact_phone',     sanitize_text_field( wp_unslash( $_POST['fge_event_contact_phone'] ?? '' ) ) );
+	// Per-section save — only the submitted section's fields are written.
+	$section = sanitize_key( $_POST['fge_platz_section'] ?? 'steckbrief' );
+	$P       = wp_unslash( $_POST );
 
-	// Logo + photos are managed asynchronously via the firmengolf/v1 REST routes
-	// (fge-media-gallery.js); nothing to persist here.
+	switch ( $section ) {
+		case 'steckbrief':
+			update_post_meta( $partner_id, '_fge_public_golfclub_name',    sanitize_text_field( $P['fge_public_golfclub_name'] ?? '' ) );
+			update_post_meta( $partner_id, '_fge_public_short_description', sanitize_textarea_field( $P['fge_public_short_description'] ?? '' ) );
+			update_post_meta( $partner_id, '_fge_website_url',             esc_url_raw( $P['fge_website_url'] ?? '' ) );
+			$gt = sanitize_text_field( $P['fge_golf_type'] ?? '' );
+			update_post_meta( $partner_id, '_fge_golf_type', array_key_exists( $gt, fge_catalog_golf_types() ) ? $gt : '' );
+			$cap = is_array( $P['fge_cap'] ?? null ) ? $P['fge_cap'] : [];
+			update_post_meta( $partner_id, '_fge_cap', [ 'min' => absint( $cap['min'] ?? 0 ), 'max' => absint( $cap['max'] ?? 0 ) ] );
+			$fmt_keys = array_keys( fge_get_event_formats_flat( false ) );
+			$fmts     = array_values( array_intersect( array_map( 'sanitize_text_field', (array) ( $P['fge_event_formats'] ?? [] ) ), $fmt_keys ) );
+			update_post_meta( $partner_id, '_fge_event_formats', $fmts );
+			break;
+
+		case 'ausstattung':
+			$valid = fge_catalog_infra_ids();
+			$infra = array_values( array_intersect( array_map( 'sanitize_text_field', (array) ( $P['fge_infra'] ?? [] ) ), $valid ) );
+			update_post_meta( $partner_id, '_fge_infra', $infra );
+			break;
+
+		case 'standort':
+			foreach ( [ 'street', 'house_number', 'postal_code', 'city', 'federal_state', 'free_region' ] as $k ) {
+				update_post_meta( $partner_id, '_fge_' . $k, sanitize_text_field( $P[ 'fge_' . $k ] ?? '' ) );
+			}
+			update_post_meta( $partner_id, '_fge_latitude',  '' === ( $P['fge_latitude'] ?? '' )  ? '' : (string) (float) $P['fge_latitude'] );
+			update_post_meta( $partner_id, '_fge_longitude', '' === ( $P['fge_longitude'] ?? '' ) ? '' : (string) (float) $P['fge_longitude'] );
+			break;
+
+		case 'kontakt':
+			update_post_meta( $partner_id, '_fge_event_contact_name',  sanitize_text_field( $P['fge_event_contact_name'] ?? '' ) );
+			update_post_meta( $partner_id, '_fge_event_contact_email', sanitize_email( $P['fge_event_contact_email'] ?? '' ) );
+			update_post_meta( $partner_id, '_fge_event_contact_phone', sanitize_text_field( $P['fge_event_contact_phone'] ?? '' ) );
+			break;
+
+		case 'medien':
+		default:
+			// Logo + photos are managed asynchronously via the firmengolf/v1 REST routes.
+			break;
+	}
 
 	$base = fge_portal_page_url();
 	wp_redirect( esc_url_raw( $base . '?tab=platz&portal_success=profile_saved' ), 303 );
@@ -721,11 +751,6 @@ function fge_portal_render(): void {
 		<div id="fp-tab-platz"       class="fp-section<?php echo $active_tab !== 'platz'       ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_platz( $partner_id ); ?></div>
 		<div id="fp-tab-team"        class="fp-section<?php echo $active_tab !== 'team'        ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_team( $partner_id ); ?></div>
 		<div id="fp-tab-kennzahlen"  class="fp-section<?php echo $active_tab !== 'kennzahlen'  ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_stats( $partner_id ); ?></div>
-
-		<div class="fgpp"><footer class="foot">
-			<div>© <?php echo esc_html( gmdate( 'Y' ) ); ?> Firmengolf · Partner-Portal</div>
-			<div class="links"><a href="mailto:<?php echo esc_attr( fge_company()['email_partner'] ); ?>">Support</a></div>
-		</footer></div>
 
 	</div>
 
@@ -1806,8 +1831,9 @@ function fge_portal_section_team( int $partner_id ): void {
  */
 function fge_portal_render_platz_profile( int $partner_id ): void {
 	$m    = static fn( string $k ): string => (string) get_post_meta( $partner_id, '_fge_' . $k, true );
-	$base = fge_portal_page_url();
-	$edit = esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => '1' ], $base ) );
+	$base     = fge_portal_page_url();
+	$edit_sec = static fn( string $s ): string => esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => $s ], $base ) );
+	$edit     = $edit_sec( 'steckbrief' );
 
 	$name       = $m( 'public_golfclub_name' ) ?: get_the_title( $partner_id );
 	$city       = $m( 'city' );
@@ -1922,21 +1948,9 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 			<section class="section">
 				<div class="section-head">
 					<div><div class="eyebrow">Ausstattung</div><h2>Was euch <em>erwartet</em></h2></div>
-					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit; ?>">Bearbeiten</a></div>
+					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'ausstattung' ); ?>">Bearbeiten</a></div>
 				</div>
-				<div class="amenities">
-					<?php foreach ( $infra as $id ) :
-						$it = $infra_index[ $id ] ?? null;
-						if ( ! $it ) { continue; } ?>
-						<div class="amenity">
-							<span class="ic-wrap">✓</span>
-							<div>
-								<div class="l"><?php echo esc_html( $it['label'] ); ?></div>
-								<div class="s"><?php echo esc_html( $it['group'] ); ?></div>
-							</div>
-						</div>
-					<?php endforeach; ?>
-				</div>
+				<?php fge_render_amenities_grid( $partner_id ); ?>
 			</section>
 			<?php endif; ?>
 
@@ -1944,7 +1958,7 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 			<section class="section" id="galerie">
 				<div class="section-head">
 					<div><div class="eyebrow">Bildergalerie</div><h2>Fotos deines <em>Platzes</em></h2></div>
-					<div class="actions"><a class="btn btn-brand btn-sm" href="<?php echo $edit; ?>">Fotos verwalten</a></div>
+					<div class="actions"><a class="btn btn-brand btn-sm" href="<?php echo $edit_sec( 'medien' ); ?>">Fotos verwalten</a></div>
 				</div>
 				<div class="gallery-grid">
 					<?php foreach ( $gallery as $gid ) :
@@ -1965,7 +1979,7 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 			<section class="section" id="standort">
 				<div class="section-head">
 					<div><div class="eyebrow">Standort</div><h2>Wo ihr uns <em>findet</em></h2></div>
-					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit; ?>">Bearbeiten</a></div>
+					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'standort' ); ?>">Bearbeiten</a></div>
 				</div>
 				<div class="fgpp-map">
 					<iframe src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
@@ -1995,7 +2009,7 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 							<div class="fact-row"><span class="lbl">E-Mail</span><span class="val"><?php echo esc_html( $m( 'main_contact_email' ) ?: '—' ); ?></span></div>
 							<div class="fact-row"><span class="lbl">Telefon</span><span class="val"><?php echo esc_html( $m( 'main_contact_phone' ) ?: '—' ); ?></span></div>
 						</div>
-						<a class="btn btn-ghost btn-sm" style="margin-top:14px;" href="<?php echo $edit; ?>">Kontaktdaten bearbeiten</a>
+						<a class="btn btn-ghost btn-sm" style="margin-top:14px;" href="<?php echo $edit_sec( 'kontakt' ); ?>">Kontaktdaten bearbeiten</a>
 					</div>
 				</div>
 			</section>
@@ -2006,103 +2020,146 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 }
 
 function fge_portal_section_platz( int $partner_id ): void {
-	// Standard: neue Profil-Anzeige. Mit ?edit=1: bestehendes Bearbeiten-Formular.
-	if ( ! isset( $_GET['edit'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-		fge_portal_render_platz_profile( $partner_id );
+	$edit = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+	if ( '1' === $edit ) { $edit = 'steckbrief'; } // back-compat with the old single edit form
+	if ( in_array( $edit, [ 'steckbrief', 'ausstattung', 'standort', 'medien', 'kontakt' ], true ) ) {
+		fge_portal_render_platz_edit_section( $partner_id, $edit );
 		return;
 	}
-	$m    = static function( string $key ) use ( $partner_id ): string {
-		return (string) get_post_meta( $partner_id, '_fge_' . $key, true );
-	};
+	fge_portal_render_platz_profile( $partner_id );
+}
+
+/** Focused per-section edit form for the portal "Platz". Saved by fge_portal_handle_profile_update(). */
+function fge_portal_render_platz_edit_section( int $partner_id, string $section ): void {
+	$m    = static fn( string $k ): string => (string) get_post_meta( $partner_id, '_fge_' . $k, true );
 	$base = fge_portal_page_url();
+	$back = esc_url( add_query_arg( [ 'tab' => 'platz' ], $base ) );
+	$titles = [
+		'steckbrief'  => 'Über den Platz',
+		'ausstattung' => 'Ausstattung',
+		'standort'    => 'Standort',
+		'medien'      => 'Fotos & Logo',
+		'kontakt'     => 'Ansprechpartner',
+	];
+	$title = $titles[ $section ] ?? 'Bearbeiten';
 	?>
 	<div style="padding-top:32px;">
-		<div class="fp-section-head">
-			<div>
-				<div class="fp-eyebrow">Dein Profil</div>
-				<h2>Mein <em>Platz</em></h2>
-			</div>
-		</div>
+		<a href="<?php echo $back; ?>" class="fg-btn fg-btn-outline" style="margin-bottom:18px;">← Zurück zum Platz</a>
+		<div class="fp-section-head"><div><div class="fp-eyebrow">Platz bearbeiten</div><h2><?php echo esc_html( $title ); ?></h2></div></div>
 
-		<form method="post" action="<?php echo esc_url( $base ); ?>" enctype="multipart/form-data">
+		<form method="post" action="<?php echo esc_url( $base ); ?>" enctype="multipart/form-data" class="fp-platz-editform">
 			<input type="hidden" name="fge_action" value="portal_profile_update">
+			<input type="hidden" name="fge_platz_section" value="<?php echo esc_attr( $section ); ?>">
 			<?php wp_nonce_field( 'fge_portal_profile_update', 'fge_portal_nonce' ); ?>
 
-			<div class="fp-profile-edit">
-
-				<!-- ─ Left: text fields ─ -->
-				<div>
-					<div class="fp-form-sec">
-						<h3>Golfplatz</h3>
-						<p class="fp-help">Diese Informationen erscheinen auf deinem öffentlichen Firmengolf-Profil.</p>
-
-						<div class="fg-form-row">
-							<label class="fg-form-label" for="fge_public_golfclub_name">Öffentlicher Name</label>
-							<input class="fg-form-input" type="text" id="fge_public_golfclub_name" name="fge_public_golfclub_name" value="<?php echo esc_attr( $m('public_golfclub_name') ); ?>">
+			<div class="fp-form-sec">
+			<?php
+			switch ( $section ) {
+				case 'steckbrief':
+					?>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_public_golfclub_name">Öffentlicher Name</label>
+						<input class="fg-form-input" type="text" id="fge_public_golfclub_name" name="fge_public_golfclub_name" value="<?php echo esc_attr( $m( 'public_golfclub_name' ) ); ?>">
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_website_url">Website</label>
+						<input class="fg-form-input" type="url" id="fge_website_url" name="fge_website_url" value="<?php echo esc_attr( $m( 'website_url' ) ); ?>" placeholder="https://...">
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_public_short_description">Kurzbeschreibung</label>
+						<textarea class="fg-form-textarea" id="fge_public_short_description" name="fge_public_short_description" rows="4" placeholder="2–3 Sätze für dein öffentliches Profil"><?php echo esc_textarea( $m( 'public_short_description' ) ); ?></textarea>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_golf_type">Platztyp</label>
+						<select class="fg-form-input" id="fge_golf_type" name="fge_golf_type">
+							<option value="">— bitte wählen —</option>
+							<?php $gt = $m( 'golf_type' ); foreach ( fge_catalog_golf_types() as $id => $label ) : ?>
+								<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $gt, $id ); ?>><?php echo esc_html( $label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+					<?php $cap = (array) get_post_meta( $partner_id, '_fge_cap', true ); ?>
+					<div class="fg-form-row fg-form-row--2col">
+						<div>
+							<label class="fg-form-label" for="fge_cap_min">Gruppengröße min.</label>
+							<input class="fg-form-input" type="number" min="0" id="fge_cap_min" name="fge_cap[min]" value="<?php echo esc_attr( (string) ( $cap['min'] ?? '' ) ); ?>">
 						</div>
-						<div class="fg-form-row fg-form-row--2col">
-							<div>
-								<label class="fg-form-label" for="fge_city">Stadt</label>
-								<input class="fg-form-input" type="text" id="fge_city" name="fge_city" value="<?php echo esc_attr( $m('city') ); ?>">
-							</div>
-							<div>
-								<label class="fg-form-label" for="fge_federal_state">Bundesland</label>
-								<input class="fg-form-input" type="text" id="fge_federal_state" name="fge_federal_state" value="<?php echo esc_attr( $m('federal_state') ); ?>">
-							</div>
-						</div>
-						<div class="fg-form-row fg-form-row--2col">
-							<div>
-								<label class="fg-form-label" for="fge_website_url">Website</label>
-								<input class="fg-form-input" type="url" id="fge_website_url" name="fge_website_url" value="<?php echo esc_attr( $m('website_url') ); ?>" placeholder="https://...">
-							</div>
-							<div>
-								<label class="fg-form-label" for="fge_free_region">Region</label>
-								<input class="fg-form-input" type="text" id="fge_free_region" name="fge_free_region" value="<?php echo esc_attr( $m('free_region') ); ?>" placeholder="z.B. München, Bayern">
-							</div>
-						</div>
-						<div class="fg-form-row">
-							<label class="fg-form-label" for="fge_public_short_description">Kurzbeschreibung</label>
-							<textarea class="fg-form-textarea" id="fge_public_short_description" name="fge_public_short_description" rows="3" placeholder="2–3 Sätze für dein öffentliches Profil"><?php echo esc_textarea( $m('public_short_description') ); ?></textarea>
+						<div>
+							<label class="fg-form-label" for="fge_cap_max">Gruppengröße max.</label>
+							<input class="fg-form-input" type="number" min="0" id="fge_cap_max" name="fge_cap[max]" value="<?php echo esc_attr( (string) ( $cap['max'] ?? '' ) ); ?>">
 						</div>
 					</div>
-
-					<div class="fp-form-sec">
-						<h3>Event-Ansprechpartner</h3>
-						<p class="fp-help">Wird intern für Verfügbarkeitsanfragen genutzt.</p>
-
-						<div class="fg-form-row fg-form-row--3col">
-							<div>
-								<label class="fg-form-label" for="fge_event_contact_name">Name</label>
-								<input class="fg-form-input" type="text" id="fge_event_contact_name" name="fge_event_contact_name" value="<?php echo esc_attr( $m('event_contact_name') ); ?>">
-							</div>
-							<div>
-								<label class="fg-form-label" for="fge_event_contact_email">E-Mail</label>
-								<input class="fg-form-input" type="email" id="fge_event_contact_email" name="fge_event_contact_email" value="<?php echo esc_attr( $m('event_contact_email') ); ?>">
-							</div>
-							<div>
-								<label class="fg-form-label" for="fge_event_contact_phone">Telefon</label>
-								<input class="fg-form-input" type="tel" id="fge_event_contact_phone" name="fge_event_contact_phone" value="<?php echo esc_attr( $m('event_contact_phone') ); ?>">
-							</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label">Veranstaltungstypen</label>
+						<?php $sel = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_event_formats', true ) ); ?>
+						<div class="fp-check-grid">
+							<?php foreach ( fge_get_event_formats_flat( false ) as $id => $label ) : ?>
+								<label class="fp-check"><input type="checkbox" name="fge_event_formats[]" value="<?php echo esc_attr( $id ); ?>" <?php checked( in_array( (string) $id, $sel, true ) ); ?>> <?php echo esc_html( $label ); ?></label>
+							<?php endforeach; ?>
 						</div>
 					</div>
-				</div>
+					<?php
+					break;
 
-				<!-- Photos + logo (async, REST-backed) -->
-				<div class="fp-form-sec" style="margin-top:32px;">
-					<h3>Fotos &amp; Logo</h3>
+				case 'ausstattung':
+					$sel = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_infra', true ) );
+					foreach ( fge_catalog_infra_groups() as $group => $items ) : ?>
+						<div class="fp-check-group">
+							<div class="fp-check-group-h"><?php echo esc_html( $group ); ?></div>
+							<div class="fp-check-grid">
+								<?php foreach ( $items as $id => $label ) : ?>
+									<label class="fp-check"><input type="checkbox" name="fge_infra[]" value="<?php echo esc_attr( $id ); ?>" <?php checked( in_array( (string) $id, $sel, true ) ); ?>> <span class="fp-check-ico"><?php echo function_exists( 'fge_infra_icon' ) ? fge_infra_icon( (string) $id ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?></span> <?php echo esc_html( $label ); ?></label>
+								<?php endforeach; ?>
+							</div>
+						</div>
+					<?php endforeach;
+					break;
+
+				case 'standort':
+					?>
+					<div class="fg-form-row fg-form-row--2col">
+						<div><label class="fg-form-label" for="fge_street">Straße</label><input class="fg-form-input" type="text" id="fge_street" name="fge_street" value="<?php echo esc_attr( $m( 'street' ) ); ?>"></div>
+						<div><label class="fg-form-label" for="fge_house_number">Hausnummer</label><input class="fg-form-input" type="text" id="fge_house_number" name="fge_house_number" value="<?php echo esc_attr( $m( 'house_number' ) ); ?>"></div>
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div><label class="fg-form-label" for="fge_postal_code">PLZ</label><input class="fg-form-input" type="text" id="fge_postal_code" name="fge_postal_code" value="<?php echo esc_attr( $m( 'postal_code' ) ); ?>"></div>
+						<div><label class="fg-form-label" for="fge_city">Ort</label><input class="fg-form-input" type="text" id="fge_city" name="fge_city" value="<?php echo esc_attr( $m( 'city' ) ); ?>"></div>
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div><label class="fg-form-label" for="fge_federal_state">Bundesland</label><input class="fg-form-input" type="text" id="fge_federal_state" name="fge_federal_state" value="<?php echo esc_attr( $m( 'federal_state' ) ); ?>"></div>
+						<div><label class="fg-form-label" for="fge_free_region">Region</label><input class="fg-form-input" type="text" id="fge_free_region" name="fge_free_region" value="<?php echo esc_attr( $m( 'free_region' ) ); ?>" placeholder="z.B. München und Umgebung"></div>
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div><label class="fg-form-label" for="fge_latitude">Breitengrad (lat)</label><input class="fg-form-input" type="text" id="fge_latitude" name="fge_latitude" value="<?php echo esc_attr( $m( 'latitude' ) ); ?>" placeholder="48.1372"></div>
+						<div><label class="fg-form-label" for="fge_longitude">Längengrad (lng)</label><input class="fg-form-input" type="text" id="fge_longitude" name="fge_longitude" value="<?php echo esc_attr( $m( 'longitude' ) ); ?>" placeholder="11.5755"></div>
+					</div>
+					<p class="fp-help">Die Koordinaten setzen den Pin auf der Karte (öffentliche Platzseite + Event-Detail).</p>
+					<?php
+					break;
+
+				case 'kontakt':
+					?>
+					<p class="fp-help">Wird intern für Verfügbarkeitsanfragen genutzt.</p>
+					<div class="fg-form-row fg-form-row--3col">
+						<div><label class="fg-form-label" for="fge_event_contact_name">Name</label><input class="fg-form-input" type="text" id="fge_event_contact_name" name="fge_event_contact_name" value="<?php echo esc_attr( $m( 'event_contact_name' ) ); ?>"></div>
+						<div><label class="fg-form-label" for="fge_event_contact_email">E-Mail</label><input class="fg-form-input" type="email" id="fge_event_contact_email" name="fge_event_contact_email" value="<?php echo esc_attr( $m( 'event_contact_email' ) ); ?>"></div>
+						<div><label class="fg-form-label" for="fge_event_contact_phone">Telefon</label><input class="fg-form-input" type="tel" id="fge_event_contact_phone" name="fge_event_contact_phone" value="<?php echo esc_attr( $m( 'event_contact_phone' ) ); ?>"></div>
+					</div>
+					<?php
+					break;
+
+				case 'medien':
+					?>
 					<p class="fp-help">Das erste Foto ist dein Titelbild. Ziehe per Drag &amp; Drop, um die Reihenfolge zu ändern.</p>
 					<?php fge_media_gallery_render( [ 'show_logo' => true ] ); ?>
-				</div>
+					<?php
+					break;
+			}
+			?>
+			</div>
 
-			</div><!-- .fp-profile-edit -->
-
-			<div style="margin-top:28px;">
-				<button type="submit" class="fp-btn fp-btn-brand">
-					Profil speichern <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-				</button>
-				<p style="font-size:13px;color:var(--ink-500);margin-top:10px;">
-					Name, Betreiber und Adresse können nur vom Firmengolf-Team geändert werden. Schreib uns unter <a href="mailto:events@visionpunch.de" style="color:var(--fairway-700);">events@visionpunch.de</a>.
-				</p>
+			<div style="margin-top:24px;">
+				<button type="submit" class="fp-btn fp-btn-brand"><?php echo esc_html( $title ); ?> speichern <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></button>
 			</div>
 		</form>
 	</div>

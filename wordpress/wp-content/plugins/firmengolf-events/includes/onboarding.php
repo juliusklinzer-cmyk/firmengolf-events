@@ -1134,6 +1134,15 @@ function fge_onboarding_card_icon( string $name ): string {
 	return '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $inner . '</svg>';
 }
 
+/** SVG icon for a catalog id (golf type / infrastructure / gastronomy / format) — uses the onboarding icon set. */
+function fge_infra_icon( string $id ): string {
+	static $map = null;
+	if ( null === $map ) {
+		$map = fge_onboarding_icon_map();
+	}
+	return fge_onboarding_card_icon( $map[ $id ] ?? '' );
+}
+
 /**
  * Maps catalog ids (golf types, infrastructure incl. gastronomy) to icon glyph
  * names — taken verbatim from the design's item lists.

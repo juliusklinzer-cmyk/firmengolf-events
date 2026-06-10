@@ -60,6 +60,13 @@ add_action( 'wp_enqueue_scripts', function() {
 			[ 'fge-portal' ],
 			defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
 		);
+		wp_enqueue_script(
+			'fge-golfplatz',
+			plugins_url( 'assets/js/fge-golfplatz.js', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
+			[],
+			defined( 'FGE_VERSION' ) ? FGE_VERSION : '1',
+			true
+		);
 	}
 
 	// Anfrage-Wizard (JS-Insel) — auf Individuelle-Events (inkl. Budget-Rechner) und der allgemeinen Anfrage-Seite.

@@ -134,6 +134,37 @@ function fge_event_save_images( int $event_id, int $partner_id, array $post ): v
 	}
 }
 
+/**
+ * Renders a partner's infrastructure as grouped 2×2 cards (green label → white card with icon rows).
+ * Same markup on the public golf-course page AND the portal "Platz" view. "Tagungstechnik" is
+ * merged into "Im Clubhaus"; fixed group order. Outputs nothing if no infrastructure is set.
+ */
+function fge_render_amenities_grid( int $partner_id ): void {
+	$infra = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_infra', true ) );
+	if ( empty( $infra ) ) {
+		return;
+	}
+	$merged = [];
+	foreach ( fge_catalog_infra_groups() as $gname => $items ) {
+		$target            = ( 'Tagungstechnik' === $gname ) ? 'Im Clubhaus' : $gname;
+		$merged[ $target ] = ( $merged[ $target ] ?? [] ) + $items;
+	}
+	echo '<div class="gp-amenity-grid">';
+	foreach ( [ 'Auf dem Platz', 'Im Clubhaus', 'Gastronomie', 'Golfschule' ] as $gname ) {
+		$hits = array_filter( $merged[ $gname ] ?? [], static fn( $l, $id ) => in_array( (string) $id, $infra, true ), ARRAY_FILTER_USE_BOTH );
+		if ( ! $hits ) {
+			continue;
+		}
+		echo '<div class="gp-amenity-block"><div class="gp-amenity-label">' . esc_html( $gname ) . '</div><div class="gp-amenity-card">';
+		foreach ( $hits as $id => $label ) {
+			$icon = function_exists( 'fge_infra_icon' ) ? fge_infra_icon( (string) $id ) : '';
+			echo '<div class="gp-amenity-row"><span class="gp-amenity-ico">' . $icon . '</span><span>' . esc_html( $label ) . '</span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput — $icon is trusted SVG
+		}
+		echo '</div></div>';
+	}
+	echo '</div>';
+}
+
 /** Assigned partner id for an event (0 if none). */
 function fge_event_partner_id( int $event_id ): int {
 	return (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
