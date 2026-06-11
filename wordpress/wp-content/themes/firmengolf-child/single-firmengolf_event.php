@@ -76,12 +76,11 @@ $review_quote  = (string) get_post_meta( $partner_id, '_fge_review_quote', true 
 $review_author = (string) get_post_meta( $partner_id, '_fge_review_author', true );
 $review_role   = (string) get_post_meta( $partner_id, '_fge_review_role', true );
 $directions    = (string) get_post_meta( $partner_id, '_fge_directions_text', true );
-$pois = array_filter( [
-	'Auto'   => (string) get_post_meta( $partner_id, '_fge_poi_car', true ),
-	'Bahn'   => (string) get_post_meta( $partner_id, '_fge_poi_train', true ),
-	'Parken' => (string) get_post_meta( $partner_id, '_fge_poi_parking', true ),
-	'Hotel'  => (string) get_post_meta( $partner_id, '_fge_poi_hotel', true ),
-] );
+$pois = function_exists( 'fge_partner_arrival_pois' ) ? fge_partner_arrival_pois( $partner_id ) : [];
+$poi_hotel = (string) get_post_meta( $partner_id, '_fge_poi_hotel', true );
+if ( $poi_hotel !== '' ) {
+	$pois['Hotel'] = $poi_hotel;
+}
 $pricing_mode  = (string) get_post_meta( $post_id, '_fge_pricing_mode', true );
 $booking_label = 'package' === $pricing_mode ? 'Als Paket — alles inklusive' : ( 'individual' === $pricing_mode ? 'Einzelpreise' : 'Auf Anfrage' );
 // Im Event inkludierte Anfrage-Wünsche (für „✓ inklusive"-Markierung im Anfrage-Modal).

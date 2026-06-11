@@ -338,6 +338,12 @@ function fge_portal_handle_profile_update(): void {
 			}
 			update_post_meta( $partner_id, '_fge_latitude',  '' === ( $P['fge_latitude'] ?? '' )  ? '' : (string) (float) $P['fge_latitude'] );
 			update_post_meta( $partner_id, '_fge_longitude', '' === ( $P['fge_longitude'] ?? '' ) ? '' : (string) (float) $P['fge_longitude'] );
+			foreach ( [ 'poi_car', 'poi_parking', 'poi_train', 'poi_shuttle' ] as $k ) {
+				update_post_meta( $partner_id, '_fge_' . $k, sanitize_text_field( $P[ 'fge_' . $k ] ?? '' ) );
+			}
+			// '' = keine Angabe (gleiche Drei-Zustands-Logik wie im Onboarding).
+			$est = (string) ( $P['fge_arrival_estation'] ?? '' );
+			update_post_meta( $partner_id, '_fge_arrival_estation', '' === $est ? '' : ( '1' === $est ? 1 : 0 ) );
 			break;
 
 		case 'kontakt':
@@ -1985,6 +1991,14 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 					<iframe src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
 				</div>
 				<?php if ( $paddr !== '' ) : ?><p class="fgpp-map-addr"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $paddr ); ?></p><?php endif; ?>
+				<?php $apois = fge_partner_arrival_pois( $partner_id ); ?>
+				<?php if ( $apois ) : ?>
+				<div class="fgpp-poi-grid">
+					<?php foreach ( $apois as $pl => $pv ) : ?>
+						<div class="fgpp-poi"><div class="fgpp-poi-l"><?php echo esc_html( $pl ); ?></div><div class="fgpp-poi-v"><?php echo esc_html( $pv ); ?></div></div>
+					<?php endforeach; ?>
+				</div>
+				<?php endif; ?>
 			</section>
 			<?php endif; ?>
 
@@ -2134,6 +2148,22 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 						<div><label class="fg-form-label" for="fge_longitude">Längengrad (lng)</label><input class="fg-form-input" type="text" id="fge_longitude" name="fge_longitude" value="<?php echo esc_attr( $m( 'longitude' ) ); ?>" placeholder="11.5755"></div>
 					</div>
 					<p class="fp-help">Die Koordinaten setzen den Pin auf der Karte (öffentliche Platzseite + Event-Detail).</p>
+					<div class="fg-form-row fg-form-row--2col">
+						<div><label class="fg-form-label" for="fge_poi_car">Anfahrt mit dem Auto</label><input class="fg-form-input" type="text" id="fge_poi_car" name="fge_poi_car" value="<?php echo esc_attr( $m( 'poi_car' ) ); ?>" placeholder="z. B. 15 Min ab Stadtzentrum"></div>
+						<div><label class="fg-form-label" for="fge_poi_parking">Parken</label><input class="fg-form-input" type="text" id="fge_poi_parking" name="fge_poi_parking" value="<?php echo esc_attr( $m( 'poi_parking' ) ); ?>" placeholder="z. B. 100 kostenfreie Parkplätze"></div>
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div><label class="fg-form-label" for="fge_poi_train">Mit der Bahn</label><input class="fg-form-input" type="text" id="fge_poi_train" name="fge_poi_train" value="<?php echo esc_attr( $m( 'poi_train' ) ); ?>" placeholder="z. B. S2 Riem, 10 Gehminuten"></div>
+						<div><label class="fg-form-label" for="fge_poi_shuttle">Shuttle-Service</label><input class="fg-form-input" type="text" id="fge_poi_shuttle" name="fge_poi_shuttle" value="<?php echo esc_attr( $m( 'poi_shuttle' ) ); ?>" placeholder="z. B. Abholung nach Absprache"></div>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_arrival_estation">Ladestation für E-Autos</label>
+						<select class="fg-form-input" id="fge_arrival_estation" name="fge_arrival_estation">
+							<option value="" <?php selected( $m( 'arrival_estation' ), '' ); ?>>Keine Angabe</option>
+							<option value="1" <?php selected( $m( 'arrival_estation' ), '1' ); ?>>Ja</option>
+							<option value="0" <?php selected( $m( 'arrival_estation' ), '0' ); ?>>Nein</option>
+						</select>
+					</div>
 					<?php
 					break;
 
@@ -2164,6 +2194,21 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 		</form>
 	</div>
 	<?php
+}
+
+/** Anfahrt-POIs eines Partners als Label => Wert (nur ausgefüllte; E-Ladestation nur bei „Ja"). */
+function fge_partner_arrival_pois( int $partner_id ): array {
+	$m    = static fn( string $k ): string => (string) get_post_meta( $partner_id, '_fge_' . $k, true );
+	$pois = array_filter( [
+		'Auto'    => $m( 'poi_car' ),
+		'Bahn'    => $m( 'poi_train' ),
+		'Parken'  => $m( 'poi_parking' ),
+		'Shuttle' => $m( 'poi_shuttle' ),
+	] );
+	if ( '1' === $m( 'arrival_estation' ) ) {
+		$pois['E-Ladestation'] = 'Vorhanden';
+	}
+	return $pois;
 }
 
 function fge_portal_profile_row( string $key, string $val ): void {

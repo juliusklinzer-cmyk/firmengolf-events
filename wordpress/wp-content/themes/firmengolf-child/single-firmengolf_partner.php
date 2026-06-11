@@ -144,6 +144,14 @@ if ( $season )  { $facts[] = [ 'Saison', $season ]; }
 					<iframe src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
 				</div>
 				<?php if ( $paddr !== '' ) : ?><p class="fgpp-map-addr"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $paddr ); ?></p><?php endif; ?>
+				<?php $apois = function_exists( 'fge_partner_arrival_pois' ) ? fge_partner_arrival_pois( $pid ) : []; ?>
+				<?php if ( $apois ) : ?>
+				<div class="fgpp-poi-grid">
+					<?php foreach ( $apois as $pl => $pv ) : ?>
+						<div class="fgpp-poi"><div class="fgpp-poi-l"><?php echo esc_html( $pl ); ?></div><div class="fgpp-poi-v"><?php echo esc_html( $pv ); ?></div></div>
+					<?php endforeach; ?>
+				</div>
+				<?php endif; ?>
 			</section>
 			<?php endif; ?>
 
