@@ -244,7 +244,6 @@ function fge_onboarding_is_submittable( int $partner_id ): bool {
 	};
 
 	if ( $m( 'public_golfclub_name' ) === '' )     { return false; }
-	if ( $m( 'legal_operator_name' ) === '' )      { return false; }
 	if ( ! in_array( $m( 'golf_type' ), array_keys( fge_catalog_golf_types() ), true ) ) { return false; }
 	if ( $m( 'main_contact_name' ) === '' )        { return false; }
 	if ( ! is_email( $m( 'main_contact_email' ) ) ) { return false; }
@@ -315,10 +314,8 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 
 		case 'basics':
 			update_post_meta( $partner_id, '_fge_public_golfclub_name',    $s( 'fge_public_golfclub_name' ) );
-			update_post_meta( $partner_id, '_fge_legal_operator_name',     $s( 'fge_legal_operator_name' ) );
 			update_post_meta( $partner_id, '_fge_website_url',             $su( 'fge_website_url' ) );
 			update_post_meta( $partner_id, '_fge_public_short_description', $sa( 'fge_public_short_description' ) );
-			update_post_meta( $partner_id, '_fge_internal_note',           $sa( 'fge_internal_note' ) );
 			// Sync post title to public name.
 			wp_update_post( [ 'ID' => $partner_id, 'post_title' => $s( 'fge_public_golfclub_name' ) ] );
 			break;
@@ -626,8 +623,8 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 
 		case 'basics':
 			return fge_onboarding_validate(
-				[ 'fge_public_golfclub_name' => $s( 'fge_public_golfclub_name' ), 'fge_legal_operator_name' => $s( 'fge_legal_operator_name' ) ],
-				[ 'fge_public_golfclub_name' => 'Golfplatz Name', 'fge_legal_operator_name' => 'Rechtlicher Betreibername' ]
+				[ 'fge_public_golfclub_name' => $s( 'fge_public_golfclub_name' ) ],
+				[ 'fge_public_golfclub_name' => 'Öffentlicher Anzeigename' ]
 			);
 
 		case 'location':
@@ -776,10 +773,8 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 	};
 	return [
 		'public_golfclub_name'          => (string) $m( 'public_golfclub_name' ),
-		'legal_operator_name'           => (string) $m( 'legal_operator_name' ),
 		'website_url'                   => (string) $m( 'website_url' ),
 		'public_short_description'      => (string) $m( 'public_short_description' ),
-		'internal_note'                 => (string) $m( 'internal_note' ),
 		'street'                        => (string) $m( 'street' ),
 		'house_number'                  => (string) $m( 'house_number' ),
 		'postal_code'                   => (string) $m( 'postal_code' ),
@@ -1056,24 +1051,32 @@ function fge_onboarding_error( array $errors, string $field ): void {
 	}
 }
 
-function fge_onboarding_input( string $id, string $name, string $label, string $val, string $type = 'text', bool $required = false, string $placeholder = '', array $errors = [] ): void {
+function fge_onboarding_input( string $id, string $name, string $label, string $val, string $type = 'text', bool $required = false, string $placeholder = '', array $errors = [], string $hint = '', string $attrs = '' ): void {
 	$err_class = isset( $errors[ $name ] ) ? ' ob-input--error' : '';
 	?>
 	<div class="ob-field<?php echo $err_class ? ' ob-field--error' : ''; ?>">
-		<label class="ob-label" for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?><?php if ( $required ) : ?> <span class="ob-required">*</span><?php endif; ?></label>
+		<?php if ( $label !== '' ) : ?>
+			<label class="ob-label" for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?><?php if ( $required ) : ?> <span class="ob-required">*</span><?php endif; ?></label>
+		<?php endif; ?>
+		<?php if ( $hint !== '' ) : ?>
+			<span class="ob-field-hint"><?php echo esc_html( $hint ); ?></span>
+		<?php endif; ?>
 		<input class="ob-input<?php echo $err_class; ?>" type="<?php echo esc_attr( $type ); ?>"
 		       id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>"
 		       value="<?php echo esc_attr( $val ); ?>"
 		       <?php echo $placeholder !== '' ? 'placeholder="' . esc_attr( $placeholder ) . '"' : ''; ?>
-		       <?php echo $required ? 'required' : ''; ?>>
+		       <?php echo $required ? 'required' : ''; ?> <?php echo $attrs; // phpcs:ignore WordPress.Security.EscapeOutput -- static attribute strings from callers ?>>
 		<?php fge_onboarding_error( $errors, $name ); ?>
 	</div>
 	<?php
 }
 
-function fge_onboarding_textarea( string $id, string $name, string $label, string $val, string $placeholder = '' ): void { ?>
+function fge_onboarding_textarea( string $id, string $name, string $label, string $val, string $placeholder = '', string $hint = '' ): void { ?>
 <div class="ob-field">
 	<label class="ob-label" for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?></label>
+	<?php if ( $hint !== '' ) : ?>
+		<span class="ob-field-hint"><?php echo esc_html( $hint ); ?></span>
+	<?php endif; ?>
 	<textarea class="ob-input ob-textarea" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>"
 	          rows="4" <?php echo $placeholder !== '' ? 'placeholder="' . esc_attr( $placeholder ) . '"' : ''; ?>><?php echo esc_textarea( $val ); ?></textarea>
 </div>
@@ -1312,11 +1315,9 @@ function fge_onboarding_render_basics( int $step, int $partner_id, string $token
 	fge_onboarding_render_step_header( $step, 'Wie heißt euer Golfplatz?', 'Diese Angaben erscheinen später öffentlich auf deinem Partnerprofil. Du kannst alles jederzeit ändern.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
-	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', 'Öffentlicher Golfplatzname', $v['public_golfclub_name'] ?? '', 'text', true, 'z.B. Golfclub Königsfeld', $errors );
-	fge_onboarding_input( 'fge_legal_operator_name', 'fge_legal_operator_name', 'Rechtlicher Betreibername', $v['legal_operator_name'] ?? '', 'text', true, 'z.B. GC Königsfeld GmbH & Co. KG', $errors );
-	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website (optional)', $v['website_url'] ?? '', 'url', false, 'https://' );
-	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Kurzbeschreibung (optional)', $v['public_short_description'] ?? '', 'Was macht deinen Golfplatz besonders für Firmenevents?' );
-	fge_onboarding_textarea( 'fge_internal_note', 'fge_internal_note', 'Interne Notiz für Firmengolf (optional)', $v['internal_note'] ?? '' );
+	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', '', $v['public_golfclub_name'] ?? '', 'text', true, 'z. B. GC Augusta National', $errors );
+	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Öffentliche Kurzbeschreibung', $v['public_short_description'] ?? '', 'z. B. 18-Loch-Anlage am Stadtrand, gemütliche Clubhaus-Terrasse, Driving Range mit 30 Plätzen…', '2–3 Sätze. Du kannst das später noch ausbauen.' );
+	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website', $v['website_url'] ?? '', 'url', false, 'https://…' );
 	echo '</form>';
 }
 
@@ -1344,13 +1345,13 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 	];
 
 	?>
-	<div class="ob-field-row">
-		<?php fge_onboarding_input( 'fge_street', 'fge_street', 'Straße', $v['street'] ?? '', 'text', true, 'Musterstraße', $errors ); ?>
-		<?php fge_onboarding_input( 'fge_house_number', 'fge_house_number', 'Hausnr.', $v['house_number'] ?? '', 'text', false, '1' ); ?>
+	<div class="ob-field-row ob-field-row-3-1">
+		<?php fge_onboarding_input( 'fge_street', 'fge_street', 'Straße', $v['street'] ?? '', 'text', true, 'Straßenname', $errors ); ?>
+		<?php fge_onboarding_input( 'fge_house_number', 'fge_house_number', 'Hausnr.', $v['house_number'] ?? '', 'text', false, '123' ); ?>
 	</div>
-	<div class="ob-field-row">
-		<?php fge_onboarding_input( 'fge_postal_code', 'fge_postal_code', 'PLZ', $v['postal_code'] ?? '', 'text', true, '12345', $errors ); ?>
-		<?php fge_onboarding_input( 'fge_city', 'fge_city', 'Ort', $v['city'] ?? '', 'text', true, 'Musterstadt', $errors ); ?>
+	<div class="ob-field-row ob-field-row-1-3">
+		<?php fge_onboarding_input( 'fge_postal_code', 'fge_postal_code', 'PLZ', $v['postal_code'] ?? '', 'text', true, '20359', $errors, '', 'maxlength="5"' ); ?>
+		<?php fge_onboarding_input( 'fge_city', 'fge_city', 'Ort', $v['city'] ?? '', 'text', true, 'Hamburg', $errors ); ?>
 	</div>
 	<?php
 	fge_onboarding_select( 'fge_federal_state', 'fge_federal_state', 'Bundesland', $v['federal_state'] ?? '', $states, true, $errors );
@@ -1813,7 +1814,6 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 
 		<?php fge_onboarding_summary_section( 'Golfplatz', [
 			'Name'              => $v['public_golfclub_name'],
-			'Betreiber'         => $v['legal_operator_name'],
 			'Website'           => $v['website_url'],
 			'Kurzbeschreibung'  => $v['public_short_description'],
 		] ); ?>

@@ -72,7 +72,7 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 	?>
 	<table class="form-table">
 		<tr>
-			<th scope="row"><label for="fge_public_golfclub_name">Golfplatz Name öffentlich</label></th>
+			<th scope="row"><label for="fge_public_golfclub_name">Öffentlicher Anzeigename</label></th>
 			<td><input type="text" id="fge_public_golfclub_name" name="fge_public_golfclub_name"
 			           value="<?php echo esc_attr( $public_golfclub_name ); ?>" class="regular-text"></td>
 		</tr>
@@ -106,7 +106,7 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 			           value="<?php echo esc_attr( $partner_since ); ?>"></td>
 		</tr>
 		<tr>
-			<th scope="row"><label for="fge_public_short_description">Kurzbeschreibung öffentlich</label></th>
+			<th scope="row"><label for="fge_public_short_description">Öffentliche Kurzbeschreibung</label></th>
 			<td><textarea id="fge_public_short_description" name="fge_public_short_description" rows="3" class="large-text"><?php echo esc_textarea( $public_short_description ); ?></textarea></td>
 		</tr>
 		<tr>

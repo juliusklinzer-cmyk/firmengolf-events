@@ -2058,7 +2058,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 				case 'steckbrief':
 					?>
 					<div class="fg-form-row">
-						<label class="fg-form-label" for="fge_public_golfclub_name">Öffentlicher Name</label>
+						<label class="fg-form-label" for="fge_public_golfclub_name">Öffentlicher Anzeigename</label>
 						<input class="fg-form-input" type="text" id="fge_public_golfclub_name" name="fge_public_golfclub_name" value="<?php echo esc_attr( $m( 'public_golfclub_name' ) ); ?>">
 					</div>
 					<div class="fg-form-row">
@@ -2066,7 +2066,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 						<input class="fg-form-input" type="url" id="fge_website_url" name="fge_website_url" value="<?php echo esc_attr( $m( 'website_url' ) ); ?>" placeholder="https://...">
 					</div>
 					<div class="fg-form-row">
-						<label class="fg-form-label" for="fge_public_short_description">Kurzbeschreibung</label>
+						<label class="fg-form-label" for="fge_public_short_description">Öffentliche Kurzbeschreibung</label>
 						<textarea class="fg-form-textarea" id="fge_public_short_description" name="fge_public_short_description" rows="4" placeholder="2–3 Sätze für dein öffentliches Profil"><?php echo esc_textarea( $m( 'public_short_description' ) ); ?></textarea>
 					</div>
 					<div class="fg-form-row">
