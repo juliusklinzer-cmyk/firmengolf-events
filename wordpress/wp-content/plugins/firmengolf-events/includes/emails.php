@@ -349,9 +349,12 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 			<p>Bitte ändere dein Passwort nach dem ersten Login.</p>';
 	}
 
+	$ref = function_exists( 'fge_partner_number' ) ? fge_partner_number( $partner_id ) : '';
+
 	$content = '
 		<p>' . $greeting . '</p>
 		<p>Dein Golfplatz-Profil für <strong>' . esc_html( $name ) . '</strong> wurde erfolgreich zur Prüfung eingereicht.</p>
+		' . ( $ref !== '' ? '<p style="color:#6C736E;font-size:13px;">Deine Vorgangsnummer: <strong>' . esc_html( $ref ) . '</strong></p>' : '' ) . '
 		<p>Firmengolf prüft deine Angaben und meldet sich bei dir, sobald das Profil freigeschaltet ist oder noch Informationen fehlen.</p>
 		' . $pw_notice . '
 		<p style="margin-top:28px;">
@@ -369,12 +372,15 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 
 	// Internal notification to Firmengolf team.
 	$internal_to = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+	$final_note  = (string) get_post_meta( $partner_id, '_fge_onboarding_final_note', true );
 	$int_content = '
 		<p>Neues Golfplatz-Profil eingereicht:</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;">
 			<tr><td style="padding:6px 16px 6px 0;color:#555;width:130px;"><strong>Golfplatz</strong></td><td>' . esc_html( $name ) . '</td></tr>
+			' . ( $ref !== '' ? '<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>Vorgangs-Nr.</strong></td><td>' . esc_html( $ref ) . '</td></tr>' : '' ) . '
 			<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>Kontakt</strong></td><td>' . esc_html( $contact ) . '</td></tr>
 			<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>E-Mail</strong></td><td><a href="mailto:' . esc_attr( $email ) . '" style="color:#2a6e32;">' . esc_html( $email ) . '</a></td></tr>
+			' . ( $final_note !== '' ? '<tr><td style="padding:6px 16px 6px 0;color:#555;vertical-align:top;"><strong>Hinweis</strong></td><td>' . nl2br( esc_html( $final_note ) ) . '</td></tr>' : '' ) . '
 		</table>
 		<p style="margin-top:28px;">
 			<a href="' . esc_url( $admin_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Im Admin öffnen</a>

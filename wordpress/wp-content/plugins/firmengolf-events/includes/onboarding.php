@@ -33,7 +33,7 @@ function fge_onboarding_manifest(): array {
 		14 => [ 'id' => 'avail',    'chapter' => 3, 'kind' => 'form' ],
 		15 => [ 'id' => 'pricing',  'chapter' => 3, 'kind' => 'form' ],
 		16 => [ 'id' => 'media',    'chapter' => 3, 'kind' => 'form' ],
-		17 => [ 'id' => 'review',   'chapter' => 3, 'kind' => 'review' ],
+		17 => [ 'id' => 'review',   'chapter' => 3, 'kind' => 'review', 'wide' => true ],
 	];
 }
 
@@ -504,6 +504,9 @@ function fge_onboarding_submit( int $partner_id ): void {
 		}
 	}
 
+	// Vorgangsnummer vergeben (FG-P-26-001), bevor die Mails sie erwähnen.
+	fge_partner_number( $partner_id );
+
 	// Email.
 	fge_send_onboarding_submitted_email( $partner_id );
 }
@@ -566,12 +569,20 @@ function fge_onboarding_handle_step(): void {
 		exit;
 	}
 
+	// Kam der Nutzer über „Bearbeiten" aus der Zusammenfassung? Dann nach dem
+	// Speichern direkt dorthin zurück statt zur nächsten Slide.
+	$return_review = isset( $_POST['fge_ob_return'] );
+
 	// Validate slide-specific required fields.
 	$errors = fge_onboarding_validate_slide( $id, $_POST );
 	if ( ! empty( $errors ) ) {
 		$trans_key = 'fge_ob_err_' . $partner_id . '_' . $step;
 		set_transient( $trans_key, $errors, 120 );
-		wp_redirect( add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) ) );
+		$err_url = add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) );
+		if ( $return_review ) {
+			$err_url = add_query_arg( 'ob_return', '1', $err_url );
+		}
+		wp_redirect( $err_url );
 		exit;
 	}
 
@@ -593,6 +604,9 @@ function fge_onboarding_handle_step(): void {
 		}
 		update_post_meta( $partner_id, '_fge_onboarding_step', max( fge_onboarding_get_progress( $partner_id ), $step ) );
 		[ $n ] = $next( $step );
+		if ( $return_review ) {
+			$n = fge_onboarding_ordinal_of( 'review' );
+		}
 		wp_redirect( fge_onboarding_step_url( $n ) );
 		exit;
 	}
@@ -603,6 +617,7 @@ function fge_onboarding_handle_step(): void {
 			wp_redirect( add_query_arg( 'ob_missing', '1', fge_onboarding_step_url( $step ) ) );
 			exit;
 		}
+		update_post_meta( $partner_id, '_fge_onboarding_final_note', sanitize_textarea_field( wp_unslash( $_POST['fge_final_note'] ?? '' ) ) );
 		fge_onboarding_submit( $partner_id );
 		wp_redirect( add_query_arg( 'ob_submitted', '1', fge_onboarding_page_url() ) );
 		exit;
@@ -625,7 +640,11 @@ function fge_onboarding_handle_step(): void {
 		exit;
 	}
 
-	// Advance to next slide.
+	// Advance to next slide (oder zurück zur Zusammenfassung nach „Bearbeiten").
+	if ( $return_review ) {
+		wp_redirect( fge_onboarding_step_url( fge_onboarding_ordinal_of( 'review' ) ) );
+		exit;
+	}
 	[ $n, $ntok ] = $next( $step );
 	wp_redirect( fge_onboarding_step_url( $n, $ntok ? $token : '' ) );
 	exit;
@@ -1066,6 +1085,10 @@ function fge_onboarding_form_open( int $step, int $partner_id, string $token ): 
 	printf( '<input type="hidden" name="ob_step" value="%d">', $step );
 	if ( $token !== '' ) {
 		printf( '<input type="hidden" name="ob_token" value="%s">', esc_attr( $token ) );
+	}
+	// Über „Bearbeiten" aus der Zusammenfassung gekommen: Flag mitschicken.
+	if ( isset( $_GET['ob_return'] ) ) {
+		printf( '<input type="hidden" name="fge_ob_return" value="1">' );
 	}
 }
 
@@ -1928,48 +1951,85 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 	$can_submit = fge_onboarding_is_submittable( $partner_id );
 	$missing    = isset( $_GET['ob_missing'] );
 
-	fge_onboarding_render_step_header( $step, 'Prüf deine Angaben — dann reichen wir ein.', 'Sieh nochmal über alles drüber, was du eingegeben hast. Korrigieren kannst du jeden Bereich mit „Zurück".' );
+	// „Bearbeiten" springt direkt auf die jeweilige Slide; ob_return bringt den
+	// Nutzer nach dem Speichern automatisch hierher zurück.
+	$edit = static function ( string $slide_id ) use ( $token ): string {
+		return esc_url( add_query_arg( 'ob_return', '1', fge_onboarding_step_url( fge_onboarding_ordinal_of( $slide_id ), $token ) ) );
+	};
 
-	if ( $missing ) { ?>
-		<div class="ob-notice ob-notice--warn">Einige Pflichtangaben fehlen noch. Bitte gehe zurück und ergänze die markierten Felder.</div>
-	<?php } ?>
+	$states = [
+		'baden_wuerttemberg' => 'Baden-Württemberg', 'bayern' => 'Bayern', 'berlin' => 'Berlin',
+		'brandenburg' => 'Brandenburg', 'bremen' => 'Bremen', 'hamburg' => 'Hamburg', 'hessen' => 'Hessen',
+		'mecklenburg_vorpommern' => 'Mecklenburg-Vorpommern', 'niedersachsen' => 'Niedersachsen',
+		'nordrhein_westfalen' => 'Nordrhein-Westfalen', 'rheinland_pfalz' => 'Rheinland-Pfalz',
+		'saarland' => 'Saarland', 'sachsen' => 'Sachsen', 'sachsen_anhalt' => 'Sachsen-Anhalt',
+		'schleswig_holstein' => 'Schleswig-Holstein', 'thueringen' => 'Thüringen',
+	];
+	?>
+	<header class="ob-step-head">
+		<div class="ob-eyebrow">Letzter Schritt</div>
+		<h1 class="ob-step-title">Prüf deine Angaben, dann reichen wir ein.</h1>
+		<p class="ob-step-lead">Sieh nochmal über alles drüber. Jeden Abschnitt kannst du über „Bearbeiten" direkt anpassen und kommst danach automatisch hierher zurück.</p>
+	</header>
 
-	<div class="ob-summary">
+	<?php if ( $missing ) : ?>
+		<div class="ob-notice ob-notice--warn">Einige Pflichtangaben fehlen noch. Öffne die betroffenen Bereiche über „Bearbeiten" und ergänze die Felder.</div>
+	<?php endif; ?>
 
-		<?php fge_onboarding_summary_section( 'Golfplatz', [
-			'Name'              => $v['public_golfclub_name'],
-			'Website'           => $v['website_url'],
-			'Kurzbeschreibung'  => $v['public_short_description'],
-		] ); ?>
-
-		<?php fge_onboarding_summary_section( 'Standort', [
-			'Adresse'   => trim( $v['street'] . ' ' . $v['house_number'] . ', ' . $v['postal_code'] . ' ' . $v['city'] ),
-			'Bundesland' => $v['federal_state'],
-		] ); ?>
-
-		<?php fge_onboarding_summary_section( 'Hauptkontakt', [
-			'Name'    => $v['main_contact_name'],
-			'E-Mail'  => $v['main_contact_email'],
-			'Telefon' => $v['main_contact_phone'],
-			'Rolle'   => $v['main_contact_role'],
-		] ); ?>
-
+	<div class="ob-rev-grid">
 		<?php
-		$further = fge_contacts_get( $partner_id );
-		$further = array_values( array_filter( $further, static function ( $c ) { return (int) $c['user_id'] === 0; } ) );
-		if ( ! empty( $further ) ) {
-			$perm_labels = fge_contact_permissions();
-			$rows = [];
-			foreach ( $further as $c ) {
-				$label = trim( ( $c['name'] ?: $c['email'] ) . ( $c['role'] ? ' · ' . $c['role'] : '' ) );
-				$rows[ $label ] = ( $perm_labels[ $c['permission'] ] ?? $c['permission'] ) . ' · ' . $c['email'];
+		// ── Golfplatz ──
+		$gt_label = fge_catalog_golf_types()[ (string) ( $v['golf_type'] ?? '' ) ] ?? '';
+		fge_onboarding_rev_block( 'Golfplatz', $edit( 'golftype' ), [
+			[ 'Golfangebot', $gt_label ],
+			[ 'Öffentlicher Name', (string) $v['public_golfclub_name'] ],
+			[ 'Website', (string) $v['website_url'] ],
+			[ 'Beschreibung', (string) $v['public_short_description'], true ],
+		] );
+
+		// ── Standort ──
+		fge_onboarding_rev_block( 'Standort', $edit( 'location' ), [
+			[ 'Adresse', trim( $v['street'] . ' ' . $v['house_number'] . ', ' . $v['postal_code'] . ' ' . $v['city'], ' ,' ) ],
+			[ 'Bundesland', $states[ (string) $v['federal_state'] ] ?? (string) $v['federal_state'] ],
+		] );
+
+		// ── Anfahrt ──
+		$arrival_rows = [];
+		foreach ( [ 'poi_car' => 'Auto', 'poi_parking' => 'Parken', 'poi_train' => 'Bahn', 'poi_shuttle' => 'Shuttle' ] as $pk => $pl ) {
+			if ( '' !== (string) ( $v[ $pk ] ?? '' ) ) {
+				$arrival_rows[] = [ $pl, (string) $v[ $pk ] ];
 			}
-			fge_onboarding_summary_section( 'Weitere Ansprechpartner', $rows );
 		}
-		?>
+		if ( '1' === (string) ( $v['arrival_estation'] ?? '' ) ) {
+			$arrival_rows[] = [ 'E-Ladestation', 'Vorhanden' ];
+		}
+		if ( empty( $arrival_rows ) ) {
+			$arrival_rows[] = [ '', 'Keine Angaben, alles optional.' ];
+		}
+		fge_onboarding_rev_block( 'Anfahrt', $edit( 'arrival' ), $arrival_rows );
 
-		<?php
-		// Labels aus dem Katalog (neues _fge_infra-Array) — nicht mehr die Legacy-has_*-Flags.
+		// ── Hauptkontakt ──
+		fge_onboarding_rev_block( 'Hauptkontakt', $edit( 'main' ), [
+			[ 'Name', (string) $v['main_contact_name'] ],
+			[ 'Rolle', (string) $v['main_contact_role'] ],
+			[ 'E-Mail', (string) $v['main_contact_email'] ],
+			[ 'Telefon', (string) $v['main_contact_phone'] ],
+		] );
+
+		// ── Weitere Ansprechpartner ──
+		$further = array_values( array_filter( fge_contacts_get( $partner_id ), static function ( $c ) {
+			return (int) $c['user_id'] === 0;
+		} ) );
+		$contact_rows = [];
+		foreach ( $further as $c ) {
+			$contact_rows[] = [ $c['role'] ?: 'Kontakt', trim( ( $c['name'] ?: '—' ) . ( $c['email'] ? ' · ' . $c['email'] : '' ) ) ];
+		}
+		if ( empty( $contact_rows ) ) {
+			$contact_rows[] = [ '', 'Keine weiteren Ansprechpartner hinzugefügt.' ];
+		}
+		fge_onboarding_rev_block( 'Weitere Ansprechpartner', $edit( 'contacts' ), $contact_rows );
+
+		// ── Infrastruktur & Gastronomie ──
 		$infra_index = [];
 		foreach ( fge_catalog_infra_groups() as $g_items ) {
 			foreach ( $g_items as $iid => $ilabel ) {
@@ -1982,21 +2042,24 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 				$active_infra[] = $infra_index[ (string) $iid ];
 			}
 		}
-		$infra_rows = [ 'Ausstattung' => implode( ', ', $active_infra ) ?: '—' ];
+		$infra_rows = [ [ '', implode( ' · ', $active_infra ), true ] ];
 		if ( '' !== (string) ( $v['additional_equipment'] ?? '' ) ) {
-			$infra_rows['Weitere Ausstattung'] = (string) $v['additional_equipment'];
+			$infra_rows[] = [ 'Weitere Ausstattung', (string) $v['additional_equipment'], true ];
 		}
-		fge_onboarding_summary_section( 'Infrastruktur', $infra_rows );
-		?>
+		fge_onboarding_rev_block( 'Infrastruktur & Gastronomie', $edit( 'infra' ), $infra_rows );
 
-		<?php
-		$rev_cap = is_array( $v['cap'] ?? null ) ? $v['cap'] : [];
-		fge_onboarding_summary_section( 'Kapazitäten', [
-			'Teilnehmer Min/Max' => ( (int) ( $rev_cap['min'] ?? 0 ) ?: '—' ) . ' – ' . ( (int) ( $rev_cap['max'] ?? 0 ) ?: '—' ),
-		] );
-		?>
+		// ── Kapazitäten ──
+		$cap      = is_array( $v['cap'] ?? null ) ? $v['cap'] : [];
+		$cap_rows = [ [ 'Gruppengröße', ( (int) ( $cap['min'] ?? 0 ) ?: '?' ) . ' – ' . ( (int) ( $cap['max'] ?? 0 ) ?: '?' ) . ' Gäste' ] ];
+		foreach ( fge_catalog_cap_rows() as $cr ) {
+			$cn = (int) ( $cap[ $cr['key'] ] ?? 0 );
+			if ( $cn > 0 && in_array( $cr['infra'], (array) ( $v['infra'] ?? [] ), true ) && isset( $infra_index[ (string) $cr['infra'] ] ) ) {
+				$cap_rows[] = [ $infra_index[ (string) $cr['infra'] ], $cn . ' Personen' ];
+			}
+		}
+		fge_onboarding_rev_block( 'Kapazitäten', $edit( 'capacity' ), $cap_rows );
 
-		<?php
+		// ── Veranstaltungstypen ──
 		$fmt_labels  = fge_get_event_format_options();
 		$active_fmts = [];
 		foreach ( (array) $v['event_formats'] as $key ) {
@@ -2004,38 +2067,109 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 				$active_fmts[] = $fmt_labels[ $key ];
 			}
 		}
-		fge_onboarding_summary_section( 'Eventformate', [ 'Formate' => implode( ', ', $active_fmts ) ?: '—' ] );
+		fge_onboarding_rev_block( 'Veranstaltungstypen', $edit( 'formats' ), [ [ '', implode( ' · ', $active_fmts ), true ] ] );
+
+		// ── Verfügbarkeit ──
+		$day_labels = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
+		$days       = [];
+		foreach ( (array) ( $v['preferred_event_days'] ?? [] ) as $dk ) {
+			if ( isset( $day_labels[ $dk ] ) ) {
+				$days[] = $day_labels[ $dk ];
+			}
+		}
+		$evening = (string) ( $v['evening_events_possible'] ?? '' );
+		fge_onboarding_rev_block( 'Verfügbarkeit', $edit( 'avail' ), [
+			[ 'Wochentage', implode( ', ', $days ) ],
+			[ 'Abend-Events', '' === $evening ? 'Keine Angabe' : ( '1' === $evening ? 'Ja' : 'Nein' ) ],
+			[ 'Vorlauf', $v['min_lead_time_days'] . ' Tage' ],
+			[ 'Saison', fge_season_label( (string) $v['season'] ) ],
+		] );
+
+		// ── Preis & Abrechnung ──
+		fge_onboarding_rev_block( 'Preis & Abrechnung', $edit( 'pricing' ), [
+			[ 'Netto-Preise', 'Pro Event im Portal hinterlegt' ],
+			[ 'Abrechnung', 'Direkt mit Firmengolf · Anfragenummer angeben' ],
+		] );
+
+		// ── Medien ──
+		$gallery_count = count( fge_partner_gallery_ids( $partner_id ) );
+		fge_onboarding_rev_block( 'Medien', $edit( 'media' ), [
+			[ 'Logo', $v['logo_attachment_id'] > 0 ? 'Hochgeladen ✓' : 'Noch nicht hochgeladen' ],
+			[ 'Titelbild', $v['hero_image_attachment_id'] > 0 ? 'Hochgeladen ✓' : 'Noch nicht hochgeladen' ],
+			[ 'Galerie', $gallery_count . ' ' . ( 1 === $gallery_count ? 'Bild' : 'Bilder' ) ],
+			[ 'Bildrechte', $v['image_rights_confirmed'] === '1' ? 'Bestätigt ✓' : 'Noch nicht bestätigt' ],
+		] );
 		?>
+	</div>
 
-		<?php fge_onboarding_summary_section( 'Verfügbarkeit', [
-			'Saison'         => fge_season_label( (string) $v['season'] ) ?: '—',
-			'Mindestvorlauf' => $v['min_lead_time_days'] . ' Tage',
-		] ); ?>
-
-		<?php fge_onboarding_summary_section( 'Preis & Abrechnung', [
-			'Modell'      => 'Netto-Preise pro Event im Portal',
-			'Aufschlag'   => 'Firmengolf-Aufschlag wird zusätzlich kalkuliert',
-			'Abrechnung'  => 'Rechnung an Firmengolf mit Anfragenummer',
-		] ); ?>
-
-		<?php fge_onboarding_summary_section( 'Medien', [
-			'Logo'           => $v['logo_attachment_id'] > 0 ? 'Hochgeladen' : 'Nicht hochgeladen',
-			'Titelbild'      => $v['hero_image_attachment_id'] > 0 ? 'Hochgeladen' : 'Nicht hochgeladen',
-			'Bildrechte'     => $v['image_rights_confirmed'] === '1' ? 'Bestätigt ✓' : 'Nicht bestätigt',
-		] ); ?>
-
+	<div class="ob-rev-benefits">
+		<div class="ob-rev-benefit">
+			<span class="ob-rev-benefit-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg></span>
+			<div>
+				<div class="ob-rev-benefit-h">Du gestaltest jedes Event selbst</div>
+				<p>Nach der Anmeldung legst du jedes Event einzeln an und stellst es online, ganz nach deinen Vorstellungen.</p>
+			</div>
+		</div>
+		<div class="ob-rev-benefit">
+			<span class="ob-rev-benefit-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M17 5h3a2 2 0 0 1-2 3h-1"/><path d="M7 5H4a2 2 0 0 0 2 3h1"/></svg></span>
+			<div>
+				<div class="ob-rev-benefit-h">Bevorzugt bei besonderen Events</div>
+				<p>Kommen bei uns Anfragen für besondere Firmenevents rein, wirst du als registrierter Partner bevorzugt angefragt.</p>
+			</div>
+		</div>
+		<div class="ob-rev-benefit">
+			<span class="ob-rev-benefit-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-2.5-1.5L14 21l-2-1.5L10 21l-2.5-1.5L5 21z"/><path d="M9 8h6"/><path d="M9 12h6"/></svg></span>
+			<div>
+				<div class="ob-rev-benefit-h">Eine Rechnung, null Aufwand</div>
+				<p>Du, Gastronomie und Shuttle stellen uns alle Leistungen in Rechnung. Wir bündeln und rechnen mit dem Unternehmen ab.</p>
+			</div>
+		</div>
 	</div>
 
 	<?php if ( $can_submit ) : ?>
-	<?php // Submit button lives in the footer ("Zur Prüfung einreichen") and targets this form. ?>
-	<form method="post" id="ob-step-form" class="ob-form">
+	<?php // Submit-Button liegt im Footer („Zur Prüfung einreichen") und zielt auf dieses Formular. ?>
+	<form method="post" id="ob-step-form" class="ob-form" style="margin-top:28px;">
 		<?php wp_nonce_field( 'fge_onboarding_step_' . $step, 'fge_ob_nonce' ); ?>
 		<input type="hidden" name="fge_ob_action" value="step_submit">
 		<input type="hidden" name="ob_step" value="<?php echo esc_attr( (string) $step ); ?>">
+		<div class="ob-field full">
+			<label class="ob-field-label" for="fge_final_note">Willst du uns noch etwas mitteilen?</label>
+			<span class="ob-field-hint">Hat etwas gefehlt, gibt es Besonderheiten oder Wünsche? Optional.</span>
+			<textarea class="ob-input ob-textarea" id="fge_final_note" name="fge_final_note" rows="3" placeholder="Dein Hinweis an das Firmengolf-Team …"><?php echo esc_textarea( (string) get_post_meta( $partner_id, '_fge_onboarding_final_note', true ) ); ?></textarea>
+		</div>
 	</form>
 	<?php else : ?>
-	<div class="ob-notice ob-notice--warn">Bitte ergänze die fehlenden Pflichtangaben, bevor du das Profil einreichst. Geh mit „Zurück" durch die Schritte und fülle die markierten Felder aus.</div>
+	<div class="ob-notice ob-notice--warn" style="margin-top:28px;">Bitte ergänze die fehlenden Pflichtangaben, bevor du das Profil einreichst. Nutze „Bearbeiten" in den Bereichen oben.</div>
 	<?php endif; ?>
+
+	<div class="ob-rev-foot">
+		<div class="ob-rev-foot-h">Was passiert nach dem Absenden?</div>
+		<p>Wir setzen den Status auf <strong>„zur Prüfung"</strong> und melden uns innerhalb eines Werktags. Vor der Veröffentlichung gehen wir die Daten persönlich mit dir durch und schalten dein Profil frei. Nichts wird automatisch online gestellt.</p>
+	</div>
+	<?php
+}
+
+/** Ein Review-Block: Titel, „Bearbeiten"-Sprung zur Slide, Zeilen als [Label, Wert, multiline?]. */
+function fge_onboarding_rev_block( string $title, string $edit_url, array $rows ): void {
+	?>
+	<section class="ob-rev-block">
+		<div class="ob-rev-head">
+			<h3 class="ob-rev-title"><?php echo esc_html( $title ); ?></h3>
+			<a class="ob-rev-edit" href="<?php echo $edit_url; // phpcs:ignore WordPress.Security.EscapeOutput -- bereits via esc_url escaped ?>">Bearbeiten</a>
+		</div>
+		<div class="ob-rev-body">
+			<?php foreach ( $rows as $r ) :
+				$label = (string) ( $r[0] ?? '' );
+				$value = (string) ( $r[1] ?? '' );
+				$multi = ! empty( $r[2] );
+				?>
+			<div class="ob-rev-row<?php echo $multi ? ' multi' : ''; ?>">
+				<?php if ( '' !== $label ) : ?><span class="ob-rev-l"><?php echo esc_html( $label ); ?></span><?php endif; ?>
+				<span class="ob-rev-v"><?php echo esc_html( '' !== $value ? $value : '—' ); ?></span>
+			</div>
+			<?php endforeach; ?>
+		</div>
+	</section>
 	<?php
 }
 
@@ -2052,15 +2186,49 @@ function fge_onboarding_summary_section( string $title, array $rows ): void { ?>
 </div>
 <?php }
 
-function fge_onboarding_render_confirmation(): void { ?>
-<div class="ob-wizard">
-	<div class="ob-body ob-body--center">
-		<div class="ob-confirm-icon">✓</div>
-		<h1 class="ob-title">Danke — dein Profil ist eingereicht!</h1>
-		<p class="ob-subtitle">Firmengolf prüft deine Angaben und meldet sich, wenn dein Golfplatz freigeschaltet ist oder noch Informationen fehlen.</p>
-		<p class="ob-subtitle">Du erhältst in Kürze eine Bestätigung per E-Mail.</p>
-		<div class="ob-actions ob-actions--center">
-			<a href="<?php echo esc_url( trailingslashit( home_url( '/partnerportal/' ) ) ); ?>" class="ob-btn ob-btn-primary">Zum Partner-Portal →</a>
+function fge_onboarding_render_confirmation(): void {
+	$portal    = trailingslashit( home_url( '/partnerportal/' ) );
+	$new_event = $portal . '?tab=angebote&portal_action=new&preset_type=teamevent';
+	$bg        = function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' ) : '';
+	?>
+<div class="ob-done-hero" style="background-image:url('<?php echo esc_url( $bg ); ?>')">
+	<div class="ob-done-scrim" aria-hidden="true"></div>
+	<div class="ob-done-card">
+		<div class="ob-done-icon" aria-hidden="true">
+			<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></svg>
+		</div>
+		<div class="ob-eyebrow">Eingereicht</div>
+		<h1 class="ob-done-title">Geschafft! Dein Golfplatz ist bei uns.</h1>
+		<p class="ob-done-lead">Danke für deine Zeit. Du bekommst in Kürze eine Bestätigung per E-Mail.</p>
+
+		<?php
+		$done_pid = fge_onboarding_get_current_partner_id();
+		if ( $done_pid > 0 ) :
+			$done_name    = (string) get_post_meta( $done_pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $done_pid );
+			$done_contact = trim( (string) get_post_meta( $done_pid, '_fge_main_contact_name', true ) );
+			$done_email   = (string) get_post_meta( $done_pid, '_fge_main_contact_email', true );
+			$done_ref     = fge_partner_number( $done_pid );
+		?>
+		<div class="ob-done-receipt">
+			<div><span>Platz</span><span><?php echo esc_html( $done_name ?: '—' ); ?></span></div>
+			<div><span>Hauptkontakt</span><span><?php echo esc_html( trim( $done_contact . ( $done_email ? ' · ' . $done_email : '' ) ) ?: '—' ); ?></span></div>
+			<div><span>Status</span><span><span class="ob-done-pill"><span class="ob-done-dot"></span>In Prüfung</span></span></div>
+			<div><span>Vorgangs-Nr.</span><span class="ob-done-mono"><?php echo esc_html( $done_ref ); ?></span></div>
+		</div>
+		<?php endif; ?>
+
+		<div class="ob-done-status">
+			<span class="ob-done-pill"><span class="ob-done-dot"></span>Wird geprüft</span>
+			<p>Wir schauen uns alles persönlich an und geben deinen Platz frei. Meldet sich innerhalb eines Werktags niemand bei dir, ist alles glattgelaufen und du hörst von uns mit der Freischaltung.</p>
+		</div>
+
+		<div class="ob-done-next">
+			<div class="ob-done-next-h">Fang gern schon mal an: dein erstes Event</div>
+			<p>Wir empfehlen den Start mit dem meistgebuchten Format, dem <strong>Teamevent</strong>. Gestalte Unternehmen in deiner Nähe einen richtig guten Tagesablauf und gewinn dabei neue Besucher, Interessenten und Mitglieder.</p>
+			<div class="ob-done-actions">
+				<a href="<?php echo esc_url( $new_event ); ?>" class="ob-done-btn ob-done-btn-primary">Erstes Teamevent erstellen</a>
+				<a href="<?php echo esc_url( $portal ); ?>" class="ob-done-btn ob-done-btn-ghost">Zum Partner-Portal</a>
+			</div>
 		</div>
 	</div>
 </div>

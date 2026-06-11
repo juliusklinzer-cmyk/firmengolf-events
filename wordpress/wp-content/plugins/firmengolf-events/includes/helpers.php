@@ -4,6 +4,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Partner-Vorgangsnummer (FG-P-26-001): jährliche Sequenz wie bei den Anfragen,
+ * wird beim ersten Zugriff vergeben und am Partner gespeichert.
+ */
+function fge_partner_number( int $partner_id ): string {
+	$ref = (string) get_post_meta( $partner_id, '_fge_partner_ref', true );
+	if ( '' !== $ref ) {
+		return $ref;
+	}
+	$yy  = (int) current_time( 'y' );
+	$opt = 'fge_partner_seq_' . $yy;
+	$seq = (int) get_option( $opt, 0 ) + 1;
+	update_option( $opt, $seq, false );
+	$ref = sprintf( 'FG-P-%02d-%03d', $yy, $seq );
+	update_post_meta( $partner_id, '_fge_partner_ref', $ref );
+	return $ref;
+}
+
 /** Monatsnamen 1–12 (für Saison von/bis). */
 function fge_month_names(): array {
 	return [
