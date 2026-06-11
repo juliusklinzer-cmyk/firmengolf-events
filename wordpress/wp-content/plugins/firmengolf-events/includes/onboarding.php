@@ -444,6 +444,7 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 
 function fge_onboarding_create_or_assign_user( string $email, string $first, string $last, string $role_label, string $phone, int $partner_id ): int {
 	$existing = get_user_by( 'email', $email );
+	$is_new   = false;
 	if ( $existing ) {
 		$user_id = $existing->ID;
 	} else {
@@ -452,15 +453,17 @@ function fge_onboarding_create_or_assign_user( string $email, string $first, str
 		if ( is_wp_error( $user_id ) ) {
 			return 0;
 		}
+		$is_new = true;
 		wp_update_user( [
 			'ID'         => $user_id,
 			'first_name' => $first,
 			'last_name'  => $last,
 			'role'       => 'firmengolf_partner',
 		] );
-		// Notify new user with generated password.
-		wp_new_user_notification( $user_id, null, 'user' );
 	}
+
+	// Mail nur beim ersten Verknüpfen — Re-Submits der Slide dürfen nicht spammen.
+	$was_assigned = (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true );
 
 	// Link to partner post.
 	update_post_meta( $partner_id, '_fge_assigned_wp_user_id', $user_id );
@@ -469,6 +472,12 @@ function fge_onboarding_create_or_assign_user( string $email, string $first, str
 	update_post_meta( $partner_id, '_fge_main_contact_phone',  sanitize_text_field( $phone ) );
 	update_post_meta( $partner_id, '_fge_main_contact_role',   sanitize_text_field( $role_label ) );
 	update_post_meta( $partner_id, '_fge_partner_portal_enabled', 1 );
+
+	if ( $is_new ) {
+		fge_send_partner_welcome_email( $user_id, $partner_id );
+	} elseif ( $was_assigned !== $user_id ) {
+		fge_send_partner_account_linked_email( $user_id, $partner_id );
+	}
 
 	return $user_id;
 }
@@ -1057,21 +1066,21 @@ function fge_onboarding_error( array $errors, string $field ): void {
 	}
 }
 
-function fge_onboarding_input( string $id, string $name, string $label, string $val, string $type = 'text', bool $required = false, string $placeholder = '', array $errors = [], string $hint = '', string $attrs = '' ): void {
+function fge_onboarding_input( string $id, string $name, string $label, string $val, string $type = 'text', bool $required = false, string $placeholder = '', array $errors = [], string $hint = '', string $attrs = '', bool $hint_below = false ): void {
 	$err_class = isset( $errors[ $name ] ) ? ' ob-input--error' : '';
+	$hint_html = $hint !== '' ? '<span class="ob-field-hint">' . esc_html( $hint ) . '</span>' : '';
 	?>
 	<div class="ob-field<?php echo $err_class ? ' ob-field--error' : ''; ?>">
 		<?php if ( $label !== '' ) : ?>
 			<label class="ob-label" for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?><?php if ( $required ) : ?> <span class="ob-required">*</span><?php endif; ?></label>
 		<?php endif; ?>
-		<?php if ( $hint !== '' ) : ?>
-			<span class="ob-field-hint"><?php echo esc_html( $hint ); ?></span>
-		<?php endif; ?>
+		<?php echo $hint_below ? '' : $hint_html; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped above ?>
 		<input class="ob-input<?php echo $err_class; ?>" type="<?php echo esc_attr( $type ); ?>"
 		       id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>"
 		       value="<?php echo esc_attr( $val ); ?>"
 		       <?php echo $placeholder !== '' ? 'placeholder="' . esc_attr( $placeholder ) . '"' : ''; ?>
 		       <?php echo $required ? 'required' : ''; ?> <?php echo $attrs; // phpcs:ignore WordPress.Security.EscapeOutput -- static attribute strings from callers ?>>
+		<?php echo $hint_below ? $hint_html : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped above ?>
 		<?php fge_onboarding_error( $errors, $name ); ?>
 	</div>
 	<?php
@@ -1450,15 +1459,30 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	?>
 	<div class="ob-field-row">
-		<?php fge_onboarding_input( 'fge_contact_first_name', 'fge_contact_first_name', 'Vorname', $saved_first, 'text', true, 'Max', $errors ); ?>
-		<?php fge_onboarding_input( 'fge_contact_last_name', 'fge_contact_last_name', 'Nachname', $saved_last, 'text', true, 'Mustermann', $errors ); ?>
+		<?php fge_onboarding_input( 'fge_contact_first_name', 'fge_contact_first_name', 'Vorname', $saved_first, 'text', true, 'Lena', $errors ); ?>
+		<?php fge_onboarding_input( 'fge_contact_last_name', 'fge_contact_last_name', 'Nachname', $saved_last, 'text', true, 'Hoffmann', $errors ); ?>
 	</div>
 	<?php
-	fge_onboarding_input( 'fge_contact_role', 'fge_contact_role', 'Rolle / Position (optional)', $v['main_contact_role'] ?? '', 'text', false, 'z.B. Geschäftsführer, Marketing-Leitung' );
-	fge_onboarding_input( 'fge_contact_email', 'fge_contact_email', 'E-Mail-Adresse', $v['main_contact_email'] ?? '', 'email', true, 'max@golfclub.de', $errors );
-	fge_onboarding_input( 'fge_contact_phone', 'fge_contact_phone', 'Telefon (optional)', $v['main_contact_phone'] ?? '', 'tel', false, '+49 89 …' );
+	fge_onboarding_input( 'fge_contact_role', 'fge_contact_role', 'Rolle im Club', $v['main_contact_role'] ?? '', 'text', false, 'z. B. Clubmanager:in, Eventleitung' );
 	?>
-	<p class="ob-hint">Wenn diese E-Mail bereits registriert ist, wird der bestehende Account verknüpft. Ansonsten erstellen wir automatisch einen neuen Login.</p>
+	<div class="ob-field-row">
+		<?php fge_onboarding_input( 'fge_contact_email', 'fge_contact_email', 'E-Mail', $v['main_contact_email'] ?? '', 'email', true, 'name@golfclub.de', $errors, 'Wird zum Login.', '', true ); ?>
+		<?php fge_onboarding_input( 'fge_contact_phone', 'fge_contact_phone', 'Telefon', $v['main_contact_phone'] ?? '', 'tel', false, '+49 …' ); ?>
+	</div>
+	<div class="ob-info-box">
+		<div class="ob-info-l">Login wird so erstellt</div>
+		<div class="ob-info-v">Du bekommst eine E-Mail an <strong id="fge_login_email_preview"><?php echo esc_html( ( $v['main_contact_email'] ?? '' ) !== '' ? $v['main_contact_email'] : '— deine Mail —' ); ?></strong> mit einem Link, um dein Passwort zu setzen. Mit diesem Login verwaltest du euer Partnerprofil und Anfragen. Falls die E-Mail bereits registriert ist, verbinden wir das bestehende Konto.</div>
+	</div>
+	<script>
+	(function () {
+		var input = document.getElementById('fge_contact_email');
+		var prev  = document.getElementById('fge_login_email_preview');
+		if (!input || !prev) { return; }
+		input.addEventListener('input', function () {
+			prev.textContent = input.value.trim() || '— deine Mail —';
+		});
+	})();
+	</script>
 	<?php
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';

@@ -166,7 +166,7 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 }
 .ob-info-l { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fairway-800); font-weight: 600; }
 .ob-info-v { font-size: 14px; line-height: 1.55; color: var(--ink-800); }
-.ob-info-v strong { color: var(--fairway-900); }
+.ob-info-v strong { color: var(--fairway-900); font-weight: 700; }
 
 /* Required asterisk */
 .ob-required { color: var(--clay-600); }

@@ -390,6 +390,75 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 	return $sent;
 }
 
+/**
+ * Branded welcome email for a freshly created partner account.
+ * Replaces wp_new_user_notification(): password-set link + portal context.
+ */
+function fge_send_partner_welcome_email( int $user_id, int $partner_id ): bool {
+	$user = get_userdata( $user_id );
+	if ( ! $user ) {
+		return false;
+	}
+	$key = get_password_reset_key( $user );
+	if ( is_wp_error( $key ) ) {
+		return false;
+	}
+	$set_url    = network_site_url( 'wp-login.php?action=rp&key=' . rawurlencode( $key ) . '&login=' . rawurlencode( $user->user_login ), 'login' );
+	$name       = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+	$first      = $user->first_name !== '' ? $user->first_name : $user->display_name;
+	$greeting   = $first !== '' ? 'Hallo ' . esc_html( $first ) . ',' : 'Hallo,';
+
+	$subject = 'Willkommen bei Firmengolf — dein Zugang zum Partner-Portal';
+	$content = '
+		<p>' . $greeting . '</p>
+		<p>schön, dass <strong>' . esc_html( $name ) . '</strong> dabei ist! Dein persönlicher Zugang zum Firmengolf Partner-Portal wurde erstellt.</p>
+		<p><strong>Deine Anmelde-E-Mail:</strong> ' . esc_html( $user->user_email ) . '</p>
+		<p style="margin-top:28px;">
+			<a href="' . esc_url( $set_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Passwort festlegen</a>
+		</p>
+		<p style="font-size:13px;color:#888;">Der Link ist aus Sicherheitsgründen 24 Stunden gültig. Danach kannst du jederzeit über „Passwort vergessen" auf der Anmeldeseite einen neuen Link anfordern.</p>
+		<p>Im Partner-Portal verwaltest du euer Platzprofil, Fotos und alle Event-Anfragen.</p>
+		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
+	';
+
+	return (bool) wp_mail(
+		$user->user_email,
+		$subject,
+		fge_email_wrap( $subject, $content ),
+		[ 'Content-Type: text/html; charset=UTF-8' ]
+	);
+}
+
+/** Notice to an existing account that it has just been linked to a partner (golf course). */
+function fge_send_partner_account_linked_email( int $user_id, int $partner_id ): bool {
+	$user = get_userdata( $user_id );
+	if ( ! $user ) {
+		return false;
+	}
+	$name       = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+	$portal_url = trailingslashit( home_url( '/partnerportal/' ) );
+	$first      = $user->first_name !== '' ? $user->first_name : $user->display_name;
+	$greeting   = $first !== '' ? 'Hallo ' . esc_html( $first ) . ',' : 'Hallo,';
+
+	$subject = 'Dein Firmengolf-Konto wurde mit ' . $name . ' verknüpft';
+	$content = '
+		<p>' . $greeting . '</p>
+		<p>dein bestehendes Firmengolf-Konto (<strong>' . esc_html( $user->user_email ) . '</strong>) ist jetzt mit dem Golfplatz <strong>' . esc_html( $name ) . '</strong> verknüpft.</p>
+		<p>Du kannst das Profil ab sofort mit deinem gewohnten Login im Partner-Portal verwalten.</p>
+		<p style="margin-top:28px;">
+			<a href="' . esc_url( $portal_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
+		</p>
+		<p style="font-size:13px;color:#888;">Du hast diese Verknüpfung nicht angestoßen? Dann antworte bitte kurz auf diese E-Mail oder kontaktiere uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
+	';
+
+	return (bool) wp_mail(
+		$user->user_email,
+		$subject,
+		fge_email_wrap( $subject, $content ),
+		[ 'Content-Type: text/html; charset=UTF-8' ]
+	);
+}
+
 function fge_format_request_admin_link( int $request_id ): string {
 	return admin_url( 'post.php?post=' . $request_id . '&action=edit' );
 }
