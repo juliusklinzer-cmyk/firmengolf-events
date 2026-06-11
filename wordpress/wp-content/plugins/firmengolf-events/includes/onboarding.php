@@ -847,19 +847,49 @@ function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void 
 	$kind = fge_onboarding_slide( $step )['kind'] ?? 'form';
 	?>
 <header class="ob-topbar">
-	<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="ob-brand" aria-label="Firmengolf Startseite">
+	<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="ob-brand" data-ob-brand aria-label="Firmengolf Startseite">
 		<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="120" height="24">
 	</a>
 	<div class="ob-top-actions">
 		<button type="button" class="ob-top-pill" data-ob-help>Noch Fragen?</button>
 		<?php if ( 'form' === $kind ) : ?>
 		<?php // Saves the current slide (via the content form) and exits — handler redirects. ?>
-		<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-top-pill">Speichern &amp; beenden</button>
+		<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-top-pill ob-top-save">Speichern &amp; beenden</button>
 		<?php elseif ( 'review' === $kind ) : ?>
-		<a class="ob-top-pill" href="<?php echo esc_url( $save_exit_url ); ?>">Speichern &amp; beenden</a>
+		<a class="ob-top-pill ob-top-save" href="<?php echo esc_url( $save_exit_url ); ?>">Speichern &amp; beenden</a>
 		<?php endif; ?>
 	</div>
 </header>
+
+<?php // Mobile: tapping the logo opens this exit dialog (instead of navigating home). ?>
+<div class="ob-exit-scrim" data-ob-exit-scrim hidden>
+	<div class="ob-exit-dialog" role="dialog" aria-modal="true" aria-label="Onboarding verlassen">
+		<h3 class="ob-exit-h">Onboarding verlassen?</h3>
+		<p class="ob-exit-p">Speichere deinen Fortschritt, um später weiterzumachen — oder verlasse die Seite ohne zu speichern.</p>
+		<?php if ( 'form' === $kind ) : ?>
+			<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-exit-btn ob-exit-primary">Speichern &amp; beenden</button>
+		<?php elseif ( 'review' === $kind ) : ?>
+			<a class="ob-exit-btn ob-exit-primary" href="<?php echo esc_url( $save_exit_url ); ?>">Speichern &amp; beenden</a>
+		<?php endif; ?>
+		<a class="ob-exit-btn ob-exit-leave" href="<?php echo esc_url( home_url( '/' ) ); ?>">Ohne Speichern verlassen</a>
+		<button type="button" class="ob-exit-btn ob-exit-cancel" data-ob-exit-close>Abbrechen</button>
+	</div>
+</div>
+
+<script>
+(function () {
+	var brand = document.querySelector('[data-ob-brand]');
+	var scrim = document.querySelector('[data-ob-exit-scrim]');
+	if (!brand || !scrim) { return; }
+	var mq = window.matchMedia('(max-width: 960px)');
+	brand.addEventListener('click', function (e) {
+		if (mq.matches) { e.preventDefault(); scrim.hidden = false; }
+	});
+	function close() { scrim.hidden = true; }
+	scrim.addEventListener('click', function (e) { if (e.target === scrim || (e.target.closest && e.target.closest('[data-ob-exit-close]'))) { close(); } });
+	document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !scrim.hidden) { close(); } });
+})();
+</script>
 <?php }
 
 /**
