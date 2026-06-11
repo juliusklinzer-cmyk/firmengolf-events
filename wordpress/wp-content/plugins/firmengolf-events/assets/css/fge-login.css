@@ -1,0 +1,104 @@
+/* Firmengolf-Branding für wp-login.php (Login, Passwort vergessen, Passwort setzen).
+   Farbwerte entsprechen den Frontend-Tokens (paper/fairway/ink). */
+
+body.login {
+  background: #F4F4F2;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+/* Logo (Bild kommt als Inline-Style aus login-branding.php) */
+.login h1 a {
+  width: 190px;
+  height: 38px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  margin-bottom: 18px;
+}
+
+/* Formular-Karte */
+.login form {
+  border: 1px solid #E3E6E1;
+  border-radius: 16px;
+  box-shadow: 0 14px 48px rgba(14, 19, 16, 0.07);
+  padding: 30px 28px;
+  background: #FFFFFF;
+}
+.login label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A1F1B;
+}
+
+/* Eingabefelder */
+.login input[type="text"],
+.login input[type="password"],
+.login input[type="email"],
+.login form .input {
+  border: 1px solid #D7DBD4;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 15px;
+  box-shadow: none;
+  background: #FFFFFF;
+}
+.login input[type="text"]:focus,
+.login input[type="password"]:focus,
+.login input[type="email"]:focus,
+.login form .input:focus {
+  border-color: #2A6E32;
+  box-shadow: 0 0 0 3px rgba(42, 110, 50, 0.12);
+  outline: none;
+}
+
+/* Buttons */
+.login .wp-core-ui .button-primary,
+body.login .button-primary {
+  background: #2A6E32;
+  border-color: #2A6E32;
+  border-radius: 999px;
+  padding: 4px 24px;
+  font-weight: 600;
+  text-shadow: none;
+  box-shadow: none;
+  transition: background 0.15s ease;
+}
+.login .wp-core-ui .button-primary:hover,
+body.login .button-primary:hover,
+body.login .button-primary:focus {
+  background: #1F5526;
+  border-color: #1F5526;
+  box-shadow: none;
+}
+/* „Passwort generieren" und sonstige Sekundär-Buttons */
+body.login .button-secondary {
+  border-radius: 999px;
+  color: #2A6E32;
+  border-color: #C9D6CB;
+}
+
+/* Hinweise und Fehler */
+.login .message,
+.login .success {
+  border-left-color: #2A6E32;
+  border-radius: 8px;
+}
+#login_error {
+  border-left-color: #B4332B;
+  border-radius: 8px;
+}
+
+/* Links unter dem Formular */
+.login #nav a,
+.login #backtoblog a {
+  color: #4A514C;
+}
+.login #nav a:hover,
+.login #backtoblog a:hover {
+  color: #2A6E32;
+}
+
+/* Sprachwähler ausblenden (einsprachige Seite) */
+.login .language-switcher {
+  display: none;
+}
