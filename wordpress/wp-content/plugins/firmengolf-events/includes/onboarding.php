@@ -333,6 +333,9 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 				update_post_meta( $partner_id, '_fge_latitude',  ( $lat >= -90 && $lat <= 90 && 0.0 !== $lat ) ? $lat : '' );
 				update_post_meta( $partner_id, '_fge_longitude', ( $lng >= -180 && $lng <= 180 && 0.0 !== $lng ) ? $lng : '' );
 			}
+			if ( isset( $post['fge_google_place_id'] ) ) {
+				update_post_meta( $partner_id, '_fge_google_place_id', $s( 'fge_google_place_id' ) );
+			}
 			// Manual link only used as fallback when the map is disabled.
 			if ( isset( $post['fge_google_maps_url'] ) ) {
 				update_post_meta( $partner_id, '_fge_google_maps_url', $su( 'fge_google_maps_url' ) );
@@ -345,7 +348,9 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			update_post_meta( $partner_id, '_fge_poi_parking',     $s( 'fge_poi_parking' ) );
 			update_post_meta( $partner_id, '_fge_poi_train',       $s( 'fge_poi_train' ) );
 			update_post_meta( $partner_id, '_fge_poi_shuttle',     $s( 'fge_poi_shuttle' ) );
-			update_post_meta( $partner_id, '_fge_arrival_estation', ( ( $post['fge_arrival_estation'] ?? '' ) === '1' ) ? 1 : 0 );
+			// '' bleibt erhalten = Frage (noch) nicht beantwortet.
+			$est = (string) ( $post['fge_arrival_estation'] ?? '' );
+			update_post_meta( $partner_id, '_fge_arrival_estation', '' === $est ? '' : ( '1' === $est ? 1 : 0 ) );
 			break;
 
 		case 'main':
@@ -781,6 +786,7 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'city'                          => (string) $m( 'city' ),
 		'federal_state'                 => (string) $m( 'federal_state' ),
 		'google_maps_url'               => (string) $m( 'google_maps_url' ),
+		'google_place_id'               => (string) $m( 'google_place_id' ),
 		'latitude'                      => (string) $m( 'latitude' ),
 		'longitude'                     => (string) $m( 'longitude' ),
 		'main_contact_name'             => (string) $m( 'main_contact_name' ),
@@ -1344,6 +1350,15 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 		'thueringen'           => 'Thüringen',
 	];
 
+	if ( fge_gmaps_api_key() !== '' ) :
+		?>
+		<div class="ob-field full">
+			<label class="ob-field-label" for="fge_map_search">Golfplatz suchen</label>
+			<span class="ob-field-hint">Such deinen Golfplatz bei Google — Adresse, Bundesland und Kartenpin füllen sich automatisch.</span>
+			<input type="text" id="fge_map_search" class="ob-input" placeholder="z. B. Golfclub Hamburg-Wendlohe…" autocomplete="off">
+		</div>
+		<?php
+	endif;
 	?>
 	<div class="ob-field-row ob-field-row-3-1">
 		<?php fge_onboarding_input( 'fge_street', 'fge_street', 'Straße', $v['street'] ?? '', 'text', true, 'Straßenname', $errors ); ?>
@@ -1361,13 +1376,13 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 		$lng = (string) ( $v['longitude'] ?? '' );
 		?>
 		<div class="ob-field full">
-			<label class="ob-field-label" for="fge_map_search">Standort auf der Karte</label>
-			<span class="ob-field-hint">Such deine Adresse und zieh den Pin genau auf euren Eingang oder Parkplatz.</span>
-			<input type="text" id="fge_map_search" class="ob-input" placeholder="Adresse oder Platzname suchen…" autocomplete="off">
+			<label class="ob-field-label">Standort auf der Karte</label>
+			<span class="ob-field-hint">Zieh den Pin bei Bedarf genau auf euren Eingang oder Parkplatz.</span>
 			<div id="fge_map" class="ob-map"></div>
 		</div>
 		<input type="hidden" id="fge_latitude"  name="fge_latitude"  value="<?php echo esc_attr( $lat ); ?>">
 		<input type="hidden" id="fge_longitude" name="fge_longitude" value="<?php echo esc_attr( $lng ); ?>">
+		<input type="hidden" id="fge_google_place_id" name="fge_google_place_id" value="<?php echo esc_attr( (string) ( $v['google_place_id'] ?? '' ) ); ?>">
 		<?php
 	else :
 		// No API key configured — keep the manual link as a fallback.
@@ -1377,45 +1392,50 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 }
 
 function fge_onboarding_render_arrival( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Anfahrt & Location', 'Wie kommen Gäste zu euch? Diese Angaben helfen Firmen bei der Planung — du kannst sie jederzeit anpassen.' );
+	fge_onboarding_render_step_header( $step, 'Anfahrt & Location', 'Wie kommen Gäste zu euch? Diese Angaben helfen Firmen bei der Planung. Alles optional — füll aus, was zutrifft.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	// Maps to _fge_poi_* / _fge_arrival_estation (same keys as admin/Platz view).
-	$estation = ( (string) ( $v['arrival_estation'] ?? '' ) === '1' );
+	// '' = noch nicht beantwortet → keine Vorauswahl.
+	$est_raw = (string) ( $v['arrival_estation'] ?? '' );
 	?>
-	<div class="ob-field full">
-		<label class="ob-field-label" for="fge_poi_car">Mit dem Auto</label>
-		<span class="ob-field-hint">Fahrzeit ab Stadtzentrum oder Autobahn.</span>
-		<input type="text" class="ob-input" id="fge_poi_car" name="fge_poi_car" value="<?php echo esc_attr( (string) ( $v['poi_car'] ?? '' ) ); ?>" placeholder="z. B. 15 Min ab Stadtzentrum">
-	</div>
-	<div class="ob-field full">
-		<label class="ob-field-label" for="fge_poi_parking">Parken</label>
-		<span class="ob-field-hint">Anzahl und Art der Parkplätze.</span>
-		<input type="text" class="ob-input" id="fge_poi_parking" name="fge_poi_parking" value="<?php echo esc_attr( (string) ( $v['poi_parking'] ?? '' ) ); ?>" placeholder="z. B. 100 kostenfreie Parkplätze">
+	<div class="ob-field-row">
+		<div class="ob-field">
+			<label class="ob-field-label" for="fge_poi_car">Mit dem Auto</label>
+			<span class="ob-field-hint">Fahrzeit ab Stadtzentrum oder Autobahn.</span>
+			<input type="text" class="ob-input" id="fge_poi_car" name="fge_poi_car" value="<?php echo esc_attr( (string) ( $v['poi_car'] ?? '' ) ); ?>" placeholder="z. B. 15 Min ab Stadtzentrum">
+		</div>
+		<div class="ob-field">
+			<label class="ob-field-label" for="fge_poi_parking">Parken</label>
+			<span class="ob-field-hint">Anzahl und Art der Parkplätze.</span>
+			<input type="text" class="ob-input" id="fge_poi_parking" name="fge_poi_parking" value="<?php echo esc_attr( (string) ( $v['poi_parking'] ?? '' ) ); ?>" placeholder="z. B. 100 kostenfreie Parkplätze">
+		</div>
 	</div>
 	<div class="ob-field full">
 		<label class="ob-field-label">Ladestation für E-Autos vorhanden?</label>
 		<span class="ob-field-hint">Wird Gästen mit E-Auto als Hinweis angezeigt.</span>
 		<div class="ob-radio-row">
 			<label class="ob-radio">
-				<input type="radio" name="fge_arrival_estation" value="1" <?php checked( $estation ); ?> style="position:absolute;opacity:0">
+				<input type="radio" name="fge_arrival_estation" value="1" <?php checked( '1' === $est_raw ); ?> style="position:absolute;opacity:0">
 				<span class="ob-radio-dot" aria-hidden="true"></span> Ja
 			</label>
 			<label class="ob-radio">
-				<input type="radio" name="fge_arrival_estation" value="0" <?php checked( ! $estation ); ?> style="position:absolute;opacity:0">
+				<input type="radio" name="fge_arrival_estation" value="0" <?php checked( '0' === $est_raw ); ?> style="position:absolute;opacity:0">
 				<span class="ob-radio-dot" aria-hidden="true"></span> Nein
 			</label>
 		</div>
 	</div>
-	<div class="ob-field full">
-		<label class="ob-field-label" for="fge_poi_train">Mit der Bahn</label>
-		<span class="ob-field-hint">Nächste Station und Gehweg.</span>
-		<input type="text" class="ob-input" id="fge_poi_train" name="fge_poi_train" value="<?php echo esc_attr( (string) ( $v['poi_train'] ?? '' ) ); ?>" placeholder="z. B. S2 Riem, 10 Gehminuten">
-	</div>
-	<div class="ob-field full">
-		<label class="ob-field-label" for="fge_poi_shuttle">Shuttle-Service</label>
-		<span class="ob-field-hint">Falls ihr einen Transfer anbietet.</span>
-		<input type="text" class="ob-input" id="fge_poi_shuttle" name="fge_poi_shuttle" value="<?php echo esc_attr( (string) ( $v['poi_shuttle'] ?? '' ) ); ?>" placeholder="z. B. Abholung nach Absprache">
+	<div class="ob-field-row">
+		<div class="ob-field">
+			<label class="ob-field-label" for="fge_poi_train">Mit der Bahn</label>
+			<span class="ob-field-hint">Nächste Station und Gehweg.</span>
+			<input type="text" class="ob-input" id="fge_poi_train" name="fge_poi_train" value="<?php echo esc_attr( (string) ( $v['poi_train'] ?? '' ) ); ?>" placeholder="z. B. S2 Riem, 10 Gehminuten">
+		</div>
+		<div class="ob-field">
+			<label class="ob-field-label" for="fge_poi_shuttle">Shuttle-Service</label>
+			<span class="ob-field-hint">Falls ihr einen Transfer anbietet.</span>
+			<input type="text" class="ob-input" id="fge_poi_shuttle" name="fge_poi_shuttle" value="<?php echo esc_attr( (string) ( $v['poi_shuttle'] ?? '' ) ); ?>" placeholder="z. B. Abholung nach Absprache">
+		</div>
 	</div>
 	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';

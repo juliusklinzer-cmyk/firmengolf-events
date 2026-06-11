@@ -620,21 +620,21 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   font-weight: 600;
 }
 
-.ob-radio-row { display: flex; gap: 12px; }
+.ob-radio-row { display: flex; gap: 10px; }
+/* Dezente Pills statt voller Breite — Ja/Nein soll nicht wie eine Hauptaktion wirken. */
 .ob-radio {
-  flex: 1;
-  display: inline-flex; align-items: center; gap: 12px;
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
   border: 1px solid var(--ink-200);
   background: var(--paper-50);
   color: var(--ink-900);
-  font-size: 15px; font-weight: 500;
+  font-size: 14px; font-weight: 500;
   transition: all var(--dur-fast) var(--ease-out);
 }
 .ob-radio:hover { border-color: var(--ink-400); }
 .ob-radio-dot {
-  width: 18px; height: 18px;
+  width: 14px; height: 14px;
   border: 2px solid var(--ink-300);
   border-radius: 999px;
   position: relative;
@@ -1064,9 +1064,11 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 @media (max-width: 560px) {
   .ob-cards { grid-template-columns: 1fr !important; }
   .ob-cap-row { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .ob-radio-row { flex-direction: column; }
   .ob-day-row { gap: 6px; }
   .ob-day { width: 44px; height: 40px; font-size: 13px; }
+  /* 16px verhindert den automatischen Fokus-Zoom von iOS Safari. */
+  .ob-input { font-size: 16px; }
+  .ob-map { height: 240px; }
 }
 
 /* =========================================================================
@@ -1149,7 +1151,7 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 }
 .ob-radio:has(input:checked) .ob-radio-dot { border-color: var(--ink-900); }
 .ob-radio:has(input:checked) .ob-radio-dot::after {
-  content: ""; position: absolute; inset: 3px; background: var(--ink-900); border-radius: 999px;
+  content: ""; position: absolute; inset: 2px; background: var(--ink-900); border-radius: 999px;
 }
 /* Weekday pills as labels (hidden checkbox + :has selection). */
 .ob-day { position: relative; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
@@ -1164,7 +1166,12 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 .ob-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .ob-field-row-3-1 { grid-template-columns: 3fr 1fr; }
 .ob-field-row-1-3 { grid-template-columns: 1fr 3fr; }
-@media (max-width: 560px) { .ob-field-row, .ob-field-row-3-1, .ob-field-row-1-3 { grid-template-columns: 1fr; } }
+@media (max-width: 560px) {
+  .ob-field-row { grid-template-columns: 1fr; }
+  /* Kurzfelder (Hausnr., PLZ) bleiben mobil neben dem breiten Feld. */
+  .ob-field-row-3-1 { grid-template-columns: 2fr 1fr; gap: 12px; }
+  .ob-field-row-1-3 { grid-template-columns: 1fr 2fr; gap: 12px; }
+}
 .ob-hint { font-size: 13px; color: var(--ink-500); line-height: 1.5; }
 .ob-input--error { border-color: var(--danger); }
 .ob-input--error:focus { box-shadow: 0 0 0 3px rgba(180,51,43,0.12); }
