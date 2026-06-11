@@ -1197,6 +1197,10 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 
 .ob-notice { padding: 14px 18px; border-radius: var(--radius-lg); font-size: 14px; line-height: 1.5; }
 .ob-notice--warn { background: #FBF3E0; border: 1px solid var(--warning); color: #7A5A12; }
+.ob-notice--ok { background: var(--fairway-100); border: 1px solid var(--fairway-200); color: var(--fairway-800, var(--fairway-700)); }
+/* E-Mail-Formular auf der „Fortschritt gespeichert"-Seite */
+.ob-resume-mail { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 480px; width: 100%; }
+.ob-resume-mail .ob-input { flex: 1; min-width: 220px; }
 
 .ob-summary { display: flex; flex-direction: column; gap: 16px; }
 .ob-summary-section { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-lg); padding: 20px 22px; }

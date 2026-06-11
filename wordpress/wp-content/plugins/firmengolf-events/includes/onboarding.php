@@ -2245,9 +2245,54 @@ function fge_onboarding_render_saved_notice( int $step, string $token ): void {
 			<input type="text" value="<?php echo esc_attr( $resume_url ); ?>" readonly class="ob-input ob-input--mono" id="ob-resume-input">
 			<button onclick="navigator.clipboard.writeText(document.getElementById('ob-resume-input').value)" class="ob-btn ob-btn-ghost" type="button">Kopieren</button>
 		</div>
+
+		<?php if ( isset( $_GET['ob_link_sent'] ) ) : ?>
+		<div class="ob-notice ob-notice--ok">Der Link ist unterwegs! Schau in dein Postfach (ggf. auch im Spam-Ordner).</div>
+		<?php else : ?>
+		<p class="ob-subtitle" style="margin-top:10px;">Oder lass dir den Link schicken, dann kann nichts verloren gehen:</p>
+		<form method="post" class="ob-resume-mail">
+			<?php wp_nonce_field( 'fge_ob_email_link', 'fge_ob_nonce_mail' ); ?>
+			<input type="hidden" name="fge_ob_action" value="email_resume_link">
+			<input type="hidden" name="ob_token" value="<?php echo esc_attr( $token ); ?>">
+			<input type="hidden" name="ob_step" value="<?php echo (int) $step; ?>">
+			<input type="email" class="ob-input" name="fge_resume_email" placeholder="deine@email.de" required>
+			<button type="submit" class="ob-btn ob-btn-primary">Link per E-Mail senden</button>
+		</form>
+		<?php endif; ?>
+
 		<div class="ob-actions ob-actions--center">
-			<a href="<?php echo esc_url( $resume_url ); ?>" class="ob-btn ob-btn-primary">Jetzt weitermachen →</a>
+			<a href="<?php echo esc_url( $resume_url ); ?>" class="ob-btn ob-btn-ghost">Jetzt weitermachen →</a>
 		</div>
 	</div>
 </div>
 <?php }
+
+/** POST-Handler: schickt den Resume-Link der Token-Phase per E-Mail. */
+add_action( 'init', 'fge_onboarding_handle_email_link', 6 );
+function fge_onboarding_handle_email_link(): void {
+	if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) || 'email_resume_link' !== sanitize_key( $_POST['fge_ob_action'] ?? '' ) ) {
+		return;
+	}
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['fge_ob_nonce_mail'] ?? '' ) ), 'fge_ob_email_link' ) ) {
+		wp_die( 'Ungültige Sicherheitsüberprüfung.', '', [ 'response' => 403 ] );
+	}
+	$token = sanitize_text_field( wp_unslash( $_POST['ob_token'] ?? '' ) );
+	$step  = max( 1, absint( $_POST['ob_step'] ?? 1 ) );
+	$email = sanitize_email( wp_unslash( $_POST['fge_resume_email'] ?? '' ) );
+	$pid   = fge_onboarding_get_partner_id_by_token( $token );
+	if ( $pid <= 0 || ! is_email( $email ) ) {
+		wp_die( 'Ungültige Anfrage.', '', [ 'response' => 400 ] );
+	}
+
+	// Adresse am Partner merken, damit das Team unfertige Onboardings nachfassen kann.
+	update_post_meta( $pid, '_fge_resume_email', $email );
+
+	$name = (string) get_post_meta( $pid, '_fge_public_golfclub_name', true );
+	fge_send_onboarding_resume_email( $email, fge_onboarding_step_url( $step, $token ), $name );
+
+	wp_redirect( add_query_arg(
+		[ 'ob_saved' => '1', 'ob_step' => $step, 'ob_token' => $token, 'ob_link_sent' => '1' ],
+		fge_onboarding_page_url()
+	) );
+	exit;
+}

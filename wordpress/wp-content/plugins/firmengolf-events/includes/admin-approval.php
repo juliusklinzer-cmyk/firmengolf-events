@@ -314,10 +314,11 @@ function fge_partner_row_actions( array $actions, WP_Post $post ): array {
 	$current = (string) get_post_meta( $post->ID, '_fge_partner_status', true );
 
 	$status_actions = [
-		'freigeben'  => [ 'label' => 'Freigeben',  'status' => 'aktiv'       ],
-		'pausieren'  => [ 'label' => 'Pausieren',  'status' => 'pausiert'    ],
-		'ablehnen'   => [ 'label' => 'Ablehnen',   'status' => 'abgelehnt'   ],
-		'in_pruefung' => [ 'label' => 'Zur Prüfung', 'status' => 'in_pruefung' ],
+		'freigeben'   => [ 'label' => 'Freigeben',         'status' => 'aktiv'       ],
+		'rueckfragen' => [ 'label' => 'Rückfragen senden', 'status' => 'rueckfragen' ],
+		'pausieren'   => [ 'label' => 'Pausieren',         'status' => 'pausiert'    ],
+		'ablehnen'    => [ 'label' => 'Ablehnen',          'status' => 'abgelehnt'   ],
+		'in_pruefung' => [ 'label' => 'Zur Prüfung',       'status' => 'in_pruefung' ],
 	];
 
 	foreach ( $status_actions as $key => $cfg ) {
@@ -358,14 +359,20 @@ function fge_handle_set_partner_status(): void {
 		wp_die( 'Ungültiger Post-Typ.', '', [ 'response' => 400 ] );
 	}
 
-	$allowed    = [ 'aktiv', 'in_pruefung', 'pausiert', 'abgelehnt' ];
+	$allowed    = [ 'aktiv', 'in_pruefung', 'rueckfragen', 'pausiert', 'abgelehnt' ];
 	$new_status = sanitize_key( $_GET['fge_new_partner_status'] ?? '' );
 
 	if ( ! in_array( $new_status, $allowed, true ) ) {
 		wp_die( 'Ungültiger Status.', '', [ 'response' => 400 ] );
 	}
 
+	$old_status = (string) get_post_meta( $post_id, '_fge_partner_status', true );
 	update_post_meta( $post_id, '_fge_partner_status', $new_status );
+
+	// Partner über Freischaltung, Rückfragen oder Ablehnung informieren.
+	if ( function_exists( 'fge_notify_partner_status_change' ) ) {
+		fge_notify_partner_status_change( $post_id, $old_status, $new_status );
+	}
 
 	// When activating a partner, ensure portal is enabled and standard permissions are set.
 	if ( $new_status === 'aktiv' ) {
@@ -395,10 +402,11 @@ function fge_partner_status_notice(): void {
 
 	$key = sanitize_key( $_GET['fge_partner_notice'] ?? '' );
 	$messages = [
-		'aktiv'       => 'Partner wurde freigegeben.',
+		'aktiv'       => 'Partner wurde freigegeben und per E-Mail informiert.',
+		'rueckfragen' => 'Status „Rückfragen" gesetzt, der Partner wurde per E-Mail informiert.',
 		'in_pruefung' => 'Partner wurde zur Prüfung gesetzt.',
 		'pausiert'    => 'Partner wurde pausiert.',
-		'abgelehnt'   => 'Partner wurde abgelehnt.',
+		'abgelehnt'   => 'Partner wurde abgelehnt und per E-Mail informiert.',
 	];
 
 	if ( ! isset( $messages[ $key ] ) ) {

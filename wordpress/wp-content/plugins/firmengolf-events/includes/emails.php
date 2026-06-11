@@ -465,6 +465,111 @@ function fge_send_partner_account_linked_email( int $user_id, int $partner_id ):
 	);
 }
 
+// ── Partner-Status-Mails (Freischaltung, Rückfragen, Ablehnung) ──────────────
+
+/** Versendet die passende Mail bei einem Statuswechsel. Kein Wechsel = keine Mail. */
+function fge_notify_partner_status_change( int $partner_id, string $old, string $new ): void {
+	if ( $old === $new ) {
+		return;
+	}
+	switch ( $new ) {
+		case 'aktiv':
+			fge_send_partner_approved_email( $partner_id );
+			break;
+		case 'rueckfragen':
+			fge_send_partner_inquiry_email( $partner_id );
+			break;
+		case 'abgelehnt':
+			fge_send_partner_rejected_email( $partner_id );
+			break;
+	}
+}
+
+/** Name, Empfänger-Mail und Anrede eines Partners für Status-Mails. */
+function fge_partner_mail_basics( int $partner_id ): array {
+	$name    = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+	$email   = (string) get_post_meta( $partner_id, '_fge_main_contact_email', true );
+	$contact = trim( (string) get_post_meta( $partner_id, '_fge_main_contact_name', true ) );
+	return [ $name, $email, $contact !== '' ? 'Hallo ' . esc_html( $contact ) . ',' : 'Hallo,' ];
+}
+
+/** „Dein Platz ist live": nach der Freischaltung, mit CTA fürs erste Event. */
+function fge_send_partner_approved_email( int $partner_id ): bool {
+	[ $name, $email, $greeting ] = fge_partner_mail_basics( $partner_id );
+	if ( ! is_email( $email ) ) {
+		return false;
+	}
+	$portal     = trailingslashit( home_url( '/partnerportal/' ) );
+	$public_url = (string) get_permalink( $partner_id );
+	$new_event  = $portal . '?tab=angebote&portal_action=new&preset_type=teamevent';
+
+	$subject = 'Dein Golfplatz ist jetzt live auf Firmengolf';
+	$content = '
+		<p>' . $greeting . '</p>
+		<p>gute Nachrichten: <strong>' . esc_html( $name ) . '</strong> ist geprüft, freigeschaltet und ab sofort für Unternehmen sichtbar.</p>
+		<p style="margin-top:28px;">
+			<a href="' . esc_url( $new_event ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Erstes Event erstellen</a>
+		</p>
+		<p>Tipp für den Start: Das meistgebuchte Format ist das <strong>Teamevent</strong>. Leg eins an und du bist für Anfragen aus deiner Region sofort buchbar.</p>
+		' . ( $public_url !== '' ? '<p style="font-size:13px;color:#888;">Dein öffentliches Profil: <a href="' . esc_url( $public_url ) . '" style="color:#2a6e32;">' . esc_html( $public_url ) . '</a></p>' : '' ) . '
+		<p style="font-size:13px;color:#888;">Fragen? Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_partner'] ) . '</a>.</p>
+	';
+	return (bool) wp_mail( $email, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+/** Rückfragen bei der Prüfung: Profil bleibt in der Schwebe, wir melden uns. */
+function fge_send_partner_inquiry_email( int $partner_id ): bool {
+	[ $name, $email, $greeting ] = fge_partner_mail_basics( $partner_id );
+	if ( ! is_email( $email ) ) {
+		return false;
+	}
+	$portal  = trailingslashit( home_url( '/partnerportal/' ) );
+	$subject = 'Kurze Rückfragen zu deinem Golfplatz-Profil';
+	$content = '
+		<p>' . $greeting . '</p>
+		<p>bei der Prüfung von <strong>' . esc_html( $name ) . '</strong> sind ein paar Fragen aufgekommen. Wir melden uns dazu in Kürze per E-Mail oder Telefon bei dir.</p>
+		<p>Du kannst dein Profil in der Zwischenzeit jederzeit im Partner-Portal anpassen und ergänzen.</p>
+		<p style="margin-top:28px;">
+			<a href="' . esc_url( $portal ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
+		</p>
+		<p style="font-size:13px;color:#888;">Du erreichst uns direkt unter <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_partner'] ) . '</a>. Antworte gern auch einfach auf diese E-Mail.</p>
+	';
+	return (bool) wp_mail( $email, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+/** Neutrale Ablehnungs-Mail mit Gesprächsangebot. */
+function fge_send_partner_rejected_email( int $partner_id ): bool {
+	[ $name, $email, $greeting ] = fge_partner_mail_basics( $partner_id );
+	if ( ! is_email( $email ) ) {
+		return false;
+	}
+	$subject = 'Dein Golfplatz-Profil bei Firmengolf';
+	$content = '
+		<p>' . $greeting . '</p>
+		<p>danke für dein Interesse an Firmengolf. Nach der Prüfung können wir <strong>' . esc_html( $name ) . '</strong> aktuell leider nicht freischalten.</p>
+		<p>Wenn du die Gründe besprechen möchtest oder sich bei euch etwas ändert, melde dich jederzeit. Oft lässt sich gemeinsam ein Weg finden.</p>
+		<p style="font-size:13px;color:#888;">Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_partner'] ) . '</a>.</p>
+	';
+	return (bool) wp_mail( $email, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+/** Resume-Link fürs unterbrochene Onboarding (Token-Phase, noch kein Account). */
+function fge_send_onboarding_resume_email( string $to, string $resume_url, string $name = '' ): bool {
+	if ( ! is_email( $to ) ) {
+		return false;
+	}
+	$subject = 'Dein Firmengolf-Onboarding: Hier geht es weiter';
+	$content = '
+		<p>Hallo,</p>
+		<p>dein Stand' . ( $name !== '' ? ' für <strong>' . esc_html( $name ) . '</strong>' : '' ) . ' ist gespeichert. Mit diesem Link machst du genau dort weiter, wo du aufgehört hast:</p>
+		<p style="margin-top:28px;">
+			<a href="' . esc_url( $resume_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Onboarding fortsetzen</a>
+		</p>
+		<p style="font-size:13px;color:#888;">Behandle den Link bitte vertraulich, er führt direkt zu deinen Eingaben. Wenn du das Onboarding nicht gestartet hast, ignoriere diese E-Mail einfach.</p>
+	';
+	return (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
 function fge_format_request_admin_link( int $request_id ): string {
 	return admin_url( 'post.php?post=' . $request_id . '&action=edit' );
 }

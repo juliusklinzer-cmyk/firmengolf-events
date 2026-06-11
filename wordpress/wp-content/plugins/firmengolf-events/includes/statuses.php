@@ -16,6 +16,7 @@ function fge_get_statuses( string $type ): array {
 		],
 		'partner' => [
 			'in_pruefung',
+			'rueckfragen',
 			'aktiv',
 			'pausiert',
 			'abgelehnt',
