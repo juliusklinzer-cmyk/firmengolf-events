@@ -144,6 +144,52 @@
 .fgpp .fgpp-poi { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-md); padding: 14px 16px; }
 .fgpp .fgpp-poi-l { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-500); }
 .fgpp .fgpp-poi-v { font-size: 14px; font-weight: 600; color: var(--ink-900); margin-top: 5px; }
+
+/* ── Event-Editor: Leistungs-Chips, Preis-Toggle, Live-Rechnung, Live-Vorschau ── */
+.fp-inc-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fp-inc-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--fairway-100); color: var(--fairway-800, var(--fairway-700));
+  border: 1px solid var(--fairway-200); border-radius: 999px;
+  padding: 7px 12px; font-size: 13px; font-weight: 600;
+}
+.fp-inc-chip button { border: 0; background: transparent; cursor: pointer; color: inherit; font-size: 15px; line-height: 1; padding: 0 2px; }
+.fp-inc-add-wrap { position: relative; display: inline-flex; }
+.fp-inc-add {
+  border: 1.5px dashed var(--ink-300); background: var(--paper-100); border-radius: 999px;
+  padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-700); cursor: pointer;
+}
+.fp-inc-add:hover { border-color: var(--fairway-700); color: var(--fairway-700); }
+.fp-inc-menu {
+  position: absolute; z-index: 30; top: calc(100% + 6px); left: 0;
+  min-width: 280px; max-height: 300px; overflow: auto;
+  background: #fff; border: 1px solid var(--ink-200); border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(14, 19, 16, 0.14); padding: 6px;
+  display: none;
+}
+.fp-inc-menu.open { display: block; }
+.fp-inc-menu > button {
+  display: block; width: 100%; text-align: left; border: 0; background: transparent;
+  padding: 8px 10px; border-radius: 8px; font: inherit; font-size: 14px; color: var(--ink-900); cursor: pointer;
+}
+.fp-inc-menu > button:hover { background: var(--paper-200); }
+.fp-inc-custom { display: flex; gap: 6px; padding: 8px 6px 4px; border-top: 1px solid var(--ink-200); margin-top: 4px; }
+.fp-price-modes { display: flex; gap: 8px; margin-bottom: 14px; }
+.fp-price-mode {
+  border: 1px solid var(--ink-200); background: var(--paper-50); border-radius: 999px;
+  padding: 8px 18px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-700); cursor: pointer;
+  transition: all 0.15s ease;
+}
+.fp-price-mode.on { border-color: var(--ink-900); box-shadow: inset 0 0 0 1px var(--ink-900); color: var(--ink-900); background: var(--paper-200); }
+.fp-price-item { display: grid; grid-template-columns: 1fr 130px 34px; gap: 8px; margin-bottom: 8px; align-items: center; }
+.fp-price-item .x { border: 0; background: transparent; cursor: pointer; color: var(--ink-500); font-size: 18px; line-height: 1; }
+.fp-price-item .x:hover { color: var(--danger, #c0392b); }
+.fp-price-summary { margin-top: 16px; background: var(--paper-200); border-radius: 12px; padding: 14px 16px; font-size: 14px; }
+.fp-price-summary .row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; color: var(--ink-700); }
+.fp-price-summary .row .v { font-weight: 600; color: var(--ink-900); white-space: nowrap; }
+.fp-price-summary .row.total { border-top: 1px solid var(--ink-300); margin-top: 6px; padding-top: 10px; font-weight: 700; color: var(--ink-900); }
+.fp-preview-card { pointer-events: none; }
+.fp-preview-card .fg-event-photo { min-height: 130px; }
 @media (max-width: 640px) { .fgpp .fgpp-map { aspect-ratio: 4/3; } .fgpp .fgpp-poi-grid { grid-template-columns: 1fr; } }
 
 .fgpp .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }

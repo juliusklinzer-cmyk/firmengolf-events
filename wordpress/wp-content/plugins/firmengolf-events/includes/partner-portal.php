@@ -278,11 +278,15 @@ function fge_portal_handle_edit_event(): void {
 		exit;
 	}
 
-	wp_update_post( [
-		'ID'           => $event_id,
-		'post_title'   => sanitize_text_field( wp_unslash( $_POST['fge_post_title'] ?? '' ) ),
-		'post_content' => wp_kses_post( wp_unslash( $_POST['fge_post_content'] ?? '' ) ),
-	] );
+	$upd = [
+		'ID'         => $event_id,
+		'post_title' => sanitize_text_field( wp_unslash( $_POST['fge_post_title'] ?? '' ) ),
+	];
+	// Lange Beschreibung gibt es im Formular nicht mehr; Bestand nicht überschreiben.
+	if ( isset( $_POST['fge_post_content'] ) ) {
+		$upd['post_content'] = wp_kses_post( wp_unslash( $_POST['fge_post_content'] ) );
+	}
+	wp_update_post( $upd );
 
 	$current_status = (string) get_post_meta( $event_id, '_fge_event_status', true );
 	update_post_meta( $event_id, '_fge_event_status', $current_status === 'freigegeben' ? 'aenderung_in_pruefung' : 'zur_pruefung' );
@@ -476,9 +480,21 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	update_post_meta( $post_id, '_fge_participants_min', absint( $_POST['fge_participants_min'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_participants_max', absint( $_POST['fge_participants_max'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_duration',         sanitize_text_field( wp_unslash( $_POST['fge_duration'] ?? '' ) ) );
-	update_post_meta( $post_id, '_fge_season',           sanitize_text_field( wp_unslash( $_POST['fge_season'] ?? '' ) ) );
-	update_post_meta( $post_id, '_fge_region',           sanitize_text_field( wp_unslash( $_POST['fge_region'] ?? '' ) ) );
-	update_post_meta( $post_id, '_fge_event_location',   sanitize_text_field( wp_unslash( $_POST['fge_event_location'] ?? '' ) ) );
+	// Saison nur übernehmen, wenn das Feld im Formular existiert (Portal-Form hat es nicht mehr).
+	if ( isset( $_POST['fge_season'] ) ) {
+		update_post_meta( $post_id, '_fge_season', sanitize_text_field( wp_unslash( $_POST['fge_season'] ) ) );
+	}
+	// Standort kommt vom Platz: Suche läuft über PLZ/Entfernung, nicht über Region-Freitext.
+	$loc_partner = (int) get_post_meta( $post_id, '_fge_assigned_partner_id', true );
+	if ( $loc_partner <= 0 ) {
+		$loc_partner = fge_portal_get_partner_id();
+	}
+	if ( $loc_partner > 0 ) {
+		$lp_name = (string) get_post_meta( $loc_partner, '_fge_public_golfclub_name', true ) ?: get_the_title( $loc_partner );
+		$lp_city = (string) get_post_meta( $loc_partner, '_fge_city', true );
+		update_post_meta( $post_id, '_fge_event_location', trim( $lp_name . ( '' !== $lp_city ? ', ' . $lp_city : '' ) ) );
+		update_post_meta( $post_id, '_fge_region', $lp_city );
+	}
 
 	$raw_days   = array_map( 'sanitize_text_field', (array) ( $_POST['fge_available_weekdays'] ?? [] ) );
 	$clean_days = array_values( array_filter( $raw_days, static function( $v ) use ( $allowed_weekdays ) {
@@ -486,13 +502,31 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	} ) );
 	update_post_meta( $post_id, '_fge_available_weekdays', $clean_days );
 
-	$leistungen = [
-		'has_golf_teacher', 'has_range_usage', 'has_rental_clubs', 'has_range_balls',
-		'has_putting_shortgame', 'has_meeting_room', 'has_breakfast', 'has_lunch',
-		'has_dinner', 'has_shuttle', 'has_branding',
+	// has_*-Flags aus den inkludierten Leistungen ableiten, damit Filter und
+	// Badges („Indoor-Backup" etc.) ohne eigenes Checkbox-Grid gültig bleiben.
+	$inc_raw      = mb_strtolower( (string) wp_unslash( $_POST['fge_event_includes'] ?? '' ) );
+	$flag_needles = [
+		'has_golf_teacher'      => [ 'pga', 'coaching', 'golflehrer', 'schnupperkurs' ],
+		'has_range_usage'       => [ 'range' ],
+		'has_rental_clubs'      => [ 'leihschläger' ],
+		'has_range_balls'       => [ 'bälle' ],
+		'has_putting_shortgame' => [ 'putting', 'kurzspiel' ],
+		'has_meeting_room'      => [ 'meetingraum', 'seminarraum', 'konferenz' ],
+		'has_breakfast'         => [ 'frühstück' ],
+		'has_lunch'             => [ 'lunch', 'mittagessen' ],
+		'has_dinner'            => [ 'abendessen', 'dinner' ],
+		'has_shuttle'           => [ 'shuttle' ],
+		'has_branding'          => [ 'branding' ],
 	];
-	foreach ( $leistungen as $key ) {
-		update_post_meta( $post_id, '_fge_' . $key, isset( $_POST[ 'fge_' . $key ] ) ? '1' : '0' );
+	foreach ( $flag_needles as $flag => $needles ) {
+		$on = '0';
+		foreach ( $needles as $needle ) {
+			if ( false !== mb_strpos( $inc_raw, $needle ) ) {
+				$on = '1';
+				break;
+			}
+		}
+		update_post_meta( $post_id, '_fge_' . $flag, $on );
 	}
 
 	// ── Termin-Freigabe: Modus + Event-Ansprechpartner (inkl. Quick-Add neuer Kontakte) ──
@@ -522,8 +556,13 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	}
 	update_post_meta( $post_id, '_fge_event_responder_ids', array_values( array_unique( $responders ) ) );
 
-	update_post_meta( $post_id, '_fge_additional_services',         sanitize_textarea_field( wp_unslash( $_POST['fge_additional_services'] ?? '' ) ) );
-	update_post_meta( $post_id, '_fge_price_note',                  sanitize_textarea_field( wp_unslash( $_POST['fge_price_note'] ?? '' ) ) );
+	// Beide Felder existieren im Portal-Formular nicht mehr; Admin-Werte erhalten.
+	if ( isset( $_POST['fge_additional_services'] ) ) {
+		update_post_meta( $post_id, '_fge_additional_services', sanitize_textarea_field( wp_unslash( $_POST['fge_additional_services'] ) ) );
+	}
+	if ( isset( $_POST['fge_price_note'] ) ) {
+		update_post_meta( $post_id, '_fge_price_note', sanitize_textarea_field( wp_unslash( $_POST['fge_price_note'] ) ) );
+	}
 
 	// ── Preismodell + Inhalt (rev. 2) ──
 	$price_mode = in_array( $_POST['fge_price_mode'] ?? '', [ 'gesamt', 'einzel' ], true ) ? $_POST['fge_price_mode'] : 'gesamt';
@@ -557,9 +596,13 @@ function fge_portal_save_event_meta( int $post_id ): void {
 		update_post_meta( $post_id, '_fge_sale_price_net', $pr['gross'] );
 		update_post_meta( $post_id, '_fge_public_price_label', fge_event_price_label( $post_id ) );
 	}
-	update_post_meta( $post_id, '_fge_availability_contact_name',   sanitize_text_field( wp_unslash( $_POST['fge_availability_contact_name'] ?? '' ) ) );
-	update_post_meta( $post_id, '_fge_availability_contact_email',  sanitize_email( wp_unslash( $_POST['fge_availability_contact_email'] ?? '' ) ) );
-	update_post_meta( $post_id, '_fge_availability_contact_phone',  sanitize_text_field( wp_unslash( $_POST['fge_availability_contact_phone'] ?? '' ) ) );
+	// Verfügbarkeits-Kontakt: Felder existieren im Portal-Formular nicht mehr,
+	// vorhandene Werte (z. B. aus dem Admin) bleiben erhalten.
+	if ( isset( $_POST['fge_availability_contact_name'] ) ) {
+		update_post_meta( $post_id, '_fge_availability_contact_name',  sanitize_text_field( wp_unslash( $_POST['fge_availability_contact_name'] ) ) );
+		update_post_meta( $post_id, '_fge_availability_contact_email', sanitize_email( wp_unslash( $_POST['fge_availability_contact_email'] ?? '' ) ) );
+		update_post_meta( $post_id, '_fge_availability_contact_phone', sanitize_text_field( wp_unslash( $_POST['fge_availability_contact_phone'] ?? '' ) ) );
+	}
 }
 
 function fge_portal_format_event_status( string $status ): string {
@@ -2464,25 +2507,33 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					<!-- Titel & Beschreibung -->
 					<div class="fp-form-sec">
 						<h3>Titel & Beschreibung</h3>
-						<p class="fp-help">Wir empfehlen einen Titel, der ein Gefühl verspricht — nicht nur ein Format beschreibt.</p>
+						<p class="fp-help">Wir empfehlen einen Titel, der ein Gefühl verspricht, nicht nur ein Format beschreibt.</p>
 
+						<div class="fg-form-row">
+							<label class="fg-form-label" for="fge_event_type">Eventart <span class="fg-form-required" aria-label="Pflichtfeld">*</span></label>
+							<div class="fg-form-field">
+								<select class="fg-form-select<?php echo $has_err( 'fge_event_type' ); // phpcs:ignore ?>" id="fge_event_type" name="fge_event_type">
+									<option value="">— bitte wählen —</option>
+									<?php foreach ( $event_types as $val => $label ) : ?>
+										<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $saved['fge_event_type'] ?? '', $val ); ?>><?php echo esc_html( $label ); ?></option>
+									<?php endforeach; ?>
+								</select>
+								<?php echo $err_html( 'fge_event_type' ); // phpcs:ignore ?>
+							</div>
+						</div>
 						<div class="fg-form-row">
 							<label class="fg-form-label" for="fge_post_title">Eventtitel <span class="fg-form-required" aria-label="Pflichtfeld">*</span></label>
 							<div class="fg-form-field">
-								<input class="fg-form-input<?php echo $has_err( 'fge_post_title' ); // phpcs:ignore ?>" type="text" id="fge_post_title" name="fge_post_title" value="<?php echo $v( 'fge_post_title' ); ?>" placeholder="z.B. Golfschnupperkurs für Firmenkunden">
+								<input class="fg-form-input<?php echo $has_err( 'fge_post_title' ); // phpcs:ignore ?>" type="text" id="fge_post_title" name="fge_post_title" value="<?php echo $v( 'fge_post_title' ); ?>" maxlength="80" placeholder="z. B. Erster Schwung: Schnupperkurs für Teams">
 								<?php echo $err_html( 'fge_post_title' ); // phpcs:ignore ?>
+								<p class="fp-help">Maximal 60 Zeichen empfohlen. Keine GROSSBUCHSTABEN.</p>
 							</div>
 						</div>
 						<div class="fg-form-row">
 							<label class="fg-form-label" for="fge_card_description">Kurzbeschreibung</label>
 							<div class="fg-form-field">
-								<textarea class="fg-form-textarea" id="fge_card_description" name="fge_card_description" rows="2" placeholder="Kurzer Teaser (1–2 Sätze)"><?php echo esc_textarea( $saved['fge_card_description'] ?? '' ); ?></textarea>
-							</div>
-						</div>
-						<div class="fg-form-row">
-							<label class="fg-form-label" for="fge_post_content">Ausführliche Beschreibung</label>
-							<div class="fg-form-field">
-								<textarea class="fg-form-textarea" id="fge_post_content" name="fge_post_content" rows="6" placeholder="Detaillierter Ablauf, Besonderheiten, Programm …"><?php echo esc_textarea( $saved['fge_post_content'] ?? '' ); ?></textarea>
+								<textarea class="fg-form-textarea" id="fge_card_description" name="fge_card_description" rows="2" maxlength="200" placeholder="Was erwartet die Gäste in einem Satz?"><?php echo esc_textarea( $saved['fge_card_description'] ?? '' ); ?></textarea>
+								<p class="fp-help">Maximal 160 Zeichen empfohlen. Erscheint als Vorschau in den Suchergebnissen.</p>
 							</div>
 						</div>
 					</div>
@@ -2493,43 +2544,55 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<p class="fp-help">Diese Eckdaten erscheinen auf der Angebotskarte.</p>
 
 						<?php
-						$pmode      = $event_id ? ( get_post_meta( $event_id, '_fge_price_mode', true ) ?: 'gesamt' ) : 'gesamt';
-						$pamount    = $event_id ? get_post_meta( $event_id, '_fge_price_amount', true ) : '';
-						$pbasis     = $event_id ? ( get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person' ) : 'person';
-						$pitems     = $event_id ? (array) get_post_meta( $event_id, '_fge_line_items', true ) : [];
-						$pitems_txt = implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ), $pitems ) );
+						$pmode   = $event_id ? ( get_post_meta( $event_id, '_fge_price_mode', true ) ?: 'gesamt' ) : 'gesamt';
+						$pamount = $event_id ? get_post_meta( $event_id, '_fge_price_amount', true ) : '';
+						$pbasis  = $event_id ? ( get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person' ) : 'person';
+						$pitems  = $event_id ? (array) get_post_meta( $event_id, '_fge_line_items', true ) : [];
+						$markup  = defined( 'FGE_MARKUP_PERCENT' ) ? (int) FGE_MARKUP_PERCENT : 20;
 						?>
-						<p class="fp-help">Hinterlege deine <strong>Netto</strong>-Preise — der Firmengolf-Aufschlag (20 %) kommt automatisch oben drauf.</p>
-						<div class="fg-form-row fg-form-row--2col">
-							<div>
-								<label class="fg-form-label" for="fge_price_mode">Preislogik</label>
-								<select class="fg-form-input" id="fge_price_mode" name="fge_price_mode">
-									<option value="gesamt" <?php selected( $pmode, 'gesamt' ); ?>>Gesamtpreis netto</option>
-									<option value="einzel" <?php selected( $pmode, 'einzel' ); ?>>Einzelauflistung netto</option>
-								</select>
-							</div>
-							<div>
-								<label class="fg-form-label" for="fge_price_note">Preis-Hinweis (optional)</label>
-								<input class="fg-form-input" type="text" id="fge_price_note" name="fge_price_note" value="<?php echo $v( 'fge_price_note' ); ?>" placeholder="z.B. zzgl. Getränke">
+						<p class="fp-help">Hinterlege deinen <strong>Netto</strong>-Preis. Die Vermittlung von Firmengolf (<?php echo (int) $markup; ?> %) kommt automatisch oben drauf.</p>
+
+						<input type="hidden" name="fge_price_mode" id="fge_price_mode" value="<?php echo esc_attr( $pmode ); ?>">
+						<div class="fp-price-modes" role="tablist">
+							<button type="button" class="fp-price-mode<?php echo 'gesamt' === $pmode ? ' on' : ''; ?>" data-fp-mode="gesamt">Gesamtpreis</button>
+							<button type="button" class="fp-price-mode<?php echo 'einzel' === $pmode ? ' on' : ''; ?>" data-fp-mode="einzel">Einzelauflistung</button>
+						</div>
+
+						<div id="fp-price-gesamt" style="<?php echo 'gesamt' === $pmode ? '' : 'display:none;'; ?>">
+							<div class="fg-form-row fg-form-row--2col">
+								<div>
+									<label class="fg-form-label" for="fge_price_amount">Gesamtpreis für die Veranstaltung (netto, €)</label>
+									<input class="fg-form-input" type="text" inputmode="decimal" id="fge_price_amount" name="fge_price_amount" value="<?php echo esc_attr( $pamount ); ?>" placeholder="2400">
+								</div>
+								<div>
+									<label class="fg-form-label">Basis</label>
+									<input type="hidden" name="fge_price_basis" id="fge_price_basis" value="<?php echo esc_attr( $pbasis ); ?>">
+									<div class="fp-price-modes" style="margin-bottom:0;">
+										<button type="button" class="fp-price-mode<?php echo 'person' === $pbasis ? ' on' : ''; ?>" data-fp-basis="person">pro Person</button>
+										<button type="button" class="fp-price-mode<?php echo 'pauschal' === $pbasis ? ' on' : ''; ?>" data-fp-basis="pauschal">Pauschal</button>
+									</div>
+								</div>
 							</div>
 						</div>
-						<div class="fg-form-row fg-form-row--2col">
-							<div>
-								<label class="fg-form-label" for="fge_price_amount">Gesamtpreis netto (€)</label>
-								<input class="fg-form-input" type="text" id="fge_price_amount" name="fge_price_amount" value="<?php echo esc_attr( $pamount ); ?>" placeholder="z.B. 2400">
+
+						<div id="fp-price-einzel" style="<?php echo 'einzel' === $pmode ? '' : 'display:none;'; ?>">
+							<div id="fp-price-items">
+								<?php foreach ( $pitems as $pit ) : ?>
+								<div class="fp-price-item">
+									<input class="fg-form-input" type="text" value="<?php echo esc_attr( (string) ( $pit['label'] ?? '' ) ); ?>" placeholder="Bezeichnung (z. B. Golflehrer)" data-fp-item-label>
+									<input class="fg-form-input" type="text" inputmode="decimal" value="<?php echo esc_attr( (string) ( $pit['cost'] ?? '' ) ); ?>" placeholder="80" data-fp-item-cost>
+									<button type="button" class="x" data-fp-item-remove aria-label="Entfernen">×</button>
+								</div>
+								<?php endforeach; ?>
 							</div>
-							<div>
-								<label class="fg-form-label" for="fge_price_basis">Basis</label>
-								<select class="fg-form-input" id="fge_price_basis" name="fge_price_basis">
-									<option value="person" <?php selected( $pbasis, 'person' ); ?>>pro Person</option>
-									<option value="pauschal" <?php selected( $pbasis, 'pauschal' ); ?>>Pauschal</option>
-								</select>
-							</div>
+							<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fp-price-additem">+ Kosten hinzufügen</button>
+							<textarea name="fge_line_items" id="fge_line_items" hidden><?php echo esc_textarea( implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ), $pitems ) ) ); ?></textarea>
 						</div>
-						<div class="fg-form-row">
-							<label class="fg-form-label" for="fge_line_items">Einzelposten (nur bei „Einzelauflistung")</label>
-							<textarea class="fg-form-textarea" id="fge_line_items" name="fge_line_items" rows="3" placeholder="Golflehrer | 80&#10;Meetingraum | 50"><?php echo esc_textarea( $pitems_txt ); ?></textarea>
-							<p class="fp-help">Pro Zeile: <code>Bezeichnung | Kosten netto</code>.</p>
+
+						<div class="fp-price-summary" id="fp-price-summary" data-markup="<?php echo (int) $markup; ?>">
+							<div class="row"><span>Netto-Summe</span><span class="v" id="fp-sum-net">€0</span></div>
+							<div class="row"><span>+ Vermittlung Firmengolf (<?php echo (int) $markup; ?> %)</span><span class="v" id="fp-sum-fee">€0</span></div>
+							<div class="row total"><span>Gesamtpreis für das Unternehmen</span><span class="v" id="fp-sum-total">€0</span></div>
 						</div>
 						<div class="fg-form-row fg-form-row--3col">
 							<div>
@@ -2569,55 +2632,51 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						</div>
 					</div>
 
-					<!-- Enthaltene Leistungen -->
+					<!-- Inkludierte Leistungen + Tagesablauf -->
 					<div class="fp-form-sec">
-						<h3>Enthaltene Leistungen</h3>
-						<p class="fp-help">Was im Preis enthalten ist — Firmen filtern nach diesen Punkten.</p>
-						<div class="fg-form-checkgrid">
-							<?php foreach ( $leistungen_labels as $key => $label ) : ?>
-								<label class="fg-form-check">
-									<input type="checkbox" name="fge_<?php echo esc_attr( $key ); ?>" value="1" <?php checked( $checked( 'fge_' . $key ) ); ?>>
-									<span><?php echo esc_html( $label ); ?></span>
-								</label>
+						<h3>Inkludierte Leistungen</h3>
+						<p class="fp-help">Wähl aus, was in diesem Angebot enthalten ist. Die Liste erscheint als „Im Preis enthalten" auf der Event-Seite und Firmen filtern danach.</p>
+
+						<?php
+						$service_catalogue = [
+							'Shuttle-Service', 'Schnupperkurs', 'Meetingraum 2 Stunden', 'Meetingraum (ganzer Tag)',
+							'Kaffee & Kuchen', 'Lunch', 'Abendessen', 'Begrüßungsgetränk',
+							'Greenfee Range & Übungsanlage', 'Leihschläger & Bälle', 'PGA-Coaching',
+							'9-Loch-Runde', '18-Loch-Turnier', 'Putting-Challenge',
+							'Halfway-Verpflegung', 'Urkunde & Foto-Erinnerung', 'Übernachtung',
+						];
+						$cur_includes = $event_id ? array_map( 'strval', (array) get_post_meta( $event_id, '_fge_event_includes', true ) ) : [];
+						?>
+						<div class="fp-inc-chips" id="fp-inc-chips">
+							<?php foreach ( $cur_includes as $inc ) : ?>
+							<span class="fp-inc-chip" data-fp-chip="<?php echo esc_attr( $inc ); ?>">✓ <?php echo esc_html( $inc ); ?><button type="button" data-fp-chip-remove aria-label="Entfernen">×</button></span>
 							<?php endforeach; ?>
+							<span class="fp-inc-add-wrap">
+								<button type="button" class="fp-inc-add" id="fp-inc-addbtn">+ Leistung hinzufügen</button>
+								<span class="fp-inc-menu" id="fp-inc-menu">
+									<?php foreach ( $service_catalogue as $svc ) : ?>
+									<button type="button" data-fp-inc-option="<?php echo esc_attr( $svc ); ?>"><?php echo esc_html( $svc ); ?></button>
+									<?php endforeach; ?>
+									<span class="fp-inc-custom">
+										<input class="fg-form-input" type="text" id="fp-inc-custom-input" placeholder="Eigene Leistung …">
+										<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fp-inc-custom-add">OK</button>
+									</span>
+								</span>
+							</span>
 						</div>
-						<div class="fg-form-row" style="margin-top:16px;">
-							<label class="fg-form-label" for="fge_additional_services">Weitere Leistungen</label>
-							<textarea class="fg-form-textarea" id="fge_additional_services" name="fge_additional_services" rows="2" placeholder="Sonstige enthaltene Leistungen"><?php echo esc_textarea( $saved['fge_additional_services'] ?? '' ); ?></textarea>
-						</div>
-						<div class="fg-form-row" style="margin-top:16px;">
-							<label class="fg-form-label" for="fge_event_includes">Im Preis enthalten — Liste</label>
-							<textarea class="fg-form-textarea" id="fge_event_includes" name="fge_event_includes" rows="4" placeholder="90 Min. Coaching&#10;Leihschläger&#10;Lunch im Clubhaus"><?php echo esc_textarea( $event_id ? implode( "\n", (array) get_post_meta( $event_id, '_fge_event_includes', true ) ) : '' ); ?></textarea>
-							<p class="fp-help">Eine Leistung pro Zeile — erscheint als „Im Preis enthalten" auf der Angebotsseite.</p>
-						</div>
-						<div class="fg-form-row" style="margin-top:16px;">
+						<textarea name="fge_event_includes" id="fge_event_includes" hidden><?php echo esc_textarea( implode( "\n", $cur_includes ) ); ?></textarea>
+
+						<div class="fg-form-row" style="margin-top:24px;">
 							<label class="fg-form-label" for="fge_event_dayflow">So läuft der Tag ab</label>
-							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="3" placeholder="Ankunft &amp; Begrüßung → Coaching → Lunch → Turnier → Ausklang"><?php echo esc_textarea( $event_id ? (string) get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ); ?></textarea>
+							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="9" placeholder="Wir holen euch um 9:00 Uhr direkt in eurer Firma ab.&#10;&#10;Treffpunkt ist der Pro-Shop. Dort begrüßen wir euch und stellen euch Platz und Anlage kurz vor.&#10;&#10;9:30 Uhr: Erster Teil des Schnupperkurses auf der Range (ca. 1 Stunde) mit unseren PGA-Pros.&#10;&#10;Mittags: gemeinsames Lunch auf der Terrasse.&#10;&#10;Am Nachmittag geht es aufs Grün. Zum Abschluss bringt euch unser Shuttle bequem zurück."><?php echo esc_textarea( $event_id ? (string) get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ); ?></textarea>
+							<p class="fp-help">Beschreib den Ablauf Schritt für Schritt, von der Ankunft bis zur Heimfahrt. Dieser Text erscheint auf der Event-Seite.</p>
 						</div>
 					</div>
 
-					<!-- Verfügbarkeit & Kontakt -->
+					<!-- Verfügbarkeit & Termin-Freigabe -->
 					<div class="fp-form-sec">
-						<h3>Verfügbarkeit & Kontakt</h3>
-
-						<div class="fg-form-row fg-form-row--2col">
-							<div>
-								<label class="fg-form-label" for="fge_event_type">Eventart <span class="fg-form-required" aria-label="Pflichtfeld">*</span></label>
-								<div class="fg-form-field">
-									<select class="fg-form-select<?php echo $has_err( 'fge_event_type' ); // phpcs:ignore ?>" id="fge_event_type" name="fge_event_type">
-										<option value="">— bitte wählen —</option>
-										<?php foreach ( $event_types as $val => $label ) : ?>
-											<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $saved['fge_event_type'] ?? '', $val ); ?>><?php echo esc_html( $label ); ?></option>
-										<?php endforeach; ?>
-									</select>
-									<?php echo $err_html( 'fge_event_type' ); // phpcs:ignore ?>
-								</div>
-							</div>
-							<div>
-								<label class="fg-form-label" for="fge_event_location">Ort</label>
-								<input class="fg-form-input" type="text" id="fge_event_location" name="fge_event_location" value="<?php echo $v( 'fge_event_location' ); ?>" placeholder="z.B. GC München, Mainburg">
-							</div>
-						</div>
+						<h3>Verfügbarkeit & Termin-Freigabe</h3>
+						<p class="fp-help">An welchen Wochentagen kann dieses Event angefragt werden? Standort und Saison kommen automatisch von deinem Platz.</p>
 
 						<div class="fg-form-row">
 							<label class="fg-form-label">Verfügbare Wochentage</label>
@@ -2628,35 +2687,6 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 										<span><?php echo esc_html( $label ); ?></span>
 									</label>
 								<?php endforeach; ?>
-							</div>
-						</div>
-
-						<div class="fg-form-row fg-form-row--2col">
-							<div>
-								<label class="fg-form-label" for="fge_region">Region</label>
-								<input class="fg-form-input" type="text" id="fge_region" name="fge_region" value="<?php echo $v( 'fge_region' ); ?>" placeholder="z.B. München, Bayern">
-							</div>
-							<div>
-								<label class="fg-form-label" for="fge_season">Saison / Zeitraum</label>
-								<input class="fg-form-input" type="text" id="fge_season" name="fge_season" value="<?php echo $v( 'fge_season' ); ?>" placeholder="z.B. April bis Oktober">
-							</div>
-						</div>
-
-						<div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--ink-200);">
-							<p class="fg-form-label" style="margin-bottom:12px;font-weight:500;">Ansprechpartner für Verfügbarkeit</p>
-							<div class="fg-form-row fg-form-row--3col">
-								<div>
-									<label class="fg-form-label" for="fge_availability_contact_name">Name</label>
-									<input class="fg-form-input" type="text" id="fge_availability_contact_name" name="fge_availability_contact_name" value="<?php echo $v( 'fge_availability_contact_name' ); ?>" placeholder="Ansprechpartner">
-								</div>
-								<div>
-									<label class="fg-form-label" for="fge_availability_contact_email">E-Mail</label>
-									<input class="fg-form-input" type="email" id="fge_availability_contact_email" name="fge_availability_contact_email" value="<?php echo $v( 'fge_availability_contact_email' ); ?>">
-								</div>
-								<div>
-									<label class="fg-form-label" for="fge_availability_contact_phone">Telefon</label>
-									<input class="fg-form-input" type="tel" id="fge_availability_contact_phone" name="fge_availability_contact_phone" value="<?php echo $v( 'fge_availability_contact_phone' ); ?>">
-								</div>
 							</div>
 						</div>
 
@@ -2752,6 +2782,36 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<?php endif; ?>
 					</div>
 
+					<?php
+					$pv_name   = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+					$pv_rating = (string) get_post_meta( $partner_id, '_fge_rating', true );
+					$pv_cover  = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : '';
+					?>
+					<div class="fp-rail-card">
+						<h4>Live-Vorschau</h4>
+						<p style="font-size:12px;color:var(--ink-500);margin:0 0 10px;">So erscheint dein Angebot in der Suche. Aktualisiert sich beim Tippen.</p>
+						<article class="fg-event ev-card2 fp-preview-card">
+							<div class="fg-event-photo" id="fp-pv-photo" style="<?php echo $pv_cover ? "background-image:url('" . esc_url( $pv_cover ) . "');" : 'background:var(--paper-300);'; // phpcs:ignore WordPress.Security.EscapeOutput ?>">
+								<div class="fg-event-chips"><span class="fg-photo-chip" id="fp-pv-chip"><?php echo esc_html( $event_type_label ?: 'Eventart' ); ?></span></div>
+							</div>
+							<div class="fg-event-body">
+								<div class="ev-card2-top">
+									<div class="fg-event-eyebrow" id="fp-pv-eyebrow"><?php echo esc_html( $event_type_label ?: 'Eventart' ); ?></div>
+									<?php if ( $pv_rating ) : ?><div class="fg-event-rating">★ <span><?php echo esc_html( $pv_rating ); ?></span></div><?php endif; ?>
+								</div>
+								<h3 class="fg-event-title" id="fp-pv-title"><?php echo esc_html( $event_title ?: 'Titel deines Angebots' ); ?></h3>
+								<div class="ev-card2-loc">
+									<span><?php echo esc_html( $pv_name ); ?></span>
+									<span class="dot">·</span><span id="fp-pv-guests">Teilnehmer</span>
+									<span class="dot">·</span><span id="fp-pv-duration">Dauer</span>
+								</div>
+								<div class="fg-event-foot ev-card2-foot">
+									<div class="fg-event-price" id="fp-pv-price">Preis</div>
+								</div>
+							</div>
+						</article>
+					</div>
+
 					<div class="fp-rail-card fp-rail-card--tip">
 						<h4>Tipp vom Team</h4>
 						<p style="font-size:14px;line-height:1.5;color:rgba(251,250,246,0.85);margin-bottom:0;">
@@ -2773,6 +2833,193 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					<?php echo $is_edit ? 'Änderungen speichern' : 'Event einreichen'; ?>
 				</button>
 			</div>
+
+			<script>
+			(function () {
+				var byId = function (id) { return document.getElementById(id); };
+				var fmt  = function (n) { return '€' + (Math.round(n * 100) / 100).toLocaleString('de-DE'); };
+
+				// ── Preis: Modus/Basis-Pills, Posten-Zeilen, Live-Rechnung ──
+				var modeIn  = byId('fge_price_mode');
+				var basisIn = byId('fge_price_basis');
+				var amount  = byId('fge_price_amount');
+				var boxG    = byId('fp-price-gesamt');
+				var boxE    = byId('fp-price-einzel');
+				var items   = byId('fp-price-items');
+				var itemsTa = byId('fge_line_items');
+				var summary = byId('fp-price-summary');
+				var markup  = summary ? parseInt(summary.dataset.markup || '20', 10) : 20;
+
+				function parseNum(v) { return parseFloat(String(v || '').replace(/[^\d.,]/g, '').replace(',', '.')) || 0; }
+				function netSum() {
+					if (modeIn && modeIn.value === 'einzel' && items) {
+						var s = 0;
+						items.querySelectorAll('[data-fp-item-cost]').forEach(function (i) { s += parseNum(i.value); });
+						return s;
+					}
+					return amount ? parseNum(amount.value) : 0;
+				}
+				function syncItems() {
+					if (!items || !itemsTa) { return; }
+					var lines = [];
+					items.querySelectorAll('.fp-price-item').forEach(function (row) {
+						var l = row.querySelector('[data-fp-item-label]');
+						var c = row.querySelector('[data-fp-item-cost]');
+						if (l && l.value.trim() !== '') { lines.push(l.value.trim() + ' | ' + (c ? c.value.trim() : '')); }
+					});
+					itemsTa.value = lines.join('\n');
+				}
+				function recalc() {
+					if (!summary) { return; }
+					var net = netSum();
+					var perPerson = modeIn && modeIn.value === 'gesamt' && basisIn && basisIn.value === 'person';
+					byId('fp-sum-net').textContent   = fmt(net) + (perPerson ? ' pro Person' : '');
+					byId('fp-sum-fee').textContent   = fmt(net * markup / 100);
+					byId('fp-sum-total').textContent = fmt(net * (1 + markup / 100)) + (perPerson ? ' pro Person' : '');
+					var pv = byId('fp-pv-price');
+					if (pv) { pv.textContent = net > 0 ? 'ab ' + fmt(net * (1 + markup / 100)) + (perPerson ? ' /p.P.' : '') : 'Preis'; }
+				}
+				document.querySelectorAll('[data-fp-mode]').forEach(function (b) {
+					b.addEventListener('click', function () {
+						if (modeIn) { modeIn.value = b.dataset.fpMode; }
+						document.querySelectorAll('[data-fp-mode]').forEach(function (x) { x.classList.toggle('on', x === b); });
+						if (boxG) { boxG.style.display = b.dataset.fpMode === 'gesamt' ? '' : 'none'; }
+						if (boxE) { boxE.style.display = b.dataset.fpMode === 'einzel' ? '' : 'none'; }
+						recalc();
+					});
+				});
+				document.querySelectorAll('[data-fp-basis]').forEach(function (b) {
+					b.addEventListener('click', function () {
+						if (basisIn) { basisIn.value = b.dataset.fpBasis; }
+						document.querySelectorAll('[data-fp-basis]').forEach(function (x) { x.classList.toggle('on', x === b); });
+						recalc();
+					});
+				});
+				function addItemRow(label, cost) {
+					var row = document.createElement('div');
+					row.className = 'fp-price-item';
+					row.innerHTML = '<input class="fg-form-input" type="text" placeholder="Bezeichnung (z. B. Golflehrer)" data-fp-item-label>' +
+						'<input class="fg-form-input" type="text" inputmode="decimal" placeholder="80" data-fp-item-cost>' +
+						'<button type="button" class="x" data-fp-item-remove aria-label="Entfernen">×</button>';
+					row.querySelector('[data-fp-item-label]').value = label || '';
+					row.querySelector('[data-fp-item-cost]').value  = cost || '';
+					items.appendChild(row);
+				}
+				var addBtn = byId('fp-price-additem');
+				if (addBtn) { addBtn.addEventListener('click', function () { addItemRow('', ''); }); }
+				if (items) {
+					items.addEventListener('input', function () { syncItems(); recalc(); });
+					items.addEventListener('click', function (e) {
+						var rm = e.target.closest('[data-fp-item-remove]');
+						if (rm) { rm.closest('.fp-price-item').remove(); syncItems(); recalc(); }
+					});
+				}
+				if (amount) { amount.addEventListener('input', recalc); }
+				syncItems();
+				recalc();
+
+				// ── Inkludierte Leistungen: Chips + Katalog-Menü ──
+				var chips   = byId('fp-inc-chips');
+				var incTa   = byId('fge_event_includes');
+				var menu    = byId('fp-inc-menu');
+				var menuBtn = byId('fp-inc-addbtn');
+				function syncChips() {
+					if (!chips || !incTa) { return; }
+					var vals = [];
+					chips.querySelectorAll('[data-fp-chip]').forEach(function (c) { vals.push(c.dataset.fpChip); });
+					incTa.value = vals.join('\n');
+				}
+				function hasChip(v) {
+					var found = false;
+					chips.querySelectorAll('[data-fp-chip]').forEach(function (c) { if (c.dataset.fpChip === v) { found = true; } });
+					return found;
+				}
+				function addChip(v) {
+					v = (v || '').trim();
+					if (v === '' || hasChip(v)) { return; }
+					var chip = document.createElement('span');
+					chip.className = 'fp-inc-chip';
+					chip.dataset.fpChip = v;
+					chip.appendChild(document.createTextNode('✓ ' + v));
+					var x = document.createElement('button');
+					x.type = 'button';
+					x.setAttribute('data-fp-chip-remove', '');
+					x.setAttribute('aria-label', 'Entfernen');
+					x.textContent = '×';
+					chip.appendChild(x);
+					chips.insertBefore(chip, chips.querySelector('.fp-inc-add-wrap'));
+					syncChips();
+				}
+				if (chips) {
+					chips.addEventListener('click', function (e) {
+						var rm = e.target.closest('[data-fp-chip-remove]');
+						if (rm) { rm.closest('[data-fp-chip]').remove(); syncChips(); return; }
+						var opt = e.target.closest('[data-fp-inc-option]');
+						if (opt) { addChip(opt.dataset.fpIncOption); menu.classList.remove('open'); }
+					});
+				}
+				if (menuBtn && menu) {
+					menuBtn.addEventListener('click', function (e) { e.stopPropagation(); menu.classList.toggle('open'); });
+					document.addEventListener('click', function (e) {
+						if (!e.target.closest('.fp-inc-add-wrap')) { menu.classList.remove('open'); }
+					});
+				}
+				var customIn  = byId('fp-inc-custom-input');
+				var customAdd = byId('fp-inc-custom-add');
+				if (customIn && customAdd) {
+					customAdd.addEventListener('click', function () { addChip(customIn.value); customIn.value = ''; });
+					customIn.addEventListener('keydown', function (e) {
+						if (e.key === 'Enter') { e.preventDefault(); addChip(customIn.value); customIn.value = ''; }
+					});
+				}
+				syncChips();
+
+				// ── Live-Vorschau ──
+				function bindPreview(srcId, fn) {
+					var el = byId(srcId);
+					if (el) { el.addEventListener('input', fn); el.addEventListener('change', fn); }
+				}
+				function updPreview() {
+					var title = byId('fge_post_title');
+					var type  = byId('fge_event_type');
+					var dur   = byId('fge_duration');
+					var minP  = byId('fge_participants_min');
+					var maxP  = byId('fge_participants_max');
+					var typeLabel = type && type.selectedIndex > 0 ? type.options[type.selectedIndex].text : 'Eventart';
+					var pvT = byId('fp-pv-title');
+					if (pvT) { pvT.textContent = ( title && title.value.trim() ) ? title.value.trim() : 'Titel deines Angebots'; }
+					var pvC = byId('fp-pv-chip');
+					if (pvC) { pvC.textContent = typeLabel; }
+					var pvE = byId('fp-pv-eyebrow');
+					if (pvE) { pvE.textContent = typeLabel + ( dur && dur.value.trim() ? ' · ' + dur.value.trim() : '' ); }
+					var pvD = byId('fp-pv-duration');
+					if (pvD) { pvD.textContent = ( dur && dur.value.trim() ) ? dur.value.trim() : 'Dauer'; }
+					var pvG = byId('fp-pv-guests');
+					if (pvG) {
+						pvG.textContent = ( minP && maxP && minP.value && maxP.value )
+							? minP.value + '–' + maxP.value + ' Gäste'
+							: ( maxP && maxP.value ? 'bis ' + maxP.value + ' Gäste' : 'Teilnehmer' );
+					}
+				}
+				['fge_post_title', 'fge_event_type', 'fge_duration', 'fge_participants_min', 'fge_participants_max'].forEach(function (id) {
+					bindPreview(id, updPreview);
+				});
+				updPreview();
+
+				// Cover-Auswahl im Picker → Vorschau-Foto (URL aus der Galerie-Config).
+				var coverIn = document.querySelector('[data-fge-picker-cover]');
+				var pvPhoto = byId('fp-pv-photo');
+				function updCover() {
+					if (!coverIn || !pvPhoto || !window.FGE_MEDIA) { return; }
+					var id = parseInt(coverIn.value || '0', 10);
+					var hit = (window.FGE_MEDIA.gallery || []).filter(function (p) { return p.id === id; })[0];
+					if (hit) { pvPhoto.style.background = ''; pvPhoto.style.backgroundImage = "url('" + (hit.large || hit.thumb) + "')"; }
+				}
+				var pickerHost = document.querySelector('[data-fge-picker]');
+				if (pickerHost) { pickerHost.addEventListener('click', function () { setTimeout(updCover, 50); }); }
+				updCover();
+			})();
+			</script>
 
 		</form>
 	</div><!-- .fp-edit-shell -->

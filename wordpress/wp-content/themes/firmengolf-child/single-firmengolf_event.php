@@ -101,31 +101,86 @@ if ( $p_min && $p_max ) {
 	$guests_str = '';
 }
 
-// "Gut zu wissen" tags — derived from meta
+// "Gut zu wissen" — echte Rahmen-Infos von Event und Platz statt geratener Flags.
 $good_tags = [];
-if ( $format_label === 'Schnupperkurs' || isset( $leistungen['has_golf_teacher'] ) ) {
-	$good_tags[] = 'Einsteigerfreundlich';
+$p_infra   = $partner_id ? array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_infra', true ) ) : [];
+
+$ev_days = (array) get_post_meta( $post_id, '_fge_available_weekdays', true );
+if ( $ev_days ) {
+	$day_short  = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
+	$day_labels = [];
+	foreach ( $day_short as $dk => $dl ) {
+		if ( in_array( $dk, $ev_days, true ) ) {
+			$day_labels[] = $dl;
+		}
+	}
+	if ( 7 === count( $day_labels ) ) {
+		$good_tags[] = 'Täglich anfragbar';
+	} elseif ( [ 'Mo', 'Di', 'Mi', 'Do', 'Fr' ] === $day_labels ) {
+		$good_tags[] = 'Anfragbar Mo bis Fr';
+	} elseif ( $day_labels ) {
+		$good_tags[] = 'Anfragbar ' . implode( ', ', $day_labels );
+	}
 }
-if ( isset( $leistungen['has_rental_clubs'] ) ) {
-	$good_tags[] = 'Schläger gestellt';
-}
-if ( isset( $leistungen['has_golf_teacher'] ) ) {
-	$good_tags[] = 'PGA-Coach inklusive';
-}
-if ( isset( $leistungen['has_range_balls'] ) ) {
-	$good_tags[] = 'Range-Bälle inklusive';
-}
-if ( isset( $leistungen['has_lunch'] ) || isset( $leistungen['has_dinner'] ) ) {
-	$good_tags[] = 'Catering inklusive';
-}
-if ( isset( $leistungen['has_branding'] ) ) {
-	$good_tags[] = 'Branding möglich';
+if ( $partner_id ) {
+	$lead_days = (int) get_post_meta( $partner_id, '_fge_min_lead_time_days', true );
+	if ( $lead_days > 0 ) {
+		$good_tags[] = 'Mind. ' . $lead_days . ' Tage Vorlauf';
+	}
+	$season_lbl = function_exists( 'fge_season_label' ) ? fge_season_label( (string) get_post_meta( $partner_id, '_fge_season', true ) ) : '';
+	if ( 'Ganzjährig' === $season_lbl ) {
+		$good_tags[] = 'Ganzjährig buchbar';
+	} elseif ( $season_lbl !== '' ) {
+		$good_tags[] = 'Saison ' . $season_lbl;
+	}
+	if ( '1' === (string) get_post_meta( $partner_id, '_fge_evening_events_possible', true ) ) {
+		$good_tags[] = 'Abend-Events möglich';
+	}
+	if ( in_array( 'indoor', $p_infra, true ) ) {
+		$good_tags[] = 'Indoor-Backup vorhanden';
+	}
+	if ( in_array( 'barrierefrei', $p_infra, true ) ) {
+		$good_tags[] = 'Barrierearme Anlage';
+	}
 }
 if ( $guests_str ) {
 	$good_tags[] = $guests_str;
 }
 if ( $duration ) {
 	$good_tags[] = $duration;
+}
+
+// "Vor Ort am Platz" — Infrastruktur-Highlights des Golfplatzes mit Kapazitäten.
+$onsite = [];
+if ( $partner_id && $p_infra && function_exists( 'fge_catalog_infra_groups' ) ) {
+	$p_cap        = (array) get_post_meta( $partner_id, '_fge_cap', true );
+	$cap_by_infra = [];
+	if ( function_exists( 'fge_catalog_cap_rows' ) ) {
+		foreach ( fge_catalog_cap_rows() as $cr ) {
+			$cn = (int) ( $p_cap[ $cr['key'] ] ?? 0 );
+			if ( $cn > 0 ) {
+				$cap_by_infra[ (string) $cr['infra'] ] = $cn;
+			}
+		}
+	}
+	$infra_names = [];
+	foreach ( fge_catalog_infra_groups() as $infra_items ) {
+		foreach ( $infra_items as $iid => $il ) {
+			$infra_names[ (string) $iid ] = $il;
+		}
+	}
+	$onsite_priority = [
+		'meeting-room', 'conference', 'seminar', 'eventroom', 'restaurant', 'terrace',
+		'driving-range', 'trackman', 'toptracer', 'indoor', 'coach', 'bar', 'bbq', 'shower', 'wifi',
+	];
+	foreach ( $onsite_priority as $iid ) {
+		if ( count( $onsite ) >= 8 ) {
+			break;
+		}
+		if ( in_array( $iid, $p_infra, true ) && isset( $infra_names[ $iid ] ) ) {
+			$onsite[] = [ $infra_names[ $iid ], isset( $cap_by_infra[ $iid ] ) ? 'bis ' . $cap_by_infra[ $iid ] . ' Personen' : '' ];
+		}
+	}
 }
 
 // Side gallery images — from event gallery (attachment IDs) with placeholder fallback
@@ -244,8 +299,8 @@ get_header();
 				</section>
 				<?php endif; ?>
 
-				<?php /* Im Preis enthalten — inkludierte Leistungen (rev. 2) bevorzugt, sonst Alt-Leistungen */ ?>
-				<?php $inc_list = $includes_new ?: array_values( $leistungen ); ?>
+				<?php /* Im Preis enthalten — ausschließlich die im Editor kuratierten Leistungen */ ?>
+				<?php $inc_list = array_values( array_filter( array_map( 'strval', $includes_new ) ) ); ?>
 				<?php if ( $inc_list ) : ?>
 				<section>
 					<div class="fg-section-eyebrow">Im Preis enthalten</div>
@@ -267,6 +322,21 @@ get_header();
 					<div class="fg-good-grid">
 						<?php foreach ( $good_tags as $tag ) : ?>
 							<div class="fg-good"><?php echo esc_html( $tag ); ?></div>
+						<?php endforeach; ?>
+					</div>
+				</section>
+				<?php endif; ?>
+
+				<?php /* Vor Ort am Platz — Infrastruktur-Highlights des Golfplatzes */ ?>
+				<?php if ( $onsite ) : ?>
+				<section>
+					<div class="fg-section-eyebrow">Vor Ort am Platz</div>
+					<div class="evd-poi-grid evd-onsite">
+						<?php foreach ( $onsite as $o ) : ?>
+						<div class="evd-poi">
+							<div class="evd-onsite-n"><?php echo esc_html( $o[0] ); ?></div>
+							<?php if ( $o[1] !== '' ) : ?><div class="evd-onsite-c"><?php echo esc_html( $o[1] ); ?></div><?php endif; ?>
+						</div>
 						<?php endforeach; ?>
 					</div>
 				</section>
