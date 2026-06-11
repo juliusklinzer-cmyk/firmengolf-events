@@ -1771,7 +1771,10 @@ function fge_onboarding_render_step_8( int $step, int $partner_id, string $token
 			fge_onboarding_card( 'checkbox', 'fge_event_formats[]', (string) $key, (string) $label, in_array( $key, $saved_formats, true ) );
 		endforeach; ?>
 	</div>
-	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
+	<p class="ob-cat-note">Deine Auswahl hilft uns, euch passende Anfragen zuzuordnen, und erscheint auf eurem Profil. Du kannst sie später jederzeit im Partner-Portal anpassen — eure buchbaren Event-Angebote legst du dort unabhängig davon an.</p>
+	<?php
+	fge_onboarding_cards_script();
+	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
 

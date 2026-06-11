@@ -523,7 +523,8 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   font-size: 13px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
   color: var(--ink-500); margin-bottom: 14px;
 }
-.ob-cat-note {
+/* .ob-shell als Präfix: schlägt den `.ob-shell p`-Reset (0,1,1). */
+.ob-shell .ob-cat-note {
   margin-top: 24px; padding: 14px 18px;
   background: var(--paper-200); border-radius: var(--radius-lg);
   font-size: 14px; line-height: 1.5; color: var(--ink-600); max-width: 720px;
