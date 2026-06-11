@@ -27,7 +27,7 @@ $website   = $m( 'website_url' );
 $infra     = array_map( 'strval', (array) get_post_meta( $pid, '_fge_infra', true ) );
 $gallery   = function_exists( 'fge_partner_gallery_ids' ) ? fge_partner_gallery_ids( $pid ) : [];
 $cover_att = function_exists( 'fge_partner_cover_id' ) ? fge_partner_cover_id( $pid ) : 0;
-$cover     = $cover_att > 0 ? (string) wp_get_attachment_image_url( $cover_att, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $pid );
+$cover     = $cover_att > 0 ? (string) wp_get_attachment_image_url( $cover_att, '2048x2048' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $pid );
 $mono      = function_exists( 'fge_portal_make_monogram' ) ? fge_portal_make_monogram( $name ) : strtoupper( mb_substr( $name, 0, 2 ) );
 $events    = function_exists( 'fge_partner_public_event_ids' ) ? fge_partner_public_event_ids( $pid ) : [];
 $fmt_lbl   = function_exists( 'fge_get_event_formats_flat' ) ? fge_get_event_formats_flat( false ) : [];
@@ -47,7 +47,9 @@ if ( ! empty( $cap['min'] ) || ! empty( $cap['max'] ) ) {
 	$facts[] = [ 'Gruppengröße', trim( ( $cap['min'] ?? '?' ) . '–' . ( $cap['max'] ?? '?' ) . ' Personen' ) ];
 }
 if ( $formats ) { $facts[] = [ 'Veranstaltungstypen', (string) count( $formats ) ]; }
-if ( $season )  { $facts[] = [ 'Saison', $season ]; }
+if ( $season )  { $facts[] = [ 'Saison', function_exists( 'fge_season_label' ) ? fge_season_label( $season ) : $season ]; }
+$os_note = function_exists( 'fge_partner_offseason_note' ) ? fge_partner_offseason_note( $pid ) : '';
+if ( $os_note ) { $facts[] = [ 'Aktuell', 'Offseason. ' . $os_note ]; }
 ?>
 <div class="fge-page">
 

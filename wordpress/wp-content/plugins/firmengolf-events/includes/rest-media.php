@@ -27,12 +27,14 @@ function fge_rest_media_can_edit( int $partner_id ): bool {
 
 /** Compact JSON shape for one attachment. */
 function fge_rest_photo_payload( int $att_id ): array {
+	$meta = wp_get_attachment_metadata( $att_id );
 	return [
 		'id'    => $att_id,
 		'thumb' => (string) wp_get_attachment_image_url( $att_id, 'thumbnail' ),
 		'large' => (string) wp_get_attachment_image_url( $att_id, 'large' ),
 		'full'  => (string) wp_get_attachment_image_url( $att_id, 'full' ),
 		'name'  => (string) get_the_title( $att_id ),
+		'width' => (int) ( is_array( $meta ) ? ( $meta['width'] ?? 0 ) : 0 ),
 	];
 }
 
@@ -60,7 +62,7 @@ function fge_rest_validate_upload( string $field, int $max, array $mimes ) {
 }
 
 /** Run WordPress' attachment upload for $_FILES[$field], attached to the partner post. */
-function fge_rest_handle_upload( string $field, int $partner_id ) {
+function fge_rest_handle_upload( string $field, int $partner_id, string $alt_suffix = 'Platzfoto' ) {
 	require_once ABSPATH . 'wp-admin/includes/file.php';
 	require_once ABSPATH . 'wp-admin/includes/image.php';
 	require_once ABSPATH . 'wp-admin/includes/media.php';
@@ -68,6 +70,10 @@ function fge_rest_handle_upload( string $field, int $partner_id ) {
 	if ( is_wp_error( $att ) ) {
 		return new WP_Error( 'fge_upload_failed', $att->get_error_message(), [ 'status' => 400 ] );
 	}
+	// Alt-Text automatisch setzen (SEO/Barrierefreiheit), z. B. „Golfclub X, Platzfoto".
+	$name = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+	$alt  = $name !== '' ? $name . ', ' . $alt_suffix : $alt_suffix;
+	update_post_meta( (int) $att, '_wp_attachment_image_alt', $alt );
 	return (int) $att;
 }
 
@@ -184,7 +190,7 @@ function fge_rest_logo_upload( WP_REST_Request $req ) {
 	if ( is_wp_error( $err ) ) {
 		return $err;
 	}
-	$att = fge_rest_handle_upload( 'file', $pid );
+	$att = fge_rest_handle_upload( 'file', $pid, 'Logo' );
 	if ( is_wp_error( $att ) ) {
 		return $att;
 	}

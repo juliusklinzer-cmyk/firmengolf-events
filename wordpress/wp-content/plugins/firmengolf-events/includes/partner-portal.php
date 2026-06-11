@@ -1791,6 +1791,26 @@ function fge_portal_section_team( int $partner_id ): void {
 			<p class="tm-legal">Personenbezogene Daten werden ausschließlich zur Bearbeitung von Firmenanfragen verwendet und nicht an Dritte weitergegeben (Art. 6 Abs. 1 lit. b/f DSGVO).</p>
 		</section>
 
+		<?php $co = fge_company(); ?>
+		<section class="section" id="rechnungsdaten">
+			<div class="section-head">
+				<div>
+					<div class="eyebrow">Abrechnung</div>
+					<h2>Unsere <em>Rechnungsdaten</em></h2>
+					<p>Nach einem Event stellst du deine Leistung direkt an Firmengolf in Rechnung. Hier findest du alle Angaben dafür.</p>
+				</div>
+			</div>
+			<div class="panel">
+				<?php
+				fge_portal_profile_row( 'Rechnungsempfänger', $co['legal_name'] );
+				fge_portal_profile_row( 'Anschrift', $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'] );
+				fge_portal_profile_row( 'USt-ID', $co['ust_id'] );
+				fge_portal_profile_row( 'Rechnung per E-Mail an', $co['email_partner'] );
+				?>
+				<p style="font-size:13px;color:var(--ink-500);margin-top:14px;line-height:1.5;">Bitte gib auf jeder Rechnung die <strong>Anfragenummer</strong> an (z. B. FG-26-001), damit wir sie eindeutig dem Event zuordnen können.</p>
+			</div>
+		</section>
+
 		<div class="fgc-scrim" id="fgc-modal" hidden>
 			<form class="fgc-sheet" method="post" action="<?php echo esc_url( $base ); ?>">
 				<div class="fgc-bar">
@@ -1887,7 +1907,7 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 	$formats    = (array) get_post_meta( $partner_id, '_fge_event_formats', true );
 	$gallery    = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $partner_id, '_fge_gallery_attachment_ids', true ) ) ) );
 	$cover_id   = (int) get_post_meta( $partner_id, '_fge_hero_image_attachment_id', true );
-	$cover      = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $partner_id );
+	$cover      = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, '2048x2048' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $partner_id );
 	$mono       = function_exists( 'fge_portal_make_monogram' ) ? fge_portal_make_monogram( $name ) : strtoupper( mb_substr( $name, 0, 2 ) );
 
 	$infra_index = [];
@@ -2530,7 +2550,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 								?>
 								<input class="fg-form-input" type="number" id="fge_participants_max" name="fge_participants_max" value="<?php echo esc_attr( $pmax_val ); ?>" min="1" placeholder="z.B. 40">
 								<?php if ( $platz_max > 0 ) : ?>
-								<p class="fp-help" id="fge-pmax-warn" style="display:none;color:#9a6b00;margin-top:6px;">Liegt über eurem Platz-Maximum von <?php echo (int) $platz_max; ?> Personen — prüf kurz, ob das wirklich passt.</p>
+								<p class="fp-help" id="fge-pmax-warn" style="display:none;color:#9a6b00;margin-top:6px;">Liegt über eurem Platz-Maximum von <?php echo (int) $platz_max; ?> Personen. Prüf kurz, ob das wirklich passt.</p>
 								<script>
 								(function () {
 									var inp  = document.getElementById('fge_participants_max');

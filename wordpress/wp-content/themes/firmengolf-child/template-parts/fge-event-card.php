@@ -37,6 +37,9 @@ $arrow     = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke
 		<div class="fg-event-photo" style="background-image:url('<?php echo esc_url( $thumb ); ?>')">
 			<div class="fg-event-chips">
 				<?php if ( $elabel ) : ?><span class="fg-photo-chip"><?php echo esc_html( $elabel ); ?></span><?php endif; ?>
+				<?php if ( $cpartner && function_exists( 'fge_partner_is_offseason' ) && fge_partner_is_offseason( $cpartner ) ) : ?>
+					<span class="fg-photo-chip fg-chip-offseason">Offseason</span>
+				<?php endif; ?>
 			</div>
 			<button class="fg-event-heart" type="button" aria-label="Event teilen"
 			        data-share-url="<?php echo esc_url( $permalink ); ?>" data-share-title="<?php echo esc_attr( $title ); ?>">

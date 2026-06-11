@@ -1,8 +1,9 @@
 /**
- * Airbnb-style partner photo gallery widget.
- * Talks to the firmengolf/v1 REST routes; config comes from FGE_MEDIA (localized).
- * Renders: empty state, upload modal (with per-file progress), filled grid
- * (first = Titelfoto, "…" menu, drag & drop reorder, "+ Weitere"), and a logo uploader.
+ * Partner-Medien-Widget: Logo-Slot + Titelbild-Slot + Galerie-Dropzone.
+ * Alles inline, ohne Modal: Dateien per Klick oder Drag & Drop, Vorschau sofort,
+ * Upload-Fortschritt als Overlay auf der Kachel.
+ * Datenmodell unverändert: Titelbild = erstes Galeriebild, Logo = eigene Meta.
+ * REST: firmengolf/v1 (upload/delete/reorder/logo); Config aus FGE_MEDIA.
  */
 ( function () {
 	'use strict';
@@ -13,9 +14,17 @@
 	}
 	var L = C.limits, T = C.i18n;
 
+	var root     = document.querySelector( '[data-fge-gallery]' );
+	var logoHost = document.querySelector( '[data-fge-logo]' );
+	if ( ! root ) {
+		return;
+	}
+
 	var state = {
 		gallery: ( C.gallery || [] ).slice(),
 		logo: C.logo || null,
+		pending: [], // { file, url, status: 'queued'|'up'|'error', error, toFront }
+		logoBusy: false,
 		dragId: null,
 	};
 
@@ -67,11 +76,11 @@
 		if ( html != null ) { e.innerHTML = html; }
 		return e;
 	}
-	function pickFiles( cb ) {
+	function pickFiles( cb, multiple ) {
 		var inp = document.createElement( 'input' );
 		inp.type = 'file';
 		inp.accept = L.mimes.join( ',' );
-		inp.multiple = true;
+		inp.multiple = !! multiple;
 		inp.style.display = 'none';
 		document.body.appendChild( inp );
 		inp.addEventListener( 'change', function () {
@@ -81,39 +90,149 @@
 		} );
 		inp.click();
 	}
+	function hasFiles( e ) {
+		var t = e.dataTransfer && e.dataTransfer.types;
+		return !! t && Array.prototype.indexOf.call( t, 'Files' ) !== -1;
+	}
+	/** Datei-Drop auf ein Element verdrahten (mit is-dragover Hover-Stil). */
+	function wireDrop( node, onFiles ) {
+		node.addEventListener( 'dragover', function ( e ) {
+			if ( hasFiles( e ) ) { e.preventDefault(); node.classList.add( 'is-dragover' ); }
+		} );
+		node.addEventListener( 'dragleave', function () { node.classList.remove( 'is-dragover' ); } );
+		node.addEventListener( 'drop', function ( e ) {
+			if ( ! hasFiles( e ) ) { return; }
+			e.preventDefault();
+			e.stopPropagation();
+			node.classList.remove( 'is-dragover' );
+			var files = Array.prototype.slice.call( e.dataTransfer.files || [] );
+			if ( files.length ) { onFiles( files ); }
+		} );
+	}
 
+	var ICON_IMAGE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
 	var ICON_CAMERA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l1.5 2.5h3A1.5 1.5 0 0 1 20.5 8v9A1.5 1.5 0 0 1 19 18.5H5A1.5 1.5 0 0 1 3.5 17V8A1.5 1.5 0 0 1 5 6.5h3L9.5 4z"/><circle cx="12" cy="12" r="3.2"/></svg>';
-	var ICON_DOTS = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>';
+	var ICON_STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>';
+	var ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
 
-	// ── Gallery rendering ─────────────────────────────────────────────────────
-	var root = document.querySelector( '[data-fge-gallery]' );
-
-	function render() {
-		if ( ! root ) { return; }
+	// ── Render ────────────────────────────────────────────────────────────────
+	function renderAll() {
+		if ( logoHost ) { logoHost.innerHTML = ''; }
 		root.innerHTML = '';
-		if ( ! state.gallery.length ) {
-			root.appendChild( renderEmpty() );
-			return;
+		root.appendChild( renderChecklist() );
+		root.appendChild( renderSlots() );
+		root.appendChild( renderGallery() );
+	}
+
+	function renderChecklist() {
+		var n    = state.gallery.length;
+		var list = el( 'div', 'fge-checklist' );
+		list.appendChild( checkItem( !! state.logo, T.checkLogo ) );
+		list.appendChild( checkItem( n > 0, T.checkCover ) );
+		list.appendChild( checkItem( n >= L.recommendedMin, T.checkPhotos + ' ' + n + '/' + L.recommendedMin ) );
+		return list;
+	}
+	function checkItem( ok, label ) {
+		var it = el( 'span', 'fge-check' + ( ok ? ' is-ok' : '' ) );
+		it.appendChild( el( 'span', 'fge-check-dot', ok ? '✓' : '' ) );
+		it.appendChild( document.createTextNode( label ) );
+		return it;
+	}
+
+	function renderSlots() {
+		var row = el( 'div', 'fge-slots' + ( logoHost ? '' : ' no-logo' ) );
+		if ( logoHost ) { row.appendChild( renderLogoSlot() ); }
+		row.appendChild( renderCoverSlot() );
+		return row;
+	}
+
+	function renderLogoSlot() {
+		var wrap = el( 'div', 'fge-slot-wrap fge-slot-wrap-logo' );
+		wrap.appendChild( el( 'div', 'fge-slot-label', T.slotLogoLabel ) );
+		var slot = el( 'div', 'fge-slot fge-slot-logo' + ( state.logo ? ' is-filled' : '' ) );
+		slot.setAttribute( 'role', 'button' );
+		slot.tabIndex = 0;
+		if ( state.logo ) {
+			var img = el( 'span', 'fge-slot-img is-contain' );
+			img.style.backgroundImage = "url('" + ( state.logo.thumb || state.logo.full ) + "')";
+			slot.appendChild( img );
+			slot.appendChild( el( 'span', 'fge-slot-swap', T.slotSwap ) );
+		} else {
+			slot.appendChild( el( 'span', 'fge-slot-ico', ICON_IMAGE ) );
+			slot.appendChild( el( 'span', 'fge-slot-t', T.slotLogoEmpty ) );
 		}
-		root.appendChild( renderHint() );
-		root.appendChild( renderGrid() );
+		if ( state.logoBusy ) { slot.appendChild( el( 'span', 'fge-tile-spin' ) ); }
+		var handle = function ( files ) { doLogoUpload( files[ 0 ] ); };
+		slot.addEventListener( 'click', function () { if ( ! state.logoBusy ) { pickFiles( handle, false ); } } );
+		wireDrop( slot, handle );
+		wrap.appendChild( slot );
+		wrap.appendChild( el( 'div', 'fge-slot-specs', L.exts + ' · ideal 400 × 400 px · max. ' + human( L.logo ) ) );
+		return wrap;
 	}
 
-	function renderEmpty() {
-		var box = el( 'div', 'fge-gallery-empty' );
-		box.appendChild( el( 'div', 'fge-gallery-empty-ico', ICON_CAMERA ) );
-		var btn = el( 'button', 'fge-btn fge-btn-light', T.addPhotos );
-		btn.type = 'button';
-		btn.addEventListener( 'click', function () { pickFiles( openModal ); } );
-		box.appendChild( btn );
-		return box;
+	function renderCoverSlot() {
+		var cover = state.gallery[ 0 ] || null;
+		var wrap  = el( 'div', 'fge-slot-wrap fge-slot-wrap-cover' );
+		wrap.appendChild( el( 'div', 'fge-slot-label', T.slotCoverLabel ) );
+		var slot = el( 'div', 'fge-slot fge-slot-cover' + ( cover ? ' is-filled' : '' ) );
+		slot.setAttribute( 'role', 'button' );
+		slot.tabIndex = 0;
+		if ( cover ) {
+			var img = el( 'span', 'fge-slot-img' );
+			img.style.backgroundImage = "url('" + ( cover.large || cover.thumb || cover.full ) + "')";
+			slot.appendChild( img );
+			slot.appendChild( el( 'span', 'fge-gallery-badge', T.coverBadge ) );
+			slot.appendChild( el( 'span', 'fge-slot-swap', T.slotSwap ) );
+		} else {
+			slot.appendChild( el( 'span', 'fge-slot-ico', ICON_CAMERA ) );
+			slot.appendChild( el( 'span', 'fge-slot-t', T.slotCoverEmpty ) );
+		}
+		var handle = function ( files ) { queueUploads( [ files[ 0 ] ], true ); };
+		slot.addEventListener( 'click', function () { pickFiles( handle, false ); } );
+		wireDrop( slot, handle );
+		wrap.appendChild( slot );
+		wrap.appendChild( el( 'div', 'fge-slot-specs', L.exts + ' · mind. ' + L.coverMinW + ' px breit · max. ' + human( L.gallery ) ) );
+		if ( cover && cover.width > 0 && cover.width < L.coverMinW ) {
+			wrap.appendChild( el( 'div', 'fge-slot-warn', T.coverMinWarn.replace( '%1$d', cover.width ).replace( '%2$d', L.coverMinW ) ) );
+		}
+		return wrap;
 	}
 
-	function renderHint() {
+	function renderGallery() {
+		var wrap = el( 'div', 'fge-gal' );
+		wrap.appendChild( el( 'div', 'fge-slot-label', T.galleryTitle ) );
+
+		var grid = el( 'div', 'fge-gallery-grid' );
+
+		// Erste Kachel ist immer die Plus-Kachel, auch nach Uploads.
+		var add = el( 'button', 'fge-gallery-add' );
+		add.type = 'button';
+		add.innerHTML = '<span class="fge-gallery-add-plus">+</span><span>' + T.dropHint + '</span>';
+		add.addEventListener( 'click', function () {
+			pickFiles( function ( fs ) { queueUploads( fs, false ); }, true );
+		} );
+		grid.appendChild( add );
+
+		state.gallery.slice( 1 ).forEach( function ( photo ) {
+			grid.appendChild( renderTile( photo ) );
+		} );
+		state.pending.forEach( function ( p, i ) {
+			grid.appendChild( renderPendingTile( p, i ) );
+		} );
+
+		// Auf eine volle Dreierreihe auffüllen, damit das Raster sofort erkennbar ist.
+		// Mit jedem Upload wächst das Grid von selbst weiter.
+		var total = 1 + state.gallery.slice( 1 ).length + state.pending.length;
+		for ( var ph = total; ph < 3; ph++ ) {
+			grid.appendChild( el( 'div', 'fge-gallery-ph', ICON_IMAGE ) );
+		}
+
+		wireDrop( grid, function ( fs ) { queueUploads( fs, false ); } );
+		wrap.appendChild( grid );
+		wrap.appendChild( el( 'div', 'fge-slot-specs', L.exts + ' · max. ' + human( L.gallery ) + ' pro Foto' ) );
+
 		var need = L.recommendedMin - state.gallery.length;
-		var wrap = el( 'div', 'fge-gallery-hints' );
-		wrap.appendChild( el( 'p', 'fge-gallery-hint', T.reorderHint ) );
-		var rec = el( 'p', 'fge-gallery-rec' );
+		var rec  = el( 'p', 'fge-gallery-rec' );
 		if ( need > 0 ) {
 			rec.textContent = T.recommend.replace( '%d', need );
 			rec.dataset.kind = 'warn';
@@ -121,79 +240,65 @@
 			rec.textContent = T.recommendOk;
 			rec.dataset.kind = 'ok';
 		}
+		wrap.appendChild( el( 'p', 'fge-gallery-hint', T.reorderHint ) );
 		wrap.appendChild( rec );
 		return wrap;
 	}
 
-	function renderGrid() {
-		var grid = el( 'div', 'fge-gallery-grid' );
-		state.gallery.forEach( function ( photo, i ) {
-			grid.appendChild( renderItem( photo, i === 0 ) );
-		} );
-		var add = el( 'button', 'fge-gallery-add' );
-		add.type = 'button';
-		add.innerHTML = '<span class="fge-gallery-add-plus">+</span><span>' + T.addMore + '</span>';
-		add.addEventListener( 'click', function () { pickFiles( openModal ); } );
-		grid.appendChild( add );
-		return grid;
-	}
+	function renderTile( photo ) {
+		var tile = el( 'div', 'fge-gallery-item' );
+		tile.setAttribute( 'draggable', 'true' );
+		tile.dataset.id = photo.id;
+		tile.style.backgroundImage = "url('" + ( photo.large || photo.thumb || photo.full ) + "')";
 
-	function renderItem( photo, isCover ) {
-		var item = el( 'div', 'fge-gallery-item' + ( isCover ? ' is-cover' : '' ) );
-		item.setAttribute( 'draggable', 'true' );
-		item.dataset.id = photo.id;
-		item.style.backgroundImage = "url('" + ( photo.large || photo.thumb || photo.full ) + "')";
+		var act = el( 'div', 'fge-tile-actions' );
+		var star = el( 'button', 'fge-tile-btn', ICON_STAR );
+		star.type = 'button';
+		star.title = T.menuCover;
+		star.addEventListener( 'click', function ( e ) { e.stopPropagation(); setCover( photo.id ); } );
+		var rm = el( 'button', 'fge-tile-btn is-danger', ICON_TRASH );
+		rm.type = 'button';
+		rm.title = T.menuRemove;
+		rm.addEventListener( 'click', function ( e ) { e.stopPropagation(); removePhoto( photo.id ); } );
+		act.appendChild( star );
+		act.appendChild( rm );
+		tile.appendChild( act );
 
-		if ( isCover ) {
-			item.appendChild( el( 'span', 'fge-gallery-badge', T.coverBadge ) );
-		}
-
-		var menuBtn = el( 'button', 'fge-gallery-menu-btn', ICON_DOTS );
-		menuBtn.type = 'button';
-		menuBtn.addEventListener( 'click', function ( e ) {
-			e.stopPropagation();
-			toggleMenu( item, photo, isCover );
-		} );
-		item.appendChild( menuBtn );
-
-		// Drag & drop reorder.
-		item.addEventListener( 'dragstart', function () { state.dragId = photo.id; item.classList.add( 'dragging' ); } );
-		item.addEventListener( 'dragend', function () { item.classList.remove( 'dragging' ); } );
-		item.addEventListener( 'dragover', function ( e ) { e.preventDefault(); } );
-		item.addEventListener( 'drop', function ( e ) {
+		// Drag & Drop: Reihenfolge innerhalb der Galerie.
+		tile.addEventListener( 'dragstart', function () { state.dragId = photo.id; tile.classList.add( 'dragging' ); } );
+		tile.addEventListener( 'dragend', function () { tile.classList.remove( 'dragging' ); } );
+		tile.addEventListener( 'dragover', function ( e ) { if ( ! hasFiles( e ) ) { e.preventDefault(); } } );
+		tile.addEventListener( 'drop', function ( e ) {
+			if ( hasFiles( e ) ) { return; }
 			e.preventDefault();
 			moveBefore( state.dragId, photo.id );
 		} );
-		return item;
+		return tile;
 	}
 
-	function toggleMenu( item, photo, isCover ) {
-		var open = item.querySelector( '.fge-gallery-pop' );
-		closeMenus();
-		if ( open ) { return; }
-		var pop = el( 'div', 'fge-gallery-pop' );
-		if ( ! isCover ) {
-			var mk = el( 'button', 'fge-gallery-pop-item', T.menuCover );
-			mk.type = 'button';
-			mk.addEventListener( 'click', function () { closeMenus(); setCover( photo.id ); } );
-			pop.appendChild( mk );
+	function renderPendingTile( p, i ) {
+		var tile = el( 'div', 'fge-gallery-item is-pending' + ( p.status === 'error' ? ' is-error' : '' ) );
+		tile.style.backgroundImage = "url('" + p.url + "')";
+		if ( p.status === 'error' ) {
+			tile.appendChild( el( 'span', 'fge-tile-err', p.error ) );
+			tile.title = 'Klicken zum Entfernen';
+			tile.addEventListener( 'click', function () { state.pending.splice( i, 1 ); renderAll(); } );
+		} else {
+			tile.appendChild( el( 'span', 'fge-tile-spin' ) );
 		}
-		var rm = el( 'button', 'fge-gallery-pop-item is-danger', T.menuRemove );
-		rm.type = 'button';
-		rm.addEventListener( 'click', function () { closeMenus(); removePhoto( photo.id ); } );
-		pop.appendChild( rm );
-		item.appendChild( pop );
+		return tile;
 	}
-	function closeMenus() {
-		var ps = root.querySelectorAll( '.fge-gallery-pop' );
-		Array.prototype.forEach.call( ps, function ( p ) { p.parentNode.removeChild( p ); } );
-	}
-	document.addEventListener( 'click', closeMenus );
 
-	// ── Gallery actions ─────────────────────────────────────────────────────
+	// ── Actions ───────────────────────────────────────────────────────────────
+	function idx( id ) {
+		for ( var i = 0; i < state.gallery.length; i++ ) {
+			if ( state.gallery[ i ].id === id ) { return i; }
+		}
+		return -1;
+	}
 	function commitOrder() {
 		var ids = state.gallery.map( function ( p ) { return p.id; } );
-		render();
+		renderAll();
 		saveOrder( ids ).catch( function ( err ) { alert( '' + err ); } );
 	}
 	function moveBefore( dragId, targetId ) {
@@ -215,136 +320,78 @@
 		if ( ! window.confirm( T.confirmDelete ) ) { return; }
 		deletePhoto( id ).then( function ( res ) {
 			state.gallery = res.gallery || [];
-			render();
+			renderAll();
 		} ).catch( function ( err ) { alert( '' + err ); } );
 	}
-	function idx( id ) {
-		for ( var i = 0; i < state.gallery.length; i++ ) { if ( state.gallery[ i ].id === id ) { return i; } }
-		return -1;
-	}
 
-	// ── Upload modal ──────────────────────────────────────────────────────────
-	function openModal( files ) {
-		var pending = []; // { file, url, status: 'queued'|'up'|'done'|'error', error }
-		var uploading = false;
-
-		var backdrop = el( 'div', 'fge-gm-backdrop' );
-		var modal = el( 'div', 'fge-gm-modal' );
-		backdrop.appendChild( modal );
-
-		var head = el( 'div', 'fge-gm-head' );
-		var closeBtn = el( 'button', 'fge-gm-x', '✕' ); closeBtn.type = 'button';
-		var title = el( 'div', 'fge-gm-title' );
-		title.innerHTML = '<strong>' + T.modalTitle + '</strong><span class="fge-gm-sub"></span>';
-		var addBtn = el( 'button', 'fge-gm-add', '+' ); addBtn.type = 'button';
-		head.appendChild( closeBtn ); head.appendChild( title ); head.appendChild( addBtn );
-
-		var grid = el( 'div', 'fge-gm-grid' );
-		var foot = el( 'div', 'fge-gm-foot' );
-		var cancel = el( 'button', 'fge-btn fge-btn-quiet', T.cancel ); cancel.type = 'button';
-		var go = el( 'button', 'fge-btn fge-btn-dark', T.upload ); go.type = 'button';
-		foot.appendChild( cancel ); foot.appendChild( go );
-
-		modal.appendChild( head ); modal.appendChild( grid ); modal.appendChild( foot );
-		document.body.appendChild( backdrop );
-
-		function close() { if ( backdrop.parentNode ) { backdrop.parentNode.removeChild( backdrop ); } }
-		function sub() {
-			var done = pending.filter( function ( p ) { return p.status === 'done'; } ).length;
-			var s = title.querySelector( '.fge-gm-sub' );
-			s.textContent = uploading
-				? T.uploaded.replace( '%1$d', done ).replace( '%2$d', pending.length )
-				: T.selected.replace( '%d', pending.length );
-		}
-		function addFiles( list ) {
-			list.forEach( function ( file ) {
-				var err = checkFile( file, L.gallery );
-				pending.push( { file: file, url: URL.createObjectURL( file ), status: err ? 'error' : 'queued', error: err } );
-			} );
-			renderGM();
-		}
-		function renderGM() {
-			grid.innerHTML = '';
-			pending.forEach( function ( p, i ) {
-				var cell = el( 'div', 'fge-gm-item' + ( p.status === 'error' ? ' is-error' : '' ) );
-				cell.style.backgroundImage = "url('" + p.url + "')";
-				if ( ! uploading && p.status !== 'done' ) {
-					var x = el( 'button', 'fge-gm-rm', '🗑'); x.type = 'button';
-					x.addEventListener( 'click', function () { pending.splice( i, 1 ); renderGM(); } );
-					cell.appendChild( x );
-				}
-				if ( p.status === 'up' ) { cell.appendChild( el( 'span', 'fge-gm-status fge-gm-spin' ) ); }
-				if ( p.status === 'done' ) { cell.appendChild( el( 'span', 'fge-gm-status fge-gm-check', '✓' ) ); }
-				if ( p.status === 'error' ) { cell.appendChild( el( 'span', 'fge-gm-err', p.error ) ); }
-				grid.appendChild( cell );
-			} );
-			sub();
-			go.disabled = uploading || ! pending.some( function ( p ) { return p.status === 'queued'; } );
-		}
-		function doUpload() {
-			uploading = true; renderGM();
-			var queue = pending.filter( function ( p ) { return p.status === 'queued'; } );
-			var chain = Promise.resolve();
-			queue.forEach( function ( p ) {
-				chain = chain.then( function () {
-					p.status = 'up'; renderGM();
-					return uploadPhoto( p.file ).then( function ( res ) {
-						p.status = 'done';
-						state.gallery = res.gallery || state.gallery;
-						renderGM();
-					} ).catch( function ( err ) {
-						p.status = 'error'; p.error = '' + err; renderGM();
-					} );
-				} );
-			} );
-			chain.then( function () {
-				uploading = false;
-				render();
-				if ( pending.every( function ( p ) { return p.status === 'done'; } ) ) { close(); }
-				else { renderGM(); }
-			} );
-		}
-
-		closeBtn.addEventListener( 'click', close );
-		cancel.addEventListener( 'click', close );
-		backdrop.addEventListener( 'click', function ( e ) { if ( e.target === backdrop && ! uploading ) { close(); } } );
-		addBtn.addEventListener( 'click', function () { pickFiles( addFiles ); } );
-		go.addEventListener( 'click', doUpload );
-
-		addFiles( files );
-	}
-
-	// ── Logo uploader ─────────────────────────────────────────────────────────
-	function renderLogo() {
-		var host = document.querySelector( '[data-fge-logo]' );
-		if ( ! host ) { return; }
-		host.innerHTML = '';
-		host.appendChild( el( 'div', 'fge-logo-label', T.logoLabel ) );
-		host.appendChild( el( 'div', 'fge-logo-hint', T.logoHint ) );
-		var zone = el( 'div', 'fge-logo-zone' + ( state.logo ? ' filled' : '' ) );
-		if ( state.logo ) {
-			var prev = el( 'span', 'fge-logo-preview' );
-			prev.style.backgroundImage = "url('" + ( state.logo.thumb || state.logo.full ) + "')";
-			zone.appendChild( prev );
-		}
-		var btn = el( 'button', 'fge-btn fge-btn-light', state.logo ? T.logoReplace : T.logoChoose );
-		btn.type = 'button';
-		btn.addEventListener( 'click', function () {
-			pickFiles( function ( files ) {
-				var f = files[ 0 ];
-				var err = checkFile( f, L.logo );
-				if ( err ) { alert( err ); return; }
-				btn.disabled = true;
-				uploadLogo( f ).then( function ( res ) {
-					state.logo = res.logo; renderLogo();
-				} ).catch( function ( e ) { alert( '' + e ); btn.disabled = false; } );
+	/** Dateien validieren, als Pending-Kacheln zeigen und sequenziell hochladen. */
+	function queueUploads( files, toFront ) {
+		files.forEach( function ( file ) {
+			var err = checkFile( file, L.gallery );
+			state.pending.push( {
+				file: file,
+				url: URL.createObjectURL( file ),
+				status: err ? 'error' : 'queued',
+				error: err,
+				toFront: !! toFront,
 			} );
 		} );
-		zone.appendChild( btn );
-		host.appendChild( zone );
+		renderAll();
+		processQueue();
+	}
+
+	var processing = false;
+	function processQueue() {
+		if ( processing ) { return; }
+		var next = null;
+		for ( var i = 0; i < state.pending.length; i++ ) {
+			if ( state.pending[ i ].status === 'queued' ) { next = state.pending[ i ]; break; }
+		}
+		if ( ! next ) { return; }
+		processing = true;
+		next.status = 'up';
+		renderAll();
+		var prevIds = state.gallery.map( function ( p ) { return p.id; } );
+		uploadPhoto( next.file ).then( function ( res ) {
+			state.gallery = res.gallery || state.gallery;
+			if ( next.toFront ) {
+				// Neues Bild ermitteln und an Position 1 (Titelbild) setzen.
+				var fresh = state.gallery.filter( function ( p ) { return prevIds.indexOf( p.id ) === -1; } );
+				if ( fresh.length ) {
+					var j = idx( fresh[ fresh.length - 1 ].id );
+					if ( j > 0 ) {
+						var moved = state.gallery.splice( j, 1 )[ 0 ];
+						state.gallery.unshift( moved );
+						saveOrder( state.gallery.map( function ( p ) { return p.id; } ) ).catch( function () {} );
+					}
+				}
+			}
+			state.pending.splice( state.pending.indexOf( next ), 1 );
+		} ).catch( function ( err ) {
+			next.status = 'error';
+			next.error = '' + err;
+		} ).then( function () {
+			processing = false;
+			renderAll();
+			processQueue();
+		} );
+	}
+
+	function doLogoUpload( file ) {
+		var err = checkFile( file, L.logo );
+		if ( err ) { alert( err ); return; }
+		state.logoBusy = true;
+		renderAll();
+		uploadLogo( file ).then( function ( res ) {
+			state.logo = res.logo;
+		} ).catch( function ( e ) {
+			alert( '' + e );
+		} ).then( function () {
+			state.logoBusy = false;
+			renderAll();
+		} );
 	}
 
 	// ── Init ────────────────────────────────────────────────────────────────
-	renderLogo();
-	render();
+	renderAll();
 } )();

@@ -408,7 +408,7 @@ function fge_send_partner_welcome_email( int $user_id, int $partner_id ): bool {
 	$first      = $user->first_name !== '' ? $user->first_name : $user->display_name;
 	$greeting   = $first !== '' ? 'Hallo ' . esc_html( $first ) . ',' : 'Hallo,';
 
-	$subject = 'Willkommen bei Firmengolf — dein Zugang zum Partner-Portal';
+	$subject = 'Willkommen bei Firmengolf: Dein Zugang zum Partner-Portal';
 	$content = '
 		<p>' . $greeting . '</p>
 		<p>schön, dass <strong>' . esc_html( $name ) . '</strong> dabei ist! Dein persönlicher Zugang zum Firmengolf Partner-Portal wurde erstellt.</p>

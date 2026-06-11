@@ -1,8 +1,9 @@
-/* Airbnb-style partner photo gallery widget. Tokens come from fge-frontend.css. */
+/* Partner-Medien-Widget: Checkliste + Logo-/Titelbild-Slots + Galerie-Dropzone.
+   Tokens kommen aus fge-frontend.css. */
 
 .fge-media { display: flex; flex-direction: column; gap: 28px; }
 
-/* ── Buttons ─────────────────────────────────────────────────────────────── */
+/* ── Buttons (auch vom Event-Picker genutzt) ─────────────────────────────── */
 .fge-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   font: inherit; font-size: 15px; font-weight: 600;
@@ -16,141 +17,143 @@
 .fge-btn-dark:not(:disabled):hover { filter: brightness(1.15); }
 .fge-btn-quiet { background: transparent; color: var(--ink-700); text-decoration: underline; padding: 12px 8px; }
 
-/* ── Logo uploader ─────────────────────────────────────────────────────────── */
-.fge-logo-label { font-size: 16px; font-weight: 600; color: var(--ink-900); }
-.fge-logo-hint  { font-size: 13px; color: var(--ink-500); margin-top: 4px; line-height: 1.5; }
-.fge-logo-zone {
-  display: flex; align-items: center; gap: 18px; margin-top: 12px;
-  padding: 16px; border: 1px solid var(--ink-200); border-radius: var(--radius-lg, 16px);
-  background: var(--paper-50);
+/* ── Fortschritts-Checkliste ─────────────────────────────────────────────── */
+.fge-checklist { display: flex; flex-wrap: wrap; gap: 10px; }
+.fge-check {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--ink-600, var(--ink-500));
+  background: var(--paper-100); border: 1px solid var(--ink-200);
+  padding: 7px 14px; border-radius: var(--radius-pill, 999px);
 }
-.fge-logo-preview {
-  width: 72px; height: 72px; flex: none; border-radius: var(--radius-md, 12px);
-  background-size: contain; background-position: center; background-repeat: no-repeat;
-  background-color: var(--paper-100);
+.fge-check-dot {
+  width: 16px; height: 16px; flex: none; border-radius: 999px;
+  border: 1.5px solid var(--ink-300); background: var(--paper-50);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; line-height: 1; color: transparent;
 }
+.fge-check.is-ok { color: var(--fairway-700); border-color: var(--fairway-200); background: var(--fairway-100); }
+.fge-check.is-ok .fge-check-dot { background: var(--fairway-700); border-color: var(--fairway-700); color: #fff; }
 
-/* ── Empty state ───────────────────────────────────────────────────────────── */
-.fge-gallery-empty {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
-  min-height: 360px; padding: 40px;
-  border: 1.5px dashed var(--ink-300); border-radius: var(--radius-lg, 20px);
-  background: var(--paper-100);
+/* ── Slots (Logo + Titelbild) ────────────────────────────────────────────── */
+.fge-slots { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
+.fge-slots.no-logo { grid-template-columns: 1fr; }
+.fge-slot-label { font-size: 14px; font-weight: 600; color: var(--ink-900); margin-bottom: 8px; }
+.fge-slot-specs { font-size: 12px; color: var(--ink-500); line-height: 1.5; margin-top: 8px; }
+.fge-slot-warn { font-size: 12px; font-weight: 500; color: #b45309; line-height: 1.5; margin-top: 6px; }
+.fge-slot {
+  position: relative; overflow: hidden;
+  border: 1.5px dashed var(--ink-300); border-radius: var(--radius-lg, 16px);
+  background: var(--paper-100); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; text-align: center; padding: 18px;
+  transition: border-color var(--dur-fast, .15s) var(--ease-out, ease), background var(--dur-fast, .15s) var(--ease-out, ease);
 }
-.fge-gallery-empty-ico { width: 72px; height: 72px; color: var(--ink-500); }
-.fge-gallery-empty-ico svg { width: 100%; height: 100%; }
+.fge-slot:hover, .fge-slot.is-dragover { border-color: var(--fairway-700); background: var(--fairway-100); }
+.fge-slot.is-filled { border-style: solid; border-color: var(--ink-200); background: var(--paper-200); padding: 0; }
+.fge-slot-logo  { aspect-ratio: 1/1; }
+.fge-slot-cover { aspect-ratio: 16/9; }
+.fge-slot-ico { width: 34px; height: 34px; color: var(--ink-500); }
+.fge-slot-ico svg { width: 100%; height: 100%; }
+.fge-slot-t { font-size: 14px; font-weight: 600; color: var(--ink-800); }
+.fge-slot-h { font-size: 12px; line-height: 1.5; color: var(--ink-500); max-width: 320px; }
+.fge-slot-img {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+.fge-slot-img.is-contain { background-size: contain; margin: 12px; }
+.fge-slot-swap {
+  position: absolute; right: 10px; bottom: 10px; z-index: 2;
+  background: rgba(255,255,255,.95); color: var(--ink-900);
+  font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  opacity: 0; transition: opacity var(--dur-fast, .15s) var(--ease-out, ease);
+}
+.fge-slot:hover .fge-slot-swap, .fge-slot:focus-visible .fge-slot-swap { opacity: 1; }
+.fge-slot.is-dragover .fge-slot-swap { opacity: 1; }
 
-/* ── Hints ─────────────────────────────────────────────────────────────────── */
-.fge-gallery-hints { margin-bottom: 16px; }
-.fge-gallery-hint { font-size: 14px; color: var(--ink-600, var(--ink-500)); margin: 0; }
-.fge-gallery-rec  { font-size: 13px; margin: 6px 0 0; font-weight: 500; }
+/* ── Galerie-Hinweise ────────────────────────────────────────────────────── */
+.fge-gallery-hint { font-size: 13px; color: var(--ink-600, var(--ink-500)); margin: 10px 0 0; }
+.fge-gallery-rec  { font-size: 13px; margin: 8px 0 0; font-weight: 500; }
 .fge-gallery-rec[data-kind="warn"] { color: #b45309; }
 .fge-gallery-rec[data-kind="ok"]   { color: var(--fairway-700); }
 .fge-gallery-loading { font-size: 14px; color: var(--ink-500); padding: 24px; text-align: center; }
 
-/* ── Filled grid ───────────────────────────────────────────────────────────── */
+/* ── Galerie-Grid (Dropzone) ─────────────────────────────────────────────── */
 .fge-gallery-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  padding: 12px; border-radius: var(--radius-lg, 16px);
+  border: 1.5px dashed transparent;
+  transition: border-color var(--dur-fast, .15s) var(--ease-out, ease), background var(--dur-fast, .15s) var(--ease-out, ease);
 }
+.fge-gallery-grid.is-dragover { border-color: var(--fairway-700); background: var(--fairway-100); }
 .fge-gallery-item {
-  position: relative; aspect-ratio: 3/2; border-radius: var(--radius-md, 12px);
+  position: relative; aspect-ratio: 3/2; border-radius: var(--radius-lg, 16px);
   background-size: cover; background-position: center; background-color: var(--paper-200);
-  cursor: grab; overflow: visible;
+  background-clip: padding-box;
+  border: 1px solid var(--ink-200);
+  cursor: grab; overflow: hidden;
 }
-.fge-gallery-item.is-cover { grid-column: 1 / -1; aspect-ratio: 16/9; }
 .fge-gallery-item.dragging { opacity: .4; }
+.fge-gallery-item.is-pending { cursor: default; }
+.fge-gallery-item.is-error { outline: 2px solid var(--danger, #c0392b); }
 .fge-gallery-badge {
-  position: absolute; top: 12px; left: 12px;
+  position: absolute; top: 12px; left: 12px; z-index: 2;
   background: var(--paper-50); color: var(--ink-900);
   font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: var(--radius-pill, 999px);
   box-shadow: 0 1px 4px rgba(0,0,0,.18);
 }
-.fge-gallery-menu-btn {
-  position: absolute; top: 10px; right: 10px;
-  width: 32px; height: 32px; border: 0; border-radius: 999px;
-  background: var(--paper-50); color: var(--ink-900); cursor: pointer;
+.fge-tile-actions {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  display: flex; gap: 6px;
+  opacity: 0; transition: opacity var(--dur-fast, .15s) var(--ease-out, ease);
+}
+.fge-gallery-item:hover .fge-tile-actions { opacity: 1; }
+@media (hover: none) { .fge-tile-actions { opacity: 1; } }
+.fge-tile-btn {
+  width: 32px; height: 32px; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgba(255,255,255,.95); color: var(--ink-900);
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 1px 4px rgba(0,0,0,.2);
 }
-.fge-gallery-menu-btn svg { width: 18px; height: 18px; }
-.fge-gallery-menu-btn:hover { background: #fff; }
-.fge-gallery-pop {
-  position: absolute; top: 46px; right: 10px; z-index: 5;
-  background: var(--paper-50); border-radius: var(--radius-md, 12px);
-  box-shadow: 0 6px 24px rgba(0,0,0,.18); padding: 6px; min-width: 200px;
-  display: flex; flex-direction: column;
+.fge-tile-btn svg { width: 16px; height: 16px; }
+.fge-tile-btn:hover { background: #fff; }
+.fge-tile-btn.is-danger:hover { color: var(--danger, #c0392b); }
+.fge-tile-spin {
+  position: absolute; top: 50%; left: 50%; z-index: 2;
+  width: 30px; height: 30px; border-radius: 999px;
+  border: 3px solid rgba(255,255,255,.45); border-top-color: #fff;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,.18);
+  animation: fge-spin .8s linear infinite;
 }
-.fge-gallery-pop-item {
-  text-align: left; background: transparent; border: 0; cursor: pointer;
-  font: inherit; font-size: 14px; padding: 10px 12px; border-radius: 8px; color: var(--ink-900);
+@keyframes fge-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.fge-tile-err {
+  position: absolute; inset: auto 0 0 0; z-index: 2;
+  background: rgba(192,57,43,.92); color: #fff;
+  font-size: 11px; line-height: 1.4; padding: 6px 8px;
 }
-.fge-gallery-pop-item:hover { background: var(--paper-200); }
-.fge-gallery-pop-item.is-danger { color: var(--danger, #c0392b); }
-.fge-gallery-add {
-  aspect-ratio: 3/2; border: 1.5px dashed var(--ink-300); border-radius: var(--radius-md, 12px);
+/* .fge-media-Präfix: schlägt den globalen `.fge-page button`-Reset, der sonst den Rahmen entfernt. */
+.fge-media .fge-gallery-add {
+  aspect-ratio: 3/2; border: 1.5px dashed var(--ink-300); border-radius: var(--radius-lg, 16px);
   background: var(--paper-100); cursor: pointer; color: var(--ink-700);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  font: inherit; font-size: 14px; font-weight: 500;
+  font: inherit; font-size: 13px; font-weight: 500; padding: 10px; text-align: center;
+  transition: border-color var(--dur-fast, .15s) var(--ease-out, ease), background var(--dur-fast, .15s) var(--ease-out, ease);
 }
-.fge-gallery-add:hover { border-color: var(--ink-700); }
+.fge-media .fge-gallery-add:hover { border-color: var(--fairway-700); color: var(--fairway-700); background: var(--fairway-100); }
 .fge-gallery-add-plus { font-size: 28px; font-weight: 300; line-height: 1; }
-
-/* ── Upload modal ──────────────────────────────────────────────────────────── */
-.fge-gm-backdrop {
-  position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.45);
-  display: flex; align-items: center; justify-content: center; padding: 20px;
-}
-.fge-gm-modal {
-  background: var(--paper-50, #fff); border-radius: var(--radius-lg, 20px);
-  width: 100%; max-width: 480px; max-height: 88vh; display: flex; flex-direction: column;
-  overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.3);
-}
-.fge-gm-head {
-  display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
-  padding: 12px 16px; border-bottom: 1px solid var(--ink-200);
-}
-.fge-gm-x, .fge-gm-add {
-  width: 36px; height: 36px; border: 0; border-radius: 999px; background: transparent;
-  cursor: pointer; font-size: 20px; color: var(--ink-900);
-}
-.fge-gm-x:hover, .fge-gm-add:hover { background: var(--paper-200); }
-.fge-gm-title { text-align: center; font-size: 15px; color: var(--ink-900); }
-.fge-gm-sub { display: block; font-size: 12px; color: var(--ink-500); font-weight: 400; }
-.fge-gm-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-  padding: 16px; overflow-y: auto;
-}
-.fge-gm-item {
-  position: relative; aspect-ratio: 1/1; border-radius: var(--radius-md, 12px);
-  background-size: cover; background-position: center; background-color: var(--paper-200);
-}
-.fge-gm-item.is-error { outline: 2px solid var(--danger, #c0392b); }
-.fge-gm-rm {
-  position: absolute; top: 8px; right: 8px; width: 30px; height: 30px;
-  border: 0; border-radius: 999px; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; font-size: 14px;
-}
-.fge-gm-err {
-  position: absolute; left: 6px; right: 6px; bottom: 6px;
-  background: var(--danger, #c0392b); color: #fff; font-size: 11px; padding: 4px 6px; border-radius: 6px;
-}
-.fge-gm-status {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  width: 36px; height: 36px; border-radius: 999px;
+/* Leere Platzhalter-Kacheln: gleicher gestrichelter Look, ohne Plus. */
+.fge-gallery-ph {
+  aspect-ratio: 3/2; border: 1.5px dashed var(--ink-200); border-radius: var(--radius-lg, 16px);
+  background: var(--paper-100); color: var(--ink-300);
   display: flex; align-items: center; justify-content: center;
 }
-.fge-gm-check { background: var(--fairway-700, #2f6b3a); color: #fff; font-size: 18px; }
-.fge-gm-spin {
-  border: 3px solid rgba(255,255,255,.5); border-top-color: #fff;
-  background: rgba(0,0,0,.25); animation: fge-gm-rot .8s linear infinite;
-}
-@keyframes fge-gm-rot { to { transform: translate(-50%,-50%) rotate(360deg); } }
-.fge-gm-foot {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; border-top: 1px solid var(--ink-200);
-}
+.fge-gallery-ph svg { width: 26px; height: 26px; }
 
-@media (max-width: 600px) {
-  .fge-gallery-item.is-cover { aspect-ratio: 4/3; }
+@media (max-width: 700px) {
+  .fge-slots { grid-template-columns: 1fr; }
+  .fge-slot-logo { aspect-ratio: 16/9; }
+  .fge-gallery-grid { grid-template-columns: 1fr 1fr; padding: 0; border: 0; }
 }
 
 /* ── Event image picker ────────────────────────────────────────────────────── */

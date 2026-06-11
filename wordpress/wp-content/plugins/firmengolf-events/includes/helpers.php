@@ -4,6 +4,62 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/** Monatsnamen 1–12 (für Saison von/bis). */
+function fge_month_names(): array {
+	return [
+		1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April',
+		5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August',
+		9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember',
+	];
+}
+
+/** Lesbares Saison-Label aus von/bis-Monat (1–12). Januar–Dezember = „Ganzjährig". */
+function fge_season_range_label( int $from, int $to ): string {
+	if ( 1 === $from && 12 === $to ) {
+		return 'Ganzjährig';
+	}
+	$m = fge_month_names();
+	return trim( ( $m[ $from ] ?? '' ) . ' – ' . ( $m[ $to ] ?? '' ), ' –' );
+}
+
+/**
+ * True, wenn der aktuelle Monat außerhalb der Saison des Partners liegt.
+ * Dynamisch abgeleitet (kein gespeicherter Status, kein Cron) — endet automatisch
+ * mit Saisonbeginn. Ohne gepflegte Saison (von/bis) nie offseason.
+ */
+function fge_partner_is_offseason( int $partner_id ): bool {
+	$sf = (int) get_post_meta( $partner_id, '_fge_season_from', true );
+	$st = (int) get_post_meta( $partner_id, '_fge_season_to', true );
+	if ( $sf < 1 || $st < 1 ) {
+		return false;
+	}
+	$mo = (int) current_time( 'n' );
+	// Saison kann übers Jahresende gehen (z. B. Oktober–März).
+	$in = $sf <= $st ? ( $mo >= $sf && $mo <= $st ) : ( $mo >= $sf || $mo <= $st );
+	return ! $in;
+}
+
+/** „Saison startet im April wieder" — leer, wenn der Partner nicht offseason ist. */
+function fge_partner_offseason_note( int $partner_id ): string {
+	if ( ! fge_partner_is_offseason( $partner_id ) ) {
+		return '';
+	}
+	$sf = (int) get_post_meta( $partner_id, '_fge_season_from', true );
+	$m  = fge_month_names();
+	return isset( $m[ $sf ] ) ? 'Saison startet im ' . $m[ $sf ] . ' wieder' : 'Aktuell außerhalb der Saison';
+}
+
+/** Saison-Anzeige: mappt Legacy-Keys (year_round …) auf Labels, reicht Klartext durch. */
+function fge_season_label( string $value ): string {
+	$legacy = [
+		'year_round'       => 'Ganzjährig',
+		'march_to_october' => 'März – Oktober',
+		'april_to_october' => 'April – Oktober',
+		'on_request'       => 'Auf Anfrage',
+	];
+	return $legacy[ $value ] ?? $value;
+}
+
 /**
  * Calculates the net sale price based on purchase prices and the Firmengolf markup.
  *

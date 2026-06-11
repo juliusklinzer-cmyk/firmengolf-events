@@ -419,11 +419,20 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'avail':
-			update_post_meta( $partner_id, '_fge_preferred_event_days',         $san_group( 'fge_preferred_event_days', $allowed_days ) );
-			update_post_meta( $partner_id, '_fge_evening_events_possible',       ( ( $post['fge_evening_events_possible'] ?? '' ) === '1' ) ? 1 : 0 );
-			update_post_meta( $partner_id, '_fge_min_lead_time_days',            absint( $post['fge_min_lead_time_days'] ?? 14 ) );
-			update_post_meta( $partner_id, '_fge_season',                        $san_select( 'fge_season', $allowed_seasons ) );
-			update_post_meta( $partner_id, '_fge_individual_availability_check', ( ( $post['fge_individual_availability_check'] ?? '1' ) !== '0' ) ? 1 : 0 );
+			update_post_meta( $partner_id, '_fge_preferred_event_days', $san_group( 'fge_preferred_event_days', $allowed_days ) );
+			// '' bleibt erhalten = Frage (noch) nicht beantwortet.
+			$eve = (string) ( $post['fge_evening_events_possible'] ?? '' );
+			update_post_meta( $partner_id, '_fge_evening_events_possible', '' === $eve ? '' : ( '1' === $eve ? 1 : 0 ) );
+			$lead_in = absint( $post['fge_min_lead_time_days'] ?? 14 );
+			update_post_meta( $partner_id, '_fge_min_lead_time_days', in_array( $lead_in, [ 7, 14, 20, 30 ], true ) ? $lead_in : 14 );
+			// Saison von/bis (1–12) + lesbares Label in _fge_season für alle Anzeigen.
+			$sf = min( 12, max( 1, absint( $post['fge_season_from'] ?? 4 ) ) );
+			$st = min( 12, max( 1, absint( $post['fge_season_to'] ?? 10 ) ) );
+			update_post_meta( $partner_id, '_fge_season_from', $sf );
+			update_post_meta( $partner_id, '_fge_season_to', $st );
+			update_post_meta( $partner_id, '_fge_season', fge_season_range_label( $sf, $st ) );
+			// Keine Frage mehr — es wird immer individuell geprüft.
+			update_post_meta( $partner_id, '_fge_individual_availability_check', 1 );
 			break;
 
 		case 'pricing':
@@ -1436,7 +1445,7 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 }
 
 function fge_onboarding_render_arrival( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Anfahrt & Location', 'Wie kommen Gäste zu euch? Diese Angaben helfen Firmen bei der Planung. Alles optional — füll aus, was zutrifft.' );
+	fge_onboarding_render_step_header( $step, 'Anfahrt & Location', 'Wie kommen Gäste zu euch? Diese Angaben helfen Firmen bei der Planung. Alles ist optional, füll einfach aus, was zutrifft.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	// Maps to _fge_poi_* / _fge_arrival_estation (same keys as admin/Platz view).
@@ -1524,11 +1533,11 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 }
 
 function fge_onboarding_render_step_5( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Möchtest du weitere Ansprechpartner hinzufügen?', 'So beantwortet ihr Anfragen von Unternehmen schneller — und alle Beteiligten bleiben automatisch auf dem Laufenden. Komplett optional: Füg nur hinzu, wen du einbinden möchtest.' );
+	fge_onboarding_render_step_header( $step, 'Möchtest du weitere Ansprechpartner hinzufügen?', 'So beantwortet ihr Anfragen von Unternehmen schneller und alle Beteiligten bleiben automatisch auf dem Laufenden. Komplett optional: Füg nur hinzu, wen du einbinden möchtest.' );
 	?>
 	<ul class="ob-intro-list">
-		<li><span class="ob-intro-dot"></span><span><strong>Schnellere Termine:</strong> Wunschtermine aus Anfragen können die richtigen Personen direkt per Link bestätigen — Events werden schneller verbindlich.</span></li>
-		<li><span class="ob-intro-dot"></span><span><strong>Automatisch informiert:</strong> Buchhaltung oder Schatzmeister bekommen relevante Updates von selbst — du musst nichts weiterleiten.</span></li>
+		<li><span class="ob-intro-dot"></span><span><strong>Schnellere Termine:</strong> Wunschtermine aus Anfragen können die richtigen Personen direkt per Link bestätigen. So werden Events schneller verbindlich.</span></li>
+		<li><span class="ob-intro-dot"></span><span><strong>Automatisch informiert:</strong> Buchhaltung oder Schatzmeister bekommen relevante Updates von selbst, du musst nichts weiterleiten.</span></li>
 		<li><span class="ob-intro-dot"></span><span><strong>Jederzeit änderbar:</strong> Überspring den Schritt einfach und ergänze Ansprechpartner später im Portal.</span></li>
 	</ul>
 	<?php
@@ -1771,7 +1780,7 @@ function fge_onboarding_render_step_8( int $step, int $partner_id, string $token
 			fge_onboarding_card( 'checkbox', 'fge_event_formats[]', (string) $key, (string) $label, in_array( $key, $saved_formats, true ) );
 		endforeach; ?>
 	</div>
-	<p class="ob-cat-note">Deine Auswahl hilft uns, euch passende Anfragen zuzuordnen, und erscheint auf eurem Profil. Du kannst sie später jederzeit im Partner-Portal anpassen — eure buchbaren Event-Angebote legst du dort unabhängig davon an.</p>
+	<p class="ob-cat-note">Deine Auswahl hilft uns, euch passende Anfragen zuzuordnen, und erscheint auf eurem Profil. Du kannst sie später jederzeit im Partner-Portal anpassen. Eure buchbaren Event-Angebote legst du dort unabhängig davon an.</p>
 	<?php
 	fge_onboarding_cards_script();
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
@@ -1786,25 +1795,30 @@ function fge_onboarding_render_step_9( int $step, int $partner_id, string $token
 		'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi',
 		'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So',
 	];
-	$saved_days = (array) ( $v['preferred_event_days'] ?? [] );
-	$seasons = [
-		''                 => 'Bitte wählen …',
-		'year_round'       => 'Ganzjährig',
-		'march_to_october' => 'März – Oktober',
-		'april_to_october' => 'April – Oktober',
-		'on_request'       => 'Auf Anfrage',
-	];
-	$lead  = ( '' !== (string) ( $v['min_lead_time_days'] ?? '' ) ) ? $v['min_lead_time_days'] : '14';
-	$indiv = ( (string) ( $v['individual_availability_check'] ?? '1' ) !== '0' );
+	// Noch nie gespeichert (Meta kein Array) → alle Tage vorausgewählt.
+	$raw_days   = $partner_id > 0 ? get_post_meta( $partner_id, '_fge_preferred_event_days', true ) : '';
+	$saved_days = is_array( $raw_days ) ? $raw_days : array_keys( $weekdays );
+
+	$lead_options = [ 7 => '7 Tage', 14 => '14 Tage', 20 => '20 Tage', 30 => '30 Tage' ];
+	$lead         = (int) ( $v['min_lead_time_days'] ?? 0 );
+	if ( ! isset( $lead_options[ $lead ] ) ) {
+		$lead = 14;
+	}
+
+	$months      = fge_month_names();
+	$season_from = (int) get_post_meta( $partner_id, '_fge_season_from', true ) ?: 4;
+	$season_to   = (int) get_post_meta( $partner_id, '_fge_season_to', true ) ?: 10;
+
+	// Drei Zustände: '1' / '0' / '' = unbeantwortet (keine Vorauswahl).
+	$evening = (string) ( $v['evening_events_possible'] ?? '' );
 	?>
 	<div class="ob-form">
 		<div class="ob-field full">
 			<span class="ob-field-label">Bevorzugte Event-Wochentage</span>
 			<div class="ob-day-row">
-				<?php foreach ( $weekdays as $val => $label ) :
-					$on = in_array( $val, $saved_days, true ); ?>
-				<label class="ob-day<?php echo $on ? ' on' : ''; ?>">
-					<input type="checkbox" name="fge_preferred_event_days[]" value="<?php echo esc_attr( $val ); ?>" <?php checked( $on ); ?>>
+				<?php foreach ( $weekdays as $val => $label ) : ?>
+				<label class="ob-day">
+					<input type="checkbox" name="fge_preferred_event_days[]" value="<?php echo esc_attr( $val ); ?>" <?php checked( in_array( $val, $saved_days, true ) ); ?>>
 					<?php echo esc_html( $label ); ?>
 				</label>
 				<?php endforeach; ?>
@@ -1812,28 +1826,53 @@ function fge_onboarding_render_step_9( int $step, int $partner_id, string $token
 			<span class="ob-field-hint">Mehrfachauswahl. Du kannst jederzeit weitere Tage freischalten.</span>
 		</div>
 
-		<?php
-		fge_onboarding_yesno( 'fge_evening_events_possible', 'Abend-Events möglich?', 'Z. B. Flutlicht-Putting oder Tasting-Abend.', ( (string) ( $v['evening_events_possible'] ?? '' ) === '1' ) );
-		?>
-
-		<div class="ob-row">
-			<div class="ob-field">
-				<label class="ob-field-label" for="fge_min_lead_time_days">Mindest-Vorlauf in Tagen</label>
-				<span class="ob-field-hint">So weit im Voraus müssen Anfragen mindestens kommen.</span>
-				<input type="number" inputmode="numeric" min="0" class="ob-input" id="fge_min_lead_time_days" name="fge_min_lead_time_days" value="<?php echo esc_attr( $lead ); ?>" placeholder="14">
-			</div>
-			<div class="ob-field">
-				<label class="ob-field-label" for="fge_season">Saison / Verfügbarkeitszeitraum</label>
-				<span class="ob-field-hint">Grober Zeitraum für Events bei euch.</span>
-				<select class="ob-input" id="fge_season" name="fge_season">
-					<?php foreach ( $seasons as $sk => $sl ) : ?>
-					<option value="<?php echo esc_attr( $sk ); ?>" <?php selected( (string) ( $v['season'] ?? '' ), $sk ); ?>><?php echo esc_html( $sl ); ?></option>
-					<?php endforeach; ?>
-				</select>
+		<div class="ob-field full">
+			<label class="ob-field-label">Abend-Events grundsätzlich möglich?</label>
+			<span class="ob-field-hint">Z. B. Flutlicht-Putting oder Tasting-Abend.</span>
+			<div class="ob-radio-row">
+				<label class="ob-radio">
+					<input type="radio" name="fge_evening_events_possible" value="1" <?php checked( '1' === $evening ); ?> style="position:absolute;opacity:0">
+					<span class="ob-radio-dot" aria-hidden="true"></span> Ja
+				</label>
+				<label class="ob-radio">
+					<input type="radio" name="fge_evening_events_possible" value="0" <?php checked( '0' === $evening ); ?> style="position:absolute;opacity:0">
+					<span class="ob-radio-dot" aria-hidden="true"></span> Nein
+				</label>
 			</div>
 		</div>
 
-		<?php fge_onboarding_yesno( 'fge_individual_availability_check', 'Individuelle Verfügbarkeitsprüfung erforderlich?', 'Standardmäßig ja. Wir fragen jede Anfrage individuell bei euch ab — kein Auto-Booking.', $indiv ); ?>
+		<div class="ob-row">
+			<div class="ob-field">
+				<label class="ob-field-label" for="fge_min_lead_time_days">Mindest-Vorlauf</label>
+				<select class="ob-input" id="fge_min_lead_time_days" name="fge_min_lead_time_days">
+					<?php foreach ( $lead_options as $lv => $ll ) : ?>
+					<option value="<?php echo esc_attr( (string) $lv ); ?>" <?php selected( $lead, $lv ); ?>><?php echo esc_html( $ll ); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<span class="ob-field-hint">So weit im Voraus müssen Anfragen mindestens kommen.</span>
+			</div>
+			<div class="ob-field">
+				<label class="ob-field-label" for="fge_season_from">Saison</label>
+				<div class="ob-field-row">
+					<select class="ob-input" id="fge_season_from" name="fge_season_from" aria-label="Saison von">
+						<?php foreach ( $months as $mk => $ml ) : ?>
+						<option value="<?php echo esc_attr( (string) $mk ); ?>" <?php selected( $season_from, $mk ); ?>><?php echo esc_html( $ml ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<select class="ob-input" id="fge_season_to" name="fge_season_to" aria-label="Saison bis">
+						<?php foreach ( $months as $mk => $ml ) : ?>
+						<option value="<?php echo esc_attr( (string) $mk ); ?>" <?php selected( $season_to, $mk ); ?>><?php echo esc_html( $ml ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+				<span class="ob-field-hint">Grober Zeitraum für Events bei euch.</span>
+			</div>
+		</div>
+
+		<div class="ob-info-box">
+			<div class="ob-info-l">Individuelle Verfügbarkeitsprüfung</div>
+			<div class="ob-info-v">Jede Anfrage fragen wir einzeln bei euch an, es wird nie automatisch gebucht. Du behältst immer das letzte Wort.</div>
+		</div>
 	</div>
 	<?php
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
@@ -1841,37 +1880,26 @@ function fge_onboarding_render_step_9( int $step, int $partner_id, string $token
 }
 
 function fge_onboarding_render_step_10( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Preis und Abrechnung', 'Du hinterlegst deine Netto-Preise für das Event. Auf dieser Basis berechnet Firmengolf den Verkaufspreis für das Unternehmen.' );
+	fge_onboarding_render_step_header( $step, 'Preis und Abrechnung', 'Du hinterlegst deine Netto-Preise pro Event. Firmengolf kalkuliert darauf den Verkaufspreis für das Unternehmen.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
-	$portal_url = trailingslashit( home_url( '/partnerportal/' ) );
 	?>
 	<div class="ob-form">
-		<div class="ob-fixed full">
+		<div class="ob-fixed ob-fixed--positive full">
 			<div class="ob-fixed-head">
-				<span class="ob-fixed-l">Dein Netto-Preis bleibt dein Netto-Preis</span>
+				<span class="ob-fixed-l">Dein Netto-Preis, ohne Abzüge</span>
 			</div>
-			<p class="ob-fixed-body">Dein hinterlegter Netto-Preis ist der Betrag, den du nach Durchführung des Events an Firmengolf abrechnest. Der Firmengolf-Aufschlag wird zusätzlich kalkuliert und <strong>nicht</strong> von deinem Anteil abgezogen.</p>
+			<p class="ob-fixed-body">Du hinterlegst pro Event deinen Netto-Preis. Den Firmengolf-Aufschlag kalkulieren wir oben drauf, er wird <strong>nie</strong> von deinem Anteil abgezogen. Genau deinen hinterlegten Betrag rechnest du nach dem Event ab.</p>
 		</div>
 		<div class="ob-fixed full">
 			<div class="ob-fixed-head">
-				<span class="ob-fixed-l">So läuft die Abrechnung</span>
+				<span class="ob-fixed-l">So rechnest du ab</span>
+				<span class="ob-fixed-badge">Wichtig</span>
 			</div>
-			<p class="ob-fixed-body">Nach dem Event stellst du deine Leistung direkt an Firmengolf in Rechnung. Das Unternehmen erhält die Gesamtrechnung von Firmengolf.</p>
-		</div>
-		<div class="ob-portal-note full">
-			<span class="ob-portal-note-ic" aria-hidden="true">⛳</span>
-			<div>
-				<div class="ob-portal-note-h">Unsere Rechnungsdaten findest du im Portal</div>
-				<p>Sobald dein Profil bestätigt ist, findest du im Partner-Portal alle Rechnungsdaten von Firmengolf.</p>
-			</div>
-			<a class="ob-portal-note-btn" href="<?php echo esc_url( $portal_url ); ?>">Im Portal ansehen</a>
-		</div>
-		<div class="ob-fixed full">
-			<div class="ob-fixed-head">
-				<span class="ob-fixed-l">Bitte immer angeben</span>
-				<span class="ob-fixed-badge">Pflicht</span>
-			</div>
-			<p class="ob-fixed-body">Gib auf jeder Rechnung die jeweilige <strong>Anfragenummer</strong> an, zum Beispiel FG-26-001. So können wir deine Rechnung eindeutig dem richtigen Event zuordnen.</p>
+			<ul class="ob-intro-list ob-benefit-list ob-fixed-list">
+				<li><span class="ob-intro-dot"></span><span>Nach dem Event stellst du deine Rechnung <strong>direkt an Firmengolf</strong>. Das Unternehmen bekommt die Gesamtrechnung von uns.</span></li>
+				<li><span class="ob-intro-dot"></span><span>Gib immer die <strong>Anfragenummer</strong> an (z.&nbsp;B. FG-26-001), damit wir die Rechnung dem Event zuordnen können.</span></li>
+				<li><span class="ob-intro-dot"></span><span>Unsere Rechnungsdaten findest du jederzeit im Partner-Portal.</span></li>
+			</ul>
 		</div>
 	</div>
 	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
@@ -1961,9 +1989,12 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 		fge_onboarding_summary_section( 'Infrastruktur', $infra_rows );
 		?>
 
-		<?php fge_onboarding_summary_section( 'Kapazitäten', [
-			'Teilnehmer Min/Max' => $v['participants_min_general'] . ' – ' . $v['participants_max_general'],
-		] ); ?>
+		<?php
+		$rev_cap = is_array( $v['cap'] ?? null ) ? $v['cap'] : [];
+		fge_onboarding_summary_section( 'Kapazitäten', [
+			'Teilnehmer Min/Max' => ( (int) ( $rev_cap['min'] ?? 0 ) ?: '—' ) . ' – ' . ( (int) ( $rev_cap['max'] ?? 0 ) ?: '—' ),
+		] );
+		?>
 
 		<?php
 		$fmt_labels  = fge_get_event_format_options();
@@ -1977,9 +2008,8 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 		?>
 
 		<?php fge_onboarding_summary_section( 'Verfügbarkeit', [
-			'Saison'            => $v['season'],
-			'Mindestvorlauf'    => $v['min_lead_time_days'] . ' Tage',
-			'Individuelle Prüfung' => $v['individual_availability_check'] === '1' ? 'Ja' : 'Nein',
+			'Saison'         => fge_season_label( (string) $v['season'] ) ?: '—',
+			'Mindestvorlauf' => $v['min_lead_time_days'] . ' Tage',
 		] ); ?>
 
 		<?php fge_onboarding_summary_section( 'Preis & Abrechnung', [

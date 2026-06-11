@@ -344,6 +344,11 @@ get_header();
 				<p class="evd-location-p">
 					<?php echo $directions !== '' ? esc_html( $directions ) : 'Genaue Adresse und Anfahrtsbeschreibung schicken wir mit der Bestätigung.'; ?>
 				</p>
+				<?php
+				$os_note = ( $partner_id && function_exists( 'fge_partner_offseason_note' ) ) ? fge_partner_offseason_note( $partner_id ) : '';
+				if ( $os_note !== '' ) : ?>
+				<p class="evd-offseason"><strong>Aktuell Offseason.</strong> <?php echo esc_html( $os_note ); ?>. Anfragen für Termine in der Saison sind jederzeit möglich.</p>
+				<?php endif; ?>
 				<?php if ( $pois ) : ?>
 				<div class="evd-poi-grid">
 					<?php foreach ( $pois as $poi_label => $poi_val ) : ?>

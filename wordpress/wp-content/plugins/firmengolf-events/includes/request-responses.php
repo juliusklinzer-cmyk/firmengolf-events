@@ -278,6 +278,16 @@ function fge_match_partners_for_request( int $req, int $limit = 8 ): array {
 	$fmt    = (string) get_post_meta( $req, '_fge_event_type', true );
 	if ( '' === $fmt ) { $fmt = (string) get_post_meta( $req, '_fge_event_goal', true ); }
 
+	// Wunschtermine der Anfrage (Timestamps) für den Verfügbarkeits-Score.
+	$wish_ts = [];
+	foreach ( [ 1, 2, 3 ] as $di ) {
+		$d = (string) get_post_meta( $req, '_fge_preferred_date_' . $di, true );
+		$t = '' !== $d ? strtotime( $d ) : false;
+		if ( false !== $t ) {
+			$wish_ts[] = $t;
+		}
+	}
+
 	$partners = get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => 'publish', 'numberposts' => -1 ] );
 	$out = [];
 	foreach ( $partners as $p ) {
@@ -304,6 +314,54 @@ function fge_match_partners_for_request( int $req, int $limit = 8 ): array {
 		if ( '' !== $fmt && in_array( $fmt, $pf, true ) ) {
 			$score += 2; $why[] = 'bietet dieses Format';
 		}
+
+		// ── Verfügbarkeit: Wunschtermine vs. Saison, Wochentage und Vorlauf des Platzes ──
+		if ( $wish_ts ) {
+			$sf = (int) get_post_meta( $p->ID, '_fge_season_from', true );
+			$st = (int) get_post_meta( $p->ID, '_fge_season_to', true );
+			if ( $sf >= 1 && $st >= 1 ) {
+				$in_season = 0;
+				foreach ( $wish_ts as $t ) {
+					$mo = (int) gmdate( 'n', $t );
+					// Saison kann übers Jahresende gehen (z. B. Oktober–März).
+					$ok = $sf <= $st ? ( $mo >= $sf && $mo <= $st ) : ( $mo >= $sf || $mo <= $st );
+					if ( $ok ) { $in_season++; }
+				}
+				if ( $in_season === count( $wish_ts ) ) {
+					$score += 2; $why[] = 'Saison passt';
+				} elseif ( 0 === $in_season ) {
+					$score -= 3; $why[] = 'Wunschtermine außerhalb der Saison';
+				} else {
+					$score += 1; $why[] = 'Saison passt teilweise';
+				}
+			}
+
+			$pref_days = (array) get_post_meta( $p->ID, '_fge_preferred_event_days', true );
+			if ( $pref_days ) {
+				$day_keys = [ 1 => 'monday', 2 => 'tuesday', 3 => 'wednesday', 4 => 'thursday', 5 => 'friday', 6 => 'saturday', 7 => 'sunday' ];
+				foreach ( $wish_ts as $t ) {
+					if ( in_array( $day_keys[ (int) gmdate( 'N', $t ) ], $pref_days, true ) ) {
+						$score += 1; $why[] = 'Wunschtag passt';
+						break;
+					}
+				}
+			}
+
+			$lead_days = (int) get_post_meta( $p->ID, '_fge_min_lead_time_days', true );
+			if ( $lead_days > 0 ) {
+				$lead_ok = false;
+				foreach ( $wish_ts as $t ) {
+					if ( $t - time() >= $lead_days * DAY_IN_SECONDS ) {
+						$lead_ok = true;
+						break;
+					}
+				}
+				if ( ! $lead_ok ) {
+					$score -= 2; $why[] = "Vorlauf zu kurz (braucht {$lead_days} Tage)";
+				}
+			}
+		}
+
 		$out[] = [ 'id' => $p->ID, 'name' => get_the_title( $p->ID ), 'city' => $pcity, 'cap' => ( $min || $max ) ? "{$min}–{$max}" : '—', 'score' => $score, 'why' => $why, 'fits' => $fits ];
 	}
 	usort( $out, static function ( $a, $b ) { return $b['score'] <=> $a['score']; } );

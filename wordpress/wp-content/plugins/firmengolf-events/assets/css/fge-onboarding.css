@@ -202,6 +202,16 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 /* Nutzen-Liste mit mehrzeiligen Texten: Punkt oben an der ersten Zeile ausrichten. */
 .ob-benefit-list li { align-items: flex-start; }
 .ob-benefit-list .ob-intro-dot { margin-top: 7px; }
+/* Liste innerhalb einer ob-fixed-Box (Slide Preis & Abrechnung). */
+.ob-fixed .ob-fixed-list { margin-top: 12px; }
+.ob-fixed .ob-fixed-list li { font-size: 14px; line-height: 1.55; }
+/* Positive Variante: grüner Hintergrund für die Kernbotschaft.
+   Doppelklasse schlägt die später definierte .ob-fixed-Basisregel. */
+.ob-fixed.ob-fixed--positive {
+  background: var(--fairway-100);
+  border-color: var(--fairway-200);
+}
+.ob-fixed--positive .ob-fixed-l { color: var(--fairway-800, var(--fairway-700)); }
 .ob-intro-meta {
   margin-top: 16px;
   font-size: 13px; color: var(--ink-500);
@@ -569,7 +579,8 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   color: var(--ink-500);
   padding: 28px 0 4px;
 }
-.ob-cap-note {
+/* .ob-shell als Präfix: schlägt den `.ob-shell p`-Reset (0,1,1). */
+.ob-shell .ob-cap-note {
   margin-top: 20px; padding: 16px 18px;
   background: var(--paper-200); border-radius: var(--radius-lg);
   font-size: 14px; line-height: 1.5; color: var(--ink-600);
