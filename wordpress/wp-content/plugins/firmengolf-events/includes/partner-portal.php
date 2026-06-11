@@ -319,8 +319,12 @@ function fge_portal_handle_profile_update(): void {
 			update_post_meta( $partner_id, '_fge_website_url',             esc_url_raw( $P['fge_website_url'] ?? '' ) );
 			$gt = sanitize_text_field( $P['fge_golf_type'] ?? '' );
 			update_post_meta( $partner_id, '_fge_golf_type', array_key_exists( $gt, fge_catalog_golf_types() ) ? $gt : '' );
-			$cap = is_array( $P['fge_cap'] ?? null ) ? $P['fge_cap'] : [];
-			update_post_meta( $partner_id, '_fge_cap', [ 'min' => absint( $cap['min'] ?? 0 ), 'max' => absint( $cap['max'] ?? 0 ) ] );
+			// Nur min/max aktualisieren — die Bereichs-Kapazitäten aus dem Onboarding erhalten.
+			$cap_in       = is_array( $P['fge_cap'] ?? null ) ? $P['fge_cap'] : [];
+			$cap_existing = (array) get_post_meta( $partner_id, '_fge_cap', true );
+			$cap_existing['min'] = absint( $cap_in['min'] ?? 0 );
+			$cap_existing['max'] = absint( $cap_in['max'] ?? 0 );
+			update_post_meta( $partner_id, '_fge_cap', $cap_existing );
 			$fmt_keys = array_keys( fge_get_event_formats_flat( false ) );
 			$fmts     = array_values( array_intersect( array_map( 'sanitize_text_field', (array) ( $P['fge_event_formats'] ?? [] ) ), $fmt_keys ) );
 			update_post_meta( $partner_id, '_fge_event_formats', $fmts );
@@ -330,6 +334,7 @@ function fge_portal_handle_profile_update(): void {
 			$valid = fge_catalog_infra_ids();
 			$infra = array_values( array_intersect( array_map( 'sanitize_text_field', (array) ( $P['fge_infra'] ?? [] ) ), $valid ) );
 			update_post_meta( $partner_id, '_fge_infra', $infra );
+			update_post_meta( $partner_id, '_fge_additional_equipment', sanitize_textarea_field( $P['fge_additional_equipment'] ?? '' ) );
 			break;
 
 		case 'standort':
@@ -489,6 +494,33 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	foreach ( $leistungen as $key ) {
 		update_post_meta( $post_id, '_fge_' . $key, isset( $_POST[ 'fge_' . $key ] ) ? '1' : '0' );
 	}
+
+	// ── Termin-Freigabe: Modus + Event-Ansprechpartner (inkl. Quick-Add neuer Kontakte) ──
+	update_post_meta( $post_id, '_fge_release_mode', in_array( $_POST['fge_release_mode'] ?? '', [ 'us', 'approve' ], true ) ? $_POST['fge_release_mode'] : 'us' );
+	$responders = array_values( array_filter( array_map( 'absint', (array) ( $_POST['fge_event_responders'] ?? [] ) ) ) );
+	$rp_partner = fge_portal_get_partner_id();
+	if ( $rp_partner > 0 && function_exists( 'fge_contact_add' ) ) {
+		$n_names = (array) ( $_POST['fge_new_responder_name'] ?? [] );
+		$n_roles = (array) ( $_POST['fge_new_responder_role'] ?? [] );
+		$n_mails = (array) ( $_POST['fge_new_responder_email'] ?? [] );
+		foreach ( $n_names as $i => $nn ) {
+			$nm = sanitize_text_field( wp_unslash( $nn ) );
+			$em = sanitize_email( wp_unslash( $n_mails[ $i ] ?? '' ) );
+			if ( '' === $nm || ! is_email( $em ) ) {
+				continue;
+			}
+			$cid = fge_contact_add( $rp_partner, [
+				'name'       => $nm,
+				'email'      => $em,
+				'role'       => sanitize_text_field( wp_unslash( $n_roles[ $i ] ?? '' ) ),
+				'permission' => 'vote',
+			] );
+			if ( $cid > 0 ) {
+				$responders[] = $cid;
+			}
+		}
+	}
+	update_post_meta( $post_id, '_fge_event_responder_ids', array_values( array_unique( $responders ) ) );
 
 	update_post_meta( $post_id, '_fge_additional_services',         sanitize_textarea_field( wp_unslash( $_POST['fge_additional_services'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_price_note',                  sanitize_textarea_field( wp_unslash( $_POST['fge_price_note'] ?? '' ) ) );
@@ -1957,6 +1989,10 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'ausstattung' ); ?>">Bearbeiten</a></div>
 				</div>
 				<?php fge_render_amenities_grid( $partner_id ); ?>
+				<?php $fge_extra_eq = $m( 'additional_equipment' ); ?>
+				<?php if ( '' !== $fge_extra_eq ) : ?>
+				<p class="fgpp-extra-equipment"><strong>Außerdem vor Ort:</strong> <?php echo esc_html( $fge_extra_eq ); ?></p>
+				<?php endif; ?>
 			</section>
 			<?php endif; ?>
 
@@ -2126,7 +2162,12 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 								<?php endforeach; ?>
 							</div>
 						</div>
-					<?php endforeach;
+					<?php endforeach; ?>
+					<div class="fg-form-row" style="margin-top:16px;">
+						<label class="fg-form-label" for="fge_additional_equipment">Weitere Ausstattung</label>
+						<textarea class="fg-form-textarea" id="fge_additional_equipment" name="fge_additional_equipment" rows="2" placeholder="z. B. E-Trolleys, Cart-Flotte, Wellness-Bereich …"><?php echo esc_textarea( $m( 'additional_equipment' ) ); ?></textarea>
+					</div>
+					<?php
 					break;
 
 				case 'standort':
@@ -2481,7 +2522,29 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 							</div>
 							<div>
 								<label class="fg-form-label" for="fge_participants_max">Max. Teilnehmer</label>
-								<input class="fg-form-input" type="number" id="fge_participants_max" name="fge_participants_max" value="<?php echo esc_attr( $saved['fge_participants_max'] ?: '' ); ?>" min="1" placeholder="z.B. 40">
+								<?php
+								$platz_cap = (array) get_post_meta( $partner_id, '_fge_cap', true );
+								$platz_max = (int) ( $platz_cap['max'] ?? 0 );
+								// Neues Event: mit dem Platz-Maximum vorbelegen.
+								$pmax_val = $saved['fge_participants_max'] ?: ( ( ! $is_edit && $platz_max > 0 ) ? (string) $platz_max : '' );
+								?>
+								<input class="fg-form-input" type="number" id="fge_participants_max" name="fge_participants_max" value="<?php echo esc_attr( $pmax_val ); ?>" min="1" placeholder="z.B. 40">
+								<?php if ( $platz_max > 0 ) : ?>
+								<p class="fp-help" id="fge-pmax-warn" style="display:none;color:#9a6b00;margin-top:6px;">Liegt über eurem Platz-Maximum von <?php echo (int) $platz_max; ?> Personen — prüf kurz, ob das wirklich passt.</p>
+								<script>
+								(function () {
+									var inp  = document.getElementById('fge_participants_max');
+									var warn = document.getElementById('fge-pmax-warn');
+									if (!inp || !warn) { return; }
+									var platzMax = <?php echo (int) $platz_max; ?>;
+									var upd = function () {
+										warn.style.display = parseInt(inp.value || '0', 10) > platzMax ? '' : 'none';
+									};
+									inp.addEventListener('input', upd);
+									upd();
+								})();
+								</script>
+								<?php endif; ?>
 							</div>
 						</div>
 					</div>
@@ -2575,6 +2638,70 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 									<input class="fg-form-input" type="tel" id="fge_availability_contact_phone" name="fge_availability_contact_phone" value="<?php echo $v( 'fge_availability_contact_phone' ); ?>">
 								</div>
 							</div>
+						</div>
+
+						<div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--ink-200);">
+							<p class="fg-form-label" style="margin-bottom:6px;font-weight:500;">Termin-Freigabe</p>
+							<p class="fp-help" style="margin-bottom:12px;">Wer stimmt Wunschterminen von Unternehmen für dieses Event zu?</p>
+							<?php
+							$fge_release  = $event_id ? ( (string) get_post_meta( $event_id, '_fge_release_mode', true ) ?: 'us' ) : 'us';
+							$fge_resp_sel = $event_id ? array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) : [];
+							$fge_contacts = function_exists( 'fge_contacts_get' ) ? fge_contacts_get( $partner_id ) : [];
+							?>
+							<div class="fg-form-row">
+								<select class="fg-form-input" id="fge_release_mode" name="fge_release_mode">
+									<option value="us" <?php selected( $fge_release, 'us' ); ?>>Nur wir am Platz bestätigen Termine</option>
+									<option value="approve" <?php selected( $fge_release, 'approve' ); ?>>Ausgewählte Ansprechpartner stimmen Termine ab</option>
+								</select>
+							</div>
+							<div id="fge-responders" style="<?php echo 'approve' === $fge_release ? '' : 'display:none;'; ?>">
+								<?php if ( $fge_contacts ) : ?>
+								<div class="fg-form-checkgrid" style="margin-bottom:12px;">
+									<?php foreach ( $fge_contacts as $fc ) :
+										$fc_checked = $fge_resp_sel ? in_array( (int) $fc['id'], $fge_resp_sel, true ) : ( ( $fc['permission'] ?? '' ) === 'vote' );
+									?>
+									<label class="fg-form-check">
+										<input type="checkbox" name="fge_event_responders[]" value="<?php echo esc_attr( (string) $fc['id'] ); ?>" <?php checked( $fc_checked ); ?>>
+										<span><?php echo esc_html( $fc['name'] . ( '' !== (string) ( $fc['role'] ?? '' ) ? ' · ' . $fc['role'] : '' ) ); ?></span>
+									</label>
+									<?php endforeach; ?>
+								</div>
+								<?php endif; ?>
+								<div id="fge-newresp-list"></div>
+								<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fge-newresp-add">+ Neue Person hinzufügen</button>
+								<p class="fp-help" style="margin-top:8px;">Neue Personen werden deinen Ansprechpartnern hinzugefügt und direkt für dieses Event ausgewählt.</p>
+								<template id="fge-newresp-tpl">
+									<div class="fg-form-row fg-form-row--3col" style="margin-top:12px;">
+										<div><input class="fg-form-input" type="text" name="fge_new_responder_name[]" placeholder="Vor- und Nachname"></div>
+										<div>
+											<select class="fg-form-input" name="fge_new_responder_role[]">
+												<option value="">Rolle wählen …</option>
+												<?php foreach ( fge_catalog_contact_roles() as $r ) : ?>
+												<option value="<?php echo esc_attr( $r ); ?>"><?php echo esc_html( $r ); ?></option>
+												<?php endforeach; ?>
+											</select>
+										</div>
+										<div><input class="fg-form-input" type="email" name="fge_new_responder_email[]" placeholder="name@golfclub.de"></div>
+									</div>
+								</template>
+							</div>
+							<script>
+							(function () {
+								var mode = document.getElementById('fge_release_mode');
+								var box  = document.getElementById('fge-responders');
+								var add  = document.getElementById('fge-newresp-add');
+								var list = document.getElementById('fge-newresp-list');
+								var tpl  = document.getElementById('fge-newresp-tpl');
+								if (mode && box) {
+									mode.addEventListener('change', function () { box.style.display = mode.value === 'approve' ? '' : 'none'; });
+								}
+								if (add && list && tpl) {
+									add.addEventListener('click', function () {
+										list.appendChild(tpl.content.firstElementChild.cloneNode(true));
+									});
+								}
+							})();
+							</script>
 						</div>
 					</div>
 

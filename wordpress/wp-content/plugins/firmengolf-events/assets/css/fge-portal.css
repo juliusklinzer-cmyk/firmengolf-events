@@ -139,6 +139,7 @@
 .fgpp .fgpp-map iframe { width: 100%; height: 100%; border: 0; display: block; }
 .fgpp .fgpp-map-addr { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: var(--ink-600, var(--ink-500)); }
 .fgpp .fgpp-map-addr svg { width: 16px; height: 16px; flex: none; }
+.fgpp .fgpp-extra-equipment { margin-top: 14px; font-size: 14px; line-height: 1.6; color: var(--ink-600, var(--ink-500)); }
 .fgpp .fgpp-poi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
 .fgpp .fgpp-poi { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-md); padding: 14px 16px; }
 .fgpp .fgpp-poi-l { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-500); }

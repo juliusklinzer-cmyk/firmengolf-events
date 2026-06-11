@@ -93,7 +93,20 @@ function fge_rr_responders( int $request_id ): array {
 	if ( $event_id > 0 && 'us' === (string) get_post_meta( $event_id, '_fge_release_mode', true ) ) {
 		return [];
 	}
-	return array_values( array_filter( fge_contacts_get( $partner_id ), static function ( $c ) {
+	$contacts = fge_contacts_get( $partner_id );
+
+	// Per-event selection (set in portal/admin). Empty = legacy fallback below.
+	$selected = $event_id > 0 ? array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) : [];
+	if ( $selected ) {
+		$picked = array_values( array_filter( $contacts, static function ( $c ) use ( $selected ) {
+			return in_array( (int) $c['id'], $selected, true );
+		} ) );
+		if ( $picked ) {
+			return $picked;
+		}
+	}
+
+	return array_values( array_filter( $contacts, static function ( $c ) {
 		return ( $c['permission'] ?? '' ) === 'vote';
 	} ) );
 }

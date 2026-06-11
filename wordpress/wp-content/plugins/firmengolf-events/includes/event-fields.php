@@ -570,6 +570,28 @@ function fge_render_mb_angebot_neu( WP_Post $post ) {
 					<option value="us"      <?php selected( $release, 'us' ); ?>>Nur der Platz selbst gibt Anfragen frei</option>
 					<option value="approve" <?php selected( $release, 'approve' ); ?>>Zusätzliche Personen stimmen Termine ab</option>
 				</select>
+				<?php
+				$resp_sel    = array_map( 'absint', (array) get_post_meta( $post->ID, '_fge_event_responder_ids', true ) );
+				$ev_partner  = (int) get_post_meta( $post->ID, '_fge_assigned_partner_id', true );
+				$ev_contacts = ( $ev_partner > 0 && function_exists( 'fge_contacts_get' ) ) ? fge_contacts_get( $ev_partner ) : [];
+				if ( $ev_contacts ) :
+				?>
+				<fieldset style="margin-top:10px;">
+					<?php foreach ( $ev_contacts as $fc ) :
+						$is_checked = $resp_sel ? in_array( (int) $fc['id'], $resp_sel, true ) : ( ( $fc['permission'] ?? '' ) === 'vote' );
+					?>
+					<label style="display:block;margin-bottom:4px;">
+						<input type="checkbox" name="fge_event_responders[]" value="<?php echo esc_attr( (string) $fc['id'] ); ?>" <?php checked( $is_checked ); ?>>
+						<?php echo esc_html( $fc['name'] . ( '' !== (string) ( $fc['role'] ?? '' ) ? ' · ' . $fc['role'] : '' ) ); ?>
+					</label>
+					<?php endforeach; ?>
+				</fieldset>
+				<p class="description">Welche Ansprechpartner für dieses Event Termine abstimmen. Keine Auswahl = alle Kontakte mit Berechtigung „Terminabstimmung".</p>
+				<?php elseif ( $ev_partner > 0 ) : ?>
+				<p class="description">Der zugewiesene Partner hat noch keine Ansprechpartner angelegt.</p>
+				<?php else : ?>
+				<p class="description">Ansprechpartner-Auswahl erscheint, sobald ein Partner zugewiesen ist.</p>
+				<?php endif; ?>
 			</td>
 		</tr>
 	</table>
@@ -737,6 +759,7 @@ function fge_save_event_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_event_includes', $includes );
 	update_post_meta( $post_id, '_fge_event_dayflow', sanitize_textarea_field( wp_unslash( $_POST['fge_event_dayflow'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_release_mode', in_array( $_POST['fge_release_mode'] ?? '', [ 'us', 'approve' ], true ) ? $_POST['fge_release_mode'] : 'us' );
+	update_post_meta( $post_id, '_fge_event_responder_ids', array_values( array_filter( array_map( 'absint', (array) ( $_POST['fge_event_responders'] ?? [] ) ) ) ) );
 	update_post_meta( $post_id, '_fge_owner', in_array( $_POST['fge_owner'] ?? '', [ 'partner', 'firmengolf' ], true ) ? $_POST['fge_owner'] : 'partner' );
 
 	// Öffentliche Preis-Felder aus dem neuen Modell spiegeln (eine Quelle: event-pricing.php).

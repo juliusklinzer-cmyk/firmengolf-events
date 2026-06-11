@@ -199,6 +199,9 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   background: var(--fairway-700);
   flex: none;
 }
+/* Nutzen-Liste mit mehrzeiligen Texten: Punkt oben an der ersten Zeile ausrichten. */
+.ob-benefit-list li { align-items: flex-start; }
+.ob-benefit-list .ob-intro-dot { margin-top: 7px; }
 .ob-intro-meta {
   margin-top: 16px;
   font-size: 13px; color: var(--ink-500);
@@ -1138,6 +1141,14 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 .ob-card:has(.ob-card-input:checked) .ob-card-check {
   background: var(--fairway-700); border-color: var(--fairway-700); color: var(--paper-50);
 }
+/* Live-Zähler im Gruppentitel + Auswahl-Pop (Klassen via fge_onboarding_cards_script). */
+.ob-cat-count { font-size: 13px; font-weight: 500; color: var(--fairway-700); margin-left: 8px; }
+@keyframes ob-card-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.965); }
+  100% { transform: scale(1); }
+}
+.ob-card.ob-just-toggled { animation: ob-card-pop 0.18s var(--ease-out); }
 .ob-field-error { font-size: 13px; color: var(--danger); font-weight: 500; }
 /* Capacity stepper: hide native number spinners (the −/+ buttons drive it). */
 .ob-stepper-input::-webkit-outer-spin-button,

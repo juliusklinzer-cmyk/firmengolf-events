@@ -113,10 +113,29 @@ if ( $season )  { $facts[] = [ 'Saison', $season ]; }
 				</div>
 			</section>
 
-			<?php if ( $infra ) : ?>
+			<?php $extra_equipment = $m( 'additional_equipment' ); ?>
+			<?php if ( $infra || $extra_equipment !== '' ) : ?>
 			<section class="section">
 				<div class="section-head"><div><div class="eyebrow">Ausstattung</div><h2>Was euch <em>erwartet</em></h2></div></div>
-				<?php fge_render_amenities_grid( $pid ); ?>
+				<?php if ( $infra ) { fge_render_amenities_grid( $pid ); } ?>
+				<?php
+				// Bereichs-Kapazitäten (aus dem Onboarding) zu den gewählten Anlagen.
+				$cap_lines = [];
+				if ( function_exists( 'fge_catalog_cap_rows' ) ) {
+					foreach ( fge_catalog_cap_rows() as $cr ) {
+						$cn = (int) ( $cap[ $cr['key'] ] ?? 0 );
+						if ( $cn > 0 && in_array( (string) $cr['infra'], $infra, true ) && isset( $infra_index[ (string) $cr['infra'] ] ) ) {
+							$cap_lines[] = $infra_index[ (string) $cr['infra'] ]['label'] . ' bis ' . $cn . ' Personen';
+						}
+					}
+				}
+				?>
+				<?php if ( $cap_lines ) : ?>
+				<p class="fgpp-extra-equipment"><strong>Kapazitäten:</strong> <?php echo esc_html( implode( ' · ', $cap_lines ) ); ?></p>
+				<?php endif; ?>
+				<?php if ( $extra_equipment !== '' ) : ?>
+				<p class="fgpp-extra-equipment"><strong>Außerdem vor Ort:</strong> <?php echo esc_html( $extra_equipment ); ?></p>
+				<?php endif; ?>
 			</section>
 			<?php endif; ?>
 

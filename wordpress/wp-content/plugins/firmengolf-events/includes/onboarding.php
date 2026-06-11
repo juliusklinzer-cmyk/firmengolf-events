@@ -1248,6 +1248,41 @@ function fge_onboarding_card( string $type, string $name, string $id, string $la
 	<?php
 }
 
+/**
+ * Shared script for the icon-card slides (Infra/Gastro): live "n ausgewählt"
+ * counter per group header + a subtle pop on selecting a card.
+ */
+function fge_onboarding_cards_script(): void {
+	?>
+	<script>
+	(function () {
+		document.querySelectorAll('.ob-cat').forEach(function (cat) {
+			var h = cat.querySelector('.ob-cat-h');
+			if (!h) { return; }
+			var badge = document.createElement('span');
+			badge.className = 'ob-cat-count';
+			h.appendChild(badge);
+			var upd = function () {
+				var n = cat.querySelectorAll('.ob-card-input:checked').length;
+				badge.textContent = n > 0 ? '· ' + n + ' ausgewählt' : '';
+			};
+			cat.addEventListener('change', upd);
+			upd();
+		});
+		document.addEventListener('change', function (e) {
+			var t = e.target;
+			if (!t.classList || !t.classList.contains('ob-card-input') || !t.checked) { return; }
+			var card = t.closest('.ob-card');
+			if (!card) { return; }
+			card.classList.remove('ob-just-toggled');
+			void card.offsetWidth; // Animation auch bei schnellem Mehrfach-Klick neu starten.
+			card.classList.add('ob-just-toggled');
+		});
+	})();
+	</script>
+	<?php
+}
+
 // ── Step renderers ────────────────────────────────────────────────────────────
 
 /**
@@ -1291,7 +1326,7 @@ function fge_onboarding_render_intro( string $id ): void {
 		<div class="ob-eyebrow"><?php echo wp_kses_post( $d['eyebrow'] ); ?></div>
 		<h1 class="ob-step-title big"><?php echo wp_kses_post( $d['title'] ); ?></h1>
 		<p class="ob-intro-lead"><?php echo esc_html( $d['lead'] ); ?></p>
-		<ul class="ob-intro-list">
+		<ul class="ob-intro-list ob-benefit-list">
 			<?php foreach ( $d['list'] as $item ) : ?>
 			<li><span class="ob-intro-dot"></span> <?php echo wp_kses_post( $item ); ?></li>
 			<?php endforeach; ?>
@@ -1489,7 +1524,14 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 }
 
 function fge_onboarding_render_step_5( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Möchtest du weitere Ansprechpartner hinzufügen?', 'Du kannst diesen Schritt überspringen und später ergänzen. Diese Personen kannst du später bei der Termin-Freigabe für ein Event einbinden.' );
+	fge_onboarding_render_step_header( $step, 'Möchtest du weitere Ansprechpartner hinzufügen?', 'So beantwortet ihr Anfragen von Unternehmen schneller — und alle Beteiligten bleiben automatisch auf dem Laufenden. Komplett optional: Füg nur hinzu, wen du einbinden möchtest.' );
+	?>
+	<ul class="ob-intro-list">
+		<li><span class="ob-intro-dot"></span><span><strong>Schnellere Termine:</strong> Wunschtermine aus Anfragen können die richtigen Personen direkt per Link bestätigen — Events werden schneller verbindlich.</span></li>
+		<li><span class="ob-intro-dot"></span><span><strong>Automatisch informiert:</strong> Buchhaltung oder Schatzmeister bekommen relevante Updates von selbst — du musst nichts weiterleiten.</span></li>
+		<li><span class="ob-intro-dot"></span><span><strong>Jederzeit änderbar:</strong> Überspring den Schritt einfach und ergänze Ansprechpartner später im Portal.</span></li>
+	</ul>
+	<?php
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$existing = $partner_id > 0 ? fge_contacts_get( $partner_id ) : [];
@@ -1606,6 +1648,7 @@ function fge_onboarding_render_infra( int $step, int $partner_id, string $token,
 		</div>
 	</div>
 	<?php
+	fge_onboarding_cards_script();
 	echo '</form>';
 }
 
@@ -1622,6 +1665,7 @@ function fge_onboarding_render_gastro( int $step, int $partner_id, string $token
 		endforeach; ?>
 	</div>
 	<?php
+	fge_onboarding_cards_script();
 	echo '</form>';
 }
 
@@ -1634,25 +1678,30 @@ function fge_onboarding_render_step_7( int $step, int $partner_id, string $token
 	$rows  = array_filter( fge_catalog_cap_rows(), static function ( $r ) use ( $infra ) {
 		return in_array( $r['infra'], $infra, true );
 	} );
+	// Sinnvolle Startwerte statt leerer Felder — 0/leer gilt als „noch nicht gesetzt".
+	$cap_val = static function ( string $key, string $default ) use ( $cap ): string {
+		$val = (string) ( $cap[ $key ] ?? '' );
+		return ( '' === $val || '0' === $val ) ? $default : $val;
+	};
 	?>
 	<div class="ob-cap-list">
 		<?php
-		fge_onboarding_cap_stepper( 'min', 'Teilnehmer-Minimum', 'Ab wie vielen Gästen lohnt sich ein Event?', $cap['min'] ?? '', true );
+		fge_onboarding_cap_stepper( 'min', 'Teilnehmer-Minimum', 'Ab wie vielen Gästen lohnt sich ein Event?', $cap_val( 'min', '10' ), true );
 		fge_onboarding_error( $errors, 'fge_cap_min' );
-		fge_onboarding_cap_stepper( 'max', 'Teilnehmer-Maximum', 'Größte Gruppe, die ihr realistisch betreuen könnt.', $cap['max'] ?? '', true );
+		fge_onboarding_cap_stepper( 'max', 'Teilnehmer-Maximum', 'Größte Gruppe, die ihr realistisch betreuen könnt.', $cap_val( 'max', '80' ), true );
 		fge_onboarding_error( $errors, 'fge_cap_max' );
 		?>
 
 		<?php if ( ! empty( $rows ) ) : ?>
 			<div class="ob-cap-divider">Kapazitäten deiner Bereiche</div>
 			<?php foreach ( $rows as $r ) {
-				fge_onboarding_cap_stepper( $r['key'], $r['label'], $r['hint'], $cap[ $r['key'] ] ?? '', false );
+				fge_onboarding_cap_stepper( $r['key'], $r['label'], $r['hint'], $cap_val( $r['key'], '10' ), false );
 			} ?>
 		<?php endif; ?>
 	</div>
 
 	<?php if ( empty( $rows ) ) : ?>
-		<p class="ob-cap-note">Du hast in Schritt 6 noch keine Bereiche mit eigener Kapazität gewählt (z. B. Driving Range, Meetingraum, Restaurant). Geh einen Schritt zurück, falls du welche ergänzen möchtest.</p>
+		<p class="ob-cap-note">Du hast bei der Ausstattung noch keine Bereiche mit eigener Kapazität gewählt (z. B. Driving Range, Meetingraum, Restaurant). Geh ein paar Schritte zurück, falls du welche ergänzen möchtest.</p>
 	<?php endif; ?>
 
 	<script>
@@ -1889,14 +1938,24 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 		?>
 
 		<?php
-		$infra_labels = fge_get_infrastructure_options();
-		$active_infra = [];
-		foreach ( $infra_labels as $key => $label ) {
-			if ( ( $v[ $key ] ?? '' ) == '1' ) {
-				$active_infra[] = $label;
+		// Labels aus dem Katalog (neues _fge_infra-Array) — nicht mehr die Legacy-has_*-Flags.
+		$infra_index = [];
+		foreach ( fge_catalog_infra_groups() as $g_items ) {
+			foreach ( $g_items as $iid => $ilabel ) {
+				$infra_index[ (string) $iid ] = $ilabel;
 			}
 		}
-		fge_onboarding_summary_section( 'Infrastruktur', [ 'Ausstattung' => implode( ', ', $active_infra ) ?: '—' ] );
+		$active_infra = [];
+		foreach ( (array) ( $v['infra'] ?? [] ) as $iid ) {
+			if ( isset( $infra_index[ (string) $iid ] ) ) {
+				$active_infra[] = $infra_index[ (string) $iid ];
+			}
+		}
+		$infra_rows = [ 'Ausstattung' => implode( ', ', $active_infra ) ?: '—' ];
+		if ( '' !== (string) ( $v['additional_equipment'] ?? '' ) ) {
+			$infra_rows['Weitere Ausstattung'] = (string) $v['additional_equipment'];
+		}
+		fge_onboarding_summary_section( 'Infrastruktur', $infra_rows );
 		?>
 
 		<?php fge_onboarding_summary_section( 'Kapazitäten', [
