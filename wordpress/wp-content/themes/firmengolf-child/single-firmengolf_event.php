@@ -169,9 +169,11 @@ if ( $partner_id && $p_infra && function_exists( 'fge_catalog_infra_groups' ) ) 
 			$infra_names[ (string) $iid ] = $il;
 		}
 	}
+	// Nur echte Anlagen — Leistungen (Coaching, Catering …) stehen unter „Im Preis enthalten".
 	$onsite_priority = [
 		'meeting-room', 'conference', 'seminar', 'eventroom', 'restaurant', 'terrace',
-		'driving-range', 'trackman', 'toptracer', 'indoor', 'coach', 'bar', 'bbq', 'shower', 'wifi',
+		'driving-range', 'trackman', 'toptracer', 'indoor', 'course-18', 'course-9',
+		'bar', 'lounge', 'shower', 'wifi',
 	];
 	foreach ( $onsite_priority as $iid ) {
 		if ( count( $onsite ) >= 8 ) {
@@ -304,14 +306,14 @@ get_header();
 				<?php if ( $inc_list ) : ?>
 				<section>
 					<div class="fg-section-eyebrow">Im Preis enthalten</div>
-					<ul class="fg-includes">
+					<div class="evd-poi-grid evd-onsite evd-includes">
 						<?php foreach ( $inc_list as $label ) : ?>
-							<li>
-								<span class="fg-includes-check"><?php echo fge_icon_check(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-								<span><?php echo esc_html( $label ); ?></span>
-							</li>
+						<div class="evd-poi evd-include">
+							<span class="evd-include-ic" aria-hidden="true"><?php echo function_exists( 'fge_include_icon' ) ? fge_include_icon( $label ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
+							<div class="evd-onsite-n"><?php echo esc_html( $label ); ?></div>
+						</div>
 						<?php endforeach; ?>
-					</ul>
+					</div>
 				</section>
 				<?php endif; ?>
 

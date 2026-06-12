@@ -2493,6 +2493,27 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 				<!-- ── LEFT: form sections ── -->
 				<div>
 
+					<!-- Eventart als Kachel-Auswahl -->
+					<div class="fp-form-sec">
+						<h3>Eventart <span class="fg-form-required" aria-label="Pflichtfeld">*</span></h3>
+						<p class="fp-help">Welches Format legst du an? Bestimmt Kategorie und Filter in der Suche.</p>
+						<?php
+						$cur_type   = (string) ( $saved['fge_event_type'] ?? '' );
+						$type_icons = function_exists( 'fge_onboarding_icon_map' ) ? fge_onboarding_icon_map() : [];
+						?>
+						<div class="fp-type-grid" id="fp-type-grid">
+							<?php foreach ( $event_types as $tval => $tlabel ) : ?>
+							<label class="fp-svc-card fp-type-card">
+								<input type="radio" name="fge_event_type" value="<?php echo esc_attr( $tval ); ?>" data-label="<?php echo esc_attr( $tlabel ); ?>" <?php checked( $cur_type, $tval ); ?>>
+								<span class="fp-svc-ico" aria-hidden="true"><?php echo function_exists( 'fge_onboarding_card_icon' ) ? fge_onboarding_card_icon( $type_icons[ $tval ] ?? '' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
+								<span class="fp-svc-l"><?php echo esc_html( $tlabel ); ?></span>
+								<span class="fp-svc-check" aria-hidden="true">✓</span>
+							</label>
+							<?php endforeach; ?>
+						</div>
+						<?php echo $err_html( 'fge_event_type' ); // phpcs:ignore ?>
+					</div>
+
 					<!-- Eventbilder: Auswahl aus der Platz-Galerie -->
 					<div class="fp-form-sec">
 						<h3>Eventbilder</h3>
@@ -2509,18 +2530,6 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<h3>Titel & Beschreibung</h3>
 						<p class="fp-help">Wir empfehlen einen Titel, der ein Gefühl verspricht, nicht nur ein Format beschreibt.</p>
 
-						<div class="fg-form-row">
-							<label class="fg-form-label" for="fge_event_type">Eventart <span class="fg-form-required" aria-label="Pflichtfeld">*</span></label>
-							<div class="fg-form-field">
-								<select class="fg-form-select<?php echo $has_err( 'fge_event_type' ); // phpcs:ignore ?>" id="fge_event_type" name="fge_event_type">
-									<option value="">— bitte wählen —</option>
-									<?php foreach ( $event_types as $val => $label ) : ?>
-										<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $saved['fge_event_type'] ?? '', $val ); ?>><?php echo esc_html( $label ); ?></option>
-									<?php endforeach; ?>
-								</select>
-								<?php echo $err_html( 'fge_event_type' ); // phpcs:ignore ?>
-							</div>
-						</div>
 						<div class="fg-form-row">
 							<label class="fg-form-label" for="fge_post_title">Eventtitel <span class="fg-form-required" aria-label="Pflichtfeld">*</span></label>
 							<div class="fg-form-field">
@@ -2638,33 +2647,118 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<p class="fp-help">Wähl aus, was in diesem Angebot enthalten ist. Die Liste erscheint als „Im Preis enthalten" auf der Event-Seite und Firmen filtern danach.</p>
 
 						<?php
-						$service_catalogue = [
-							'Shuttle-Service', 'Schnupperkurs', 'Meetingraum 2 Stunden', 'Meetingraum (ganzer Tag)',
-							'Kaffee & Kuchen', 'Lunch', 'Abendessen', 'Begrüßungsgetränk',
-							'Greenfee Range & Übungsanlage', 'Leihschläger & Bälle', 'PGA-Coaching',
-							'9-Loch-Runde', '18-Loch-Turnier', 'Putting-Challenge',
-							'Halfway-Verpflegung', 'Urkunde & Foto-Erinnerung', 'Übernachtung',
+						// Anlage ≠ Leistung: Die Onboarding-Infrastruktur wird in buchbare
+						// Leistungs-Formulierungen übersetzt (der 18-Loch-Platz ist vor Ort,
+						// die Leistung ist die Runde darauf). Reine Fakten wie WLAN oder
+						// Duschen tauchen hier bewusst nicht auf.
+						$p_infra_sel = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_infra', true ) );
+
+						$infra_to_service = [
+							'Golf & Training' => [
+								'trial-course'    => 'Schnupperkurs',
+								'platzreife'      => 'Platzreifekurs',
+								'company-course'  => 'Firmenkurs',
+								'advanced-course' => 'Fortgeschrittenenkurs',
+								'coach'           => 'PGA-Coaching',
+								'driving-range'   => 'Range-Nutzung inkl. Bälle',
+								'trackman'        => 'TrackMan-Session',
+								'toptracer'       => 'Toptracer-Session',
+								'indoor'          => 'Indoor-Simulator-Session',
+								'course-18'       => '18-Loch-Runde (Greenfee)',
+								'course-9'        => '9-Loch-Runde (Greenfee)',
+								'short-course'    => 'Kurzplatz-Runde',
+								'short-game'      => 'Putting- & Kurzspiel-Challenge',
+								'rental-clubs'    => 'Leihschläger',
+								'range-balls'     => 'Range-Bälle',
+							],
+							'Räume & Tagung' => [
+								'meeting-room' => 'Meetingraum-Nutzung',
+								'seminar'      => 'Seminarraum-Nutzung',
+								'conference'   => 'Konferenzraum-Nutzung',
+								'workshop'     => 'Workshopraum-Nutzung',
+								'eventroom'    => 'Eventraum-Nutzung',
+							],
+							'Verpflegung' => [
+								'breakfast'    => 'Frühstück',
+								'lunch'        => 'Lunch',
+								'dinner'       => 'Abendessen',
+								'bbq'          => 'BBQ',
+								'catering'     => 'Catering',
+								'coffee-break' => 'Kaffeepause',
+								'drinks-flat'  => 'Getränkepauschale',
+								'halfway'      => 'Halfway-Verpflegung',
+							],
 						];
+
+						$svc_groups = [];
+						foreach ( $infra_to_service as $svc_group => $svc_map ) {
+							foreach ( $svc_map as $svc_id => $svc_label ) {
+								if ( in_array( $svc_id, $p_infra_sel, true ) ) {
+									$svc_groups[ $svc_group ][] = $svc_label;
+								}
+							}
+						}
+						// Tagungstechnik gesammelt als eine Leistung anbieten.
+						if ( array_intersect( [ 'beamer', 'screen', 'mic', 'flipchart', 'whiteboard', 'moderation' ], $p_infra_sel ) ) {
+							$svc_groups['Räume & Tagung'][] = 'Tagungstechnik (Beamer, Leinwand & Co.)';
+						}
+						// Extras, die keine Anlage voraussetzen.
+						$svc_groups['Extras'] = [
+							'Shuttle-Service', 'Begrüßungsgetränk', 'Urkunde & Foto-Erinnerung',
+							'Turnierorganisation', 'Übernachtung',
+						];
+
 						$cur_includes = $event_id ? array_map( 'strval', (array) get_post_meta( $event_id, '_fge_event_includes', true ) ) : [];
 						?>
 						<div class="fp-inc-chips" id="fp-inc-chips">
 							<?php foreach ( $cur_includes as $inc ) : ?>
-							<span class="fp-inc-chip" data-fp-chip="<?php echo esc_attr( $inc ); ?>">✓ <?php echo esc_html( $inc ); ?><button type="button" data-fp-chip-remove aria-label="Entfernen">×</button></span>
+							<span class="fp-inc-chip" data-fp-chip="<?php echo esc_attr( $inc ); ?>">
+								<span class="fp-inc-chip-ic" aria-hidden="true"><?php echo function_exists( 'fge_include_icon' ) ? fge_include_icon( $inc ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
+								<span class="fp-inc-chip-l"><?php echo esc_html( $inc ); ?></span>
+								<button type="button" data-fp-chip-remove aria-label="Entfernen">×</button>
+							</span>
 							<?php endforeach; ?>
 							<span class="fp-inc-add-wrap">
-								<button type="button" class="fp-inc-add" id="fp-inc-addbtn">+ Leistung hinzufügen</button>
-								<span class="fp-inc-menu" id="fp-inc-menu">
-									<?php foreach ( $service_catalogue as $svc ) : ?>
-									<button type="button" data-fp-inc-option="<?php echo esc_attr( $svc ); ?>"><?php echo esc_html( $svc ); ?></button>
-									<?php endforeach; ?>
-									<span class="fp-inc-custom">
-										<input class="fg-form-input" type="text" id="fp-inc-custom-input" placeholder="Eigene Leistung …">
-										<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fp-inc-custom-add">OK</button>
-									</span>
-								</span>
+								<button type="button" class="fp-inc-add" id="fp-inc-addbtn"><span class="fp-inc-add-plus">+</span>Leistung hinzufügen</button>
 							</span>
 						</div>
 						<textarea name="fge_event_includes" id="fge_event_includes" hidden><?php echo esc_textarea( implode( "\n", $cur_includes ) ); ?></textarea>
+
+						<!-- Auswahl-Fenster: Leistungs-Kacheln im Onboarding-Look -->
+						<div class="fp-svc-overlay" id="fp-svc-overlay" hidden>
+							<div class="fp-svc-sheet" role="dialog" aria-modal="true" aria-label="Leistungen auswählen">
+								<div class="fp-svc-bar">
+									<span class="t">Leistungen auswählen</span>
+									<button type="button" class="fp-svc-close" id="fp-svc-close" aria-label="Schließen">×</button>
+								</div>
+								<div class="fp-svc-body">
+									<?php foreach ( $svc_groups as $svc_group => $svc_list ) : ?>
+										<?php if ( empty( $svc_list ) ) { continue; } ?>
+									<div class="fp-svc-group">
+										<div class="fp-svc-group-h"><?php echo esc_html( $svc_group ); ?></div>
+										<div class="fp-svc-grid">
+											<?php foreach ( $svc_list as $svc ) : ?>
+											<label class="fp-svc-card">
+												<input type="checkbox" data-fp-svc="<?php echo esc_attr( $svc ); ?>" <?php checked( in_array( $svc, $cur_includes, true ) ); ?>>
+												<span class="fp-svc-ico" aria-hidden="true"><?php echo function_exists( 'fge_include_icon' ) ? fge_include_icon( $svc ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
+												<span class="fp-svc-l"><?php echo esc_html( $svc ); ?></span>
+												<span class="fp-svc-check" aria-hidden="true">✓</span>
+											</label>
+											<?php endforeach; ?>
+										</div>
+									</div>
+									<?php endforeach; ?>
+									<div class="fp-svc-custom">
+										<input class="fg-form-input" type="text" id="fp-inc-custom-input" placeholder="Eigene Leistung, z. B. Feuerwerk …">
+										<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fp-inc-custom-add">Hinzufügen</button>
+									</div>
+								</div>
+								<div class="fp-svc-foot">
+									<span class="fp-svc-count" id="fp-svc-count"></span>
+									<button type="button" class="fp-btn fp-btn-brand" id="fp-svc-done">Fertig</button>
+								</div>
+							</div>
+						</div>
 
 						<div class="fg-form-row" style="margin-top:24px;">
 							<label class="fg-form-label" for="fge_event_dayflow">So läuft der Tag ab</label>
@@ -2918,29 +3012,40 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 				syncItems();
 				recalc();
 
-				// ── Inkludierte Leistungen: Chips + Katalog-Menü ──
+				// ── Inkludierte Leistungen: Chips + Kachel-Auswahlfenster ──
 				var chips   = byId('fp-inc-chips');
 				var incTa   = byId('fge_event_includes');
-				var menu    = byId('fp-inc-menu');
-				var menuBtn = byId('fp-inc-addbtn');
+				var overlay = byId('fp-svc-overlay');
 				function syncChips() {
 					if (!chips || !incTa) { return; }
 					var vals = [];
 					chips.querySelectorAll('[data-fp-chip]').forEach(function (c) { vals.push(c.dataset.fpChip); });
 					incTa.value = vals.join('\n');
+					var count = byId('fp-svc-count');
+					if (count) { count.textContent = vals.length > 0 ? vals.length + ' ausgewählt' : ''; }
 				}
 				function hasChip(v) {
 					var found = false;
 					chips.querySelectorAll('[data-fp-chip]').forEach(function (c) { if (c.dataset.fpChip === v) { found = true; } });
 					return found;
 				}
-				function addChip(v) {
+				// Icon für eigene Leistungen (Zusatzleistung: Plus im Kreis).
+				var ZUSATZ_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
+				function addChip(v, iconHtml) {
 					v = (v || '').trim();
 					if (v === '' || hasChip(v)) { return; }
 					var chip = document.createElement('span');
 					chip.className = 'fp-inc-chip';
 					chip.dataset.fpChip = v;
-					chip.appendChild(document.createTextNode('✓ ' + v));
+					var ic = document.createElement('span');
+					ic.className = 'fp-inc-chip-ic';
+					ic.setAttribute('aria-hidden', 'true');
+					ic.innerHTML = iconHtml || ZUSATZ_ICON;
+					chip.appendChild(ic);
+					var lbl = document.createElement('span');
+					lbl.className = 'fp-inc-chip-l';
+					lbl.textContent = v;
+					chip.appendChild(lbl);
 					var x = document.createElement('button');
 					x.type = 'button';
 					x.setAttribute('data-fp-chip-remove', '');
@@ -2950,26 +3055,64 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					chips.insertBefore(chip, chips.querySelector('.fp-inc-add-wrap'));
 					syncChips();
 				}
+				function removeChip(v) {
+					chips.querySelectorAll('[data-fp-chip]').forEach(function (c) {
+						if (c.dataset.fpChip === v) { c.remove(); }
+					});
+					syncChips();
+				}
+				function setCard(v, on) {
+					if (!overlay) { return; }
+					overlay.querySelectorAll('[data-fp-svc]').forEach(function (cb) {
+						if (cb.dataset.fpSvc === v) { cb.checked = on; }
+					});
+				}
 				if (chips) {
 					chips.addEventListener('click', function (e) {
 						var rm = e.target.closest('[data-fp-chip-remove]');
-						if (rm) { rm.closest('[data-fp-chip]').remove(); syncChips(); return; }
-						var opt = e.target.closest('[data-fp-inc-option]');
-						if (opt) { addChip(opt.dataset.fpIncOption); menu.classList.remove('open'); }
+						if (rm) {
+							var chip = rm.closest('[data-fp-chip]');
+							setCard(chip.dataset.fpChip, false);
+							chip.remove();
+							syncChips();
+						}
 					});
 				}
-				if (menuBtn && menu) {
-					menuBtn.addEventListener('click', function (e) { e.stopPropagation(); menu.classList.toggle('open'); });
-					document.addEventListener('click', function (e) {
-						if (!e.target.closest('.fp-inc-add-wrap')) { menu.classList.remove('open'); }
+				function openSvc()  { if (overlay) { overlay.hidden = false; document.body.style.overflow = 'hidden'; } }
+				function closeSvc() { if (overlay) { overlay.hidden = true; document.body.style.overflow = ''; } }
+				var addBtnSvc = byId('fp-inc-addbtn');
+				if (addBtnSvc) { addBtnSvc.addEventListener('click', openSvc); }
+				var closeBtnSvc = byId('fp-svc-close');
+				var doneBtnSvc  = byId('fp-svc-done');
+				if (closeBtnSvc) { closeBtnSvc.addEventListener('click', closeSvc); }
+				if (doneBtnSvc)  { doneBtnSvc.addEventListener('click', closeSvc); }
+				if (overlay) {
+					overlay.addEventListener('click', function (e) { if (e.target === overlay) { closeSvc(); } });
+					document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !overlay.hidden) { closeSvc(); } });
+					overlay.addEventListener('change', function (e) {
+						var cb = e.target.closest('[data-fp-svc]');
+						if (!cb) { return; }
+						var card = cb.closest('.fp-svc-card');
+						if (cb.checked) {
+							var ico = card ? card.querySelector('.fp-svc-ico') : null;
+							addChip(cb.dataset.fpSvc, ico ? ico.innerHTML : '');
+							if (card) {
+								card.classList.remove('fp-svc-pop');
+								void card.offsetWidth;
+								card.classList.add('fp-svc-pop');
+							}
+						} else {
+							removeChip(cb.dataset.fpSvc);
+						}
 					});
 				}
 				var customIn  = byId('fp-inc-custom-input');
 				var customAdd = byId('fp-inc-custom-add');
+				function addCustom() { addChip(customIn.value); customIn.value = ''; }
 				if (customIn && customAdd) {
-					customAdd.addEventListener('click', function () { addChip(customIn.value); customIn.value = ''; });
+					customAdd.addEventListener('click', addCustom);
 					customIn.addEventListener('keydown', function (e) {
-						if (e.key === 'Enter') { e.preventDefault(); addChip(customIn.value); customIn.value = ''; }
+						if (e.key === 'Enter') { e.preventDefault(); addCustom(); }
 					});
 				}
 				syncChips();
@@ -2981,11 +3124,11 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 				}
 				function updPreview() {
 					var title = byId('fge_post_title');
-					var type  = byId('fge_event_type');
 					var dur   = byId('fge_duration');
 					var minP  = byId('fge_participants_min');
 					var maxP  = byId('fge_participants_max');
-					var typeLabel = type && type.selectedIndex > 0 ? type.options[type.selectedIndex].text : 'Eventart';
+					var typeRadio = document.querySelector('#fp-type-grid input[name="fge_event_type"]:checked');
+					var typeLabel = typeRadio ? (typeRadio.dataset.label || 'Eventart') : 'Eventart';
 					var pvT = byId('fp-pv-title');
 					if (pvT) { pvT.textContent = ( title && title.value.trim() ) ? title.value.trim() : 'Titel deines Angebots'; }
 					var pvC = byId('fp-pv-chip');
@@ -3001,9 +3144,21 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 							: ( maxP && maxP.value ? 'bis ' + maxP.value + ' Gäste' : 'Teilnehmer' );
 					}
 				}
-				['fge_post_title', 'fge_event_type', 'fge_duration', 'fge_participants_min', 'fge_participants_max'].forEach(function (id) {
+				['fge_post_title', 'fge_duration', 'fge_participants_min', 'fge_participants_max'].forEach(function (id) {
 					bindPreview(id, updPreview);
 				});
+				var typeGrid = byId('fp-type-grid');
+				if (typeGrid) {
+					typeGrid.addEventListener('change', function (e) {
+						var card = e.target.closest('.fp-type-card');
+						if (card) {
+							card.classList.remove('fp-svc-pop');
+							void card.offsetWidth;
+							card.classList.add('fp-svc-pop');
+						}
+						updPreview();
+					});
+				}
 				updPreview();
 
 				// Cover-Auswahl im Picker → Vorschau-Foto (URL aus der Galerie-Config).

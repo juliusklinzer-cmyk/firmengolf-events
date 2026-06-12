@@ -146,41 +146,129 @@
 .fgpp .fgpp-poi-v { font-size: 14px; font-weight: 600; color: var(--ink-900); margin-top: 5px; }
 
 /* ── Event-Editor: Leistungs-Chips, Preis-Toggle, Live-Rechnung, Live-Vorschau ── */
-.fp-inc-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* Eventart als Kachel-Auswahl (Radio-Karten im Auswahlfenster-Look). */
+.fp-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.fp-type-card { background: var(--paper-50, #FBFAF6); }
+@media (max-width: 700px) { .fp-type-grid { grid-template-columns: 1fr 1fr; } }
+
+/* Ausgewählte Leistungen als Icon-Kacheln (gleicher Look wie im Auswahlfenster). */
+.fp-inc-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .fp-inc-chip {
-  display: inline-flex; align-items: center; gap: 7px;
-  background: var(--fairway-100); color: var(--fairway-800, var(--fairway-700));
-  border: 1px solid var(--fairway-200); border-radius: 999px;
-  padding: 7px 12px; font-size: 13px; font-weight: 600;
-}
-.fp-inc-chip button { border: 0; background: transparent; cursor: pointer; color: inherit; font-size: 15px; line-height: 1; padding: 0 2px; }
-.fp-inc-add-wrap { position: relative; display: inline-flex; }
-.fp-inc-add {
-  border: 1.5px dashed var(--ink-300); background: var(--paper-100); border-radius: 999px;
-  padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-700); cursor: pointer;
-}
-.fp-inc-add:hover { border-color: var(--fairway-700); color: var(--fairway-700); }
-.fp-inc-menu {
-  position: absolute; z-index: 30; top: calc(100% + 6px); left: 0;
-  min-width: 280px; max-height: 300px; overflow: auto;
+  display: flex; align-items: center; gap: 10px;
   background: #fff; border: 1px solid var(--ink-200); border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(14, 19, 16, 0.14); padding: 6px;
-  display: none;
+  padding: 12px 14px; font-size: 13px; font-weight: 600; color: var(--ink-900);
 }
-.fp-inc-menu.open { display: block; }
-.fp-inc-menu > button {
-  display: block; width: 100%; text-align: left; border: 0; background: transparent;
-  padding: 8px 10px; border-radius: 8px; font: inherit; font-size: 14px; color: var(--ink-900); cursor: pointer;
+.fp-inc-chip-ic { flex: none; width: 20px; height: 20px; color: var(--fairway-700); }
+.fp-inc-chip-ic svg { width: 100%; height: 100%; }
+.fp-inc-chip-l { line-height: 1.3; }
+.fp-inc-chip button {
+  margin-left: auto; flex: none;
+  border: 0; background: transparent; cursor: pointer;
+  color: var(--ink-500); font-size: 16px; line-height: 1; padding: 0 2px;
 }
-.fp-inc-menu > button:hover { background: var(--paper-200); }
-.fp-inc-custom { display: flex; gap: 6px; padding: 8px 6px 4px; border-top: 1px solid var(--ink-200); margin-top: 4px; }
+.fp-inc-chip button:hover { color: var(--danger, #c0392b); }
+.fp-inc-add-wrap { display: contents; }
+/* .fp-inc-chips-Präfix: gestrichelter Rahmen überlebt den `.fge-page button`-Reset. */
+.fp-inc-chips .fp-inc-add {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1.5px dashed var(--ink-300); background: var(--paper-100); border-radius: 12px;
+  padding: 12px 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-700); cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.fp-inc-chips .fp-inc-add:hover { border-color: var(--fairway-700); color: var(--fairway-700); background: var(--fairway-100); }
+.fp-inc-add-plus { font-size: 18px; font-weight: 300; line-height: 1; }
+@media (max-width: 700px) { .fp-inc-chips { grid-template-columns: 1fr 1fr; } }
+
+/* ── Leistungs-Auswahlfenster: Kacheln im Onboarding-Look ── */
+.fp-svc-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(10, 16, 12, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.fp-svc-overlay[hidden] { display: none; }
+.fp-svc-sheet {
+  background: var(--paper-50, #FBFAF6); border-radius: 20px;
+  width: 100%; max-width: 760px; max-height: 86vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+}
+.fp-svc-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 22px; border-bottom: 1px solid var(--ink-200);
+}
+.fp-svc-bar .t { font-size: 16px; font-weight: 700; color: var(--ink-900); }
+.fp-svc-close {
+  border: 0; background: var(--paper-200); cursor: pointer;
+  width: 32px; height: 32px; border-radius: 999px;
+  font-size: 17px; line-height: 1; color: var(--ink-700);
+}
+.fp-svc-close:hover { background: var(--paper-300, var(--ink-200)); }
+.fp-svc-body { overflow: auto; padding: 20px 22px; }
+.fp-svc-group + .fp-svc-group { margin-top: 24px; }
+.fp-svc-group-h {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--ink-500); margin-bottom: 12px;
+}
+.fp-svc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.fp-svc-card {
+  position: relative; cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 14px;
+  background: #fff; border: 1px solid var(--ink-200); border-radius: 12px;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.fp-svc-card input { position: absolute; opacity: 0; pointer-events: none; }
+.fp-svc-card:hover { border-color: var(--ink-400, var(--ink-500)); }
+.fp-svc-ico { flex: none; width: 22px; height: 22px; color: var(--ink-700); transition: color 0.15s ease; }
+.fp-svc-ico svg { width: 100%; height: 100%; }
+.fp-svc-l { font-size: 13px; font-weight: 600; color: var(--ink-900); line-height: 1.3; }
+.fp-svc-check {
+  margin-left: auto; flex: none;
+  width: 20px; height: 20px; border-radius: 999px;
+  border: 1.5px solid var(--ink-300, var(--ink-200));
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; color: transparent;
+  transition: all 0.15s ease;
+}
+.fp-svc-card:has(input:checked) {
+  border-color: var(--ink-900); background: var(--paper-200);
+  box-shadow: inset 0 0 0 1px var(--ink-900);
+}
+.fp-svc-card:has(input:checked) .fp-svc-ico { color: var(--fairway-700); }
+.fp-svc-card:has(input:checked) .fp-svc-check {
+  background: var(--fairway-700); border-color: var(--fairway-700); color: #fff;
+}
+@keyframes fp-svc-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.fp-svc-card.fp-svc-pop { animation: fp-svc-pop 0.18s ease; }
+.fp-svc-custom { display: flex; gap: 8px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--ink-200); }
+.fp-svc-custom .fg-form-input { flex: 1; }
+.fp-svc-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 22px; border-top: 1px solid var(--ink-200);
+}
+.fp-svc-count { font-size: 13px; font-weight: 600; color: var(--fairway-700); }
+@media (max-width: 700px) {
+  .fp-svc-grid { grid-template-columns: 1fr 1fr; }
+  .fp-svc-overlay { padding: 12px; }
+}
+@media (max-width: 480px) {
+  .fp-svc-grid { grid-template-columns: 1fr; }
+}
 .fp-price-modes { display: flex; gap: 8px; margin-bottom: 14px; }
-.fp-price-mode {
-  border: 1px solid var(--ink-200); background: var(--paper-50); border-radius: 999px;
+/* .fp-price-modes-Präfix: schlägt den globalen `.fge-page button`-Reset,
+   damit auch inaktive Optionen sichtbar umrandet sind. */
+.fp-price-modes .fp-price-mode {
+  border: 1px solid var(--ink-300, var(--ink-200)); background: var(--paper-50); border-radius: 999px;
   padding: 8px 18px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-700); cursor: pointer;
   transition: all 0.15s ease;
 }
-.fp-price-mode.on { border-color: var(--ink-900); box-shadow: inset 0 0 0 1px var(--ink-900); color: var(--ink-900); background: var(--paper-200); }
+.fp-price-modes .fp-price-mode:hover { border-color: var(--ink-500, var(--ink-400)); }
+.fp-price-modes .fp-price-mode.on { border-color: var(--ink-900); box-shadow: inset 0 0 0 1px var(--ink-900); color: var(--ink-900); background: var(--paper-200); }
 .fp-price-item { display: grid; grid-template-columns: 1fr 130px 34px; gap: 8px; margin-bottom: 8px; align-items: center; }
 .fp-price-item .x { border: 0; background: transparent; cursor: pointer; color: var(--ink-500); font-size: 18px; line-height: 1; }
 .fp-price-item .x:hover { color: var(--danger, #c0392b); }

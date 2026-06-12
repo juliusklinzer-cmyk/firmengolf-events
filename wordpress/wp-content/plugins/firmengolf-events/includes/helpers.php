@@ -5,6 +5,42 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Icon (SVG) für eine inkludierte Event-Leistung: mappt das Label per Stichwort
+ * auf die Onboarding-Icons; unbekannte Leistungen bekommen ein Häkchen.
+ */
+function fge_include_icon( string $label ): string {
+	$l   = mb_strtolower( $label );
+	$map = [
+		'meeting'       => [ 'meetingraum', 'seminar', 'konferenz', 'workshop', 'raum' ],
+		'restaurant'    => [ 'lunch', 'mittag', 'dinner', 'abendessen', 'menü', 'buffet', 'verpflegung', 'catering' ],
+		'coffee'        => [ 'kaffee', 'kuchen', 'frühstück', 'pause' ],
+		'drinks'        => [ 'getränk', 'begrüßung', 'sekt', 'bar' ],
+		'grill'         => [ 'bbq', 'grill' ],
+		'coach'         => [ 'coaching', 'pga', 'golflehrer', 'schnupperkurs', 'kurs', 'training' ],
+		'clubs'         => [ 'leihschläger', 'schläger' ],
+		'balls'         => [ 'bälle', 'ball' ],
+		'driving-range' => [ 'range', 'übungsanlage', 'greenfee' ],
+		'course-18'     => [ 'loch', 'runde', 'turnier' ],
+		'putting'       => [ 'putting' ],
+		'branding'      => [ 'urkunde', 'foto', 'branding' ],
+	];
+	if ( function_exists( 'fge_onboarding_card_icon' ) ) {
+		foreach ( $map as $icon => $needles ) {
+			foreach ( $needles as $needle ) {
+				if ( false !== mb_strpos( $l, $needle ) ) {
+					$svg = fge_onboarding_card_icon( $icon );
+					if ( '' !== $svg ) {
+						return $svg;
+					}
+				}
+			}
+		}
+	}
+	// Fallback: „Zusatzleistung"-Icon (Plus im Kreis) für eigene Leistungen.
+	return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
+}
+
+/**
  * Partner-Vorgangsnummer (FG-P-26-001): jährliche Sequenz wie bei den Anfragen,
  * wird beim ersten Zugriff vergeben und am Partner gespeichert.
  */
