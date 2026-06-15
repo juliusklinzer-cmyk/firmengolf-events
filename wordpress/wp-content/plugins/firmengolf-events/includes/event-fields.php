@@ -564,7 +564,7 @@ function fge_render_mb_angebot_neu( WP_Post $post ) {
 			<td><textarea id="fge_event_dayflow" name="fge_event_dayflow" rows="4" class="large-text" placeholder="Ankunft & Begrüßung → Coaching → Lunch → Turnier → Ausklang"><?php echo esc_textarea( $dayflow ); ?></textarea></td>
 		</tr>
 		<tr>
-			<th scope="row"><label for="fge_release_mode">Termin-Freigabe</label></th>
+			<th scope="row"><label for="fge_release_mode">Terminabstimmung</label></th>
 			<td>
 				<select id="fge_release_mode" name="fge_release_mode">
 					<option value="us"      <?php selected( $release, 'us' ); ?>>Nur der Platz selbst gibt Anfragen frei</option>

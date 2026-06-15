@@ -537,19 +537,27 @@ function fge_portal_save_event_meta( int $post_id ): void {
 		$n_names = (array) ( $_POST['fge_new_responder_name'] ?? [] );
 		$n_roles = (array) ( $_POST['fge_new_responder_role'] ?? [] );
 		$n_mails = (array) ( $_POST['fge_new_responder_email'] ?? [] );
+		$n_perms = (array) ( $_POST['fge_new_responder_perm'] ?? [] );
 		foreach ( $n_names as $i => $nn ) {
 			$nm = sanitize_text_field( wp_unslash( $nn ) );
 			$em = sanitize_email( wp_unslash( $n_mails[ $i ] ?? '' ) );
 			if ( '' === $nm || ! is_email( $em ) ) {
 				continue;
 			}
+			$n_role = sanitize_text_field( wp_unslash( $n_roles[ $i ] ?? '' ) );
+			$n_perm = strtolower( sanitize_text_field( wp_unslash( $n_perms[ $i ] ?? '' ) ) );
+			if ( ! in_array( $n_perm, [ 'vote', 'notify' ], true ) ) {
+				$n_perm = ''; // Standard nach Rolle.
+			}
 			$cid = fge_contact_add( $rp_partner, [
 				'name'       => $nm,
 				'email'      => $em,
-				'role'       => sanitize_text_field( wp_unslash( $n_roles[ $i ] ?? '' ) ),
-				'permission' => 'vote',
+				'role'       => $n_role,
+				'permission' => $n_perm,
 			] );
-			if ( $cid > 0 ) {
+			// Nur Abstimmende werden fürs Event vorgemerkt; „Nur informieren" stimmt nicht ab.
+			$n_effective = function_exists( 'fge_contact_normalize_permission' ) ? fge_contact_normalize_permission( $n_perm, $n_role ) : $n_perm;
+			if ( $cid > 0 && 'notify' !== $n_effective ) {
 				$responders[] = $cid;
 			}
 		}
@@ -1157,15 +1165,9 @@ function fge_portal_render_cat_card( WP_Post $event, string $type_label, string 
 	$cover    = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $event_id, 'large' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' );
 	$edit_url = esc_url( $base . '?tab=angebote&portal_action=edit&event_id=' . $event_id );
 
-	$st_map = [
-		'freigegeben'           => [ 'published', 'Veröffentlicht' ],
-		'zur_pruefung'          => [ 'pruefung',  'In Prüfung' ],
-		'aenderung_in_pruefung' => [ 'pruefung',  'In Prüfung' ],
-		'entwurf'               => [ 'draft',     'Entwurf' ],
-		'pausiert'              => [ 'paused',    'Pausiert' ],
-		'abgelehnt'             => [ 'paused',    'Abgelehnt' ],
-	];
-	$st = $st_map[ $status ] ?? [ 'draft', 'Entwurf' ];
+	// Einheitliches Status-Tag (gleiche Labels/Farben wie überall sonst).
+	$st_label = fge_portal_format_event_status( $status ) ?: 'Entwurf';
+	$st_class = fge_portal_status_class( $status );
 
 	$group = ( $pmin > 0 && $pmax > 0 ) ? "{$pmin}–{$pmax}" : ( $pmax > 0 ? "bis {$pmax}" : ( $pmin > 0 ? "ab {$pmin}" : '' ) );
 	$pr    = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $event_id ) : [ 'gross' => 0.0, 'unit' => '' ];
@@ -1181,7 +1183,7 @@ function fge_portal_render_cat_card( WP_Post $event, string $type_label, string 
 	<div class="cat">
 		<div class="cat-photo" style="background-image:url('<?php echo esc_url( $cover ); ?>')">
 			<span class="cat-cat-chip"><?php echo esc_html( $type_label ); ?></span>
-			<span class="cat-status <?php echo esc_attr( $st[0] ); ?>"><span class="dot"></span><?php echo esc_html( $st[1] ); ?></span>
+			<span class="fp-pill cat-status-pos <?php echo esc_attr( $st_class ); ?>"><span class="dot"></span><?php echo esc_html( $st_label ); ?></span>
 		</div>
 		<div class="cat-body">
 			<div class="cat-title"><?php echo esc_html( $event->post_title ); ?></div>
@@ -1782,7 +1784,7 @@ function fge_portal_section_team( int $partner_id ): void {
 				<div>
 					<div class="eyebrow">Konto</div>
 					<h2>Deine <em>Ansprechpartner</em></h2>
-					<p>Diese Personen kannst du bei der Termin-Freigabe für ein Angebot einbinden. Sie werden bei Anfragen über die gewünschten Termine benachrichtigt — und brauchen keinen eigenen Account.</p>
+					<p>Diese Personen kannst du bei der Terminabstimmung für ein Angebot einbinden. Sie werden bei Anfragen über die gewünschten Termine benachrichtigt und brauchen keinen eigenen Account.</p>
 				</div>
 				<button type="button" class="btn btn-brand" data-fgc-open="new">+ Person hinzufügen</button>
 			</div>
@@ -2474,6 +2476,9 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					<?php echo fge_icon_arrow_left(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 					Zurück
 				</a>
+				<button type="submit" form="fp-event-form" class="fp-btn fp-btn-brand">
+					<?php echo $is_edit ? 'Änderungen speichern' : 'Event einreichen'; ?>
+				</button>
 			</div>
 		</div>
 
@@ -2483,7 +2488,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 			</div>
 		<?php endif; ?>
 
-		<form method="post" action="<?php echo esc_url( $base ); ?>" enctype="multipart/form-data" novalidate>
+		<form method="post" action="<?php echo esc_url( $base ); ?>" enctype="multipart/form-data" novalidate id="fp-event-form">
 			<input type="hidden" name="fge_action" value="<?php echo $is_edit ? 'portal_edit_event' : 'portal_new_event'; ?>">
 			<?php if ( $is_edit ) : ?><input type="hidden" name="fge_event_id" value="<?php echo esc_attr( $event_id ); ?>"><?php endif; ?>
 			<?php wp_nonce_field( $is_edit ? 'fge_portal_edit_event' : 'fge_portal_new_event', 'fge_portal_nonce' ); ?>
@@ -2767,55 +2772,83 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						</div>
 					</div>
 
-					<!-- Verfügbarkeit & Termin-Freigabe -->
+					<!-- Verfügbarkeit -->
 					<div class="fp-form-sec">
-						<h3>Verfügbarkeit & Termin-Freigabe</h3>
+						<h3>Verfügbarkeit</h3>
 						<p class="fp-help">An welchen Wochentagen kann dieses Event angefragt werden? Standort und Saison kommen automatisch von deinem Platz.</p>
 
 						<div class="fg-form-row">
 							<label class="fg-form-label">Verfügbare Wochentage</label>
-							<div class="fg-portal-weekdays">
+							<div class="fp-day-row">
 								<?php foreach ( $weekdays as $val => $label ) : ?>
-									<label class="fg-portal-weekday-check">
+									<label class="fp-day">
 										<input type="checkbox" name="fge_available_weekdays[]" value="<?php echo esc_attr( $val ); ?>" <?php checked( in_array( $val, $saved_weekdays, true ) ); ?>>
-										<span><?php echo esc_html( $label ); ?></span>
+										<?php echo esc_html( $label ); ?>
 									</label>
 								<?php endforeach; ?>
 							</div>
 						</div>
+					</div>
 
-						<div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--ink-200);">
-							<p class="fg-form-label" style="margin-bottom:6px;font-weight:500;">Termin-Freigabe</p>
-							<p class="fp-help" style="margin-bottom:12px;">Wer stimmt Wunschterminen von Unternehmen für dieses Event zu?</p>
-							<?php
-							$fge_release  = $event_id ? ( (string) get_post_meta( $event_id, '_fge_release_mode', true ) ?: 'us' ) : 'us';
-							$fge_resp_sel = $event_id ? array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) : [];
-							$fge_contacts = function_exists( 'fge_contacts_get' ) ? fge_contacts_get( $partner_id ) : [];
-							?>
-							<div class="fg-form-row">
-								<select class="fg-form-input" id="fge_release_mode" name="fge_release_mode">
-									<option value="us" <?php selected( $fge_release, 'us' ); ?>>Nur wir am Platz bestätigen Termine</option>
-									<option value="approve" <?php selected( $fge_release, 'approve' ); ?>>Ausgewählte Ansprechpartner stimmen Termine ab</option>
-								</select>
+					<!-- Terminabstimmung -->
+					<div class="fp-form-sec">
+						<h3>Terminabstimmung</h3>
+						<p class="fp-help">Wenn ein Unternehmen anfragt, schickt es bis zu drei Wunschtermine mit. Hier legst du fest, wer diese Termine für dieses Event bestätigt.</p>
+
+						<div class="fp-rel-info">
+							<strong>So funktioniert die Abstimmung im Team:</strong> Alle ausgewählten Personen bekommen die Wunschtermine automatisch per E-Mail und antworten mit einem Klick „passt" oder „passt nicht", ganz ohne eigenes Konto. Du siehst alle Rückmeldungen gesammelt und niemand muss hinterhertelefonieren. So werden Events deutlich schneller verbindlich.
+						</div>
+
+						<?php
+						$fge_release  = $event_id ? ( (string) get_post_meta( $event_id, '_fge_release_mode', true ) ?: 'us' ) : 'us';
+						$fge_resp_sel = $event_id ? array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) : [];
+						$fge_contacts = function_exists( 'fge_contacts_get' ) ? fge_contacts_get( $partner_id ) : [];
+						?>
+						<div class="fp-rel-opts" id="fp-rel-opts">
+							<label class="fp-rel-opt">
+								<input type="radio" name="fge_release_mode" value="us" <?php checked( $fge_release, 'us' ); ?>>
+								<span class="fp-rel-radio" aria-hidden="true"></span>
+								<span>
+									<span class="fp-rel-t">Nur wir am Platz</span>
+									<span class="fp-rel-s">Die Wunschtermine kommen direkt bei euch an und ihr bestätigt sie allein.</span>
+								</span>
+							</label>
+							<label class="fp-rel-opt">
+								<input type="radio" name="fge_release_mode" value="approve" <?php checked( $fge_release, 'approve' ); ?>>
+								<span class="fp-rel-radio" aria-hidden="true"></span>
+								<span>
+									<span class="fp-rel-t">Team stimmt Termine ab <span class="fp-rel-badge">Empfohlen</span></span>
+									<span class="fp-rel-s">Gastronomie, Pro oder Sekretariat bestätigen ihre Verfügbarkeit selbst per Mail-Link. Ideal, wenn mehrere Bereiche am Event beteiligt sind.</span>
+								</span>
+							</label>
+						</div>
+
+						<div id="fge-responders" style="margin-top:14px;<?php echo 'approve' === $fge_release ? '' : 'display:none;'; ?>">
+							<p class="fg-form-label" style="margin-bottom:10px;font-weight:600;">Wer stimmt für dieses Event ab?</p>
+							<?php if ( $fge_contacts ) : ?>
+							<div class="fg-form-checkgrid" style="margin-bottom:12px;">
+								<?php foreach ( $fge_contacts as $fc ) :
+									$fc_perm = function_exists( 'fge_contact_normalize_permission' )
+										? fge_contact_normalize_permission( (string) ( $fc['permission'] ?? '' ), (string) ( $fc['role'] ?? '' ) )
+										: (string) ( $fc['permission'] ?? '' );
+									$fc_perm_lbl = fge_contact_permissions()[ $fc_perm ] ?? $fc_perm;
+									$fc_checked  = $fge_resp_sel ? in_array( (int) $fc['id'], $fge_resp_sel, true ) : ( 'vote' === $fc_perm );
+								?>
+								<label class="fg-form-check">
+									<input type="checkbox" name="fge_event_responders[]" value="<?php echo esc_attr( (string) $fc['id'] ); ?>" <?php checked( $fc_checked ); ?>>
+									<span><?php echo esc_html( $fc['name'] . ( '' !== (string) ( $fc['role'] ?? '' ) ? ' · ' . $fc['role'] : '' ) ); ?>
+										<span class="fp-perm-tag <?php echo 'vote' === $fc_perm ? 'is-vote' : 'is-notify'; ?>"><?php echo esc_html( $fc_perm_lbl ); ?></span>
+									</span>
+								</label>
+								<?php endforeach; ?>
 							</div>
-							<div id="fge-responders" style="<?php echo 'approve' === $fge_release ? '' : 'display:none;'; ?>">
-								<?php if ( $fge_contacts ) : ?>
-								<div class="fg-form-checkgrid" style="margin-bottom:12px;">
-									<?php foreach ( $fge_contacts as $fc ) :
-										$fc_checked = $fge_resp_sel ? in_array( (int) $fc['id'], $fge_resp_sel, true ) : ( ( $fc['permission'] ?? '' ) === 'vote' );
-									?>
-									<label class="fg-form-check">
-										<input type="checkbox" name="fge_event_responders[]" value="<?php echo esc_attr( (string) $fc['id'] ); ?>" <?php checked( $fc_checked ); ?>>
-										<span><?php echo esc_html( $fc['name'] . ( '' !== (string) ( $fc['role'] ?? '' ) ? ' · ' . $fc['role'] : '' ) ); ?></span>
-									</label>
-									<?php endforeach; ?>
-								</div>
-								<?php endif; ?>
-								<div id="fge-newresp-list"></div>
-								<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fge-newresp-add">+ Neue Person hinzufügen</button>
-								<p class="fp-help" style="margin-top:8px;">Neue Personen werden deinen Ansprechpartnern hinzugefügt und direkt für dieses Event ausgewählt.</p>
-								<template id="fge-newresp-tpl">
-									<div class="fg-form-row fg-form-row--3col" style="margin-top:12px;">
+							<?php endif; ?>
+							<div id="fge-newresp-list"></div>
+							<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fge-newresp-add">+ Neue Person hinzufügen</button>
+							<p class="fp-help" style="margin-top:8px;">Neue Personen werden deinen Ansprechpartnern hinzugefügt und direkt für dieses Event ausgewählt.</p>
+							<template id="fge-newresp-tpl">
+								<div class="fp-newresp" style="margin-top:12px;padding:14px;border:1px solid var(--ink-200);border-radius:12px;">
+									<div class="fg-form-row fg-form-row--3col">
 										<div><input class="fg-form-input" type="text" name="fge_new_responder_name[]" placeholder="Vor- und Nachname"></div>
 										<div>
 											<select class="fg-form-input" name="fge_new_responder_role[]">
@@ -2827,26 +2860,36 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 										</div>
 										<div><input class="fg-form-input" type="email" name="fge_new_responder_email[]" placeholder="name@golfclub.de"></div>
 									</div>
-								</template>
-							</div>
-							<script>
-							(function () {
-								var mode = document.getElementById('fge_release_mode');
-								var box  = document.getElementById('fge-responders');
-								var add  = document.getElementById('fge-newresp-add');
-								var list = document.getElementById('fge-newresp-list');
-								var tpl  = document.getElementById('fge-newresp-tpl');
-								if (mode && box) {
-									mode.addEventListener('change', function () { box.style.display = mode.value === 'approve' ? '' : 'none'; });
-								}
-								if (add && list && tpl) {
-									add.addEventListener('click', function () {
-										list.appendChild(tpl.content.firstElementChild.cloneNode(true));
-									});
-								}
-							})();
-							</script>
+									<div class="fg-form-row" style="margin-top:8px;">
+										<select class="fg-form-input" name="fge_new_responder_perm[]">
+											<option value="">Standard nach Rolle</option>
+											<option value="vote">Terminabstimmung: stimmt Wunschterminen per Link zu</option>
+											<option value="notify">Nur informieren: bekommt Status-Mails, stimmt nicht ab</option>
+										</select>
+									</div>
+								</div>
+							</template>
 						</div>
+						<script>
+						(function () {
+							var opts = document.getElementById('fp-rel-opts');
+							var box  = document.getElementById('fge-responders');
+							var add  = document.getElementById('fge-newresp-add');
+							var list = document.getElementById('fge-newresp-list');
+							var tpl  = document.getElementById('fge-newresp-tpl');
+							if (opts && box) {
+								opts.addEventListener('change', function () {
+									var sel = opts.querySelector('input[name="fge_release_mode"]:checked');
+									box.style.display = ( sel && sel.value === 'approve' ) ? '' : 'none';
+								});
+							}
+							if (add && list && tpl) {
+								add.addEventListener('click', function () {
+									list.appendChild(tpl.content.firstElementChild.cloneNode(true));
+								});
+							}
+						})();
+						</script>
 					</div>
 
 				</div><!-- /left -->
@@ -2919,7 +2962,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 
 			<div class="fp-edit-actionbar">
 				<span style="font-size:13px;color:var(--ink-500);display:inline-flex;align-items:center;gap:8px;">
-					<span style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none;display:inline-block;"></span>
+					<span class="fp-unsaved-dot" style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none;display:inline-block;"></span>
 					<?php echo $is_edit ? 'Änderungen noch nicht gespeichert' : 'Noch nicht eingereicht'; ?>
 				</span>
 				<button type="submit" class="fp-btn fp-btn-brand">

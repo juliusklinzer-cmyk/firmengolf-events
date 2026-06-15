@@ -45,6 +45,7 @@
 .fgpp .cat-photo { position: relative; aspect-ratio: 16/10; background-size: cover; background-position: center; background-color: var(--paper-300); }
 .fgpp .cat-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,19,16,0) 50%, rgba(14,19,16,0.45) 100%); }
 .fgpp .cat-cat-chip { position: absolute; left: 14px; top: 14px; background: rgba(255,255,255,0.88); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--ink-900); z-index: 1; display: inline-flex; align-items: center; gap: 6px; }
+.fgpp .cat-status-pos { position: absolute; right: 14px; top: 14px; z-index: 1; }
 .fgpp .cat-status { position: absolute; right: 14px; top: 14px; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; padding: 5px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; z-index: 1; text-transform: uppercase; background: var(--paper-100); }
 .fgpp .cat-status .dot { width: 6px; height: 6px; border-radius: 999px; }
 .fgpp .cat-status.published { color: var(--fairway-700); } .fgpp .cat-status.published .dot { background: #5BCB7E; }
@@ -146,6 +147,65 @@
 .fgpp .fgpp-poi-v { font-size: 14px; font-weight: 600; color: var(--ink-900); margin-top: 5px; }
 
 /* ── Event-Editor: Leistungs-Chips, Preis-Toggle, Live-Rechnung, Live-Vorschau ── */
+/* Wochentags-Pills wie im Onboarding (Mo–So, Auswahl über den Checkbox-Zustand). */
+.fp-day-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.fp-day {
+  position: relative; cursor: pointer;
+  width: 56px; height: 44px; border-radius: 12px;
+  border: 1px solid var(--ink-200); background: var(--paper-50, #FBFAF6);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600; color: var(--ink-700);
+  transition: all 0.15s ease;
+}
+.fp-day input { position: absolute; opacity: 0; pointer-events: none; }
+.fp-day:hover { border-color: var(--ink-500, var(--ink-400)); }
+.fp-day:has(input:checked) {
+  color: var(--ink-900); border-color: var(--ink-900);
+  box-shadow: inset 0 0 0 1px var(--ink-900); background: var(--paper-200);
+}
+
+/* Berechtigungs-Tag an Personen (Terminabstimmung vs. Nur informieren). */
+.fp-perm-tag {
+  display: inline-flex; align-items: center;
+  margin-left: 6px; padding: 2px 8px; border-radius: 999px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.fp-perm-tag.is-vote   { background: var(--fairway-100); color: var(--fairway-700); border: 1px solid var(--fairway-200); }
+.fp-perm-tag.is-notify { background: var(--paper-200); color: var(--ink-600, #6C736E); border: 1px solid var(--ink-200); }
+
+/* Terminabstimmung: Info-Box + Options-Karten. */
+.fp-rel-info {
+  background: var(--fairway-100); border: 1px solid var(--fairway-200);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;
+  font-size: 13px; line-height: 1.55; color: var(--ink-800);
+}
+.fp-rel-info strong { color: var(--fairway-800, var(--fairway-700)); }
+.fp-rel-opts { display: grid; gap: 10px; }
+.fp-rel-opt {
+  position: relative; display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 16px; background: #fff;
+  border: 1px solid var(--ink-300, var(--ink-200)); border-radius: 12px;
+  cursor: pointer; transition: all 0.15s ease;
+}
+.fp-rel-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.fp-rel-opt:hover { border-color: var(--ink-500, var(--ink-400)); }
+.fp-rel-radio {
+  flex: none; margin-top: 2px; width: 18px; height: 18px;
+  border-radius: 999px; border: 2px solid var(--ink-300, var(--ink-200)); position: relative;
+}
+.fp-rel-opt:has(input:checked) { border-color: var(--ink-900); box-shadow: inset 0 0 0 1px var(--ink-900); background: var(--paper-200); }
+.fp-rel-opt:has(input:checked) .fp-rel-radio { border-color: var(--ink-900); }
+.fp-rel-opt:has(input:checked) .fp-rel-radio::after {
+  content: ""; position: absolute; inset: 3px; border-radius: 999px; background: var(--ink-900);
+}
+.fp-rel-t { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 700; color: var(--ink-900); }
+.fp-rel-badge {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  background: var(--fairway-100); color: var(--fairway-700); border: 1px solid var(--fairway-200);
+  border-radius: 999px; padding: 2px 8px;
+}
+.fp-rel-s { display: block; font-size: 13px; line-height: 1.5; color: var(--ink-600, var(--ink-500)); margin-top: 3px; }
+
 /* Eventart als Kachel-Auswahl (Radio-Karten im Auswahlfenster-Look). */
 .fp-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .fp-type-card { background: var(--paper-50, #FBFAF6); }

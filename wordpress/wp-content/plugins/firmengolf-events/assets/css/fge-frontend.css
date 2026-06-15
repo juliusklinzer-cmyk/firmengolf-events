@@ -1571,10 +1571,29 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   font-size: 13px; color: var(--ink-700); font-weight: 500;
   display: inline-flex; align-items: center; gap: 6px;
 }
+/* ── Status-Tag: EIN Look für alle Status auf der gesamten Seite ──
+   green = live/aktiv · orange = in Prüfung · gray = Entwurf/pausiert · red = abgelehnt */
+.fp-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: 999px;
+  background: var(--paper-200); color: var(--ink-700);
+  border: 1px solid var(--ink-200);
+}
+.fp-pill .dot { width: 7px; height: 7px; border-radius: 999px; background: var(--ink-400, #9AA09B); flex: none; }
+.fp-pill.green  { background: var(--fairway-100); color: var(--fairway-700); border-color: var(--fairway-200); }
+.fp-pill.green .dot { background: #5BCB7E; }
+.fp-pill.orange { background: #FBF3E0; color: #9A6B12; border-color: #E2C36B; }
+.fp-pill.orange .dot { background: #C8932B; }
+.fp-pill.gray   { background: var(--paper-200); color: var(--ink-600, #6C736E); border-color: var(--ink-200); }
+.fp-pill.red    { background: #F7E6E4; color: #B4332B; border-color: #E2A49F; }
+.fp-pill.red .dot { background: #B4332B; }
+
 .fp-brand-context .fp-pill {
   font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
   text-transform: uppercase; color: var(--fairway-700);
   background: var(--fairway-100); padding: 3px 8px; border-radius: 999px;
+  border: 0;
 }
 .fp-nav-tabs { display: flex; gap: 4px; margin: 0 auto; }
 .fp-nav-tab {
@@ -1991,12 +2010,19 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 .fp-rail-card--tip h4 { color: var(--paper-100); }
 
 .fp-edit-actionbar {
-  position: sticky; bottom: 0; z-index: 20;
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 32px; padding: 14px 28px;
-  background: rgba(251,250,246,0.9); backdrop-filter: blur(12px);
-  border-top: 1px solid var(--ink-200);
+  position: sticky; bottom: 14px; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-top: 32px; padding: 14px 20px;
+  background: rgba(255,255,255,0.96); backdrop-filter: blur(12px);
+  border: 1px solid var(--ink-200); border-radius: 16px;
+  box-shadow: 0 14px 44px rgba(14,19,16,0.16);
 }
+.fp-edit-actionbar .fp-btn-brand {
+  padding: 13px 28px; font-size: 15px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(42,110,50,0.35);
+}
+@keyframes fp-unsaved-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.fp-edit-actionbar .fp-unsaved-dot { animation: fp-unsaved-pulse 1.6s ease-in-out infinite; }
 
 /* Profile grid (Mein Platz) */
 .fp-profile-grid {
