@@ -508,6 +508,12 @@
   font-family: var(--font-serif); font-style: italic; margin-bottom: 22px; text-wrap: pretty;
 }
 .fgpp .req-section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-500); margin-bottom: 12px; }
+/* Gewünschte Leistungen (Anfragedetail) */
+.fgpp .req-wish-sub { font-size: 13px; font-weight: 600; color: var(--ink-700); margin: 2px 0 8px; }
+.fgpp .req-wish-note { font-weight: 500; color: var(--ink-400); font-size: 12px; }
+.fgpp .req-wish-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.fgpp .req-wish-chip { font-size: 13px; font-weight: 500; color: var(--fairway-800); background: var(--fairway-100); border: 1px solid var(--fairway-200, #D5E1D6); border-radius: 999px; padding: 5px 12px; }
+.fgpp .req-wish-chip.is-fg { color: var(--ink-700); background: var(--paper-200); border-color: var(--ink-200); }
 .fgpp .req-timeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 22px; }
 .fgpp .req-tl { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding-bottom: 14px; position: relative; }
 .fgpp .req-tl:not(:last-child)::before { content: ""; position: absolute; left: 10px; top: 18px; bottom: -4px; width: 1.5px; background: var(--ink-200); }

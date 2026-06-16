@@ -3366,6 +3366,38 @@ button.fg-modal-close:hover { background: var(--paper-300); }
 .fg-want.is-included input { cursor: default; }
 .fg-want.is-included > span { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .fg-want-badge { font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--fairway-800); background: rgba(94,138,101,0.14); border-radius: 999px; padding: 2px 8px; }
+/* Datums-Eingaben im Anfrage-Modal (Kalender) */
+.fg-input.fg-date { cursor: pointer; }
+.fg-input.fg-date::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .6; }
+.fg-input.fg-date:hover::-webkit-calendar-picker-indicator { opacity: 1; }
+/* „Im Paket bereits enthalten" — reine Info-Chips */
+.fg-incl { background: var(--fairway-50); border: 1px solid var(--fairway-100); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 20px; }
+.fg-incl-h { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--fairway-800); margin-bottom: 9px; }
+.fg-incl-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.fg-incl-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ink-800); background: var(--paper-50); border: 1px solid var(--fairway-100); border-radius: 999px; padding: 4px 11px 4px 9px; }
+.fg-incl-ic { width: 15px; height: 15px; color: var(--fairway-700); flex: none; }
+.fg-incl-ic svg { width: 100%; height: 100%; }
+/* Wunsch-Gruppen-Überschriften */
+.fg-wish-group-h { font-size: 13px; font-weight: 700; color: var(--ink-800); margin: 0 0 10px; display: flex; align-items: baseline; gap: 8px; }
+.fg-wish-group-note { font-size: 12px; font-weight: 500; color: var(--ink-400); }
+/* Wunsch-Kategorien (auswählbar, aufklappbar) */
+.fg-cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fg-cat { border: 1px solid var(--ink-200); border-radius: var(--radius-md); overflow: hidden; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); align-self: start; }
+.fg-cat:hover { border-color: var(--border-strong); }
+.fg-cat.is-on { border-color: var(--fairway-600); background: var(--fairway-50); }
+button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 13px; background: none; border: none; cursor: pointer; text-align: left; font: inherit; color: var(--ink-800); }
+.fg-cat-ic { width: 18px; height: 18px; color: var(--fairway-700); flex: none; }
+.fg-cat-ic svg { width: 100%; height: 100%; }
+.fg-cat-l { font-size: 14px; font-weight: 500; flex: 1; }
+.fg-cat-chev { width: 16px; height: 16px; color: var(--ink-400); flex: none; transition: transform var(--dur-fast) var(--ease-out); }
+.fg-cat-chev svg { width: 100%; height: 100%; }
+.fg-cat.is-on .fg-cat-chev { transform: rotate(180deg); color: var(--fairway-700); }
+.fg-cat.is-on .fg-cat-l { color: var(--fairway-800); font-weight: 600; }
+.fg-cat-subs { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 13px 12px; }
+.fg-subpill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-700); background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: 999px; padding: 4px 10px; cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+.fg-subpill:hover { border-color: var(--border-strong); }
+.fg-subpill input { accent-color: var(--fairway-700); width: 14px; height: 14px; margin: 0; }
+.fg-subpill:has(input:checked) { border-color: var(--fairway-600); background: var(--fairway-100); color: var(--fairway-800); font-weight: 500; }
 /* Fixer „Deine Auswahl"-Kontext im Anfrage-Modal */
 .fg-modal-context { margin: 14px 0 4px; padding: 12px 14px; background: var(--paper-100); border: 1px solid var(--ink-200); border-radius: var(--radius-md); }
 .fg-modal-context-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-500); margin-bottom: 8px; }
@@ -3423,6 +3455,7 @@ button.fg-modal-close:hover { background: var(--paper-300); }
   button.fg-gallery-more { bottom: 12px; right: 12px; }
   .fg-form-grid { grid-template-columns: 1fr; }
   .fg-wants-grid { grid-template-columns: 1fr; }
+  .fg-cat-grid { grid-template-columns: 1fr; }
   .fg-modal { padding: 28px 24px; }
   .fg-quote { padding: 24px; }
   .fg-quote p { font-size: 16px; }

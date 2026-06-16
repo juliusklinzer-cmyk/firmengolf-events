@@ -218,6 +218,142 @@ function fge_event_included_wants( int $event_id ): array {
 }
 
 /**
+ * Anlage (Onboarding-Infrastruktur) → buchbare Leistungs-Formulierung, gruppiert.
+ * Einzige Quelle der Wahrheit, damit Editor und Anfrage-Formular dieselbe Liste teilen.
+ *
+ * @return array<string,array<string,string>> Gruppe => [ infra-id => Leistungs-Label ]
+ */
+function fge_infra_to_service_map(): array {
+	return [
+		'Golf & Training' => [
+			'trial-course'    => 'Schnupperkurs',
+			'platzreife'      => 'Platzreifekurs',
+			'company-course'  => 'Firmenkurs',
+			'advanced-course' => 'Fortgeschrittenenkurs',
+			'coach'           => 'PGA-Coaching',
+			'driving-range'   => 'Range-Nutzung inkl. Bälle',
+			'trackman'        => 'TrackMan-Session',
+			'toptracer'       => 'Toptracer-Session',
+			'indoor'          => 'Indoor-Simulator-Session',
+			'course-18'       => '18-Loch-Runde (Greenfee)',
+			'course-9'        => '9-Loch-Runde (Greenfee)',
+			'short-course'    => 'Kurzplatz-Runde',
+			'short-game'      => 'Putting- & Kurzspiel-Challenge',
+			'rental-clubs'    => 'Leihschläger',
+			'range-balls'     => 'Range-Bälle',
+		],
+		'Räume & Tagung' => [
+			'meeting-room' => 'Meetingraum-Nutzung',
+			'seminar'      => 'Seminarraum-Nutzung',
+			'conference'   => 'Konferenzraum-Nutzung',
+			'workshop'     => 'Workshopraum-Nutzung',
+			'eventroom'    => 'Eventraum-Nutzung',
+		],
+		'Verpflegung' => [
+			'breakfast'    => 'Frühstück',
+			'lunch'        => 'Lunch',
+			'dinner'       => 'Abendessen',
+			'bbq'          => 'BBQ',
+			'catering'     => 'Catering',
+			'coffee-break' => 'Kaffeepause',
+			'drinks-flat'  => 'Getränkepauschale',
+			'halfway'      => 'Halfway-Verpflegung',
+		],
+	];
+}
+
+/**
+ * Buchbare Leistungen eines Platzes, abgeleitet aus seiner Infrastruktur (`_fge_infra`).
+ *
+ * @return array<string,string[]> Gruppe => Liste der Leistungs-Labels (nur vorhandene)
+ */
+function fge_partner_bookable_services( int $partner_id ): array {
+	if ( $partner_id <= 0 ) {
+		return [];
+	}
+	$sel    = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_infra', true ) );
+	$groups = [];
+	foreach ( fge_infra_to_service_map() as $group => $map ) {
+		foreach ( $map as $infra_id => $label ) {
+			if ( in_array( $infra_id, $sel, true ) ) {
+				$groups[ $group ][] = $label;
+			}
+		}
+	}
+	if ( array_intersect( [ 'beamer', 'screen', 'mic', 'flipchart', 'whiteboard', 'moderation' ], $sel ) ) {
+		$groups['Räume & Tagung'][] = 'Tagungstechnik (Beamer, Leinwand & Co.)';
+	}
+	return $groups;
+}
+
+/**
+ * Wunsch-Kategorien für das Event-Anfrage-Modal (Schritt 2).
+ *
+ * Zwei Quellen, klar getrennt: „Am Platz" (gefiltert nach dem, was der Platz laut
+ * Infrastruktur wirklich liefern kann) und „Durch Firmengolf organisiert"
+ * (plattformweite Leistungen, immer wählbar). Jede Kategorie hat optionale
+ * Detail-Leistungen, die sich im Modal aufklappen lassen.
+ *
+ * @return array<int,array{key:string,source:string,label:string,subs:string[]}>
+ */
+function fge_request_wish_categories( int $partner_id ): array {
+	$svc = fge_partner_bookable_services( $partner_id );
+	$cats = [];
+
+	// ── Am Platz ──────────────────────────────────────────────────────────────
+	if ( ! empty( $svc['Golf & Training'] ) ) {
+		$cats[] = [ 'key' => 'golf', 'source' => 'platz', 'label' => 'Golf & Training', 'subs' => $svc['Golf & Training'] ];
+	}
+	$cats[] = [ 'key' => 'tournament', 'source' => 'platz', 'label' => 'Turnier & Wettspiel', 'subs' => [ 'Turniermodus / Scoring', 'Spielleitung & Starter', 'Siegerehrung', 'Urkunde & Foto-Erinnerung' ] ];
+	if ( ! empty( $svc['Verpflegung'] ) ) {
+		$cats[] = [ 'key' => 'food', 'source' => 'platz', 'label' => 'Verpflegung', 'subs' => $svc['Verpflegung'] ];
+	}
+	if ( ! empty( $svc['Räume & Tagung'] ) ) {
+		$cats[] = [ 'key' => 'rooms', 'source' => 'platz', 'label' => 'Tagung & Räume', 'subs' => $svc['Räume & Tagung'] ];
+	}
+	$cats[] = [ 'key' => 'shuttle', 'source' => 'platz', 'label' => 'Shuttle & Transfer', 'subs' => [ 'Shuttle ab Bahnhof', 'Hotel-Transfer', 'Bus für die Gruppe' ] ];
+	$cats[] = [ 'key' => 'stay', 'source' => 'platz', 'label' => 'Übernachtung', 'subs' => [ 'Hotel-Partner', 'Einzelzimmer', 'Doppelzimmer' ] ];
+
+	// ── Durch Firmengolf organisiert ─────────────────────────────────────────
+	$cats[] = [ 'key' => 'tech', 'source' => 'firmengolf', 'label' => 'Event-Technik', 'subs' => [ 'Bühne', 'LED-Wand', 'Tontechnik', 'Lichttechnik', 'Zelt / Pavillon', 'Stromversorgung' ] ];
+	$cats[] = [ 'key' => 'entertainment', 'source' => 'firmengolf', 'label' => 'Entertainment', 'subs' => [ 'DJ', 'Party-Band', 'Jazz-Band', 'Walking Act', 'Moderation', 'Fotograf' ] ];
+	$cats[] = [ 'key' => 'branding', 'source' => 'firmengolf', 'label' => 'Branding & Teamwear', 'subs' => [ 'Logo-Branding', 'Banner / Flags', 'Polos / Caps', 'Goodie-Bags' ] ];
+	$cats[] = [ 'key' => 'program', 'source' => 'firmengolf', 'label' => 'Rahmenprogramm', 'subs' => [ 'Team-Challenge', 'Welcome-Drink', 'Tagesabschluss', 'Sonstiges' ] ];
+
+	return $cats;
+}
+
+/**
+ * Formatiert einen Wunschtermin: ISO-Datum (vom Kalender) → „Do, 18.06.2026".
+ * Freitext (z. B. „KW 30") bleibt unverändert.
+ */
+function fge_format_wish_date( string $raw ): string {
+	$raw = trim( $raw );
+	if ( '' === $raw ) {
+		return '';
+	}
+	if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $raw ) ) {
+		$ts = strtotime( $raw );
+		if ( $ts ) {
+			$days = [ 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa' ];
+			return $days[ (int) gmdate( 'w', $ts ) ] . ', ' . gmdate( 'd.m.Y', $ts );
+		}
+	}
+	return $raw;
+}
+
+/**
+ * Gespeicherte Wunsch-Leistungen einer Anfrage, getrennt nach Quelle.
+ *
+ * @return array{platz:string[],firmengolf:string[]}
+ */
+function fge_request_wish_groups( int $request_id ): array {
+	$platz = array_values( array_filter( array_map( 'strval', (array) get_post_meta( $request_id, '_fge_wishes_platz', true ) ) ) );
+	$fg    = array_values( array_filter( array_map( 'strval', (array) get_post_meta( $request_id, '_fge_wishes_firmengolf', true ) ) ) );
+	return [ 'platz' => $platz, 'firmengolf' => $fg ];
+}
+
+/**
  * Ist ein Event öffentlich sichtbar/buchbar?
  *
  * Bedingung: Event-Status `freigegeben` UND der zugehörige Golfplatz ist NICHT pausiert

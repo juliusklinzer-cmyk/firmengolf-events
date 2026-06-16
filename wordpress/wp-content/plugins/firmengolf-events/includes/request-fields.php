@@ -347,6 +347,20 @@ function fge_render_rmb_leistungen( WP_Post $post ) {
 		'wants_individual_customization' => 'Individuelle Anpassung',
 	];
 	$additional_wishes = get_post_meta( $post->ID, '_fge_additional_wishes', true );
+	$wish_groups = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $post->ID ) : [ 'platz' => [], 'firmengolf' => [] ];
+	if ( ! empty( $wish_groups['platz'] ) || ! empty( $wish_groups['firmengolf'] ) ) :
+		?>
+		<p style="margin:0 0 6px;"><strong>Vom Kunden gewählt (Event-Anfrage)</strong></p>
+		<table class="form-table" style="margin-top:0;">
+			<?php if ( ! empty( $wish_groups['platz'] ) ) : ?>
+			<tr><th scope="row">Am Platz</th><td><?php echo esc_html( implode( ', ', $wish_groups['platz'] ) ); ?></td></tr>
+			<?php endif; ?>
+			<?php if ( ! empty( $wish_groups['firmengolf'] ) ) : ?>
+			<tr><th scope="row">Über Firmengolf</th><td><?php echo esc_html( implode( ', ', $wish_groups['firmengolf'] ) ); ?></td></tr>
+			<?php endif; ?>
+		</table>
+		<?php
+	endif;
 	?>
 	<table class="form-table">
 		<?php foreach ( $checkboxes as $key => $label ) :

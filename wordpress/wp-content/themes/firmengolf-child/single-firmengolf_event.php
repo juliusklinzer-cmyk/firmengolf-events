@@ -563,12 +563,16 @@ get_header();
 			</div>
 		</div>
 
-		<?php /* Step 0 */ ?>
+		<?php
+		/* Step 0 — Mindest-Vorlauf des Platzes begrenzt die wählbaren Termine. */
+		$fg_lead_days = $partner_id ? (int) get_post_meta( $partner_id, '_fge_min_lead_time_days', true ) : 0;
+		$fg_min_date  = gmdate( 'Y-m-d', current_time( 'timestamp' ) + max( 0, $fg_lead_days ) * DAY_IN_SECONDS );
+		?>
 		<div id="fg-modal-step-0">
 			<div class="fg-form-grid">
 				<div class="fg-field">
 					<label class="fg-field-label" for="fg-date-1">Wunschtermin 1</label>
-					<input class="fg-input" id="fg-date-1" placeholder="z.B. Do, 18. Juni 2026">
+					<input class="fg-input fg-date" id="fg-date-1" type="date" min="<?php echo esc_attr( $fg_min_date ); ?>">
 					<span class="fg-field-help">Bis zu 3 Wunschtermine — wir stimmen sie mit dem Platz ab.</span>
 				</div>
 				<div class="fg-field">
@@ -577,19 +581,20 @@ get_header();
 				</div>
 				<div class="fg-field">
 					<label class="fg-field-label" for="fg-date-2">Wunschtermin 2 (optional)</label>
-					<input class="fg-input" id="fg-date-2" placeholder="z.B. Fr, 19. Juni 2026">
+					<input class="fg-input fg-date" id="fg-date-2" type="date" min="<?php echo esc_attr( $fg_min_date ); ?>">
 				</div>
 				<div class="fg-field">
 					<label class="fg-field-label" for="fg-date-3">Wunschtermin 3 (optional)</label>
-					<input class="fg-input" id="fg-date-3" placeholder="z.B. KW 30">
+					<input class="fg-input fg-date" id="fg-date-3" type="date" min="<?php echo esc_attr( $fg_min_date ); ?>">
 				</div>
+				<?php if ( $fg_lead_days > 0 ) : ?>
 				<div class="fg-field fg-field-full">
-					<label class="fg-field-label" for="fg-date-pref">Alternativer Zeitraum (optional)</label>
-					<input class="fg-input" id="fg-date-pref" placeholder="z.B. Juli 2026 · flexibel">
+					<span class="fg-field-help" style="margin-top:0;">Dieser Platz braucht mindestens <?php echo (int) $fg_lead_days; ?> Tage Vorlauf — frühere Termine sind nicht wählbar.</span>
 				</div>
+				<?php endif; ?>
 				<div class="fg-field fg-field-full">
-					<label class="fg-field-label" for="fg-notes">Was wäre wichtig?</label>
-					<textarea class="fg-input" id="fg-notes" rows="3" placeholder="Anlass, Erfahrungslevel, Wünsche zu Catering oder Programm …"></textarea>
+					<label class="fg-field-label" for="fg-notes">Weitere Terminwünsche oder Anmerkungen? (optional)</label>
+					<textarea class="fg-input" id="fg-notes" rows="3" placeholder="z.B. „auch Juli flexibel", Anlass, Erfahrungslevel oder besondere Wünsche …"></textarea>
 				</div>
 			</div>
 			<div class="fg-modal-foot">
@@ -600,37 +605,55 @@ get_header();
 			</div>
 		</div>
 
-		<?php /* Step 1 — Feinschliff & Sonderwünsche */ ?>
+		<?php
+		/* Step 1 — Wunsch-Leistungen: Platz-Leistungen (gefiltert) + Firmengolf-Leistungen. */
+		$wish_cats   = function_exists( 'fge_request_wish_categories' ) ? fge_request_wish_categories( $partner_id ) : [];
+		$cats_platz  = array_values( array_filter( $wish_cats, static function ( $c ) { return $c['source'] === 'platz'; } ) );
+		$cats_fg     = array_values( array_filter( $wish_cats, static function ( $c ) { return $c['source'] === 'firmengolf'; } ) );
+		$inc_chips   = array_values( array_filter( array_map( 'strval', (array) $includes_new ) ) );
+
+		$render_cat = static function ( array $c ): void {
+			?>
+			<div class="fg-cat" data-cat="<?php echo esc_attr( $c['key'] ); ?>" data-source="<?php echo esc_attr( $c['source'] ); ?>" data-label="<?php echo esc_attr( $c['label'] ); ?>">
+				<button type="button" class="fg-cat-head">
+					<span class="fg-cat-ic" aria-hidden="true"><?php echo fge_include_icon( $c['label'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
+					<span class="fg-cat-l"><?php echo esc_html( $c['label'] ); ?></span>
+					<?php if ( ! empty( $c['subs'] ) ) : ?><span class="fg-cat-chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span><?php endif; ?>
+				</button>
+				<?php if ( ! empty( $c['subs'] ) ) : ?>
+				<div class="fg-cat-subs" hidden>
+					<?php foreach ( $c['subs'] as $sub ) : ?>
+					<label class="fg-subpill"><input type="checkbox" class="fg-sub-cb" value="<?php echo esc_attr( $sub ); ?>"><span><?php echo esc_html( $sub ); ?></span></label>
+					<?php endforeach; ?>
+				</div>
+				<?php endif; ?>
+			</div>
+			<?php
+		};
+		?>
 		<div id="fg-modal-step-1" style="display:none;">
-			<?php if ( $included_wants ) : ?>
-				<p class="fg-field-help" style="margin:0 0 12px;">Im Event-Paket bereits enthaltene Leistungen sind als <strong>✓ inklusive</strong> markiert. Wähle zusätzlich, was ihr noch möchtet.</p>
+			<?php if ( $inc_chips ) : ?>
+			<div class="fg-incl">
+				<div class="fg-incl-h">Im Paket bereits enthalten</div>
+				<div class="fg-incl-chips">
+					<?php foreach ( $inc_chips as $chip ) : ?>
+					<span class="fg-incl-chip"><span class="fg-incl-ic" aria-hidden="true"><?php echo fge_include_icon( $chip ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span><?php echo esc_html( $chip ); ?></span>
+					<?php endforeach; ?>
+				</div>
+			</div>
 			<?php endif; ?>
-			<div class="fg-wants-grid">
-				<?php
-				$want_opts = [
-					'golf_teacher'             => 'Golflehrer / Coaching',
-					'meeting_room'             => 'Meetingraum',
-					'breakfast'                => 'Frühstück',
-					'lunch'                    => 'Mittagessen',
-					'dinner'                   => 'Abendessen',
-					'shuttle'                  => 'Shuttle-Service',
-					'branding'                 => 'Branding / Logo',
-					'tournament_mode'          => 'Turniermodus',
-					'bad_weather_alternative'  => 'Schlechtwetter-Alternative',
-					'individual_customization' => 'Individuelle Anpassung',
-				];
-				foreach ( $want_opts as $wkey => $wlabel ) :
-					$is_inc = in_array( $wkey, $included_wants, true ); ?>
-					<label class="fg-want<?php echo $is_inc ? ' is-included' : ''; ?>">
-						<input type="checkbox" class="fg-want-cb" value="<?php echo esc_attr( $wkey ); ?>"<?php echo $is_inc ? ' checked disabled data-included="1"' : ''; ?>>
-						<span><?php echo esc_html( $wlabel ); ?><?php echo $is_inc ? ' <em class="fg-want-badge">✓ inklusive</em>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-					</label>
-				<?php endforeach; ?>
+
+			<div class="fg-wish-group-h">Am Platz</div>
+			<p class="fg-field-help" style="margin:0 0 10px;">Tippe an, was ihr euch zusätzlich wünscht. Für Details einfach aufklappen.</p>
+			<div class="fg-cat-grid">
+				<?php foreach ( $cats_platz as $c ) { $render_cat( $c ); } ?>
 			</div>
-			<div class="fg-field fg-field-full" style="margin-top:16px;">
-				<label class="fg-field-label" for="fg-add-wishes">Weitere Wünsche (optional)</label>
-				<textarea class="fg-input" id="fg-add-wishes" rows="2" placeholder="z.B. Fotograf, Welcome-Drink, Kaffee-Bar …"></textarea>
+
+			<div class="fg-wish-group-h" style="margin-top:22px;">Durch Firmengolf organisiert <span class="fg-wish-group-note">wir kümmern uns drum</span></div>
+			<div class="fg-cat-grid">
+				<?php foreach ( $cats_fg as $c ) { $render_cat( $c ); } ?>
 			</div>
+
 			<div class="fg-modal-foot">
 				<button class="fg-btn-ghost" data-modal-back="0" type="button">Zurück</button>
 				<button class="fg-btn-brand" data-modal-next="2" type="button">
@@ -709,8 +732,8 @@ get_header();
 
 		var COPY = [
 			{ t: 'Wann & wie groß?',            s: 'Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb eines Werktags zurück.' },
-			{ t: 'Feinschliff & Sonderwünsche', s: 'Alles optional — hilft uns, das passende Angebot zu schnüren.' },
-			{ t: 'Wer ist Ansprechpartner?',    s: 'Nur damit wir euch erreichen können — kein Newsletter, kein Spam.' }
+			{ t: 'Was wünscht ihr euch?',       s: 'Alles optional. Es hilft uns, das passende Angebot zu schnüren.' },
+			{ t: 'Wer ist Ansprechpartner?',    s: 'Nur damit wir euch erreichen können, kein Newsletter, kein Spam.' }
 		];
 
 		function show(n) {
@@ -744,6 +767,55 @@ get_header();
 		function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
 		function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
 
+		// ISO-Datum (vom Kalender) → „Do, 18.06.2026" für Beleg & Anzeige.
+		function fmtDate(iso) {
+			if (!iso) return '';
+			var p = iso.split('-');
+			if (p.length !== 3) return iso;
+			var d = new Date(+p[0], +p[1] - 1, +p[2]);
+			if (isNaN(d.getTime())) return iso;
+			var days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+			function pad(n) { return n < 10 ? '0' + n : '' + n; }
+			return days[d.getDay()] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
+		}
+
+		// Wunsch-Kategorien: Kopf tippen = auswählen + aufklappen. Detail-Pillen wählen aktiviert die Kategorie automatisch.
+		modal.querySelectorAll('.fg-cat').forEach(function (cat) {
+			var head = cat.querySelector('.fg-cat-head');
+			var subs = cat.querySelector('.fg-cat-subs');
+			if (head) {
+				head.addEventListener('click', function () {
+					var on = cat.classList.toggle('is-on');
+					if (subs) { subs.hidden = !on; }
+					if (!on && subs) {
+						subs.querySelectorAll('input:checked').forEach(function (cb) { cb.checked = false; });
+					}
+				});
+			}
+			if (subs) {
+				subs.querySelectorAll('.fg-sub-cb').forEach(function (cb) {
+					cb.addEventListener('change', function () {
+						if (cb.checked) { cat.classList.add('is-on'); }
+					});
+				});
+			}
+		});
+
+		// Sammelt die gewählten Wünsche [{source, label}]: Detail-Pillen falls vorhanden, sonst die Kategorie selbst.
+		function collectWishes() {
+			var out = [];
+			modal.querySelectorAll('.fg-cat.is-on').forEach(function (cat) {
+				var source = cat.getAttribute('data-source');
+				var picked = cat.querySelectorAll('.fg-sub-cb:checked');
+				if (picked.length) {
+					picked.forEach(function (cb) { out.push({ source: source, label: cb.value }); });
+				} else {
+					out.push({ source: source, label: cat.getAttribute('data-label') });
+				}
+			});
+			return out;
+		}
+
 		document.getElementById('fg-modal-submit').addEventListener('click', function () {
 			var first = val('fg-first-name'), last = val('fg-last-name'),
 			    email = val('fg-email'), company = val('fg-company');
@@ -755,9 +827,6 @@ get_header();
 			btn.disabled = true;
 			btn.textContent = 'Wird gesendet …';
 
-			var wants = [];
-			modal.querySelectorAll('.fg-want-cb:checked').forEach(function (cb) { wants.push(cb.value); });
-
 			var body = new URLSearchParams({
 				action:     'fge_modal_anfrage',
 				nonce:      '<?php echo esc_js( $modal_nonce ); ?>',
@@ -765,11 +834,9 @@ get_header();
 				date1:      val('fg-date-1'),
 				date2:      val('fg-date-2'),
 				date3:      val('fg-date-3'),
-				date_pref:  val('fg-date-pref'),
 				group_size: val('fg-group-size'),
 				notes:      val('fg-notes'),
-				wants:      wants.join(','),
-				add_wishes: val('fg-add-wishes'),
+				wishes:     JSON.stringify(collectWishes()),
 				first_name: first,
 				last_name:  last,
 				email:      email,
@@ -786,7 +853,7 @@ get_header();
 			.then(function (r) { return r.json(); })
 			.then(function (data) {
 				if (data.success) {
-					setText('fg-receipt-date',  val('fg-date-pref')  || '–');
+					setText('fg-receipt-date',  fmtDate(val('fg-date-1')) || val('fg-notes') || '–');
 					setText('fg-receipt-group', val('fg-group-size') || '–');
 					setText('fg-receipt-ref',   (data.data && data.data.ref) || '–');
 					show(3);

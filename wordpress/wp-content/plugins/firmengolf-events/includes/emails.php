@@ -112,6 +112,32 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 	return $sent;
 }
 
+/**
+ * Wunsch-Leistungen einer Anfrage als E-Mail-HTML, getrennt nach Quelle.
+ * Leer, wenn nichts gewählt wurde.
+ */
+function fge_wishes_email_html( int $request_id ): string {
+	if ( ! function_exists( 'fge_request_wish_groups' ) ) {
+		return '';
+	}
+	$g    = fge_request_wish_groups( $request_id );
+	$out  = '';
+	$pill = static function ( array $items ): string {
+		$html = '';
+		foreach ( $items as $it ) {
+			$html .= '<span style="display:inline-block;background:#EEF3EE;border:1px solid #D5E1D6;border-radius:999px;padding:3px 11px;margin:0 6px 6px 0;font-size:13px;color:#2C5036;">' . esc_html( $it ) . '</span>';
+		}
+		return $html;
+	};
+	if ( ! empty( $g['platz'] ) ) {
+		$out .= '<p style="margin:0 0 4px;font-weight:600;">Gewünscht am Platz</p><p style="margin:0 0 14px;">' . $pill( $g['platz'] ) . '</p>';
+	}
+	if ( ! empty( $g['firmengolf'] ) ) {
+		$out .= '<p style="margin:0 0 4px;font-weight:600;">Über Firmengolf gewünscht</p><p style="margin:0 0 14px;">' . $pill( $g['firmengolf'] ) . '</p>';
+	}
+	return $out;
+}
+
 function fge_send_internal_request_email( int $request_id, array $data ): bool {
 	$company = $data['company_name'] !== '' ? $data['company_name'] : 'Unbekannt';
 	$subject = 'Neue Firmengolf Event Anfrage: ' . $company;
@@ -153,10 +179,12 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 	}
 
 	$admin_link = fge_format_request_admin_link( $request_id );
+	$wishes_html = fge_wishes_email_html( $request_id );
 
 	$content = '
 		<p>Neue Event-Anfrage eingegangen:</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;">' . $table_rows . '</table>
+		' . ( $wishes_html !== '' ? '<div style="margin-top:18px;">' . $wishes_html . '</div>' : '' ) . '
 		<p style="margin-top:28px;">
 			<a href="' . esc_url( $admin_link ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Anfrage im Admin öffnen</a>
 		</p>
@@ -195,6 +223,7 @@ function fge_send_partner_availability_email( int $request_id, array $data ): bo
 		<p><strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ) . '<br>
 		<strong>Teilnehmer:</strong> ' . esc_html( $data['participants'] ?: '—' ) . '</p>
 		' . $dates_html . '
+		' . ( fge_wishes_email_html( $request_id ) !== '' ? '<div style="margin:0 0 12px;">' . fge_wishes_email_html( $request_id ) . '</div>' : '' ) . '
 		<p>Bitte gebt uns kurz Bescheid, ob ihr an den genannten Terminen verfügbar seid. Wir kümmern uns um die weitere Abstimmung mit dem Kunden.</p>
 		<p>Vielen Dank,<br>Euer Firmengolf Team</p>
 	';
@@ -229,8 +258,9 @@ function fge_send_contact_termin_emails( int $request_id, array $data ): int {
 	foreach ( $dates as $d ) {
 		$dates_html .= '<li style="margin-bottom:4px;">' . esc_html( $d ) . '</li>';
 	}
-	$venue = $data['event_title'] ?: ( $data['partner_title'] ?: 'euer Angebot' );
-	$sent  = 0;
+	$venue       = $data['event_title'] ?: ( $data['partner_title'] ?: 'euer Angebot' );
+	$wishes_html = fge_wishes_email_html( $request_id );
+	$sent        = 0;
 	foreach ( $responders as $c ) {
 		if ( '' === (string) ( $c['email'] ?? '' ) ) {
 			continue;
@@ -243,6 +273,7 @@ function fge_send_contact_termin_emails( int $request_id, array $data ): int {
 			<p style="margin:0 0 16px;">für <strong>' . esc_html( $venue ) . '</strong> gibt es eine neue Anfrage von <strong>' . esc_html( $data['company_name'] ?: 'einem Unternehmen' ) . '</strong>' . ( $data['participants'] ? ' (ca. ' . esc_html( $data['participants'] ) . ' Personen)' : '' ) . '.</p>
 			<p style="margin:0 0 8px;"><strong>Mögliche Termine:</strong></p>
 			<ul style="margin:0 0 18px;padding-left:20px;">' . ( $dates_html ?: '<li>Nach Absprache</li>' ) . '</ul>
+			' . ( $wishes_html !== '' ? '<div style="margin:0 0 18px;">' . $wishes_html . '</div>' : '' ) . '
 			<p style="margin:0 0 22px;">Sag uns mit einem Klick, welche Termine bei dir gehen — kein Login nötig, der Link ist persönlich für dich.</p>
 			<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Jetzt Termine bestätigen</a></p>
 			<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>

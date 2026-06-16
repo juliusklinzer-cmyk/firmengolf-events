@@ -1566,6 +1566,24 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 					<div class="req-msg-block">„<?php echo esc_html( $msg ); ?>"</div>
 				<?php endif; ?>
 
+				<?php
+				$wish_groups = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ];
+				if ( ! empty( $wish_groups['platz'] ) || ! empty( $wish_groups['firmengolf'] ) ) : ?>
+					<div class="req-section-label">Gewünschte Leistungen</div>
+					<?php if ( ! empty( $wish_groups['platz'] ) ) : ?>
+						<div class="req-wish-sub">Bei euch am Platz</div>
+						<div class="req-wish-chips">
+							<?php foreach ( $wish_groups['platz'] as $w ) : ?><span class="req-wish-chip"><?php echo esc_html( $w ); ?></span><?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+					<?php if ( ! empty( $wish_groups['firmengolf'] ) ) : ?>
+						<div class="req-wish-sub">Über Firmengolf <span class="req-wish-note">organisieren wir</span></div>
+						<div class="req-wish-chips">
+							<?php foreach ( $wish_groups['firmengolf'] as $w ) : ?><span class="req-wish-chip is-fg"><?php echo esc_html( $w ); ?></span><?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+				<?php endif; ?>
+
 				<?php if ( ! empty( $wish ) && $total > 0 ) : ?>
 					<div class="coord-head">
 						<div class="req-section-label" style="margin:0;">Wunschtermine</div>

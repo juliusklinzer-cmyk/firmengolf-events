@@ -41,10 +41,8 @@ function fge_ajax_modal_anfrage(): void {
 	check_ajax_referer( 'fge_modal_anfrage', 'nonce' );
 
 	$event_id  = absint( $_POST['event_id'] ?? 0 );
-	$date_pref = sanitize_text_field( wp_unslash( $_POST['date_pref'] ?? '' ) );
 	$group     = sanitize_text_field( wp_unslash( $_POST['group_size'] ?? '' ) );
 	$notes     = sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) );
-	$add_wish  = sanitize_textarea_field( wp_unslash( $_POST['add_wishes'] ?? '' ) );
 	$first     = sanitize_text_field( wp_unslash( $_POST['first_name'] ?? '' ) );
 	$last      = sanitize_text_field( wp_unslash( $_POST['last_name'] ?? '' ) );
 	$email     = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
@@ -89,23 +87,36 @@ function fge_ajax_modal_anfrage(): void {
 
 	// Event framework
 	update_post_meta( $request_id, '_fge_expected_participants', absint( preg_replace( '/\D/', '', $group ) ) );
-	update_post_meta( $request_id, '_fge_alternative_period',    $date_pref );
-	// Wunschtermine (1–3) → speisen die Termin-Abstimmung (fge_request_responses / scheduling).
-	update_post_meta( $request_id, '_fge_preferred_date_1', sanitize_text_field( wp_unslash( $_POST['date1'] ?? '' ) ) );
-	update_post_meta( $request_id, '_fge_preferred_date_2', sanitize_text_field( wp_unslash( $_POST['date2'] ?? '' ) ) );
-	update_post_meta( $request_id, '_fge_preferred_date_3', sanitize_text_field( wp_unslash( $_POST['date3'] ?? '' ) ) );
-	$message = trim( $notes . ( $add_wish !== '' ? "\n\nWeitere Wünsche: " . $add_wish : '' ) );
-	update_post_meta( $request_id, '_fge_message', $message );
+	// Wunschtermine (1–3): Kalender liefert ISO, wird zu lesbarem Label („Do, 18.06.2026")
+	// formatiert; speist die Termin-Abstimmung (fge_request_responses / scheduling).
+	$fmt = static function ( $raw ) {
+		$raw = sanitize_text_field( wp_unslash( $raw ?? '' ) );
+		return function_exists( 'fge_format_wish_date' ) ? fge_format_wish_date( $raw ) : $raw;
+	};
+	update_post_meta( $request_id, '_fge_preferred_date_1', $fmt( $_POST['date1'] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_2', $fmt( $_POST['date2'] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_3', $fmt( $_POST['date3'] ?? '' ) );
+	update_post_meta( $request_id, '_fge_message', trim( $notes ) );
 
-	// Finetuning (Step 1) → canonical wants_* fields
-	$allowed_wants = [ 'golf_teacher', 'meeting_room', 'breakfast', 'lunch', 'dinner', 'shuttle', 'branding', 'tournament_mode', 'bad_weather_alternative', 'individual_customization' ];
-	$selected      = array_filter( array_map( 'trim', explode( ',', sanitize_text_field( wp_unslash( $_POST['wants'] ?? '' ) ) ) ) );
-	// Im Event inkludierte Leistungen serverseitig ergänzen (vertrauenswürdig aus event_id abgeleitet, da disabled Checkboxen nicht gesendet werden).
-	$included      = function_exists( 'fge_event_included_wants' ) ? fge_event_included_wants( $event_id ) : [];
-	$wants_all     = array_unique( array_merge( $selected, $included ) );
-	foreach ( $allowed_wants as $w ) {
-		update_post_meta( $request_id, '_fge_wants_' . $w, in_array( $w, $wants_all, true ) ? 1 : 0 );
+	// Wunsch-Leistungen (Step 2) → getrennt nach Quelle: Platz vs. Firmengolf.
+	$wishes_raw = json_decode( (string) wp_unslash( $_POST['wishes'] ?? '[]' ), true );
+	$wish_platz = [];
+	$wish_fg    = [];
+	if ( is_array( $wishes_raw ) ) {
+		foreach ( $wishes_raw as $w ) {
+			$label = isset( $w['label'] ) ? sanitize_text_field( (string) $w['label'] ) : '';
+			if ( '' === $label ) {
+				continue;
+			}
+			if ( isset( $w['source'] ) && 'firmengolf' === $w['source'] ) {
+				$wish_fg[] = $label;
+			} else {
+				$wish_platz[] = $label;
+			}
+		}
 	}
+	update_post_meta( $request_id, '_fge_wishes_platz',      array_values( array_unique( $wish_platz ) ) );
+	update_post_meta( $request_id, '_fge_wishes_firmengolf', array_values( array_unique( $wish_fg ) ) );
 
 	// Tracking + downstream (emails, status) via the shared hook
 	$current_count = (int) get_post_meta( $event_id, '_fge_requests_count', true );
@@ -116,7 +127,7 @@ function fge_ajax_modal_anfrage(): void {
 	wp_send_json_success( [
 		'ref'         => $ref,
 		'event_title' => $event_title,
-		'date_pref'   => $date_pref,
+		'date_1'      => (string) get_post_meta( $request_id, '_fge_preferred_date_1', true ),
 		'group_size'  => $group,
 	] );
 }
