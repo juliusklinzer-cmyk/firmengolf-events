@@ -20,14 +20,16 @@ function fge_send_request_emails( int $request_id ): void {
 	fge_send_customer_confirmation_email( $request_id, $data );
 	fge_send_internal_request_email( $request_id, $data );
 
-	// Event-Anfrage (specific_event) → Platz koordiniert: jede vote-Person bekommt
-	// ihren persönlichen Termin-Link; der Manager wird zusätzlich informiert.
+	// Event-Anfrage (specific_event): Der Platz selbst und alle ausgewählten
+	// Ansprechpartner bekommen ihren persönlichen Termin-Link zur Abstimmung.
 	// Individuelles Event → nur Firmengolf (oben) + Kundenbestätigung.
 	if ( $data['request_type'] === 'specific_event' && $data['partner_id'] > 0 ) {
-		if ( $data['partner_email'] !== '' ) {
+		$sent = fge_send_contact_termin_emails( $request_id, $data );
+		// Fallback: keine Abstimmenden (z. B. kein Hauptkontakt mit E-Mail) →
+		// wenigstens die einfache Verfügbarkeits-Notiz an den Platz.
+		if ( 0 === $sent && $data['partner_email'] !== '' ) {
 			fge_send_partner_availability_email( $request_id, $data );
 		}
-		fge_send_contact_termin_emails( $request_id, $data );
 	}
 }
 

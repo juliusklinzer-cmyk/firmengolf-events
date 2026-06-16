@@ -2802,7 +2802,12 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<?php
 						$fge_release  = $event_id ? ( (string) get_post_meta( $event_id, '_fge_release_mode', true ) ?: 'us' ) : 'us';
 						$fge_resp_sel = $event_id ? array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) : [];
+						// Hauptkontakt (Platz) stimmt immer mit ab → nicht als abwählbares Team-Mitglied zeigen.
+						$fge_owner_id = function_exists( 'fge_partner_ensure_owner_contact' ) ? fge_partner_ensure_owner_contact( $partner_id ) : 0;
 						$fge_contacts = function_exists( 'fge_contacts_get' ) ? fge_contacts_get( $partner_id ) : [];
+						$fge_contacts = array_values( array_filter( $fge_contacts, static function ( $c ) use ( $fge_owner_id ) {
+							return (int) $c['id'] !== $fge_owner_id && (int) ( $c['user_id'] ?? 0 ) === 0;
+						} ) );
 						?>
 						<div class="fp-rel-opts" id="fp-rel-opts">
 							<label class="fp-rel-opt">
@@ -2810,15 +2815,15 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 								<span class="fp-rel-radio" aria-hidden="true"></span>
 								<span>
 									<span class="fp-rel-t">Nur wir am Platz</span>
-									<span class="fp-rel-s">Die Wunschtermine kommen direkt bei euch an und ihr bestätigt sie allein.</span>
+									<span class="fp-rel-s">Ihr bekommt die Wunschtermine per Mail-Link und stimmt sie allein ab.</span>
 								</span>
 							</label>
 							<label class="fp-rel-opt">
 								<input type="radio" name="fge_release_mode" value="approve" <?php checked( $fge_release, 'approve' ); ?>>
 								<span class="fp-rel-radio" aria-hidden="true"></span>
 								<span>
-									<span class="fp-rel-t">Team stimmt Termine ab <span class="fp-rel-badge">Empfohlen</span></span>
-									<span class="fp-rel-s">Gastronomie, Pro oder Sekretariat bestätigen ihre Verfügbarkeit selbst per Mail-Link. Ideal, wenn mehrere Bereiche am Event beteiligt sind.</span>
+									<span class="fp-rel-t">Team stimmt mit ab <span class="fp-rel-badge">Empfohlen</span></span>
+									<span class="fp-rel-s">Zusätzlich zu euch bestätigen Gastronomie, Pro oder Sekretariat ihre Verfügbarkeit selbst per Mail-Link. Ideal, wenn mehrere Bereiche am Event beteiligt sind.</span>
 								</span>
 							</label>
 						</div>

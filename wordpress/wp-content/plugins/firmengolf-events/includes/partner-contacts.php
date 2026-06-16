@@ -100,6 +100,68 @@ function fge_contacts_get( int $partner_id, bool $include_inactive = false ): ar
 	return $wpdb->get_results( $sql, ARRAY_A ) ?: [];
 }
 
+/**
+ * Stellt sicher, dass der Golfplatz selbst (Hauptkontakt) als vollwertiger
+ * Abstimmer in der Kontakt-Tabelle vorhanden ist, und liefert dessen id (0 ohne
+ * Hauptkontakt-Mail). Idempotent: Die id wird in `_fge_owner_contact_id` gemerkt,
+ * Name/E-Mail werden mit dem Hauptkontakt des Platzes synchron gehalten.
+ *
+ * Die Zeile bekommt `user_id` = Portal-Account und Rolle „Hauptkontakt", damit
+ * sie aus den „weitere Ansprechpartner"-Listen (user_id === 0) herausfällt, bei
+ * der Terminabstimmung (vote) aber immer mitzählt.
+ */
+function fge_partner_ensure_owner_contact( int $partner_id ): int {
+	if ( $partner_id <= 0 ) {
+		return 0;
+	}
+	$email = sanitize_email( (string) get_post_meta( $partner_id, '_fge_main_contact_email', true ) );
+	$name  = (string) get_post_meta( $partner_id, '_fge_main_contact_name', true );
+	if ( '' === $name ) {
+		$name = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: 'Hauptkontakt';
+	}
+
+	$stored = (int) get_post_meta( $partner_id, '_fge_owner_contact_id', true );
+	if ( $stored > 0 ) {
+		$c = fge_contact_get( $stored );
+		if ( $c && 'active' === ( $c['status'] ?? '' ) ) {
+			// Mit dem Hauptkontakt des Platzes synchron halten.
+			if ( '' !== $email && ( $c['email'] !== $email || $c['name'] !== $name ) ) {
+				fge_contact_update( $stored, [ 'email' => $email, 'name' => $name ] );
+			}
+			return $stored;
+		}
+	}
+
+	if ( '' === $email || ! is_email( $email ) ) {
+		return 0; // Ohne Adresse kann der Platz nicht per Mail abstimmen.
+	}
+
+	global $wpdb;
+	$now = current_time( 'mysql' );
+	$ok  = $wpdb->insert(
+		fge_contacts_table(),
+		[
+			'partner_id' => $partner_id,
+			'user_id'    => (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true ),
+			'name'       => $name,
+			'email'      => $email,
+			'role'       => 'Hauptkontakt',
+			'permission' => 'vote',
+			'token'      => fge_contact_generate_token(),
+			'status'     => 'active',
+			'created_at' => $now,
+			'updated_at' => $now,
+		],
+		[ '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ]
+	);
+	if ( ! $ok ) {
+		return 0;
+	}
+	$id = (int) $wpdb->insert_id;
+	update_post_meta( $partner_id, '_fge_owner_contact_id', $id );
+	return $id;
+}
+
 /** Single contact by id. */
 function fge_contact_get( int $id ): ?array {
 	global $wpdb;

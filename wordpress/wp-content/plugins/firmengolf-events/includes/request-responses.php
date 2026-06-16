@@ -80,9 +80,9 @@ function fge_rr_wish_dates( int $request_id ): array {
 }
 
 /**
- * The responders for a request: the assigned partner's vote-permission contacts.
- * Respects the assigned event's release_mode: `us` → the place confirms alone, so
- * there are no multi-party responders (empty); `approve` (default) → the vote-contacts.
+ * Die Abstimmenden einer Anfrage. Der Golfplatz selbst (Hauptkontakt) stimmt
+ * immer mit ab. Modus des Events: `us` → nur der Platz; `approve` → zusätzlich
+ * die ausgewählten Ansprechpartner (oder, ohne Auswahl, alle vote-Kontakte).
  */
 function fge_rr_responders( int $request_id ): array {
 	$partner_id = (int) get_post_meta( $request_id, '_fge_assigned_partner_id', true );
@@ -90,25 +90,40 @@ function fge_rr_responders( int $request_id ): array {
 		return [];
 	}
 	$event_id = (int) get_post_meta( $request_id, '_fge_assigned_event_id', true );
-	if ( $event_id > 0 && 'us' === (string) get_post_meta( $event_id, '_fge_release_mode', true ) ) {
-		return [];
-	}
-	$contacts = fge_contacts_get( $partner_id );
+	$mode     = $event_id > 0 ? ( (string) get_post_meta( $event_id, '_fge_release_mode', true ) ?: 'us' ) : 'us';
 
-	// Per-event selection (set in portal/admin). Empty = legacy fallback below.
-	$selected = $event_id > 0 ? array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) : [];
-	if ( $selected ) {
-		$picked = array_values( array_filter( $contacts, static function ( $c ) use ( $selected ) {
-			return in_array( (int) $c['id'], $selected, true );
-		} ) );
-		if ( $picked ) {
-			return $picked;
+	// Hauptkontakt (Platz) sicherstellen, dann alle Kontakte laden.
+	$owner_id = function_exists( 'fge_partner_ensure_owner_contact' ) ? fge_partner_ensure_owner_contact( $partner_id ) : 0;
+	$by_id    = [];
+	foreach ( fge_contacts_get( $partner_id ) as $c ) {
+		$by_id[ (int) $c['id'] ] = $c;
+	}
+
+	$result = [];
+	// Der Platz stimmt immer mit ab (erste Stimme).
+	if ( $owner_id > 0 && isset( $by_id[ $owner_id ] ) ) {
+		$result[ $owner_id ] = $by_id[ $owner_id ];
+	}
+
+	if ( 'approve' === $mode ) {
+		$selected = $event_id > 0 ? array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) : [];
+		if ( $selected ) {
+			foreach ( $selected as $sid ) {
+				if ( isset( $by_id[ $sid ] ) ) {
+					$result[ $sid ] = $by_id[ $sid ];
+				}
+			}
+		} else {
+			// Ohne explizite Auswahl: alle vote-Kontakte (außer dem Hauptkontakt, schon drin).
+			foreach ( $by_id as $cid => $c ) {
+				if ( $cid !== $owner_id && ( $c['permission'] ?? '' ) === 'vote' ) {
+					$result[ $cid ] = $c;
+				}
+			}
 		}
 	}
 
-	return array_values( array_filter( $contacts, static function ( $c ) {
-		return ( $c['permission'] ?? '' ) === 'vote';
-	} ) );
+	return array_values( $result );
 }
 
 /** Upsert one response. Returns true on success. */
