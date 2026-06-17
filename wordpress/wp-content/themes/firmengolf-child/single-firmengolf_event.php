@@ -88,7 +88,10 @@ $included_wants = function_exists( 'fge_event_included_wants' ) ? fge_event_incl
 
 // Inhalts-Felder (rev. 2): inkludierte Leistungen + Tagesablauf.
 $dayflow_new  = (string) get_post_meta( $post_id, '_fge_event_dayflow', true );
-$includes_new = (array) get_post_meta( $post_id, '_fge_event_includes', true );
+// _fge_event_includes wird mal als Array, mal als Newline-Text gespeichert — robust normalisieren.
+$includes_raw = get_post_meta( $post_id, '_fge_event_includes', true );
+$includes_new = is_array( $includes_raw ) ? $includes_raw : preg_split( '/\r\n|\r|\n/', (string) $includes_raw );
+$includes_new = array_values( array_filter( array_map( 'trim', array_map( 'strval', $includes_new ) ) ) );
 
 // Participants string
 if ( $p_min && $p_max ) {
@@ -567,31 +570,50 @@ get_header();
 		/* Step 0 — Mindest-Vorlauf des Platzes begrenzt die wählbaren Termine. */
 		$fg_lead_days = $partner_id ? (int) get_post_meta( $partner_id, '_fge_min_lead_time_days', true ) : 0;
 		$fg_min_date  = gmdate( 'Y-m-d', current_time( 'timestamp' ) + max( 0, $fg_lead_days ) * DAY_IN_SECONDS );
+		// Gäste-Rahmen des Events für die Live-Hinweise zur Gruppengröße.
+		if ( $p_min && $p_max ) {
+			$fg_group_help = 'Dieses Event ist für ' . $p_min . ' bis ' . $p_max . ' Gäste ausgelegt.';
+		} elseif ( $p_max ) {
+			$fg_group_help = 'Dieses Event ist für bis zu ' . $p_max . ' Gäste ausgelegt.';
+		} elseif ( $p_min ) {
+			$fg_group_help = 'Dieses Event ist ab ' . $p_min . ' Gästen buchbar.';
+		} else {
+			$fg_group_help = '';
+		}
 		?>
 		<div id="fg-modal-step-0">
+			<div class="fg-dates">
+				<div class="fg-dates-h">Eure Wunschtermine</div>
+				<div class="fg-dates-row">
+					<div class="fg-field">
+						<label class="fg-field-label" for="fg-date-1">1. Wunsch</label>
+						<input class="fg-input fg-date" id="fg-date-1" type="date" min="<?php echo esc_attr( $fg_min_date ); ?>">
+					</div>
+					<div class="fg-field">
+						<label class="fg-field-label" for="fg-date-2">2. Wunsch <span class="fg-opt">optional</span></label>
+						<input class="fg-input fg-date" id="fg-date-2" type="date" min="<?php echo esc_attr( $fg_min_date ); ?>">
+					</div>
+					<div class="fg-field">
+						<label class="fg-field-label" for="fg-date-3">3. Wunsch <span class="fg-opt">optional</span></label>
+						<input class="fg-input fg-date" id="fg-date-3" type="date" min="<?php echo esc_attr( $fg_min_date ); ?>">
+					</div>
+				</div>
+				<span class="fg-field-help">Gib bis zu drei Termine in deiner Wunschreihenfolge an. Wir stimmen sie mit dem Platz ab.<?php if ( $fg_lead_days > 0 ) : ?> Mindestens <?php echo (int) $fg_lead_days; ?> Tage Vorlauf nötig, frühere Termine sind gesperrt.<?php endif; ?></span>
+			</div>
+
 			<div class="fg-form-grid">
-				<div class="fg-field">
-					<label class="fg-field-label" for="fg-date-1">Wunschtermin 1</label>
-					<input class="fg-input fg-date" id="fg-date-1" type="date" min="<?php echo esc_attr( $fg_min_date ); ?>">
-					<span class="fg-field-help">Bis zu 3 Wunschtermine — wir stimmen sie mit dem Platz ab.</span>
-				</div>
-				<div class="fg-field">
-					<label class="fg-field-label" for="fg-group-size">Gruppengröße</label>
-					<input class="fg-input" id="fg-group-size" placeholder="z.B. 16 Personen">
-				</div>
-				<div class="fg-field">
-					<label class="fg-field-label" for="fg-date-2">Wunschtermin 2 (optional)</label>
-					<input class="fg-input fg-date" id="fg-date-2" type="date" min="<?php echo esc_attr( $fg_min_date ); ?>">
-				</div>
-				<div class="fg-field">
-					<label class="fg-field-label" for="fg-date-3">Wunschtermin 3 (optional)</label>
-					<input class="fg-input fg-date" id="fg-date-3" type="date" min="<?php echo esc_attr( $fg_min_date ); ?>">
-				</div>
-				<?php if ( $fg_lead_days > 0 ) : ?>
 				<div class="fg-field fg-field-full">
-					<span class="fg-field-help" style="margin-top:0;">Dieser Platz braucht mindestens <?php echo (int) $fg_lead_days; ?> Tage Vorlauf — frühere Termine sind nicht wählbar.</span>
+					<label class="fg-field-label" for="fg-group-size">Gruppengröße</label>
+					<div class="fg-stepper-wrap">
+						<div class="fg-stepper" id="fg-stepper" data-min="<?php echo (int) $p_min; ?>" data-max="<?php echo (int) $p_max; ?>">
+							<button type="button" class="fg-stepper-btn" data-step="-1" aria-label="Weniger Gäste">&minus;</button>
+							<input class="fg-stepper-input" id="fg-group-size" type="number" inputmode="numeric" readonly value="<?php echo (int) ( $p_min > 0 ? $p_min : 1 ); ?>">
+							<button type="button" class="fg-stepper-btn" data-step="1" aria-label="Mehr Gäste">+</button>
+						</div>
+						<span class="fg-stepper-unit">Gäste</span>
+					</div>
+					<?php if ( $fg_group_help ) : ?><span class="fg-field-help"><?php echo esc_html( $fg_group_help ); ?></span><?php endif; ?>
 				</div>
-				<?php endif; ?>
 				<div class="fg-field fg-field-full">
 					<label class="fg-field-label" for="fg-notes">Weitere Terminwünsche oder Anmerkungen? (optional)</label>
 					<textarea class="fg-input" id="fg-notes" rows="3" placeholder="z.B. „auch Juli flexibel", Anlass, Erfahrungslevel oder besondere Wünsche …"></textarea>
@@ -610,7 +632,12 @@ get_header();
 		$wish_cats   = function_exists( 'fge_request_wish_categories' ) ? fge_request_wish_categories( $partner_id ) : [];
 		$cats_platz  = array_values( array_filter( $wish_cats, static function ( $c ) { return $c['source'] === 'platz'; } ) );
 		$cats_fg     = array_values( array_filter( $wish_cats, static function ( $c ) { return $c['source'] === 'firmengolf'; } ) );
-		$inc_chips   = array_values( array_filter( array_map( 'strval', (array) $includes_new ) ) );
+		// Inkludierte Leistungen: bevorzugt die im Editor kuratierten Chips, sonst
+		// Fallback auf die aktiven has_-Leistungen (manche Events haben nur diese).
+		$inc_chips = $includes_new;
+		if ( empty( $inc_chips ) && function_exists( 'fge_get_active_leistungen' ) ) {
+			$inc_chips = array_values( fge_get_active_leistungen( $post_id ) );
+		}
 
 		$render_cat = static function ( array $c ): void {
 			?>
@@ -643,13 +670,14 @@ get_header();
 			</div>
 			<?php endif; ?>
 
-			<div class="fg-wish-group-h">Am Platz</div>
-			<p class="fg-field-help" style="margin:0 0 10px;">Tippe an, was ihr euch zusätzlich wünscht. Für Details einfach aufklappen.</p>
+			<p class="fg-wish-intro">Optionale Zusatzleistungen. Was ihr hier auswählt, fragen wir gleich mit an, und der Platz nimmt es ins Angebot auf. Für Details eine Kategorie antippen und aufklappen.</p>
+
+			<div class="fg-wish-group-h">Zusatzleistungen am Platz <span class="fg-wish-group-note">vom Golfplatz</span></div>
 			<div class="fg-cat-grid">
 				<?php foreach ( $cats_platz as $c ) { $render_cat( $c ); } ?>
 			</div>
 
-			<div class="fg-wish-group-h" style="margin-top:22px;">Durch Firmengolf organisiert <span class="fg-wish-group-note">wir kümmern uns drum</span></div>
+			<div class="fg-wish-group-h" style="margin-top:22px;">Zusatzleistungen über Firmengolf <span class="fg-wish-group-note">organisieren wir</span></div>
 			<div class="fg-cat-grid">
 				<?php foreach ( $cats_fg as $c ) { $render_cat( $c ); } ?>
 			</div>
@@ -732,7 +760,7 @@ get_header();
 
 		var COPY = [
 			{ t: 'Wann & wie groß?',            s: 'Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb eines Werktags zurück.' },
-			{ t: 'Was wünscht ihr euch?',       s: 'Alles optional. Es hilft uns, das passende Angebot zu schnüren.' },
+			{ t: 'Was wünscht ihr euch?',       s: 'Optionale Zusatzleistungen, die wir gleich mit anfragen und ins Angebot aufnehmen.' },
 			{ t: 'Wer ist Ansprechpartner?',    s: 'Nur damit wir euch erreichen können, kein Newsletter, kein Spam.' }
 		];
 
@@ -814,6 +842,37 @@ get_header();
 				}
 			});
 			return out;
+		}
+
+		// Ganzes Datumsfeld öffnet den Kalender (nicht nur das Icon).
+		modal.querySelectorAll('.fg-date').forEach(function (d) {
+			d.addEventListener('click', function () {
+				if (typeof d.showPicker === 'function') { try { d.showPicker(); } catch (e) {} }
+			});
+		});
+
+		// Gruppengröße als +/- Stepper im erlaubten Rahmen des Events (Start = Minimum).
+		var stepper = document.getElementById('fg-stepper');
+		if (stepper) {
+			var sinp = document.getElementById('fg-group-size');
+			var smin = parseInt(stepper.getAttribute('data-min'), 10) || 0;
+			var smax = parseInt(stepper.getAttribute('data-max'), 10) || 0; // 0 = keine Obergrenze
+			if (smin < 1) { smin = 1; }
+			var bMinus = stepper.querySelector('[data-step="-1"]');
+			var bPlus  = stepper.querySelector('[data-step="1"]');
+			function sclamp(v) { if (v < smin) { v = smin; } if (smax && v > smax) { v = smax; } return v; }
+			function scur() { var m = (sinp.value || '').match(/\d+/); return m ? parseInt(m[0], 10) : smin; }
+			function srender(v) {
+				sinp.value = v;
+				if (bMinus) { bMinus.disabled = (v <= smin); }
+				if (bPlus)  { bPlus.disabled  = (smax && v >= smax); }
+			}
+			srender(sclamp(scur()));
+			stepper.querySelectorAll('.fg-stepper-btn').forEach(function (b) {
+				b.addEventListener('click', function () {
+					srender(sclamp(scur() + (parseInt(b.getAttribute('data-step'), 10) || 0)));
+				});
+			});
 		}
 
 		document.getElementById('fg-modal-submit').addEventListener('click', function () {
