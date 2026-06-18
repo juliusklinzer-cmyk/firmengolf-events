@@ -159,6 +159,16 @@ add_action( 'wp_head', function () {
 	}
 }, 1 );
 
+// Autoren- und Datums-Archive dauerhaft auf noindex,follow: dünne, mit dem Blog
+// duplizierte Übersichten. Über den wp_robots-Filter, damit nur EIN robots-Tag entsteht.
+add_filter( 'wp_robots', function ( array $robots ): array {
+	if ( is_author() || is_date() ) {
+		$robots['noindex'] = true;
+		$robots['follow']  = true;
+	}
+	return $robots;
+} );
+
 // Einheitlicher Marken-Suffix in <title> für Seiten ohne eigenes pre_get_document_title.
 add_filter( 'document_title_parts', function ( $parts ) {
 	if ( ! is_front_page() ) {

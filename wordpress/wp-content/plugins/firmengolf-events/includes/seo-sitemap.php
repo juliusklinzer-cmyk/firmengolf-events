@@ -24,6 +24,17 @@ function fge_noindex_page_slugs(): array {
 }
 
 /**
+ * Autoren-Sitemap (wp-sitemap-users-*.xml) entfernen — Autorenseiten sind dünn
+ * und stehen auf noindex (siehe wp_robots-Filter im Theme).
+ */
+add_filter( 'wp_sitemaps_add_provider', static function ( $provider, $name ) {
+	if ( 'users' === $name ) {
+		return false;
+	}
+	return $provider;
+}, 10, 2 );
+
+/**
  * Event-Sitemap auf öffentlich sichtbare Events beschränken und gated Seiten
  * aus der Page-Sitemap entfernen.
  */
