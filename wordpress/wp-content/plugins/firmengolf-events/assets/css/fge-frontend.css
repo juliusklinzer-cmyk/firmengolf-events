@@ -4731,3 +4731,85 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   border-top: 1px solid var(--ink-200);
   border-bottom: 1px solid var(--ink-200);
 }
+
+/* ── 404 / Suche / generischer Fallback ─────────────────────────────────────── */
+.fge-state {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: clamp(48px, 9vw, 110px) 20px;
+  text-align: center;
+}
+.fge-state-code {
+  font-family: var(--font-display);
+  font-size: clamp(72px, 16vw, 140px);
+  line-height: 1;
+  font-weight: var(--fw-bold, 700);
+  color: var(--fairway-700);
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+.fge-state h1 {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1.2;
+  color: var(--ink-900, var(--ink-700));
+  margin: 0 0 14px;
+}
+.fge-state p {
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--ink-700);
+  margin: 0 auto 28px;
+  max-width: 52ch;
+}
+.fge-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* Suchformular + Ergebnisliste */
+.fge-search-form {
+  display: flex;
+  gap: 10px;
+  max-width: 520px;
+  margin: 8px auto 32px;
+}
+.fge-search-form input[type="search"] {
+  flex: 1;
+  padding: 13px 18px;
+  font-size: 16px;
+  font-family: var(--font-body);
+  border: 1px solid var(--border, var(--ink-200));
+  border-radius: var(--radius-pill);
+  background: var(--bg, #fff);
+  color: var(--ink-900, var(--ink-700));
+}
+.fge-search-form input[type="search"]:focus {
+  outline: none;
+  border-color: var(--fairway-600);
+}
+.fge-result-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+.fge-result-list li {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--ink-200);
+}
+.fge-result-list a {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--fairway-700);
+  text-decoration: none;
+}
+.fge-result-list a:hover { text-decoration: underline; }
+.fge-result-list p {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: var(--ink-700);
+  max-width: none;
+}
