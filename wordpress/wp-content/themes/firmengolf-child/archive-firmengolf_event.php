@@ -8,11 +8,15 @@ $arch_title = 'Firmenevents auf dem Golfplatz: alle Formate | Firmengolf';
 $arch_desc  = 'Alle Firmenevent-Formate auf einen Blick: Teamevents, Firmenturniere, Schnupperkurse und Incentives auf Golfplätzen in ganz Deutschland. Nach Region und Gruppengröße filtern und anfragen.';
 add_filter( 'pre_get_document_title', function () use ( $arch_title ) { return $arch_title; } );
 add_action( 'wp_head', function () use ( $arch_title, $arch_desc ) {
+	$GLOBALS['fge_seo_meta_done'] = true;
 	echo '<meta name="description" content="' . esc_attr( $arch_desc ) . '">' . "\n";
+	echo '<link rel="canonical" href="' . esc_url( get_post_type_archive_link( 'firmengolf_event' ) ) . '">' . "\n";
 	echo '<meta property="og:type" content="website">' . "\n";
 	echo '<meta property="og:title" content="' . esc_attr( $arch_title ) . '">' . "\n";
 	echo '<meta property="og:description" content="' . esc_attr( $arch_desc ) . '">' . "\n";
 	echo '<meta property="og:url" content="' . esc_url( get_post_type_archive_link( 'firmengolf_event' ) ) . '">' . "\n";
+	$arch_og_img = function_exists( 'fge_default_og_image_url' ) ? fge_default_og_image_url() : '';
+	if ( $arch_og_img ) { echo '<meta property="og:image" content="' . esc_url( $arch_og_img ) . '">' . "\n"; }
 	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
 } );
 

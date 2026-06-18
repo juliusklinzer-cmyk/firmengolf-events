@@ -59,6 +59,7 @@ $p_seo_tail  = ' Jetzt bei Firmengolf anfragen.';
 $p_seo_desc  = rtrim( mb_substr( wp_strip_all_tags( (string) $p_seo_desc ), 0, 150 - mb_strlen( $p_seo_tail ) ) ) . $p_seo_tail;
 add_filter( 'pre_get_document_title', function () use ( $p_seo_title ) { return $p_seo_title; } );
 add_action( 'wp_head', function () use ( $p_seo_title, $p_seo_desc, $pid, $cover, $name, $city ) {
+	$GLOBALS['fge_seo_meta_done'] = true;
 	echo '<meta name="description" content="' . esc_attr( $p_seo_desc ) . '">' . "\n";
 	echo '<meta property="og:type" content="website">' . "\n";
 	echo '<meta property="og:title" content="' . esc_attr( $p_seo_title ) . '">' . "\n";

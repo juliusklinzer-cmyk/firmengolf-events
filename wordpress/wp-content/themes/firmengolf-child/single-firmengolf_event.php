@@ -227,6 +227,7 @@ if ( ! $seo_desc ) {
 $seo_price = ( $pricing_new && ( $pricing_new['gross'] ?? 0 ) > 0 ) ? (int) round( $pricing_new['gross'] ) : 0;
 add_filter( 'pre_get_document_title', function () use ( $seo_title ) { return $seo_title; } );
 add_action( 'wp_head', function () use ( $seo_title, $seo_desc, $post_id, $thumb_url, $seo_price ) {
+	$GLOBALS['fge_seo_meta_done'] = true;
 	echo '<meta name="description" content="' . esc_attr( $seo_desc ) . '">' . "\n";
 	echo '<meta property="og:type" content="website">' . "\n";
 	echo '<meta property="og:title" content="' . esc_attr( $seo_title ) . '">' . "\n";

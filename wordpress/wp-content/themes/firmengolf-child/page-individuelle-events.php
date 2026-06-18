@@ -14,11 +14,14 @@ $ie_title = 'Individuelles Firmen-Golfevent planen | Firmengolf';
 $ie_desc  = 'Plant euer individuelles Firmen-Golfevent: Teamevent, Incentive, Sommerfest oder Kundenturnier, passend zu Budget und Gruppe. Budget-Rechner und Anfrage in wenigen Minuten.';
 add_filter( 'pre_get_document_title', function () use ( $ie_title ) { return $ie_title; } );
 add_action( 'wp_head', function () use ( $ie_title, $ie_desc ) {
+	$GLOBALS['fge_seo_meta_done'] = true;
 	echo '<meta name="description" content="' . esc_attr( $ie_desc ) . '">' . "\n";
 	echo '<meta property="og:type" content="website">' . "\n";
 	echo '<meta property="og:title" content="' . esc_attr( $ie_title ) . '">' . "\n";
 	echo '<meta property="og:description" content="' . esc_attr( $ie_desc ) . '">' . "\n";
 	echo '<meta property="og:url" content="' . esc_url( get_permalink() ) . '">' . "\n";
+	$ie_og_img = function_exists( 'fge_default_og_image_url' ) ? fge_default_og_image_url() : '';
+	if ( $ie_og_img ) { echo '<meta property="og:image" content="' . esc_url( $ie_og_img ) . '">' . "\n"; }
 	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
 } );
 

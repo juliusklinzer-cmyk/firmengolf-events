@@ -56,12 +56,15 @@ if ( ! function_exists( 'fge_city_ico' ) ) {
 // ── SEO head injection ────────────────────────────────────────────────────────
 add_filter( 'pre_get_document_title', static fn() => $seo_title );
 add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonical, $city_name, $faqs ) {
+	$GLOBALS['fge_seo_meta_done'] = true;
 	echo '<meta name="description" content="' . esc_attr( $seo_desc ) . '">' . "\n";
 	echo '<link rel="canonical" href="' . esc_url( $canonical ) . '">' . "\n";
 	echo '<meta property="og:type" content="website">' . "\n";
 	echo '<meta property="og:title" content="' . esc_attr( $seo_title ) . '">' . "\n";
 	echo '<meta property="og:description" content="' . esc_attr( $seo_desc ) . '">' . "\n";
 	echo '<meta property="og:url" content="' . esc_url( $canonical ) . '">' . "\n";
+	$city_og_img = function_exists( 'fge_default_og_image_url' ) ? fge_default_og_image_url() : '';
+	if ( $city_og_img ) { echo '<meta property="og:image" content="' . esc_url( $city_og_img ) . '">' . "\n"; }
 
 	$graph = [
 		[

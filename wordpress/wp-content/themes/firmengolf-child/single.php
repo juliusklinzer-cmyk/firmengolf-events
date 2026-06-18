@@ -49,6 +49,53 @@ if ( count( $related_posts ) < 3 ) {
 	$related_posts = array_merge( $related_posts, get_posts( $extra_args ) );
 }
 
+// ── SEO: Blogpost-Title, Description, OpenGraph (Article) + BlogPosting-Schema ──
+$post_seo_title = $title . ' | Firmengolf';
+$post_seo_desc  = function_exists( 'fge_generate_description' ) ? fge_generate_description( $post_id ) : '';
+add_filter( 'pre_get_document_title', function () use ( $post_seo_title ) {
+	return $post_seo_title;
+} );
+add_action( 'wp_head', function () use ( $post_seo_title, $post_seo_desc, $post_id, $title, $thumb, $author ) {
+	if ( function_exists( 'fge_render_seo_meta' ) ) {
+		fge_render_seo_meta( [
+			'title'   => $post_seo_title,
+			'desc'    => $post_seo_desc,
+			'url'     => get_permalink( $post_id ),
+			'image'   => $thumb,
+			'og_type' => 'article',
+		] );
+	}
+
+	$schema = [
+		'@context'         => 'https://schema.org',
+		'@type'            => 'BlogPosting',
+		'headline'         => $title,
+		'datePublished'    => get_the_date( 'c', $post_id ),
+		'dateModified'     => get_the_modified_date( 'c', $post_id ),
+		'author'           => [ '@type' => 'Person', 'name' => $author ],
+		'publisher'        => [ '@type' => 'Organization', 'name' => 'Firmengolf', 'url' => home_url( '/' ) ],
+		'mainEntityOfPage' => [ '@type' => 'WebPage', '@id' => get_permalink( $post_id ) ],
+	];
+	if ( $post_seo_desc !== '' ) {
+		$schema['description'] = $post_seo_desc;
+	}
+	if ( $thumb ) {
+		$schema['image'] = $thumb;
+	}
+	echo '<script type="application/ld+json">' . wp_json_encode( $schema ) . '</script>' . "\n";
+
+	$crumbs = [
+		'@context'        => 'https://schema.org',
+		'@type'           => 'BreadcrumbList',
+		'itemListElement' => [
+			[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf', 'item' => home_url( '/' ) ],
+			[ '@type' => 'ListItem', 'position' => 2, 'name' => 'Blog', 'item' => home_url( '/blog/' ) ],
+			[ '@type' => 'ListItem', 'position' => 3, 'name' => $title ],
+		],
+	];
+	echo '<script type="application/ld+json">' . wp_json_encode( $crumbs ) . '</script>' . "\n";
+} );
+
 get_header();
 ?>
 <div class="fge-page">
