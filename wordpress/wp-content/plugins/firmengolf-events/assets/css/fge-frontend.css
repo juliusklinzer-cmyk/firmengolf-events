@@ -450,6 +450,8 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 
 /* ---------- 10. EVENT CARD ---------- */
 .fg-event {
+  display: flex;
+  flex-direction: column;
   background: var(--paper-50);
   border-radius: 20px;
   overflow: hidden;
@@ -462,10 +464,11 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   box-shadow: 0 4px 12px rgba(14,19,16,0.08), 0 16px 40px rgba(14,19,16,0.08);
   transform: translateY(-2px);
 }
-.fg-event a { color: inherit; text-decoration: none; display: flex; flex-direction: column; height: 100%; }
+.fg-event a { color: inherit; text-decoration: none; display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
 .fg-event-photo {
   position: relative;
+  flex: none;
   aspect-ratio: 5/4;
   background-size: cover; background-position: center;
   background-color: var(--paper-300);
@@ -2689,7 +2692,13 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
   .fg-footer-cols { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 720px) {
-  .mk-hero-title { font-size: 44px; }
+  /* Mobile-Hero: handytaugliche Höhe statt erzwungener 560px, kompaktere Typo */
+  .mk-hero { padding: 0 16px; margin-top: 12px; }
+  .mk-hero-photo { min-height: 0; aspect-ratio: 4/5; }
+  .mk-hero-title { font-size: clamp(32px, 8.5vw, 44px); line-height: 1.04; margin-top: 10px; }
+  .mk-hero-sub { font-size: 15px; margin-top: 14px; }
+  .mk-hero-ctas { margin-top: 20px; gap: 10px; }
+  .mk-hero-trust { margin-top: 18px; font-size: 13px; gap: 10px; }
   .mk-h2 { font-size: 32px; }
   .mk-cta-h { font-size: 36px; }
   .home-benefit-h { font-size: 44px; }
@@ -2811,7 +2820,7 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 .ev-card2-loc svg { color: var(--fairway-700); flex: none; }
 .ev-card2-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .ev-mini-tag { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--paper-200); color: var(--ink-600); }
-.ev-card2-foot { margin-top: 16px; }
+.ev-card2-foot { margin-top: auto; }
 .ev-card2-cta { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--fairway-700); transition: gap var(--dur-fast) var(--ease-out); }
 .ev-card2:hover .ev-card2-cta { gap: 9px; }
 
@@ -4988,3 +4997,46 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   border: 0; cursor: pointer;
 }
 .ev-sheet-go:hover { background: var(--fairway-800); }
+
+/* ── Mobile Events: Kategorie-Browse mit wischbaren Reihen (nur ≤768px) ── */
+.ev-catbrowse { display: none; }
+.ev-catsec-c { font-weight: 500; color: var(--ink-500); margin-left: 6px; }
+.ev-inline-cta {
+  display: flex; flex-direction: column; gap: 14px; align-items: flex-start;
+  background: var(--fairway-100); border-radius: var(--radius-xl);
+  padding: 24px; margin-top: 32px;
+}
+.ev-inline-h { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-900); margin: 4px 0 0; }
+
+@media (max-width: 768px) {
+  /* Hero (inkl. Desktop-Suchbalken) + Chip-Rail raus — Mobile-Pille/Sheet übernimmt */
+  .ev-hero { display: none; }
+  .fg-filter-rail { display: none; }
+  .fge-hide-mobile { display: none; }
+  .ev-catbrowse { display: block; padding: 6px 16px 0; }
+  .ev-catsec { margin-bottom: 26px; }
+  .ev-catsec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; padding: 0; }
+  .ev-catsec-h { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.015em; color: var(--ink-900); }
+  .ev-catsec-all { font-size: 13px; font-weight: 500; color: var(--fairway-700); white-space: nowrap; text-decoration: none; }
+  .ev-catrow {
+    display: flex; flex-wrap: nowrap;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory; scroll-padding-left: 16px;
+    gap: 14px; padding: 2px 16px 6px; margin: 0 -16px;
+    scrollbar-width: none;
+  }
+  .ev-catrow::-webkit-scrollbar { display: none; }
+  .ev-catrow .ev-card2 { flex: 0 0 60%; scroll-snap-align: start; }
+  .ev-catrow .ev-card2 .fg-event-photo { aspect-ratio: 3/2; }
+  .ev-allcard {
+    flex: 0 0 46%; scroll-snap-align: start;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 12px;
+    background: var(--paper-200); border: 1px dashed var(--ink-200); border-radius: 18px;
+    padding: 22px 20px; text-align: left; text-decoration: none;
+  }
+  .ev-allcard-ic { width: 40px; height: 40px; border-radius: 999px; background: var(--paper-50); color: var(--fairway-700); display: inline-flex; align-items: center; justify-content: center; }
+  .ev-allcard-t { font-family: var(--font-display); font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-900); line-height: 1.2; }
+  .ev-allcard-go { font-size: 13px; font-weight: 500; color: var(--fairway-700); display: inline-flex; align-items: center; gap: 6px; }
+  /* Gefilterte Treffer: einspaltig gestapelt */
+  .ev-grid4 { grid-template-columns: 1fr; }
+}

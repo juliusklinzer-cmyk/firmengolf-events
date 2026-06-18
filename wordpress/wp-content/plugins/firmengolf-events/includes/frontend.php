@@ -465,6 +465,15 @@ function fge_get_event_price_display( int $post_id ): string {
 	if ( $label !== '' ) {
 		return $label;
 	}
+	// Aktuelles Pricing-Modell (_fge_price_mode/-amount/-basis) – wie auf der Detailseite.
+	if ( function_exists( 'fge_event_pricing' ) ) {
+		$p = fge_event_pricing( $post_id );
+		if ( ( $p['gross'] ?? 0 ) > 0 ) {
+			$amount = '€' . number_format_i18n( $p['gross'], 0 );
+			return ( ( $p['unit'] ?? '' ) === 'pro Person' ) ? $amount . ' p.P.' : $amount . ' gesamt';
+		}
+	}
+	// Legacy-Fallback (alte Felder).
 	$price = (float) get_post_meta( $post_id, '_fge_sale_price_net', true );
 	if ( $price > 0 ) {
 		return 'ab ' . number_format( $price, 0, ',', '.' ) . ' € netto';

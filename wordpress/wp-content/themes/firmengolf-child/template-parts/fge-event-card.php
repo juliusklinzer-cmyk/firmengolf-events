@@ -33,7 +33,7 @@ $title     = get_the_title( $pid );
 $arrow     = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
 ?>
 <article class="fg-event ev-card2">
-	<a href="<?php echo esc_url( $permalink ); ?>" style="display:contents">
+	<a href="<?php echo esc_url( $permalink ); ?>" target="_blank" rel="noopener noreferrer">
 		<div class="fg-event-photo" style="background-image:url('<?php echo esc_url( $thumb ); ?>')">
 			<div class="fg-event-chips">
 				<?php if ( $elabel ) : ?><span class="fg-photo-chip"><?php echo esc_html( $elabel ); ?></span><?php endif; ?>

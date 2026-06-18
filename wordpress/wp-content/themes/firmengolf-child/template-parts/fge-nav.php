@@ -42,17 +42,22 @@ $mtab_active = static function ( string $key ) use ( $active_item ): bool {
 	if ( 'blog' === $key ) {
 		return 'blog' === $active_item;
 	}
+	if ( 'kontakt' === $key ) {
+		return 'kontakt' === $active_item;
+	}
 	return false;
 };
 $mtab_ic = [
 	'events'  => '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
 	'anfrage' => '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
 	'blog'    => '<path d="M4 5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/>',
+	'kontakt' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
 ];
 $mtabs = [
 	[ 'key' => 'events',  'label' => 'Events',  'url' => $url_events ],
 	[ 'key' => 'anfrage', 'label' => 'Anfrage', 'url' => $url_anfrage ],
 	[ 'key' => 'blog',    'label' => 'Blog',    'url' => $url_blog ],
+	[ 'key' => 'kontakt', 'label' => 'Kontakt', 'url' => $url_kontakt ],
 ];
 ?>
 <nav class="fg-topnav" aria-label="Hauptnavigation">

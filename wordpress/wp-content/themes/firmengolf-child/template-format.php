@@ -164,7 +164,7 @@ get_header();
 			$thumb  = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $eid, 'large' ) : ( has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' ) );
 		?>
 		<article class="fg-event">
-			<a href="<?php echo esc_url( get_permalink( $eid ) ); ?>" style="display:contents">
+			<a href="<?php echo esc_url( get_permalink( $eid ) ); ?>" target="_blank" rel="noopener noreferrer">
 				<div class="fg-event-photo" style="background-image:url('<?php echo esc_url( $thumb ); ?>')">
 					<?php if ( $elabel ) : ?><div class="fg-event-chips"><span class="fg-photo-chip"><?php echo esc_html( $elabel ); ?></span></div><?php endif; ?>
 				</div>

@@ -90,10 +90,7 @@ get_header();
 ?>
 <div class="fge-page">
 
-	<?php
-	$mbar_action = '<a class="ev-msearch ev-maction" href="#budget"><span>Event anfragen</span><span class="ev-maction-arrow"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span></a>';
-	get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'individuelle-events', 'mbar_action' => $mbar_action ] );
-	?>
+	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'individuelle-events' ] ); ?>
 
 	<?php /* ── Hero ── */ ?>
 	<section class="ind-hero">
@@ -182,12 +179,6 @@ get_header();
 						<?php foreach ( $bc['ranges'] as $r ) : ?>
 							<button type="button" class="bc-seg-btn<?php echo $start_range === $r['id'] ? ' on' : ''; ?>" data-range="<?php echo esc_attr( $r['id'] ); ?>"><?php echo esc_html( $r['id'] ); ?></button>
 						<?php endforeach; ?>
-					</div>
-				</div>
-				<div class="bc-field">
-					<span class="bc-flabel">Dauer</span>
-					<div class="bc-stepper" style="align-items:center;">
-						<span class="bc-step-val" id="bc-duration" style="min-width:0;font-size:16px;font-weight:500;">Halbtag+</span>
 					</div>
 				</div>
 			</div>

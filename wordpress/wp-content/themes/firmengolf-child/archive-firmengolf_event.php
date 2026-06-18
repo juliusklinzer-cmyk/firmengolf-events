@@ -446,7 +446,60 @@ $group_bands = [
 </div>
 
 <?php /* ══════════════ GRID ══════════════ */ ?>
-<section class="fg-grid-section" aria-label="Eventangebote">
+<?php
+$has_filters = ( $active_format !== 'all' ) || $geo_active || ( $active_pax > 0 );
+if ( ! $has_filters ) :
+	// Mobile (≤768px via CSS): nach Kategorie gruppierte, wischbare Reihen. Desktop unberührt.
+	$legacy_map = function_exists( 'fge_get_event_format_legacy_map' ) ? fge_get_event_format_legacy_map() : [];
+	$cat_key = static function ( string $type ) use ( $formats, $legacy_map ) {
+		if ( isset( $formats[ $type ] ) ) { return $type; }
+		if ( isset( $legacy_map[ $type ], $formats[ $legacy_map[ $type ] ] ) ) { return $legacy_map[ $type ]; }
+		return null;
+	};
+	$browse_all = get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => 'publish',
+		'numberposts' => -1,
+		'meta_query'  => [ [ 'key' => '_fge_event_status', 'value' => fge_public_event_statuses(), 'compare' => 'IN' ] ],
+	] );
+	$by_cat = [];
+	foreach ( $browse_all as $bp ) {
+		if ( function_exists( 'fge_event_is_public' ) && ! fge_event_is_public( $bp->ID ) ) { continue; }
+		$k = $cat_key( (string) get_post_meta( $bp->ID, '_fge_event_type', true ) );
+		if ( $k ) { $by_cat[ $k ][] = (int) $bp->ID; }
+	}
+	$ind_link = ( $p = get_page_by_path( 'individuelle-events' ) ) ? get_permalink( $p->ID ) : home_url( '/individuelle-events/' );
+	?>
+	<div class="ev-catbrowse" aria-label="Events nach Kategorie">
+		<?php foreach ( $formats as $fkey => $flabel ) :
+			if ( 'all' === $fkey || empty( $by_cat[ $fkey ] ) ) { continue; }
+			$ids = array_slice( $by_cat[ $fkey ], 0, 5 );
+			$all_url = esc_url( add_query_arg( 'format', $fkey, $archive_url ) ); ?>
+			<section class="ev-catsec">
+				<div class="ev-catsec-head">
+					<h3 class="ev-catsec-h"><?php echo esc_html( $flabel ); ?> <span class="ev-catsec-c"><?php echo (int) count( $by_cat[ $fkey ] ); ?></span></h3>
+					<a class="ev-catsec-all" href="<?php echo $all_url; ?>">Alle ansehen →</a>
+				</div>
+				<div class="ev-catrow">
+					<?php foreach ( $ids as $id ) { get_template_part( 'template-parts/fge-event-card', null, [ 'id' => $id, 'dist' => null ] ); } ?>
+					<a class="ev-allcard" href="<?php echo $all_url; ?>">
+						<span class="ev-allcard-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+						<span class="ev-allcard-t">Alle <?php echo esc_html( $flabel ); ?></span>
+						<span class="ev-allcard-go">anzeigen →</span>
+					</a>
+				</div>
+			</section>
+		<?php endforeach; ?>
+		<div class="ev-inline-cta">
+			<div>
+				<div class="mk-eyebrow">Kein passender Veranstaltungstyp dabei?</div>
+				<h3 class="ev-inline-h">Wir planen dein Event nach deinen Ansprüchen.</h3>
+			</div>
+			<a class="fg-btn fg-btn-brand" href="<?php echo esc_url( $ind_link ); ?>">Individuelles Event anfragen</a>
+		</div>
+	</div>
+<?php endif; ?>
+<section class="fg-grid-section<?php echo ! $has_filters ? ' fge-hide-mobile' : ''; ?>" aria-label="Eventangebote">
 
 	<?php /* Active filter pills */ ?>
 	<?php $has_filters = ( $active_format !== 'all' ) || $geo_active || ( $active_pax > 0 ); ?>
