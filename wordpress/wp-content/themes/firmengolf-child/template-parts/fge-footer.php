@@ -78,7 +78,7 @@ $url_karriere   = $get_page_url( 'karriere' );
 				<a href="<?php echo esc_url( $url_impressum ); ?>">Impressum</a>
 				<a href="<?php echo esc_url( $url_datenschutz ); ?>">Datenschutz</a>
 				<a href="<?php echo esc_url( $url_agb ); ?>">AGB</a>
-				<a href="#" class="rcb-change-consent" data-cookie-settings>Cookie-Einstellungen</a>
+				<a href="#" onclick="if(window.klaro){window.klaro.show(undefined,true);}return false;">Cookie-Einstellungen</a>
 			</div>
 		</div>
 	</div>

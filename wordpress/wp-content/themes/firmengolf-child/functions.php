@@ -264,3 +264,127 @@ add_action( 'wp_enqueue_scripts', function() {
 		] );
 	}
 } );
+
+// ── Cookie-Consent: Klaro! (self-hosted, kein Drittanbieter-CDN) ─────────────
+// Blockt einwilligungspflichtige Einbettungen (Google Maps) bis zur Zustimmung.
+// Banner mit gleichwertigem „Ablehnen" (DSGVO/TTDSG). Konfig als JSON ins Frontend.
+function fge_klaro_config(): array {
+	$icon = '<svg viewBox="0 0 24 24" fill="none" stroke="#2C5036" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 1 0 9.8 12 3.4 3.4 0 0 1-4.3-4.3A3.4 3.4 0 0 1 12.3 5.4 2 2 0 0 1 12 2z"/><circle cx="9.5" cy="10" r="1" fill="#2C5036" stroke="none"/><circle cx="14.5" cy="14" r="1" fill="#2C5036" stroke="none"/><circle cx="9.5" cy="15" r="1" fill="#2C5036" stroke="none"/></svg>';
+	$notice = '<span class="fge-cc-head">' . $icon . 'Diese Webseite verwendet Cookies</span>'
+		. '<span class="fge-cc-body">Wir verwenden Cookies und ähnliche Technologien, um die Nutzung unserer Website zu analysieren, Funktionen anzubieten und Inhalte wie Karten, Videos, unseren Terminkalender oder Newsletter-Formulare einzubinden. Manche Dienste übertragen dabei Daten an Anbieter wie Google oder HubSpot. Du entscheidest selbst, was geladen wird, und kannst deine Wahl jederzeit über „Cookie-Einstellungen" im Footer ändern.</span>';
+
+	return [
+		'version'                => 2,
+		'elementID'              => 'klaro',
+		'styling'                => [ 'theme' => [ 'light', 'top', 'wide' ] ],
+		'noAutoLoad'             => false,
+		'htmlTexts'              => true,
+		'embedded'               => false,
+		'groupByPurpose'         => true,
+		'storageMethod'          => 'cookie',
+		'cookieName'             => 'fge_consent',
+		'cookieExpiresAfterDays' => 180,
+		'default'                => false,
+		'mustConsent'            => false,
+		'acceptAll'              => true,
+		'hideDeclineAll'         => false,
+		'hideLearnMore'          => false,
+		'noticeAsModal'          => true,
+		'lang'                   => 'de',
+		'translations'           => [
+			'de' => [
+				'privacyPolicyUrl' => home_url( '/datenschutz/' ),
+				'consentModal'     => [
+					'title'       => 'Datenschutz-Einstellungen',
+					'description' => 'Hier entscheidest du, welche Dienste wir einbinden dürfen. Technisch notwendige Funktionen laufen immer. Alles andere – Statistik, Marketing und externe Inhalte – laden wir nur mit deiner Einwilligung.',
+				],
+				'consentNotice'    => [
+					'description' => $notice,
+					'learnMore'   => 'Einstellungen',
+				],
+				'acceptAll'        => 'Alle akzeptieren',
+				'acceptSelected'   => 'Auswahl speichern',
+				'decline'          => 'Ablehnen',
+				'ok'               => 'Alle akzeptieren',
+				'close'            => 'Schließen',
+				'save'             => 'Auswahl speichern',
+				'purposes'         => [
+					'functional'     => 'Notwendig',
+					'statistics'     => 'Statistik',
+					'marketing'      => 'Marketing',
+					'external-media' => 'Externe Medien',
+				],
+				'service'          => [
+					'disableAll'  => [ 'title' => 'Alle Dienste an/aus', 'description' => 'Aktiviert oder deaktiviert alle Dienste auf einmal.' ],
+					'required'    => [ 'title' => '(immer aktiv)', 'description' => 'Dieser Dienst ist technisch notwendig und kann nicht deaktiviert werden.' ],
+				],
+				'wordpress'        => [ 'title' => 'WordPress (technisch notwendig)', 'description' => 'Session- und Sicherheits-Cookies sowie das Speichern deiner Cookie-Auswahl. Ohne diese funktioniert die Seite nicht.' ],
+				'googleanalytics'  => [ 'title' => 'Google Analytics', 'description' => 'Statistik zur anonymisierten Auswertung der Websitenutzung. Setzt Cookies und überträgt Daten an Google.' ],
+				'googlemaps'       => [ 'title' => 'Google Maps', 'description' => 'Interaktive Karten. Beim Laden wird deine IP-Adresse an Google übertragen.' ],
+				'youtube'          => [ 'title' => 'YouTube', 'description' => 'Eingebettete Videos von YouTube/Google. Beim Abspielen werden Daten an Google übertragen.' ],
+				'hubspotmeetings'  => [ 'title' => 'HubSpot Terminkalender', 'description' => 'Eingebetteter Terminbuchungs-Kalender von HubSpot. Setzt Cookies und überträgt Daten an HubSpot.' ],
+				'hubspotcta'       => [ 'title' => 'HubSpot CTA / Tracking', 'description' => 'Marketing- und CTA-Elemente von HubSpot inkl. Nutzungs-Tracking.' ],
+				'kitnewsletter'    => [ 'title' => 'Newsletter (Kit)', 'description' => 'Anmeldeformular unseres Newsletter-Anbieters Kit (ehem. ConvertKit). Setzt Cookies und überträgt Daten an Kit.' ],
+			],
+		],
+		'services'               => [
+			[ 'name' => 'wordpress',       'title' => 'WordPress (technisch notwendig)', 'purposes' => [ 'functional' ],     'required' => true,  'default' => true ],
+			[ 'name' => 'googleanalytics', 'title' => 'Google Analytics',                 'purposes' => [ 'statistics' ],     'default'  => false, 'cookies' => [ '/^_ga.*/', '/^_gid$/' ] ],
+			[ 'name' => 'googlemaps',      'title' => 'Google Maps',                      'purposes' => [ 'external-media' ], 'default'  => false ],
+			[ 'name' => 'youtube',         'title' => 'YouTube',                          'purposes' => [ 'external-media' ], 'default'  => false ],
+			[ 'name' => 'hubspotmeetings', 'title' => 'HubSpot Terminkalender',           'purposes' => [ 'external-media' ], 'default'  => false ],
+			[ 'name' => 'hubspotcta',      'title' => 'HubSpot CTA / Tracking',           'purposes' => [ 'marketing' ],      'default'  => false ],
+			[ 'name' => 'kitnewsletter',   'title' => 'Newsletter (Kit)',                 'purposes' => [ 'marketing' ],      'default'  => false ],
+		],
+	];
+}
+
+add_action( 'wp_enqueue_scripts', function () {
+	$base = get_stylesheet_directory_uri() . '/assets/klaro/';
+	$dir  = get_stylesheet_directory() . '/assets/klaro/';
+	$cver = file_exists( $dir . 'klaro.js' ) ? (string) filemtime( $dir . 'klaro.js' ) : '1';
+	wp_enqueue_style( 'fge-klaro', $base . 'klaro.css', [], $cver );
+	wp_enqueue_style( 'fge-klaro-custom', $base . 'klaro-custom.css', [ 'fge-klaro' ], $cver );
+	// Markenfarbe für Klaro-eigene Elemente (Schalter etc.).
+	wp_add_inline_style( 'fge-klaro-custom', '.klaro{--green1:#2C5036;--green2:#24412c;}' );
+	wp_enqueue_script( 'fge-klaro', $base . 'klaro.js', [], $cver, true );
+	wp_add_inline_script( 'fge-klaro', 'window.klaroConfig = ' . wp_json_encode( fge_klaro_config() ) . ';', 'before' );
+} );
+
+// Klaro per data-config automatisch initialisieren lassen.
+add_filter( 'script_loader_tag', function ( $tag, $handle ) {
+	if ( 'fge-klaro' === $handle ) {
+		$tag = str_replace( ' src=', ' defer data-config="klaroConfig" src=', $tag );
+	}
+	return $tag;
+}, 10, 2 );
+
+// Gravatar vermeiden: lokalen Standard-Avatar ausliefern (kein IP-Transfer an Automattic).
+add_filter( 'get_avatar_url', function ( $url ) {
+	return get_stylesheet_directory_uri() . '/assets/img/avatar.svg';
+}, 10, 1 );
+
+// WordPress-Emoji-Skript (lädt von s.w.org) deaktivieren.
+add_action( 'init', function () {
+	remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+	remove_action( 'wp_print_styles', 'print_emoji_styles' );
+	remove_action( 'admin_print_scripts', 'print_emoji_detection_script' );
+	remove_action( 'admin_print_styles', 'print_emoji_styles' );
+	remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
+	remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
+	remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
+	add_filter( 'emoji_svg_url', '__return_false' );
+} );
+
+// Google Analytics 4 – nur wenn Mess-ID gesetzt (Konstante FGE_GA4_ID oder Option fge_ga4_id).
+// Klaro-verwaltet: lädt erst nach Einwilligung in „Statistik". Bis dahin inaktiv.
+add_action( 'wp_head', function () {
+	$ga = defined( 'FGE_GA4_ID' ) ? FGE_GA4_ID : (string) get_option( 'fge_ga4_id', '' );
+	if ( ! $ga ) {
+		return;
+	}
+	echo '<script type="text/plain" data-type="application/javascript" data-name="googleanalytics" data-src="https://www.googletagmanager.com/gtag/js?id=' . esc_attr( $ga ) . '"></script>' . "\n";
+	echo '<script type="text/plain" data-type="application/javascript" data-name="googleanalytics">'
+		. 'window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config",' . wp_json_encode( $ga ) . ');'
+		. '</script>' . "\n";
+}, 20 );

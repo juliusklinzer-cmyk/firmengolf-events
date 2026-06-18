@@ -485,7 +485,7 @@ get_header();
 				<?php endif; ?>
 			</div>
 			<?php if ( $map_embed ) : ?>
-				<iframe class="evd-map-frame" src="<?php echo esc_url( $map_embed ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $venue ?: get_the_title() ); ?>"></iframe>
+				<iframe class="evd-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $map_embed ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $venue ?: get_the_title() ); ?>"></iframe>
 			<?php else : ?>
 				<div class="evd-map" role="img" aria-label="Ungefähre Lage des Platzes">
 					<div class="evd-map-grid"></div>

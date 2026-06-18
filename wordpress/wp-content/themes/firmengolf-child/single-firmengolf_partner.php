@@ -227,7 +227,7 @@ get_header();
 			<section class="section">
 				<div class="section-head"><div><div class="eyebrow">Standort</div><h2>Wo ihr uns <em>findet</em></h2></div></div>
 				<div class="fgpp-map">
-					<iframe src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
+					<iframe data-name="googlemaps" data-src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
 				</div>
 				<?php if ( $paddr !== '' ) : ?><p class="fgpp-map-addr"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $paddr ); ?></p><?php endif; ?>
 				<?php $apois = function_exists( 'fge_partner_arrival_pois' ) ? fge_partner_arrival_pois( $pid ) : []; ?>

@@ -19,9 +19,16 @@
 | 1 | Golf-Teamevent ohne Vorkenntnisse: warum es für fast jedes Team funktioniert | Nicht-Golfer | golf teamevent ohne vorkenntnisse / golf für anfänger firma | Awareness | Such+Teilbar | /firmenevent/schnupperkurs/, /firmenevent/teamevent/ | ✅ Entwurf (ID 288) |
 | 2 | Was kostet ein Firmen-Golfevent? Preise, Faktoren & Beispiele | Planung | was kostet firmen golfevent / golf firmenevent preis | Consideration | Such | /individuelle-events/, Format-Hubs | ✅ Entwurf (ID 290) |
 | 3 | Stableford oder Scramble? Das richtige Format für euer Firmen-Golfturnier | Nicht-Golfer | scramble golf erklärt / firmenturnier format | Consideration | Such+Teilbar | /firmenevent/golfturnier/, Artikel #1 | ✅ Entwurf (ID 292) |
-| 4 | Golf vs. klassisches Teambuilding: was wirklich zusammenschweißt | Business-Nutzen | golf teambuilding / teamevent ideen | Awareness | Teilbar | /firmenevent/teamevent/ | ✅ |
-| 5 | Schlechtwetter-Plan: was passiert, wenn es beim Golfevent regnet | Planung | — (Einwand) | Consideration | Such | /individuelle-events/ | ✅ |
-| 6 | Welche Teamgröße passt zu welchem Golf-Format (10 / 30 / 80) | Planung | firmenevent gruppengröße | Consideration | Such | Format-Hubs | ✅ |
+| 4 | Warum Golf ein Team zusammenschweißt – und Bowling nicht | Business-Nutzen | golf teambuilding / teamevent ideen | Awareness | Teilbar | /firmenevent/teamevent/, Artikel #1 | ✅ Entwurf (ID 294) |
+| 5 | Schlechtwetter beim Golfevent? Was wirklich passiert – und euer Plan B | Planung | golfevent regen / schlechtwetter | Consideration | Such | /individuelle-events/, Artikel #4 | ✅ Entwurf (ID 296) |
+| 6 | Welche Teamgröße passt zu welchem Golf-Format? (10, 30, 80 Personen) | Planung | firmenevent gruppengröße | Consideration | Such | Format-Hubs (teamevent/golfturnier/schnupperkurs) | ✅ Entwurf (ID 298) |
+
+## Sprint 1 — Status: VERÖFFENTLICHT
+Alle 6 Artikel **publiziert** (IDs 288, 290, 292, 294, 296, 298), SEO-optimiert (Title/Meta/H1, BlogPosting+Breadcrumb-Schema, interne Links auf Format-Hubs + Blog-zu-Blog), Platzhalter-Titelbild automatisch.
+Optionale Verfeinerungen: in #2 echte Paketpreise (aktuell Markt-Orientierung); „MACHT Turnier"-Details in #3; Lee-Trevino-Bild in #5 (Lizenz).
+
+## Sprint 2 — geplant für NACH dem Go-Live
+Themen #7–12 oben (Golf-Knigge, Kundenevent, Weihnachtsfeier-Alternative, Incentive, Tagesablauf, Benefit/Steuer). Erst nach Launch angehen.
 | 7 | Golf-Knigge fürs Firmenevent: die 8 Regeln, die wirklich zählen | Nicht-Golfer | golf knigge / golfregeln anfänger | Awareness | Such+Teilbar | /firmenevent/schnupperkurs/ | |
 | 8 | Kundenevent auf dem Golfplatz: Beziehungen aufbauen, die halten | Business-Nutzen | kundenevent golf / hospitality golf | Consideration | Such | /firmenevent/kundenevent/ | |
 | 9 | Weihnachtsfeier mal anders: Golf-Indoor & Wintervarianten | Formate | weihnachtsfeier idee firma | Awareness | Such (saisonal) | /firmenevent/, Format-Hubs | |

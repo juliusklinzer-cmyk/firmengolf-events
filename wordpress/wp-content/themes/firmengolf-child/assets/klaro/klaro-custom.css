@@ -1,0 +1,83 @@
+/* Firmengolf – Klaro-Anpassungen: zentrierte Modal-Box, Fokus-Backdrop, Markenstil */
+
+/* Backdrop: grau + blurry, damit der Fokus auf dem Banner liegt */
+.klaro .cm-bg {
+	background: rgba(40, 44, 42, 0.5);
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+}
+
+/* Zentrierte Box */
+.klaro .cookie-modal-notice {
+	max-width: 540px;
+	width: calc(100% - 40px);
+	border-radius: 18px;
+	padding: 30px 30px 24px;
+	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+	background: #fff;
+	font-family: var(--font-body, system-ui, sans-serif);
+}
+
+/* Kopf: Cookie-Icon + Headline */
+.klaro .cookie-modal-notice .fge-cc-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-family: var(--font-display, inherit);
+	font-size: 21px;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--fairway-900, #1c3322);
+	margin-bottom: 12px;
+}
+.klaro .cookie-modal-notice .fge-cc-head svg {
+	width: 30px;
+	height: 30px;
+	flex: 0 0 auto;
+}
+.klaro .cookie-modal-notice .fge-cc-body {
+	display: block;
+	font-size: 14.5px;
+	line-height: 1.65;
+	color: #3a423d;
+}
+
+/* Buttons: alle klar sichtbar, im Markenstil (Pill) */
+.klaro .cookie-modal-notice .cn-buttons {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-top: 18px;
+}
+.klaro .cm-btn {
+	background: #fff;
+	color: #2C5036;
+	border: 1px solid #2C5036;
+	border-radius: 999px;
+	padding: 11px 22px;
+	font-weight: 600;
+	font-size: 14px;
+	min-height: 44px;
+	opacity: 1;
+	cursor: pointer;
+	transition: filter 120ms ease, background 120ms ease;
+}
+.klaro .cm-btn:hover {
+	filter: brightness(0.97);
+}
+/* Primär: „Alle akzeptieren" gefüllt grün */
+.klaro .cm-btn.cm-btn-success {
+	background: #2C5036;
+	color: #fff;
+	border-color: #2C5036;
+}
+.klaro .cm-btn.cm-btn-success:hover {
+	background: #24412c;
+}
+/* „Einstellungen"-Link sichtbar */
+.klaro .cookie-modal-notice .cn-learn-more,
+.klaro .cookie-modal-notice a {
+	color: #2C5036;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}

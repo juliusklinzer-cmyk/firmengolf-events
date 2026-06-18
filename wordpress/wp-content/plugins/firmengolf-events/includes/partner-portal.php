@@ -2114,7 +2114,7 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'standort' ); ?>">Bearbeiten</a></div>
 				</div>
 				<div class="fgpp-map">
-					<iframe src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
+					<iframe data-name="googlemaps" data-src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
 				</div>
 				<?php if ( $paddr !== '' ) : ?><p class="fgpp-map-addr"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $paddr ); ?></p><?php endif; ?>
 				<?php $apois = fge_partner_arrival_pois( $partner_id ); ?>
