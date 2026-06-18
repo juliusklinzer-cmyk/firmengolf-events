@@ -81,8 +81,8 @@ $poi_hotel = (string) get_post_meta( $partner_id, '_fge_poi_hotel', true );
 if ( $poi_hotel !== '' ) {
 	$pois['Hotel'] = $poi_hotel;
 }
-$pricing_mode  = (string) get_post_meta( $post_id, '_fge_pricing_mode', true );
-$booking_label = 'package' === $pricing_mode ? 'Als Paket — alles inklusive' : ( 'individual' === $pricing_mode ? 'Einzelpreise' : 'Auf Anfrage' );
+$price_mode    = (string) get_post_meta( $post_id, '_fge_price_mode', true );
+$booking_label = 'gesamt' === $price_mode ? 'Als Paket, alles inklusive' : ( 'einzel' === $price_mode ? 'Einzelpreise' : 'Auf Anfrage' );
 // Im Event inkludierte Anfrage-Wünsche (für „✓ inklusive"-Markierung im Anfrage-Modal).
 $included_wants = function_exists( 'fge_event_included_wants' ) ? fge_event_included_wants( $post_id ) : [];
 
