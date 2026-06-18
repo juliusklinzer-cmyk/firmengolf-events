@@ -5,11 +5,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 the_post();
 $post_id = get_the_ID();
-$status  = get_post_meta( $post_id, '_fge_event_status', true );
-if ( $status !== 'freigegeben' ) {
-	wp_redirect( get_post_type_archive_link( 'firmengolf_event' ), 302 );
-	exit;
-}
+// Sichtbarkeit (Status + Pausieren-Kaskade) erzwingt fge_block_non_approved_events
+// per template_redirect → hier ist das Event garantiert öffentlich.
 
 // ── Meta ──────────────────────────────────────────────────────────────────────
 $event_type_raw = fge_get_event_meta( $post_id, 'event_type' );

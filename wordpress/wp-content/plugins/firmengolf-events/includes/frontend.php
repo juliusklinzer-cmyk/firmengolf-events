@@ -46,7 +46,26 @@ function fge_filter_archive_query( WP_Query $q ) {
 }
 add_action( 'pre_get_posts', 'fge_filter_archive_query' );
 
-// ── 404 Guard for non-approved event detail pages ────────────────────────────
+// ── "Gone" (410) für dauerhaft entfernte Events/Plätze ───────────────────────
+
+/**
+ * Rendert eine gestylte „nicht mehr verfügbar"-Seite mit HTTP 410 (Gone) und
+ * beendet die Anfrage. 410 signalisiert Google „dauerhaft entfernt" → schnellere
+ * Deindexierung als bei 404. $kind: 'event' | 'partner'.
+ */
+function fge_render_gone_page( string $kind, int $post_id ): void {
+	global $wp_query;
+	$wp_query->set_404();
+	status_header( 410 );
+	nocache_headers();
+	$rendered = get_template_part( 'template-parts/fge-gone', null, [ 'kind' => $kind, 'post_id' => $post_id ] );
+	if ( false === $rendered ) {
+		get_template_part( '404' ); // Fallback, falls das Theme die Vorlage nicht kennt.
+	}
+	exit;
+}
+
+// ── Guard für nicht-öffentliche Event-Detailseiten ───────────────────────────
 
 add_action( 'template_redirect', 'fge_block_non_approved_events', 1 );
 
@@ -57,16 +76,12 @@ function fge_block_non_approved_events(): void {
 	if ( is_preview() || current_user_can( 'manage_options' ) ) {
 		return;
 	}
-	$status = (string) get_post_meta( get_the_ID(), '_fge_event_status', true );
-	if ( in_array( $status, fge_public_event_statuses(), true ) ) {
+	$id = (int) get_the_ID();
+	// Prüft Status UND Pausieren-Kaskade: Events eines deaktivierten Platzes → offline.
+	if ( fge_event_is_public( $id ) ) {
 		return;
 	}
-	global $wp_query;
-	$wp_query->set_404();
-	status_header( 404 );
-	nocache_headers();
-	get_template_part( '404' );
-	exit;
+	fge_render_gone_page( 'event', $id );
 }
 
 // ── View Counter ──────────────────────────────────────────────────────────────
@@ -405,7 +420,7 @@ function fge_partner_is_public( int $partner_id ): bool {
 	return ! empty( fge_partner_public_event_ids( $partner_id ) );
 }
 
-// ── 404 Guard for non-public golf-course pages ───────────────────────────────
+// ── Guard für nicht-öffentliche Golfplatz-Seiten ─────────────────────────────
 
 add_action( 'template_redirect', 'fge_block_non_public_partners', 1 );
 
@@ -416,15 +431,11 @@ function fge_block_non_public_partners(): void {
 	if ( is_preview() || current_user_can( 'manage_options' ) ) {
 		return;
 	}
-	if ( fge_partner_is_public( (int) get_the_ID() ) ) {
+	$id = (int) get_the_ID();
+	if ( fge_partner_is_public( $id ) ) {
 		return;
 	}
-	global $wp_query;
-	$wp_query->set_404();
-	status_header( 404 );
-	nocache_headers();
-	get_template_part( '404' );
-	exit;
+	fge_render_gone_page( 'partner', $id );
 }
 
 function fge_get_featured_events( int $count = 3 ): array {
