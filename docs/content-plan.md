@@ -16,9 +16,9 @@
 
 | # | Titel (Arbeitstitel) | Pillar | Ziel-Keyword | Funnel | Typ | Interne Links | Sprint 1 |
 |---|---|---|---|---|---|---|---|
-| 1 | Golf-Teamevent für Nicht-Golfer: so wird der Tag für alle ein Erfolg | Nicht-Golfer | golf teamevent ohne vorkenntnisse / golf für anfänger firma | Awareness | Such+Teilbar | /firmenevent/schnupperkurs/, /firmenevent/teamevent/ | ✅ |
-| 2 | Was kostet ein Firmen-Golfevent? Preise, Faktoren, Beispiele | Planung | was kostet firmen golfevent / golf firmenevent preis | Consideration | Such | /individuelle-events/, Format-Hubs | ✅ |
-| 3 | Scramble & Co.: welches Turnierformat zu welchem Team passt | Nicht-Golfer | scramble golf erklärt / firmenturnier format | Consideration | Such+Teilbar | /firmenevent/golfturnier/ | ✅ |
+| 1 | Golf-Teamevent ohne Vorkenntnisse: warum es für fast jedes Team funktioniert | Nicht-Golfer | golf teamevent ohne vorkenntnisse / golf für anfänger firma | Awareness | Such+Teilbar | /firmenevent/schnupperkurs/, /firmenevent/teamevent/ | ✅ Entwurf (ID 288) |
+| 2 | Was kostet ein Firmen-Golfevent? Preise, Faktoren & Beispiele | Planung | was kostet firmen golfevent / golf firmenevent preis | Consideration | Such | /individuelle-events/, Format-Hubs | ✅ Entwurf (ID 290) |
+| 3 | Stableford oder Scramble? Das richtige Format für euer Firmen-Golfturnier | Nicht-Golfer | scramble golf erklärt / firmenturnier format | Consideration | Such+Teilbar | /firmenevent/golfturnier/, Artikel #1 | ✅ Entwurf (ID 292) |
 | 4 | Golf vs. klassisches Teambuilding: was wirklich zusammenschweißt | Business-Nutzen | golf teambuilding / teamevent ideen | Awareness | Teilbar | /firmenevent/teamevent/ | ✅ |
 | 5 | Schlechtwetter-Plan: was passiert, wenn es beim Golfevent regnet | Planung | — (Einwand) | Consideration | Such | /individuelle-events/ | ✅ |
 | 6 | Welche Teamgröße passt zu welchem Golf-Format (10 / 30 / 80) | Planung | firmenevent gruppengröße | Consideration | Such | Format-Hubs | ✅ |
