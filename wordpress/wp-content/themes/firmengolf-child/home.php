@@ -28,7 +28,68 @@ get_header();
 ?>
 <div class="fge-page">
 
-	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'blog' ] ); ?>
+	<?php
+	$blog_url    = home_url( '/blog/' );
+	$active_cat  = $active_cat_slug ? array_filter( $categories, static fn( $c ) => $c->slug === $active_cat_slug ) : [];
+	$active_cat  = $active_cat ? reset( $active_cat ) : null;
+	$pill_label  = $active_cat ? $active_cat->name : 'Beiträge durchsuchen';
+	$mbar_action = '<button class="ev-msearch" type="button" id="fge-blog-pill" aria-label="Blog durchsuchen">'
+		. '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
+		. '<span class="ev-msearch-t ' . ( $active_cat ? '' : 'muted' ) . '">' . esc_html( $pill_label ) . '</span></button>';
+	get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'blog', 'mbar_action' => $mbar_action ] );
+	?>
+
+	<?php /* ── Mobiles Blog-Such-Sheet (≤768px) ── */ ?>
+	<div class="ev-sheet-scrim" id="fge-blog-sheet">
+		<div class="ev-sheet" role="dialog" aria-modal="true" aria-label="Im Magazin suchen">
+			<div class="ev-sheet-top">
+				<button class="ev-sheet-close" type="button" aria-label="Schließen">
+					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+				</button>
+				<span class="ev-sheet-title">Im Magazin suchen</span>
+			</div>
+			<div class="ev-sheet-body">
+				<section class="ev-sheet-card">
+					<div class="ev-sheet-q">Kategorie</div>
+					<div class="ev-sheet-chips">
+						<a class="ev-sheet-chip <?php echo $active_cat ? '' : 'on'; ?>" href="<?php echo esc_url( $blog_url ); ?>">Alle</a>
+						<?php foreach ( $categories as $c ) : ?>
+							<a class="ev-sheet-chip <?php echo $active_cat_slug === $c->slug ? 'on' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'category_name', $c->slug, $blog_url ) ); ?>"><?php echo esc_html( $c->name ); ?></a>
+						<?php endforeach; ?>
+					</div>
+				</section>
+				<section class="ev-sheet-card">
+					<div class="ev-sheet-q">Stichwort</div>
+					<form id="fge-blog-search-form" method="get" action="<?php echo esc_url( home_url( '/' ) ); ?>" role="search">
+						<div class="ev-loc-input">
+							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+							<input type="search" name="s" placeholder="Beiträge durchsuchen" autocomplete="off">
+						</div>
+					</form>
+				</section>
+			</div>
+			<div class="ev-sheet-foot">
+				<a class="ev-sheet-clear" href="<?php echo esc_url( $blog_url ); ?>">Zurücksetzen</a>
+				<button class="ev-sheet-go" type="submit" form="fge-blog-search-form">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+					Suchen
+				</button>
+			</div>
+		</div>
+	</div>
+	<script>
+	(function () {
+		var pill  = document.getElementById('fge-blog-pill');
+		var sheet = document.getElementById('fge-blog-sheet');
+		if (!sheet) { return; }
+		var openS  = function () { sheet.classList.add('is-open'); document.body.style.overflow = 'hidden'; };
+		var closeS = function () { sheet.classList.remove('is-open'); document.body.style.overflow = ''; };
+		if (pill) { pill.addEventListener('click', openS); }
+		sheet.addEventListener('click', function (e) { if (e.target === sheet) { closeS(); } });
+		sheet.querySelector('.ev-sheet-close').addEventListener('click', closeS);
+		document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('is-open')) { closeS(); } });
+	})();
+	</script>
 
 	<?php /* ── Page Hero ── */ ?>
 	<div class="page-hero">

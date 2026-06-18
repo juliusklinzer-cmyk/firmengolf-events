@@ -5,6 +5,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $args        = $args ?? [];
 $active_item = (string) ( $args['active_item'] ?? '' );
+// Optionale kontextuelle Aktion in der Mobile-Bar (Etappe 2: Such-Pille / CTA pro Seite).
+// Erwartet fertiges, escaptes HTML.
+$mbar_action = (string) ( $args['mbar_action'] ?? '' );
 
 // Resolve page URLs (graceful fallback if page not created yet).
 $get_page_url = static function( string $slug, string $fallback = '#' ): string {
@@ -26,6 +29,30 @@ $nav_items = [
 	[ 'key' => 'blog',                'label' => 'Blog',                'url' => $url_blog ],
 	[ 'key' => 'ueber-uns',           'label' => 'Über uns',            'url' => $url_ueber_uns ],
 	[ 'key' => 'kontakt',             'label' => 'Kontakt',             'url' => $url_kontakt ],
+];
+
+// Mobile-Tabs (das Mobile-Menü, ≤768px). Aktiv-Status aus active_item ableiten.
+$mtab_active = static function ( string $key ) use ( $active_item ): bool {
+	if ( 'events' === $key ) {
+		return 'events' === $active_item;
+	}
+	if ( 'anfrage' === $key ) {
+		return in_array( $active_item, [ 'individuelle-events', 'anfrage' ], true );
+	}
+	if ( 'blog' === $key ) {
+		return 'blog' === $active_item;
+	}
+	return false;
+};
+$mtab_ic = [
+	'events'  => '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+	'anfrage' => '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+	'blog'    => '<path d="M4 5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/>',
+];
+$mtabs = [
+	[ 'key' => 'events',  'label' => 'Events',  'url' => $url_events ],
+	[ 'key' => 'anfrage', 'label' => 'Anfrage', 'url' => $url_anfrage ],
+	[ 'key' => 'blog',    'label' => 'Blog',    'url' => $url_blog ],
 ];
 ?>
 <nav class="fg-topnav" aria-label="Hauptnavigation">
@@ -49,53 +76,33 @@ $nav_items = [
 				</span>
 			</a>
 		</div>
-		<button class="fg-nav-burger" type="button" aria-label="Menü öffnen" aria-expanded="false" aria-controls="fge-mobile-drawer">
-			<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-		</button>
-	</div>
-	<div class="fg-drawer-scrim" id="fge-mobile-drawer">
-		<div class="fg-drawer" role="dialog" aria-modal="true" aria-label="Navigation">
-			<div class="fg-drawer-top">
-				<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="fg-brand">
-					<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="120" height="24">
-				</a>
-				<button class="fg-drawer-close" type="button" aria-label="Menü schließen">
-					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-				</button>
-			</div>
-			<div class="fg-drawer-items">
-				<?php foreach ( $nav_items as $item ) : ?>
-					<a class="fg-drawer-link <?php echo $active_item === $item['key'] ? 'active' : ''; ?>" href="<?php echo esc_url( $item['url'] ); ?>">
-						<?php echo esc_html( $item['label'] ); ?>
-						<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-					</a>
-				<?php endforeach; ?>
-			</div>
-			<div class="fg-drawer-foot">
-				<a class="fg-nav-cta fg-drawer-cta" href="<?php echo esc_url( $url_anfrage ); ?>">
-					Jetzt anfragen
-					<span class="fg-arrow">
-						<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-					</span>
-				</a>
-				<a class="fg-drawer-partner" href="<?php echo esc_url( $url_portal ); ?>">Partnerportal für Golfplätze →</a>
-			</div>
-		</div>
 	</div>
 </nav>
+
+<?php /* Mobile-Menü: obere sticky Leiste mit 3 Icon-Tabs (≤768px), kein Burger. */ ?>
+<div class="ev-msearch-bar <?php echo $mbar_action ? '' : 'tabs-only'; ?>" id="fge-mbar">
+	<div class="ev-mtabs">
+		<?php foreach ( $mtabs as $t ) : ?>
+			<a href="<?php echo esc_url( $t['url'] ); ?>" class="ev-mtab <?php echo $mtab_active( $t['key'] ) ? 'active' : ''; ?>">
+				<span class="ev-mtab-ic">
+					<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><?php echo $mtab_ic[ $t['key'] ]; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVG-Pfade ?></svg>
+				</span>
+				<span class="ev-mtab-l"><?php echo esc_html( $t['label'] ); ?></span>
+			</a>
+		<?php endforeach; ?>
+	</div>
+	<?php
+	if ( $mbar_action ) {
+		echo $mbar_action; // phpcs:ignore WordPress.Security.EscapeOutput -- vom Aufrufer escaptes HTML
+	}
+	?>
+</div>
 <script>
 (function () {
-	var nav = document.currentScript.previousElementSibling;
-	if ( ! nav || ! nav.classList.contains( 'fg-topnav' ) ) { return; }
-	var burger = nav.querySelector( '.fg-nav-burger' );
-	var scrim  = nav.querySelector( '.fg-drawer-scrim' );
-	if ( ! burger || ! scrim ) { return; }
-	function open() { scrim.classList.add( 'is-open' ); document.body.style.overflow = 'hidden'; burger.setAttribute( 'aria-expanded', 'true' ); }
-	function close() { scrim.classList.remove( 'is-open' ); document.body.style.overflow = ''; burger.setAttribute( 'aria-expanded', 'false' ); }
-	burger.addEventListener( 'click', open );
-	scrim.querySelector( '.fg-drawer-close' ).addEventListener( 'click', close );
-	scrim.addEventListener( 'click', function ( e ) { if ( e.target === scrim ) { close(); } } );
-	scrim.querySelectorAll( '.fg-drawer-link, .fg-drawer-cta, .fg-drawer-partner' ).forEach( function ( a ) { a.addEventListener( 'click', close ); } );
-	document.addEventListener( 'keydown', function ( e ) { if ( e.key === 'Escape' && scrim.classList.contains( 'is-open' ) ) { close(); } } );
+	var bar = document.getElementById('fge-mbar');
+	if (!bar) { return; }
+	var onScroll = function () { bar.classList.toggle('is-stuck', window.scrollY > 56); };
+	window.addEventListener('scroll', onScroll, { passive: true });
+	onScroll();
 })();
 </script>

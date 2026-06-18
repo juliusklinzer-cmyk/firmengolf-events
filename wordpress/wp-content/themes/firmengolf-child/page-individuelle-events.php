@@ -90,7 +90,10 @@ get_header();
 ?>
 <div class="fge-page">
 
-	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'individuelle-events' ] ); ?>
+	<?php
+	$mbar_action = '<a class="ev-msearch ev-maction" href="#budget"><span>Event anfragen</span><span class="ev-maction-arrow"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span></a>';
+	get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'individuelle-events', 'mbar_action' => $mbar_action ] );
+	?>
 
 	<?php /* ── Hero ── */ ?>
 	<section class="ind-hero">

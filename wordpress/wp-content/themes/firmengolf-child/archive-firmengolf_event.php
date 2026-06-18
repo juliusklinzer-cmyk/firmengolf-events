@@ -187,7 +187,152 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 ?>
 <div class="fge-page">
 
-<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] ); ?>
+<?php
+// Mobile-Such-Pille für die Nav-Bar (öffnet das Sheet weiter unten).
+$pill_bits = [];
+if ( $active_format !== 'all' && isset( $formats[ $active_format ] ) ) { $pill_bits[] = $formats[ $active_format ]; }
+if ( $active_loc !== '' ) { $pill_bits[] = $active_loc; }
+if ( $active_pax > 0 ) { $pill_bits[] = $active_pax . ' Pers.'; }
+$pill_summary = $pill_bits ? implode( ' · ', $pill_bits ) : 'Jetzt suchen';
+$mbar_action  = '<button class="ev-msearch" type="button" id="fge-ev-pill" aria-label="Suche öffnen">'
+	. '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
+	. '<span class="ev-msearch-t ' . ( $pill_bits ? '' : 'muted' ) . '">' . esc_html( $pill_summary ) . '</span></button>';
+get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events', 'mbar_action' => $mbar_action ] );
+
+// ── Mobiles Such-Sheet (≤768px) – gleiche GET-Parameter wie der Desktop-Filter ──
+$group_bands = [
+	[ 'pax' => 0,   'label' => 'Jede Größe' ],
+	[ 'pax' => 12,  'label' => 'Bis 12' ],
+	[ 'pax' => 30,  'label' => '12–30' ],
+	[ 'pax' => 60,  'label' => '30–60' ],
+	[ 'pax' => 100, 'label' => '60+' ],
+];
+?>
+<form class="ev-sheet-scrim" id="fge-ev-sheet" method="get" action="<?php echo esc_url( $archive_url ); ?>">
+	<div class="ev-sheet" role="dialog" aria-modal="true" aria-label="Event finden">
+		<div class="ev-sheet-top">
+			<button class="ev-sheet-close" type="button" aria-label="Schließen">
+				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+			</button>
+			<span class="ev-sheet-title">Event finden</span>
+		</div>
+		<div class="ev-sheet-body">
+			<section class="ev-sheet-card">
+				<div class="ev-sheet-q">Was möchtet ihr machen?</div>
+				<div class="ev-sheet-chips" id="fge-ev-fmt">
+					<?php foreach ( $formats as $slug => $label ) : ?>
+						<button type="button" class="ev-sheet-chip <?php echo $active_format === $slug ? 'on' : ''; ?>" data-fmt="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></button>
+					<?php endforeach; ?>
+				</div>
+			</section>
+			<section class="ev-sheet-card">
+				<div class="ev-sheet-q">Wo seid ihr?</div>
+				<div class="ev-loc-input ev-loc-input-sheet">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+					<input type="text" id="fge-ev-loc" placeholder="Ort oder PLZ" autocomplete="off">
+				</div>
+				<button type="button" class="ev-loc-gps ev-loc-gps-sheet" id="fge-ev-gps">
+					<span class="ev-loc-gps-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
+					Meinen Standort
+				</button>
+				<div class="ev-sheet-chips" id="fge-ev-loc-sugg" style="margin-top:10px;"></div>
+				<div class="ev-sheet-picked" id="fge-ev-loc-picked" style="<?php echo $active_loc !== '' ? '' : 'display:none;'; ?>">Gewählt: <strong id="fge-ev-loc-pickedlabel"><?php echo esc_html( $active_loc ); ?></strong> <button type="button" id="fge-ev-loc-clear">ändern</button></div>
+			</section>
+			<section class="ev-sheet-card">
+				<div class="ev-sheet-q">Wie groß ist die Gruppe?</div>
+				<div class="ev-sheet-chips" id="fge-ev-grp">
+					<?php foreach ( $group_bands as $b ) :
+						$on = ( 0 === $b['pax'] ) ? ( $active_pax <= 0 ) : ( $active_pax === $b['pax'] ); ?>
+						<button type="button" class="ev-sheet-chip <?php echo $on ? 'on' : ''; ?>" data-pax="<?php echo (int) $b['pax']; ?>"><?php echo esc_html( $b['label'] ); ?></button>
+					<?php endforeach; ?>
+				</div>
+			</section>
+		</div>
+		<div class="ev-sheet-foot">
+			<button class="ev-sheet-clear" type="button" id="fge-ev-clear">Alle löschen</button>
+			<button class="ev-sheet-go" type="submit">
+				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+				Suche
+			</button>
+		</div>
+	</div>
+	<input type="hidden" name="format" id="fge-ev-h-format" value="<?php echo esc_attr( $active_format ); ?>">
+	<input type="hidden" name="lat"    id="fge-ev-h-lat"    value="<?php echo esc_attr( $active_lat ?: '' ); ?>">
+	<input type="hidden" name="lng"    id="fge-ev-h-lng"    value="<?php echo esc_attr( $active_lng ?: '' ); ?>">
+	<input type="hidden" name="radius" id="fge-ev-h-radius" value="<?php echo esc_attr( (string) ( $active_radius ?: 50 ) ); ?>">
+	<input type="hidden" name="loc"    id="fge-ev-h-loc"    value="<?php echo esc_attr( $active_loc ); ?>">
+	<input type="hidden" name="pax"    id="fge-ev-h-pax"    value="<?php echo esc_attr( (string) $active_pax ); ?>">
+</form>
+<script>
+(function () {
+	var pill  = document.getElementById('fge-ev-pill');
+	var sheet = document.getElementById('fge-ev-sheet');
+	if (!sheet) { return; }
+	var openS  = function () { sheet.classList.add('is-open'); document.body.style.overflow = 'hidden'; };
+	var closeS = function () { sheet.classList.remove('is-open'); document.body.style.overflow = ''; };
+	if (pill) { pill.addEventListener('click', openS); }
+	sheet.addEventListener('click', function (e) { if (e.target === sheet) { closeS(); } });
+	sheet.querySelector('.ev-sheet-close').addEventListener('click', closeS);
+	document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('is-open')) { closeS(); } });
+
+	function singleSelect(wrapId, attr, hidden) {
+		var wrap = document.getElementById(wrapId);
+		wrap.querySelectorAll('.ev-sheet-chip').forEach(function (c) {
+			c.addEventListener('click', function () {
+				wrap.querySelectorAll('.ev-sheet-chip').forEach(function (x) { x.classList.remove('on'); });
+				c.classList.add('on');
+				hidden.value = c.getAttribute(attr);
+			});
+		});
+	}
+	singleSelect('fge-ev-fmt', 'data-fmt', document.getElementById('fge-ev-h-format'));
+	singleSelect('fge-ev-grp', 'data-pax', document.getElementById('fge-ev-h-pax'));
+
+	var ajax    = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+	var locIn   = document.getElementById('fge-ev-loc');
+	var sugg    = document.getElementById('fge-ev-loc-sugg');
+	var picked  = document.getElementById('fge-ev-loc-picked');
+	var pickedL = document.getElementById('fge-ev-loc-pickedlabel');
+	var hLat = document.getElementById('fge-ev-h-lat'), hLng = document.getElementById('fge-ev-h-lng'), hLoc = document.getElementById('fge-ev-h-loc');
+	function setLoc(label, lat, lng) {
+		hLoc.value = label;
+		if (lat !== null && lat !== undefined) { hLat.value = lat; hLng.value = lng; }
+		pickedL.textContent = label; picked.style.display = ''; sugg.innerHTML = ''; locIn.value = '';
+	}
+	var t = null;
+	if (locIn) locIn.addEventListener('input', function () {
+		var q = locIn.value.trim(); clearTimeout(t);
+		if (q.length < 2) { sugg.innerHTML = ''; return; }
+		t = setTimeout(function () {
+			fetch(ajax + '?action=fge_geo_suggest&q=' + encodeURIComponent(q))
+				.then(function (r) { return r.json(); })
+				.then(function (res) {
+					sugg.innerHTML = '';
+					if (!res || !res.success) { return; }
+					res.data.forEach(function (s) {
+						var b = document.createElement('button');
+						b.type = 'button'; b.className = 'ev-sheet-chip'; b.textContent = s.label;
+						b.addEventListener('click', function () { setLoc(s.label, s.lat, s.lng); });
+						sugg.appendChild(b);
+					});
+				}).catch(function () { sugg.innerHTML = ''; });
+		}, 220);
+	});
+	var gps = document.getElementById('fge-ev-gps');
+	if (gps) gps.addEventListener('click', function () {
+		if (!navigator.geolocation) { return; }
+		var orig = gps.innerHTML; gps.disabled = true;
+		navigator.geolocation.getCurrentPosition(function (pos) {
+			gps.disabled = false; gps.innerHTML = orig;
+			setLoc('Mein Standort', pos.coords.latitude.toFixed(5), pos.coords.longitude.toFixed(5));
+		}, function () { gps.disabled = false; gps.innerHTML = orig; }, { timeout: 8000 });
+	});
+	var clearLoc = document.getElementById('fge-ev-loc-clear');
+	if (clearLoc) clearLoc.addEventListener('click', function () { hLat.value = ''; hLng.value = ''; hLoc.value = ''; picked.style.display = 'none'; });
+	var clearAll = document.getElementById('fge-ev-clear');
+	if (clearAll) clearAll.addEventListener('click', function () { window.location.href = '<?php echo esc_js( $archive_url ); ?>'; });
+})();
+</script>
 
 <?php /* ══════════════ HERO ══════════════ */ ?>
 <section class="ev-hero" aria-label="Events">

@@ -57,7 +57,10 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 ?>
 <div class="fge-page">
 
-<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
+<?php
+$mbar_action = '<a class="ev-msearch" href="' . esc_url( get_post_type_archive_link( 'firmengolf_event' ) ) . '"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="ev-msearch-t muted">Events suchen</span></a>';
+get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_action' => $mbar_action ] );
+?>
 
 <?php /* ══════════════════ 1. HERO ══════════════════ */ ?>
 <section class="mk-hero" aria-label="Hero">
