@@ -53,6 +53,12 @@ $url_karriere   = $get_page_url( 'karriere' );
 				<a href="<?php echo esc_url( add_query_arg( 'format', 'after_work_golf', $url_events ) ); ?>">After-Work Golf</a>
 				<a href="<?php echo esc_url( add_query_arg( 'format', 'offsite', $url_events ) ); ?>">Offsite</a>
 				<a href="<?php echo esc_url( $url_ind ); ?>">Individuelles Event</a>
+				<?php if ( function_exists( 'fge_get_cities' ) ) : ?>
+					<div class="fg-footer-head" style="margin-top:18px;">Golf-Events nach Stadt</div>
+					<?php foreach ( fge_get_cities() as $fc_slug => $fc_city ) : ?>
+						<a href="<?php echo esc_url( home_url( '/golf-events/' . $fc_slug . '/' ) ); ?>">Firmenevents <?php echo esc_html( $fc_city['name'] ); ?></a>
+					<?php endforeach; ?>
+				<?php endif; ?>
 			</div>
 			<div>
 				<div class="fg-footer-head">Firmengolf</div>
@@ -72,6 +78,7 @@ $url_karriere   = $get_page_url( 'karriere' );
 				<a href="<?php echo esc_url( $url_impressum ); ?>">Impressum</a>
 				<a href="<?php echo esc_url( $url_datenschutz ); ?>">Datenschutz</a>
 				<a href="<?php echo esc_url( $url_agb ); ?>">AGB</a>
+				<a href="#" class="rcb-change-consent" data-cookie-settings>Cookie-Einstellungen</a>
 			</div>
 		</div>
 	</div>

@@ -4,21 +4,41 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Quelle-Optionen für Anfragen. Enthält alle von den Formularen gesetzten Werte
+ * (gespeichert in `_fge_source`) plus manuelle Admin-Quellen.
+ *
+ * @return array<string,string>
+ */
+function fge_request_source_options(): array {
+	return [
+		'event_page'          => 'Event-Seite',
+		'general_landingpage' => 'Allgemeine Landingpage',
+		'general_anfrage_page' => 'Anfrage-Seite',
+		'partner_page'        => 'Partner-Seite',
+		'contact_page'        => 'Kontaktseite',
+		'callback_widget'     => 'Rückruf-Widget',
+		'linkedin'            => 'LinkedIn',
+		'google'              => 'Google',
+		'manual'              => 'Manuell',
+		'other'               => 'Sonstiges',
+	];
+}
+
 // ── Registration ─────────────────────────────────────────────────────────────
 
 function fge_register_request_metaboxes() {
 	$screen = 'firmengolf_request';
 
-	add_meta_box( 'fge_rmb_basis',          'Anfrage Basis',                     'fge_render_rmb_basis',          $screen, 'normal', 'high' );
-	add_meta_box( 'fge_rmb_unternehmen',    'Unternehmensdaten',                 'fge_render_rmb_unternehmen',    $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_kontakt',        'Ansprechpartner Unternehmen',       'fge_render_rmb_kontakt',        $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_rahmen',         'Event Rahmen',                      'fge_render_rmb_rahmen',         $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_termine',        'Terminvorschläge',                  'fge_render_rmb_termine',        $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_leistungen',     'Gewünschte Zusatzleistungen',       'fge_render_rmb_leistungen',     $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_verfuegbarkeit', 'Interne Verfügbarkeitsprüfung',     'fge_render_rmb_verfuegbarkeit', $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_kit_hubspot',    'Kit und HubSpot',                   'fge_render_rmb_kit_hubspot',    $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_lexoffice',      'Lexoffice MVP manuell',             'fge_render_rmb_lexoffice',      $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_tracking',       'Quelle und Tracking',               'fge_render_rmb_tracking',       $screen, 'side',   'default' );
+	add_meta_box( 'fge_rmb_basis',       'Anfrage Basis',               'fge_render_rmb_basis',       $screen, 'normal', 'high' );
+	add_meta_box( 'fge_rmb_unternehmen', 'Unternehmensdaten',           'fge_render_rmb_unternehmen', $screen, 'normal', 'default' );
+	add_meta_box( 'fge_rmb_kontakt',     'Ansprechpartner Unternehmen', 'fge_render_rmb_kontakt',     $screen, 'normal', 'default' );
+	add_meta_box( 'fge_rmb_rahmen',      'Event Rahmen',                'fge_render_rmb_rahmen',      $screen, 'normal', 'default' );
+	add_meta_box( 'fge_rmb_termine',     'Terminvorschläge',            'fge_render_rmb_termine',     $screen, 'normal', 'default' );
+	add_meta_box( 'fge_rmb_leistungen',  'Gewünschte Zusatzleistungen', 'fge_render_rmb_leistungen',  $screen, 'normal', 'default' );
+	add_meta_box( 'fge_rmb_kit_hubspot', 'Kit und HubSpot (intern)',    'fge_render_rmb_kit_hubspot', $screen, 'normal', 'default' );
+	add_meta_box( 'fge_rmb_lexoffice',   'Lexoffice (intern, manuell)', 'fge_render_rmb_lexoffice',   $screen, 'normal', 'default' );
+	add_meta_box( 'fge_rmb_tracking',    'Quelle und Tracking',         'fge_render_rmb_tracking',    $screen, 'side',   'default' );
 }
 add_action( 'add_meta_boxes', 'fge_register_request_metaboxes' );
 
@@ -37,8 +57,13 @@ function fge_render_rmb_basis( WP_Post $post ) {
 		'general_event_request'  => 'Allgemeine Eventanfrage',
 	];
 	$statuses = fge_get_statuses( 'request' );
+	$ref      = function_exists( 'fge_request_number' ) ? fge_request_number( $post->ID ) : (string) get_post_meta( $post->ID, '_fge_ref', true );
 	?>
 	<table class="form-table">
+		<tr>
+			<th scope="row">Anfragenummer</th>
+			<td><input type="text" value="<?php echo esc_attr( $ref ); ?>" readonly class="regular-text" style="background:#f0f0f1;font-weight:600;width:160px;"></td>
+		</tr>
 		<tr>
 			<th scope="row"><label for="fge_request_type">Anfrageart</label></th>
 			<td>
@@ -295,18 +320,21 @@ function fge_render_rmb_termine( WP_Post $post ) {
 	<table class="form-table">
 		<tr>
 			<th scope="row"><label for="fge_preferred_date_1">Wunschtermin 1</label></th>
-			<td><input type="date" id="fge_preferred_date_1" name="fge_preferred_date_1"
-			           value="<?php echo esc_attr( $preferred_date_1 ); ?>"></td>
+			<td>
+				<input type="text" id="fge_preferred_date_1" name="fge_preferred_date_1"
+				       value="<?php echo esc_attr( $preferred_date_1 ); ?>" class="regular-text">
+				<p class="description">Wird als Label gespeichert (z.B. „Do, 18.06.2026"), so wie es in der Terminabstimmung erscheint.</p>
+			</td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_preferred_date_2">Wunschtermin 2</label></th>
-			<td><input type="date" id="fge_preferred_date_2" name="fge_preferred_date_2"
-			           value="<?php echo esc_attr( $preferred_date_2 ); ?>"></td>
+			<td><input type="text" id="fge_preferred_date_2" name="fge_preferred_date_2"
+			           value="<?php echo esc_attr( $preferred_date_2 ); ?>" class="regular-text"></td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_preferred_date_3">Wunschtermin 3</label></th>
-			<td><input type="date" id="fge_preferred_date_3" name="fge_preferred_date_3"
-			           value="<?php echo esc_attr( $preferred_date_3 ); ?>"></td>
+			<td><input type="text" id="fge_preferred_date_3" name="fge_preferred_date_3"
+			           value="<?php echo esc_attr( $preferred_date_3 ); ?>" class="regular-text"></td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_alternative_period">Alternativer Zeitraum</label></th>
@@ -362,6 +390,8 @@ function fge_render_rmb_leistungen( WP_Post $post ) {
 		<?php
 	endif;
 	?>
+	<p style="margin:14px 0 4px;"><strong>Interne Einordnung</strong></p>
+	<p class="description" style="margin:0 0 6px;">Bei Event-Anfragen steht die echte Kundenauswahl oben. Diese Häkchen befüllt die allgemeine Anfrage und dienen sonst der internen Zuordnung.</p>
 	<table class="form-table">
 		<?php foreach ( $checkboxes as $key => $label ) :
 			$val = get_post_meta( $post->ID, '_fge_' . $key, true );
@@ -380,43 +410,6 @@ function fge_render_rmb_leistungen( WP_Post $post ) {
 		<tr>
 			<th scope="row"><label for="fge_additional_wishes">Sonstige Wünsche</label></th>
 			<td><textarea id="fge_additional_wishes" name="fge_additional_wishes" rows="3" class="large-text"><?php echo esc_textarea( $additional_wishes ); ?></textarea></td>
-		</tr>
-	</table>
-	<?php
-}
-
-// ── Render: Interne Verfügbarkeitsprüfung ─────────────────────────────────────
-
-function fge_render_rmb_verfuegbarkeit( WP_Post $post ) {
-	$checkboxes = [
-		'golfplatz_requested'               => 'Golfplatz angefragt',
-		'golfpro_requested'                 => 'Golfpro angefragt',
-		'gastro_requested'                  => 'Gastro angefragt',
-		'meeting_room_requested'            => 'Meetingraum angefragt',
-		'shuttle_requested'                 => 'Shuttle angefragt',
-		'other_service_providers_requested' => 'Sonstige Dienstleister angefragt',
-		'availability_fully_checked'        => 'Verfügbarkeit vollständig geprüft',
-	];
-	$availability_internal_note = get_post_meta( $post->ID, '_fge_availability_internal_note', true );
-	?>
-	<table class="form-table">
-		<?php foreach ( $checkboxes as $key => $label ) :
-			$val = get_post_meta( $post->ID, '_fge_' . $key, true );
-			?>
-			<tr>
-				<th scope="row"><?php echo esc_html( $label ); ?></th>
-				<td>
-					<label>
-						<input type="checkbox" name="fge_<?php echo esc_attr( $key ); ?>" value="1"
-						       <?php checked( $val, '1' ); ?>>
-						<?php echo esc_html( $label ); ?>
-					</label>
-				</td>
-			</tr>
-		<?php endforeach; ?>
-		<tr>
-			<th scope="row"><label for="fge_availability_internal_note">Interne Notiz Verfügbarkeit</label></th>
-			<td><textarea id="fge_availability_internal_note" name="fge_availability_internal_note" rows="3" class="large-text"><?php echo esc_textarea( $availability_internal_note ); ?></textarea></td>
 		</tr>
 	</table>
 	<?php
@@ -532,22 +525,14 @@ function fge_render_rmb_lexoffice( WP_Post $post ) {
 // ── Render: Quelle und Tracking ───────────────────────────────────────────────
 
 function fge_render_rmb_tracking( WP_Post $post ) {
-	$request_source     = get_post_meta( $post->ID, '_fge_request_source', true );
+	$request_source     = get_post_meta( $post->ID, '_fge_source', true );
 	$utm_source         = get_post_meta( $post->ID, '_fge_utm_source', true );
 	$utm_medium         = get_post_meta( $post->ID, '_fge_utm_medium', true );
 	$utm_campaign       = get_post_meta( $post->ID, '_fge_utm_campaign', true );
 	$request_date       = get_post_meta( $post->ID, '_fge_request_date', true );
 	$last_status_change = get_post_meta( $post->ID, '_fge_last_status_change', true );
 
-	$sources = [
-		'event_page'          => 'Event-Seite',
-		'general_landingpage' => 'Allgemeine Landingpage',
-		'partner_page'        => 'Partner-Seite',
-		'linkedin'            => 'LinkedIn',
-		'google'              => 'Google',
-		'manual'              => 'Manuell',
-		'other'               => 'Sonstiges',
-	];
+	$sources = fge_request_source_options();
 	?>
 	<table class="form-table">
 		<tr>
@@ -619,7 +604,7 @@ function fge_save_request_fields( int $post_id ) {
 	$allowed_event_goals        = array_keys( fge_get_event_formats_flat( true ) );
 	$allowed_preferred_times    = [ 'morning', 'afternoon', 'after_work', 'full_day', 'open' ];
 	$allowed_integration_status = [ 'not_sent', 'sent', 'error' ];
-	$allowed_sources            = [ 'event_page', 'general_landingpage', 'partner_page', 'linkedin', 'google', 'manual', 'other' ];
+	$allowed_sources            = array_keys( fge_request_source_options() );
 
 	$san_select = static function ( string $key, array $allowed ): string {
 		$val = sanitize_text_field( wp_unslash( $_POST[ $key ] ?? '' ) );
@@ -682,18 +667,7 @@ function fge_save_request_fields( int $post_id ) {
 	}
 	update_post_meta( $post_id, '_fge_additional_wishes', sanitize_textarea_field( wp_unslash( $_POST['fge_additional_wishes'] ?? '' ) ) );
 
-	// ── Metabox 7: Verfügbarkeit ──
-	$verfuegbarkeit_keys = [
-		'golfplatz_requested', 'golfpro_requested', 'gastro_requested',
-		'meeting_room_requested', 'shuttle_requested',
-		'other_service_providers_requested', 'availability_fully_checked',
-	];
-	foreach ( $verfuegbarkeit_keys as $key ) {
-		update_post_meta( $post_id, '_fge_' . $key, isset( $_POST[ 'fge_' . $key ] ) ? 1 : 0 );
-	}
-	update_post_meta( $post_id, '_fge_availability_internal_note', sanitize_textarea_field( wp_unslash( $_POST['fge_availability_internal_note'] ?? '' ) ) );
-
-	// ── Metabox 8: Kit / HubSpot ──
+	// ── Kit / HubSpot (intern) ──
 	update_post_meta( $post_id, '_fge_kit_opt_in',          isset( $_POST['fge_kit_opt_in'] ) ? 1 : 0 );
 	update_post_meta( $post_id, '_fge_kit_status',          $san_select( 'fge_kit_status', $allowed_integration_status ) );
 	update_post_meta( $post_id, '_fge_kit_tags',            sanitize_text_field( wp_unslash( $_POST['fge_kit_tags'] ?? '' ) ) );
@@ -707,8 +681,8 @@ function fge_save_request_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_lexoffice_invoice_number',  sanitize_text_field( wp_unslash( $_POST['fge_lexoffice_invoice_number'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_lexoffice_note',            sanitize_textarea_field( wp_unslash( $_POST['fge_lexoffice_note'] ?? '' ) ) );
 
-	// ── Metabox 10: Tracking ──
-	update_post_meta( $post_id, '_fge_request_source', $san_select( 'fge_request_source', $allowed_sources ) );
+	// ── Tracking ──
+	update_post_meta( $post_id, '_fge_source', $san_select( 'fge_request_source', $allowed_sources ) );
 	update_post_meta( $post_id, '_fge_utm_source',     sanitize_text_field( wp_unslash( $_POST['fge_utm_source'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_utm_medium',     sanitize_text_field( wp_unslash( $_POST['fge_utm_medium'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_utm_campaign',   sanitize_text_field( wp_unslash( $_POST['fge_utm_campaign'] ?? '' ) ) );

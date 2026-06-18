@@ -3,6 +3,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// SEO: Title + Meta + OpenGraph für die Event-Übersicht (vor get_header, damit es greift).
+$arch_title = 'Firmenevents auf dem Golfplatz: alle Formate | Firmengolf';
+$arch_desc  = 'Alle Firmenevent-Formate auf einen Blick: Teamevents, Firmenturniere, Schnupperkurse und Incentives auf Golfplätzen in ganz Deutschland. Nach Region und Gruppengröße filtern und anfragen.';
+add_filter( 'pre_get_document_title', function () use ( $arch_title ) { return $arch_title; } );
+add_action( 'wp_head', function () use ( $arch_title, $arch_desc ) {
+	echo '<meta name="description" content="' . esc_attr( $arch_desc ) . '">' . "\n";
+	echo '<meta property="og:type" content="website">' . "\n";
+	echo '<meta property="og:title" content="' . esc_attr( $arch_title ) . '">' . "\n";
+	echo '<meta property="og:description" content="' . esc_attr( $arch_desc ) . '">' . "\n";
+	echo '<meta property="og:url" content="' . esc_url( get_post_type_archive_link( 'firmengolf_event' ) ) . '">' . "\n";
+	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
+} );
+
 get_header();
 
 // ── URL / page setup ────────────────────────────────────────────────────────

@@ -9,6 +9,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// SEO: Title + Meta + OpenGraph für die Geldseite „Individuelle Events".
+$ie_title = 'Individuelles Firmen-Golfevent planen | Firmengolf';
+$ie_desc  = 'Plant euer individuelles Firmen-Golfevent: Teamevent, Incentive, Sommerfest oder Kundenturnier, passend zu Budget und Gruppe. Budget-Rechner und Anfrage in wenigen Minuten.';
+add_filter( 'pre_get_document_title', function () use ( $ie_title ) { return $ie_title; } );
+add_action( 'wp_head', function () use ( $ie_title, $ie_desc ) {
+	echo '<meta name="description" content="' . esc_attr( $ie_desc ) . '">' . "\n";
+	echo '<meta property="og:type" content="website">' . "\n";
+	echo '<meta property="og:title" content="' . esc_attr( $ie_title ) . '">' . "\n";
+	echo '<meta property="og:description" content="' . esc_attr( $ie_desc ) . '">' . "\n";
+	echo '<meta property="og:url" content="' . esc_url( get_permalink() ) . '">' . "\n";
+	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
+} );
+
 $bc = function_exists( 'fge_bc_config' ) ? fge_bc_config() : null;
 
 $img = static function ( $name ) {

@@ -85,6 +85,55 @@ function fge_request_run_followups(): array {
 	return $stats;
 }
 
+// ── Angebots-Followups: Kunden-Erinnerung + Eskalation an Firmengolf ──────────
+add_action( 'fge_request_followups_cron', 'fge_offer_run_followups' );
+function fge_offer_run_followups(): array {
+	$stats = [ 'offer_reminded' => 0, 'offer_escalated' => 0 ];
+
+	$reqs = get_posts( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_key'    => '_fge_offer_status', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		'meta_value'  => 'pending', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+	] );
+
+	$reminder_days = (int) apply_filters( 'fge_offer_reminder_days', 3 );
+
+	foreach ( $reqs as $req ) {
+		if ( 'pending' !== (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
+			continue;
+		}
+		$sent_at = strtotime( (string) get_post_meta( $req, '_fge_last_status_change', true ) ?: get_post_field( 'post_date', $req ) ?: 'now' );
+
+		// Einmalige Erinnerung an den Kunden.
+		if ( time() >= $sent_at + $reminder_days * DAY_IN_SECONDS && '1' !== (string) get_post_meta( $req, '_fge_offer_reminded', true ) ) {
+			if ( function_exists( 'fge_send_offer_reminder' ) && fge_send_offer_reminder( $req ) ) {
+				update_post_meta( $req, '_fge_offer_reminded', 1 );
+				$stats['offer_reminded']++;
+			}
+		}
+
+		// Einmalige Eskalation an Firmengolf nach Ablauf der Angebotsfrist.
+		$deadline = (int) get_post_meta( $req, '_fge_offer_deadline', true );
+		if ( $deadline && time() > $deadline && '1' !== (string) get_post_meta( $req, '_fge_offer_escalated', true ) ) {
+			$ref = function_exists( 'fge_request_number' ) ? fge_request_number( $req ) : 'FG-' . $req;
+			$to  = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+			$admin = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
+			$content = '<p style="margin:0 0 16px;">Das Angebot <strong>' . esc_html( $ref ) . '</strong> ist seit der Frist offen, der Kunde hat noch nicht zugesagt. Bitte nachfassen.</p>'
+				. '<p style="margin:0;"><a href="' . esc_url( $admin ) . '">Anfrage im Admin öffnen</a></p>';
+			if ( function_exists( 'fge_email_wrap' ) ) {
+				wp_mail( $to, 'Angebot überfällig: ' . $ref, fge_email_wrap( 'Angebot überfällig: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+			}
+			update_post_meta( $req, '_fge_offer_escalated', 1 );
+			$stats['offer_escalated']++;
+		}
+	}
+
+	return $stats;
+}
+
 // Cron beim Deaktivieren entfernen.
 register_deactivation_hook( FGE_DIR . 'firmengolf-events.php', static function () {
 	$ts = wp_next_scheduled( 'fge_request_followups_cron' );

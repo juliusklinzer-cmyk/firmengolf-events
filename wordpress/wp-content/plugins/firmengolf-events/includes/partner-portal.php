@@ -90,8 +90,15 @@ function fge_portal_handle_request(): void {
 /** Derived pipeline status of a request → [ id, label ]. */
 function fge_portal_request_status( int $req ): array {
 	$manual = (string) get_post_meta( $req, '_fge_request_status', true );
-	if ( in_array( $manual, [ 'abgeschlossen', 'gewonnen' ], true ) ) {
-		return [ 'abgeschlossen', 'Abgeschlossen' ];
+	// Explizite Lebenszyklus-Status sind führend (eine Statusquelle).
+	if ( in_array( $manual, [ 'abgeschlossen', 'gewonnen', 'angebot_angenommen', 'event_durchgefuehrt', 'rechnung_in_lexoffice_erstellt' ], true ) ) {
+		return [ 'abgeschlossen', 'angebot_angenommen' === $manual ? 'Gebucht' : 'Abgeschlossen' ];
+	}
+	if ( in_array( $manual, [ 'angebot_abgelehnt', 'verloren', 'nicht_verfuegbar' ], true ) ) {
+		return [ 'abgelehnt', 'Abgelehnt' ];
+	}
+	if ( 'angebot_versendet' === $manual ) {
+		return [ 'bestaetigt', 'Angebot versendet' ];
 	}
 	if ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 ) {
 		return [ 'bestaetigt', 'Bestätigt' ];

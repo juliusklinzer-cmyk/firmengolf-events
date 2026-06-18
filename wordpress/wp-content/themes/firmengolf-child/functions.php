@@ -4,6 +4,56 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Title-Tag-Support: ohne das gibt WordPress in den klassischen Templates keinen
+// <title> aus. Damit greifen unsere Seitentitel (pre_get_document_title) erst.
+add_action( 'after_setup_theme', function () {
+	add_theme_support( 'title-tag' );
+} );
+
+// SEO der Startseite: keyword-orientierter Title + Meta + OpenGraph.
+add_filter( 'pre_get_document_title', function ( $title ) {
+	if ( is_front_page() ) {
+		return 'Firmenevents auf dem Golfplatz | Teamevents, Turniere & Incentives | Firmengolf';
+	}
+	return $title;
+} );
+add_action( 'wp_head', function () {
+	if ( ! is_front_page() ) {
+		return;
+	}
+	$desc = 'Firmenevents auf Deutschlands schönsten Golfplätzen: Teamevents, Firmenturniere, Schnupperkurse und Incentives. Passenden Platz finden und schnell anfragen.';
+	echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
+	echo '<meta property="og:type" content="website">' . "\n";
+	echo '<meta property="og:title" content="Firmenevents auf dem Golfplatz | Firmengolf">' . "\n";
+	echo '<meta property="og:description" content="' . esc_attr( $desc ) . '">' . "\n";
+	echo '<meta property="og:url" content="' . esc_url( home_url( '/' ) ) . '">' . "\n";
+	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
+}, 1 );
+
+// Marken-Entität: Organization auf allen Seiten, WebSite auf der Startseite (für Google Knowledge + KI).
+add_action( 'wp_head', function () {
+	$org = [
+		'@context'    => 'https://schema.org',
+		'@type'       => 'Organization',
+		'name'        => 'Firmengolf',
+		'url'         => home_url( '/' ),
+		'description' => 'Firmenevents auf Golfplätzen in ganz Deutschland: Teamevents, Firmenturniere, Schnupperkurse und Incentives. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
+	];
+	$logo = function_exists( 'get_site_icon_url' ) ? get_site_icon_url( 512 ) : '';
+	if ( $logo ) { $org['logo'] = $logo; }
+	echo '<script type="application/ld+json">' . wp_json_encode( $org ) . '</script>' . "\n";
+
+	if ( is_front_page() ) {
+		$site = [
+			'@context' => 'https://schema.org',
+			'@type'    => 'WebSite',
+			'name'     => 'Firmengolf',
+			'url'      => home_url( '/' ),
+		];
+		echo '<script type="application/ld+json">' . wp_json_encode( $site ) . '</script>' . "\n";
+	}
+}, 2 );
+
 add_action( 'wp_enqueue_scripts', function() {
 	wp_enqueue_style(
 		'firmengolf-child-style',
@@ -28,7 +78,7 @@ add_action( 'wp_enqueue_scripts', function() {
 		);
 	}
 
-	if ( get_query_var( 'fge_termin' ) ) {
+	if ( get_query_var( 'fge_termin' ) || get_query_var( 'fge_angebot' ) ) {
 		wp_enqueue_style(
 			'fge-termin',
 			plugins_url( 'assets/css/fge-termin.css', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),

@@ -211,17 +211,61 @@ $related_query = new WP_Query( [
 	'orderby' => 'rand',
 ] );
 
-// SEO
+// SEO: Title + Meta + OpenGraph. Fallbacks keyword- und ortsorientiert aus den Event-Daten,
+// damit jede Event-Seite auch ohne manuelle Pflege auf „Firmenevent Golf [Stadt]" optimiert ist.
+$seo_city  = $location ?: $region;
 $seo_title = fge_get_event_meta( $post_id, 'seo_title' );
-$seo_desc  = fge_get_event_meta( $post_id, 'meta_description' );
-if ( $seo_title ) {
-	add_filter( 'pre_get_document_title', function() use ( $seo_title ) { return $seo_title; } );
+if ( ! $seo_title ) {
+	$seo_title = 'Firmenevent Golf' . ( $seo_city ? ' ' . $seo_city : '' ) . ': ' . get_the_title() . ' | Firmengolf';
 }
-if ( $seo_desc ) {
-	add_action( 'wp_head', function() use ( $seo_desc ) {
-		echo '<meta name="description" content="' . esc_attr( $seo_desc ) . '">' . "\n";
-	} );
+$seo_desc = fge_get_event_meta( $post_id, 'meta_description' );
+if ( ! $seo_desc ) {
+	$seo_base = $description ?: ( $format_label . ' auf dem Golfplatz' . ( $seo_city ? ' in ' . $seo_city : '' ) );
+	$seo_tail = ' Jetzt bei Firmengolf anfragen.';
+	$seo_desc = rtrim( mb_substr( wp_strip_all_tags( (string) $seo_base ), 0, 150 - mb_strlen( $seo_tail ) ) ) . $seo_tail;
 }
+$seo_price = ( $pricing_new && ( $pricing_new['gross'] ?? 0 ) > 0 ) ? (int) round( $pricing_new['gross'] ) : 0;
+add_filter( 'pre_get_document_title', function () use ( $seo_title ) { return $seo_title; } );
+add_action( 'wp_head', function () use ( $seo_title, $seo_desc, $post_id, $thumb_url, $seo_price ) {
+	echo '<meta name="description" content="' . esc_attr( $seo_desc ) . '">' . "\n";
+	echo '<meta property="og:type" content="website">' . "\n";
+	echo '<meta property="og:title" content="' . esc_attr( $seo_title ) . '">' . "\n";
+	echo '<meta property="og:description" content="' . esc_attr( $seo_desc ) . '">' . "\n";
+	echo '<meta property="og:url" content="' . esc_url( get_permalink( $post_id ) ) . '">' . "\n";
+	if ( $thumb_url ) { echo '<meta property="og:image" content="' . esc_url( $thumb_url ) . '">' . "\n"; }
+	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
+
+	// JSON-LD: Produkt/Angebot (Preis als Rich-Result) + Breadcrumb. Keine erfundenen Bewertungen.
+	$product = [
+		'@context'    => 'https://schema.org',
+		'@type'       => 'Product',
+		'name'        => get_the_title( $post_id ),
+		'description' => $seo_desc,
+		'brand'       => [ '@type' => 'Brand', 'name' => 'Firmengolf' ],
+		'url'         => get_permalink( $post_id ),
+	];
+	if ( $thumb_url ) { $product['image'] = $thumb_url; }
+	if ( $seo_price > 0 ) {
+		$product['offers'] = [
+			'@type'         => 'Offer',
+			'price'         => $seo_price,
+			'priceCurrency' => 'EUR',
+			'availability'  => 'https://schema.org/InStock',
+			'url'           => get_permalink( $post_id ),
+		];
+	}
+	$crumbs = [
+		'@context'        => 'https://schema.org',
+		'@type'           => 'BreadcrumbList',
+		'itemListElement' => [
+			[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf', 'item' => home_url( '/' ) ],
+			[ '@type' => 'ListItem', 'position' => 2, 'name' => 'Firmenevents', 'item' => get_post_type_archive_link( 'firmengolf_event' ) ],
+			[ '@type' => 'ListItem', 'position' => 3, 'name' => get_the_title( $post_id ) ],
+		],
+	];
+	echo '<script type="application/ld+json">' . wp_json_encode( $product ) . '</script>' . "\n";
+	echo '<script type="application/ld+json">' . wp_json_encode( $crumbs ) . '</script>' . "\n";
+} );
 
 // AJAX nonce for modal
 $modal_nonce = wp_create_nonce( 'fge_modal_anfrage' );
@@ -488,6 +532,15 @@ get_header();
 		],
 	]; }
 	$kontakt_url = home_url( '/kontakt/' );
+	// JSON-LD FAQPage aus den sichtbaren FAQ (valide, da echter Seiteninhalt) — stark für KI + Google-FAQ.
+	$faq_schema = [
+		'@context'   => 'https://schema.org',
+		'@type'      => 'FAQPage',
+		'mainEntity' => array_map( static function ( $f ) {
+			return [ '@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => [ '@type' => 'Answer', 'text' => $f['a'] ] ];
+		}, $faq_items ),
+	];
+	echo '<script type="application/ld+json">' . wp_json_encode( $faq_schema ) . '</script>' . "\n";
 	?>
 	<section class="mk-section faq-section">
 		<div class="faq-shell">

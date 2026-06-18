@@ -106,7 +106,9 @@ function fge_rr_responders( int $request_id ): array {
 	}
 
 	if ( 'approve' === $mode ) {
-		$selected = $event_id > 0 ? array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) : [];
+		// array_filter entfernt 0/leer: ein ungesetztes Meta liefert sonst [0] und
+		// würde fälschlich als „explizite Auswahl" gelten (alle vote-Kontakte fielen weg).
+		$selected = $event_id > 0 ? array_values( array_filter( array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) ) ) : [];
 		if ( $selected ) {
 			foreach ( $selected as $sid ) {
 				if ( isset( $by_id[ $sid ] ) ) {

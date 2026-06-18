@@ -22,27 +22,35 @@ $seo_desc    = 'Firmenevents auf Golfplätzen in ' . $city_name . ': Teamevents,
 $events_url  = (string) get_post_type_archive_link( 'firmengolf_event' );
 $ind_url     = ( $p = get_page_by_path( 'individuelle-events' ) ) ? (string) get_permalink( $p->ID ) : home_url( '/individuelle-events/' );
 
-// City FAQ (used for visible accordion + FAQPage JSON-LD).
-$faqs = [
-	[ 'q' => 'Welche Golfplätze gibt es für Firmenevents in ' . $city_name . '?', 'a' => 'Wir arbeiten mit ausgewählten Partnerplätzen in der Region ' . $city_region . ' zusammen — von der Übungsanlage für Einsteigende bis zur 18-Loch-Anlage für Firmenturniere.' ],
-	[ 'q' => 'Müssen unsere Mitarbeitenden Golf spielen können?', 'a' => 'Nein. Unsere Schnupperkurse und Teamevents sind für Einsteigende konzipiert — PGA-Coach vor Ort, Schläger werden gestellt.' ],
+// City FAQ: aus der Stadt-Config (eigener Inhalt), sonst generischer Fallback.
+$faqs = ! empty( $city['faqs'] ) ? $city['faqs'] : [
+	[ 'q' => 'Welche Golfplätze gibt es für Firmenevents in ' . $city_name . '?', 'a' => 'Wir arbeiten mit ausgewählten Partnerplätzen in der Region ' . $city_region . ' zusammen, von der Übungsanlage für Einsteigende bis zur 18-Loch-Anlage für Firmenturniere.' ],
+	[ 'q' => 'Müssen unsere Mitarbeitenden Golf spielen können?', 'a' => 'Nein. Unsere Schnupperkurse und Teamevents sind für Einsteigende konzipiert, PGA-Coach vor Ort, Schläger werden gestellt.' ],
 	[ 'q' => 'Wie schnell bekommen wir eine Antwort?', 'a' => 'Innerhalb eines Werktags meldet sich ein persönlicher Ansprechpartner mit passenden Optionen für ' . $city_name . '.' ],
-	[ 'q' => 'Wie wird abgerechnet?', 'a' => 'Eine Sammelrechnung von Firmengolf mit allen Posten — einfach für HR und Buchhaltung.' ],
+	[ 'q' => 'Wie wird abgerechnet?', 'a' => 'Eine Sammelrechnung von Firmengolf mit allen Posten, einfach für HR und Buchhaltung.' ],
 ];
 
-// Events in this region.
-$city_events = get_posts( [
-	'post_type'      => 'firmengolf_event',
-	'post_status'    => 'publish',
-	'posts_per_page' => 6,
-	'meta_query'     => [
-		'relation' => 'AND',
-		[ 'key' => '_fge_event_status', 'value' => 'freigegeben', 'compare' => '=' ],
-		[ 'key' => '_fge_region', 'value' => $city_region, 'compare' => '=' ],
-	],
-] );
+// Events der lokalen Partnerplätze (Stadt → Platz-Standort), Fallback verhindert leere Seite.
+$city_events = function_exists( 'fge_city_events' ) ? fge_city_events( $city, 6 ) : [];
 if ( empty( $city_events ) ) {
-	$city_events = fge_get_featured_events( 6 ); // fallback so the page never looks empty
+	$city_events = fge_get_featured_events( 6 );
+}
+
+// Icon-Set für die „Gründe"-Kacheln.
+if ( ! function_exists( 'fge_city_ico' ) ) {
+	function fge_city_ico( string $name ): string {
+		$p = [
+			'clock'    => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+			'users'    => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+			'mountain' => '<path d="M3 20l6.5-11 4 6 2-3L21 20z"/>',
+			'flag'     => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
+			'castle'   => '<path d="M4 21V8l2 1V5l2 1V4l2 1V4l2-1v2l2-1v2l2-1v4l2-1v13z"/><path d="M10 21v-4h4v4"/>',
+			'gift'     => '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 3 8 4.5 9.5 8 12 8zM12 8s1.5-5 4-3.5S14.5 8 12 8z"/>',
+			'leaf'     => '<path d="M11 20A7 7 0 0 1 4 13C4 8 9 4 20 4c0 9-4 16-9 16z"/><path d="M4 20c4-4 7-6 11-7"/>',
+		];
+		$d = $p[ $name ] ?? $p['flag'];
+		return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $d . '</svg>';
+	}
 }
 
 // ── SEO head injection ────────────────────────────────────────────────────────
@@ -75,6 +83,14 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 					'acceptedAnswer' => [ '@type' => 'Answer', 'text' => $f['a'] ],
 				];
 			}, $faqs ),
+		],
+		[
+			'@context'        => 'https://schema.org',
+			'@type'           => 'BreadcrumbList',
+			'itemListElement' => [
+				[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf', 'item' => home_url( '/' ) ],
+				[ '@type' => 'ListItem', 'position' => 2, 'name' => 'Firmenevents ' . $city_name ],
+			],
 		],
 	];
 	echo '<script type="application/ld+json">' . wp_json_encode( $graph ) . '</script>' . "\n";
@@ -120,12 +136,27 @@ get_header();
 	</div>
 </section>
 
+<?php /* Gründe für Golf-Events in der Stadt */ ?>
+<?php if ( ! empty( $city['reasons'] ) ) : ?>
+<section class="mk-section city-reasons-section" aria-label="Gründe für Golf-Events in <?php echo esc_attr( $city_name ); ?>">
+	<div class="city-reasons">
+		<?php foreach ( $city['reasons'] as $r ) : ?>
+		<div class="city-reason">
+			<span class="city-reason-ic" aria-hidden="true"><?php echo fge_city_ico( $r['ic'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
+			<h3 class="city-reason-t"><?php echo esc_html( $r['t'] ); ?></h3>
+			<p class="city-reason-b"><?php echo esc_html( $r['b'] ); ?></p>
+		</div>
+		<?php endforeach; ?>
+	</div>
+</section>
+<?php endif; ?>
+
 <?php /* Events in region */ ?>
 <?php if ( ! empty( $city_events ) ) : ?>
 <section class="fg-grid-section" aria-label="Formate in <?php echo esc_attr( $city_name ); ?>">
 	<div class="fg-grid-head">
 		<h2 class="fg-grid-title">Beliebte Formate rund um <?php echo esc_html( $city_name ); ?></h2>
-		<a class="fg-chip" href="<?php echo esc_url( add_query_arg( 'region', $city_region, $events_url ) ); ?>">Alle ansehen</a>
+		<a class="fg-chip" href="<?php echo esc_url( $events_url ); ?>">Alle ansehen</a>
 	</div>
 	<div class="fg-grid">
 		<?php foreach ( $city_events as $ev ) :

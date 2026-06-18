@@ -181,7 +181,8 @@ function fge_request_column_content( string $column, int $post_id ) {
 			echo esc_html( get_post_meta( $post_id, '_fge_preferred_date_1', true ) ?: '—' );
 			break;
 		case 'fge_request_source':
-			echo esc_html( get_post_meta( $post_id, '_fge_request_source', true ) ?: '—' );
+			$src = (string) get_post_meta( $post_id, '_fge_source', true );
+			echo esc_html( $src ? ( fge_request_source_options()[ $src ] ?? $src ) : '—' );
 			break;
 		case 'fge_request_date':
 			echo esc_html( get_post_meta( $post_id, '_fge_request_date', true ) ?: '—' );

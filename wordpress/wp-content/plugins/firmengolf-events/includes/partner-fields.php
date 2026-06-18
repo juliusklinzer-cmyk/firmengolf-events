@@ -39,16 +39,15 @@ function fge_get_infrastructure_options(): array {
 function fge_register_partner_metaboxes() {
 	$screen = 'firmengolf_partner';
 
-	add_meta_box( 'fge_pmb_basisdaten',      'Golfplatz Basisdaten',          'fge_render_pmb_basisdaten',      $screen, 'normal', 'high' );
-	add_meta_box( 'fge_pmb_standort',         'Standort und Region',           'fge_render_pmb_standort',         $screen, 'normal', 'default' );
-	add_meta_box( 'fge_pmb_profil',           'Profil & Ausstattung (Onboarding-Modell)', 'fge_render_pmb_profil',  $screen, 'normal', 'default' );
-	add_meta_box( 'fge_pmb_ansprechpartner',  'Ansprechpartner',               'fge_render_pmb_ansprechpartner',  $screen, 'normal', 'default' );
-	add_meta_box( 'fge_pmb_ausstattung',      'Event Ausstattung',             'fge_render_pmb_ausstattung',      $screen, 'normal', 'default' );
-	add_meta_box( 'fge_pmb_kapazitaeten',     'Event Kapazitäten',             'fge_render_pmb_kapazitaeten',     $screen, 'normal', 'default' );
-	add_meta_box( 'fge_pmb_preis',            'Preis und Abrechnung Basis',    'fge_render_pmb_preis',            $screen, 'normal', 'default' );
-	add_meta_box( 'fge_pmb_portal',           'Partnerportal Rechte',          'fge_render_pmb_portal',           $screen, 'normal', 'default' );
-	add_meta_box( 'fge_pmb_medien',           'Medien und Bildrechte',         'fge_render_pmb_medien',           $screen, 'normal', 'default' );
-	add_meta_box( 'fge_pmb_tracking',         'Tracking Basis',                'fge_render_pmb_tracking',         $screen, 'side',   'default' );
+	add_meta_box( 'fge_pmb_basisdaten',      'Golfplatz Basisdaten',     'fge_render_pmb_basisdaten',      $screen, 'normal', 'high' );
+	add_meta_box( 'fge_pmb_standort',        'Standort und Region',      'fge_render_pmb_standort',        $screen, 'normal', 'default' );
+	add_meta_box( 'fge_pmb_profil',          'Profil & Ausstattung',     'fge_render_pmb_profil',          $screen, 'normal', 'default' );
+	add_meta_box( 'fge_pmb_ansprechpartner', 'Ansprechpartner',          'fge_render_pmb_ansprechpartner', $screen, 'normal', 'default' );
+	add_meta_box( 'fge_pmb_kapazitaeten',    'Verfügbarkeit & Formate',  'fge_render_pmb_kapazitaeten',    $screen, 'normal', 'default' );
+	add_meta_box( 'fge_pmb_preis',           'Abrechnung (intern)',      'fge_render_pmb_preis',           $screen, 'normal', 'default' );
+	add_meta_box( 'fge_pmb_portal',          'Partnerportal',            'fge_render_pmb_portal',          $screen, 'normal', 'default' );
+	add_meta_box( 'fge_pmb_medien',          'Medien und Bildrechte',    'fge_render_pmb_medien',          $screen, 'normal', 'default' );
+	add_meta_box( 'fge_pmb_tracking',        'Tracking Basis',           'fge_render_pmb_tracking',        $screen, 'side',   'default' );
 }
 add_action( 'add_meta_boxes', 'fge_register_partner_metaboxes' );
 
@@ -77,19 +76,6 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 			           value="<?php echo esc_attr( $public_golfclub_name ); ?>" class="regular-text"></td>
 		</tr>
 		<tr>
-			<th scope="row"><label for="fge_rating">Sterne-Bewertung</label></th>
-			<td>
-				<input type="number" id="fge_rating" name="fge_rating" min="0" max="5" step="0.1"
-				       value="<?php echo esc_attr( $rating ); ?>" style="width:90px;">
-				<p class="description">Statische Anzeige auf den Event-Karten (z. B. 4.8). Leer = keine Sterne.</p>
-			</td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_legal_operator_name">Rechtlicher Betreibername</label></th>
-			<td><input type="text" id="fge_legal_operator_name" name="fge_legal_operator_name"
-			           value="<?php echo esc_attr( $legal_operator_name ); ?>" class="regular-text"></td>
-		</tr>
-		<tr>
 			<th scope="row"><label for="fge_partner_status">Anbieter Status</label></th>
 			<td>
 				<select id="fge_partner_status" name="fge_partner_status">
@@ -102,8 +88,19 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_partner_since">Partner seit</label></th>
-			<td><input type="date" id="fge_partner_since" name="fge_partner_since"
-			           value="<?php echo esc_attr( $partner_since ); ?>"></td>
+			<td>
+				<input type="date" id="fge_partner_since" name="fge_partner_since"
+				       value="<?php echo esc_attr( $partner_since ); ?>">
+				<p class="description">Wird im Portal und auf der Golfplatz-Detailseite als „Mitglied seit" angezeigt.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_rating">Sterne-Bewertung</label></th>
+			<td>
+				<input type="number" id="fge_rating" name="fge_rating" min="0" max="5" step="0.1"
+				       value="<?php echo esc_attr( $rating ); ?>" style="width:90px;">
+				<p class="description">Statische Anzeige auf den Event-Karten (z. B. 4.8). Leer = keine Sterne.</p>
+			</td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_public_short_description">Öffentliche Kurzbeschreibung</label></th>
@@ -116,6 +113,14 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 				<input type="text" name="fge_review_author" value="<?php echo esc_attr( $review_author ); ?>" class="regular-text" placeholder="Name (z.B. Sandra Klein)" style="margin-top:6px;display:block;">
 				<input type="text" name="fge_review_role" value="<?php echo esc_attr( $review_role ); ?>" class="regular-text" placeholder="Rolle · Firma (z.B. HR-Direktorin · Werkstatt 4)" style="margin-top:6px;display:block;">
 				<p class="description">Wird auf den Event-Detailseiten dieses Platzes als Kundenstimme angezeigt. Leer = ausgeblendet.</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="fge_legal_operator_name">Rechtlicher Betreibername</label></th>
+			<td>
+				<input type="text" id="fge_legal_operator_name" name="fge_legal_operator_name"
+				       value="<?php echo esc_attr( $legal_operator_name ); ?>" class="regular-text">
+				<p class="description">Für Rechnungen / rechtliche Zwecke. Nicht öffentlich.</p>
 			</td>
 		</tr>
 		<tr>
@@ -242,13 +247,14 @@ function fge_render_pmb_standort( WP_Post $post ) {
 // ── Render: Ansprechpartner ───────────────────────────────────────────────────
 
 function fge_render_pmb_profil( WP_Post $post ) {
-	$golf_type     = (string) get_post_meta( $post->ID, '_fge_golf_type', true );
-	$infra         = (array) get_post_meta( $post->ID, '_fge_infra', true );
-	$cap           = (array) get_post_meta( $post->ID, '_fge_cap', true );
-	$poi_shuttle   = (string) get_post_meta( $post->ID, '_fge_poi_shuttle', true );
-	$estation      = (string) get_post_meta( $post->ID, '_fge_arrival_estation', true );
+	$golf_type            = (string) get_post_meta( $post->ID, '_fge_golf_type', true );
+	$infra                = (array) get_post_meta( $post->ID, '_fge_infra', true );
+	$cap                  = (array) get_post_meta( $post->ID, '_fge_cap', true );
+	$poi_shuttle          = (string) get_post_meta( $post->ID, '_fge_poi_shuttle', true );
+	$estation             = (string) get_post_meta( $post->ID, '_fge_arrival_estation', true );
+	$additional_equipment = (string) get_post_meta( $post->ID, '_fge_additional_equipment', true );
 	?>
-	<p class="description">Katalog-basiertes Profil-Modell (Handoff rev. 2). Quelle: <code>includes/catalogs.php</code>.</p>
+	<p class="description">Katalog-basiertes Profil-Modell. Dies ist die führende Quelle für Ausstattung und Kapazitäten (Onboarding, Portal, Matching). Quelle: <code>includes/catalogs.php</code>.</p>
 	<table class="form-table">
 		<tr>
 			<th scope="row"><label for="fge_golf_type">Golf-Angebot (Platztyp)</label></th>
@@ -275,6 +281,13 @@ function fge_render_pmb_profil( WP_Post $post ) {
 			<?php endforeach; ?>
 		</div>
 	<?php endforeach; ?>
+
+	<table class="form-table">
+		<tr>
+			<th scope="row"><label for="fge_additional_equipment">Weitere Ausstattung</label></th>
+			<td><textarea id="fge_additional_equipment" name="fge_additional_equipment" rows="3" class="large-text" placeholder="Freitext, z.B. besondere Anlagen oder Extras"><?php echo esc_textarea( $additional_equipment ); ?></textarea></td>
+		</tr>
+	</table>
 
 	<h3 style="margin:18px 0 4px;">Kapazitäten</h3>
 	<table class="form-table">
@@ -361,75 +374,11 @@ function fge_render_pmb_ansprechpartner( WP_Post $post ) {
 	<?php
 }
 
-// ── Render: Event Ausstattung ─────────────────────────────────────────────────
-
-function fge_render_pmb_ausstattung( WP_Post $post ) {
-	$checkboxes = [
-		'has_driving_range'           => 'Driving Range',
-		'has_putting_green'           => 'Putting Green',
-		'has_short_game_area'         => 'Kurzspielbereich',
-		'has_short_course'            => 'Kurzplatz',
-		'has_9hole_course'            => '9-Loch-Platz',
-		'has_18hole_course'           => '18-Loch-Platz',
-		'has_rental_clubs'            => 'Leihschläger',
-		'has_range_balls'             => 'Rangebälle',
-		'has_golf_teacher'            => 'Golflehrer',
-		'has_meeting_room'            => 'Meetingraum',
-		'has_gastronomy'              => 'Restaurant / Gastronomie',
-		'has_breakfast'               => 'Frühstück',
-		'has_lunch'                   => 'Lunch',
-		'has_dinner'                  => 'Abendessen',
-		'has_terrace'                 => 'Terrasse / Außenbereich',
-		'has_parking'                 => 'Parkplätze',
-		'has_shuttle_access'          => 'Shuttle möglich',
-		'has_indoor_or_simulator'     => 'Indoor / Simulator',
-		'has_branding_options'        => 'Branding Möglichkeiten',
-		'has_tournament_organization' => 'Turnierorganisation',
-		'has_bad_weather_alternative' => 'Schlechtwetter Alternative',
-		'has_locker_room'             => 'Umkleiden & Duschen',
-	];
-	$additional_equipment = get_post_meta( $post->ID, '_fge_additional_equipment', true );
-	?>
-	<table class="form-table">
-		<?php foreach ( $checkboxes as $key => $label ) :
-			$val = get_post_meta( $post->ID, '_fge_' . $key, true );
-			?>
-			<tr>
-				<th scope="row"><?php echo esc_html( $label ); ?></th>
-				<td>
-					<label>
-						<input type="checkbox" name="fge_<?php echo esc_attr( $key ); ?>" value="1"
-						       <?php checked( $val, '1' ); ?>>
-						<?php echo esc_html( $label ); ?>
-					</label>
-				</td>
-			</tr>
-		<?php endforeach; ?>
-		<tr>
-			<th scope="row"><label for="fge_additional_equipment">Weitere Ausstattung</label></th>
-			<td><textarea id="fge_additional_equipment" name="fge_additional_equipment" rows="3" class="large-text"><?php echo esc_textarea( $additional_equipment ); ?></textarea></td>
-		</tr>
-	</table>
-	<?php
-}
-
-// ── Render: Event Kapazitäten ─────────────────────────────────────────────────
+// ── Render: Verfügbarkeit & Formate ───────────────────────────────────────────
 
 function fge_render_pmb_kapazitaeten( WP_Post $post ) {
-	$participants_min_general   = get_post_meta( $post->ID, '_fge_participants_min_general', true );
-	$participants_max_general   = get_post_meta( $post->ID, '_fge_participants_max_general', true );
-	$meeting_room_capacity      = get_post_meta( $post->ID, '_fge_meeting_room_capacity', true );
-	$gastro_capacity            = get_post_meta( $post->ID, '_fge_gastro_capacity', true );
-	$gastro_outdoor_capacity    = get_post_meta( $post->ID, '_fge_gastro_outdoor_capacity', true );
-	$range_group_capacity       = get_post_meta( $post->ID, '_fge_range_group_capacity', true );
-	$putting_green_capacity     = get_post_meta( $post->ID, '_fge_putting_green_capacity', true );
-	$short_game_capacity        = get_post_meta( $post->ID, '_fge_short_game_capacity', true );
-	$golf_teacher_capacity      = get_post_meta( $post->ID, '_fge_golf_teacher_capacity', true );
-	$parking_count              = get_post_meta( $post->ID, '_fge_parking_count', true );
 	$preferred_event_days       = (array) get_post_meta( $post->ID, '_fge_preferred_event_days', true );
-	$preferred_event_times      = (array) get_post_meta( $post->ID, '_fge_preferred_event_times', true );
 	$season                     = get_post_meta( $post->ID, '_fge_season', true );
-	$weekend_events_possible    = get_post_meta( $post->ID, '_fge_weekend_events_possible', true );
 	$evening_events_possible    = get_post_meta( $post->ID, '_fge_evening_events_possible', true );
 	$min_lead_time_days         = get_post_meta( $post->ID, '_fge_min_lead_time_days', true );
 	$individual_availability    = get_post_meta( $post->ID, '_fge_individual_availability_check', true );
@@ -444,12 +393,6 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 		'saturday'  => 'Samstag',
 		'sunday'    => 'Sonntag',
 	];
-	$event_times = [
-		'morning'    => 'Vormittag',
-		'afternoon'  => 'Nachmittag',
-		'after_work' => 'After Work',
-		'full_day'   => 'Ganztägig',
-	];
 	$seasons = [
 		'year_round'       => 'Ganzjährig',
 		'march_to_october' => 'März bis Oktober',
@@ -458,93 +401,8 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 	];
 	$format_tiers = fge_get_event_formats();
 	?>
+	<p class="description">Teilnehmerzahlen und Raum-Kapazitäten pflegst du oben unter „Profil &amp; Ausstattung". Hier nur Verfügbarkeit und Formate.</p>
 	<table class="form-table">
-		<tr>
-			<th scope="row"><label for="fge_participants_min_general">Teilnehmer Minimum</label></th>
-			<td><input type="number" id="fge_participants_min_general" name="fge_participants_min_general"
-			           value="<?php echo esc_attr( $participants_min_general ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_participants_max_general">Teilnehmer Maximum</label></th>
-			<td><input type="number" id="fge_participants_max_general" name="fge_participants_max_general"
-			           value="<?php echo esc_attr( $participants_max_general ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_range_group_capacity">Kapazität Driving Range</label></th>
-			<td><input type="number" id="fge_range_group_capacity" name="fge_range_group_capacity"
-			           value="<?php echo esc_attr( $range_group_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_putting_green_capacity">Kapazität Putting Green</label></th>
-			<td><input type="number" id="fge_putting_green_capacity" name="fge_putting_green_capacity"
-			           value="<?php echo esc_attr( $putting_green_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_short_game_capacity">Kapazität Kurzspielbereich</label></th>
-			<td><input type="number" id="fge_short_game_capacity" name="fge_short_game_capacity"
-			           value="<?php echo esc_attr( $short_game_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_meeting_room_capacity">Kapazität Meetingraum</label></th>
-			<td><input type="number" id="fge_meeting_room_capacity" name="fge_meeting_room_capacity"
-			           value="<?php echo esc_attr( $meeting_room_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_gastro_capacity">Kapazität Restaurant innen</label></th>
-			<td><input type="number" id="fge_gastro_capacity" name="fge_gastro_capacity"
-			           value="<?php echo esc_attr( $gastro_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_gastro_outdoor_capacity">Kapazität Restaurant außen</label></th>
-			<td><input type="number" id="fge_gastro_outdoor_capacity" name="fge_gastro_outdoor_capacity"
-			           value="<?php echo esc_attr( $gastro_outdoor_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_golf_teacher_capacity">Anzahl Golflehrer</label></th>
-			<td><input type="number" id="fge_golf_teacher_capacity" name="fge_golf_teacher_capacity"
-			           value="<?php echo esc_attr( $golf_teacher_capacity ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_parking_count">Anzahl Parkplätze</label></th>
-			<td><input type="number" id="fge_parking_count" name="fge_parking_count"
-			           value="<?php echo esc_attr( $parking_count ); ?>" min="0" step="1" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row">Bevorzugte Eventtage</th>
-			<td>
-				<?php foreach ( $weekdays as $val => $label ) : ?>
-					<label style="display:inline-block;margin-right:14px;">
-						<input type="checkbox" name="fge_preferred_event_days[]"
-						       value="<?php echo esc_attr( $val ); ?>"
-						       <?php checked( in_array( $val, $preferred_event_days, true ) ); ?>>
-						<?php echo esc_html( $label ); ?>
-					</label>
-				<?php endforeach; ?>
-			</td>
-		</tr>
-		<tr>
-			<th scope="row">Wochenend-Events möglich</th>
-			<td><label><input type="checkbox" name="fge_weekend_events_possible" value="1"
-			                  <?php checked( $weekend_events_possible, '1' ); ?>> Ja</label></td>
-		</tr>
-		<tr>
-			<th scope="row">Abend-Events möglich</th>
-			<td><label><input type="checkbox" name="fge_evening_events_possible" value="1"
-			                  <?php checked( $evening_events_possible, '1' ); ?>> Ja</label></td>
-		</tr>
-		<tr>
-			<th scope="row">Bevorzugte Eventzeiten</th>
-			<td>
-				<?php foreach ( $event_times as $val => $label ) : ?>
-					<label style="display:inline-block;margin-right:14px;">
-						<input type="checkbox" name="fge_preferred_event_times[]"
-						       value="<?php echo esc_attr( $val ); ?>"
-						       <?php checked( in_array( $val, $preferred_event_times, true ) ); ?>>
-						<?php echo esc_html( $label ); ?>
-					</label>
-				<?php endforeach; ?>
-			</td>
-		</tr>
 		<tr>
 			<th scope="row"><label for="fge_min_lead_time_days">Mindestvorlauf (Tage)</label></th>
 			<td><input type="number" id="fge_min_lead_time_days" name="fge_min_lead_time_days"
@@ -560,6 +418,24 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 					<?php endforeach; ?>
 				</select>
 			</td>
+		</tr>
+		<tr>
+			<th scope="row">Bevorzugte Eventtage</th>
+			<td>
+				<?php foreach ( $weekdays as $val => $label ) : ?>
+					<label style="display:inline-block;margin-right:14px;">
+						<input type="checkbox" name="fge_preferred_event_days[]"
+						       value="<?php echo esc_attr( $val ); ?>"
+						       <?php checked( in_array( $val, $preferred_event_days, true ) ); ?>>
+						<?php echo esc_html( $label ); ?>
+					</label>
+				<?php endforeach; ?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row">Abend-Events möglich</th>
+			<td><label><input type="checkbox" name="fge_evening_events_possible" value="1"
+			                  <?php checked( $evening_events_possible, '1' ); ?>> Ja</label></td>
 		</tr>
 		<tr>
 			<th scope="row">Individuelle Verfügbarkeitsprüfung</th>
@@ -596,54 +472,17 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 // ── Render: Preis und Abrechnung Basis ───────────────────────────────────────
 
 function fge_render_pmb_preis( WP_Post $post ) {
-	$markup_raw              = get_post_meta( $post->ID, '_fge_default_markup_percent', true );
-	$markup                  = ( $markup_raw !== '' ) ? $markup_raw : '20';
-	$billing_method_internal = get_post_meta( $post->ID, '_fge_billing_method_internal', true );
-	$bank_details_available  = get_post_meta( $post->ID, '_fge_bank_details_available', true );
-	$vat_required            = get_post_meta( $post->ID, '_fge_vat_required', true );
 	$tax_number_or_vat_id    = get_post_meta( $post->ID, '_fge_tax_number_or_vat_id', true );
 	$internal_billing_note   = get_post_meta( $post->ID, '_fge_internal_billing_note', true );
-
-	$billing_methods = [
-		'manual_clarification'                 => 'Manuelle Klärung',
-		'invoice_from_partner_to_firmengolf'   => 'Rechnung Partner an Firmengolf',
-		'credit_note'                          => 'Gutschrift',
-		'other'                                => 'Sonstiges',
-	];
 	?>
+	<p class="description">Die Plätze stellen Firmengolf eine Rechnung. Hier nur, was wir intern dafür brauchen.</p>
 	<table class="form-table">
-		<tr>
-			<th scope="row"><label for="fge_default_markup_percent">Standard Firmengolf Aufschlag %</label></th>
-			<td><input type="number" id="fge_default_markup_percent" name="fge_default_markup_percent"
-			           value="<?php echo esc_attr( $markup ); ?>" step="0.01" min="0" style="width:110px;"></td>
-		</tr>
-		<tr>
-			<th scope="row"><label for="fge_billing_method_internal">Abrechnungsmethode intern</label></th>
-			<td>
-				<select id="fge_billing_method_internal" name="fge_billing_method_internal">
-					<option value="">— bitte wählen —</option>
-					<?php foreach ( $billing_methods as $val => $label ) : ?>
-						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $billing_method_internal, $val ); ?>><?php echo esc_html( $label ); ?></option>
-					<?php endforeach; ?>
-				</select>
-			</td>
-		</tr>
-		<tr>
-			<th scope="row">Bankdaten hinterlegt</th>
-			<td><label><input type="checkbox" name="fge_bank_details_available" value="1"
-			                  <?php checked( $bank_details_available, '1' ); ?>> Bankdaten hinterlegt</label></td>
-		</tr>
-		<tr>
-			<th scope="row">Umsatzsteuerpflichtig</th>
-			<td><label><input type="checkbox" name="fge_vat_required" value="1"
-			                  <?php checked( $vat_required, '1' ); ?>> Umsatzsteuerpflichtig</label></td>
-		</tr>
 		<tr>
 			<th scope="row"><label for="fge_tax_number_or_vat_id">Steuernummer / USt-ID</label></th>
 			<td>
 				<input type="text" id="fge_tax_number_or_vat_id" name="fge_tax_number_or_vat_id"
 				       value="<?php echo esc_attr( $tax_number_or_vat_id ); ?>" class="regular-text">
-				<p class="description">Optional.</p>
+				<p class="description">Optional, für Rechnungszwecke.</p>
 			</td>
 		</tr>
 		<tr>
@@ -659,11 +498,6 @@ function fge_render_pmb_preis( WP_Post $post ) {
 function fge_render_pmb_portal( WP_Post $post ) {
 	$portal_enabled               = get_post_meta( $post->ID, '_fge_partner_portal_enabled', true );
 	$assigned_wp_user_id          = get_post_meta( $post->ID, '_fge_assigned_wp_user_id', true );
-	$can_create_events            = get_post_meta( $post->ID, '_fge_can_create_events', true );
-	$can_edit_events              = get_post_meta( $post->ID, '_fge_can_edit_events', true );
-	$can_view_requests            = get_post_meta( $post->ID, '_fge_can_view_requests', true );
-	$can_view_statistics          = get_post_meta( $post->ID, '_fge_can_view_statistics', true );
-	$auto_publication_allowed     = get_post_meta( $post->ID, '_fge_automatic_publication_allowed', true );
 	?>
 	<table class="form-table">
 		<tr>
@@ -676,35 +510,7 @@ function fge_render_pmb_portal( WP_Post $post ) {
 			<td>
 				<input type="number" id="fge_assigned_wp_user_id" name="fge_assigned_wp_user_id"
 				       value="<?php echo esc_attr( $assigned_wp_user_id ); ?>" min="0" step="1" style="width:110px;">
-				<p class="description">User-ID des zugeordneten WP-Benutzers. Später als Suche.</p>
-			</td>
-		</tr>
-		<tr>
-			<th scope="row">Darf Events erstellen</th>
-			<td><label><input type="checkbox" name="fge_can_create_events" value="1"
-			                  <?php checked( $can_create_events, '1' ); ?>> Darf Events erstellen</label></td>
-		</tr>
-		<tr>
-			<th scope="row">Darf Events bearbeiten</th>
-			<td><label><input type="checkbox" name="fge_can_edit_events" value="1"
-			                  <?php checked( $can_edit_events, '1' ); ?>> Darf Events bearbeiten</label></td>
-		</tr>
-		<tr>
-			<th scope="row">Darf Anfragen sehen</th>
-			<td><label><input type="checkbox" name="fge_can_view_requests" value="1"
-			                  <?php checked( $can_view_requests, '1' ); ?>> Darf Anfragen sehen</label></td>
-		</tr>
-		<tr>
-			<th scope="row">Darf Statistiken sehen</th>
-			<td><label><input type="checkbox" name="fge_can_view_statistics" value="1"
-			                  <?php checked( $can_view_statistics, '1' ); ?>> Darf Statistiken sehen</label></td>
-		</tr>
-		<tr>
-			<th scope="row">Automatische Veröffentlichung erlaubt</th>
-			<td>
-				<label><input type="checkbox" name="fge_automatic_publication_allowed" value="1"
-				              <?php checked( $auto_publication_allowed, '1' ); ?>> Automatische Veröffentlichung erlaubt</label>
-				<p class="description">Im MVP standardmäßig nicht gesetzt.</p>
+				<p class="description">User-ID des zugeordneten WP-Benutzers. Steuert den Portal-Zugang dieses Platzes.</p>
 			</td>
 		</tr>
 	</table>
@@ -831,11 +637,7 @@ function fge_save_partner_fields( int $post_id ) {
 		'schleswig_holstein', 'thueringen',
 	];
 	$allowed_seasons          = [ 'year_round', 'march_to_october', 'april_to_october', 'on_request' ];
-	$allowed_billing_methods  = [
-		'manual_clarification', 'invoice_from_partner_to_firmengolf', 'credit_note', 'other',
-	];
 	$allowed_event_days       = [ 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday' ];
-	$allowed_event_times      = [ 'morning', 'afternoon', 'after_work', 'full_day' ];
 
 	$san_select = static function ( string $key, array $allowed ): string {
 		$val = sanitize_text_field( wp_unslash( $_POST[ $key ] ?? '' ) );
@@ -909,61 +711,27 @@ function fge_save_partner_fields( int $post_id ) {
 	}
 	update_post_meta( $post_id, '_fge_main_contact_role', sanitize_text_field( wp_unslash( $_POST['fge_main_contact_role'] ?? '' ) ) );
 
-	// ── Metabox 4: Ausstattung ──
-	$ausstattung_keys = [
-		'has_driving_range', 'has_putting_green', 'has_short_game_area', 'has_short_course',
-		'has_9hole_course', 'has_18hole_course', 'has_rental_clubs', 'has_range_balls',
-		'has_golf_teacher', 'has_meeting_room', 'has_gastronomy', 'has_breakfast', 'has_lunch',
-		'has_dinner', 'has_terrace', 'has_parking', 'has_shuttle_access',
-		'has_indoor_or_simulator', 'has_branding_options', 'has_tournament_organization',
-		'has_bad_weather_alternative', 'has_locker_room',
-	];
-	foreach ( $ausstattung_keys as $key ) {
-		update_post_meta( $post_id, '_fge_' . $key, isset( $_POST[ 'fge_' . $key ] ) ? 1 : 0 );
-	}
+	// ── Profil-Zusatz: Weitere Ausstattung (Freitext, im Profil-Modell) ──
 	update_post_meta( $post_id, '_fge_additional_equipment', sanitize_textarea_field( wp_unslash( $_POST['fge_additional_equipment'] ?? '' ) ) );
 
-	// ── Metabox 5: Kapazitäten ──
-	update_post_meta( $post_id, '_fge_participants_min_general', absint( $_POST['fge_participants_min_general'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_participants_max_general', absint( $_POST['fge_participants_max_general'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_range_group_capacity',     absint( $_POST['fge_range_group_capacity'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_putting_green_capacity',   absint( $_POST['fge_putting_green_capacity'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_short_game_capacity',      absint( $_POST['fge_short_game_capacity'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_meeting_room_capacity',    absint( $_POST['fge_meeting_room_capacity'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_gastro_capacity',          absint( $_POST['fge_gastro_capacity'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_gastro_outdoor_capacity',  absint( $_POST['fge_gastro_outdoor_capacity'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_golf_teacher_capacity',    absint( $_POST['fge_golf_teacher_capacity'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_parking_count',            absint( $_POST['fge_parking_count'] ?? 0 ) );
+	// ── Verfügbarkeit & Formate ──
 	update_post_meta( $post_id, '_fge_preferred_event_days',  $san_group( 'fge_preferred_event_days', $allowed_event_days ) );
-	update_post_meta( $post_id, '_fge_weekend_events_possible',  isset( $_POST['fge_weekend_events_possible'] ) ? 1 : 0 );
 	update_post_meta( $post_id, '_fge_evening_events_possible',  isset( $_POST['fge_evening_events_possible'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_fge_preferred_event_times', $san_group( 'fge_preferred_event_times', $allowed_event_times ) );
 	update_post_meta( $post_id, '_fge_min_lead_time_days',       absint( $_POST['fge_min_lead_time_days'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_season',                $san_select( 'fge_season', $allowed_seasons ) );
 	update_post_meta( $post_id, '_fge_individual_availability_check', isset( $_POST['fge_individual_availability_check'] ) ? 1 : 0 );
 	$allowed_formats = array_keys( fge_get_event_format_options() );
 	update_post_meta( $post_id, '_fge_event_formats', $san_group( 'fge_event_formats', $allowed_formats ) );
 
-	// ── Metabox 6: Preis ──
-	$markup_raw = trim( wp_unslash( $_POST['fge_default_markup_percent'] ?? '' ) );
-	$markup     = ( $markup_raw !== '' ) ? (float) str_replace( ',', '.', $markup_raw ) : 20.0;
-	update_post_meta( $post_id, '_fge_default_markup_percent',    $markup );
-	update_post_meta( $post_id, '_fge_billing_method_internal',   $san_select( 'fge_billing_method_internal', $allowed_billing_methods ) );
-	update_post_meta( $post_id, '_fge_bank_details_available',    isset( $_POST['fge_bank_details_available'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_fge_vat_required',              isset( $_POST['fge_vat_required'] ) ? 1 : 0 );
+	// ── Abrechnung (intern) ──
 	update_post_meta( $post_id, '_fge_tax_number_or_vat_id',      sanitize_text_field( wp_unslash( $_POST['fge_tax_number_or_vat_id'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_internal_billing_note',     sanitize_textarea_field( wp_unslash( $_POST['fge_internal_billing_note'] ?? '' ) ) );
 
-	// ── Metabox 7: Portal Rechte ──
-	update_post_meta( $post_id, '_fge_partner_portal_enabled',          isset( $_POST['fge_partner_portal_enabled'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_fge_assigned_wp_user_id',             absint( $_POST['fge_assigned_wp_user_id'] ?? 0 ) );
-	update_post_meta( $post_id, '_fge_can_create_events',               isset( $_POST['fge_can_create_events'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_fge_can_edit_events',                 isset( $_POST['fge_can_edit_events'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_fge_can_view_requests',               isset( $_POST['fge_can_view_requests'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_fge_can_view_statistics',             isset( $_POST['fge_can_view_statistics'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_fge_automatic_publication_allowed',   isset( $_POST['fge_automatic_publication_allowed'] ) ? 1 : 0 );
+	// ── Partnerportal ──
+	update_post_meta( $post_id, '_fge_partner_portal_enabled',  isset( $_POST['fge_partner_portal_enabled'] ) ? 1 : 0 );
+	update_post_meta( $post_id, '_fge_assigned_wp_user_id',     absint( $_POST['fge_assigned_wp_user_id'] ?? 0 ) );
 
-	// ── Metabox 8: Medien ──
+	// ── Medien ──
 	update_post_meta( $post_id, '_fge_logo_attachment_id',      absint( $_POST['fge_logo_attachment_id'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_hero_image_attachment_id', absint( $_POST['fge_hero_image_attachment_id'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_gallery_attachment_ids',  sanitize_text_field( wp_unslash( $_POST['fge_gallery_attachment_ids'] ?? '' ) ) );

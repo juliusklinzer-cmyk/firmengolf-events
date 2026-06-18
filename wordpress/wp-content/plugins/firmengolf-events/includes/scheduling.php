@@ -36,10 +36,10 @@ add_action( 'init', static function () {
 
 // ── Eskalation / Übernehmen ──────────────────────────────────────────────────
 
-/** Response deadline (timestamp) — created + N days (default 3, filterable). */
+/** Response deadline (timestamp) — created + N days (default 5, filterable). */
 function fge_request_response_deadline( int $request_id ): int {
 	$created = strtotime( (string) get_post_field( 'post_date', $request_id ) ?: 'now' );
-	$days    = (int) apply_filters( 'fge_request_response_days', 3 );
+	$days    = (int) apply_filters( 'fge_request_response_days', 5 );
 	return $created + $days * DAY_IN_SECONDS;
 }
 

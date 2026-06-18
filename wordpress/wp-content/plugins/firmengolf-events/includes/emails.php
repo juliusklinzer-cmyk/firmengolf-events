@@ -94,6 +94,7 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 			<li style="margin-bottom:6px;">Innerhalb eines Werktags meldet sich ein:e echte:r Ansprechpartner:in persönlich bei dir.</li>
 		</ul>
 		<p style="margin:0 0 16px;">Du musst nichts weiter tun. Fällt dir in der Zwischenzeit noch etwas ein, antworte einfach auf diese E-Mail oder schreib uns an <a href="mailto:' . esc_attr( $events_email ) . '" style="color:#2a6e32;">' . esc_html( $events_email ) . '</a>.</p>
+		<p style="margin:0 0 22px;"><a href="' . esc_url( fge_offer_link( $request_id ) ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:11px 22px;border-radius:999px;font-weight:600;">Status meiner Anfrage ansehen</a></p>
 		<p style="margin:24px 0 0;">Sportliche Grüße<br><strong>Dein Firmengolf-Team</strong></p>
 	';
 
@@ -347,17 +348,126 @@ function fge_notify_date_confirmed( int $request_id, int $date_index ): void {
 	$ref  = fge_request_number( $request_id );
 	$date = (string) get_post_meta( $request_id, '_fge_preferred_date_' . $date_index, true );
 	$to   = apply_filters( 'fge_internal_email', fge_company_internal_email() );
-	$subject = 'Termin bestätigt — ' . $ref . ( $data['partner_title'] ? ' (' . $data['partner_title'] . ')' : '' );
+	$subject = 'Termin bestätigt: ' . $ref . ( $data['partner_title'] ? ' (' . $data['partner_title'] . ')' : '' );
 	$content = '
-		<p style="margin:0 0 16px;">Für die Anfrage <strong>' . esc_html( $ref ) . '</strong> wurde ein Termin bestätigt — alle Beteiligten haben zugestimmt.</p>
+		<p style="margin:0 0 16px;">Für die Anfrage <strong>' . esc_html( $ref ) . '</strong> wurde ein Termin bestätigt, alle Beteiligten haben zugestimmt.</p>
 		<p style="margin:0 0 16px;"><strong>Termin:</strong> ' . esc_html( $date ?: '—' ) . '<br>
 		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: '—' ) . '<br>
 		<strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: '—' ) . '<br>
 		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: '—' ) . '</p>
-		<p style="margin:0 0 16px;">Bitte Angebot &amp; Buchung anstoßen.</p>
+		<p style="margin:0 0 16px;">Das Angebot geht automatisch an den Kunden. Sobald er annimmt, steht der Auftrag und ihr werdet informiert.</p>
 		<p style="margin:0;"><a href="' . esc_url( fge_format_request_admin_link( $request_id ) ) . '">Anfrage im Admin öffnen</a></p>
 	';
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+// ── Angebots-Mail an den Kunden ───────────────────────────────────────────────
+
+/** Schickt dem Kunden das automatisch erzeugte Angebot mit Annehmen/Ablehnen-Link. */
+function fge_send_offer_email( int $request_id ): bool {
+	$data = fge_get_request_email_data( $request_id );
+	if ( $data['contact_email'] === '' ) {
+		return false;
+	}
+	$snap  = (array) get_post_meta( $request_id, '_fge_offer_snapshot', true );
+	$ref   = fge_request_number( $request_id );
+	$link  = function_exists( 'fge_offer_link' ) ? fge_offer_link( $request_id ) : home_url();
+	$greet = $data['first_name'] !== '' ? 'Hallo ' . esc_html( $data['first_name'] ) . ',' : 'Hallo,';
+
+	$row  = static function ( $k, $v ) { return '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $v . '</td></tr>'; };
+	$rows = $row( 'Event', esc_html( (string) ( $snap['event_title'] ?? '' ) ) )
+		. $row( 'Termin', esc_html( (string) ( $snap['date'] ?? '' ) ) )
+		. ( (int) ( $snap['participants'] ?? 0 ) > 0 ? $row( 'Teilnehmer', 'ca. ' . (int) $snap['participants'] . ' Personen' ) : '' )
+		. $row( 'Preis', esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' ) );
+
+	$incl = '';
+	foreach ( (array) ( $snap['includes'] ?? [] ) as $i ) { $incl .= '<li style="margin-bottom:3px;">' . esc_html( $i ) . '</li>'; }
+	$wish = '';
+	foreach ( (array) ( $snap['wishes_platz'] ?? [] ) as $i ) { $wish .= '<li style="margin-bottom:3px;">' . esc_html( $i ) . ' <span style="color:#6C736E;">(am Platz)</span></li>'; }
+	foreach ( (array) ( $snap['wishes_firmengolf'] ?? [] ) as $i ) { $wish .= '<li style="margin-bottom:3px;">' . esc_html( $i ) . ' <span style="color:#6C736E;">(durch Firmengolf)</span></li>'; }
+
+	$subject = 'Euer Angebot für ' . ( (string) ( $snap['event_title'] ?? 'euer Event' ) ) . ' (' . $ref . ')';
+	$content = '
+		<p style="margin:0 0 16px;">' . $greet . '</p>
+		<p style="margin:0 0 16px;">der Termin steht. Hier ist euer Angebot, ihr könnt es mit einem Klick annehmen.</p>
+		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
+		' . ( $incl !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Das ist dabei</p><ul style="margin:0 0 14px;padding-left:20px;">' . $incl . '</ul>' : '' ) . '
+		' . ( $wish !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Eure Zusatzwünsche</p><ul style="margin:0 0 14px;padding-left:20px;">' . $wish . '</ul>' : '' ) . '
+		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 26px;border-radius:999px;font-weight:600;">Angebot ansehen &amp; bestätigen</a></p>
+		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '. Bei Fragen einfach auf diese Mail antworten.</p>
+	';
+	$sent = wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	update_post_meta( $request_id, '_fge_offer_email_sent', $sent ? 1 : 0 );
+	return (bool) $sent;
+}
+
+// ── Angebot angenommen / abgelehnt → Beteiligte informieren ───────────────────
+
+add_action( 'fge_offer_accepted', 'fge_notify_offer_accepted' );
+function fge_notify_offer_accepted( int $request_id ): void {
+	$data = fge_get_request_email_data( $request_id );
+	$ref  = fge_request_number( $request_id );
+	$snap = (array) get_post_meta( $request_id, '_fge_offer_snapshot', true );
+	$date = (string) ( $snap['date'] ?? '' );
+
+	$to = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+	$ic = '
+		<p style="margin:0 0 16px;">Der Kunde hat das Angebot <strong>' . esc_html( $ref ) . '</strong> angenommen. Der Auftrag steht.</p>
+		<p style="margin:0 0 16px;"><strong>Termin:</strong> ' . esc_html( $date ?: '—' ) . '<br>
+		<strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: '—' ) . '<br>
+		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: '—' ) . '<br>
+		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: '—' ) . '</p>
+		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen.</p>
+		<p style="margin:0;"><a href="' . esc_url( fge_format_request_admin_link( $request_id ) ) . '">Anfrage im Admin öffnen</a></p>
+	';
+	wp_mail( $to, 'Auftrag steht: ' . $ref, fge_email_wrap( 'Auftrag steht: ' . $ref, $ic ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+
+	if ( $data['partner_email'] !== '' ) {
+		$pc = '
+			<p style="margin:0 0 16px;">Gute Nachricht: der Kunde hat das Event <strong>' . esc_html( $data['event_title'] ?: '' ) . '</strong> am <strong>' . esc_html( $date ?: 'bestätigten Termin' ) . '</strong> verbindlich gebucht.</p>
+			<p style="margin:0;">Firmengolf meldet sich für die Detailabstimmung. Bitte den Termin fest einplanen.</p>
+		';
+		wp_mail( $data['partner_email'], 'Event gebucht: ' . $ref, fge_email_wrap( 'Event gebucht: ' . $ref, $pc ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	}
+
+	if ( $data['contact_email'] !== '' ) {
+		$cc = '
+			<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ', danke für die Zusage.</p>
+			<p style="margin:0;">Euer Event <strong>' . esc_html( $data['event_title'] ?: '' ) . '</strong> am <strong>' . esc_html( $date ?: '' ) . '</strong> ist gebucht. Wir kümmern uns um die letzten Details und melden uns.</p>
+		';
+		wp_mail( $data['contact_email'], 'Buchung bestätigt: ' . $ref, fge_email_wrap( 'Buchung bestätigt: ' . $ref, $cc ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	}
+}
+
+add_action( 'fge_offer_declined', 'fge_notify_offer_declined' );
+function fge_notify_offer_declined( int $request_id ): void {
+	$data = fge_get_request_email_data( $request_id );
+	$ref  = fge_request_number( $request_id );
+	$to   = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+	$content = '
+		<p style="margin:0 0 16px;">Der Kunde hat das Angebot <strong>' . esc_html( $ref ) . '</strong> (' . esc_html( $data['company_name'] ?: '—' ) . ') abgelehnt.</p>
+		<p style="margin:0 0 16px;">Bitte nachfassen oder eine Alternative anbieten.</p>
+		<p style="margin:0;"><a href="' . esc_url( fge_format_request_admin_link( $request_id ) ) . '">Anfrage im Admin öffnen</a></p>
+	';
+	wp_mail( $to, 'Angebot abgelehnt: ' . $ref, fge_email_wrap( 'Angebot abgelehnt: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+/** Erinnerung an den Kunden, wenn das Angebot noch offen ist. */
+function fge_send_offer_reminder( int $request_id ): bool {
+	$data = fge_get_request_email_data( $request_id );
+	if ( $data['contact_email'] === '' ) {
+		return false;
+	}
+	$ref  = fge_request_number( $request_id );
+	$link = function_exists( 'fge_offer_link' ) ? fge_offer_link( $request_id ) : home_url();
+	$snap = (array) get_post_meta( $request_id, '_fge_offer_snapshot', true );
+	$content = '
+		<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ',</p>
+		<p style="margin:0 0 16px;">euer Angebot für <strong>' . esc_html( (string) ( $snap['event_title'] ?? 'euer Event' ) ) . '</strong> am <strong>' . esc_html( (string) ( $snap['date'] ?? '' ) ) . '</strong> wartet noch auf eure Rückmeldung.</p>
+		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Angebot ansehen &amp; bestätigen</a></p>
+		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
+	';
+	return (bool) wp_mail( $data['contact_email'], 'Erinnerung: euer Angebot (' . $ref . ')', fge_email_wrap( 'Erinnerung: euer Angebot (' . $ref . ')', $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
 
 function fge_send_onboarding_submitted_email( int $partner_id, string $temp_password = '' ): bool {

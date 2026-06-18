@@ -46,6 +46,26 @@ $done     = isset( $_GET['done'] );
 		$rows     = fge_rr_get( $req );
 		$nonce    = wp_create_nonce( 'fge_termin_' . $token );
 
+		// Live-Stand der Abstimmung: wer hat zu welchem Termin schon zu- oder abgesagt.
+		$matrix      = function_exists( 'fge_rr_matrix' ) ? fge_rr_matrix( $req ) : [ 'dates' => [], 'responders' => [] ];
+		$m_resp      = $matrix['responders'];
+		$m_total     = count( $m_resp );
+		$final_idx   = function_exists( 'fge_rr_final_index' ) ? fge_rr_final_index( $req ) : 0;
+		$deadline_ts = function_exists( 'fge_request_response_deadline' ) ? fge_request_response_deadline( $req ) : 0;
+		$lead_idx = null; $lead_cnt = 0;
+		foreach ( $matrix['dates'] as $li => $ld ) {
+			if ( (int) $ld['confirmed'] > $lead_cnt ) { $lead_cnt = (int) $ld['confirmed']; $lead_idx = $li; }
+		}
+		$tl_dots = static function ( array $d ) use ( $m_resp ): string {
+			$out = '';
+			foreach ( $m_resp as $c ) {
+				$st  = $d['responders'][ (int) $c['id'] ]['response'] ?? 'pending';
+				$ini = function_exists( 'fge_portal_initials' ) ? fge_portal_initials( (string) ( $c['name'] ?: $c['email'] ) ) : '·';
+				$out .= '<span class="tl-vdot ' . esc_attr( $st ) . '" title="' . esc_attr( (string) $c['name'] ) . '">' . esc_html( $ini ) . '</span>';
+			}
+			return $out;
+		};
+
 		if ( $done ) : ?>
 		<div class="tl-done">
 			<div class="tl-done-ic">
@@ -53,12 +73,24 @@ $done     = isset( $_GET['done'] );
 			</div>
 			<h2>Danke, <?php echo esc_html( $first ?: 'dir' ); ?> — gespeichert.</h2>
 			<p>Deine Rückmeldung ist da. Sobald alle Beteiligten reagiert haben und ein Termin bestätigt ist, kümmert sich Firmengolf um Angebot und Buchung.</p>
+			<?php if ( $m_total > 0 && null !== $lead_idx ) : $ld = $matrix['dates'][ $lead_idx ]; ?>
+			<div class="tl-done-stand">
+				<?php if ( $final_idx ) : ?>
+					Bestätigter Termin: <strong><?php echo esc_html( $matrix['dates'][ $final_idx ]['label'] ?? '' ); ?></strong>.
+				<?php else : ?>
+					Aktueller Stand: <strong><?php echo esc_html( $ld['label'] ); ?></strong> führt mit <?php echo (int) $ld['confirmed']; ?> von <?php echo (int) $m_total; ?> Zusagen.
+				<?php endif; ?>
+			</div>
+			<?php endif; ?>
 			<p style="margin-top:18px;"><a class="tl-btn" href="<?php echo esc_url( fge_termin_contact_link( $req, $contact ) ); ?>">Antwort ändern</a></p>
 		</div>
 		<?php else : ?>
 		<div class="tl-eyebrow">Anfrage <?php echo esc_html( $ref ); ?></div>
 		<h1 class="tl-h">Hallo <?php echo esc_html( $first ?: '' ); ?>, passt <em>einer dieser Termine</em>?</h1>
-		<p class="tl-lead">Eine Firmenanfrage wartet auf eure Rückmeldung. Sag einfach zu jedem Wunschtermin kurz zu oder ab — dauert keine Minute.</p>
+		<p class="tl-lead">Eine Firmenanfrage wartet auf eure Rückmeldung. Sag einfach zu jedem Wunschtermin kurz zu oder ab — dauert keine Minute. Ihr seht direkt, wie die anderen schon abgestimmt haben.</p>
+		<?php if ( $deadline_ts && ! $final_idx ) : ?>
+		<div class="tl-deadline">Bitte möglichst <strong>bis <?php echo esc_html( wp_date( 'D, d.m.Y', $deadline_ts ) ); ?></strong> zurückmelden, damit der Termin rechtzeitig steht.</div>
+		<?php endif; ?>
 
 		<div class="tl-summary">
 			<div class="tl-sum-co"><?php echo esc_html( $company ?: 'Ein Unternehmen' ); ?></div>
@@ -95,6 +127,14 @@ $done     = isset( $_GET['done'] );
 						</label>
 					</div>
 				</div>
+				<?php $dd = $matrix['dates'][ $idx ] ?? null; if ( $dd && $m_total > 0 ) : ?>
+				<div class="tl-tally">
+					<div class="tl-tally-dots"><?php echo $tl_dots( $dd ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+					<div class="tl-tally-txt"><b><?php echo (int) $dd['confirmed']; ?></b> von <?php echo (int) $m_total; ?> zugesagt<?php if ( (int) $dd['declined'] > 0 ) { echo ', ' . (int) $dd['declined'] . ' dagegen'; } ?></div>
+					<?php if ( (int) $final_idx === (int) $idx ) : ?><span class="tl-lead-badge final">Bestätigter Termin</span>
+					<?php elseif ( $idx === $lead_idx && $lead_cnt > 0 ) : ?><span class="tl-lead-badge">Wahrscheinlichster Termin</span><?php endif; ?>
+				</div>
+				<?php endif; ?>
 			</div>
 			<?php endforeach; ?>
 

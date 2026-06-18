@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.15' );
+define( 'FGE_VERSION', '1.9.20' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -37,6 +37,7 @@ require_once FGE_DIR . 'includes/geo.php';
 require_once FGE_DIR . 'includes/budget-calc.php';
 require_once FGE_DIR . 'includes/form-handler.php';
 require_once FGE_DIR . 'includes/emails.php';
+require_once FGE_DIR . 'includes/offers.php';
 require_once FGE_DIR . 'includes/request-followups.php';
 require_once FGE_DIR . 'includes/contact-handler.php';
 require_once FGE_DIR . 'includes/partner-portal.php';
