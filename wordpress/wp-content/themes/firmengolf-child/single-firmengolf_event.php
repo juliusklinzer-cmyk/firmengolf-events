@@ -208,12 +208,17 @@ $related_query = new WP_Query( [
 	'orderby' => 'rand',
 ] );
 
-// SEO: Title + Meta + OpenGraph. Fallbacks keyword- und ortsorientiert aus den Event-Daten,
-// damit jede Event-Seite auch ohne manuelle Pflege auf „Firmenevent Golf [Stadt]" optimiert ist.
+// SEO: Title + Meta + OpenGraph. Format-first (z. B. „Team-Golftag mit Coaching in München"),
+// damit Event-Singles NICHT mit der City-Landingpage um „Firmenevent Golf [Stadt]" konkurrieren –
+// die City-Page besitzt das Head-Keyword, die Singles decken die längeren Format-Suchen ab.
 $seo_city  = $location ?: $region;
 $seo_title = fge_get_event_meta( $post_id, 'seo_title' );
 if ( ! $seo_title ) {
-	$seo_title = 'Firmenevent Golf' . ( $seo_city ? ' ' . $seo_city : '' ) . ': ' . get_the_title() . ' | Firmengolf';
+	$seo_base = str_replace( ' · ', ' in ', get_the_title() );
+	if ( $seo_city && stripos( $seo_base, (string) $seo_city ) === false ) {
+		$seo_base .= ' in ' . $seo_city;
+	}
+	$seo_title = $seo_base . ' | Firmengolf';
 }
 $seo_desc = fge_get_event_meta( $post_id, 'meta_description' );
 if ( ! $seo_desc ) {

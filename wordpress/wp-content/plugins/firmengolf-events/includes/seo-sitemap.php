@@ -92,6 +92,13 @@ add_action( 'init', function () {
 					}
 				}
 
+				// Format-Landingpages.
+				if ( function_exists( 'fge_get_event_format_pages' ) ) {
+					foreach ( array_keys( fge_get_event_format_pages() ) as $slug ) {
+						$list[] = [ 'loc' => home_url( '/firmenevent/' . $slug . '/' ) ];
+					}
+				}
+
 				// Öffentlich sichtbare Golfplatz-Partner.
 				$partners = get_posts( [
 					'post_type'   => 'firmengolf_partner',

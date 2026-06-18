@@ -46,7 +46,9 @@ function fge_register_post_types() {
 		'show_ui'       => true,
 		'has_archive'   => false,
 		'supports'      => [ 'editor' ],
-		'show_in_rest'  => true,
+		// show_in_rest absichtlich false: Event-Anfragen enthalten Kundendaten (PII).
+		// Mit true lieferte /wp-json/wp/v2/firmengolf_request diese unauthentifiziert aus.
+		'show_in_rest'  => false,
 		'menu_icon'     => 'dashicons-email-alt',
 		'menu_position' => 22,
 	] );

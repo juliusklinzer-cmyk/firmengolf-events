@@ -32,6 +32,7 @@ require_once FGE_DIR . 'includes/admin-columns.php';
 require_once FGE_DIR . 'includes/admin-approval.php';
 require_once FGE_DIR . 'includes/frontend.php';
 require_once FGE_DIR . 'includes/city-landing.php';
+require_once FGE_DIR . 'includes/format-landing.php';
 require_once FGE_DIR . 'includes/seo-sitemap.php';
 require_once FGE_DIR . 'includes/scheduling.php';
 require_once FGE_DIR . 'includes/geo.php';
