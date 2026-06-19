@@ -110,6 +110,15 @@ add_action( 'init', function () {
 					}
 				}
 
+				// Format×Stadt-Landingpages (nur scharf geschaltete Städte).
+				if ( function_exists( 'fge_citformat_enabled_cities' ) && function_exists( 'fge_get_event_format_pages' ) ) {
+					foreach ( fge_citformat_enabled_cities() as $cslug ) {
+						foreach ( array_keys( fge_get_event_format_pages() ) as $fslug ) {
+							$list[] = [ 'loc' => home_url( '/golf-events/' . $cslug . '/' . $fslug . '/' ) ];
+						}
+					}
+				}
+
 				// Öffentlich sichtbare Golfplatz-Partner.
 				$partners = get_posts( [
 					'post_type'   => 'firmengolf_partner',

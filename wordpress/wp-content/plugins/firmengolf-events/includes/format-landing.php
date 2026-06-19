@@ -135,6 +135,9 @@ add_filter( 'template_include', static function ( $template ) {
 	if ( ! $slug ) {
 		return $template;
 	}
+	if ( get_query_var( 'fge_city' ) ) {
+		return $template; // Format×Stadt-Kombi → citformat-landing.php übernimmt.
+	}
 	$formats = fge_get_event_format_pages();
 	if ( ! isset( $formats[ $slug ] ) ) {
 		global $wp_query;
