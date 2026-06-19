@@ -40,7 +40,8 @@ function fge_company(): array {
 		'hq_city'          => 'München',
 
 		// Büro (Besuchsadresse)
-		'office_street'    => 'Elsenheimerstr. 7',
+		'office_name'      => 'ELZE Laim',
+		'office_street'    => 'Elsenheimerstr. 7-13',
 		'office_zip'       => '80687',
 		'office_city'      => 'München',
 		'office_floor'     => '2. Stock',

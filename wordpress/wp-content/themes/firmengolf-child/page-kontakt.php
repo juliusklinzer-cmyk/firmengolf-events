@@ -18,6 +18,7 @@ $url_dsgvo   = home_url( '/datenschutz/' );
 $hubspot_url = 'https://meetings.hubspot.com/julius-klinzer/firmengolf_fuer_dein_unternehmen';
 $office_addr = $co['office_street'] . ', ' . $co['office_zip'] . ' ' . $co['office_city'];
 $maps_url    = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode( $office_addr );
+$office_map  = 'https://www.google.com/maps?q=' . rawurlencode( $office_addr ) . '&output=embed';
 
 /* ── State (PRG: Erfolg / Fehler) ── */
 $danke = isset( $_GET['kontakt'] ) && $_GET['kontakt'] === 'danke'; // phpcs:ignore WordPress.Security.NonceVerification
@@ -332,14 +333,13 @@ $faqs = [
 			</a>
 		</div>
 		<div class="ct-extra-card ct-extra-card-visit">
-			<div class="ct-extra-map" aria-hidden="true">
-				<div class="ct-extra-map-grid"></div>
-				<div class="ct-extra-map-pin"></div>
+			<div class="ct-extra-map">
+				<iframe class="ct-extra-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $office_map ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $co['office_name'] . ', ' . $office_addr ); ?>"></iframe>
 			</div>
 			<div class="ct-extra-map-body">
 				<span class="ct-extra-ic"><?php echo $cicon( 'pin', 24 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				<h3 class="ct-extra-h">Komm vorbei.</h3>
-				<p class="ct-extra-p"><?php echo esc_html( $co['legal_name'] ); ?> · <?php echo esc_html( $office_addr ); ?> (<?php echo esc_html( $co['office_floor'] ); ?>). Auf einen Kaffee — kurz vorher anrufen, dann ist jemand da.</p>
+				<p class="ct-extra-p"><?php echo esc_html( $co['legal_name'] ); ?> · <?php echo esc_html( $co['office_name'] ); ?>, <?php echo esc_html( $office_addr ); ?> (<?php echo esc_html( $co['office_floor'] ); ?>). Auf einen Kaffee — kurz vorher anrufen, dann ist jemand da.</p>
 				<a class="fg-btn-ghost" href="<?php echo esc_url( $maps_url ); ?>" target="_blank" rel="noopener noreferrer">
 					Route anzeigen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 				</a>

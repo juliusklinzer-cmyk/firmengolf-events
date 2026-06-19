@@ -9,10 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 get_header();
-$co       = fge_company();
-$addr     = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
-$mail_ds  = 'datenschutz@visionpunch.de';
-$mail_gen = $co['email_general'];
+$co        = fge_company();
+$addr      = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
+$mail_ds   = 'datenschutz@visionpunch.de';
+$mail_gen  = $co['email_general'];
 $mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 ?>
 <div class="fge-page">
@@ -71,21 +71,14 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 
 		<h2>5. Hosting</h2>
 		<p>
-			Diese Website wird bei One.com (one.com Group / one.com A/S) gehostet; die Server stehen in einem
-			Rechenzentrum in Kopenhagen, Dänemark (EU). One.com verarbeitet die beim Besuch anfallenden Daten in
-			unserem Auftrag (Art. 6 Abs. 1 lit. f DSGVO – sichere, zuverlässige Bereitstellung). Es besteht ein
-			Auftragsverarbeitungsvertrag (Art. 28 DSGVO).
+			Diese Website wird bei one.com gehostet. Beim Besuch der Website verarbeitet one.com insbesondere
+			technische Zugriffsdaten wie IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene Seiten,
+			Browserinformationen und Server-Logfiles. Die Verarbeitung erfolgt, um die Website sicher und
+			zuverlässig bereitzustellen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Mit one.com besteht ein
+			Vertrag zur Auftragsverarbeitung gemäß Art. 28 DSGVO.
 		</p>
 
-		<h2>6. Server-Logfiles</h2>
-		<p>
-			Beim Aufruf der Website werden automatisch Informationen im Server-Logfile gespeichert: IP-Adresse,
-			Datum/Uhrzeit, aufgerufene Seite, übertragene Datenmenge, Referrer-URL, Browser und Betriebssystem.
-			Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (sicherer Betrieb, Missbrauchsabwehr). Die Speicherung
-			erfolgt für kurze Zeit und wird danach gelöscht bzw. anonymisiert.
-		</p>
-
-		<h2>7. Cookies &amp; Einwilligungsverwaltung</h2>
+		<h2>6. Cookies &amp; Einwilligungsverwaltung</h2>
 		<p>
 			Technisch notwendige Cookies setzen wir auf Grundlage von § 25 Abs. 2 TDDDG bzw. Art. 6 Abs. 1 lit. f
 			DSGVO ein. Für alle nicht notwendigen Dienste (Statistik, Marketing, eingebettete Inhalte) holen wir
@@ -94,7 +87,7 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 			ändern oder widerrufen.
 		</p>
 
-		<h2>8. Kontakt- und Event-Anfragen</h2>
+		<h2>7. Kontakt- und Event-Anfragen</h2>
 		<p>
 			Über unsere Formulare (Event-Anfrage, Kontakt) verarbeiten wir die angegebenen Daten – insbesondere
 			Firma, Ansprechpartner, E-Mail, Telefon sowie Angaben zum geplanten Event (z. B. Termin, Gruppengröße,
@@ -105,23 +98,27 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 			(i. d. R. 6 Jahre nach § 257 HGB bzw. 10 Jahre nach § 147 AO), danach erfolgt Löschung.
 		</p>
 
-		<h2>9. CRM – HubSpot</h2>
+		<h2>8. CRM – HubSpot</h2>
 		<p>
-			Zur Verwaltung von Anfragen und Kundenkontakten nutzen wir das CRM HubSpot (HubSpot, Inc., 2 Canal Park,
-			Cambridge, MA, USA). Dabei werden die o. g. Kontakt- und Anfragedaten an HubSpot übermittelt.
-			Rechtsgrundlage: Art. 6 Abs. 1 lit. b und lit. f DSGVO. Es besteht ein Auftragsverarbeitungsvertrag.
-			Eine Verarbeitung in den USA wird durch das EU-US Data Privacy Framework bzw. Standardvertragsklauseln
-			abgesichert (Art. 44 ff. DSGVO).
+			Wir nutzen HubSpot (Anbieter: HubSpot, Inc., USA) zur Bearbeitung von Anfragen, zur Verwaltung von
+			Unternehmens- und Kontaktdaten sowie zur Kommunikation mit Interessenten und Partnern. Dabei können
+			insbesondere Name, Unternehmen, E-Mail-Adresse, Telefonnummer, Nachricht, Anfrageinhalt und
+			Kommunikationsverlauf verarbeitet werden. Rechtsgrundlage ist je nach Anfrage Art. 6 Abs. 1 lit. b DSGVO
+			(vorvertragliche Kommunikation) oder Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an effizienter
+			Kundenverwaltung). Mit HubSpot besteht ein Vertrag zur Auftragsverarbeitung gemäß Art. 28 DSGVO. Eine
+			Verarbeitung kann auch in den USA erfolgen; die Übermittlung wird durch das EU-US Data Privacy Framework
+			bzw. Standardvertragsklauseln (Art. 44 ff. DSGVO) abgesichert.
 		</p>
 
-		<h2>10. HubSpot-Terminkalender &amp; CTA</h2>
+		<h2>9. HubSpot-Terminkalender</h2>
 		<p>
-			Auf einzelnen Seiten binden wir den HubSpot-Terminkalender (Meetings) sowie HubSpot-CTA-/Marketing-Elemente
-			ein. Diese werden erst nach Ihrer Einwilligung geladen (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG).
-			Dabei können Cookies gesetzt und Daten an HubSpot (USA) übertragen werden (Safeguards wie unter Ziffer 9).
+			Auf unserer Kontaktseite verlinken wir auf den HubSpot-Terminkalender (Meetings) zur Online-Terminbuchung.
+			Es handelt sich um eine einfache Verlinkung – beim bloßen Aufruf unserer Seite werden keine Daten an HubSpot
+			übertragen. Erst wenn Sie auf den Link klicken, werden Sie zur HubSpot-Buchungsseite (HubSpot, Inc., USA)
+			weitergeleitet, für deren Datenverarbeitung dann HubSpot verantwortlich ist.
 		</p>
 
-		<h2>11. Google Maps</h2>
+		<h2>10. Google Maps</h2>
 		<p>
 			Zur Anzeige von Standorten binden wir Google Maps (Google Ireland Ltd., Dublin, Irland; Google LLC, USA)
 			ein. Die Karten werden erst nach Ihrer Einwilligung geladen; dabei wird u. a. Ihre IP-Adresse an Google
@@ -129,7 +126,7 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 			Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG.
 		</p>
 
-		<h2>12. Google Analytics</h2>
+		<h2>11. Google Analytics</h2>
 		<p>
 			Wir nutzen Google Analytics 4 zur pseudonymen, statistischen Auswertung der Websitenutzung (Google
 			Ireland Ltd. / Google LLC, USA) – ausschließlich nach Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO,
@@ -137,25 +134,20 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 			(Safeguards wie oben). Es besteht ein Auftragsverarbeitungsvertrag.
 		</p>
 
-		<h2>13. YouTube</h2>
+		<h2>12. Newsletter &amp; E-Mail-Marketing (Kit)</h2>
 		<p>
-			Eingebettete YouTube-Videos (Google Ireland Ltd. / Google LLC, USA) werden erst nach Ihrer Einwilligung
-			geladen; dabei können Daten an Google/YouTube (USA) übertragen werden. Rechtsgrundlage: Art. 6 Abs. 1
-			lit. a DSGVO, § 25 Abs. 1 TDDDG.
+			Wir nutzen Kit für den Versand von Newslettern, Informationen zu Firmengolf, Partnerupdates und zur
+			Verwaltung von E-Mail-Kontakten. Anbieter ist Kit, Inc. (USA). Dabei können insbesondere Name,
+			E-Mail-Adresse, Unternehmen, Interessen, Anmeldezeitpunkt, IP-Adresse, Opt-in-Status sowie Interaktionen
+			mit unseren E-Mails verarbeitet werden. Die Verarbeitung erfolgt je nach Nutzung auf Grundlage Ihrer
+			Einwilligung gemäß Art. 6 Abs. 1 lit. a DSGVO oder auf Grundlage unseres berechtigten Interesses an einer
+			strukturierten Kommunikation gemäß Art. 6 Abs. 1 lit. f DSGVO. Die Newsletter-Anmeldung erfolgt im
+			Double-Opt-in-Verfahren; eine Abmeldung ist jederzeit über den Link in jeder E-Mail möglich. Mit Kit
+			besteht ein Vertrag zur Auftragsverarbeitung gemäß Art. 28 DSGVO. Eine Übermittlung in die USA wird durch
+			das EU-US Data Privacy Framework bzw. Standardvertragsklauseln (Art. 44 ff. DSGVO) abgesichert.
 		</p>
 
-		<h2>14. Newsletter (Kit)</h2>
-		<p>
-			Für den Newsletter-Versand nutzen wir den Dienst Kit (ehemals ConvertKit; ConvertKit LLC, USA). Die
-			Anmeldung erfolgt im Double-Opt-in-Verfahren: Erst nach Klick auf den Bestätigungslink in der
-			Bestätigungs-E-Mail werden Sie aufgenommen. An- und Abmeldungen werden protokolliert. Rechtsgrundlage:
-			Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Abmeldung jederzeit über den Link in jeder E-Mail oder
-			per Nachricht an <a href="mailto:<?php echo esc_attr( $mail_ds ); ?>"><?php echo esc_html( $mail_ds ); ?></a>.
-			Die Übermittlung in die USA wird durch EU-US Data Privacy Framework/Standardvertragsklauseln abgesichert;
-			ein Auftragsverarbeitungsvertrag besteht.
-		</p>
-
-		<h2>15. Bewerbungen</h2>
+		<h2>13. Bewerbungen</h2>
 		<p>
 			Senden Sie uns eine Bewerbung (z. B. an <a href="mailto:<?php echo esc_attr( $mail_jobs ); ?>"><?php echo esc_html( $mail_jobs ); ?></a>),
 			verarbeiten wir Ihre übermittelten Daten ausschließlich zur Durchführung des Bewerbungsverfahrens
@@ -164,7 +156,7 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 			Verfahrens, sofern Sie keiner längeren Speicherung zugestimmt haben.
 		</p>
 
-		<h2>16. Social-Media-Profile</h2>
+		<h2>14. Social-Media-Profile</h2>
 		<p>
 			Wir verlinken auf unsere Profile bei Instagram, Facebook und LinkedIn. Es handelt sich um einfache
 			Verlinkungen – beim bloßen Aufruf unserer Seite werden keine Daten an diese Netzwerke übertragen. Erst
@@ -172,18 +164,18 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 			verantwortlich sind.
 		</p>
 
-		<h2>17. Schriftarten</h2>
+		<h2>15. Schriftarten</h2>
 		<p>
 			Schriftarten werden lokal von unserem eigenen Server eingebunden. Eine Verbindung zu Servern Dritter
 			(z. B. Google Fonts) findet nicht statt; es werden keine personenbezogenen Daten an Dritte übertragen.
 		</p>
 
-		<h2>18. Verschlüsselung</h2>
+		<h2>16. Verschlüsselung</h2>
 		<p>
 			Diese Website nutzt aus Sicherheitsgründen eine SSL-/TLS-Verschlüsselung (erkennbar an „https://").
 		</p>
 
-		<h2>19. Aktualität und Änderung</h2>
+		<h2>17. Aktualität und Änderung</h2>
 		<p>
 			Diese Datenschutzerklärung ist aktuell gültig. Durch die Weiterentwicklung der Website oder geänderte
 			gesetzliche Vorgaben kann eine Anpassung notwendig werden.
