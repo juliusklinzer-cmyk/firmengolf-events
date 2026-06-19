@@ -141,8 +141,11 @@ get_header();
 				<p class="blog-featured-x"><?php echo esc_html( $featured_exc ); ?></p>
 				<?php if ( $featured_author ) : ?>
 					<div class="blog-author">
-						<span class="blog-author-n"><?php echo esc_html( $featured_author ); ?></span>
-						<span class="blog-author-r"><?php echo esc_html( $featured_bio ?: 'Autor' ); ?></span>
+						<img class="blog-author-img" src="<?php echo esc_url( get_avatar_url( $featured_auth_id, [ 'size' => 72 ] ) ); ?>" alt="<?php echo esc_attr( $featured_author ); ?>" width="36" height="36" loading="lazy">
+						<div class="blog-author-txt">
+							<span class="blog-author-n"><?php echo esc_html( $featured_author ); ?></span>
+							<span class="blog-author-r"><?php echo esc_html( $featured_bio ?: 'Autor' ); ?></span>
+						</div>
 					</div>
 				<?php endif; ?>
 				<div class="blog-featured-cta">
@@ -201,12 +204,38 @@ get_header();
 							<h3 class="blog-card-h"><?php echo esc_html( get_the_title( $pid ) ); ?></h3>
 							<p class="blog-card-x"><?php echo esc_html( $p_exc ); ?></p>
 							<div class="blog-card-foot">
-								<span class="blog-author-n"><?php echo esc_html( $p_auth ); ?></span>
+								<span class="blog-card-author">
+									<img class="blog-card-avatar" src="<?php echo esc_url( get_avatar_url( (int) $p->post_author, [ 'size' => 48 ] ) ); ?>" alt="<?php echo esc_attr( $p_auth ); ?>" width="24" height="24" loading="lazy">
+									<span class="blog-author-n"><?php echo esc_html( $p_auth ); ?></span>
+								</span>
 								<span class="blog-author-r"><?php echo esc_html( $p_date ); ?></span>
 							</div>
 						</div>
 					</a>
 				</article>
+				<?php endforeach; ?>
+			</div>
+			<?php
+			// Mobile (≤768px via CSS): Beiträge nach Kategorie in wischbaren Reihen.
+			$blog_by_cat = [];
+			foreach ( $remaining_posts as $bp ) {
+				$bc  = get_the_category( $bp->ID );
+				$bc0 = $bc[0] ?? null;
+				$bk  = $bc0 ? (int) $bc0->term_id : 0;
+				if ( ! isset( $blog_by_cat[ $bk ] ) ) { $blog_by_cat[ $bk ] = [ 'name' => $bc0 ? $bc0->name : 'Weitere', 'ids' => [] ]; }
+				$blog_by_cat[ $bk ]['ids'][] = (int) $bp->ID;
+			}
+			?>
+			<div class="blog-catbrowse">
+				<?php foreach ( $blog_by_cat as $grp ) : ?>
+					<section class="ev-catsec">
+						<div class="ev-catsec-head">
+							<h3 class="ev-catsec-h"><?php echo esc_html( $grp['name'] ); ?> <span class="ev-catsec-c"><?php echo (int) count( $grp['ids'] ); ?></span></h3>
+						</div>
+						<div class="ev-catrow blog-catrow">
+							<?php foreach ( $grp['ids'] as $bid ) { get_template_part( 'template-parts/fge-blog-card', null, [ 'id' => $bid ] ); } ?>
+						</div>
+					</section>
 				<?php endforeach; ?>
 			</div>
 		<?php elseif ( ! $featured_post ) : ?>

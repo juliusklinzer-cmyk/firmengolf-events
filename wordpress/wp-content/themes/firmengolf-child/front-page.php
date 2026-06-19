@@ -34,7 +34,7 @@ if ( empty( $available_regions ) ) {
 }
 
 // ── Featured events (up to 4 published) ────────────────────────────────────
-$featured_events = fge_get_featured_events( 4 );
+$featured_events = fge_get_featured_events( 6 );
 
 // ── Latest blog posts ───────────────────────────────────────────────────────
 $blog_posts = get_posts( [
@@ -72,7 +72,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 				Bringt euer Team raus aus dem Büro und rein in <span class="rot-wrap"><span class="rot-word mk-italic in" id="fg-rot-word">Bewegung</span><span class="rot-dot">.</span></span>
 			</h1>
 			<p class="mk-hero-sub">
-				Vom Schnupperkurs bis zum Firmenturnier — kuratierte Golf-Formate auf Partnerplätzen
+				Vom Schnupperkurs bis zum Firmenturnier — Golf-Formate auf Partnerplätzen
 				in ganz Deutschland. Eine Anfrage, eine Rechnung, ein Ansprechpartner.
 			</p>
 			<div class="mk-hero-ctas">
@@ -249,19 +249,19 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 </section>
 
 <?php /* ══════════════════ 4. FEATURED FORMATS ══════════════════ */ ?>
-<section class="mk-section" aria-label="Kuratierte Formate">
+<section class="mk-section" aria-label="Beliebte Formate">
 	<div class="mk-section-head between">
 		<div>
-			<div class="mk-eyebrow">Kuratierte Formate</div>
+			<div class="mk-eyebrow">Beliebte Formate</div>
 			<h2 class="mk-h2">Vom Schnupperkurs bis zum Firmenturnier.</h2>
 		</div>
 		<a class="fg-btn-ghost" href="<?php echo esc_url( $url_events ); ?>">
 			Alle Events ansehen <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		</a>
 	</div>
-	<div class="home-formats-grid">
+	<div class="home-formats-grid<?php echo ! empty( $featured_events ) ? ' home-formats-grid--desk' : ''; ?>">
 		<?php if ( ! empty( $featured_events ) ) : ?>
-			<?php foreach ( $featured_events as $i => $event ) :
+			<?php foreach ( array_slice( $featured_events, 0, 4 ) as $i => $event ) :
 				$eid         = $event->ID;
 				$event_type  = fge_get_event_meta( $eid, 'event_type' );
 				$format_label = fge_format_event_type( $event_type );
@@ -321,6 +321,13 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			<?php endforeach; ?>
 		<?php endif; ?>
 	</div>
+	<?php if ( ! empty( $featured_events ) ) : ?>
+		<div class="home-formats-rail">
+			<?php foreach ( $featured_events as $event ) {
+				get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $event->ID, 'dist' => null ] );
+			} ?>
+		</div>
+	<?php endif; ?>
 </section>
 
 <?php /* ══════════════════ 5. OCCASIONS GRID ══════════════════ */ ?>

@@ -47,22 +47,41 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 	</div>
 	<div class="about-video-wrap">
 		<div class="about-video">
-			<div class="about-video-ph" role="img" aria-label="Video-Vorschau: Eine Minute mit dem Gründer">
-				<div class="about-video-poster" style="background-image:url('<?php echo esc_url( $img( 'hero-forest.jpg' ) ); ?>')"></div>
+			<?php
+			$fge_video_url    = plugins_url( 'assets/video/gruender.mp4', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' );
+			$fge_video_poster = $img( 'gruender-video-poster.jpg' );
+			?>
+			<video class="about-video-el" preload="none" playsinline controls poster="<?php echo esc_url( $fge_video_poster ); ?>" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border:0;background:var(--ink-900);">
+				<source src="<?php echo esc_url( $fge_video_url ); ?>" type="video/mp4">
+			</video>
+			<button type="button" class="about-video-ph" aria-label="Video abspielen: Eine Minute mit dem Gründer">
+				<div class="about-video-poster" style="background-image:url('<?php echo esc_url( $fge_video_poster ); ?>')"></div>
 				<div class="about-video-scrim"></div>
 				<div class="about-video-center">
 					<span class="about-play">
 						<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
 					</span>
 					<div class="about-video-label">Eine Minute mit dem Gründer</div>
-					<div class="about-video-hint">Video folgt in Kürze</div>
 				</div>
 				<span class="about-video-badge">Video</span>
-			</div>
+			</button>
+			<script>
+			(function(){
+				var ph  = document.currentScript.previousElementSibling;
+				var box = ph ? ph.parentNode : null;
+				var vid = box ? box.querySelector('.about-video-el') : null;
+				if ( ! ph || ! vid ) { return; }
+				ph.addEventListener('click', function(){
+					ph.style.display = 'none';
+					vid.style.display = 'block';
+					if ( vid.play ) { vid.play(); }
+				});
+			})();
+			</script>
 		</div>
 		<div class="about-video-caption">
 			<span class="about-video-cap-dot"></span>
-			<span>Das persönliche Video vom Gründer folgt in Kürze.</span>
+			<span>Eine Minute mit Julius — dem Gründer von Firmengolf.</span>
 		</div>
 	</div>
 </section>

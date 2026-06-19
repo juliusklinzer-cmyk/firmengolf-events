@@ -1,14 +1,19 @@
 <?php
 /**
- * Template: Datenschutzerklärung (Gerüst).
- * Struktur nach DSGVO; finaler Rechtstext folgt (Anwalt/Generator).
+ * Template: Datenschutzerklärung.
+ * Inhaltlich auf die tatsächliche Verarbeitung der Seite zugeschnitten.
+ * Vor Live-Gang von Anwalt/DSB prüfen lassen (kein Rechtsrat).
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 get_header();
-$co = fge_company();
+$co       = fge_company();
+$addr     = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
+$mail_ds  = 'datenschutz@visionpunch.de';
+$mail_gen = $co['email_general'];
+$mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 ?>
 <div class="fge-page">
 
@@ -17,60 +22,171 @@ $co = fge_company();
 <article class="legal" aria-label="Datenschutzerklärung">
 	<div class="legal-head">
 		<div class="mk-eyebrow">Rechtliches</div>
-		<h1 class="legal-h">Datenschutzerklärung</h1>
+		<h1 class="legal-h">Datenschutz bei Firmengolf</h1>
 	</div>
 	<div class="legal-body">
 		<p class="legal-lead">
-			Der Schutz deiner persönlichen Daten ist uns wichtig. Wir verarbeiten deine Daten ausschließlich
-			auf Grundlage der gesetzlichen Bestimmungen (DSGVO, BDSG, TDDDG).
+			Der Schutz Ihrer personenbezogenen Daten ist uns wichtig. Nachfolgend informieren wir Sie
+			über die Verarbeitung personenbezogener Daten auf dieser Website (Art. 13/14 DSGVO).
 		</p>
 
 		<h2>1. Verantwortlicher</h2>
 		<p>
-			<?php echo esc_html( $co['legal_name'] ); ?>, <?php echo esc_html( $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'] ); ?>.<br>
-			E-Mail: <a href="mailto:<?php echo esc_attr( $co['email_general'] ); ?>"><?php echo esc_html( $co['email_general'] ); ?></a> · weitere Angaben siehe <a href="<?php echo esc_url( home_url( '/impressum/' ) ); ?>">Impressum</a>.
+			<?php echo esc_html( $co['legal_name'] ); ?> (Marke „<?php echo esc_html( $co['brand'] ); ?>")<br>
+			<?php echo esc_html( $addr ); ?>, Deutschland<br>
+			Vertreten durch den Geschäftsführer: <?php echo esc_html( $co['managing_director'] ); ?><br>
+			Telefon: <?php echo esc_html( $co['phone_display'] ); ?> · E-Mail: <a href="mailto:<?php echo esc_attr( $mail_gen ); ?>"><?php echo esc_html( $mail_gen ); ?></a><br>
+			Registergericht: <?php echo esc_html( $co['register_court'] . ', ' . $co['register_no'] ); ?> · USt-IdNr.: <?php echo esc_html( $co['ust_id'] ); ?><br>
+			Datenschutzanfragen: <a href="mailto:<?php echo esc_attr( $mail_ds ); ?>"><?php echo esc_html( $mail_ds ); ?></a> · weitere Angaben im <a href="<?php echo esc_url( home_url( '/impressum/' ) ); ?>">Impressum</a>.
 		</p>
 
-		<h2>2. Welche Daten werden erhoben?</h2>
-		<ul>
-			<li>Server-Logfiles (IP-Adresse, Zeitstempel, Browser, Betriebssystem)</li>
-			<li>Kontaktdaten, die du uns im Anfrage- oder Kontaktformular übermittelst</li>
-			<li>Nutzungsdaten für die Bereitstellung der Website</li>
-		</ul>
-
-		<h2>3. Zweck der Verarbeitung</h2>
-		<ul>
-			<li>Beantwortung von Anfragen und Kontaktaufnahme</li>
-			<li>Vertragsanbahnung und -abwicklung</li>
-			<li>Bereitstellung und Sicherheit der Website</li>
-		</ul>
-
-		<h2>4. Cookies</h2>
+		<h2>2. Datenschutzbeauftragte</h2>
 		<p>
-			Wir setzen technisch notwendige Cookies ein, um die Nutzung der Website zu ermöglichen.
-			Tracking-Cookies setzen wir nur mit deiner ausdrücklichen Einwilligung.
+			Frau Marie Helena Bauer, E-Mail: <a href="mailto:marie.bauer@visionpunch.de">marie.bauer@visionpunch.de</a>
 		</p>
 
-		<h2>5. Deine Rechte</h2>
+		<h2>3. Allgemeines zur Datenverarbeitung</h2>
+		<p>
+			Wir verarbeiten personenbezogene Daten nur, soweit dies zur Bereitstellung einer funktionsfähigen
+			Website sowie unserer Inhalte und Leistungen erforderlich ist. Rechtsgrundlagen sind insbesondere
+			Art. 6 Abs. 1 lit. a (Einwilligung), lit. b (Vertrag/vorvertragliche Maßnahmen), lit. c (rechtliche
+			Verpflichtung) und lit. f (berechtigtes Interesse) DSGVO.
+		</p>
+
+		<h2>4. Ihre Rechte</h2>
 		<ul>
 			<li>Recht auf Auskunft (Art. 15 DSGVO)</li>
 			<li>Recht auf Berichtigung (Art. 16 DSGVO)</li>
 			<li>Recht auf Löschung (Art. 17 DSGVO)</li>
 			<li>Recht auf Einschränkung der Verarbeitung (Art. 18 DSGVO)</li>
 			<li>Recht auf Datenübertragbarkeit (Art. 20 DSGVO)</li>
-			<li>Widerspruchsrecht (Art. 21 DSGVO)</li>
-			<li>Beschwerderecht bei einer Aufsichtsbehörde</li>
+			<li>Widerspruchsrecht gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21 DSGVO)</li>
+			<li>Widerruf erteilter Einwilligungen mit Wirkung für die Zukunft (Art. 7 Abs. 3 DSGVO)</li>
 		</ul>
-
-		<h2>6. Kontakt zum Datenschutz</h2>
 		<p>
-			Fragen zur Verarbeitung deiner Daten richtest du an
-			<a href="mailto:<?php echo esc_attr( $co['email_general'] ); ?>"><?php echo esc_html( $co['email_general'] ); ?></a>.
+			Wenden Sie sich dafür an <a href="mailto:<?php echo esc_attr( $mail_ds ); ?>"><?php echo esc_html( $mail_ds ); ?></a>.
+			Sie haben zudem das Recht auf Beschwerde bei einer Aufsichtsbehörde; zuständig ist das Bayerische
+			Landesamt für Datenschutzaufsicht (BayLDA), Promenade 18, 91522 Ansbach.
 		</p>
 
-		<p class="muted" style="margin-top:32px;font-size:13px;">
-			Hinweis: Dieser Text ist ein Platzhalter und nicht rechtsverbindlich. Die finale Datenschutzerklärung
-			wird noch geprüft und ergänzt.
+		<h2>5. Hosting</h2>
+		<p>
+			Diese Website wird bei One.com (one.com Group / one.com A/S) gehostet; die Server stehen in einem
+			Rechenzentrum in Kopenhagen, Dänemark (EU). One.com verarbeitet die beim Besuch anfallenden Daten in
+			unserem Auftrag (Art. 6 Abs. 1 lit. f DSGVO – sichere, zuverlässige Bereitstellung). Es besteht ein
+			Auftragsverarbeitungsvertrag (Art. 28 DSGVO).
+		</p>
+
+		<h2>6. Server-Logfiles</h2>
+		<p>
+			Beim Aufruf der Website werden automatisch Informationen im Server-Logfile gespeichert: IP-Adresse,
+			Datum/Uhrzeit, aufgerufene Seite, übertragene Datenmenge, Referrer-URL, Browser und Betriebssystem.
+			Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (sicherer Betrieb, Missbrauchsabwehr). Die Speicherung
+			erfolgt für kurze Zeit und wird danach gelöscht bzw. anonymisiert.
+		</p>
+
+		<h2>7. Cookies &amp; Einwilligungsverwaltung</h2>
+		<p>
+			Technisch notwendige Cookies setzen wir auf Grundlage von § 25 Abs. 2 TDDDG bzw. Art. 6 Abs. 1 lit. f
+			DSGVO ein. Für alle nicht notwendigen Dienste (Statistik, Marketing, eingebettete Inhalte) holen wir
+			über unser selbst gehostetes Consent-Tool (Klaro) Ihre Einwilligung ein (§ 25 Abs. 1 TDDDG, Art. 6
+			Abs. 1 lit. a DSGVO). Ihre Auswahl können Sie jederzeit über den Link „Cookie-Einstellungen" im Footer
+			ändern oder widerrufen.
+		</p>
+
+		<h2>8. Kontakt- und Event-Anfragen</h2>
+		<p>
+			Über unsere Formulare (Event-Anfrage, Kontakt) verarbeiten wir die angegebenen Daten – insbesondere
+			Firma, Ansprechpartner, E-Mail, Telefon sowie Angaben zum geplanten Event (z. B. Termin, Gruppengröße,
+			Format, Region, Budget, Wünsche). Diese Daten werden gespeichert und zur Bearbeitung an die zuständigen
+			Stellen übermittelt. Rechtsgrundlage: Durchführung (vor-)vertraglicher Maßnahmen (Art. 6 Abs. 1 lit. b
+			DSGVO) sowie berechtigtes Interesse an der Kommunikation (lit. f). Speicherdauer: nur solange für den
+			Zweck erforderlich; geschäftsrelevante Vorgänge unterliegen den gesetzlichen Aufbewahrungsfristen
+			(i. d. R. 6 Jahre nach § 257 HGB bzw. 10 Jahre nach § 147 AO), danach erfolgt Löschung.
+		</p>
+
+		<h2>9. CRM – HubSpot</h2>
+		<p>
+			Zur Verwaltung von Anfragen und Kundenkontakten nutzen wir das CRM HubSpot (HubSpot, Inc., 2 Canal Park,
+			Cambridge, MA, USA). Dabei werden die o. g. Kontakt- und Anfragedaten an HubSpot übermittelt.
+			Rechtsgrundlage: Art. 6 Abs. 1 lit. b und lit. f DSGVO. Es besteht ein Auftragsverarbeitungsvertrag.
+			Eine Verarbeitung in den USA wird durch das EU-US Data Privacy Framework bzw. Standardvertragsklauseln
+			abgesichert (Art. 44 ff. DSGVO).
+		</p>
+
+		<h2>10. HubSpot-Terminkalender &amp; CTA</h2>
+		<p>
+			Auf einzelnen Seiten binden wir den HubSpot-Terminkalender (Meetings) sowie HubSpot-CTA-/Marketing-Elemente
+			ein. Diese werden erst nach Ihrer Einwilligung geladen (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG).
+			Dabei können Cookies gesetzt und Daten an HubSpot (USA) übertragen werden (Safeguards wie unter Ziffer 9).
+		</p>
+
+		<h2>11. Google Maps</h2>
+		<p>
+			Zur Anzeige von Standorten binden wir Google Maps (Google Ireland Ltd., Dublin, Irland; Google LLC, USA)
+			ein. Die Karten werden erst nach Ihrer Einwilligung geladen; dabei wird u. a. Ihre IP-Adresse an Google
+			übertragen (ggf. in die USA, gestützt auf das EU-US Data Privacy Framework). Rechtsgrundlage: Art. 6
+			Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG.
+		</p>
+
+		<h2>12. Google Analytics</h2>
+		<p>
+			Wir nutzen Google Analytics 4 zur pseudonymen, statistischen Auswertung der Websitenutzung (Google
+			Ireland Ltd. / Google LLC, USA) – ausschließlich nach Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO,
+			§ 25 Abs. 1 TDDDG). Dabei werden Cookies gesetzt und Nutzungsdaten ggf. in die USA übertragen
+			(Safeguards wie oben). Es besteht ein Auftragsverarbeitungsvertrag.
+		</p>
+
+		<h2>13. YouTube</h2>
+		<p>
+			Eingebettete YouTube-Videos (Google Ireland Ltd. / Google LLC, USA) werden erst nach Ihrer Einwilligung
+			geladen; dabei können Daten an Google/YouTube (USA) übertragen werden. Rechtsgrundlage: Art. 6 Abs. 1
+			lit. a DSGVO, § 25 Abs. 1 TDDDG.
+		</p>
+
+		<h2>14. Newsletter (Kit)</h2>
+		<p>
+			Für den Newsletter-Versand nutzen wir den Dienst Kit (ehemals ConvertKit; ConvertKit LLC, USA). Die
+			Anmeldung erfolgt im Double-Opt-in-Verfahren: Erst nach Klick auf den Bestätigungslink in der
+			Bestätigungs-E-Mail werden Sie aufgenommen. An- und Abmeldungen werden protokolliert. Rechtsgrundlage:
+			Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Abmeldung jederzeit über den Link in jeder E-Mail oder
+			per Nachricht an <a href="mailto:<?php echo esc_attr( $mail_ds ); ?>"><?php echo esc_html( $mail_ds ); ?></a>.
+			Die Übermittlung in die USA wird durch EU-US Data Privacy Framework/Standardvertragsklauseln abgesichert;
+			ein Auftragsverarbeitungsvertrag besteht.
+		</p>
+
+		<h2>15. Bewerbungen</h2>
+		<p>
+			Senden Sie uns eine Bewerbung (z. B. an <a href="mailto:<?php echo esc_attr( $mail_jobs ); ?>"><?php echo esc_html( $mail_jobs ); ?></a>),
+			verarbeiten wir Ihre übermittelten Daten ausschließlich zur Durchführung des Bewerbungsverfahrens
+			(§ 26 Abs. 1 BDSG i. V. m. Art. 88 DSGVO bzw. Art. 6 Abs. 1 lit. b DSGVO). Kommt kein
+			Beschäftigungsverhältnis zustande, löschen wir die Bewerberdaten spätestens 6 Monate nach Abschluss des
+			Verfahrens, sofern Sie keiner längeren Speicherung zugestimmt haben.
+		</p>
+
+		<h2>16. Social-Media-Profile</h2>
+		<p>
+			Wir verlinken auf unsere Profile bei Instagram, Facebook und LinkedIn. Es handelt sich um einfache
+			Verlinkungen – beim bloßen Aufruf unserer Seite werden keine Daten an diese Netzwerke übertragen. Erst
+			beim Klick werden Sie zur jeweiligen Plattform weitergeleitet, für deren Datenverarbeitung die Anbieter
+			verantwortlich sind.
+		</p>
+
+		<h2>17. Schriftarten</h2>
+		<p>
+			Schriftarten werden lokal von unserem eigenen Server eingebunden. Eine Verbindung zu Servern Dritter
+			(z. B. Google Fonts) findet nicht statt; es werden keine personenbezogenen Daten an Dritte übertragen.
+		</p>
+
+		<h2>18. Verschlüsselung</h2>
+		<p>
+			Diese Website nutzt aus Sicherheitsgründen eine SSL-/TLS-Verschlüsselung (erkennbar an „https://").
+		</p>
+
+		<h2>19. Aktualität und Änderung</h2>
+		<p>
+			Diese Datenschutzerklärung ist aktuell gültig. Durch die Weiterentwicklung der Website oder geänderte
+			gesetzliche Vorgaben kann eine Anpassung notwendig werden.
 		</p>
 	</div>
 </article>

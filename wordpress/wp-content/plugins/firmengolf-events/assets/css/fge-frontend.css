@@ -2694,11 +2694,13 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 @media (max-width: 720px) {
   /* Mobile-Hero: handytaugliche Höhe statt erzwungener 560px, kompaktere Typo */
   .mk-hero { padding: 0 16px; margin-top: 12px; }
-  .mk-hero-photo { min-height: 0; aspect-ratio: 4/5; }
+  .mk-hero-photo { min-height: 0; aspect-ratio: 4/5; background-image: url('../imagery/hero-korb.jpg') !important; }
   .mk-hero-title { font-size: clamp(32px, 8.5vw, 44px); line-height: 1.04; margin-top: 10px; }
   .mk-hero-sub { font-size: 15px; margin-top: 14px; }
   .mk-hero-ctas { margin-top: 20px; gap: 10px; }
   .mk-hero-trust { margin-top: 18px; font-size: 13px; gap: 10px; }
+  /* Section-Kopf mit Button: auf Mobile stapeln, sonst läuft der Button aus dem Bild */
+  .mk-section-head.between { flex-direction: column; align-items: flex-start; gap: 16px; }
   .mk-h2 { font-size: 32px; }
   .mk-cta-h { font-size: 36px; }
   .home-benefit-h { font-size: 44px; }
@@ -5039,4 +5041,46 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   .ev-allcard-go { font-size: 13px; font-weight: 500; color: var(--fairway-700); display: inline-flex; align-items: center; gap: 6px; }
   /* Gefilterte Treffer: einspaltig gestapelt */
   .ev-grid4 { grid-template-columns: 1fr; }
+}
+
+/* ── Startseite „Kuratierte Formate": Standard-Karten als Wisch-Reihe (nur ≤720px) ── */
+.home-formats-rail { display: none; }
+@media (max-width: 720px) {
+  .home-formats-grid--desk { display: none; }
+  .home-formats-rail {
+    display: flex; flex-wrap: nowrap;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory; scroll-padding-left: 24px;
+    gap: 14px; padding: 4px 24px 8px; margin: 24px -24px 0;
+    scrollbar-width: none;
+  }
+  .home-formats-rail::-webkit-scrollbar { display: none; }
+  .home-formats-rail .ev-card2 { flex: 0 0 80%; scroll-snap-align: start; }
+  .home-formats-rail .ev-card2 .fg-event-photo { aspect-ratio: 16/10; }
+}
+
+/* ── Blog: Autor-Bilder + mobile Kategorie-Wisch-Reihen ── */
+.blog-author { flex-direction: row; align-items: center; gap: 10px; }
+.blog-author-img { width: 36px; height: 36px; border-radius: 999px; flex: none; object-fit: cover; background: var(--paper-200); }
+.blog-author-txt { display: flex; flex-direction: column; gap: 2px; }
+.blog-card-author { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.blog-card-avatar { width: 24px; height: 24px; border-radius: 999px; flex: none; object-fit: cover; background: var(--paper-200); }
+.blog-card-foot { align-items: center; }
+.blog-catbrowse { display: none; }
+
+@media (max-width: 768px) {
+  /* Kompaktere Typo */
+  .page-hero-title.blog-hero { font-size: clamp(28px, 8vw, 38px); max-width: 100%; }
+  .blog-featured { grid-template-columns: 1fr; }
+  .blog-featured-photo { min-height: 0; aspect-ratio: 16/10; }
+  .blog-featured-body { padding: 20px; gap: 10px; }
+  .blog-featured-h { font-size: 22px; line-height: 1.18; }
+  .blog-featured-x { font-size: 14px; line-height: 1.55; }
+  /* Grid + Chips raus → Kategorie-Wisch-Reihen */
+  .blog-cats { display: none; }
+  .blog-grid { display: none; }
+  .blog-catbrowse { display: block; }
+  .blog-catbrowse .ev-catsec-head { padding: 0; }
+  .blog-catrow { margin: 0 -24px; padding: 4px 24px 10px; scroll-padding-left: 24px; }
+  .ev-catrow .blog-card { flex: 0 0 80%; scroll-snap-align: start; }
 }
