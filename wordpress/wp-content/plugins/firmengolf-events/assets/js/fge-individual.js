@@ -31,6 +31,15 @@
 
 	var ARROW = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
 
+	// Distinkte, markennahe Farbpalette — jede gewählte Leistung bekommt nach ihrer
+	// Position in der Typ-Liste eine eigene Farbe (innerhalb eines Events alle verschieden).
+	var SVC_PALETTE = [
+		'#2C5036', '#C9B488', '#C77D4A', '#5E8A65', '#6C736E', '#B45A37',
+		'#D8B26A', '#3D6A47', '#8AA98F', '#9C5A45', '#4A5A8A', '#A8894E',
+		'#6E5AA0', '#B0A48C', '#7A8B6A', '#D2693E'
+	];
+	function svcColor(i) { return SVC_PALETTE[((i % SVC_PALETTE.length) + SVC_PALETTE.length) % SVC_PALETTE.length]; }
+
 	/* =================================================================
 	 * BUDGET CALCULATOR
 	 * ================================================================= */
@@ -43,11 +52,10 @@
 			participants: start.participants || 30,
 			type: start.type || (BC.types[0] && BC.types[0].id),
 			range: start.range || '€€',
-			services: (start.services || []).slice()
+			services: [] // wird je nach Typ von applyType() gesetzt
 		};
 
 		var stepVal   = root.querySelector('#bc-participants');
-		var durVal    = root.querySelector('#bc-duration');
 		var typeSel   = root.querySelector('#bc-type');
 		var breakList = root.querySelector('#bc-break-list');
 		var donut     = root.querySelector('#bc-donut');
@@ -58,22 +66,21 @@
 			var type = find(BC.types, state.type) || BC.types[0];
 			var rng  = find(BC.ranges, state.range);
 			var mult = rng ? rng.mult : 1;
-			var cats = {};
-			function add(cat, amt) { cats[cat] = (cats[cat] || 0) + amt; }
-			add('venue', state.participants * type.pp * (BC.venue_split != null ? BC.venue_split : 0.6));
-			add('programm', state.participants * type.pp * (BC.programm_split != null ? BC.programm_split : 0.4));
-			state.services.forEach(function (sid) {
+			// Ein Posten je gewählter Leistung, eigene Farbe — in Tagesablauf-Reihenfolge des Typs.
+			// Donut UND Aufschlüsselung nutzen dieselben Posten (1:1, gut unterscheidbar).
+			var items = [];
+			var order = (type.services && type.services.length) ? type.services : state.services;
+			order.forEach(function (sid, pos) {
+				if (state.services.indexOf(sid) < 0) return;
 				var s = find(BC.services, sid);
 				if (!s) return;
-				add(s.cat, (s.flat > 0) ? s.flat : state.participants * s.pp);
+				var base = (s.flat > 0) ? s.flat : state.participants * s.pp;
+				var amt = base * mult;
+				if (amt <= 0) return;
+				items.push({ label: s.label, color: svcColor(pos), amount: amt });
 			});
-			var rows = Object.keys(cats).map(function (cat) {
-				var c = (BC.cats && BC.cats[cat]) || {};
-				return { cat: cat, label: c.label || cat, color: c.color || '#6C736E', amount: cats[cat] * mult };
-			}).filter(function (r) { return r.amount > 0; })
-				.sort(function (a, b) { return b.amount - a.amount; });
-			var total = rows.reduce(function (s, r) { return s + r.amount; }, 0);
-			return { rows: rows, total: total, type: type };
+			var total = items.reduce(function (a, r) { return a + r.amount; }, 0);
+			return { rows: items, items: items, total: total, type: type };
 		}
 
 		function renderDonut(rows, total) {
@@ -105,10 +112,9 @@
 		function render() {
 			var res = compute();
 			if (stepVal) stepVal.textContent = state.participants;
-			if (durVal) durVal.textContent = (state.type === 'offsite') ? '2–3 Tage' : (state.type === 'gesundheit') ? '1 Tag' : 'Halbtag+';
-			// breakdown
+			// breakdown — eine Zeile je gewählter Leistung (matcht die Chips)
 			breakList.innerHTML = '';
-			res.rows.forEach(function (row) {
+			res.items.forEach(function (row) {
 				var r = el('div', 'bc-break-row');
 				r.innerHTML = '<span class="bc-break-dot" style="background:' + esc(row.color) + '"></span>'
 					+ '<span class="bc-break-name">' + esc(row.label) + '</span>'
@@ -120,6 +126,21 @@
 			totalMeta.textContent = 'Für ' + state.participants + ' Personen · ' + res.type.label;
 		}
 
+		// Typ wechseln: nur passende Chips zeigen, Vorauswahl/Pflicht setzen, neu rechnen.
+		function applyType() {
+			var t = find(BC.types, state.type) || BC.types[0];
+			var vis = t.services || [], don = t.default_on || [], req = t.required || [];
+			state.services = don.slice();
+			req.forEach(function (id) { if (state.services.indexOf(id) < 0) state.services.push(id); });
+			root.querySelectorAll('.bc-chip').forEach(function (btn) {
+				var id = btn.getAttribute('data-id');
+				btn.style.display = (vis.indexOf(id) >= 0) ? '' : 'none';
+				btn.classList.toggle('is-locked', req.indexOf(id) >= 0);
+				btn.classList.toggle('on', state.services.indexOf(id) >= 0);
+			});
+			render();
+		}
+
 		// steppers
 		root.querySelectorAll('[data-bc-step]').forEach(function (btn) {
 			btn.addEventListener('click', function () {
@@ -129,7 +150,7 @@
 			});
 		});
 		// type select
-		if (typeSel) typeSel.addEventListener('change', function () { state.type = typeSel.value; render(); });
+		if (typeSel) typeSel.addEventListener('change', function () { state.type = typeSel.value; applyType(); });
 		// range segments
 		root.querySelectorAll('.bc-seg-btn').forEach(function (btn) {
 			btn.addEventListener('click', function () {
@@ -141,6 +162,7 @@
 		// service chips
 		root.querySelectorAll('.bc-chip').forEach(function (btn) {
 			btn.addEventListener('click', function () {
+				if (btn.classList.contains('is-locked')) return; // Pflicht-Service, nicht abwählbar
 				var id = btn.getAttribute('data-id');
 				var i = state.services.indexOf(id);
 				if (i >= 0) state.services.splice(i, 1); else state.services.push(id);
@@ -152,7 +174,8 @@
 		var cta = root.querySelector('#bc-request');
 		if (cta) cta.addEventListener('click', function () {
 			var res = compute();
-			var svcWiz = state.services.map(function (id) { var s = find(BC.services, id); return s ? s.wiz : null; }).filter(Boolean);
+			var svcWiz = state.services.map(function (id) { var s = find(BC.services, id); return s ? s.wiz : null; })
+				.filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; });
 			var lo = Math.round(res.total * 0.85 / 1000), hi = Math.round(res.total * 1.15 / 1000);
 			Wizard.open('full', {
 				occasion: res.type.wiz || 'Teamevent',
@@ -164,7 +187,7 @@
 			});
 		});
 
-		render();
+		applyType();
 	}
 
 	/* =================================================================

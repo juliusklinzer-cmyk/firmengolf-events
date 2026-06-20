@@ -763,7 +763,7 @@ get_header();
 				</div>
 				<div class="fg-field">
 					<label class="fg-field-label" for="fg-company">Firma</label>
-					<input class="fg-input" id="fg-company" placeholder="Quartz Labs">
+					<input class="fg-input" id="fg-company" placeholder="Eure Firma GmbH">
 				</div>
 				<div class="fg-field">
 					<label class="fg-field-label" for="fg-phone">Telefon (optional)</label>

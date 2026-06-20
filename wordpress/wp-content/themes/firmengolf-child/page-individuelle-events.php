@@ -33,22 +33,53 @@ $img = static function ( $name ) {
 
 // Inline-SVG-Pfade für die Service-Chip-Icons (entsprechen BcIcon im Design).
 $bc_icon_paths = [
-	'catering' => '<path d="M5 8h12v4a6 6 0 0 1-12 0z"/><path d="M17 9h2a2 2 0 0 1 0 4h-2M5 21h12"/>',
-	'coaching' => '<path d="M5 21V4M5 4l11 2-3 4 3 4-11 2"/>',
-	'bed'      => '<path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="M3 14h18M7 10V7a1 1 0 0 1 1-1h3v4"/>',
-	'bus'      => '<rect x="4" y="4" width="16" height="13" rx="2"/><path d="M4 11h16M8 17v2M16 17v2"/><circle cx="8" cy="14" r="1"/><circle cx="16" cy="14" r="1"/>',
-	'show'     => '<path d="M13 2L4 14h6l-1 8 9-12h-6z"/>',
-	'cam'      => '<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.2"/><path d="M8 7l1.5-3h5L16 7"/>',
+	'catering'  => '<path d="M5 8h12v4a6 6 0 0 1-12 0z"/><path d="M17 9h2a2 2 0 0 1 0 4h-2M5 21h12"/>',
+	'coaching'  => '<path d="M5 21V4M5 4l11 2-3 4 3 4-11 2"/>',
+	'bed'       => '<path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="M3 14h18M7 10V7a1 1 0 0 1 1-1h3v4"/>',
+	'bus'       => '<rect x="4" y="4" width="16" height="13" rx="2"/><path d="M4 11h16M8 17v2M16 17v2"/><circle cx="8" cy="14" r="1"/><circle cx="16" cy="14" r="1"/>',
+	'show'      => '<path d="M13 2L4 14h6l-1 8 9-12h-6z"/>',
+	'cam'       => '<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.2"/><path d="M8 7l1.5-3h5L16 7"/>',
+	'trophy'    => '<path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M5 4H3v2a3 3 0 0 0 3 3M19 4h2v2a3 3 0 0 1-3 3"/>',
+	'target'    => '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+	'flag'      => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
+	'club'      => '<path d="M7 3v11M7 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM7 8l9-4"/>',
+	'clipboard' => '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h4"/>',
+	'star'      => '<path d="M12 3l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8 6.8 19l1-5.8L3.6 9.1l5.8-.8z"/>',
+	'drink'     => '<path d="M5 4h14l-6 8v6M13 18h-2M9 22h6M19 4l-2 4"/>',
+	'music'     => '<circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M9 18V5l12-2v13"/>',
+	'room'      => '<path d="M3 21h18M5 21V6l8-3v18M13 21V9l6 2v10M8 9h1M8 13h1M8 17h1"/>',
+	'gift'      => '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 3 8 4.5 9.5 8 12 8zM12 8s1.5-5 4-3.5S14.5 8 12 8z"/>',
+	'tag'       => '<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+	'calendar'  => '<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
+	'bulb'      => '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+	'ball'      => '<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1"/><circle cx="14" cy="9" r="1"/><circle cx="12" cy="14" r="1"/><circle cx="15" cy="14" r="1"/>',
 ];
 $bc_svg = static function ( $name ) use ( $bc_icon_paths ) {
 	$inner = $bc_icon_paths[ $name ] ?? '';
 	return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $inner . '</svg>';
 };
 
-$start_services = ( $bc && isset( $bc['start']['services'] ) ) ? (array) $bc['start']['services'] : [];
 $start_range    = ( $bc && isset( $bc['start']['range'] ) ) ? $bc['start']['range'] : '€€';
 $start_type     = ( $bc && isset( $bc['start']['type'] ) ) ? $bc['start']['type'] : '';
 $start_parts    = ( $bc && isset( $bc['start']['participants'] ) ) ? (int) $bc['start']['participants'] : 30;
+
+// Start-Typ-Konfig: bestimmt initial sichtbare/vorausgewählte/gesperrte Service-Chips.
+// (JS übernimmt das bei jedem Typ-Wechsel; hier nur zur flackerfreien Erstanzeige.)
+$bc_start_type_cfg = null;
+if ( $bc ) {
+	foreach ( $bc['types'] as $bt ) {
+		if ( $bt['id'] === $start_type ) {
+			$bc_start_type_cfg = $bt;
+			break;
+		}
+	}
+	if ( ! $bc_start_type_cfg && ! empty( $bc['types'] ) ) {
+		$bc_start_type_cfg = $bc['types'][0];
+	}
+}
+$start_vis = $bc_start_type_cfg['services'] ?? [];
+$start_don = $bc_start_type_cfg['default_on'] ?? [];
+$start_req = $bc_start_type_cfg['required'] ?? [];
 
 // Veranstaltungstyp-Kacheln
 $type_tiles = [
@@ -74,7 +105,7 @@ $exp_levels = [
 $faqs = [
 	[ 'q' => 'Wie viel kostet ein individuelles Event?', 'a' => 'Sehr unterschiedlich. Ein abendliches Sommerfest für 80 Personen liegt typischerweise bei €15.000–€25.000, ein zweitägiges Strategie-Offsite für 20 Personen bei €30.000–€50.000. Wir gehen das nach der Anfrage transparent durch und du bekommst ein vollständiges Angebot mit allen Posten.' ],
 	[ 'q' => 'Wie viel Vorlauf brauchen wir?', 'a' => 'Idealerweise 3 Monate für mehrtägige Formate, 6–8 Wochen für eintägige. Kurzfristiger geht oft auch — das hängt vom Datum und der Region ab.' ],
-	[ 'q' => 'Können wir eigene Locations einbringen?', 'a' => 'Ja. Wenn ihr eine Wunsch-Location habt, sprechen wir mit dem Platz und integrieren das ins Konzept. Wir arbeiten mit über 180 Plätzen direkt zusammen — und können neue Partner anfragen.' ],
+	[ 'q' => 'Können wir eigene Locations einbringen?', 'a' => 'Ja. Wenn ihr eine Wunsch-Location habt, sprechen wir mit dem Platz und integrieren das ins Konzept. Wir organisieren Events deutschlandweit — in Deutschland kommen rund 721 Golfplätze als Eventlocation in Frage, passt einer nicht, nehmen wir einfach den nächsten.' ],
 	[ 'q' => 'Was, wenn wir noch keinen festen Plan haben?', 'a' => 'Genau dafür gibt es uns. Sag uns Anlass, ungefähre Gruppe und Region — wir schicken zwei bis drei sehr unterschiedliche Konzept-Vorschläge zurück, aus denen du wählst.' ],
 	[ 'q' => 'Kommt jemand von euch vor Ort?', 'a' => 'Bei Events ab 30 Personen oder mehrtägigen Formaten — ja, immer. Ein Firmengolf-Host ist vor Ort und stimmt sich mit dem Platz ab.' ],
 	[ 'q' => 'Was, wenn wir das Event verschieben müssen?', 'a' => 'Bis 30 Tage vorher kostenlos. Danach gestaffelt — die genauen Konditionen schreiben wir in jedes Angebot rein. Wir sind kulant und finden Lösungen.' ],
@@ -186,9 +217,12 @@ get_header();
 			<div class="bc-services">
 				<span class="bc-services-l">Gewünschte Services</span>
 				<?php foreach ( $bc['services'] as $s ) :
-					$on = in_array( $s['id'], $start_services, true );
+					$show   = in_array( $s['id'], $start_vis, true );
+					$locked = in_array( $s['id'], $start_req, true );
+					$on     = $locked || in_array( $s['id'], $start_don, true );
+					$cls    = 'bc-chip' . ( $on ? ' on' : '' ) . ( $locked ? ' is-locked' : '' );
 				?>
-					<button type="button" class="bc-chip<?php echo $on ? ' on' : ''; ?>" data-id="<?php echo esc_attr( $s['id'] ); ?>">
+					<button type="button" class="<?php echo esc_attr( $cls ); ?>" data-id="<?php echo esc_attr( $s['id'] ); ?>" data-cat="<?php echo esc_attr( $s['cat'] ); ?>"<?php echo $show ? '' : ' style="display:none;"'; ?>>
 						<span class="bc-chip-ic"><?php echo $bc_svg( $s['icon'] ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span><?php echo esc_html( $s['label'] ); ?>
 					</button>
 				<?php endforeach; ?>

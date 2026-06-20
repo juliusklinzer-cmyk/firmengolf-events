@@ -69,7 +69,8 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		<div class="mk-hero-content">
 			<div class="mk-hero-eyebrow">Firmenevents · Golf für Unternehmen</div>
 			<h1 class="mk-hero-title">
-				Bringt euer Team raus aus dem Büro und rein in <span class="rot-wrap"><span class="rot-word mk-italic in" id="fg-rot-word">Bewegung</span><span class="rot-dot">.</span></span>
+				<span class="mk-hero-lead">Bringt euer Team raus aus dem Büro und rein in</span>
+				<span class="rot-wrap"><span class="rot-word mk-italic in" id="fg-rot-word">Bewegung</span><span class="rot-dot">.</span></span>
 			</h1>
 			<p class="mk-hero-sub">
 				Vom Schnupperkurs bis zum Firmenturnier — Golf-Formate auf Partnerplätzen
@@ -179,17 +180,28 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	</form>
 </section>
 
-<?php /* ══════════════════ 2. PARTNERS STRIP ══════════════════ */ ?>
-<div class="mk-partners" aria-label="Unsere Partner">
-	<div class="mk-eyebrow">Schon mit uns draußen gewesen</div>
-	<div class="mk-partners-row">
-		<?php
-		$partners = [ 'Quartz Labs', 'North Studio', 'Hartmann GmbH', 'Steinblick', 'Halde & Co.', 'Werkstatt 4', 'Bauer & Söhne', 'Pixelhof' ];
-		foreach ( $partners as $partner ) :
-		?>
-			<span class="mk-partner-logo"><?php echo esc_html( $partner ); ?></span>
-		<?php endforeach; ?>
-	</div>
+<?php /* ══════════════════ 2. FAKTEN-BOXEN ══════════════════ */ ?>
+<div class="home-facts" aria-label="Firmengolf in Zahlen">
+	<?php
+	$facts = [
+		[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
+		  't' => '721', 'b' => 'Golfplätze in Deutschland' ],
+		[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+		  't' => '1.500', 'b' => 'PGA-Pros deutschlandweit' ],
+		[ 'ic' => '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
+		  't' => 'Aus einer Hand', 'b' => 'Platz, Pro, Catering, Rechnung' ],
+		[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+		  't' => '&lt; 24 h', 'b' => 'Antwort auf jede Anfrage' ],
+	];
+	foreach ( $facts as $f ) : ?>
+		<div class="home-fact">
+			<span class="home-fact-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $f['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
+			<div class="home-fact-txt">
+				<div class="home-fact-t"><?php echo $f['t']; // phpcs:ignore WordPress.Security.EscapeOutput -- nur statische, kontrollierte Strings (inkl. &lt;) ?></div>
+				<div class="home-fact-b"><?php echo esc_html( $f['b'] ); ?></div>
+			</div>
+		</div>
+	<?php endforeach; ?>
 </div>
 
 <?php /* ══════════════════ 2b. EXPERIENCE — Warum Golf ══════════════════ */ ?>
@@ -452,32 +464,30 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	</div>
 </section>
 
-<?php /* ══════════════════ 8. TESTIMONIALS ══════════════════ */ ?>
-<section class="mk-section home-quotes" aria-label="Kundenstimmen">
+<?php /* ══════════════════ 8. WAS EUCH ERWARTET ══════════════════ */ ?>
+<section class="mk-section" aria-label="Was euch erwartet">
 	<div class="mk-section-head">
-		<div class="mk-eyebrow">Was Teams sagen</div>
-		<h2 class="mk-h2">Der beste Beweis ist der Montag danach.</h2>
+		<div class="mk-eyebrow">Was euch erwartet</div>
+		<h2 class="mk-h2">Worauf ihr euch <span class="mk-italic">verlassen</span> könnt.</h2>
 	</div>
-	<div class="home-quotes-grid">
+	<div class="city-reasons">
 		<?php
-		$star = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>';
-		$quotes = [
-			[ 'q' => 'Das Team kam aufgeladen zurück, und drei Leute haben am Sonntag direkt wieder gespielt. Die Latte für nächstes Jahr liegt hoch.', 'name' => 'Lena Hoffmann',  'role' => 'People Lead · Quartz Labs', 'img' => 'golferin-portrait.png' ],
-			[ 'q' => 'Wir hatten eine Sales-Offsite mit 22 Leuten gebucht. Ein Ansprechpartner, eine Rechnung — danach war ich überzeugt.',            'name' => 'Matthias Reuter', 'role' => 'VP Sales · Hartmann GmbH',  'img' => 'golfer-mann-lachend.png' ],
-			[ 'q' => 'Unser Gesundheitstag war zum dritten Mal in Folge mit Firmengolf. Buchung im Self-Service, BGM-konform, fertig.',              'name' => 'Sandra Klein',    'role' => 'HR-Direktorin · Werkstatt 4', 'img' => 'firmengolf-portrait.jpg' ],
+		$promises = [
+			[ 'ic' => '<path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+			  't' => 'Ein echter Mensch am Telefon', 'b' => 'Kein Ticketsystem. Du sprichst direkt mit dem, der dein Event plant.' ],
+			[ 'ic' => '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+			  't' => 'Eine Anfrage, eine Rechnung', 'b' => 'Platz, Pro, Catering, Shuttle – alles über einen Ansprechpartner, sauber für HR und Buchhaltung.' ],
+			[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+			  't' => 'Auch ohne Golferfahrung', 'b' => 'PGA-Pros führen Einsteiger an, Schläger werden gestellt. Niemand muss spielen können.' ],
+			[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
+			  't' => 'Deutschlandweit organisierbar', 'b' => 'Rund 721 Golfplätze in Deutschland kommen als Eventlocation in Frage – passt einer nicht, nehmen wir den nächsten.' ],
 		];
-		foreach ( $quotes as $i => $q ) : ?>
-			<figure class="home-quote<?php echo $i === 0 ? ' is-lead' : ''; ?>">
-				<div class="home-quote-stars" aria-label="5 von 5"><?php echo str_repeat( $star, 5 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
-				<blockquote><?php echo esc_html( $q['q'] ); ?></blockquote>
-				<figcaption>
-					<img src="<?php echo esc_url( $img( $q['img'] ) ); ?>" alt="" width="44" height="44">
-					<div>
-						<div class="home-quote-name"><?php echo esc_html( $q['name'] ); ?></div>
-						<div class="home-quote-role"><?php echo esc_html( $q['role'] ); ?></div>
-					</div>
-				</figcaption>
-			</figure>
+		foreach ( $promises as $p ) : ?>
+			<div class="city-reason">
+				<span class="city-reason-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $p['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
+				<h3 class="city-reason-t"><?php echo esc_html( $p['t'] ); ?></h3>
+				<p class="city-reason-b"><?php echo esc_html( $p['b'] ); ?></p>
+			</div>
 		<?php endforeach; ?>
 	</div>
 </section>
@@ -526,9 +536,9 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		<?php else : ?>
 			<?php
 			$static_posts = [
-				[ 'Benefits', 'Warum Golf zum Corporate Benefit passt', 'golf-coaching-gruppe.jpg', '6 Min.', 'Lena Hoffmann', '14. Mai 2026', '50 € steuerfreier Sachbezug, fittere Mitarbeitende — wir erklären die wichtigsten Punkte.' ],
-				[ 'Praxis', 'Die 12-Punkte-Checkliste für dein erstes Firmen-Golfevent', 'firmenevent-afterwork-golf.jpg', '4 Min.', 'Jonas Bredow', '2. Mai 2026', 'Vom richtigen Zeitfenster bis zum Wetter-Backup — was du im Blick haben solltest.' ],
-				[ 'Einsteiger', '"Aber wir können doch alle nicht Golf spielen"', 'golfplatz-rasen-qualitaet.jpg', '5 Min.', 'Petra Sailer', '18. April 2026', 'Genau das ist der Punkt. Wie ein Schnupperkurs für absolute Einsteigende funktioniert.' ],
+				[ 'Benefits', 'Warum Golf zum Corporate Benefit passt', 'golf-coaching-gruppe.jpg', '6 Min.', 'Julius Klinzer', '14. Mai 2026', '50 € steuerfreier Sachbezug, fittere Mitarbeitende — wir erklären die wichtigsten Punkte.' ],
+				[ 'Praxis', 'Die 12-Punkte-Checkliste für dein erstes Firmen-Golfevent', 'firmenevent-afterwork-golf.jpg', '4 Min.', 'Julius Klinzer', '2. Mai 2026', 'Vom richtigen Zeitfenster bis zum Wetter-Backup — was du im Blick haben solltest.' ],
+				[ 'Einsteiger', '"Aber wir können doch alle nicht Golf spielen"', 'golfplatz-rasen-qualitaet.jpg', '5 Min.', 'Julius Klinzer', '18. April 2026', 'Genau das ist der Punkt. Wie ein Schnupperkurs für absolute Einsteigende funktioniert.' ],
 			];
 			foreach ( $static_posts as $p ) : ?>
 				<article class="home-blog-card">

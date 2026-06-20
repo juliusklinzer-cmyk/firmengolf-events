@@ -27,10 +27,10 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 		<div class="trust-inner">
 			<?php
 			$facts = [
-				[ '180+',   'Partnerplätze in Deutschland' ],
-				[ '2.400',  'Mitarbeitende im Benefit-Programm' ],
+				[ '721',    'Golfplätze in Deutschland als Eventlocation' ],
+				[ '1.500',  'PGA-Pros führen euer Event an' ],
 				[ '2024',   'gegründet in München' ],
-				[ '4,9 ★',  'Ø Bewertung über alle Events' ],
+				[ '< 24 h', 'Antwort auf jede Anfrage' ],
 			];
 			foreach ( $facts as $f ) : ?>
 				<div class="trust-cell"><div class="trust-t"><?php echo esc_html( $f[0] ); ?></div><div class="trust-b"><?php echo esc_html( $f[1] ); ?></div></div>
@@ -48,8 +48,8 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 	<p class="mk-sub" style="max-width:var(--width-prose);">
 		Firmengolf macht Golf für Unternehmen zugänglich — als Firmenevent, als Offsite-Location und als
 		wiederkehrenden Mitarbeiter-Benefit. Über eine kuratierte Plattform buchen Firmen Teamevents, Turniere,
-		Schnupperkurse und individuelle Veranstaltungen auf über 180 Partnerplätzen in ganz Deutschland: eine
-		Anfrage, ein Ansprechpartner, eine Rechnung. Gegründet 2024 in München, verfolgt Firmengolf ein klares
+		Schnupperkurse und individuelle Veranstaltungen deutschlandweit auf Golfplätzen in ganz Deutschland:
+		eine Anfrage, ein Ansprechpartner, eine Rechnung. Gegründet 2024 in München, verfolgt Firmengolf ein klares
 		Ziel — Golf nicht als exklusives Statussymbol, sondern als offenen, gesunden Ausgleich, der Teams aus dem
 		Büro und in Bewegung bringt.
 	</p>
@@ -60,20 +60,17 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 	<div class="mk-section-head"><div class="mk-eyebrow">Pressemitteilungen</div><h2 class="mk-h2">Aktuelles</h2></div>
 	<ul class="faq-list">
 		<?php
-		$releases = [
-			[ '22. Mai 2026',     'Wachstum', 'Firmengolf überschreitet 180 Partnerplätze in Deutschland', 'Mit 24 neuen Clubs allein in diesem Frühjahr wächst das Netz buchbarer Golfplätze weiter.' ],
-			[ '8. April 2026',    'Benefit',  '2.400 Mitarbeitende nutzen Golf inzwischen als Corporate Benefit', 'Jahresbilanz: Immer mehr Unternehmen integrieren den steuerfreien Sachbezug.' ],
-			[ '3. März 2026',     'Studie',   'Neue Auswertung: Wie ein Tag im Grünen Teams nachhaltig verbindet', 'Gemeinsam mit einer Sporthochschule hat Firmengolf untersucht, was bleibt.' ],
-			[ '14. Januar 2026',  'Produkt',  'Neuer Budget-Rechner macht Eventplanung in Minuten transparent', 'Unternehmen sehen ab sofort in Echtzeit einen realistischen Richtwert.' ],
-		];
-		foreach ( $releases as $r ) : ?>
+		$releases = [];
+		if ( empty( $releases ) ) : ?>
+			<li class="faq-item"><div class="faq-q" style="cursor:default;"><span>Aktuell sind keine Pressemitteilungen veröffentlicht. Für Presseanfragen, O-Töne und Bildmaterial meldet euch jederzeit über den Pressekontakt — wir antworten kurzfristig.</span></div></li>
+		<?php else : foreach ( $releases as $r ) : ?>
 			<li class="faq-item">
 				<div class="faq-q" style="cursor:default;">
 					<span><span class="mk-eyebrow" style="color:var(--fairway-700)"><?php echo esc_html( $r[0] . ' · ' . $r[1] ); ?></span><br><?php echo esc_html( $r[2] ); ?></span>
 				</div>
 				<div class="faq-a" style="max-height:none;padding:0 0 18px;"><?php echo esc_html( $r[3] ); ?></div>
 			</li>
-		<?php endforeach; ?>
+		<?php endforeach; endif; ?>
 	</ul>
 </section>
 

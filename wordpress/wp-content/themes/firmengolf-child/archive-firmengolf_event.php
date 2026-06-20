@@ -605,7 +605,7 @@ if ( ! $has_filters ) :
 	<div class="trust-inner">
 		<?php
 		$trust = [
-			[ '180+ Partnerplätze',  'Vom Stadtkurs bis zur Berg-Anlage.' ],
+			[ '721 Golfplätze deutschlandweit', 'Events auf Golfplätzen in ganz Deutschland – passt einer nicht, nehmen wir den nächsten.' ],
 			[ 'Ein Ansprechpartner', 'Vom Erstkontakt bis nach dem Event.' ],
 			[ 'Eine Rechnung',       'Sauber abgerechnet, BGM-konform wenn nötig.' ],
 			[ 'Antwort < 24 h',      'Werktags innerhalb eines Arbeitstags.' ],

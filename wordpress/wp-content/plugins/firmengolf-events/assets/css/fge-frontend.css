@@ -269,7 +269,7 @@ a.fg-nav-cta {
 .fg-btn-cta:active, .fg-btn-brand:active { transform: translateY(1px); }
 /* CTA button fix — overrides .fge-page button reset (line 157) so a real <button> keeps its background */
 button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper-100); }
-.fg-btn-ink, a.fg-btn-ink {
+.fg-btn-ink, a.fg-btn-ink, button.fg-btn-ink {
   background: var(--ink-900); color: var(--paper-100);
   border-radius: var(--radius-pill);
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -278,7 +278,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   cursor: pointer; border: 0; text-decoration: none; white-space: nowrap;
   transition: background var(--dur-fast) var(--ease-out), transform 80ms var(--ease-out);
 }
-.fg-btn-ink:hover, a.fg-btn-ink:hover { background: #000; color: var(--paper-100); transform: translateY(-1px); }
+.fg-btn-ink:hover, a.fg-btn-ink:hover, button.fg-btn-ink:hover { background: #000; color: var(--paper-100); transform: translateY(-1px); }
 /* Self-contained so they look like proper buttons even without the .fg-btn base class. */
 .fg-btn-ghost, a.fg-btn-ghost {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -2510,11 +2510,13 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 .mk-hero-trust-dot { width: 4px; height: 4px; border-radius: 999px; background: var(--fairway-300); flex: none; }
 
 /* Hero rotating word (ported 1:1 from design site.css) */
-.rot-wrap { display: inline; white-space: normal; }
-.rot-word { display: inline-block; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); will-change: opacity, transform; }
+/* Standardtext eigene Zeile (fix), variables Wort eigene Zeile ohne Umbruch → kein Springen. */
+.mk-hero-lead { display: block; text-wrap: balance; }
+.rot-wrap { display: block; white-space: nowrap; min-height: 1em; margin-top: 2px; }
+.rot-word { display: inline-block; color: #E7C987; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); will-change: opacity, transform; }
 .rot-word.in  { opacity: 1; transform: translateY(0); }
 .rot-word.out { opacity: 0; transform: translateY(-0.32em); }
-.rot-dot { display: inline-block; }
+.rot-dot { display: inline-block; color: #E7C987; }
 
 /* Experience section ("Warum Golf" — ported 1:1 from design site.css) */
 .home-exp { background: var(--paper-100); color: var(--ink-900); padding: 104px 24px; }
@@ -2879,6 +2881,27 @@ button.fg-search-btn { background: var(--fairway-700); color: var(--paper-100); 
 .trust-cell { padding-left: 16px; border-left: 2px solid var(--fairway-300); }
 .trust-t { font-family: var(--font-display); font-size: 22px; font-weight: 500; letter-spacing: -.015em; line-height: 1.2; color: var(--fairway-900); }
 .trust-b { margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--ink-700); }
+
+/* Fakten-Boxen (Startseite) — luftig, modern, ohne harten Rahmen */
+.home-facts { max-width: 1120px; margin: 44px auto 0; padding: 0 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.home-fact {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--paper-50); border-radius: 18px; padding: 20px 22px;
+  box-shadow: 0 1px 2px rgba(14,19,16,.04), 0 10px 28px rgba(14,19,16,.05);
+  transition: transform .22s var(--ease-out), box-shadow .22s var(--ease-out);
+}
+.home-fact:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(14,19,16,.05), 0 18px 40px rgba(14,19,16,.10); }
+.home-fact-ic { flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--fairway-100); color: var(--fairway-700); display: grid; place-items: center; }
+.home-fact-ic svg { width: 20px; height: 20px; }
+.home-fact-txt { min-width: 0; }
+.home-fact-t { font-family: var(--font-display); font-size: 26px; font-weight: 600; line-height: 1.04; color: var(--fairway-900); letter-spacing: -.02em; }
+.home-fact-b { font-size: 12.5px; line-height: 1.35; color: var(--ink-500); margin-top: 4px; }
+@media (max-width: 900px) { .home-facts { grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 32px; } }
+@media (max-width: 560px) {
+  .home-facts { gap: 10px; padding: 0 16px; }
+  .home-fact { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px; }
+  .home-fact-t { font-size: 22px; }
+}
 
 /* ── FAQ ── */
 .faq-section { padding-top: 80px; padding-bottom: 80px; }
@@ -3665,9 +3688,10 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 
 /* stepper */
 .bc-stepper { display: flex; align-items: center; gap: 6px; }
-.bc-step-btn {
+/* button.-Präfix gegen den .fge-page button-Reset; gleicher Ton wie die nicht ausgewählten Buttons. */
+button.bc-step-btn {
   width: 34px; height: 34px; border-radius: 999px;
-  border: 1px solid var(--ink-200); background: var(--paper-50);
+  border: 1px solid var(--paper-300); background: var(--paper-200);
   color: var(--ink-700);
   display: grid; place-items: center;
   transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
@@ -3718,15 +3742,18 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
   font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
   text-transform: uppercase; color: var(--ink-500); margin-right: 4px;
 }
-.bc-chip {
+/* button.-Präfix hebt die Spezifität über den .fge-page button-Reset (Zeile 157).
+   Nicht ausgewählt = gleicher Ton wie die nicht ausgewählten Preisniveau-Buttons (--paper-200). */
+button.bc-chip {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 14px; font-weight: 500; color: var(--ink-700);
   padding: 9px 15px 9px 12px; border-radius: 999px;
-  border: 1px solid var(--ink-200); background: var(--paper-50);
+  border: 1px solid var(--paper-300); background: var(--paper-200);
   transition: all var(--dur-fast) var(--ease-out);
 }
 .bc-chip:hover { border-color: var(--ink-300); }
-.bc-chip.on { background: #C9B488; color: var(--paper-100); border-color: #C9B488; }
+.bc-chip.on { background: var(--sand-500); color: var(--paper-100); border-color: var(--sand-500); }
+.bc-chip.is-locked { cursor: default; }
 .bc-chip-ic { width: 18px; height: 18px; display: grid; place-items: center; opacity: 0.9; }
 
 /* result card */
@@ -3781,9 +3808,33 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
   .bcalc-wrap { padding: 60px 18px; }
   .iv-head .mk-h2 { font-size: 32px; }
   .bcalc-head .mk-h2 { font-size: 32px; }
-  .bc-controls { grid-template-columns: 1fr; }
-  .bc-field { border-left: 0 !important; border-right: 0 !important; }
-  .bc-field + .bc-field { border-top: 1px solid var(--ink-200); }
+
+  /* Controls: Reihe 1 = Teilnehmende | Preisniveau (50/50), Reihe 2 = Veranstaltungstyp (voll) */
+  .bc-controls { grid-template-columns: 1fr 1fr; gap: 0; }
+  .bc-field { padding: 13px 16px; }
+  .bc-field:nth-child(1) { grid-column: 1; grid-row: 1; border: 0; border-right: 1px solid var(--ink-200); }
+  .bc-field:nth-child(2) { grid-column: 1 / -1; grid-row: 2; border: 0; border-top: 1px solid var(--ink-200); }
+  .bc-field:nth-child(3) { grid-column: 2; grid-row: 1; border: 0; }
+  .bc-stepper { justify-content: space-between; }
+  .bc-seg { display: flex; width: 100%; }
+  .bc-seg-btn { flex: 1; text-align: center; padding: 8px 6px; }
+
+  /* Gewünschte Services kompakter */
+  .bc-services { padding: 14px; gap: 8px; }
+  .bc-services-l { flex-basis: 100%; margin: 0 0 2px; }
+  button.bc-chip { font-size: 13px; padding: 7px 11px 7px 9px; gap: 6px; }
+  .bc-chip-ic { width: 15px; height: 15px; }
+
+  /* Golf-Erfahrung: horizontal wischbare Karten */
+  .iv-exp-grid {
+    display: flex; grid-template-columns: none;
+    gap: 14px; overflow-x: auto;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+    margin: 0 -20px; padding: 2px 20px 10px; scrollbar-width: none;
+  }
+  .iv-exp-grid::-webkit-scrollbar { display: none; }
+  .iv-exp { flex: 0 0 80%; scroll-snap-align: start; }
+
   .bc-result { padding: 26px 22px; }
   .bc-total-num { font-size: 44px; }
 }
