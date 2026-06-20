@@ -638,7 +638,7 @@ if ( ! $has_filters ) :
 			$faqs = [
 				[
 					'q' => 'Müssen meine Mitarbeitenden Golf spielen können?',
-					'a' => 'Nein. Unsere Schnupperkurse und Team-Building-Formate sind komplett für Einsteigende konzipiert. Es gibt einen PGA-Coach vor Ort, alle Schläger werden gestellt und niemand wird mit einem 18-Loch-Turnier konfrontiert, wenn er noch nie einen Schläger gehalten hat.',
+					'a' => 'Nein. Unsere Schnupperkurse und Team-Building-Formate sind komplett für Einsteigende konzipiert. Es gibt einen Golflehrer vor Ort, alle Schläger werden gestellt und niemand wird mit einem 18-Loch-Turnier konfrontiert, wenn er noch nie einen Schläger gehalten hat.',
 				],
 				[
 					'q' => 'Wie kurzfristig können wir buchen?',

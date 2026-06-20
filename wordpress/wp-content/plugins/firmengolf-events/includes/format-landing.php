@@ -19,9 +19,9 @@ function fge_get_event_format_pages(): array {
 	$reason = static function ( $ic, $t, $b ) { return [ 'ic' => $ic, 't' => $t, 'b' => $b ]; };
 	$faq    = static function ( $q, $a ) { return [ 'q' => $q, 'a' => $a ]; };
 
-	$r_team = $reason( 'users', 'Für jedes Level', 'Von kompletten Einsteigenden bis zu Stammspielern. Schläger werden gestellt, ein PGA-Pro führt an.' );
+	$r_team = $reason( 'users', 'Für jedes Level', 'Von kompletten Einsteigenden bis zu Stammspielern. Schläger werden gestellt, ein Golflehrer führt an.' );
 	$r_one  = $reason( 'flag', 'Eine Anfrage, ein Kontakt', 'Platzwahl, Format, Catering und Abrechnung über einen einzigen Ansprechpartner.' );
-	$f_anf  = $faq( 'Müssen unsere Mitarbeitenden Golf spielen können?', 'Nein. Das Format ist auch für Teams ohne Vorerfahrung geeignet. Schläger werden gestellt, ein PGA-Pro führt euch an, der gemeinsame Tag steht im Vordergrund.' );
+	$f_anf  = $faq( 'Müssen unsere Mitarbeitenden Golf spielen können?', 'Nein. Das Format ist auch für Teams ohne Vorerfahrung geeignet. Schläger werden gestellt, ein Golflehrer führt euch an, der gemeinsame Tag steht im Vordergrund.' );
 	$f_fast = $faq( 'Wie schnell bekomme ich eine Rückmeldung?', 'Nach eurer Anfrage meldet sich innerhalb eines Werktags ein persönlicher Ansprechpartner mit konkreten Vorschlägen für Platz, Format und Termin.' );
 	$f_bill = $faq( 'Wie wird abgerechnet?', 'Ihr bekommt eine Sammelrechnung von Firmengolf mit allen Posten, einfach für HR und Buchhaltung.' );
 
@@ -31,7 +31,7 @@ function fge_get_event_format_pages(): array {
 			'eyebrow' => 'Format · Teamevent',
 			'h1'      => 'Golf-Teamevents für Firmen',
 			'lead'    => 'Ein gemeinsamer Tag auf dem Platz, der euer Team wirklich zusammenbringt — auch ohne Golferfahrung.',
-			'intro'   => 'Ein Golf-Teamevent holt euer Team raus aus dem Büro und rein ins Grüne. Anders als beim klassischen Teambuilding entsteht hier ganz nebenbei Nähe: gemeinsam üben, lachen, anfeuern. Ein PGA-Pro führt auch komplette Einsteigende sicher an, Schläger und Material werden gestellt. Wir stellen Platz, Ablauf und Verpflegung passend zu eurer Gruppe zusammen — deutschlandweit.',
+			'intro'   => 'Ein Golf-Teamevent holt euer Team raus aus dem Büro und rein ins Grüne. Anders als beim klassischen Teambuilding entsteht hier ganz nebenbei Nähe: gemeinsam üben, lachen, anfeuern. Ein Golflehrer führt auch komplette Einsteigende sicher an, Schläger und Material werden gestellt. Wir stellen Platz, Ablauf und Verpflegung passend zu eurer Gruppe zusammen — deutschlandweit.',
 			'reasons' => [ $r_team, $reason( 'leaf', 'Wirkt nach', 'Bewegung, frische Luft und gemeinsame Erlebnisse statt Stuhlkreis — bleibt länger in Erinnerung als das nächste Meeting.' ), $reason( 'clock', 'Halber oder ganzer Tag', 'Vom kompakten Nachmittag bis zum vollen Eventtag, passend zu Kalender und Budget.' ), $r_one ],
 			'faqs'    => [ $f_anf, $faq( 'Wie groß darf das Team sein?', 'Von der kleinen Abteilung bis zu rund 80 Teilnehmenden ist alles möglich. Sag uns eure Gruppengröße, dann wählen wir Platz und Format passend aus.' ), $f_fast, $f_bill ],
 			'types'   => [ 'teamevent', 'team-building', 'team_challenge', 'azubi_event' ],
@@ -51,9 +51,9 @@ function fge_get_event_format_pages(): array {
 			'eyebrow' => 'Format · Einsteiger',
 			'h1'      => 'Golf-Schnupperkurs für Teams',
 			'lead'    => 'Der einfachste Einstieg: in wenigen Stunden vom ersten Schwung zum gemeinsamen Erfolgserlebnis.',
-			'intro'   => 'Der Golf-Schnupperkurs ist ideal, wenn euer Team Golf noch nie ausprobiert hat. Ein PGA-Pro erklärt die Grundlagen, vom Putten bis zum ersten vollen Schwung — locker, mit viel Humor und ohne Leistungsdruck. Alles Material wird gestellt. Am Ende steht ein gemeinsames Erfolgserlebnis, das verbindet. Perfekt als Teamtag, Azubi-Event oder lockerer Einstieg vor einem größeren Format.',
-			'reasons' => [ $reason( 'users', 'Null Vorkenntnisse nötig', 'Genau für Teams ohne Golferfahrung gemacht. PGA-Pro vor Ort, Schläger und Bälle inklusive.' ), $reason( 'clock', 'In ein paar Stunden', 'Kompaktes Format für den Nachmittag, leicht in den Arbeitstag integrierbar.' ), $reason( 'leaf', 'Spaß vor Leistung', 'Lockerer Rahmen, gemeinsames Lachen, kein Handicap-Druck.' ), $r_one ],
-			'faqs'    => [ $f_anf, $faq( 'Was ist im Schnupperkurs enthalten?', 'PGA-Coaching, Leihschläger, Bälle und die Platz-/Range-Nutzung. Auf Wunsch ergänzen wir Verpflegung und einen kleinen Abschluss-Wettbewerb.' ), $f_fast, $f_bill ],
+			'intro'   => 'Der Golf-Schnupperkurs ist ideal, wenn euer Team Golf noch nie ausprobiert hat. Ein Golflehrer erklärt die Grundlagen, vom Putten bis zum ersten vollen Schwung — locker, mit viel Humor und ohne Leistungsdruck. Alles Material wird gestellt. Am Ende steht ein gemeinsames Erfolgserlebnis, das verbindet. Perfekt als Teamtag, Azubi-Event oder lockerer Einstieg vor einem größeren Format.',
+			'reasons' => [ $reason( 'users', 'Null Vorkenntnisse nötig', 'Genau für Teams ohne Golferfahrung gemacht. Golflehrer vor Ort, Schläger und Bälle inklusive.' ), $reason( 'clock', 'In ein paar Stunden', 'Kompaktes Format für den Nachmittag, leicht in den Arbeitstag integrierbar.' ), $reason( 'leaf', 'Spaß vor Leistung', 'Lockerer Rahmen, gemeinsames Lachen, kein Handicap-Druck.' ), $r_one ],
+			'faqs'    => [ $f_anf, $faq( 'Was ist im Schnupperkurs enthalten?', 'Golftraining, Leihschläger, Bälle und die Platz-/Range-Nutzung. Auf Wunsch ergänzen wir Verpflegung und einen kleinen Abschluss-Wettbewerb.' ), $f_fast, $f_bill ],
 			'types'   => [ 'schnupperkurs', 'schnuppergolf', 'range_training' ],
 		],
 		'kundenevent' => [

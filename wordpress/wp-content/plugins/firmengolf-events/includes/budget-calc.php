@@ -31,8 +31,8 @@ function fge_bc_defaults(): array {
 		[ 'id' => 'shuttle',       'label' => 'Shuttle-Service',                        'cat' => 'transport','icon' => 'bus',  'pp' => 38,  'flat' => 0,    'wiz' => 'Shuttle / Transport' ],
 		[ 'id' => 'vip_shuttle',   'label' => 'VIP-Shuttle',                            'cat' => 'transport','icon' => 'star', 'pp' => 0,   'flat' => 1200, 'wiz' => 'Shuttle / Transport' ],
 		// Golf-Leistung (Platznutzung/Greenfee inkludiert).
-		[ 'id' => 'schnupperkurs', 'label' => 'Schnupperkurs (inkl. Platz, PGA-Pro & Leihschläger)', 'cat' => 'programm', 'icon' => 'coaching', 'pp' => 99, 'flat' => 0, 'wiz' => 'Schnupperkurs' ],
-		[ 'id' => 'coaching',      'label' => 'Trainerstunde / PGA-Coaching',           'cat' => 'programm', 'icon' => 'club', 'pp' => 48,  'flat' => 0,    'wiz' => 'Golflehrer / Coaching' ],
+		[ 'id' => 'schnupperkurs', 'label' => 'Schnupperkurs (inkl. Platz, Golflehrer & Leihschläger)', 'cat' => 'programm', 'icon' => 'coaching', 'pp' => 99, 'flat' => 0, 'wiz' => 'Schnupperkurs' ],
+		[ 'id' => 'coaching',      'label' => 'Trainerstunde / Golftraining',           'cat' => 'programm', 'icon' => 'club', 'pp' => 48,  'flat' => 0,    'wiz' => 'Golflehrer / Coaching' ],
 		[ 'id' => 'turnier',       'label' => 'Firmenturnier (9 oder 18 Loch, inkl. Greenfee & Scoring)', 'cat' => 'venue', 'icon' => 'trophy', 'pp' => 145, 'flat' => 0, 'wiz' => 'Firmenturnier' ],
 		[ 'id' => 'putting',       'label' => 'Putting-Turnier',                        'cat' => 'programm', 'icon' => 'target','pp' => 0,   'flat' => 600,  'wiz' => 'Putting-Challenge' ],
 		[ 'id' => 'nachtrunde',    'label' => 'Nacht-Runde (Kurzplatz / Range)',        'cat' => 'venue',    'icon' => 'flag', 'pp' => 75,  'flat' => 0,    'wiz' => 'Firmenturnier' ],

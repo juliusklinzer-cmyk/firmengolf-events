@@ -187,7 +187,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
 		  't' => '721', 'b' => 'Golfplätze in Deutschland' ],
 		[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
-		  't' => '1.500', 'b' => 'PGA-Pros deutschlandweit' ],
+		  't' => '1.500', 'b' => 'Golflehrer deutschlandweit' ],
 		[ 'ic' => '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
 		  't' => 'Aus einer Hand', 'b' => 'Platz, Pro, Catering, Rechnung' ],
 		[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -311,7 +311,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			<?php
 			// Fallback: static cards when no published events yet
 			$static_formats = [
-				[ 'label' => 'Schnupperkurs',  'title' => 'Schnupperkurs an einem Nachmittag',    'desc' => 'Einsteigerfreundlich. PGA-Coach, Schläger gestellt, Range-Bälle inklusive.',           'price' => 'ab €89 p.P.',       'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
+				[ 'label' => 'Schnupperkurs',  'title' => 'Schnupperkurs an einem Nachmittag',    'desc' => 'Einsteigerfreundlich. Golflehrer, Schläger gestellt, Range-Bälle inklusive.',           'price' => 'ab €89 p.P.',       'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
 				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',               'desc' => 'Shotgun-Start, Fotograf, Siegerehrung — wir kümmern uns um alles.',                   'price' => 'ab €320 p.P.',      'img' => 'firmenevent-afterwork-golf.jpg',  'dark' => true  ],
 				[ 'label' => 'Offsite',        'title' => 'Strategie-Offsite Schloss Lüdersburg',  'desc' => 'Workshops im Schloss, nachmittags 9 Loch. Übernachtung inklusive.',                   'price' => 'ab €540 p.P.',      'img' => 'clubhaus-aussenansicht.jpg',      'dark' => false ],
 				[ 'label' => 'Incentive',      'title' => 'Incentive-Reise Südtirol',              'desc' => 'Drei Tage Dolomiten — Bergblick, private Dinings, Wellness.',                         'price' => 'ab €1.480 p.P.',    'img' => 'golfplatz-meerblick.jpg',         'dark' => true  ],
@@ -478,7 +478,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			[ 'ic' => '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
 			  't' => 'Eine Anfrage, eine Rechnung', 'b' => 'Platz, Pro, Catering, Shuttle – alles über einen Ansprechpartner, sauber für HR und Buchhaltung.' ],
 			[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
-			  't' => 'Auch ohne Golferfahrung', 'b' => 'PGA-Pros führen Einsteiger an, Schläger werden gestellt. Niemand muss spielen können.' ],
+			  't' => 'Auch ohne Golferfahrung', 'b' => 'Golflehrer führen Einsteiger an, Schläger werden gestellt. Niemand muss spielen können.' ],
 			[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
 			  't' => 'Deutschlandweit organisierbar', 'b' => 'Rund 721 Golfplätze in Deutschland kommen als Eventlocation in Frage – passt einer nicht, nehmen wir den nächsten.' ],
 		];

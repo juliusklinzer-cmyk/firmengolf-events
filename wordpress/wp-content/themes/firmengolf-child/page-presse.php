@@ -28,7 +28,7 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 			<?php
 			$facts = [
 				[ '721',    'Golfplätze in Deutschland als Eventlocation' ],
-				[ '1.500',  'PGA-Pros führen euer Event an' ],
+				[ '1.500',  'Golflehrer führen euer Event an' ],
 				[ '2024',   'gegründet in München' ],
 				[ '< 24 h', 'Antwort auf jede Anfrage' ],
 			];

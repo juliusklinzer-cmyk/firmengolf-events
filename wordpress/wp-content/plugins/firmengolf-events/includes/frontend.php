@@ -245,7 +245,7 @@ function fge_infra_to_service_map(): array {
 			'platzreife'      => 'Platzreifekurs',
 			'company-course'  => 'Firmenkurs',
 			'advanced-course' => 'Fortgeschrittenenkurs',
-			'coach'           => 'PGA-Coaching',
+			'coach'           => 'Golftraining',
 			'driving-range'   => 'Range-Nutzung inkl. Bälle',
 			'trackman'        => 'TrackMan-Session',
 			'toptracer'       => 'Toptracer-Session',

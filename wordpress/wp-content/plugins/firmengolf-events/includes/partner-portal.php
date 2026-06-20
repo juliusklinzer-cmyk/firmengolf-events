@@ -2689,7 +2689,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 								'platzreife'      => 'Platzreifekurs',
 								'company-course'  => 'Firmenkurs',
 								'advanced-course' => 'Fortgeschrittenenkurs',
-								'coach'           => 'PGA-Coaching',
+								'coach'           => 'Golftraining',
 								'driving-range'   => 'Range-Nutzung inkl. Bälle',
 								'trackman'        => 'TrackMan-Session',
 								'toptracer'       => 'Toptracer-Session',
@@ -2792,7 +2792,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 
 						<div class="fg-form-row" style="margin-top:24px;">
 							<label class="fg-form-label" for="fge_event_dayflow">So läuft der Tag ab</label>
-							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="9" placeholder="Wir holen euch um 9:00 Uhr direkt in eurer Firma ab.&#10;&#10;Treffpunkt ist der Pro-Shop. Dort begrüßen wir euch und stellen euch Platz und Anlage kurz vor.&#10;&#10;9:30 Uhr: Erster Teil des Schnupperkurses auf der Range (ca. 1 Stunde) mit unseren PGA-Pros.&#10;&#10;Mittags: gemeinsames Lunch auf der Terrasse.&#10;&#10;Am Nachmittag geht es aufs Grün. Zum Abschluss bringt euch unser Shuttle bequem zurück."><?php echo esc_textarea( $event_id ? (string) get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ); ?></textarea>
+							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="9" placeholder="Wir holen euch um 9:00 Uhr direkt in eurer Firma ab.&#10;&#10;Treffpunkt ist der Pro-Shop. Dort begrüßen wir euch und stellen euch Platz und Anlage kurz vor.&#10;&#10;9:30 Uhr: Erster Teil des Schnupperkurses auf der Range (ca. 1 Stunde) mit unseren Golflehrer.&#10;&#10;Mittags: gemeinsames Lunch auf der Terrasse.&#10;&#10;Am Nachmittag geht es aufs Grün. Zum Abschluss bringt euch unser Shuttle bequem zurück."><?php echo esc_textarea( $event_id ? (string) get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ); ?></textarea>
 							<p class="fp-help">Beschreib den Ablauf Schritt für Schritt, von der Ankunft bis zur Heimfahrt. Dieser Text erscheint auf der Event-Seite.</p>
 						</div>
 					</div>

@@ -41,7 +41,7 @@ $addr = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
 		<h2>§ 2 Unsere Rolle und Leistungen</h2>
 		<p>
 			(1) Firmengolf erbringt Vermittlungs-, Organisations-, Koordinations- und Abrechnungsleistungen. Wir stellen
-			passende Event-Formate zusammen, vermitteln die beteiligten Leistungsträger (z. B. Golfplätze, Golflehrer/PGA-Pros,
+			passende Event-Formate zusammen, vermitteln die beteiligten Leistungsträger (z. B. Golfplätze, Golflehrer,
 			Shuttle-/Transportunternehmen, Gastronomie) und koordinieren den Ablauf.<br>
 			(2) Die eigentlichen Eventleistungen vor Ort (Platznutzung, Training, Transport, Verpflegung u. a.) werden von den
 			jeweiligen Partnern (Leistungsträgern) eigenverantwortlich erbracht. Firmengolf ist insoweit nicht Veranstalter

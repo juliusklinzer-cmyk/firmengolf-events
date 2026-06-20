@@ -25,7 +25,7 @@ $ind_url     = ( $p = get_page_by_path( 'individuelle-events' ) ) ? (string) get
 // City FAQ: aus der Stadt-Config (eigener Inhalt), sonst generischer Fallback.
 $faqs = ! empty( $city['faqs'] ) ? $city['faqs'] : [
 	[ 'q' => 'Welche Golfplätze gibt es für Firmenevents in ' . $city_name . '?', 'a' => 'Wir arbeiten mit ausgewählten Partnerplätzen in der Region ' . $city_region . ' zusammen, von der Übungsanlage für Einsteigende bis zur 18-Loch-Anlage für Firmenturniere.' ],
-	[ 'q' => 'Müssen unsere Mitarbeitenden Golf spielen können?', 'a' => 'Nein. Unsere Schnupperkurse und Teamevents sind für Einsteigende konzipiert, PGA-Coach vor Ort, Schläger werden gestellt.' ],
+	[ 'q' => 'Müssen unsere Mitarbeitenden Golf spielen können?', 'a' => 'Nein. Unsere Schnupperkurse und Teamevents sind für Einsteigende konzipiert, Golflehrer vor Ort, Schläger werden gestellt.' ],
 	[ 'q' => 'Wie schnell bekommen wir eine Antwort?', 'a' => 'Innerhalb eines Werktags meldet sich ein persönlicher Ansprechpartner mit passenden Optionen für ' . $city_name . '.' ],
 	[ 'q' => 'Wie wird abgerechnet?', 'a' => 'Eine Sammelrechnung von Firmengolf mit allen Posten, einfach für HR und Buchhaltung.' ],
 ];

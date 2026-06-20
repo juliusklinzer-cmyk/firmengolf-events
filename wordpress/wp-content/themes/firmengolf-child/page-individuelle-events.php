@@ -92,8 +92,8 @@ $type_tiles = [
 // Golf-Erfahrung
 $exp_levels = [
 	[ 'level' => 1, 'badge' => 'Einsteiger', 't' => 'Erste Erfahrungen', 'img' => 'erfahrung-korb.jpg',
-		'b' => 'Noch nie einen Schläger gehalten? Genau richtig. PGA-Coach, Leih-Ausrüstung und die ersten Schwünge auf der Range — locker, ohne Druck.',
-		'meta' => [ 'PGA-Coach', 'Schläger gestellt', 'Range & Putting' ] ],
+		'b' => 'Noch nie einen Schläger gehalten? Genau richtig. Golflehrer, Leih-Ausrüstung und die ersten Schwünge auf der Range — locker, ohne Druck.',
+		'meta' => [ 'Golflehrer', 'Schläger gestellt', 'Range & Putting' ] ],
 	[ 'level' => 2, 'badge' => 'Auffrischer', 't' => 'Schon mal gespielt', 'img' => 'erfahrung-sand.jpg',
 		'b' => 'Ein paar Runden Erfahrung? Wir frischen den Schwung auf, gehen ins Kurzspiel und spielen danach gemeinsam entspannte 9 Loch.',
 		'meta' => [ 'Kurzspiel-Training', '9 Loch', 'Gemischte Flights' ] ],
