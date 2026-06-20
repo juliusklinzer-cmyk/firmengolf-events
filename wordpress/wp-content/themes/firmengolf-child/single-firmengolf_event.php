@@ -835,6 +835,10 @@ get_header();
 					<label class="fg-field-label" for="fg-company">Firma</label>
 					<input class="fg-input" id="fg-company" placeholder="Eure Firma GmbH">
 				</div>
+				<div aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
+					<label for="fg-hp">Bitte dieses Feld leer lassen</label>
+					<input id="fg-hp" name="fge_hp" type="text" tabindex="-1" autocomplete="off">
+				</div>
 				<div class="fg-field">
 					<label class="fg-field-label" for="fg-phone">Telefon (optional)</label>
 					<input class="fg-input" id="fg-phone" placeholder="+49 …">
@@ -1015,6 +1019,7 @@ get_header();
 			var body = new URLSearchParams({
 				action:     'fge_modal_anfrage',
 				nonce:      '<?php echo esc_js( $modal_nonce ); ?>',
+				fge_hp:     val('fg-hp'),
 				event_id:   '<?php echo esc_js( (string) $post_id ); ?>',
 				date1:      val('fg-date-1'),
 				date2:      val('fg-date-2'),

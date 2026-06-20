@@ -221,7 +221,7 @@
 				budget: '€10.000 – €20.000', when: '', flex: 'flexibel', duration: 'Halbtag',
 				date1: '', date2: '', date3: '', services: ['Lunch', 'Golflehrer / Coaching'],
 				company: '', city: '', firstName: '', lastName: '', role: '', email: '', phone: '',
-				contactPref: 'E-Mail', notes: ''
+				contactPref: 'E-Mail', notes: '', consent: true
 			};
 			if (preset) for (var k in preset) if (preset.hasOwnProperty(k)) f[k] = preset[k];
 			return f;
@@ -294,6 +294,7 @@
 				+ '<div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div></div>'
 				+ '<div class="rw-field">' + label('Firma') + input('company', '', 'Musterfirma GmbH') + '</div>'
 				+ '<div class="rw-field">' + label('Was habt ihr vor?') + '<textarea class="fg-input" data-field="notes" rows="3" placeholder="Ein, zwei Sätze zu Ziel, Stimmung, Wünschen.">' + esc(S.form.notes) + '</textarea></div>'
+				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '><span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß Datenschutzerklärung zu.</span></label>'
 				+ '</div></div></div>'
 				+ '<div class="rw-foot rw-foot-quick"><button class="rw-switch" data-act="to-full">Lieber ausführlich anfragen</button>'
 				+ '<button class="fg-btn-brand lg" data-act="submit">Anfrage senden <span class="fg-arrow">' + ARROW + '</span></button></div>';
@@ -362,7 +363,7 @@
 				+ '<div class="rw-row"><div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div>'
 				+ '<div class="rw-field">' + label('Telefon') + input('phone', 'type="tel"', '+49 …') + '</div></div>'
 				+ '<div class="rw-field">' + label('Bevorzugte Kontaktart') + chips('contactPref', ['E-Mail', 'Telefon', 'Egal']) + '</div>'
-				+ '<label class="ind-consent"><input type="checkbox" data-field="consent" checked>'
+				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '>'
 				+ '<span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß Datenschutzerklärung zu.</span></label></div>';
 		}
 
@@ -415,9 +416,9 @@
 		}
 
 		function valid() {
-			if (S.mode === 'quick') return S.form.firstName && S.form.email && S.form.occasion;
+			if (S.mode === 'quick') return S.form.firstName && S.form.email && S.form.occasion && S.form.consent;
 			if (S.step === 0) return !!S.form.occasion;
-			if (S.step === 4) return S.form.company && S.form.firstName && S.form.lastName && S.form.email;
+			if (S.step === 4) return S.form.company && S.form.firstName && S.form.lastName && S.form.email && S.form.consent;
 			return true;
 		}
 
@@ -438,6 +439,7 @@
 			body.set('first_name', f.firstName); body.set('last_name', f.lastName);
 			body.set('role', f.role); body.set('email', f.email); body.set('phone', f.phone);
 			body.set('contact_pref', f.contactPref); body.set('notes', f.notes);
+			body.set('consent', f.consent ? '1' : '');
 			body.set('services', (f.services || []).join('||'));
 			if (S.source) body.set('source', S.source);
 

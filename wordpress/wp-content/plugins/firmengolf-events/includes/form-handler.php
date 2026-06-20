@@ -30,6 +30,43 @@ function fge_load_form_state( string $err_key ): array {
 }
 
 
+/**
+ * Spam-Schutz für öffentliche Anfrage-Endpunkte.
+ * Honeypot: das versteckte Feld `fge_hp` muss leer bleiben (Bots füllen es aus).
+ */
+function fge_form_honeypot_tripped(): bool {
+	return '' !== trim( (string) wp_unslash( $_POST['fge_hp'] ?? '' ) );
+}
+
+/**
+ * Einfaches IP-Rate-Limit via Transient. true = Limit überschritten.
+ * Default: max. 8 Anfragen pro 10 Minuten je IP — großzügig für Menschen, bremst Bots.
+ */
+function fge_form_rate_limited( int $max = 8, int $window = 600 ): bool {
+	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? preg_replace( '/[^0-9a-f:.]/i', '', (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+	if ( $ip === '' ) {
+		return false;
+	}
+	$key   = 'fge_rl_' . md5( $ip );
+	$count = (int) get_transient( $key );
+	if ( $count >= $max ) {
+		return true;
+	}
+	set_transient( $key, $count + 1, $window );
+	return false;
+}
+
+/** Gemeinsamer Spam-Gate für AJAX-Anfragen: bricht mit JSON-Antwort ab, wenn verdächtig. */
+function fge_form_spam_gate(): void {
+	if ( fge_form_honeypot_tripped() ) {
+		wp_send_json_error( [ 'message' => 'Ungültige Anfrage.' ], 400 );
+	}
+	if ( fge_form_rate_limited() ) {
+		wp_send_json_error( [ 'message' => 'Zu viele Anfragen in kurzer Zeit. Bitte versuche es in ein paar Minuten erneut oder schreib uns direkt.' ], 429 );
+	}
+}
+
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MODAL ANFRAGE — AJAX handler (logged-out + logged-in)
 // ══════════════════════════════════════════════════════════════════════════════
@@ -39,6 +76,7 @@ add_action( 'wp_ajax_nopriv_fge_modal_anfrage', 'fge_ajax_modal_anfrage' );
 
 function fge_ajax_modal_anfrage(): void {
 	check_ajax_referer( 'fge_modal_anfrage', 'nonce' );
+	fge_form_spam_gate();
 
 	$event_id  = absint( $_POST['event_id'] ?? 0 );
 	$group     = sanitize_text_field( wp_unslash( $_POST['group_size'] ?? '' ) );
@@ -138,6 +176,7 @@ add_action( 'wp_ajax_nopriv_fge_general_request', 'fge_ajax_general_request' );
 
 function fge_ajax_general_request(): void {
 	check_ajax_referer( 'fge_general_request', 'nonce' );
+	fge_form_spam_gate();
 
 	$t = static fn( $k ) => sanitize_text_field( wp_unslash( $_POST[ $k ] ?? '' ) );
 
@@ -156,6 +195,11 @@ function fge_ajax_general_request(): void {
 
 	if ( ! $email || ! is_email( $email ) || $first === '' || $occasion === '' ) {
 		wp_send_json_error( [ 'message' => 'Bitte Anlass, Name und gültige E-Mail angeben.' ], 422 );
+	}
+
+	// DSGVO: Einwilligung ist Pflicht.
+	if ( '1' !== (string) ( $_POST['consent'] ?? '' ) ) {
+		wp_send_json_error( [ 'message' => 'Bitte stimme der Datenverarbeitung zu, um die Anfrage zu senden.' ], 422 );
 	}
 
 	$goal      = $t( 'goal' );

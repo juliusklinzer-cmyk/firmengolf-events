@@ -451,11 +451,19 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 
 // ── User creation / assignment ────────────────────────────────────────────────
 
-function fge_onboarding_create_or_assign_user( string $email, string $first, string $last, string $role_label, string $phone, int $partner_id ): int {
+function fge_onboarding_create_or_assign_user( string $email, string $first, string $last, string $role_label, string $phone, int $partner_id, bool &$is_new = false ): int {
 	$existing = get_user_by( 'email', $email );
 	$is_new   = false;
 	if ( $existing ) {
-		$user_id = $existing->ID;
+		// SICHERHEIT: Eine bereits registrierte E-Mail darf über den öffentlichen
+		// Onboarding-Flow NICHT automatisch verknüpft oder eingeloggt werden, sonst
+		// könnte sich jeder als bestehender Nutzer (inkl. Admin) ausgeben (Account-
+		// Übernahme). Nur erlaubt für Admins oder wenn bereits als genau dieser
+		// Nutzer eingeloggt. Sonst Signal -1 → Aufrufer leitet zum Login.
+		if ( ! current_user_can( 'manage_options' ) && get_current_user_id() !== (int) $existing->ID ) {
+			return -1;
+		}
+		$user_id = (int) $existing->ID;
 	} else {
 		$temp_pass = wp_generate_password( 12, false );
 		$user_id   = wp_create_user( $email, $temp_pass, $email );
@@ -514,7 +522,7 @@ function fge_onboarding_submit( int $partner_id ): void {
 // ── POST Handler ──────────────────────────────────────────────────────────────
 
 function fge_onboarding_handle_step(): void {
-	if ( 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
+	if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
 		return;
 	}
 	if ( ( sanitize_key( $_POST['fge_ob_action'] ?? '' ) ) !== 'step_submit' ) {
@@ -595,8 +603,17 @@ function fge_onboarding_handle_step(): void {
 		$phone = sanitize_text_field( wp_unslash( $_POST['fge_contact_phone'] ?? '' ) );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			$user_id = fge_onboarding_create_or_assign_user( $email, $first, $last, $role, $phone, $partner_id );
-			if ( $user_id > 0 ) {
+			$is_new  = false;
+			$user_id = fge_onboarding_create_or_assign_user( $email, $first, $last, $role, $phone, $partner_id, $is_new );
+			if ( $user_id === -1 ) {
+				// E-Mail bereits registriert → nicht einloggen, zum Login leiten.
+				$trans_key = 'fge_ob_err_' . $partner_id . '_' . $step;
+				set_transient( $trans_key, [ 'fge_contact_email' => 'Diese E-Mail ist bereits registriert. Bitte logge dich zuerst in dein Partnerkonto ein, dann kannst du das Onboarding fortsetzen.' ], 120 );
+				wp_redirect( add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) ) );
+				exit;
+			}
+			// Auto-Login NUR für frisch erzeugte Accounts (kein Login für bestehende).
+			if ( $user_id > 0 && $is_new ) {
 				wp_set_auth_cookie( $user_id );
 			}
 		} else {

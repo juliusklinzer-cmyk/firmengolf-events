@@ -19,6 +19,7 @@ $done     = isset( $_GET['done'] );
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="robots" content="noindex, nofollow">
+	<meta name="referrer" content="no-referrer">
 	<?php wp_head(); ?>
 </head>
 <body class="tl-page">

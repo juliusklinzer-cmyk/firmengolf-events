@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.49' );
+define( 'FGE_VERSION', '1.9.50' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -19,6 +19,7 @@ require_once FGE_DIR . 'includes/login-branding.php';
 require_once FGE_DIR . 'includes/statuses.php';
 require_once FGE_DIR . 'includes/helpers.php';
 require_once FGE_DIR . 'includes/company-info.php';
+require_once FGE_DIR . 'includes/mail-config.php';
 require_once FGE_DIR . 'includes/catalogs.php';
 require_once FGE_DIR . 'includes/partner-media.php';
 require_once FGE_DIR . 'includes/partner-contacts.php';

@@ -85,8 +85,6 @@ $url_karriere   = $get_page_url( 'karriere' );
 	<div class="fg-footer-base">
 		<span>© <?php echo esc_html( (string) gmdate( 'Y' ) ); ?> Visionpunch UG (haftungsbeschränkt), München</span>
 		<div class="fg-footer-links">
-			<a href="#">DE · EN</a>
-			<span aria-hidden="true">·</span>
 			<a href="<?php echo esc_url( $url_presse ); ?>">Presse</a>
 			<span aria-hidden="true">·</span>
 			<a href="<?php echo esc_url( $url_karriere ); ?>">Karriere</a>
