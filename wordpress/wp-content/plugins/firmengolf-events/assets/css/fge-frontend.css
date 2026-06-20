@@ -3344,6 +3344,32 @@ button.fg-gallery-more {
 /* Section eyebrow */
 .fg-section-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-500); margin-bottom: 16px; }
 
+/* Tagesablauf als Phasen-Timeline */
+.fg-dayflow { list-style: none; margin: 0; padding: 0; }
+.fg-dayflow-step { position: relative; display: flex; gap: 16px; padding-bottom: 22px; }
+.fg-dayflow-step::before { content: ""; position: absolute; left: 6px; top: 18px; bottom: 0; width: 2px; background: var(--fairway-100); }
+.fg-dayflow-step:last-child { padding-bottom: 0; }
+.fg-dayflow-step:last-child::before { display: none; }
+.fg-dayflow-dot { position: relative; z-index: 1; flex: none; width: 14px; height: 14px; margin-top: 5px; border-radius: 50%; background: var(--fairway-600); box-shadow: 0 0 0 4px var(--fairway-100); }
+.fg-dayflow-c { min-width: 0; }
+.fg-dayflow-h { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--ink-900); margin: 0 0 3px; }
+.fg-dayflow-t { font-size: 15px; line-height: 1.6; color: var(--ink-700); margin: 0; }
+
+/* Info-Box: von Firmengolf organisiert */
+.fg-selfbox { display: flex; gap: 12px; background: var(--fairway-100); border: 1px solid var(--fairway-200); border-radius: var(--radius-lg); padding: 16px 18px; }
+.fg-selfbox-ic { flex: none; color: var(--fairway-700); margin-top: 1px; }
+.fg-selfbox-t { font-size: 14px; line-height: 1.55; color: var(--ink-800); }
+
+/* Optional zubuchbar — Plus-Icon-Farbe */
+.evd-addon .evd-include-ic { color: var(--fairway-600); }
+
+/* Location + FAQ in der Hauptspalte: einspaltig, ohne Voll-Band */
+.fg-detail-main .evd-location { background: transparent; padding: 0; margin: 0; }
+.fg-detail-main .evd-location-inner { grid-template-columns: 1fr; gap: 24px; max-width: none; }
+.fg-detail-main .faq-section { padding: 0; max-width: none; margin: 0; }
+.fg-detail-main .faq-shell { grid-template-columns: 1fr; gap: 20px; }
+.fg-detail-main .faq-aside .mk-h2 { font-size: 26px !important; }
+
 /* Includes list (single column) */
 .fg-includes { list-style: none; display: flex; flex-direction: column; gap: 10px; padding: 0; }
 .fg-includes li { display: flex; align-items: flex-start; gap: 12px; font-size: 15px; color: var(--ink-800); line-height: 1.45; }

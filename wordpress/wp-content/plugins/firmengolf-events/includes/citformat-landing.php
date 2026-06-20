@@ -114,7 +114,20 @@ function fge_citformat_is_valid( string $city_slug, string $format_slug ): bool 
 function fge_citformat_events( array $city, array $format, int $limit = 6 ): array {
 	$partner_ids = function_exists( 'fge_city_partner_ids' ) ? fge_city_partner_ids( $city ) : [];
 	$types       = (array) ( $format['types'] ?? [] );
-	if ( empty( $partner_ids ) || empty( $types ) ) {
+	$terms       = array_values( array_filter( (array) ( $city['match'] ?? [] ) ) );
+	if ( empty( $types ) ) {
+		return [];
+	}
+	// Stadt-Zugehörigkeit: Partner-Standort ODER Event-Stadt/-Region (Self-Events ohne Partner).
+	$loc_or = [ 'relation' => 'OR' ];
+	if ( ! empty( $partner_ids ) ) {
+		$loc_or[] = [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_ids, 'compare' => 'IN' ];
+	}
+	if ( ! empty( $terms ) ) {
+		$loc_or[] = [ 'key' => '_fge_city', 'value' => $terms, 'compare' => 'IN' ];
+		$loc_or[] = [ 'key' => '_fge_region', 'value' => $terms, 'compare' => 'IN' ];
+	}
+	if ( count( $loc_or ) <= 1 ) {
 		return [];
 	}
 	$posts = get_posts( [
@@ -124,7 +137,7 @@ function fge_citformat_events( array $city, array $format, int $limit = 6 ): arr
 		'meta_query'     => [
 			'relation' => 'AND',
 			[ 'key' => '_fge_event_status', 'value' => fge_public_event_statuses(), 'compare' => 'IN' ],
-			[ 'key' => '_fge_assigned_partner_id', 'value' => $partner_ids, 'compare' => 'IN' ],
+			$loc_or,
 			[ 'key' => '_fge_event_type', 'value' => $types, 'compare' => 'IN' ],
 		],
 	] );

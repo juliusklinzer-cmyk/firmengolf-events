@@ -112,19 +112,42 @@ function fge_city_partner_ids( array $city ): array {
  */
 function fge_city_events( array $city, int $limit = 6 ): array {
 	$partner_ids = fge_city_partner_ids( $city );
-	if ( empty( $partner_ids ) ) {
+	$terms       = array_values( array_filter( (array) ( $city['match'] ?? [] ) ) );
+
+	// Stadt-Zugehörigkeit: Partner-Standort passt ODER Event-Stadt/-Region passt
+	// (Letzteres deckt die von Firmengolf organisierten Events ohne Partner ab).
+	$loc_or = [ 'relation' => 'OR' ];
+	if ( ! empty( $partner_ids ) ) {
+		$loc_or[] = [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_ids, 'compare' => 'IN' ];
+	}
+	if ( ! empty( $terms ) ) {
+		$loc_or[] = [ 'key' => '_fge_city', 'value' => $terms, 'compare' => 'IN' ];
+		$loc_or[] = [ 'key' => '_fge_region', 'value' => $terms, 'compare' => 'IN' ];
+	}
+	if ( count( $loc_or ) <= 1 ) {
 		return [];
 	}
-	return get_posts( [
+	$statuses = function_exists( 'fge_public_event_statuses' ) ? fge_public_event_statuses() : [ 'freigegeben' ];
+	$posts    = get_posts( [
 		'post_type'      => 'firmengolf_event',
 		'post_status'    => 'publish',
-		'posts_per_page' => $limit,
+		'posts_per_page' => max( $limit * 3, 12 ),
 		'meta_query'     => [
 			'relation' => 'AND',
-			[ 'key' => '_fge_event_status', 'value' => 'freigegeben' ],
-			[ 'key' => '_fge_assigned_partner_id', 'value' => $partner_ids, 'compare' => 'IN' ],
+			[ 'key' => '_fge_event_status', 'value' => $statuses, 'compare' => 'IN' ],
+			$loc_or,
 		],
 	] );
+	$out = [];
+	foreach ( $posts as $p ) {
+		if ( ! function_exists( 'fge_event_is_public' ) || fge_event_is_public( $p->ID ) ) {
+			$out[] = $p;
+			if ( count( $out ) >= $limit ) {
+				break;
+			}
+		}
+	}
+	return $out;
 }
 
 add_action( 'init', static function () {

@@ -21,6 +21,9 @@ $price_label    = get_post_meta( $post_id, '_fge_public_price_label', true );
 $leistungen     = fge_get_active_leistungen( $post_id );
 $partner_id     = (int) fge_get_event_meta( $post_id, 'assigned_partner_id', 0 );
 $partner        = fge_get_partner_info( $partner_id );
+// Von Firmengolf selbst organisiertes Event (kein Golfplatz-Partner zugeordnet):
+// → Orientierungspreis, Info-Box, Anfahrt als Optionen statt fixer Wegbeschreibung.
+$is_self        = ( $partner_id <= 0 );
 // Rating: gleiche Quelle wie die Eventsuche — primär Partner-Rating, Fallback Event-Meta.
 $rating         = $partner_id ? (float) get_post_meta( $partner_id, '_fge_rating', true ) : 0;
 if ( ! $rating ) {
@@ -63,6 +66,10 @@ if ( $pricing_new && $pricing_new['gross'] > 0 ) {
 } else {
 	$price_main   = 'Auf Anfrage';
 	$price_suffix = '';
+}
+// Orientierungspreis kennzeichnen, wenn von Firmengolf organisiert.
+if ( $is_self && $price_main !== 'Auf Anfrage' ) {
+	$price_suffix = trim( $price_suffix ) . ' · Orientierung';
 }
 
 // Venue string
@@ -339,12 +346,44 @@ get_header();
 
 			<main class="fg-detail-main">
 
-				<?php /* So läuft der Tag — Tagesablauf (rev. 2) bevorzugt, sonst Kurzbeschreibung */ ?>
-				<?php if ( $dayflow_new !== '' || $description ) : ?>
+				<?php /* Info-Box: von Firmengolf organisiert + Orientierungspreis */ ?>
+				<?php if ( $is_self ) : ?>
+				<div class="fg-selfbox">
+					<span class="fg-selfbox-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11.5v4.5M12 8h.01"/></svg></span>
+					<div class="fg-selfbox-t">
+						<strong>Von Firmengolf für dich organisiert.</strong>
+						Du fragst dieses Event unverbindlich an – wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein. Der angezeigte Preis ist ein <strong>Orientierungswert</strong> und kann sich im finalen Angebot je nach Platz, Gruppe und Wünschen ändern.
+					</div>
+				</div>
+				<?php endif; ?>
+
+				<?php /* So läuft der Tag — Phasen: Block = Überschrift (Zeile 1) + Text darunter, Blöcke per Leerzeile */ ?>
+				<?php
+				$dayflow_parts = [];
+				if ( $dayflow_new !== '' ) {
+					foreach ( preg_split( '/\n\s*\n/', $dayflow_new ) as $df_blk ) {
+						$df_lines = preg_split( '/\r?\n/', trim( $df_blk ) );
+						$df_h     = trim( (string) array_shift( $df_lines ) );
+						$df_t     = trim( implode( ' ', array_map( 'trim', $df_lines ) ) );
+						if ( $df_h !== '' ) { $dayflow_parts[] = [ 'h' => $df_h, 't' => $df_t ]; }
+					}
+				}
+				?>
+				<?php if ( $dayflow_parts || $description ) : ?>
 				<section>
 					<div class="fg-section-eyebrow">So läuft der Tag</div>
-					<?php if ( $dayflow_new !== '' ) : ?>
-						<div class="fg-detail-summary"><?php echo nl2br( esc_html( $dayflow_new ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+					<?php if ( $dayflow_parts ) : ?>
+						<ol class="fg-dayflow">
+							<?php foreach ( $dayflow_parts as $dp ) : ?>
+							<li class="fg-dayflow-step">
+								<span class="fg-dayflow-dot" aria-hidden="true"></span>
+								<div class="fg-dayflow-c">
+									<h3 class="fg-dayflow-h"><?php echo esc_html( $dp['h'] ); ?></h3>
+									<?php if ( $dp['t'] !== '' ) : ?><p class="fg-dayflow-t"><?php echo esc_html( $dp['t'] ); ?></p><?php endif; ?>
+								</div>
+							</li>
+							<?php endforeach; ?>
+						</ol>
 					<?php else : ?>
 						<p class="fg-detail-summary"><?php echo esc_html( $description ); ?></p>
 					<?php endif; ?>
@@ -360,6 +399,26 @@ get_header();
 						<?php foreach ( $inc_list as $label ) : ?>
 						<div class="evd-poi evd-include">
 							<span class="evd-include-ic" aria-hidden="true"><?php echo function_exists( 'fge_include_icon' ) ? fge_include_icon( $label ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
+							<div class="evd-onsite-n"><?php echo esc_html( $label ); ?></div>
+						</div>
+						<?php endforeach; ?>
+					</div>
+				</section>
+				<?php endif; ?>
+
+				<?php /* Optional zubuchbar — Add-ons (z. B. Meetingraum, Abholservice) */ ?>
+				<?php
+				$addons_raw = get_post_meta( $post_id, '_fge_event_addons', true );
+				$addons     = is_array( $addons_raw ) ? $addons_raw : preg_split( '/\r\n|\r|\n/', (string) $addons_raw );
+				$addons     = array_values( array_filter( array_map( 'trim', array_map( 'strval', $addons ) ) ) );
+				?>
+				<?php if ( $addons ) : ?>
+				<section>
+					<div class="fg-section-eyebrow">Optional zubuchbar</div>
+					<div class="evd-poi-grid evd-onsite evd-includes evd-addons">
+						<?php foreach ( $addons as $label ) : ?>
+						<div class="evd-poi evd-include evd-addon">
+							<span class="evd-include-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
 							<div class="evd-onsite-n"><?php echo esc_html( $label ); ?></div>
 						</div>
 						<?php endforeach; ?>
@@ -405,67 +464,24 @@ get_header();
 				</section>
 				<?php endif; ?>
 
-			</main>
-
-			<?php /* ── Price Rail ── */ ?>
-			<aside class="fg-detail-rail">
-				<div class="fg-rail-card">
-					<div>
-						<div class="fg-rail-live">
-							<span class="fg-live-dot" aria-hidden="true"></span>
-							<span>Angebot live seit <?php echo esc_html( get_the_date( 'F Y' ) ); ?></span>
-						</div>
-						<div class="fg-rail-price">
-							<?php echo esc_html( $price_main ); ?>
-							<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
-						</div>
-					</div>
-
-					<div class="fg-rail-fields">
-						<div class="fg-rail-field">
-							<div class="fg-cell-label">Gruppe</div>
-							<div class="fg-cell-value"><?php echo esc_html( $guests_str ?: 'Nach Vereinbarung' ); ?></div>
-						</div>
-						<div class="fg-rail-field">
-							<div class="fg-cell-label">Buchung</div>
-							<div class="fg-cell-value"><?php echo esc_html( $booking_label ); ?></div>
-						</div>
-					</div>
-
-					<button class="fg-btn-brand block" id="open-modal-btn" type="button">
-						Dieses Event anfragen
-					</button>
-					<button class="fg-btn-ghost block" id="fg-share-btn" type="button"
-					        data-share-url="<?php echo esc_url( get_permalink() ); ?>"
-					        data-share-title="<?php echo esc_attr( get_the_title() ); ?>">
-						Event teilen
-					</button>
-
-					<div class="fg-rail-note">Anfrage ist kostenlos. Sie geht direkt an den Golfplatz zur Terminfreigabe und an uns — du bekommst eine Antwort innerhalb von 48 Stunden.</div>
-				</div>
-
-				<div class="fg-rail-host">
-					<img src="<?php echo esc_url( fge_get_placeholder_image_url( 'gruender-julius-klinzer.jpg' ) ); ?>" alt="Julius Klinzer · Firmengolf" class="fg-rail-host-photo">
-					<div>
-						<div class="fg-rail-host-name">Gebucht über Firmengolf</div>
-						<div class="fg-rail-host-meta">Ein Ansprechpartner · eine Rechnung</div>
-					</div>
-				</div>
-			</aside>
-
-		</div><?php /* .fg-detail-body */ ?>
-
-	</article>
-
 	<?php /* ── Location ── */ ?>
 	<section class="evd-location">
 		<div class="evd-location-inner">
 			<div class="evd-location-info">
 				<div class="mk-eyebrow">Anfahrt & Location</div>
-				<h2 class="mk-h2" style="font-size:36px;margin-top:8px;"><?php echo esc_html( $venue ?: get_the_title() ); ?></h2>
+				<h2 class="mk-h2" style="font-size:36px;margin-top:8px;"><?php echo esc_html( $is_self ? ( $location ?: $region ?: 'Nach Absprache' ) : ( $venue ?: get_the_title() ) ); ?></h2>
+				<?php if ( $is_self ) : ?>
+				<p class="evd-location-p">Den genauen Golfplatz wählen wir passend zu Gruppengröße, Termin und Anfahrt – flexibel im Raum <?php echo esc_html( $region ?: $location ?: 'eurer Region' ); ?>. Die Anfahrt hängt vom Platz ab, üblich sind:</p>
+				<div class="evd-poi-grid">
+					<div class="evd-poi"><div class="evd-poi-l">Lage</div><div class="evd-poi-v">Stadtnahe Golfplätze (ca. 30 Min.)</div></div>
+					<div class="evd-poi"><div class="evd-poi-l">ÖPNV</div><div class="evd-poi-v">Mit Öffentlichen erreichbar</div></div>
+					<div class="evd-poi"><div class="evd-poi-l">Transfer</div><div class="evd-poi-v">Abholservice möglich</div></div>
+				</div>
+				<?php else : ?>
 				<p class="evd-location-p">
 					<?php echo $directions !== '' ? esc_html( $directions ) : 'Genaue Adresse und Anfahrtsbeschreibung schicken wir mit der Bestätigung.'; ?>
 				</p>
+				<?php endif; ?>
 				<?php
 				$os_note = ( $partner_id && function_exists( 'fge_partner_offseason_note' ) ) ? fge_partner_offseason_note( $partner_id ) : '';
 				if ( $os_note !== '' ) : ?>
@@ -484,7 +500,7 @@ get_header();
 				</a>
 				<?php endif; ?>
 			</div>
-			<?php if ( $map_embed ) : ?>
+			<?php if ( $map_embed && ! $is_self ) : ?>
 				<iframe class="evd-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $map_embed ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $venue ?: get_the_title() ); ?>"></iframe>
 			<?php else : ?>
 				<div class="evd-map" role="img" aria-label="Ungefähre Lage des Platzes">
@@ -569,6 +585,60 @@ get_header();
 			</ul>
 		</div>
 	</section>
+
+			</main>
+
+			<?php /* ── Price Rail ── */ ?>
+			<aside class="fg-detail-rail">
+				<div class="fg-rail-card">
+					<div>
+						<div class="fg-rail-live">
+							<span class="fg-live-dot" aria-hidden="true"></span>
+							<span>Angebot live seit <?php echo esc_html( get_the_date( 'F Y' ) ); ?></span>
+						</div>
+						<div class="fg-rail-price">
+							<?php echo esc_html( $price_main ); ?>
+							<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
+						</div>
+					</div>
+
+					<div class="fg-rail-fields">
+						<div class="fg-rail-field">
+							<div class="fg-cell-label">Gruppe</div>
+							<div class="fg-cell-value"><?php echo esc_html( $guests_str ?: 'Nach Vereinbarung' ); ?></div>
+						</div>
+						<div class="fg-rail-field">
+							<div class="fg-cell-label">Buchung</div>
+							<div class="fg-cell-value"><?php echo esc_html( $booking_label ); ?></div>
+						</div>
+					</div>
+
+					<button class="fg-btn-brand block" id="open-modal-btn" type="button">
+						Dieses Event anfragen
+					</button>
+					<button class="fg-btn-ghost block" id="fg-share-btn" type="button"
+					        data-share-url="<?php echo esc_url( get_permalink() ); ?>"
+					        data-share-title="<?php echo esc_attr( get_the_title() ); ?>">
+						Event teilen
+					</button>
+
+					<div class="fg-rail-note"><?php echo esc_html( $is_self
+						? 'Anfrage ist kostenlos und unverbindlich. Sie geht direkt an uns – wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein und melden uns innerhalb von 48 Stunden.'
+						: 'Anfrage ist kostenlos. Sie geht direkt an den Golfplatz zur Terminfreigabe und an uns — du bekommst eine Antwort innerhalb von 48 Stunden.' ); ?></div>
+				</div>
+
+				<div class="fg-rail-host">
+					<img src="<?php echo esc_url( fge_get_placeholder_image_url( 'gruender-julius-klinzer.jpg' ) ); ?>" alt="Julius Klinzer · Firmengolf" class="fg-rail-host-photo">
+					<div>
+						<div class="fg-rail-host-name">Gebucht über Firmengolf</div>
+						<div class="fg-rail-host-meta">Ein Ansprechpartner · eine Rechnung</div>
+					</div>
+				</div>
+			</aside>
+
+		</div><?php /* .fg-detail-body */ ?>
+
+	</article>
 
 	<?php /* ── Related Events ── */ ?>
 	<?php if ( $related_query->have_posts() ) : ?>
