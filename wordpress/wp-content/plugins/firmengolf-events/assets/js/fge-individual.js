@@ -221,17 +221,17 @@
 			{ v: 'Über €50.000', h: 'Incentive-Reisen, Großformate' },
 			{ v: 'Noch unklar', h: 'Wir gehen es gemeinsam durch' }
 		];
-		var CONTACT = { name: 'Jonas Bredow', role: 'Head of Events' };
+		var CONTACT = { name: 'Julius Klinzer', role: 'Gründer' };
 
 		var overlay = null, S = null;
 
 		function blank(preset) {
 			var f = {
-				occasion: 'Sommerfest', goal: '', size: '40', region: '', place: '',
+				occasion: '', goal: '', size: '40', region: '', place: '', experience: '',
 				budget: '€10.000 – €20.000', when: '', flex: 'flexibel', duration: 'Halbtag',
 				date1: '', date2: '', date3: '', services: ['Lunch', 'Golflehrer / Coaching'],
-				company: '', city: '', firstName: '', lastName: '', role: '', email: '', phone: '',
-				contactPref: 'E-Mail', notes: '', consent: false
+				company: '', city: '', firstName: '', lastName: '', email: '', phone: '',
+				contactPref: 'E-Mail', diet: '', notes: '', consent: false
 			};
 			if (preset) for (var k in preset) if (preset.hasOwnProperty(k)) f[k] = preset[k];
 			return f;
@@ -279,7 +279,7 @@
 				+ '<div class="rw-eyebrow">Schön, dass du da bist</div>'
 				+ '<h1 class="rw-h">Toll — ihr plant ein <span class="mk-italic">' + esc(occ) + '</span> für euer Team.</h1>'
 				+ '<p class="rw-lead">Lass uns kurz ein paar Infos sammeln. Danach meldet sich ' + esc(CONTACT.name)
-				+ ' persönlich bei dir — meist noch am selben Werktag, mit ersten Ideen und einem Richtpreis.</p>'
+				+ ' persönlich bei dir — meist innerhalb eines Werktags, mit ersten Ideen und einem Richtpreis.</p>'
 				+ '<div class="rw-intro-contact"><div><div class="rw-intro-c-name">' + esc(CONTACT.name) + '</div>'
 				+ '<div class="rw-intro-c-role">' + esc(CONTACT.role) + ' · Firmengolf</div>'
 				+ '<div class="rw-intro-c-note">„Ich kümmere mich persönlich um deine Anfrage."</div></div></div>'
@@ -332,6 +332,7 @@
 					+ '<div class="rw-row rw-row-3">' + input('date1', '', '1. Termin') + input('date2', '', '2. Termin') + input('date3', '', '3. Termin') + '</div></div>'
 					+ '<div class="rw-row"><div class="rw-field">' + label('Wie flexibel beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
 					+ '<div class="rw-field">' + label('Dauer') + chips('duration', ['Halbtag', 'Ganztag', '2 Tage', 'Mehrtägig']) + '</div></div>'
+					+ '<div class="rw-field">' + label('Golf-Erfahrung im Team', false, 'Optional') + chips('experience', ['Überwiegend Anfänger', 'Gemischt', 'Erfahrene Golfer', 'Weiß noch nicht']) + '</div>'
 					+ '<div class="rw-field">' + label('Wo soll euer Event stattfinden?')
 					+ chips('region', ['In der Nähe / Bundesland', 'Mitte Deutschlands', 'In den Alpen', 'Stadtnah', 'Am Meer / Sylt', 'In Europa', 'An einem besonderen Ort', 'Noch offen'])
 					+ '</div>' + placeField() + '</div>';
@@ -359,6 +360,7 @@
 					+ '<h1 class="rw-h">Was wäre euer Budget-Rahmen?</h1>'
 					+ '<p class="rw-lead">Nur eine Richtschnur — wir verhandeln nicht nach oben.</p>'
 					+ '<div class="rw-form"><div class="ind-budget-grid">' + cards + '</div>'
+					+ '<div class="rw-field" style="margin-top:8px;">' + label('Verpflegung & Diät', false, 'Optional') + input('diet', '', 'z.B. 5× vegetarisch, 1× vegan, Nussallergie') + '</div>'
 					+ '<div class="rw-field" style="margin-top:8px;">' + label('Was ist euch wichtig?')
 					+ '<textarea class="fg-input" data-field="notes" rows="4" placeholder="Stimmung, Hintergrund, besondere Wünsche — alles was hilft.">' + esc(S.form.notes) + '</textarea></div></div>';
 			}
@@ -443,12 +445,12 @@
 			body.set('nonce', CFG.nonce || '');
 			body.set('occasion', f.occasion); body.set('goal', f.goal); body.set('size', f.size);
 			body.set('region', f.region); body.set('place', f.place || ''); body.set('budget', f.budget); body.set('when', f.when);
-			body.set('flex', f.flex); body.set('duration', f.duration);
+			body.set('flex', f.flex); body.set('duration', f.duration); body.set('experience', f.experience);
 			body.set('date1', f.date1); body.set('date2', f.date2); body.set('date3', f.date3);
 			body.set('company', f.company); body.set('city', f.city);
 			body.set('first_name', f.firstName); body.set('last_name', f.lastName);
-			body.set('role', f.role); body.set('email', f.email); body.set('phone', f.phone);
-			body.set('contact_pref', f.contactPref); body.set('notes', f.notes);
+			body.set('email', f.email); body.set('phone', f.phone);
+			body.set('contact_pref', f.contactPref); body.set('diet', f.diet); body.set('notes', f.notes);
 			body.set('consent', f.consent ? '1' : '');
 			body.set('services', (f.services || []).join('||'));
 			if (S.source) body.set('source', S.source);

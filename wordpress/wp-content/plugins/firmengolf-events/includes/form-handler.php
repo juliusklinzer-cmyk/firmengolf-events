@@ -85,8 +85,11 @@ function fge_ajax_modal_anfrage(): void {
 	$last      = sanitize_text_field( wp_unslash( $_POST['last_name'] ?? '' ) );
 	$email     = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 	$company   = sanitize_text_field( wp_unslash( $_POST['company'] ?? '' ) );
-	$phone     = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
-	$city      = sanitize_text_field( wp_unslash( $_POST['city'] ?? '' ) );
+	$phone      = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
+	$city       = sanitize_text_field( wp_unslash( $_POST['city'] ?? '' ) );
+	$experience = sanitize_text_field( wp_unslash( $_POST['experience'] ?? '' ) );
+	$diet       = sanitize_text_field( wp_unslash( $_POST['diet'] ?? '' ) );
+	$pref       = sanitize_text_field( wp_unslash( $_POST['contact_pref'] ?? '' ) );
 
 	if ( ! $email || ! is_email( $email ) || ! $first || ! $last || ! $company ) {
 		wp_send_json_error( [ 'message' => 'Pflichtfelder fehlen.' ], 422 );
@@ -125,9 +128,13 @@ function fge_ajax_modal_anfrage(): void {
 	update_post_meta( $request_id, '_fge_contact_last_name',  $last );
 	update_post_meta( $request_id, '_fge_contact_email',      $email );
 	update_post_meta( $request_id, '_fge_contact_phone',      $phone );
+	$pref_method = [ 'E-Mail' => 'email', 'Telefon' => 'phone', 'Egal' => 'any' ][ $pref ] ?? 'any';
+	update_post_meta( $request_id, '_fge_preferred_contact_method', $pref_method );
 
 	// Event framework
 	update_post_meta( $request_id, '_fge_expected_participants', absint( preg_replace( '/\D/', '', $group ) ) );
+	update_post_meta( $request_id, '_fge_group_experience', $experience );
+	update_post_meta( $request_id, '_fge_catering_notes',   $diet );
 	// Wunschtermine (1–3): Kalender liefert ISO, wird zu lesbarem Label („Do, 18.06.2026")
 	// formatiert; speist die Termin-Abstimmung (fge_request_responses / scheduling).
 	$fmt = static function ( $raw ) {
@@ -137,7 +144,11 @@ function fge_ajax_modal_anfrage(): void {
 	update_post_meta( $request_id, '_fge_preferred_date_1', $fmt( $_POST['date1'] ?? '' ) );
 	update_post_meta( $request_id, '_fge_preferred_date_2', $fmt( $_POST['date2'] ?? '' ) );
 	update_post_meta( $request_id, '_fge_preferred_date_3', $fmt( $_POST['date3'] ?? '' ) );
-	update_post_meta( $request_id, '_fge_message', trim( $notes ) );
+	$msg_parts = [];
+	if ( '' !== $experience )    { $msg_parts[] = 'Golf-Erfahrung: ' . $experience; }
+	if ( '' !== $diet )          { $msg_parts[] = 'Verpflegung/Diät: ' . $diet; }
+	if ( '' !== trim( $notes ) ) { $msg_parts[] = trim( $notes ); }
+	update_post_meta( $request_id, '_fge_message', implode( "\n", $msg_parts ) );
 
 	// Wunsch-Leistungen (Step 2) → getrennt nach Quelle: Platz vs. Firmengolf.
 	$wishes_raw = json_decode( (string) wp_unslash( $_POST['wishes'] ?? '[]' ), true );
@@ -213,7 +224,8 @@ function fge_ajax_general_request(): void {
 	$when      = $t( 'when' );
 	$flex      = $t( 'flex' );
 	$duration  = $t( 'duration' );
-	$role      = $t( 'role' );
+	$experience = $t( 'experience' );
+	$diet       = $t( 'diet' );
 	$phone     = $t( 'phone' );
 	$city      = $t( 'city' );
 	$pref      = $t( 'contact_pref' );
@@ -253,12 +265,13 @@ function fge_ajax_general_request(): void {
 	update_post_meta( $request_id, '_fge_contact_last_name',  $last );
 	update_post_meta( $request_id, '_fge_contact_email',      $email );
 	update_post_meta( $request_id, '_fge_contact_phone',      $phone );
-	update_post_meta( $request_id, '_fge_contact_role',       $role );
 	$pref_method = [ 'E-Mail' => 'email', 'Telefon' => 'phone', 'Egal' => 'any' ][ $pref ] ?? 'any';
 	update_post_meta( $request_id, '_fge_preferred_contact_method', $pref_method );
 
 	// Event framework
 	update_post_meta( $request_id, '_fge_expected_participants', $size );
+	update_post_meta( $request_id, '_fge_group_experience',      $experience );
+	update_post_meta( $request_id, '_fge_catering_notes',        $diet );
 	update_post_meta( $request_id, '_fge_desired_region',        $region );
 	update_post_meta( $request_id, '_fge_place_wish',            $place );
 	update_post_meta( $request_id, '_fge_budget_range',          $budget );
@@ -308,8 +321,10 @@ function fge_ajax_general_request(): void {
 	$message = 'Anlass: ' . $occasion
 		. ( $goal !== ''     ? "\nZiel: " . $goal : '' )
 		. ( $duration !== '' ? "\nDauer: " . $duration : '' )
+		. ( $experience !== '' ? "\nGolf-Erfahrung: " . $experience : '' )
 		. ( $region !== ''   ? "\nWunsch-Ort: " . $region : '' )
 		. ( $place !== ''    ? "\nKonkreter Platz: " . $place : '' )
+		. ( $diet !== ''     ? "\nVerpflegung/Diät: " . $diet : '' )
 		. ( $pref !== ''     ? "\nKontakt bevorzugt: " . $pref : '' )
 		. ( $services        ? "\nGewünschte Leistungen: " . implode( ', ', $services ) : '' )
 		. ( $notes !== ''    ? "\n\n" . $notes : '' );

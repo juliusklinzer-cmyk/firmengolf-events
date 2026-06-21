@@ -623,8 +623,8 @@ get_header();
 					</button>
 
 					<div class="fg-rail-note"><?php echo esc_html( $is_self
-						? 'Anfrage ist kostenlos und unverbindlich. Sie geht direkt an uns – wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein und melden uns innerhalb von 48 Stunden.'
-						: 'Anfrage ist kostenlos. Sie geht direkt an den Golfplatz zur Terminfreigabe und an uns — du bekommst eine Antwort innerhalb von 48 Stunden.' ); ?></div>
+						? 'Anfrage ist kostenlos und unverbindlich. Sie geht direkt an uns – wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein und melden uns innerhalb eines Werktags.'
+						: 'Anfrage ist kostenlos. Sie geht direkt an den Golfplatz zur Terminfreigabe und an uns — du bekommst eine Antwort innerhalb eines Werktags.' ); ?></div>
 				</div>
 
 				<div class="fg-rail-host">
@@ -741,8 +741,22 @@ get_header();
 					<?php if ( $fg_group_help ) : ?><span class="fg-field-help"><?php echo esc_html( $fg_group_help ); ?></span><?php endif; ?>
 				</div>
 				<div class="fg-field fg-field-full">
+					<label class="fg-field-label" for="fg-experience">Golf-Erfahrung im Team (optional)</label>
+					<select class="fg-input" id="fg-experience">
+						<option value="">Bitte wählen …</option>
+						<option>Überwiegend Anfänger</option>
+						<option>Gemischt</option>
+						<option>Erfahrene Golfer</option>
+						<option>Weiß noch nicht</option>
+					</select>
+				</div>
+				<div class="fg-field fg-field-full">
+					<label class="fg-field-label" for="fg-diet">Verpflegung &amp; Diät (optional)</label>
+					<input class="fg-input" id="fg-diet" placeholder="z.B. 5× vegetarisch, 1× vegan, Nussallergie">
+				</div>
+				<div class="fg-field fg-field-full">
 					<label class="fg-field-label" for="fg-notes">Weitere Terminwünsche oder Anmerkungen? (optional)</label>
-					<textarea class="fg-input" id="fg-notes" rows="3" placeholder="z.B. „auch Juli flexibel", Anlass, Erfahrungslevel oder besondere Wünsche …"></textarea>
+					<textarea class="fg-input" id="fg-notes" rows="3" placeholder="z.B. „auch Juli flexibel", Anlass oder besondere Wünsche …"></textarea>
 				</div>
 			</div>
 			<div class="fg-modal-foot">
@@ -847,6 +861,14 @@ get_header();
 					<label class="fg-field-label" for="fg-city">Standort (Stadt)</label>
 					<input class="fg-input" id="fg-city" placeholder="z.B. München">
 				</div>
+				<div class="fg-field">
+					<label class="fg-field-label" for="fg-contact-pref">Bevorzugte Kontaktart</label>
+					<select class="fg-input" id="fg-contact-pref">
+						<option>E-Mail</option>
+						<option>Telefon</option>
+						<option>Egal</option>
+					</select>
+				</div>
 			</div>
 			<label class="fg-consent" style="display:flex;gap:9px;align-items:flex-start;margin-top:14px;font-size:13px;line-height:1.45;color:var(--ink-700,#4a4a44);">
 				<input type="checkbox" id="fg-consent" style="margin-top:3px;flex:0 0 auto;">
@@ -865,7 +887,7 @@ get_header();
 			<div class="fg-success-mark"><?php echo fge_icon_check(); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<div class="mk-eyebrow" style="margin-top:12px;">Anfrage eingegangen</div>
 			<h2 class="fg-modal-title" style="max-width:360px;margin:6px auto 0;">Wir freuen uns auf euch.</h2>
-			<p class="fg-modal-sub" style="margin-top:8px;">Eure Anfrage ist bei uns eingegangen — eine Rückmeldung folgt innerhalb von 24 Stunden.</p>
+			<p class="fg-modal-sub" style="margin-top:8px;">Eure Anfrage ist bei uns eingegangen — eine Rückmeldung folgt innerhalb eines Werktags.</p>
 			<div class="fg-success-receipt" id="fg-success-receipt">
 				<div><span>Format</span><span><?php echo esc_html( $format_label ); ?></span></div>
 				<div><span>Platz</span><span><?php echo esc_html( $venue ?: get_the_title() ); ?></span></div>
@@ -1042,6 +1064,9 @@ get_header();
 				company:    company,
 				phone:      val('fg-phone'),
 				city:       val('fg-city'),
+				experience: val('fg-experience'),
+				diet:       val('fg-diet'),
+				contact_pref: val('fg-contact-pref'),
 				consent:    consentEl && consentEl.checked ? '1' : ''
 			});
 
