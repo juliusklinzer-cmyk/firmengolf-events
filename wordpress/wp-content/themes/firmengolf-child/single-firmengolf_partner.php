@@ -116,7 +116,7 @@ add_action( 'wp_head', function () use ( $p_seo_title, $p_seo_desc, $pid, $cover
 } );
 get_header();
 ?>
-<div class="fge-page">
+<div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] ); ?>
 

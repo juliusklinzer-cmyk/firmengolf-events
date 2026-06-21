@@ -146,7 +146,7 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 
 get_header();
 ?>
-<div class="fge-page">
+<div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
 

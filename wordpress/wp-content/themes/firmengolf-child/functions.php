@@ -180,6 +180,11 @@ add_filter( 'document_title_separator', function () {
 	return '|';
 } );
 
+// A11y: „Zum Inhalt springen"-Link als erstes fokussierbares Element (Ziel: #fge-main).
+add_action( 'wp_body_open', function () {
+	echo '<a class="fge-skip-link" href="#fge-main">Zum Inhalt springen</a>';
+} );
+
 add_action( 'wp_enqueue_scripts', function() {
 	wp_enqueue_style(
 		'firmengolf-child-style',

@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 get_header();
 $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>';
 ?>
-<div class="fge-page">
+<div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
 

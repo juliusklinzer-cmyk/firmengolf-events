@@ -98,7 +98,7 @@ add_action( 'wp_head', function () use ( $post_seo_title, $post_seo_desc, $post_
 
 get_header();
 ?>
-<div class="fge-page">
+<div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'blog' ] ); ?>
 

@@ -181,7 +181,7 @@ $heading = $heading_parts ? implode( ' · ', $heading_parts ) : 'Alle Firmeneven
 // ── Arrow SVG ────────────────────────────────────────────────────────────────
 $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>';
 ?>
-<div class="fge-page">
+<div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 <?php
 // Mobile-Such-Pille für die Nav-Bar (öffnet das Sheet weiter unten).

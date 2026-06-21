@@ -123,6 +123,10 @@
 				breakList.appendChild(r);
 			});
 			renderDonut(res.rows, res.total);
+			if (donut) {
+				donut.setAttribute('role', 'img');
+				donut.setAttribute('aria-label', 'Budget-Aufteilung · Gesamt ca. €' + fmt(res.total));
+			}
 			var empty = res.total <= 0;
 			totalNum.textContent = '€' + fmt(res.total);
 			totalMeta.textContent = empty
@@ -510,13 +514,31 @@
 			if (first) first.focus();
 		}
 
-		function onKey(e) { if (e.key === 'Escape') close(); }
+		var lastFocus = null;
+		function focusables() {
+			if (!overlay) { return []; }
+			return Array.prototype.filter.call(
+				overlay.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'),
+				function (el) { return el.offsetParent !== null; }
+			);
+		}
+		function onKey(e) {
+			if (e.key === 'Escape') { close(); return; }
+			if (e.key !== 'Tab') { return; }
+			var f = focusables();
+			if (!f.length) { return; }
+			var first = f[0], last = f[f.length - 1];
+			if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+			else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+		}
 
 		function open(mode, preset, intro, source) {
+			lastFocus = document.activeElement;
 			if (!overlay) {
 				overlay = el('div', 'rw-overlay');
 				overlay.setAttribute('role', 'dialog');
 				overlay.setAttribute('aria-modal', 'true');
+				overlay.setAttribute('aria-label', 'Event anfragen');
 				document.body.appendChild(overlay);
 				overlay.addEventListener('click', onClick);
 			}
@@ -525,11 +547,14 @@
 			window.addEventListener('keydown', onKey);
 			overlay.hidden = false;
 			render();
+			var f = focusables();
+			if (f.length) { f[0].focus(); }
 		}
 		function close() {
 			if (overlay) overlay.hidden = true;
 			document.body.style.overflow = '';
 			window.removeEventListener('keydown', onKey);
+			if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
 		}
 
 		return { open: open, close: close };

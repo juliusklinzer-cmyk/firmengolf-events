@@ -11,7 +11,7 @@ get_header();
 $co   = fge_company();
 $addr = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
 ?>
-<div class="fge-page">
+<div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
 

@@ -292,7 +292,7 @@ $modal_nonce = wp_create_nonce( 'fge_modal_anfrage' );
 
 get_header();
 ?>
-<div class="fge-page">
+<div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] ); ?>
 
@@ -354,7 +354,7 @@ get_header();
 		<?php /* ── Detail Body ── */ ?>
 		<div class="fg-detail-body">
 
-			<main class="fg-detail-main">
+			<div class="fg-detail-main">
 
 				<?php /* Info-Box: von Firmengolf organisiert + Orientierungspreis */ ?>
 				<?php if ( $is_self ) : ?>
@@ -596,7 +596,7 @@ get_header();
 		</div>
 	</section>
 
-			</main>
+			</div>
 
 			<?php /* ── Price Rail ── */ ?>
 			<aside class="fg-detail-rail">
@@ -942,8 +942,32 @@ get_header();
 			}
 		}
 
-		function openModal()  { modal.classList.remove('is-hidden'); document.body.style.overflow = 'hidden'; show(0); }
-		function closeModal() { modal.classList.add('is-hidden'); document.body.style.overflow = ''; }
+		var fgLastFocus = null;
+		var FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+		function fgVisibleFocusable() {
+			return Array.prototype.filter.call(modal.querySelectorAll(FOCUSABLE), function (el) { return el.offsetParent !== null; });
+		}
+		function fgTrapKey(e) {
+			if (e.key === 'Escape' || e.key === 'Esc') { closeModal(); return; }
+			if (e.key !== 'Tab') { return; }
+			var f = fgVisibleFocusable();
+			if (!f.length) { return; }
+			var first = f[0], last = f[f.length - 1];
+			if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+			else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+		}
+		function openModal()  {
+			fgLastFocus = document.activeElement;
+			modal.classList.remove('is-hidden'); document.body.style.overflow = 'hidden'; show(0);
+			document.addEventListener('keydown', fgTrapKey);
+			var f = fgVisibleFocusable();
+			if (f.length) { f[0].focus(); }
+		}
+		function closeModal() {
+			modal.classList.add('is-hidden'); document.body.style.overflow = '';
+			document.removeEventListener('keydown', fgTrapKey);
+			if (fgLastFocus && fgLastFocus.focus) { fgLastFocus.focus(); }
+		}
 
 		openBtn.addEventListener('click', openModal);
 		document.getElementById('fg-modal-close').addEventListener('click', closeModal);

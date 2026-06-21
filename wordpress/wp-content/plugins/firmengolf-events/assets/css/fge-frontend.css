@@ -5180,3 +5180,13 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
 	box-shadow: 0 2px 8px rgba(20, 36, 26, 0.18);
 }
 .fg-pagination .page-numbers.dots { border-color: transparent; background: transparent; min-width: 24px; padding: 0 4px; color: var(--ink-400); }
+
+/* ── A11y: Skip-Link ──────────────────────────────────────────────────────── */
+.fge-skip-link {
+	position: fixed; left: 8px; top: -64px; z-index: 100000;
+	background: var(--fairway-700); color: #fff;
+	padding: 10px 18px; border-radius: 8px; font-weight: 600; text-decoration: none;
+	transition: top 140ms var(--ease-out);
+}
+.fge-skip-link:focus { top: 8px; outline: 2px solid #fff; outline-offset: 2px; }
+#fge-main:focus { outline: none; }

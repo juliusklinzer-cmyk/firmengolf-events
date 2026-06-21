@@ -119,7 +119,7 @@ $nacht_preset = wp_json_encode( [
 
 get_header();
 ?>
-<div class="fge-page">
+<div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'individuelle-events' ] ); ?>
 
@@ -190,7 +190,7 @@ get_header();
 						<button type="button" class="bc-step-btn" data-bc-step="-2" aria-label="Weniger">
 							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
 						</button>
-						<span class="bc-step-val" id="bc-participants"><?php echo esc_html( (string) $start_parts ); ?></span>
+						<span class="bc-step-val" id="bc-participants" aria-live="polite" aria-label="Teilnehmerzahl"><?php echo esc_html( (string) $start_parts ); ?></span>
 						<button type="button" class="bc-step-btn" data-bc-step="2" aria-label="Mehr">
 							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
 						</button>

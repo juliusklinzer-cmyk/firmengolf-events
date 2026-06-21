@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 get_header();
 $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 ?>
-<div class="fge-page">
+<div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
 
