@@ -90,7 +90,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 				<span class="mk-hero-trust-dot" aria-hidden="true"></span>
 				<span>Schläger werden gestellt</span>
 				<span class="mk-hero-trust-dot" aria-hidden="true"></span>
-				<span>Antwort in 24 Stunden</span>
+				<span>Antwort in einem Werktag</span>
 			</div>
 		</div>
 	</div>
@@ -191,7 +191,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		[ 'ic' => '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
 		  't' => 'Aus einer Hand', 'b' => 'Platz, Pro, Catering, Rechnung' ],
 		[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-		  't' => '&lt; 24 h', 'b' => 'Antwort auf jede Anfrage' ],
+		  't' => '1 Werktag', 'b' => 'Antwort auf jede Anfrage' ],
 	];
 	foreach ( $facts as $f ) : ?>
 		<div class="home-fact">
@@ -247,7 +247,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		<?php
 		$steps = [
 			[ '01', 'Du sagst uns, was du planst.',     'Anlass, Gruppe, Zeitraum. Eine Anfrage — mehr brauchen wir nicht.' ],
-			[ '02', 'Wir kuratieren passende Plätze.',  'Innerhalb von 24 Stunden bekommst du zwei bis drei Optionen mit Format, Preis und Verfügbarkeit.' ],
+			[ '02', 'Wir kuratieren passende Plätze.',  'Innerhalb eines Werktags bekommst du zwei bis drei Optionen mit Format, Preis und Verfügbarkeit.' ],
 			[ '03', 'Du wählst, wir koordinieren.',     'Ein Ansprechpartner, eine Rechnung. Der Platz organisiert vor Ort — du bist nur Gastgeberin.' ],
 		];
 		foreach ( $steps as $step ) : ?>
@@ -355,7 +355,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			[
 				'eyebrow' => 'Onboarding',
 				'title'   => 'Neue Mitarbeitende willkommen heißen.',
-				'body'    => 'Ein Halbtag Schnupperkurs, der Eis bricht.',
+				'body'    => 'Ein entspannter Halbtag auf dem Platz, der das Eis bricht.',
 				'url'     => add_query_arg( 'format', 'after_work_golf', $url_events ),
 				'img'     => 'golfer-gruppe-fairway.png',
 			],
@@ -425,7 +425,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 				was du vorhast. Wir bauen das Format für euch und schlagen die passenden Plätze vor.
 			</p>
 			<div class="home-ind-points">
-				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Persönliche Beratung in 24 h</span></div>
+				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Persönliche Beratung in einem Werktag</span></div>
 				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Maßgeschneidertes Programm</span></div>
 				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Ein Ansprechpartner, eine Rechnung</span></div>
 			</div>

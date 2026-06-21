@@ -244,6 +244,8 @@ function fge_render_rmb_rahmen( WP_Post $post ) {
 	$desired_region        = get_post_meta( $post->ID, '_fge_desired_region', true );
 	$budget_range          = get_post_meta( $post->ID, '_fge_budget_range', true );
 	$message               = get_post_meta( $post->ID, '_fge_message', true );
+	$group_experience      = get_post_meta( $post->ID, '_fge_group_experience', true );
+	$catering_notes        = get_post_meta( $post->ID, '_fge_catering_notes', true );
 
 	$format_tiers = fge_get_event_formats();
 	?>
@@ -291,6 +293,14 @@ function fge_render_rmb_rahmen( WP_Post $post ) {
 				       value="<?php echo esc_attr( $budget_range ); ?>" class="regular-text">
 				<p class="description">Optional.</p>
 			</td>
+		</tr>
+		<tr>
+			<th scope="row">Golf-Erfahrung (Team)</th>
+			<td><?php echo '' !== $group_experience ? esc_html( $group_experience ) : '—'; ?></td>
+		</tr>
+		<tr>
+			<th scope="row">Verpflegung / Diät</th>
+			<td><?php echo '' !== $catering_notes ? esc_html( $catering_notes ) : '—'; ?></td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_message">Nachricht / Sonderwünsche</label></th>
@@ -714,6 +724,13 @@ function fge_auto_title_request( int $post_id ) {
 
 	$post = get_post( $post_id );
 	if ( ! $post ) {
+		return;
+	}
+
+	// Nur beim echten Admin-Metabox-Speichern greifen. Modal-/Wizard-/Kontakt-Handler
+	// setzen ihren eigenen „FG-… · Name"-Titel beim Insert; der darf hier nicht vom
+	// generischen Fallback überschrieben werden (AJAX/PRG senden keinen Admin-Nonce).
+	if ( ! isset( $_POST['fge_request_nonce'] ) ) {
 		return;
 	}
 

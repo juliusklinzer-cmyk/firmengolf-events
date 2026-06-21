@@ -564,6 +564,25 @@ if ( ! $has_filters ) :
 			} ?>
 		</div>
 
+		<?php
+		// Pagination nur im Nicht-Geo-Pfad (Umkreissuche listet alle Treffer ungeteilt).
+		if ( isset( $events_query ) && (int) $events_query->max_num_pages > 1 ) :
+			$pg_base = remove_query_arg( 'paged', add_query_arg( null, null ) );
+			$pg_links = paginate_links( [
+				'base'      => add_query_arg( 'paged', '%#%', $pg_base ),
+				'format'    => '',
+				'current'   => max( 1, (int) ( $_GET['paged'] ?? 1 ) ),  // phpcs:ignore WordPress.Security.NonceVerification
+				'total'     => (int) $events_query->max_num_pages,
+				'mid_size'  => 1,
+				'prev_text' => '‹ Zurück',
+				'next_text' => 'Weiter ›',
+			] );
+			if ( $pg_links ) {
+				echo '<nav class="fg-pagination" aria-label="Seiten" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:32px;">' . $pg_links . '</nav>';  // phpcs:ignore WordPress.Security.EscapeOutput
+			}
+		endif;
+		?>
+
 	<?php else : ?>
 
 		<div class="fg-empty">

@@ -105,6 +105,10 @@ function fge_offer_run_followups(): array {
 		if ( 'pending' !== (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
 			continue;
 		}
+		// Offene Rückfrage: WIR sind am Zug — Kunden nicht mahnen / nicht eskalieren.
+		if ( 'angebot_rueckfrage' === (string) get_post_meta( $req, '_fge_request_status', true ) ) {
+			continue;
+		}
 		$sent_at = strtotime( (string) get_post_meta( $req, '_fge_last_status_change', true ) ?: get_post_field( 'post_date', $req ) ?: 'now' );
 
 		// Einmalige Erinnerung an den Kunden.

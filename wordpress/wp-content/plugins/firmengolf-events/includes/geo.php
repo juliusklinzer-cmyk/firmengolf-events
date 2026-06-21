@@ -36,25 +36,64 @@ function fge_geo_distance( float $lat1, float $lng1, float $lat2, float $lng2 ):
 	return $r * 2 * asin( min( 1.0, sqrt( $a ) ) );
 }
 
-/** Koordinaten eines Events (über zugeordneten Partner-PLZ), gecacht. */
+/** Stadt-/Regionsname → repräsentative Koordinaten (für Selbstplaner-Events ohne Partner-PLZ). */
+function fge_geo_city_coords( string $place ): ?array {
+	static $map = [
+		'münchen'     => [ 48.137, 11.575 ],
+		'muenchen'    => [ 48.137, 11.575 ],
+		'hamburg'     => [ 53.551, 9.993 ],
+		'köln'        => [ 50.938, 6.960 ],
+		'koeln'       => [ 50.938, 6.960 ],
+		'stuttgart'   => [ 48.776, 9.182 ],
+		'berlin'      => [ 52.520, 13.405 ],
+		'frankfurt'   => [ 50.110, 8.682 ],
+		'düsseldorf'  => [ 51.225, 6.776 ],
+		'duesseldorf' => [ 51.225, 6.776 ],
+		'tegernsee'   => [ 47.713, 11.757 ],
+	];
+	$p = mb_strtolower( trim( $place ) );
+	if ( '' === $p ) {
+		return null;
+	}
+	if ( isset( $map[ $p ] ) ) {
+		return $map[ $p ];
+	}
+	foreach ( $map as $key => $coords ) {
+		if ( mb_strpos( $p, $key ) !== false ) {
+			return $coords;
+		}
+	}
+	return null;
+}
+
+/** Koordinaten eines Events: 1) eigene Geo-Meta, 2) Partner-PLZ, 3) Stadt/Region — gecacht. */
 function fge_geo_event_coords( int $event_id ): ?array {
 	$lat = get_post_meta( $event_id, '_fge_geo_lat', true );
 	$lng = get_post_meta( $event_id, '_fge_geo_lng', true );
 	if ( $lat !== '' && $lng !== '' ) {
 		return [ (float) $lat, (float) $lng ];
 	}
+	// 1) Über zugeordneten Partner (PLZ).
 	$partner_id = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
-	if ( $partner_id <= 0 ) {
-		return null;
+	if ( $partner_id > 0 ) {
+		$plz = (string) get_post_meta( $partner_id, '_fge_postal_code', true );
+		$geo = $plz !== '' ? fge_geo_lookup_plz( $plz ) : null;
+		if ( $geo ) {
+			update_post_meta( $event_id, '_fge_geo_lat', $geo[0] );
+			update_post_meta( $event_id, '_fge_geo_lng', $geo[1] );
+			return [ $geo[0], $geo[1] ];
+		}
 	}
-	$plz = (string) get_post_meta( $partner_id, '_fge_postal_code', true );
-	$geo = $plz !== '' ? fge_geo_lookup_plz( $plz ) : null;
-	if ( ! $geo ) {
-		return null;
+	// 2) Fallback: Stadt/Region des Events (Selbstplaner-Events „von Firmengolf organisiert").
+	foreach ( [ '_fge_city', '_fge_region', '_fge_event_location' ] as $key ) {
+		$coords = fge_geo_city_coords( (string) get_post_meta( $event_id, $key, true ) );
+		if ( $coords ) {
+			update_post_meta( $event_id, '_fge_geo_lat', $coords[0] );
+			update_post_meta( $event_id, '_fge_geo_lng', $coords[1] );
+			return $coords;
+		}
 	}
-	update_post_meta( $event_id, '_fge_geo_lat', $geo[0] );
-	update_post_meta( $event_id, '_fge_geo_lng', $geo[1] );
-	return [ $geo[0], $geo[1] ];
+	return null;
 }
 
 /** Invalidate cached event coords when a partner address changes. */
