@@ -5163,3 +5163,20 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   .blog-catrow { margin: 0 -24px; padding: 4px 24px 10px; scroll-padding-left: 24px; }
   .ev-catrow .blog-card { flex: 0 0 80%; scroll-snap-align: start; }
 }
+
+/* ── Eventarchiv-Pagination ───────────────────────────────────────────────── */
+.fg-pagination .page-numbers {
+	display: inline-flex; align-items: center; justify-content: center;
+	min-width: 42px; height: 42px; padding: 0 14px;
+	border-radius: 999px; border: 1px solid var(--ink-200);
+	background: var(--paper-50); color: var(--ink-700);
+	font-family: var(--font-body); font-size: 14px; font-weight: 600;
+	text-decoration: none;
+	transition: background 140ms var(--ease-out), color 140ms var(--ease-out), border-color 140ms var(--ease-out);
+}
+.fg-pagination a.page-numbers:hover { background: var(--paper-200); color: var(--ink-900); border-color: var(--ink-300); }
+.fg-pagination .page-numbers.current {
+	background: var(--fairway-700); color: var(--paper-50); border-color: var(--fairway-700);
+	box-shadow: 0 2px 8px rgba(20, 36, 26, 0.18);
+}
+.fg-pagination .page-numbers.dots { border-color: transparent; background: transparent; min-width: 24px; padding: 0 4px; color: var(--ink-400); }
