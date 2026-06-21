@@ -32,7 +32,10 @@ function fge_register_post_types() {
 		'has_archive'        => false,
 		'rewrite'            => [ 'slug' => 'golfplatz', 'with_front' => false ],
 		'supports'           => [ 'title', 'editor', 'thumbnail' ],
-		'show_in_rest'       => true,
+		// false: die öffentliche v2-REST-Liste würde sonst ALLE Partner (auch nicht
+		// freigegebene/pausierte) enumerierbar machen — der Frontend-Gate greift dort nicht.
+		// Portal/Frontend nutzen die wp/v2-Route nicht; Single-Page bleibt via publicly_queryable.
+		'show_in_rest'       => false,
 		'menu_icon'          => 'dashicons-location-alt',
 		'menu_position'      => 21,
 	] );

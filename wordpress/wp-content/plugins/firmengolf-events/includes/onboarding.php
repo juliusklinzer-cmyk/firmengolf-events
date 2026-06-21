@@ -517,6 +517,10 @@ function fge_onboarding_submit( int $partner_id ): void {
 
 	// Email.
 	fge_send_onboarding_submitted_email( $partner_id );
+
+	// Onboarding-Token entwerten: ab jetzt läuft alles über den Portal-Login (User-ID).
+	// Alte Resume-/Edit-URLs (Browser-History, Referrer, Logs) sollen nicht mehr greifen.
+	delete_post_meta( $partner_id, '_fge_onboarding_token' );
 }
 
 // ── POST Handler ──────────────────────────────────────────────────────────────
@@ -550,6 +554,10 @@ function fge_onboarding_handle_step(): void {
 
 	// First intro slide: create the draft partner, then advance.
 	if ( 'intro-1' === $id ) {
+		// Drossel gegen scriptbare Massen-Anlage von Draft-Partnern (großzügig für Menschen).
+		if ( function_exists( 'fge_form_rate_limited' ) && fge_form_rate_limited( 10, 3600, 'ob_create' ) ) {
+			wp_die( 'Zu viele Vorgänge in kurzer Zeit. Bitte versuche es später erneut.', '', [ 'response' => 429 ] );
+		}
 		$partner_id = fge_onboarding_create_draft_partner();
 		if ( $partner_id <= 0 ) {
 			wp_die( 'Fehler beim Erstellen des Profils.', '', [ 'response' => 500 ] );
@@ -2292,6 +2300,10 @@ function fge_onboarding_handle_email_link(): void {
 	}
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['fge_ob_nonce_mail'] ?? '' ) ), 'fge_ob_email_link' ) ) {
 		wp_die( 'Ungültige Sicherheitsüberprüfung.', '', [ 'response' => 403 ] );
+	}
+	// Drossel gegen Missbrauch als Mail-Versender (Token-Link an beliebige Adresse).
+	if ( function_exists( 'fge_form_rate_limited' ) && fge_form_rate_limited( 5, 600, 'ob_resume' ) ) {
+		wp_die( 'Zu viele Anfragen. Bitte versuche es in ein paar Minuten erneut.', '', [ 'response' => 429 ] );
 	}
 	$token = sanitize_text_field( wp_unslash( $_POST['ob_token'] ?? '' ) );
 	$step  = max( 1, absint( $_POST['ob_step'] ?? 1 ) );

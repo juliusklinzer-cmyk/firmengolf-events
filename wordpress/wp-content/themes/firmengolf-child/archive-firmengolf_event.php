@@ -102,6 +102,10 @@ if ( $geo_active ) {
 		'fields'         => 'ids',
 		'meta_query'     => $meta_query ?: null,
 	] );
+	// fields=ids primt den Meta-Cache nicht → einmal vorladen, sonst N+1 in fge_geo_event_coords().
+	if ( $ids ) {
+		update_meta_cache( 'post', $ids );
+	}
 	foreach ( $ids as $id ) {
 		$coords = fge_geo_event_coords( (int) $id );
 		if ( ! $coords ) {

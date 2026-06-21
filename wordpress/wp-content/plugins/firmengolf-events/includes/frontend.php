@@ -4,20 +4,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// ── Asset Enqueue ─────────────────────────────────────────────────────────────
-
-function fge_enqueue_frontend_assets() {
-	if ( ! is_singular( 'firmengolf_event' ) && ! is_post_type_archive( 'firmengolf_event' ) ) {
-		return;
-	}
-	wp_enqueue_style(
-		'fge-frontend',
-		plugins_url( 'assets/css/fge-frontend.css', FGE_DIR . 'firmengolf-events.php' ),
-		[],
-		FGE_VERSION
-	);
-}
-add_action( 'wp_enqueue_scripts', 'fge_enqueue_frontend_assets' );
+// Hinweis: Das Stylesheet `fge-frontend` wird zentral im Child-Theme (functions.php)
+// sitewide enqueued — viele Seitentypen brauchen es. Eine frühere, redundante
+// Plugin-Enqueue desselben Handles (nur Event-Seiten) wurde entfernt.
 
 // ── Public visibility ─────────────────────────────────────────────────────────
 

@@ -42,12 +42,12 @@ function fge_form_honeypot_tripped(): bool {
  * Einfaches IP-Rate-Limit via Transient. true = Limit überschritten.
  * Default: max. 8 Anfragen pro 10 Minuten je IP — großzügig für Menschen, bremst Bots.
  */
-function fge_form_rate_limited( int $max = 8, int $window = 600 ): bool {
+function fge_form_rate_limited( int $max = 8, int $window = 600, string $bucket = '' ): bool {
 	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? preg_replace( '/[^0-9a-f:.]/i', '', (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 	if ( $ip === '' ) {
 		return false;
 	}
-	$key   = 'fge_rl_' . md5( $ip );
+	$key   = 'fge_rl_' . md5( $bucket . '|' . $ip );
 	$count = (int) get_transient( $key );
 	if ( $count >= $max ) {
 		return true;
