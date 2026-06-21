@@ -74,29 +74,10 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 	</ul>
 </section>
 
-<?php /* Coverage */ ?>
-<section class="mk-section" aria-label="Pressestimmen">
-	<div class="mk-section-head"><div class="mk-eyebrow">Pressestimmen</div><h2 class="mk-h2">Was über uns geschrieben wird</h2></div>
-	<div class="mk-steps-grid">
-		<?php
-		$cov = [
-			[ 'HR Today', 'Firmengolf nimmt dem Golfsport das Elitäre — und macht ihn zum überraschend nahbaren Team-Benefit.' ],
-			[ 'Eventbranche.de', 'Eine Anfrage, ein Ansprechpartner, eine Rechnung: Die Plattform räumt mit der Komplexität von Firmenevents auf.' ],
-			[ 'Gründerszene', 'Aus einer simplen Idee — Golf für Firmen zugänglich machen — ist ein bundesweites Partnernetz geworden.' ],
-		];
-		foreach ( $cov as $c ) : ?>
-			<div class="mk-step">
-				<p class="mk-step-b" style="font-family:var(--font-serif);font-style:italic;font-size:18px;color:var(--ink-800);">„<?php echo esc_html( $c[1] ); ?>"</p>
-				<div class="mk-tm-role" style="margin-top:10px;"><?php echo esc_html( $c[0] ); ?> · 2026</div>
-			</div>
-		<?php endforeach; ?>
-	</div>
-</section>
-
 <section class="mk-cta" aria-label="Pressekontakt">
 	<div class="mk-cta-inner">
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Pressekontakt</div>
-		<h2 class="mk-cta-h">Marie Albers · Presse & Kommunikation</h2>
+		<h2 class="mk-cta-h">Julius Klinzer · Presse &amp; Kommunikation</h2>
 		<p class="mk-cta-sub">Firmengolf · Visionpunch UG, München</p>
 		<div class="mk-cta-ctas">
 			<a class="mk-cta-mail" href="mailto:presse@visionpunch.de">presse@visionpunch.de</a>

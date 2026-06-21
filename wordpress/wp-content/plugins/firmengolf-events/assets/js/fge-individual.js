@@ -61,6 +61,7 @@
 		var donut     = root.querySelector('#bc-donut');
 		var totalNum  = root.querySelector('#bc-total');
 		var totalMeta = root.querySelector('#bc-total-meta');
+		var ctaBtn    = root.querySelector('#bc-request');
 
 		function compute() {
 			var type = find(BC.types, state.type) || BC.types[0];
@@ -122,8 +123,16 @@
 				breakList.appendChild(r);
 			});
 			renderDonut(res.rows, res.total);
+			var empty = res.total <= 0;
 			totalNum.textContent = '€' + fmt(res.total);
-			totalMeta.textContent = 'Für ' + state.participants + ' Personen · ' + res.type.label;
+			totalMeta.textContent = empty
+				? 'Wähle mindestens eine Leistung'
+				: ('Für ' + state.participants + ' Personen · ' + res.type.label);
+			if (ctaBtn) {
+				ctaBtn.disabled = empty;
+				ctaBtn.style.opacity = empty ? '.5' : '';
+				ctaBtn.style.pointerEvents = empty ? 'none' : '';
+			}
 		}
 
 		// Typ wechseln: nur passende Chips zeigen, Vorauswahl/Pflicht setzen, neu rechnen.
@@ -176,12 +185,13 @@
 			var res = compute();
 			var svcWiz = state.services.map(function (id) { var s = find(BC.services, id); return s ? s.wiz : null; })
 				.filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; });
-			var lo = Math.round(res.total * 0.85 / 1000), hi = Math.round(res.total * 1.15 / 1000);
+			var lo = Math.max(500, Math.round(res.total * 0.85 / 500) * 500);
+			var hi = Math.max(lo + 500, Math.round(res.total * 1.15 / 500) * 500);
 			Wizard.open('full', {
 				occasion: res.type.wiz || 'Teamevent',
 				size: String(state.participants),
 				services: svcWiz,
-				budget: '€' + lo + '.000 – €' + hi + '.000',
+				budget: '€' + lo.toLocaleString('de-DE') + ' – €' + hi.toLocaleString('de-DE'),
 				notes: 'Über den Budget-Rechner geschätzt: ' + res.type.label + ', ' + state.participants
 					+ ' Personen, Preisniveau ' + state.range + ' — Richtwert ca. €' + fmt(res.total) + '.'
 			});
@@ -221,7 +231,7 @@
 				budget: '€10.000 – €20.000', when: '', flex: 'flexibel', duration: 'Halbtag',
 				date1: '', date2: '', date3: '', services: ['Lunch', 'Golflehrer / Coaching'],
 				company: '', city: '', firstName: '', lastName: '', role: '', email: '', phone: '',
-				contactPref: 'E-Mail', notes: '', consent: true
+				contactPref: 'E-Mail', notes: '', consent: false
 			};
 			if (preset) for (var k in preset) if (preset.hasOwnProperty(k)) f[k] = preset[k];
 			return f;

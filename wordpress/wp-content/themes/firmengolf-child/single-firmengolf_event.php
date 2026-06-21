@@ -848,6 +848,10 @@ get_header();
 					<input class="fg-input" id="fg-city" placeholder="z.B. München">
 				</div>
 			</div>
+			<label class="fg-consent" style="display:flex;gap:9px;align-items:flex-start;margin-top:14px;font-size:13px;line-height:1.45;color:var(--ink-700,#4a4a44);">
+				<input type="checkbox" id="fg-consent" style="margin-top:3px;flex:0 0 auto;">
+				<span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="<?php echo esc_url( home_url( '/datenschutz/' ) ); ?>" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span>
+			</label>
 			<div class="fg-modal-foot">
 				<button class="fg-btn-ghost" data-modal-back="1" type="button">Zurück</button>
 				<button class="fg-btn-brand" id="fg-modal-submit" type="button">
@@ -1008,8 +1012,13 @@ get_header();
 		document.getElementById('fg-modal-submit').addEventListener('click', function () {
 			var first = val('fg-first-name'), last = val('fg-last-name'),
 			    email = val('fg-email'), company = val('fg-company');
+			var consentEl = document.getElementById('fg-consent');
 			if (!first || !last || !email || !company) {
 				alert('Bitte fülle Vorname, Nachname, E-Mail und Firma aus.');
+				return;
+			}
+			if (!consentEl || !consentEl.checked) {
+				alert('Bitte stimme der Datenverarbeitung zu, um die Anfrage zu senden.');
 				return;
 			}
 			var btn = this;
@@ -1032,7 +1041,8 @@ get_header();
 				email:      email,
 				company:    company,
 				phone:      val('fg-phone'),
-				city:       val('fg-city')
+				city:       val('fg-city'),
+				consent:    consentEl && consentEl.checked ? '1' : ''
 			});
 
 			fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
@@ -1043,7 +1053,7 @@ get_header();
 			.then(function (r) { return r.json(); })
 			.then(function (data) {
 				if (data.success) {
-					setText('fg-receipt-date',  fmtDate(val('fg-date-1')) || val('fg-notes') || '–');
+					setText('fg-receipt-date',  fmtDate(val('fg-date-1')) || '–');
 					setText('fg-receipt-group', val('fg-group-size') || '–');
 					setText('fg-receipt-ref',   (data.data && data.data.ref) || '–');
 					show(3);

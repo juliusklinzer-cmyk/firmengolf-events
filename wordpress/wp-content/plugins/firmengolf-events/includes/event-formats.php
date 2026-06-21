@@ -37,6 +37,38 @@ function fge_get_event_formats_flat( bool $include_on_request = true ): array {
 		: $tiers['standard'];
 }
 
+/**
+ * Format-Slug→Label nur für Formate, die mindestens ein öffentlich sichtbares
+ * Event haben. Reihenfolge folgt dem Katalog (inkl. on_request, daher z. B. Incentive).
+ * Verhindert tote Filter-Chips und nimmt neue Typen automatisch auf.
+ */
+function fge_event_formats_in_use(): array {
+	global $wpdb;
+	$ids = $wpdb->get_col(
+		"SELECT p.ID FROM {$wpdb->posts} p WHERE p.post_type = 'firmengolf_event' AND p.post_status = 'publish'"
+	);
+	$catalog = fge_get_event_formats_flat( true );
+	$legacy  = fge_get_event_format_legacy_map();
+	$present = [];
+	foreach ( $ids as $id ) {
+		if ( function_exists( 'fge_event_is_public' ) && ! fge_event_is_public( (int) $id ) ) {
+			continue;
+		}
+		$type = (string) get_post_meta( (int) $id, '_fge_event_type', true );
+		$key  = isset( $catalog[ $type ] ) ? $type : ( $legacy[ $type ] ?? '' );
+		if ( '' !== $key && isset( $catalog[ $key ] ) ) {
+			$present[ $key ] = true;
+		}
+	}
+	$out = [];
+	foreach ( $catalog as $slug => $label ) {
+		if ( isset( $present[ $slug ] ) ) {
+			$out[ $slug ] = $label;
+		}
+	}
+	return $out;
+}
+
 function fge_format_event_type( string $key ): string {
 	if ( $key === '' ) {
 		return '';

@@ -40,9 +40,11 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
 			Datenschutzanfragen: <a href="mailto:<?php echo esc_attr( $mail_ds ); ?>"><?php echo esc_html( $mail_ds ); ?></a> · weitere Angaben im <a href="<?php echo esc_url( home_url( '/impressum/' ) ); ?>">Impressum</a>.
 		</p>
 
-		<h2>2. Datenschutzbeauftragte</h2>
+		<h2>2. Datenschutzbeauftragter</h2>
 		<p>
-			Frau Marie Helena Bauer, E-Mail: <a href="mailto:marie.bauer@visionpunch.de">marie.bauer@visionpunch.de</a>
+			Wir sind gesetzlich nicht zur Bestellung eines Datenschutzbeauftragten verpflichtet.
+			Bei Fragen zum Datenschutz wenden Sie sich bitte an den unter Ziffer 1 genannten Verantwortlichen
+			bzw. an <a href="mailto:<?php echo esc_attr( $mail_ds ); ?>"><?php echo esc_html( $mail_ds ); ?></a>.
 		</p>
 
 		<h2>3. Allgemeines zur Datenverarbeitung</h2>

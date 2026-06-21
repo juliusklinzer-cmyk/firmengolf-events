@@ -91,6 +91,9 @@ function fge_ajax_modal_anfrage(): void {
 	if ( ! $email || ! is_email( $email ) || ! $first || ! $last || ! $company ) {
 		wp_send_json_error( [ 'message' => 'Pflichtfelder fehlen.' ], 422 );
 	}
+	if ( '1' !== (string) ( $_POST['consent'] ?? '' ) ) {
+		wp_send_json_error( [ 'message' => 'Bitte stimme der Datenverarbeitung zu, um die Anfrage zu senden.' ], 422 );
+	}
 
 	$partner_id  = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
 	$event_title = $event_id > 0 ? get_the_title( $event_id ) : '–';

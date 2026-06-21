@@ -65,28 +65,11 @@ $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12"
 
 <?php /* Open positions */ ?>
 <section class="mk-section" aria-label="Offene Stellen">
-	<div class="mk-section-head"><div class="mk-eyebrow">Offene Stellen</div><h2 class="mk-h2">Wir suchen dich.</h2></div>
-	<ul class="faq-list">
-		<?php
-		$jobs = [
-			[ 'Senior Frontend Engineer (m/w/d)',         'Engineering · Vollzeit · München / Remote' ],
-			[ 'Backend Engineer — Buchungssystem (m/w/d)', 'Engineering · Vollzeit · München / Remote' ],
-			[ 'Partner Manager Golfplätze (m/w/d)',        'Partnerships · Vollzeit · Hybrid · Süddeutschland' ],
-			[ 'Event Coordinator (m/w/d)',                 'Events · Vollzeit · München' ],
-			[ 'Performance Marketing Manager (m/w/d)',     'Marketing · Vollzeit · München / Remote' ],
-			[ 'Content & Social Lead (m/w/d)',             'Marketing · Teilzeit möglich · Remote' ],
-			[ 'Customer Success Manager (m/w/d)',          'Operations · Vollzeit · München' ],
-			[ 'Werkstudent:in People & Operations (m/w/d)','Operations · Werkstudent · München' ],
-		];
-		foreach ( $jobs as $j ) : ?>
-			<li class="faq-item">
-				<a class="faq-q" href="mailto:jobs@visionpunch.de?subject=<?php echo rawurlencode( $j[0] ); ?>" style="text-decoration:none;">
-					<span><?php echo esc_html( $j[0] ); ?><br><span class="mk-tm-role"><?php echo esc_html( $j[1] ); ?></span></span>
-					<span class="faq-toggle" aria-hidden="true">→</span>
-				</a>
-			</li>
-		<?php endforeach; ?>
-	</ul>
+	<div class="mk-section-head"><div class="mk-eyebrow">Offene Stellen</div><h2 class="mk-h2">Aktuell keine offenen Stellen.</h2></div>
+	<p class="mk-sub" style="text-align:center;max-width:640px;margin:0 auto;">
+		Gerade schreiben wir keine konkrete Position aus. Wir wachsen aber stetig — wenn du Lust hast,
+		Firmengolf mitzugestalten, freuen wir uns über deine Initiativbewerbung.
+	</p>
 </section>
 
 <section class="mk-cta" aria-label="Initiativbewerbung">

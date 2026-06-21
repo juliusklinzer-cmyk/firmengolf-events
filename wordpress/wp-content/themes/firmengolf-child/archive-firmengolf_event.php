@@ -42,7 +42,7 @@ $active_loc    = sanitize_text_field( wp_unslash( $_GET['loc'] ?? '' ) );       
 $geo_active    = ( $active_lat && $active_lng && $active_radius > 0 && function_exists( 'fge_geo_distance' ) );
 
 // ── Format list (canonical — single source: event-formats.php) ───────────────
-$formats = array_merge( [ 'all' => 'Alle Typen' ], fge_get_event_formats_flat( false ) );
+$formats = array_merge( [ 'all' => 'Alle Typen' ], fge_event_formats_in_use() );
 
 // ── Regions: only those with at least one published event ────────────────────
 global $wpdb;
@@ -114,10 +114,7 @@ if ( $geo_active ) {
 	}
 	switch ( $active_sort ) {
 		case 'price-asc':
-			usort( $event_items, static fn( $a, $b ) => (float) get_post_meta( $a['id'], '_fge_sale_price_net', true ) <=> (float) get_post_meta( $b['id'], '_fge_sale_price_net', true ) );
-			break;
-		case 'rating':
-			usort( $event_items, static fn( $a, $b ) => (float) get_post_meta( $b['id'], '_fge_rating', true ) <=> (float) get_post_meta( $a['id'], '_fge_rating', true ) );
+			usort( $event_items, static fn( $a, $b ) => (float) get_post_meta( $a['id'], '_fge_price_amount', true ) <=> (float) get_post_meta( $b['id'], '_fge_price_amount', true ) );
 			break;
 		case 'group':
 			usort( $event_items, static fn( $a, $b ) => (int) get_post_meta( $b['id'], '_fge_participants_max', true ) <=> (int) get_post_meta( $a['id'], '_fge_participants_max', true ) );
@@ -136,14 +133,9 @@ if ( $geo_active ) {
 	];
 	switch ( $active_sort ) {
 		case 'price-asc':
-			$query_args['meta_key'] = '_fge_sale_price_net';
+			$query_args['meta_key'] = '_fge_price_amount';
 			$query_args['orderby']  = 'meta_value_num';
 			$query_args['order']    = 'ASC';
-			break;
-		case 'rating':
-			$query_args['meta_key'] = '_fge_rating';
-			$query_args['orderby']  = 'meta_value_num';
-			$query_args['order']    = 'DESC';
 			break;
 		case 'group':
 			$query_args['meta_key'] = '_fge_participants_max';
@@ -536,7 +528,6 @@ if ( ! $has_filters ) :
 			$sort_options = [
 				'curated'   => $geo_active ? 'Nächste zuerst' : 'Empfohlen',
 				'price-asc' => 'Preis aufsteigend',
-				'rating'    => 'Beste Bewertung',
 				'group'     => 'Größte Gruppen',
 			];
 			$sort_label = $sort_options[ $active_sort ] ?? reset( $sort_options );

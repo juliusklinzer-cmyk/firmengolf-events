@@ -51,7 +51,7 @@ $url_karriere   = $get_page_url( 'karriere' );
 				<a href="<?php echo esc_url( add_query_arg( 'format', 'teamevent', $url_events ) ); ?>">Teamevent</a>
 				<a href="<?php echo esc_url( add_query_arg( 'format', 'firmen_golfturnier', $url_events ) ); ?>">Firmen-Golfturnier</a>
 				<a href="<?php echo esc_url( add_query_arg( 'format', 'after_work_golf', $url_events ) ); ?>">After-Work Golf</a>
-				<a href="<?php echo esc_url( add_query_arg( 'format', 'offsite', $url_events ) ); ?>">Offsite</a>
+				<a href="<?php echo esc_url( add_query_arg( 'format', 'incentive', $url_events ) ); ?>">Incentive</a>
 				<a href="<?php echo esc_url( $url_ind ); ?>">Individuelles Event</a>
 				<?php if ( function_exists( 'fge_get_cities' ) ) : ?>
 					<div class="fg-footer-head" style="margin-top:18px;">Golf-Events nach Stadt</div>
