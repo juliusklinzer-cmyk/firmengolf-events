@@ -77,16 +77,27 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 	$unit  = (string) ( $pricing['unit'] ?? '' );
 	$total = ( 'pro Person' === $unit && $pax > 0 ) ? $gross * $pax : $gross;
 
+	$co       = function_exists( 'fge_company' ) ? fge_company() : [];
+	$location = $event_id ? (string) get_post_meta( $event_id, '_fge_event_location', true ) : '';
+	if ( '' === $location ) {
+		$location = (string) get_post_meta( $req, '_fge_company_city', true );
+	}
+
 	return [
 		'event_title'       => $event_id ? get_the_title( $event_id ) : ( (string) get_post_meta( $req, '_fge_event_type', true ) ?: 'Firmen-Event' ),
 		'date'              => (string) get_post_meta( $req, '_fge_preferred_date_' . $date_index, true ),
+		'location'          => $location,
 		'participants'      => $pax,
 		'price_gross'       => $gross,
 		'price_unit'        => $unit,
 		'price_total'       => $total,
+		'vat_percent'       => defined( 'FGE_VAT_PERCENT' ) ? (int) FGE_VAT_PERCENT : 19,
 		'includes'          => array_values( array_filter( array_map( 'strval', (array) $includes ) ) ),
 		'wishes_platz'      => array_values( (array) ( $g['platz'] ?? [] ) ),
 		'wishes_firmengolf' => array_values( (array) ( $g['firmengolf'] ?? [] ) ),
+		'contact_name'      => (string) ( $co['managing_director'] ?? 'Firmengolf' ),
+		'contact_phone'     => (string) ( $co['phone_display'] ?? '' ),
+		'contact_email'     => (string) ( $co['email_events'] ?? '' ),
 	];
 }
 
@@ -97,11 +108,26 @@ function fge_offer_price_text( array $snap ): string {
 		return 'Auf Anfrage';
 	}
 	$unit = (string) ( $snap['price_unit'] ?? '' );
+	$vat  = (int) ( $snap['vat_percent'] ?? 19 );
 	$s    = '€' . number_format_i18n( $gross, 0 ) . ( 'pro Person' === $unit ? ' p.P.' : ' gesamt' );
 	if ( 'pro Person' === $unit && (int) ( $snap['participants'] ?? 0 ) > 0 ) {
 		$s .= ' · ca. €' . number_format_i18n( (float) $snap['price_total'], 0 ) . ' bei ' . (int) $snap['participants'] . ' Personen';
 	}
+	$s .= ' zzgl. ' . $vat . ' % USt';
 	return $s;
+}
+
+/** Brutto-Gesamtbetrag inkl. USt als Text, oder '' wenn kein konkreter Gesamtpreis vorliegt. */
+function fge_offer_gross_incl_vat_text( array $snap ): string {
+	$unit = (string) ( $snap['price_unit'] ?? '' );
+	$vat  = (int) ( $snap['vat_percent'] ?? 19 );
+	$base = ( 'pro Person' === $unit )
+		? ( (int) ( $snap['participants'] ?? 0 ) > 0 ? (float) ( $snap['price_total'] ?? 0 ) : 0.0 )
+		: (float) ( $snap['price_gross'] ?? 0 );
+	if ( $base <= 0 ) {
+		return '';
+	}
+	return 'ca. €' . number_format_i18n( $base * ( 1 + $vat / 100 ), 0 ) . ' inkl. USt';
 }
 
 // ── Auslöser: Termin bestätigt → Angebot erzeugen + senden ────────────────────
@@ -173,6 +199,11 @@ function fge_offer_handle_post(): void {
 	}
 	if ( 'pending' === (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
 		if ( 'accept' === $action ) {
+			// Verbindliche Buchung nur mit AGB-Zustimmung.
+			if ( '1' !== (string) ( $_POST['fge_offer_agb'] ?? '' ) ) {
+				wp_safe_redirect( fge_offer_link( $req ) . '?agb=1' );
+				exit;
+			}
 			update_post_meta( $req, '_fge_offer_status', 'accepted' );
 			fge_request_set_status( $req, 'angebot_angenommen' );
 			do_action( 'fge_offer_accepted', $req );
@@ -180,6 +211,14 @@ function fge_offer_handle_post(): void {
 			update_post_meta( $req, '_fge_offer_status', 'declined' );
 			fge_request_set_status( $req, 'angebot_abgelehnt' );
 			do_action( 'fge_offer_declined', $req );
+		} elseif ( 'request' === $action ) {
+			// Rückfrage / Änderungswunsch — Angebot bleibt offen (pending), kein Dead-End.
+			$msg = sanitize_textarea_field( wp_unslash( $_POST['fge_offer_message'] ?? '' ) );
+			update_post_meta( $req, '_fge_offer_query', $msg );
+			fge_request_set_status( $req, 'angebot_rueckfrage' );
+			do_action( 'fge_offer_query', $req, $msg );
+			wp_safe_redirect( fge_offer_link( $req ) . '?done=query' );
+			exit;
 		}
 	}
 	wp_safe_redirect( fge_offer_link( $req ) . '?done=1' );

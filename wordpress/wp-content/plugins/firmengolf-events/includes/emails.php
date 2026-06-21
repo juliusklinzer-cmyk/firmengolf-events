@@ -374,11 +374,23 @@ function fge_send_offer_email( int $request_id ): bool {
 	$link  = function_exists( 'fge_offer_link' ) ? fge_offer_link( $request_id ) : home_url();
 	$greet = $data['first_name'] !== '' ? 'Hallo ' . esc_html( $data['first_name'] ) . ',' : 'Hallo,';
 
-	$row  = static function ( $k, $v ) { return '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $v . '</td></tr>'; };
+	$row      = static function ( $k, $v ) { return '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $v . '</td></tr>'; };
+	$incl_vat = function_exists( 'fge_offer_gross_incl_vat_text' ) ? fge_offer_gross_incl_vat_text( $snap ) : '';
 	$rows = $row( 'Event', esc_html( (string) ( $snap['event_title'] ?? '' ) ) )
 		. $row( 'Termin', esc_html( (string) ( $snap['date'] ?? '' ) ) )
+		. ( '' !== (string) ( $snap['location'] ?? '' ) ? $row( 'Ort', esc_html( (string) $snap['location'] ) ) : '' )
 		. ( (int) ( $snap['participants'] ?? 0 ) > 0 ? $row( 'Teilnehmer', 'ca. ' . (int) $snap['participants'] . ' Personen' ) : '' )
-		. $row( 'Preis', esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' ) );
+		. $row( 'Preis', esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' ) . ( '' !== $incl_vat ? '<br><span style="color:#6C736E;font-size:12px;">' . esc_html( $incl_vat ) . '</span>' : '' ) );
+
+	$cname         = (string) ( $snap['contact_name'] ?? '' );
+	$cphone        = (string) ( $snap['contact_phone'] ?? '' );
+	$cmail         = (string) ( $snap['contact_email'] ?? '' );
+	$contact_block = ( '' !== $cname )
+		? '<p style="margin:0 0 16px;color:#1a1a1a;font-size:13px;">Euer Ansprechpartner: <strong>' . esc_html( $cname ) . '</strong>'
+			. ( '' !== $cphone ? ' &nbsp;·&nbsp; ' . esc_html( $cphone ) : '' )
+			. ( '' !== $cmail ? ' &nbsp;·&nbsp; <a href="mailto:' . esc_attr( $cmail ) . '" style="color:#2a6e32;">' . esc_html( $cmail ) . '</a>' : '' )
+			. '</p>'
+		: '';
 
 	$incl = '';
 	foreach ( (array) ( $snap['includes'] ?? [] ) as $i ) { $incl .= '<li style="margin-bottom:3px;">' . esc_html( $i ) . '</li>'; }
@@ -392,13 +404,34 @@ function fge_send_offer_email( int $request_id ): bool {
 		<p style="margin:0 0 16px;">der Termin steht. Hier ist euer Angebot, ihr könnt es mit einem Klick annehmen.</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
 		' . ( $incl !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Das ist dabei</p><ul style="margin:0 0 14px;padding-left:20px;">' . $incl . '</ul>' : '' ) . '
-		' . ( $wish !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Eure Zusatzwünsche</p><ul style="margin:0 0 14px;padding-left:20px;">' . $wish . '</ul>' : '' ) . '
+		' . ( $wish !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Eure Zusatzwünsche</p><p style="margin:0 0 6px;color:#6C736E;font-size:13px;">Auf Wunsch organisiert — wird separat ausgewiesen, noch nicht im oben genannten Preis enthalten.</p><ul style="margin:0 0 14px;padding-left:20px;">' . $wish . '</ul>' : '' ) . '
+		<p style="margin:0 0 14px;color:#6C736E;font-size:13px;">Alle Preise zzgl. gesetzl. USt. Es gelten unsere <a href="' . esc_url( home_url( '/agb/' ) ) . '" style="color:#2a6e32;">AGB</a> inkl. Storno- und Zahlungsbedingungen.</p>
 		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 26px;border-radius:999px;font-weight:600;">Angebot ansehen &amp; bestätigen</a></p>
+		' . $contact_block . '
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '. Bei Fragen einfach auf diese Mail antworten.</p>
 	';
 	$sent = wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 	update_post_meta( $request_id, '_fge_offer_email_sent', $sent ? 1 : 0 );
 	return (bool) $sent;
+}
+
+// ── Rückfrage des Kunden zum Angebot → intern informieren ─────────────────────
+
+add_action( 'fge_offer_query', 'fge_notify_offer_query', 10, 2 );
+function fge_notify_offer_query( int $request_id, string $message = '' ): void {
+	$ref     = fge_request_number( $request_id );
+	$data    = fge_get_request_email_data( $request_id );
+	$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+	$name    = trim( ( $data['first_name'] ?? '' ) . ' ' . ( $data['last_name'] ?? '' ) );
+	$subject = 'Rückfrage zum Angebot: ' . $ref;
+	$content = '
+		<p style="margin:0 0 16px;">Der Kunde hat zum Angebot <strong>' . esc_html( $ref ) . '</strong> eine Rückfrage bzw. einen Änderungswunsch gestellt. Das Angebot bleibt offen — bitte meldet euch mit einer Antwort oder einem angepassten Angebot.</p>
+		<p style="margin:0 0 16px;"><strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: '—' ) . '<br>
+		<strong>Kontakt:</strong> ' . esc_html( $name ?: '—' ) . ' &nbsp;·&nbsp; ' . esc_html( $data['contact_email'] ?: '—' ) . '</p>
+		' . ( '' !== trim( $message ) ? '<p style="margin:0 0 16px;"><strong>Nachricht:</strong><br>' . nl2br( esc_html( $message ) ) . '</p>' : '<p style="margin:0 0 16px;color:#6C736E;">(Keine Nachricht hinterlegt.)</p>' ) . '
+		<p style="margin:0;"><a href="' . esc_url( fge_format_request_admin_link( $request_id ) ) . '">Anfrage im Admin öffnen</a></p>
+	';
+	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
 
 // ── Angebot angenommen / abgelehnt → Beteiligte informieren ───────────────────
@@ -718,6 +751,14 @@ function fge_format_request_admin_link( int $request_id ): string {
 }
 
 function fge_email_wrap( string $title, string $body_html ): string {
+	$co       = function_exists( 'fge_company' ) ? fge_company() : [];
+	$imp_addr = trim( ( $co['office_street'] ?? '' ) . ', ' . ( $co['office_zip'] ?? '' ) . ' ' . ( $co['office_city'] ?? '' ), ', ' );
+	$imprint  = esc_html( (string) ( $co['legal_name'] ?? 'Visionpunch UG (haftungsbeschränkt)' ) )
+		. ( '' !== $imp_addr ? ' &nbsp;·&nbsp; ' . esc_html( $imp_addr ) : '' )
+		. ( ! empty( $co['managing_director'] ) ? '<br>Geschäftsführer: ' . esc_html( (string) $co['managing_director'] ) : '' )
+		. ( ! empty( $co['register_court'] ) ? ' &nbsp;·&nbsp; ' . esc_html( (string) $co['register_court'] . ' ' . ( $co['register_no'] ?? '' ) ) : '' )
+		. ( ! empty( $co['ust_id'] ) ? ' &nbsp;·&nbsp; USt-IdNr. ' . esc_html( (string) $co['ust_id'] ) : '' );
+	$email_events = (string) ( $co['email_events'] ?? 'events@visionpunch.de' );
 	return '<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -735,8 +776,9 @@ function fge_email_wrap( string $title, string $body_html ): string {
   <tr><td style="padding:32px;color:#1a1a1a;font-size:15px;line-height:1.65;">
     ' . $body_html . '
   </td></tr>
-  <tr><td style="background:#f0f0ee;padding:16px 32px;font-size:12px;color:#888;border-top:1px solid #e4e4e0;">
-    <p style="margin:0;">Firmengolf &nbsp;·&nbsp; <a href="mailto:' . fge_company()['email_events'] . '" style="color:#2a6e32;text-decoration:none;">' . fge_company()['email_events'] . '</a></p>
+  <tr><td style="background:#f0f0ee;padding:16px 32px;font-size:12px;color:#888;border-top:1px solid #e4e4e0;line-height:1.6;">
+    <p style="margin:0 0 6px;">Firmengolf &nbsp;·&nbsp; <a href="mailto:' . $email_events . '" style="color:#2a6e32;text-decoration:none;">' . $email_events . '</a></p>
+    <p style="margin:0;color:#a0a098;">' . $imprint . '</p>
   </td></tr>
 </table>
 </td></tr>

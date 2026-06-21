@@ -1245,6 +1245,7 @@ function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 		'vollstaendig_verfuegbar'       => 'Verfügbar',
 		'nicht_verfuegbar'              => 'Nicht verfügbar',
 		'angebot_versendet'             => 'Angebot versendet',
+		'angebot_rueckfrage'            => 'Rückfrage offen',
 		'angebot_angenommen'            => 'Angenommen',
 		'event_durchgefuehrt'           => 'Durchgeführt',
 		'abgeschlossen'                 => 'Abgeschlossen',

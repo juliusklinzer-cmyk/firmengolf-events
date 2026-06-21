@@ -33,6 +33,7 @@ function fge_get_statuses( string $type ): array {
 			'telefonat_erledigt',
 			'angebot_in_lexoffice_erstellt',
 			'angebot_versendet',
+			'angebot_rueckfrage',
 			'angebot_angenommen',
 			'angebot_abgelehnt',
 			'event_durchgefuehrt',

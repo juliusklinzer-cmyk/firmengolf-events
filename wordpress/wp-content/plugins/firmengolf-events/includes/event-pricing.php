@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /** Fixer Firmengolf-Vermittlungsaufschlag in Prozent. */
 const FGE_MARKUP_PERCENT = 20;
 
+/** Gesetzliche Umsatzsteuer in Prozent. Preise (gross) werden NETTO ausgewiesen, USt kommt oben drauf. */
+const FGE_VAT_PERCENT = 19;
+
 /**
  * Reine Preisberechnung (ohne DB).
  *
