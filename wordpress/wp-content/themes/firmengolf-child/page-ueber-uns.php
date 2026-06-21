@@ -41,7 +41,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 			Warum Golf für <em class="mk-italic">jeden</em> etwas Gutes hat.
 		</h2>
 		<p class="about-video-lead">
-			Zwei Minuten, in denen ich dir erzähle, was Firmengolf ist, wovon wir träumen —
+			Eine Minute, in der ich dir erzähle, was Firmengolf ist, wovon wir träumen —
 			und warum ein Schläger in der Hand mehr verändern kann, als man denkt.
 		</p>
 	</div>

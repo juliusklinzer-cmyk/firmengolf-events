@@ -53,7 +53,10 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 				case 'teilweise_verfuegbar':
 					return 'Wir stimmen die Termine mit dem Platz ab. Sobald ein Termin steht, bekommt ihr euer Angebot.';
 				case 'vollstaendig_verfuegbar':
+				case 'bestaetigt':
 					return 'Ein Termin steht. Euer Angebot ist unterwegs.';
+				case 'in_uebernahme':
+					return 'Wir koordinieren euer Event gerade persönlich und melden uns in Kürze.';
 				case 'angebot_rueckfrage':
 					return 'Eure Rückfrage liegt uns vor. Wir melden uns mit einer Antwort oder einem angepassten Angebot.';
 				case 'angebot_angenommen':

@@ -29,6 +29,8 @@ function fge_get_statuses( string $type ): array {
 			'teilweise_verfuegbar',
 			'vollstaendig_verfuegbar',
 			'nicht_verfuegbar',
+			'in_uebernahme',
+			'bestaetigt',
 			'telefonat_offen',
 			'telefonat_erledigt',
 			'angebot_in_lexoffice_erstellt',

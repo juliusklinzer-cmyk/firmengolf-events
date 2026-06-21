@@ -97,6 +97,9 @@ function fge_ajax_modal_anfrage(): void {
 	if ( '1' !== (string) ( $_POST['consent'] ?? '' ) ) {
 		wp_send_json_error( [ 'message' => 'Bitte stimme der Datenverarbeitung zu, um die Anfrage zu senden.' ], 422 );
 	}
+	if ( 'firmengolf_event' !== get_post_type( $event_id ) ) {
+		wp_send_json_error( [ 'message' => 'Ungültiges Event.' ], 422 );
+	}
 
 	$partner_id  = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
 	$event_title = $event_id > 0 ? get_the_title( $event_id ) : '–';
@@ -132,7 +135,7 @@ function fge_ajax_modal_anfrage(): void {
 	update_post_meta( $request_id, '_fge_preferred_contact_method', $pref_method );
 
 	// Event framework
-	update_post_meta( $request_id, '_fge_expected_participants', absint( preg_replace( '/\D/', '', $group ) ) );
+	update_post_meta( $request_id, '_fge_expected_participants', preg_match( '/\d+/', $group, $group_m ) ? (int) $group_m[0] : 0 );
 	update_post_meta( $request_id, '_fge_group_experience', $experience );
 	update_post_meta( $request_id, '_fge_catering_notes',   $diet );
 	// Wunschtermine (1–3): Kalender liefert ISO, wird zu lesbarem Label („Do, 18.06.2026")
@@ -217,7 +220,7 @@ function fge_ajax_general_request(): void {
 	}
 
 	$goal      = $t( 'goal' );
-	$size      = absint( preg_replace( '/\D/', '', (string) ( $_POST['size'] ?? '' ) ) );
+	$size      = preg_match( '/\d+/', (string) ( $_POST['size'] ?? '' ), $size_m ) ? (int) $size_m[0] : 0;
 	$region    = $t( 'region' );
 	$place     = $t( 'place' );
 	$budget    = $t( 'budget' );
@@ -230,8 +233,6 @@ function fge_ajax_general_request(): void {
 	$city      = $t( 'city' );
 	$pref      = $t( 'contact_pref' );
 	$notes     = sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) );
-
-	$dates = array_filter( array_map( $t, [ 'date1', 'date2', 'date3' ] ) );
 
 	// Services kommen als kommaseparierte Wizard-Labels.
 	$services = array_filter( array_map( 'trim', explode( '||', (string) wp_unslash( $_POST['services'] ?? '' ) ) ) );
@@ -276,13 +277,15 @@ function fge_ajax_general_request(): void {
 	update_post_meta( $request_id, '_fge_place_wish',            $place );
 	update_post_meta( $request_id, '_fge_budget_range',          $budget );
 	$period = trim( $when . ( $flex !== '' ? ' · ' . $flex : '' ), ' ·' );
-	if ( $dates ) {
-		$period = trim( $period . ' · Wunschtermine: ' . implode( ', ', $dates ), ' ·' );
-	}
 	update_post_meta( $request_id, '_fge_alternative_period', $period );
-	update_post_meta( $request_id, '_fge_preferred_date_1', $t( 'date1' ) );
-	update_post_meta( $request_id, '_fge_preferred_date_2', $t( 'date2' ) );
-	update_post_meta( $request_id, '_fge_preferred_date_3', $t( 'date3' ) );
+	// Wunschtermine zu lesbaren Labels formatieren (konsistent zum Modal-Handler).
+	$fmt_wish = static function ( $raw ) {
+		$raw = sanitize_text_field( wp_unslash( $raw ?? '' ) );
+		return ( '' !== $raw && function_exists( 'fge_format_wish_date' ) ) ? fge_format_wish_date( $raw ) : $raw;
+	};
+	update_post_meta( $request_id, '_fge_preferred_date_1', $fmt_wish( $_POST['date1'] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_2', $fmt_wish( $_POST['date2'] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_3', $fmt_wish( $_POST['date3'] ?? '' ) );
 
 	// Services → kanonische wants_* Flags; unbekannte fließen in individual_customization.
 	$svc_map = [

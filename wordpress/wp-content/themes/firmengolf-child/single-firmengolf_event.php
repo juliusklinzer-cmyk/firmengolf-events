@@ -231,7 +231,17 @@ $seo_desc = fge_get_event_meta( $post_id, 'meta_description' );
 if ( ! $seo_desc ) {
 	$seo_base = $description ?: ( $format_label . ' auf dem Golfplatz' . ( $seo_city ? ' in ' . $seo_city : '' ) );
 	$seo_tail = ' Jetzt bei Firmengolf anfragen.';
-	$seo_desc = rtrim( mb_substr( wp_strip_all_tags( (string) $seo_base ), 0, 150 - mb_strlen( $seo_tail ) ) ) . $seo_tail;
+	$seo_body = wp_strip_all_tags( (string) $seo_base );
+	$seo_max  = 150 - mb_strlen( $seo_tail );
+	if ( mb_strlen( $seo_body ) > $seo_max ) {
+		$seo_body = mb_substr( $seo_body, 0, $seo_max );
+		$seo_sp   = mb_strrpos( $seo_body, ' ' );
+		if ( false !== $seo_sp && $seo_sp > 40 ) {
+			$seo_body = mb_substr( $seo_body, 0, $seo_sp );
+		}
+		$seo_body = rtrim( $seo_body, " ,.;:–-" );
+	}
+	$seo_desc = $seo_body . $seo_tail;
 }
 $seo_price = ( $pricing_new && ( $pricing_new['gross'] ?? 0 ) > 0 ) ? (int) round( $pricing_new['gross'] ) : 0;
 add_filter( 'pre_get_document_title', function () use ( $seo_title ) { return $seo_title; } );

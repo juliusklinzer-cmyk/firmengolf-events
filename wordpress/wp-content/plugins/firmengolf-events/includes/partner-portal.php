@@ -80,7 +80,7 @@ function fge_portal_handle_request(): void {
 	$idx = absint( $_POST['date_index'] ?? 0 );
 	if ( $idx > 0 && function_exists( 'fge_rr_set_final' ) ) {
 		fge_rr_set_final( $req, $idx );
-		update_post_meta( $req, '_fge_request_status', 'bestaetigt' );
+		fge_request_set_status( $req, 'bestaetigt' );
 		do_action( 'fge_request_date_confirmed', $req, $idx );
 	}
 	wp_redirect( esc_url_raw( fge_portal_page_url() . '?tab=anfragen&req=' . $req . '&portal_success=date_confirmed' ), 303 );
@@ -1242,12 +1242,20 @@ function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 		'eingangsbestaetigung_gesendet' => 'Bestätigt',
 		'verfuegbarkeit_wird_geprueft'  => 'In Prüfung',
 		'partner_angefragt'             => 'Angefragt',
+		'teilweise_verfuegbar'          => 'Teilweise verfügbar',
 		'vollstaendig_verfuegbar'       => 'Verfügbar',
 		'nicht_verfuegbar'              => 'Nicht verfügbar',
+		'in_uebernahme'                 => 'In Übernahme',
+		'bestaetigt'                    => 'Termin bestätigt',
+		'telefonat_offen'               => 'Telefonat offen',
+		'telefonat_erledigt'            => 'Telefonat erledigt',
+		'angebot_in_lexoffice_erstellt' => 'Angebot erstellt',
 		'angebot_versendet'             => 'Angebot versendet',
 		'angebot_rueckfrage'            => 'Rückfrage offen',
 		'angebot_angenommen'            => 'Angenommen',
+		'angebot_abgelehnt'             => 'Abgelehnt',
 		'event_durchgefuehrt'           => 'Durchgeführt',
+		'rechnung_in_lexoffice_erstellt' => 'Rechnung erstellt',
 		'abgeschlossen'                 => 'Abgeschlossen',
 		'verloren'                      => 'Verloren',
 	];

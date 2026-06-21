@@ -76,7 +76,7 @@ function fge_handle_take_over(): void {
 	$on = ( 'on' === ( $_POST['mode'] ?? '' ) );
 	update_post_meta( $req, '_fge_taken_over', $on ? 1 : 0 );
 	if ( $on ) {
-		update_post_meta( $req, '_fge_request_status', 'in_uebernahme' );
+		fge_request_set_status( $req, 'in_uebernahme' );
 	}
 	wp_safe_redirect( get_edit_post_link( $req, 'raw' ) );
 	exit;
