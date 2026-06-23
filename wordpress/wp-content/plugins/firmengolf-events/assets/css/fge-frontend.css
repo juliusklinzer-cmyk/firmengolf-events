@@ -862,7 +862,8 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   .fg-grid                 { grid-template-columns: repeat(2, 1fr); }
   .fg-similar-grid         { grid-template-columns: repeat(2, 1fr); }
   .fg-detail-body          { grid-template-columns: 1fr; gap: 32px; }
-  .fg-detail-rail          { position: static; }
+  /* Buchen-Karte beim Stapeln nach oben (vor Beschreibung + FAQ) statt ans Ende */
+  .fg-detail-rail          { position: static; order: -1; }
   .fg-rail-card            { position: static; }
   .fg-steps                { grid-template-columns: repeat(2, 1fr); gap: 24px; }
   .fg-intro                { grid-template-columns: 1fr; gap: 20px; }
@@ -2833,6 +2834,20 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 @media (max-width: 1100px) { .ev-grid4 { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 820px)  { .ev-grid4 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 520px)  { .ev-grid4 { grid-template-columns: 1fr; } }
+/* Ähnliche Events: auf dem Handy horizontal wischbar statt gestapelt */
+@media (max-width: 640px) {
+  .evd-related .ev-grid4 {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 14px;
+    padding-bottom: 10px;
+    scrollbar-width: none;
+  }
+  .evd-related .ev-grid4::-webkit-scrollbar { display: none; }
+  .evd-related .ev-grid4 > .fg-event { flex: 0 0 80%; scroll-snap-align: start; }
+}
 
 /* Custom sort dropdown (ev-dd) */
 .ev-dd { position: relative; }
