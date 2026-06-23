@@ -137,3 +137,127 @@
 	text-decoration: underline;
 	text-underline-offset: 2px;
 }
+
+/* ============================================================
+   Detail-Einstellungen-Dialog (.cookie-modal) — hell & gebrandet.
+   Klaro-Default ist dunkel (#333) mit fast-weißem Text → hier
+   vollständig auf das Markendesign umgestellt.
+   ============================================================ */
+
+/* Backdrop wie beim Notice */
+.klaro .cookie-modal .cm-bg {
+	background: rgba(40, 44, 42, 0.5);
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+}
+
+/* Dialog-Box: hell, abgerundet, fest auf den Viewport zentriert */
+.klaro .cookie-modal .cm-modal.cm-klaro {
+	box-sizing: border-box;
+	position: fixed;
+	left: 50%;
+	right: auto;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	margin: 0;
+	max-width: 560px;
+	width: calc(100% - 32px);
+	max-height: 90vh;
+	max-height: 90dvh;
+	overflow: auto;
+	background: #fff !important;
+	color: #3a423d !important;
+	border-radius: 18px;
+	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+	font-family: var(--font-body, system-ui, sans-serif);
+}
+.klaro .cookie-modal .cm-modal.cm-klaro * { box-sizing: border-box; }
+
+/* Texte generell dunkel (Klaro setzt sie sonst auf fast-weiß → unsichtbar) */
+.klaro .cookie-modal p,
+.klaro .cookie-modal ul,
+.klaro .cookie-modal li,
+.klaro .cookie-modal strong,
+.klaro .cookie-modal h1,
+.klaro .cookie-modal h2 {
+	color: #3a423d !important;
+}
+
+/* Kopf */
+.klaro .cookie-modal .cm-modal .cm-header {
+	border-bottom: 1px solid #e7e9e6;
+	padding: 22px 24px;
+}
+.klaro .cookie-modal .cm-modal .cm-header h1.title {
+	font-family: var(--font-display, inherit);
+	font-size: 21px;
+	font-weight: 700;
+	color: #1c3322 !important;
+	margin: 0;
+}
+/* Schließen-X sichtbar machen (Default-Stroke ist hell) */
+.klaro .cookie-modal .cm-modal .hide svg { stroke: #1c3322; }
+
+/* Body + Dienste-Liste */
+.klaro .cookie-modal .cm-modal .cm-body { padding: 18px 24px; }
+.klaro .cookie-modal .cm-list-title { font-weight: 600; color: #1c3322 !important; }
+.klaro .cookie-modal .cm-list-description { color: #6a726c !important; }
+.klaro .cookie-modal .cm-modal .cm-body ul.cm-purposes li.cm-purpose,
+.klaro .cookie-modal .cm-modal .cm-body ul.cm-services li.cm-service { border-bottom: 1px solid #eef0ed; }
+.klaro .cookie-modal .cm-switch-container { border-bottom-color: #eef0ed !important; }
+.klaro .cookie-modal .cm-modal .cm-body ul li.cm-toggle-all { border-top: 1px solid #e7e9e6 !important; }
+.klaro .cookie-modal .cm-opt-out,
+.klaro .cookie-modal .cm-required,
+.klaro .cookie-modal .purposes { color: #6a726c !important; }
+
+/* Schalter: aus = hellgrau, an = Markengrün, Knopf weiß */
+.klaro .cookie-modal .slider { background-color: #d7dbd6 !important; box-shadow: none !important; }
+.klaro .cookie-modal .slider::before { background-color: #fff !important; }
+.klaro .cookie-modal .cm-list-input:checked + .cm-list-label .slider { background-color: #2C5036 !important; }
+.klaro .cookie-modal .cm-list-input.only-required + .cm-list-label .slider,
+.klaro .cookie-modal .cm-list-input.required:checked + .cm-list-label .slider { background-color: #6f8f78 !important; }
+
+/* Footer + Buttons gebrandet (wie die Notice-Pills) */
+.klaro .cookie-modal .cm-modal .cm-footer {
+	border-top: 1px solid #e7e9e6;
+	padding: 16px 24px;
+}
+.klaro .cookie-modal .cm-modal .cm-footer-buttons {
+	display: flex;
+	flex-flow: row wrap;
+	gap: 8px;
+}
+.klaro .cookie-modal .cm-modal .cm-btn {
+	flex: 1 1 0;
+	min-width: 0;
+	margin: 0 !important;
+	padding: 11px 12px !important;
+	border-radius: 999px !important;
+	font-size: 13.5px;
+	font-weight: 600;
+	min-height: 46px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	cursor: pointer;
+	background: #fff !important;
+	color: #2C5036 !important;
+	border: 1px solid #2C5036 !important;
+}
+.klaro .cookie-modal .cm-modal .cm-btn.cm-btn-success {
+	background: #2C5036 !important;
+	color: #fff !important;
+	border-color: #2C5036 !important;
+}
+.klaro .cookie-modal .cm-modal .cm-footer .cm-powered-by,
+.klaro .cookie-modal .cm-modal .cm-footer .cm-powered-by a { color: #9aa29a !important; }
+
+/* Links im Dialog gebrandet */
+.klaro .cookie-modal .cm-modal a { color: #2C5036 !important; }
+
+/* Schmale Screens: Footer-Buttons stapeln */
+@media (max-width: 520px) {
+	.klaro .cookie-modal .cm-modal .cm-footer-buttons { flex-direction: column; }
+	.klaro .cookie-modal .cm-modal .cm-btn { flex: none; width: 100%; }
+}
