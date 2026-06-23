@@ -345,9 +345,11 @@ function fge_klaro_config(): array {
 add_action( 'wp_enqueue_scripts', function () {
 	$base = get_stylesheet_directory_uri() . '/assets/klaro/';
 	$dir  = get_stylesheet_directory() . '/assets/klaro/';
-	$cver = file_exists( $dir . 'klaro.js' ) ? (string) filemtime( $dir . 'klaro.js' ) : '1';
+	$cver  = file_exists( $dir . 'klaro.js' ) ? (string) filemtime( $dir . 'klaro.js' ) : '1';
+	// Eigene mtime für klaro-custom.css, sonst bricht eine reine CSS-Änderung den Cache nicht.
+	$ccver = file_exists( $dir . 'klaro-custom.css' ) ? (string) filemtime( $dir . 'klaro-custom.css' ) : $cver;
 	wp_enqueue_style( 'fge-klaro', $base . 'klaro.css', [], $cver );
-	wp_enqueue_style( 'fge-klaro-custom', $base . 'klaro-custom.css', [ 'fge-klaro' ], $cver );
+	wp_enqueue_style( 'fge-klaro-custom', $base . 'klaro-custom.css', [ 'fge-klaro' ], $ccver );
 	// Markenfarbe für Klaro-eigene Elemente (Schalter etc.).
 	wp_add_inline_style( 'fge-klaro-custom', '.klaro{--green1:#2C5036;--green2:#24412c;}' );
 	wp_enqueue_script( 'fge-klaro', $base . 'klaro.js', [], $cver, true );
