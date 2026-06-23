@@ -7,16 +7,27 @@
 	backdrop-filter: blur(6px);
 }
 
-/* Zentrierte Box */
+/* Zentrierte Box — fest auf den Viewport zentriert, border-box gegen Padding-Überlauf */
 .klaro .cookie-modal-notice {
+	box-sizing: border-box;
+	position: fixed;
+	left: 50%;
+	right: auto;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	margin: 0;
 	max-width: 540px;
-	width: calc(100% - 40px);
+	width: calc(100% - 32px);
+	max-height: 92vh;
+	overflow: auto;
 	border-radius: 18px;
-	padding: 30px 30px 24px;
+	padding: 26px 24px 22px;
 	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
 	background: #fff;
 	font-family: var(--font-body, system-ui, sans-serif);
 }
+/* alle Kinder im border-box, damit nichts die Breite sprengt */
+.klaro .cookie-modal-notice * { box-sizing: border-box; }
 
 /* Kopf: Cookie-Icon + Headline */
 .klaro .cookie-modal-notice .fge-cc-head {
@@ -99,6 +110,25 @@
 }
 .klaro .cookie-modal-notice .cn-ok .cm-btn.cm-btn-success:hover {
 	background: #24412c !important;
+}
+/* Schmale Screens: Buttons untereinander stapeln (volle Breite) statt zu zerquetschen */
+@media (max-width: 520px) {
+	.klaro .cookie-modal-notice .cn-ok {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+	}
+	.klaro .cookie-modal-notice .cn-ok .cn-buttons {
+		flex: none;
+		width: 100%;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.klaro .cookie-modal-notice .cn-ok .cn-learn-more,
+	.klaro .cookie-modal-notice .cn-ok .cm-btn {
+		flex: none;
+		width: 100%;
+	}
 }
 /* Datenschutz-Link im Fließtext gebrandet (kein Button) */
 .klaro .cookie-modal-notice .fge-cc-body a,

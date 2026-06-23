@@ -2704,8 +2704,8 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
   /* Section-Kopf mit Button: auf Mobile stapeln, sonst läuft der Button aus dem Bild */
   .mk-section-head.between { flex-direction: column; align-items: flex-start; gap: 16px; }
   .mk-h2 { font-size: 32px; }
-  .mk-cta-h { font-size: 36px; }
-  .home-benefit-h { font-size: 44px; }
+  .mk-cta-h { font-size: clamp(26px, 7.5vw, 36px); }
+  .home-benefit-h { font-size: clamp(28px, 8vw, 44px); }
   .home-quicksearch { flex-wrap: wrap; border-radius: 24px; padding: 16px; }
   .home-qs-cell { width: 100%; }
   .fg-cell-divider { display: none; }
@@ -2717,7 +2717,7 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
   .mk-hero-content { position: static; left: auto; right: auto; bottom: auto; max-width: none; width: 100%; padding: 24px; }
   .mk-testimonial-body { padding: 32px 28px; }
   .home-numbers-grid { grid-template-columns: 1fr; }
-  .home-num-v { font-size: 56px; }
+  .home-num-v { font-size: clamp(40px, 13vw, 56px); }
   .fg-footer-cols { grid-template-columns: 1fr 1fr; }
   .fg-footer-base { flex-direction: column; gap: 12px; text-align: center; }
   .fg-footer-links { justify-content: center; }
@@ -3029,8 +3029,8 @@ button.fg-search-btn { background: var(--fairway-700); color: var(--paper-100); 
   .blog-newsletter-inner { grid-template-columns: 1fr; gap: 32px; }
 }
 @media (max-width: 720px) {
-  .page-hero-title { font-size: 48px; }
-  .blog-article-h { font-size: 40px; }
+  .page-hero-title { font-size: clamp(30px, 9vw, 48px); }
+  .blog-article-h { font-size: clamp(28px, 8.5vw, 40px); }
   .blog-featured-h { font-size: 32px; }
   .blog-featured-body { padding: 32px 28px; }
   .blog-newsletter-form { flex-direction: column; }
@@ -3402,7 +3402,7 @@ button.fg-gallery-more {
 /* Modal */
 .fg-modal-scrim { position: fixed; inset: 0; background: rgba(14,19,16,.55); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .fg-modal-scrim.is-hidden { display: none; }
-.fg-modal { background: var(--paper-50); border-radius: var(--radius-xl); padding: 40px; width: 100%; max-width: 560px; position: relative; box-shadow: 0 24px 64px rgba(14,19,16,.18); max-height: 90vh; overflow-y: auto; }
+.fg-modal { background: var(--paper-50); border-radius: var(--radius-xl); padding: 40px; width: 100%; max-width: 560px; position: relative; box-shadow: 0 24px 64px rgba(14,19,16,.18); max-height: 90vh; max-height: 90dvh; overflow-y: auto; }
 button.fg-modal-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 999px; background: var(--paper-200); display: flex; align-items: center; justify-content: center; color: var(--ink-700); cursor: pointer; flex: none; }
 button.fg-modal-close:hover { background: var(--paper-300); }
 .fg-modal-head { margin-bottom: 28px; }
@@ -3812,7 +3812,7 @@ button.bc-chip {
 .bc-total { display: flex; flex-direction: column; align-items: flex-start; }
 .bc-total-num {
   font-family: var(--font-display); font-weight: 600;
-  font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: var(--ink-900);
+  font-size: clamp(36px, 12vw, 52px); line-height: 1; letter-spacing: -0.03em; color: var(--ink-900);
   font-variant-numeric: tabular-nums;
 }
 .bc-total-meta { font-size: 14px; color: var(--ink-500); margin-top: 10px; }
@@ -3866,6 +3866,9 @@ button.bc-chip {
 }
 @media (max-width: 560px) {
   .iv-tiles { grid-template-columns: 1fr 1fr; gap: 12px; }
+}
+@media (max-width: 400px) {
+  .iv-tiles { grid-template-columns: 1fr; }
 }
 
 /* --- Nacht-Event / Launch / Service-Picker / Request-Wizard (site.css) --- */
@@ -4008,7 +4011,9 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
    REQUEST WIZARD — launched full-screen flow
    ==================================================== */
 .rw-overlay {
-  position: fixed; inset: 0;
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 100vh;   /* Fallback */
+  height: 100dvh;  /* iOS: echte sichtbare Höhe → Fuß/„Weiter" nie hinter Safari-Leiste */
   z-index: 1000;
   background: var(--paper-100);
   display: flex; flex-direction: column;
@@ -5029,7 +5034,7 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
 }
 .ev-sheet-scrim.is-open { display: flex; }
 .ev-sheet {
-  width: 100%; max-height: 92vh;
+  width: 100%; max-height: 92vh; max-height: 92dvh;
   background: var(--paper-100);
   border-radius: 24px 24px 0 0;
   display: flex; flex-direction: column;
