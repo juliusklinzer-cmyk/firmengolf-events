@@ -2678,9 +2678,9 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 .fg-footer-head { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-600); margin-bottom: 12px; }
 .fg-footer-cols a { display: block; font-size: 14px; color: var(--ink-700); padding: 4px 0; transition: color 140ms; }
 .fg-footer-cols a:hover { color: var(--fairway-700); }
-.fg-footer-base { max-width: 1280px; margin: 56px auto 0; padding-top: 24px; border-top: 1px solid rgba(14,19,16,.10); display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; font-size: 13px; color: var(--ink-500); }
+.fg-footer-base { max-width: 1280px; margin: 56px auto 0; padding-top: 24px; border-top: 1px solid rgba(14,19,16,.10); display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; font-size: 13px; color: var(--ink-600); }
 .fg-footer-links { display: flex; gap: 20px; align-items: center; }
-.fg-footer-links a { color: var(--ink-500); transition: color 140ms; }
+.fg-footer-links a { color: var(--ink-600); transition: color 140ms; }
 .fg-footer-links a:hover { color: var(--ink-900); }
 
 /* ── Responsive (26) ── */

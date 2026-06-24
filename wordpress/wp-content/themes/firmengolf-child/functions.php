@@ -354,6 +354,24 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_add_inline_style( 'fge-klaro-custom', '.klaro{--green1:#2C5036;--green2:#24412c;}' );
 	wp_enqueue_script( 'fge-klaro', $base . 'klaro.js', [], $cver, true );
 	wp_add_inline_script( 'fge-klaro', 'window.klaroConfig = ' . wp_json_encode( fge_klaro_config() ) . ';', 'before' );
+	// A11y/Agentic: Klaro-Cookie-Dialog bekommt einen barrierefreien Namen (role=dialog war ohne Name).
+	wp_add_inline_script( 'fge-klaro', "(function(){function n(){var d=document.getElementById('klaro-cookie-notice')||document.querySelector('.cookie-modal-notice[role=dialog],.cookie-notice[role=dialog]');if(!d)return false;if(!d.getAttribute('aria-label')){d.removeAttribute('aria-labelledby');d.setAttribute('aria-label','Cookie-Hinweis');}return true;}if(n())return;var m=new MutationObserver(function(){if(n())m.disconnect();});var s=function(){m.observe(document.body,{childList:true,subtree:true});};if(document.body){s();}else{document.addEventListener('DOMContentLoaded',s);}})();", 'after' );
+} );
+
+// Perf/A11y: Manrope-Schrift des Eltern-Themes (twentytwentyfive) entfernen – wird nicht genutzt
+// (eigene Fonts = Instrument Sans/Bricolage), spart ~52 KB render-blocking auf dem kritischen Pfad.
+add_filter( 'wp_theme_json_data_theme', function ( $theme_json ) {
+	$data = $theme_json->get_data();
+	if ( ! empty( $data['settings']['typography']['fontFamilies']['theme'] ) ) {
+		$data['settings']['typography']['fontFamilies']['theme'] = array_values( array_filter(
+			$data['settings']['typography']['fontFamilies']['theme'],
+			static function ( $f ) {
+				return false === stripos( (string) ( ( $f['slug'] ?? '' ) . ( $f['name'] ?? '' ) ), 'manrope' );
+			}
+		) );
+		return $theme_json->update_with( $data );
+	}
+	return $theme_json;
 } );
 
 // Klaro per data-config automatisch initialisieren lassen.
