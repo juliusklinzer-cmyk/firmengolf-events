@@ -5,23 +5,23 @@
    ========================================================================== */
 
 /* ---------- 1. FONTS ---------- */
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-ExtraLight.ttf") format("truetype"); font-weight: 200; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Light.ttf")      format("truetype"); font-weight: 300; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Regular.ttf")    format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Medium.ttf")     format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-SemiBold.ttf")   format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Bold.ttf")       format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-ExtraLight.woff2") format("woff2"); font-weight: 200; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Light.woff2")      format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Regular.woff2")    format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Medium.woff2")     format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-SemiBold.woff2")   format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Bold.woff2")       format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Regular.ttf")        format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Italic.ttf")         format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Medium.ttf")         format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-SemiBold.ttf")       format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Bold.ttf")           format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Regular.woff2")        format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Italic.woff2")         format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Medium.woff2")         format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-SemiBold.woff2")       format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Bold.woff2")           format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 
-@font-face { font-family: "Instrument Serif"; src: url("../fonts/InstrumentSerif-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Instrument Serif"; src: url("../fonts/InstrumentSerif-Italic.ttf")  format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("../fonts/InstrumentSerif-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("../fonts/InstrumentSerif-Italic.woff2")  format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
 
-@font-face { font-family: "JetBrains Mono"; src: url("../fonts/JetBrainsMono-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("../fonts/JetBrainsMono-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 
 /* ---------- 2. DESIGN TOKENS ---------- */
 :root {
@@ -2479,7 +2479,7 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 .mk-section { max-width: 1280px; margin: 0 auto; padding: 96px 24px; }
 .mk-section-head { max-width: 720px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
 .mk-section-head.between { flex-direction: row; max-width: 100%; justify-content: space-between; align-items: flex-end; gap: 24px; }
-.mk-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-500); }
+.mk-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-600); }
 .mk-h2 { font-family: var(--font-display); font-weight: 500; font-size: 48px; line-height: 1.02; letter-spacing: -.03em; color: var(--ink-900); text-wrap: balance; }
 .mk-sub { font-size: 18px; line-height: 1.55; color: var(--ink-700); max-width: 580px; }
 
@@ -2670,12 +2670,12 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 .fg-footer-top { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 3fr; gap: 56px; }
 .fg-footer-brand { display: flex; flex-direction: column; gap: 0; align-items: flex-start; }
 .fg-footer-brand img { height: 30px; width: auto; }
-.fg-footer-line { font-size: 14px; line-height: 1.55; color: var(--ink-500); margin-top: 18px; max-width: 320px; }
+.fg-footer-line { font-size: 14px; line-height: 1.55; color: var(--ink-600); margin-top: 18px; max-width: 320px; }
 .fg-footer-socials { display: flex; gap: 8px; margin-top: 20px; }
 .fg-footer-socials a { width: 36px; height: 36px; border-radius: 999px; background: rgba(14,19,16,.06); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--ink-700); text-transform: uppercase; transition: background var(--dur-fast) var(--ease-out); }
 .fg-footer-socials a:hover { background: var(--fairway-200); color: var(--fairway-800); }
 .fg-footer-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
-.fg-footer-head { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-500); margin-bottom: 12px; }
+.fg-footer-head { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-600); margin-bottom: 12px; }
 .fg-footer-cols a { display: block; font-size: 14px; color: var(--ink-700); padding: 4px 0; transition: color 140ms; }
 .fg-footer-cols a:hover { color: var(--fairway-700); }
 .fg-footer-base { max-width: 1280px; margin: 56px auto 0; padding-top: 24px; border-top: 1px solid rgba(14,19,16,.10); display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; font-size: 13px; color: var(--ink-500); }
