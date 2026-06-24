@@ -241,6 +241,7 @@
 			return f;
 		}
 
+		var MIN_DATE = (function () { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
 		function chips(field, options) {
 			return '<div class="ind-chip-group">' + options.map(function (o) {
 				return '<button type="button" class="ind-pchip' + (S.form[field] === o ? ' on' : '')
@@ -333,7 +334,7 @@
 					+ '<div class="ind-input-row">' + input('size', 'type="number" min="1"', '40') + '<span class="ind-input-suffix">Personen</span></div></div>'
 					+ '<div class="rw-field">' + label('Gewünschter Zeitraum') + input('when', '', 'z.B. Juli 2026 · KW 28') + '</div></div>'
 					+ '<div class="rw-field">' + label('Bis zu drei Wunschtermine', false, 'Optional')
-					+ '<div class="rw-row rw-row-3">' + input('date1', '', '1. Termin') + input('date2', '', '2. Termin') + input('date3', '', '3. Termin') + '</div></div>'
+					+ '<div class="rw-row rw-row-3">' + input('date1', 'type="date" min="' + MIN_DATE + '"', '1. Termin') + input('date2', 'type="date" min="' + MIN_DATE + '"', '2. Termin') + input('date3', 'type="date" min="' + MIN_DATE + '"', '3. Termin') + '</div></div>'
 					+ '<div class="rw-row"><div class="rw-field">' + label('Wie flexibel beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
 					+ '<div class="rw-field">' + label('Dauer') + chips('duration', ['Halbtag', 'Ganztag', '2 Tage', 'Mehrtägig']) + '</div></div>'
 					+ '<div class="rw-field">' + label('Golf-Erfahrung im Team', false, 'Optional') + chips('experience', ['Überwiegend Anfänger', 'Gemischt', 'Erfahrene Golfer', 'Weiß noch nicht']) + '</div>'

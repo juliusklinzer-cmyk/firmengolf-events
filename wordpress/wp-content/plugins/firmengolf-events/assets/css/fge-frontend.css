@@ -4036,6 +4036,9 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
 }
 /* Schließen: das [hidden]-Attribut muss display:flex überstimmen */
 .rw-overlay[hidden] { display: none; }
+/* iOS: Doppeltipp-Zoom-Verzögerung auf Bedienelementen entfernen → zuverlässigeres Antippen (kein „2x klicken") */
+.rw-overlay button, .rw-overlay input, .rw-overlay textarea, .rw-overlay select, .rw-overlay a, .ind-pchip,
+.fg-modal button, .fg-modal input, .fg-modal textarea, .fg-modal select, .fg-modal a { touch-action: manipulation; }
 @keyframes rw-in {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: none; }
