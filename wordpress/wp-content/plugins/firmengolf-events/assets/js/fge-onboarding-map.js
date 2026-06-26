@@ -36,6 +36,9 @@
 		var mapEl = byId('fge_map');
 		if (!mapEl || typeof google === 'undefined' || !google.maps) { return; }
 
+		// Consent-Platzhalter entfernen (Maps räumt den Container nicht selbst leer).
+		mapEl.innerHTML = '';
+
 		var saved = window.FGE_OB_MAP || {};
 		var hasCoords = !!(saved.lat && saved.lng);
 		var center = hasCoords

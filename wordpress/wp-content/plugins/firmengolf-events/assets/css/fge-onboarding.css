@@ -130,6 +130,20 @@
   overflow: hidden;
   background: var(--paper-200);
 }
+.ob-map-consent {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  height: 100%; box-sizing: border-box;
+  margin: 0; padding: 20px;
+  font-size: .9rem; line-height: 1.5; color: var(--ink-600);
+}
+.ob-map-consent-btn {
+  font: inherit; cursor: pointer;
+  padding: 8px 14px;
+  border: 1px solid var(--ink-300, var(--ink-200));
+  border-radius: var(--radius-md);
+  background: var(--paper-100, #fff); color: var(--ink-800, inherit);
+}
+.ob-map-consent-btn:hover { border-color: var(--green1, currentColor); }
 /* Places autocomplete dropdown must clear the sticky footer/topbar. */
 .pac-container { z-index: 200; }
 

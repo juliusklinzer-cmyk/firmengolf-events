@@ -379,6 +379,13 @@ add_filter( 'script_loader_tag', function ( $tag, $handle ) {
 	if ( 'fge-klaro' === $handle ) {
 		$tag = str_replace( ' src=', ' defer data-config="klaroConfig" src=', $tag );
 	}
+	// Google-Maps-JS (Onboarding-Standort-Slide) hinter Klaro-Einwilligung „Google Maps"
+	// legen: lädt erst nach Zustimmung, davor kein IP-Transfer an Google. Klaro tauscht
+	// data-src→src und führt den callback=fgeObMapInit dann aus.
+	if ( 'google-maps' === $handle ) {
+		$tag = preg_replace( '/\stype=([\'"]).*?\1/', '', $tag );
+		$tag = str_replace( ' src=', ' type="text/plain" data-type="application/javascript" data-name="googlemaps" data-src=', $tag );
+	}
 	return $tag;
 }, 10, 2 );
 

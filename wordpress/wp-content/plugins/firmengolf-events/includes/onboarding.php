@@ -1479,7 +1479,9 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 		<div class="ob-field full">
 			<label class="ob-field-label">Standort auf der Karte</label>
 			<span class="ob-field-hint">Zieh den Pin bei Bedarf genau auf euren Eingang oder Parkplatz.</span>
-			<div id="fge_map" class="ob-map"></div>
+			<div id="fge_map" class="ob-map">
+				<p class="ob-map-consent">Die interaktive Karte lädt erst nach deiner Einwilligung in „Google Maps". Du kannst die Adresse oben auch manuell eingeben. <button type="button" class="ob-map-consent-btn" onclick="window.klaro&amp;&amp;window.klaro.show()">Cookie-Einstellungen öffnen</button></p>
+			</div>
 		</div>
 		<input type="hidden" id="fge_latitude"  name="fge_latitude"  value="<?php echo esc_attr( $lat ); ?>">
 		<input type="hidden" id="fge_longitude" name="fge_longitude" value="<?php echo esc_attr( $lng ); ?>">
