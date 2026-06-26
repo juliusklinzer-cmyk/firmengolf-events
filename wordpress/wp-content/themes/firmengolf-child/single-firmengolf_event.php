@@ -346,7 +346,10 @@ get_header();
 			<div class="fg-gallery-side">
 				<div class="fg-gallery-tile" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"></div>
 				<div class="fg-gallery-tile" style="background-image:url('<?php echo esc_url( $gallery_img_2 ); ?>')">
+					<?php /* Nur zeigen, wenn es mehr Galeriebilder gibt als im Hero sichtbar (Cover + 2 Kacheln). */ ?>
+					<?php if ( count( $gallery_urls ) > 2 ) : ?>
 					<button class="fg-gallery-more fg-btn-ghost-light">+ alle Fotos</button>
+					<?php endif; ?>
 				</div>
 			</div>
 		</div>

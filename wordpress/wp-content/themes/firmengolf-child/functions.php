@@ -358,17 +358,23 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_add_inline_script( 'fge-klaro', "(function(){function n(){var d=document.getElementById('klaro-cookie-notice')||document.querySelector('.cookie-modal-notice[role=dialog],.cookie-notice[role=dialog]');if(!d)return false;if(!d.getAttribute('aria-label')){d.removeAttribute('aria-labelledby');d.setAttribute('aria-label','Cookie-Hinweis');}return true;}if(n())return;var m=new MutationObserver(function(){if(n())m.disconnect();});var s=function(){m.observe(document.body,{childList:true,subtree:true});};if(document.body){s();}else{document.addEventListener('DOMContentLoaded',s);}})();", 'after' );
 } );
 
-// Perf/A11y: Manrope-Schrift des Eltern-Themes (twentytwentyfive) entfernen – wird nicht genutzt
-// (eigene Fonts = Instrument Sans/Bricolage), spart ~52 KB render-blocking auf dem kritischen Pfad.
+// Perf: Manrope-Download des Eltern-Themes (twentytwentyfive) sparen (~52 KB render-blocking),
+// das Preset aber ERHALTEN. Die globale Body-Schrift (theme.json styles.typography) zeigt auf
+// var:preset|font-family|manrope – entfernt man die Family ganz, fällt ALLE Block-/Standard-
+// Inhalte (Blog, Standardseiten) auf Browser-Serif zurück. Daher: fontFace streichen (kein
+// Download) und die Family auf unsere bereits sitewide geladene Marken-Schrift (Instrument Sans)
+// umbiegen.
 add_filter( 'wp_theme_json_data_theme', function ( $theme_json ) {
 	$data = $theme_json->get_data();
 	if ( ! empty( $data['settings']['typography']['fontFamilies']['theme'] ) ) {
-		$data['settings']['typography']['fontFamilies']['theme'] = array_values( array_filter(
-			$data['settings']['typography']['fontFamilies']['theme'],
-			static function ( $f ) {
-				return false === stripos( (string) ( ( $f['slug'] ?? '' ) . ( $f['name'] ?? '' ) ), 'manrope' );
+		foreach ( $data['settings']['typography']['fontFamilies']['theme'] as &$f ) {
+			$id = (string) ( ( $f['slug'] ?? '' ) . ( $f['name'] ?? '' ) );
+			if ( false !== stripos( $id, 'manrope' ) ) {
+				$f['fontFamily'] = '"Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
+				unset( $f['fontFace'] );
 			}
-		) );
+		}
+		unset( $f );
 		return $theme_json->update_with( $data );
 	}
 	return $theme_json;
