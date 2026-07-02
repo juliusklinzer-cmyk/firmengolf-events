@@ -688,7 +688,7 @@ get_header();
 		<div class="fg-modal-head" id="fg-modal-head">
 			<div class="fg-detail-eyebrow"><?php echo esc_html( $format_label . ( $venue ? ' · ' . $venue : '' ) ); ?></div>
 			<div class="fg-modal-context">
-				<span class="fg-modal-context-label">Deine Auswahl</span>
+				<span class="fg-modal-context-label">Dein Event</span>
 				<div class="fg-modal-context-row">
 					<span class="fg-modal-context-chip"><?php echo esc_html( get_the_title() ); ?></span>
 					<?php if ( $venue ) : ?><span class="fg-modal-context-chip"><?php echo esc_html( $venue ); ?></span><?php endif; ?>
@@ -781,10 +781,8 @@ get_header();
 		</div>
 
 		<?php
-		/* Step 1 — Wunsch-Leistungen: Platz-Leistungen (gefiltert) + Firmengolf-Leistungen. */
+		/* Step 1 — Optionale Zusatzleistungen: flache Ein-Klick-Auswahl + Freitext. */
 		$wish_cats   = function_exists( 'fge_request_wish_categories' ) ? fge_request_wish_categories( $partner_id ) : [];
-		$cats_platz  = array_values( array_filter( $wish_cats, static function ( $c ) { return $c['source'] === 'platz'; } ) );
-		$cats_fg     = array_values( array_filter( $wish_cats, static function ( $c ) { return $c['source'] === 'firmengolf'; } ) );
 		// Inkludierte Leistungen: bevorzugt die im Editor kuratierten Chips, sonst
 		// Fallback auf die aktiven has_-Leistungen (manche Events haben nur diese).
 		$inc_chips = $includes_new;
@@ -823,16 +821,28 @@ get_header();
 			</div>
 			<?php endif; ?>
 
-			<p class="fg-wish-intro">Optionale Zusatzleistungen. Was ihr hier auswählt, fragen wir gleich mit an, und der Platz nimmt es ins Angebot auf. Für Details eine Kategorie antippen und aufklappen.</p>
+			<p class="fg-wish-intro">Optionale Extras — nur wenn ihr mögt. Tippt an, was interessant klingt; alles Weitere schreibt ihr einfach unten rein. Wir stimmen es im Angebot ab.</p>
 
-			<div class="fg-wish-group-h">Zusatzleistungen am Platz <span class="fg-wish-group-note">vom Golfplatz</span></div>
+			<div class="fg-wish-group-h">Beliebte Zusatzleistungen</div>
 			<div class="fg-cat-grid">
-				<?php foreach ( $cats_platz as $c ) { $render_cat( $c ); } ?>
+				<?php
+				// Flache Ein-Klick-Auswahl der häufigsten Extras (kein Aufklappen). Nach Priorität,
+				// gerendert wird nur, was Platz/Firmengolf tatsächlich anbietet. data-source bleibt fürs Routing.
+				$wish_priority = [ 'food', 'entertainment', 'branding', 'stay', 'shuttle', 'tech', 'rooms', 'program', 'tournament', 'golf' ];
+				$wish_by_key   = [];
+				foreach ( $wish_cats as $c ) { $wish_by_key[ $c['key'] ] = $c; }
+				$wish_flat = [];
+				foreach ( $wish_priority as $k ) {
+					if ( isset( $wish_by_key[ $k ] ) ) { $wish_flat[] = $wish_by_key[ $k ]; }
+					if ( count( $wish_flat ) >= 6 ) { break; }
+				}
+				foreach ( $wish_flat as $c ) { $c['subs'] = []; $render_cat( $c ); }
+				?>
 			</div>
 
-			<div class="fg-wish-group-h" style="margin-top:22px;">Zusatzleistungen über Firmengolf <span class="fg-wish-group-note">organisieren wir</span></div>
-			<div class="fg-cat-grid">
-				<?php foreach ( $cats_fg as $c ) { $render_cat( $c ); } ?>
+			<div class="fg-field" style="margin-top:18px;">
+				<label class="fg-field-label" for="fg-wish-notes">Sonstige Wünsche <span class="fg-opt">optional</span></label>
+				<textarea class="fg-input" id="fg-wish-notes" rows="3" placeholder="Von Fotograf über Shuttle bis Übernachtung — vieles ist möglich. Schreib einfach, was euch vorschwebt, und wir melden uns mit einem passenden Vorschlag."></textarea>
 			</div>
 
 			<div class="fg-modal-foot">
@@ -1093,7 +1103,7 @@ get_header();
 				date2:      val('fg-date-2'),
 				date3:      val('fg-date-3'),
 				group_size: val('fg-group-size'),
-				notes:      val('fg-notes'),
+				notes:      [val('fg-notes'), val('fg-wish-notes')].map(function (s) { return (s || '').trim(); }).filter(Boolean).join('\n\n'),
 				wishes:     JSON.stringify(collectWishes()),
 				first_name: first,
 				last_name:  last,

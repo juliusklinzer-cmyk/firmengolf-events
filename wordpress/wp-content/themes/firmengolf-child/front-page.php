@@ -64,7 +64,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 
 <?php /* ══════════════════ 1. HERO ══════════════════ */ ?>
 <section class="mk-hero" aria-label="Hero">
-	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'hero-gruen-3.jpg' ) ); ?>')">
+	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-drohnenaufnahme.jpg' ) ); ?>')">
 		<div class="mk-hero-scrim" aria-hidden="true"></div>
 		<div class="mk-hero-content">
 			<div class="mk-hero-eyebrow">Firmenevents · Golf für Unternehmen</div>

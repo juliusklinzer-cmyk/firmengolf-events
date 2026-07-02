@@ -327,23 +327,29 @@ $group_bands = [
 	if (clearLoc) clearLoc.addEventListener('click', function () { hLat.value = ''; hLng.value = ''; hLoc.value = ''; picked.style.display = 'none'; });
 	var clearAll = document.getElementById('fge-ev-clear');
 	if (clearAll) clearAll.addEventListener('click', function () { window.location.href = '<?php echo esc_js( $archive_url ); ?>'; });
+
+	// Getippten Ort/PLZ ohne Vorschlag-Klick beim Absenden auflösen (besten Treffer übernehmen).
+	sheet.addEventListener('submit', function (e) {
+		var q = locIn ? locIn.value.trim() : '';
+		if (!q || q === hLoc.value) { return; }
+		e.preventDefault();
+		fetch(ajax + '?action=fge_geo_suggest&q=' + encodeURIComponent(q))
+			.then(function (r) { return r.json(); })
+			.then(function (res) {
+				if (res && res.success && res.data && res.data.length) {
+					var s = res.data[0];
+					setLoc(s.label, s.lat, s.lng);
+				}
+				sheet.submit();
+			})
+			.catch(function () { sheet.submit(); });
+	});
 })();
 </script>
 
-<?php /* ══════════════ HERO ══════════════ */ ?>
-<section class="ev-hero" aria-label="Events">
-	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( 'hero-range.jpg' ) ); ?>')">
-		<div class="ev-hero-scrim" aria-hidden="true"></div>
-		<div class="ev-hero-content">
-			<div class="ev-hero-eyebrow">Marketplace · Firmenevents</div>
-			<h1 class="ev-hero-title">
-				Finde dein nächstes <em class="mk-italic">Firmen-Event</em>.
-			</h1>
-			<p class="ev-hero-sub">
-				Der Golfplatz ist die perfekte Location für euer nächstes Firmenevent — wir bringen euer Team in Bewegung. Such nach Ort, Anlass und Gruppengröße.
-			</p>
-		</div>
-	</div>
+<?php /* ══════════════ SEARCH ══════════════ */ ?>
+<section class="ev-hero ev-hero--bare" aria-label="Events">
+	<h1 class="fge-visually-hidden">Firmenevents auf dem Golfplatz finden</h1>
 
 	<?php /* ── Search bar ── */ ?>
 	<form method="get" action="<?php echo esc_url( $archive_url ); ?>" class="fg-search-bar" role="search">
@@ -497,36 +503,17 @@ if ( ! $has_filters ) :
 <?php endif; ?>
 <section class="fg-grid-section<?php echo ! $has_filters ? ' fge-hide-mobile' : ''; ?>" aria-label="Eventangebote">
 
-	<?php /* Active filter pills */ ?>
 	<?php $has_filters = ( $active_format !== 'all' ) || $geo_active || ( $active_pax > 0 ); ?>
-	<?php if ( $has_filters ) : ?>
-		<div class="fg-activefilters">
-			<?php if ( $active_format !== 'all' ) : ?>
-				<a class="fg-fpill" href="<?php echo esc_url( $chip_url( [ 'format' => 'all' ] ) ); ?>">
-					<?php echo esc_html( $formats[ $active_format ] ?? $active_format ); ?>
-					<span class="fg-fpill-x" aria-hidden="true">×</span>
-				</a>
-			<?php endif; ?>
-			<?php if ( $geo_active && $active_loc !== '' ) : ?>
-				<a class="fg-fpill" href="<?php echo esc_url( $chip_url( [ 'lat' => '', 'lng' => '', 'radius' => '', 'loc' => '' ] ) ); ?>">
-					<?php echo esc_html( $active_loc . ' · ' . $active_radius . ' km' ); ?>
-					<span class="fg-fpill-x" aria-hidden="true">×</span>
-				</a>
-			<?php endif; ?>
-			<?php if ( $active_pax > 0 ) : ?>
-				<a class="fg-fpill" href="<?php echo esc_url( $chip_url( [ 'pax' => '' ] ) ); ?>">
-					<?php echo esc_html( $active_pax . '+ Pers.' ); ?>
-					<span class="fg-fpill-x" aria-hidden="true">×</span>
-				</a>
-			<?php endif; ?>
-			<a class="fg-fclear" href="<?php echo esc_url( $archive_url ); ?>">Alle zurücksetzen</a>
-		</div>
-	<?php endif; ?>
 
 	<div class="fg-grid-head">
-		<span class="fg-grid-count">
-			<?php echo esc_html( $total . ' ' . ( $total === 1 ? 'Event gefunden' : 'Events gefunden' ) ); ?>
-		</span>
+		<div class="fg-grid-head-l">
+			<span class="fg-grid-count">
+				<?php echo esc_html( $total . ' ' . ( $total === 1 ? 'Event gefunden' : 'Events gefunden' ) ); ?>
+			</span>
+			<?php if ( $has_filters ) : ?>
+				<a class="fg-reset-link" href="<?php echo esc_url( $archive_url ); ?>">Filter zurücksetzen</a>
+			<?php endif; ?>
+		</div>
 		<div class="ev-grid-controls">
 			<?php
 			$sort_options = [
@@ -863,6 +850,24 @@ if ( ! $has_filters ) :
         radEl.value = btn.getAttribute('data-r');
         if (latEl.value && lngEl.value) submitNow();
       });
+    });
+
+    // Getippten Ort/PLZ ohne Dropdown-Klick beim Absenden auflösen (besten Treffer übernehmen).
+    if (form) form.addEventListener('submit', function (e) {
+      var q = input ? input.value.trim() : '';
+      if (!q || q === locEl.value) return; // nichts Neues getippt → normal absenden
+      e.preventDefault();
+      fetch(ajax + '?action=fge_geo_suggest&q=' + encodeURIComponent(q))
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          if (res && res.success && res.data && res.data.length) {
+            var s = res.data[0];
+            setLocation(s.lat, s.lng, s.label); // setzt Felder + sendet ab
+          } else {
+            form.submit(); // kein Treffer → ohne Ort absenden
+          }
+        })
+        .catch(function () { form.submit(); });
     });
   }
 }());
