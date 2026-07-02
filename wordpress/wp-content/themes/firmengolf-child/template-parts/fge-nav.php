@@ -68,7 +68,7 @@ $mtabs = [
 		<div class="fg-nav-items">
 			<?php foreach ( $nav_items as $item ) : ?>
 				<a href="<?php echo esc_url( $item['url'] ); ?>"
-				   <?php if ( $active_item === $item['key'] ) : ?>class="active"<?php endif; ?>
+				   <?php if ( $active_item === $item['key'] ) : ?>class="active" aria-current="page"<?php endif; ?>
 				><?php echo esc_html( $item['label'] ); ?></a>
 			<?php endforeach; ?>
 		</div>
@@ -88,7 +88,7 @@ $mtabs = [
 <div class="ev-msearch-bar <?php echo $mbar_action ? '' : 'tabs-only'; ?>" id="fge-mbar">
 	<div class="ev-mtabs">
 		<?php foreach ( $mtabs as $t ) : ?>
-			<a href="<?php echo esc_url( $t['url'] ); ?>" class="ev-mtab <?php echo $mtab_active( $t['key'] ) ? 'active' : ''; ?>">
+			<a href="<?php echo esc_url( $t['url'] ); ?>" class="ev-mtab <?php echo $mtab_active( $t['key'] ) ? 'active' : ''; ?>"<?php echo $mtab_active( $t['key'] ) ? ' aria-current="page"' : ''; ?>>
 				<span class="ev-mtab-ic">
 					<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><?php echo $mtab_ic[ $t['key'] ]; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVG-Pfade ?></svg>
 				</span>

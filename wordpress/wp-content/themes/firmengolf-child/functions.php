@@ -185,6 +185,28 @@ add_action( 'wp_body_open', function () {
 	echo '<a class="fge-skip-link" href="#fge-main">Zum Inhalt springen</a>';
 } );
 
+/**
+ * LCP-Hero-Bild vorladen: die Heros sind CSS-Backgrounds, die der Browser sonst
+ * erst nach dem Stylesheet entdeckt → Preload zieht den Download deutlich vor.
+ */
+add_action( 'wp_head', function () {
+	if ( ! function_exists( 'fge_get_placeholder_image_url' ) ) {
+		return;
+	}
+	$img = '';
+	if ( is_front_page() ) {
+		$img = 'golfplatz-drohnenaufnahme.jpg';
+	} elseif ( get_query_var( 'fge_city' ) || get_query_var( 'fge_format' ) ) {
+		$img = 'golfplatz-panorama.jpg';
+	}
+	if ( $img !== '' ) {
+		printf(
+			'<link rel="preload" as="image" href="%s" fetchpriority="high">' . "\n",
+			esc_url( fge_get_placeholder_image_url( $img ) )
+		);
+	}
+}, 2 );
+
 add_action( 'wp_enqueue_scripts', function() {
 	wp_enqueue_style(
 		'firmengolf-child-style',

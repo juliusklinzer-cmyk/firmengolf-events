@@ -309,12 +309,13 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			<?php endforeach; ?>
 		<?php else : ?>
 			<?php
-			// Fallback: static cards when no published events yet
+			// Fallback: neutrale Format-Karten, wenn (noch) keine Events publiziert sind.
+			// Bewusst OHNE erfundene Orte/Preise (UWG!) — nur echte Format-Beschreibungen.
 			$static_formats = [
-				[ 'label' => 'Schnupperkurs',  'title' => 'Schnupperkurs an einem Nachmittag',    'desc' => 'Einsteigerfreundlich. Golflehrer, Schläger gestellt, Range-Bälle inklusive.',           'price' => 'ab €89 p.P.',       'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
-				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',               'desc' => 'Shotgun-Start, Fotograf, Siegerehrung — wir kümmern uns um alles.',                   'price' => 'ab €320 p.P.',      'img' => 'firmenevent-afterwork-golf.jpg',  'dark' => true  ],
-				[ 'label' => 'Offsite',        'title' => 'Strategie-Offsite Schloss Lüdersburg',  'desc' => 'Workshops im Schloss, nachmittags 9 Loch. Übernachtung inklusive.',                   'price' => 'ab €540 p.P.',      'img' => 'clubhaus-aussenansicht.jpg',      'dark' => false ],
-				[ 'label' => 'Incentive',      'title' => 'Incentive-Reise Südtirol',              'desc' => 'Drei Tage Dolomiten — Bergblick, private Dinings, Wellness.',                         'price' => 'ab €1.480 p.P.',    'img' => 'golfplatz-meerblick.jpg',         'dark' => true  ],
+				[ 'label' => 'Schnupperkurs',  'title' => 'Schnupperkurs an einem Nachmittag', 'desc' => 'Einsteigerfreundlich. Golflehrer, Schläger gestellt, Range-Bälle inklusive.',            'price' => 'Auf Anfrage', 'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
+				[ 'label' => 'Teamevent',      'title' => 'Golf-Teamevent für euer Team',      'desc' => 'Stationen, Team-Challenge, gemeinsames Essen — ganz ohne Vorkenntnisse.',                'price' => 'Auf Anfrage', 'img' => 'firmenevent-afterwork-golf.jpg',  'dark' => true  ],
+				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',           'desc' => 'Shotgun-Start, Fotograf, Siegerehrung — wir kümmern uns um alles.',                      'price' => 'Auf Anfrage', 'img' => 'clubhaus-aussenansicht.jpg',      'dark' => false ],
+				[ 'label' => 'Incentive',      'title' => 'Incentive mit Golf & Genuss',       'desc' => 'Besondere Plätze, private Dinings, bleibende Erinnerungen für eure Top-Leute.',          'price' => 'Auf Anfrage', 'img' => 'golfplatz-meerblick.jpg',         'dark' => true  ],
 			];
 			foreach ( $static_formats as $f ) : ?>
 				<article class="mk-format<?php echo $f['dark'] ? ' is-dark' : ''; ?>">
@@ -607,8 +608,12 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
       panel.classList.contains('is-open') ? close() : open();
     });
     cell.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); panel.classList.contains('is-open') ? close() : open(); }
-      if (e.key === 'Escape') close();
+      /* Nur auf der Zelle selbst — sonst blockiert preventDefault die Options-Auswahl per Enter */
+      if ((e.key === 'Enter' || e.key === ' ') && e.target === cell) {
+        e.preventDefault();
+        panel.classList.contains('is-open') ? close() : open();
+      }
+      if (e.key === 'Escape') { close(); cell.focus(); }
     });
     panel.querySelectorAll('.fg-search-panel-opt').forEach(function (opt) {
       opt.addEventListener('click', function (e) {
@@ -653,7 +658,13 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
       panel.classList.contains('is-open') ? close() : open();
     });
     document.addEventListener('click', function (e) { if (!cell.contains(e.target)) close(); });
-    cell.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    cell.addEventListener('keydown', function (e) {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target === cell) {
+        e.preventDefault();
+        panel.classList.contains('is-open') ? close() : open();
+      }
+      if (e.key === 'Escape') { close(); cell.focus(); }
+    });
 
     function setLocation(lat, lng, label) {
       latEl.value = lat; lngEl.value = lng; locEl.value = label;
@@ -677,6 +688,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
               var b = document.createElement('button');
               b.type = 'button';
               b.className = 'fg-loc-opt';
+              b.setAttribute('role', 'option');
               b.textContent = s.label;
               b.addEventListener('click', function () { suggest.innerHTML = ''; input.value = s.label; setLocation(s.lat, s.lng, s.label); });
               suggest.appendChild(b);

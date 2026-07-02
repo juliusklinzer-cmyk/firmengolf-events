@@ -264,19 +264,40 @@ $group_bands = [
 	var pill  = document.getElementById('fge-ev-pill');
 	var sheet = document.getElementById('fge-ev-sheet');
 	if (!sheet) { return; }
-	var openS  = function () { sheet.classList.add('is-open'); document.body.style.overflow = 'hidden'; };
-	var closeS = function () { sheet.classList.remove('is-open'); document.body.style.overflow = ''; };
+	var lastFocus = null;
+	var openS  = function () {
+		lastFocus = document.activeElement;
+		sheet.classList.add('is-open'); document.body.style.overflow = 'hidden';
+		var first = sheet.querySelector('.ev-sheet-close, button, input');
+		if (first) { first.focus(); }
+	};
+	var closeS = function () {
+		sheet.classList.remove('is-open'); document.body.style.overflow = '';
+		if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+	};
 	if (pill) { pill.addEventListener('click', openS); }
 	sheet.addEventListener('click', function (e) { if (e.target === sheet) { closeS(); } });
 	sheet.querySelector('.ev-sheet-close').addEventListener('click', closeS);
 	document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('is-open')) { closeS(); } });
+	/* Fokus im aria-modal-Sheet halten */
+	sheet.addEventListener('keydown', function (e) {
+		if (e.key !== 'Tab' || !sheet.classList.contains('is-open')) { return; }
+		var els = sheet.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
+		if (!els.length) { return; }
+		var first = els[0], last = els[els.length - 1];
+		if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+		else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+	});
 
 	function singleSelect(wrapId, attr, hidden) {
 		var wrap = document.getElementById(wrapId);
-		wrap.querySelectorAll('.ev-sheet-chip').forEach(function (c) {
+		var chips = wrap.querySelectorAll('.ev-sheet-chip');
+		chips.forEach(function (c) {
+			c.setAttribute('aria-pressed', String(c.classList.contains('on')));
 			c.addEventListener('click', function () {
-				wrap.querySelectorAll('.ev-sheet-chip').forEach(function (x) { x.classList.remove('on'); });
+				chips.forEach(function (x) { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); });
 				c.classList.add('on');
+				c.setAttribute('aria-pressed', 'true');
 				hidden.value = c.getAttribute(attr);
 			});
 		});
@@ -699,8 +720,12 @@ if ( ! $has_filters ) :
       panel.classList.contains('is-open') ? close() : open();
     });
     cell.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); panel.hidden ? open() : close(); }
-      if (e.key === 'Escape') close();
+      /* Nur wenn die Zelle selbst fokussiert ist — nicht beim Bedienen der Optionen im Panel */
+      if ((e.key === 'Enter' || e.key === ' ') && e.target === cell) {
+        e.preventDefault();
+        panel.classList.contains('is-open') ? close() : open();
+      }
+      if (e.key === 'Escape') { close(); cell.focus(); }
     });
 
     panel.querySelectorAll('.fg-search-panel-opt').forEach(function (opt) {
@@ -797,7 +822,13 @@ if ( ! $has_filters ) :
       panel.classList.contains('is-open') ? close() : open();
     });
     document.addEventListener('click', function (e) { if (!cell.contains(e.target)) close(); });
-    cell.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    cell.addEventListener('keydown', function (e) {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target === cell) {
+        e.preventDefault();
+        panel.classList.contains('is-open') ? close() : open();
+      }
+      if (e.key === 'Escape') { close(); cell.focus(); }
+    });
 
     function submitNow() { if (latEl.value && lngEl.value && radEl.value && form) form.submit(); }
     function setLocation(lat, lng, label) {
@@ -822,6 +853,7 @@ if ( ! $has_filters ) :
               var b = document.createElement('button');
               b.type = 'button';
               b.className = 'fg-loc-opt';
+              b.setAttribute('role', 'option');
               b.textContent = s.label;
               b.addEventListener('click', function () { suggest.innerHTML = ''; input.value = s.label; setLocation(s.lat, s.lng, s.label); });
               suggest.appendChild(b);

@@ -82,12 +82,30 @@ get_header();
 		var pill  = document.getElementById('fge-blog-pill');
 		var sheet = document.getElementById('fge-blog-sheet');
 		if (!sheet) { return; }
-		var openS  = function () { sheet.classList.add('is-open'); document.body.style.overflow = 'hidden'; };
-		var closeS = function () { sheet.classList.remove('is-open'); document.body.style.overflow = ''; };
+		var lastFocus = null;
+		var openS  = function () {
+			lastFocus = document.activeElement;
+			sheet.classList.add('is-open'); document.body.style.overflow = 'hidden';
+			var first = sheet.querySelector('.ev-sheet-close, button, input, a[href]');
+			if (first) { first.focus(); }
+		};
+		var closeS = function () {
+			sheet.classList.remove('is-open'); document.body.style.overflow = '';
+			if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+		};
 		if (pill) { pill.addEventListener('click', openS); }
 		sheet.addEventListener('click', function (e) { if (e.target === sheet) { closeS(); } });
 		sheet.querySelector('.ev-sheet-close').addEventListener('click', closeS);
 		document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('is-open')) { closeS(); } });
+		/* Fokus im aria-modal-Sheet halten */
+		sheet.addEventListener('keydown', function (e) {
+			if (e.key !== 'Tab' || !sheet.classList.contains('is-open')) { return; }
+			var els = sheet.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
+			if (!els.length) { return; }
+			var first = els[0], last = els[els.length - 1];
+			if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+			else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+		});
 	})();
 	</script>
 

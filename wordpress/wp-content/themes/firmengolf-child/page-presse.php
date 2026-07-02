@@ -27,10 +27,10 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 		<div class="trust-inner">
 			<?php
 			$facts = [
-				[ '721',    'Golfplätze in Deutschland als Eventlocation' ],
-				[ '1.500',  'Golflehrer führen euer Event an' ],
-				[ '2024',   'gegründet in München' ],
-				[ '< 24 h', 'Antwort auf jede Anfrage' ],
+				[ '721',       'Golfplätze in Deutschland als Eventlocation' ],
+				[ '1.500',     'Golflehrer (PGA-Pros) deutschlandweit' ],
+				[ '2024',      'gegründet in München' ],
+				[ '1 Werktag', 'Antwort auf jede Anfrage' ],
 			];
 			foreach ( $facts as $f ) : ?>
 				<div class="trust-cell"><div class="trust-t"><?php echo esc_html( $f[0] ); ?></div><div class="trust-b"><?php echo esc_html( $f[1] ); ?></div></div>

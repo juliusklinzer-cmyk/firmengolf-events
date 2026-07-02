@@ -710,6 +710,17 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   color: var(--ink-900);
 }
 .ob-stepper-input:focus { outline: none; }
+.ob-stepper-input:focus-visible { outline: 2px solid var(--fairway-600, #2e5b3f); outline-offset: 2px; }
+
+/* Reduzierte Bewegung respektieren (Audit 2026-07) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* ====================================================
    AVAILABILITY — day pills + radio rows

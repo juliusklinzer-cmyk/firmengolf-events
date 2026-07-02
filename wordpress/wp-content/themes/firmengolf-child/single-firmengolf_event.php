@@ -341,18 +341,38 @@ get_header();
 
 		<?php /* ── Gallery ── */ ?>
 		<div class="fg-detail-gallery">
-			<div class="fg-gallery-main" style="background-image:url('<?php echo esc_url( $thumb_url ); ?>')">
+			<div class="fg-gallery-main" role="img" aria-label="<?php echo esc_attr( get_the_title() . ' – Foto 1' ); ?>" style="background-image:url('<?php echo esc_url( $thumb_url ); ?>')">
 			</div>
 			<div class="fg-gallery-side">
-				<div class="fg-gallery-tile" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"></div>
-				<div class="fg-gallery-tile" style="background-image:url('<?php echo esc_url( $gallery_img_2 ); ?>')">
+				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ' – Foto 2' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"></div>
+				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ' – Foto 3' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_2 ); ?>')">
 					<?php /* Nur zeigen, wenn es mehr Galeriebilder gibt als im Hero sichtbar (Cover + 2 Kacheln). */ ?>
 					<?php if ( count( $gallery_urls ) > 2 ) : ?>
-					<button class="fg-gallery-more fg-btn-ghost-light">+ alle Fotos</button>
+					<button class="fg-gallery-more fg-btn-ghost-light" type="button" aria-expanded="false" aria-controls="fg-gallery-all">+ alle Fotos</button>
 					<?php endif; ?>
 				</div>
 			</div>
 		</div>
+		<?php if ( count( $gallery_urls ) > 2 ) : ?>
+		<div class="fg-gallery-all" id="fg-gallery-all" hidden>
+			<?php foreach ( $gallery_urls as $g_i => $g_url ) : ?>
+				<img src="<?php echo esc_url( $g_url ); ?>" alt="<?php echo esc_attr( get_the_title() . ' – Foto ' . ( $g_i + 1 ) ); ?>" loading="lazy">
+			<?php endforeach; ?>
+		</div>
+		<script>
+		(function () {
+			var btn = document.querySelector('.fg-gallery-more'), all = document.getElementById('fg-gallery-all');
+			if (!btn || !all) return;
+			btn.addEventListener('click', function () {
+				var open = all.hidden;
+				all.hidden = !open;
+				btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+				btn.textContent = open ? '– Fotos ausblenden' : '+ alle Fotos';
+				if (open) all.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			});
+		})();
+		</script>
+		<?php endif; ?>
 
 		<?php /* ── Detail Body ── */ ?>
 		<div class="fg-detail-body">

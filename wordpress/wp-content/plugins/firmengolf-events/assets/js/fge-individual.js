@@ -244,7 +244,8 @@
 		var MIN_DATE = (function () { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
 		function chips(field, options) {
 			return '<div class="ind-chip-group">' + options.map(function (o) {
-				return '<button type="button" class="ind-pchip' + (S.form[field] === o ? ' on' : '')
+				var on = S.form[field] === o;
+				return '<button type="button" class="ind-pchip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
 					+ '" data-chip="' + esc(field) + '" data-val="' + esc(o) + '">' + esc(o) + '</button>';
 			}).join('') + '</div>';
 		}
@@ -282,7 +283,7 @@
 			var occ = S.form.occasion || 'Firmenevent';
 			return '<div class="rw-stage"><div class="rw-screen rw-intro">'
 				+ '<div class="rw-eyebrow">Schön, dass du da bist</div>'
-				+ '<h1 class="rw-h">Toll — ihr plant ein <span class="mk-italic">' + esc(occ) + '</span> für euer Team.</h1>'
+				+ '<h2 class="rw-h">Toll — ihr plant ein <span class="mk-italic">' + esc(occ) + '</span> für euer Team.</h2>'
 				+ '<p class="rw-lead">Lass uns kurz ein paar Infos sammeln. Danach meldet sich ' + esc(CONTACT.name)
 				+ ' persönlich bei dir — meist innerhalb eines Werktags, mit ersten Ideen und einem Richtpreis.</p>'
 				+ '<div class="rw-intro-contact"><div><div class="rw-intro-c-name">' + esc(CONTACT.name) + '</div>'
@@ -298,7 +299,7 @@
 		function screenQuick() {
 			var h = '<div class="rw-stage"><div class="rw-screen">'
 				+ '<div class="rw-eyebrow">Schnell-Anfrage · 30 Sekunden</div>'
-				+ '<h1 class="rw-h">Das Wichtigste — wir klären den Rest persönlich.</h1>'
+				+ '<h2 class="rw-h">Das Wichtigste — wir klären den Rest persönlich.</h2>'
 				+ '<p class="rw-lead">Du willst nicht durch alle Schritte? Völlig okay. Gib uns die Basics, wir melden uns mit Rückfragen.</p>'
 				+ '<div class="rw-form">'
 				+ '<div class="rw-field">' + label('Anlass', true) + chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Offsite', 'Nacht-Event', 'Etwas anderes']) + '</div>'
@@ -319,7 +320,7 @@
 		function fullStepBody(step) {
 			if (step === 0) {
 				return '<div class="rw-eyebrow">Schritt 1 · ' + FULL_STEPS[0] + '</div>'
-					+ '<h1 class="rw-h">Worum geht\'s bei eurem Event?</h1>'
+					+ '<h2 class="rw-h">Worum geht\'s bei eurem Event?</h2>'
 					+ '<p class="rw-lead">Wähl den nächstpassenden Anlass — wir verfeinern alles im Gespräch.</p>'
 					+ '<div class="rw-form"><div class="rw-field">'
 					+ chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Offsite', 'Incentive-Reise', 'Charity-Event', 'Gesundheitstag', 'Nacht-Event', 'Etwas anderes'])
@@ -328,7 +329,7 @@
 			}
 			if (step === 1) {
 				return '<div class="rw-eyebrow">Schritt 2 · ' + FULL_STEPS[1] + '</div>'
-					+ '<h1 class="rw-h">Wann, wo und mit wie vielen?</h1>'
+					+ '<h2 class="rw-h">Wann, wo und mit wie vielen?</h2>'
 					+ '<p class="rw-lead">Genau müssen die Angaben jetzt nicht sein.</p>'
 					+ '<div class="rw-form"><div class="rw-row"><div class="rw-field">' + label('Teilnehmerzahl', true)
 					+ '<div class="ind-input-row">' + input('size', 'type="number" min="1"', '40') + '<span class="ind-input-suffix">Personen</span></div></div>'
@@ -346,23 +347,25 @@
 				var groups = SERVICE_GROUPS.map(function (g) {
 					return '<div class="ind-svc-pick-group"><div class="ind-svc-pick-h">' + esc(g.group) + '</div><div class="ind-toggles">'
 						+ g.items.map(function (it) {
-							return '<button type="button" class="ind-toggle' + (S.form.services.indexOf(it) >= 0 ? ' on' : '')
+							var on = S.form.services.indexOf(it) >= 0;
+							return '<button type="button" class="ind-toggle' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
 								+ '" data-svc="' + esc(it) + '"><span class="ind-toggle-dot"></span><span>' + esc(it) + '</span></button>';
 						}).join('') + '</div></div>';
 				}).join('');
 				return '<div class="rw-eyebrow">Schritt 3 · ' + FULL_STEPS[2] + '</div>'
-					+ '<h1 class="rw-h">Was soll dabei sein?</h1>'
+					+ '<h2 class="rw-h">Was soll dabei sein?</h2>'
 					+ '<p class="rw-lead">Mehrfachauswahl — alles kombinierbar. Nur ein Startpunkt, festlegen musst du dich nicht.</p>'
 					+ '<div class="rw-form"><div class="ind-svc-pick">' + groups + '</div></div>';
 			}
 			if (step === 3) {
 				var cards = BUDGETS.map(function (o) {
-					return '<button type="button" class="ind-budget-card' + (S.form.budget === o.v ? ' on' : '')
+					var on = S.form.budget === o.v;
+					return '<button type="button" class="ind-budget-card' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
 						+ '" data-chip="budget" data-val="' + esc(o.v) + '"><span class="ind-budget-v">' + esc(o.v)
 						+ '</span><span class="ind-budget-h">' + esc(o.h) + '</span></button>';
 				}).join('');
 				return '<div class="rw-eyebrow">Schritt 4 · ' + FULL_STEPS[3] + '</div>'
-					+ '<h1 class="rw-h">Was wäre euer Budget-Rahmen?</h1>'
+					+ '<h2 class="rw-h">Was wäre euer Budget-Rahmen?</h2>'
 					+ '<p class="rw-lead">Nur eine Richtschnur — wir verhandeln nicht nach oben.</p>'
 					+ '<div class="rw-form"><div class="ind-budget-grid">' + cards + '</div>'
 					+ '<div class="rw-field" style="margin-top:8px;">' + label('Verpflegung & Diät', false, 'Optional') + input('diet', '', 'z.B. 5× vegetarisch, 1× vegan, Nussallergie') + '</div>'
@@ -371,7 +374,7 @@
 			}
 			// step 4
 			return '<div class="rw-eyebrow">Schritt 5 · ' + FULL_STEPS[4] + '</div>'
-				+ '<h1 class="rw-h">Wer seid ihr — und wie erreichen wir dich?</h1>'
+				+ '<h2 class="rw-h">Wer seid ihr — und wie erreichen wir dich?</h2>'
 				+ '<p class="rw-lead">Letzter Schritt. Danach melden wir uns innerhalb eines Werktags.</p>'
 				+ '<div class="rw-form"><div class="rw-row"><div class="rw-field">' + label('Unternehmen', true) + input('company', 'required', 'Musterfirma GmbH') + '</div>'
 				+ '<div class="rw-field">' + label('Ort') + input('city', '', 'München') + '</div></div>'
@@ -402,7 +405,7 @@
 			return '<div class="rw-stage"><div class="rw-success">'
 				+ '<div class="fg-success-mark"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'
 				+ '<div class="mk-eyebrow">Anfrage eingegangen</div>'
-				+ '<h1 class="rw-success-h">Danke — deine Anfrage ist angekommen.</h1>'
+				+ '<h2 class="rw-success-h">Danke — deine Anfrage ist angekommen.</h2>'
 				+ '<p class="rw-success-p">Deine Anfrage liegt jetzt bei uns. Bei einem individuellen Event übernehmen wir die Planung persönlich und stimmen den passenden Golfplatz für dich ab. Eine Bestätigung ist gerade per Mail an <strong>' + esc(resp.email || S.form.email || '—') + '</strong> unterwegs.</p>'
 				+ '<div class="rw-receipt">'
 				+ '<div><span>Anlass</span><span>' + esc(resp.occasion || S.form.occasion) + '</span></div>'
@@ -414,6 +417,7 @@
 				+ '</div></div>';
 		}
 
+		var lastScreenKey = '';
 		function render(successResp) {
 			var body;
 			if (S.phase === 'success') body = topBar() + screenSuccess(successResp || {});
@@ -421,6 +425,29 @@
 			else if (S.mode === 'quick') body = topBar() + screenQuick();
 			else body = topBar() + screenFull();
 			overlay.innerHTML = body;
+			wireA11y();
+			/* Bei Schrittwechsel Fokus auf die Screen-Überschrift — nicht bei Re-Renders
+			   im selben Schritt (Chip-Klick), sonst springt der Fokus unter der Maus weg. */
+			var key = S.phase + ':' + S.mode + ':' + S.step;
+			if (key !== lastScreenKey) {
+				lastScreenKey = key;
+				var h = overlay.querySelector('.rw-h, .rw-success-h');
+				if (h) { h.setAttribute('tabindex', '-1'); h.focus(); }
+			}
+		}
+
+		/* Labels (.ind-flabel sind reine <span>s) programmatisch mit den Feldern verknüpfen. */
+		function wireA11y() {
+			overlay.querySelectorAll('.rw-field').forEach(function (fld) {
+				var lab = fld.querySelector('.ind-flabel');
+				if (!lab) return;
+				var txt = (lab.childNodes[0] ? lab.childNodes[0].textContent : lab.textContent || '').trim();
+				var req = !!lab.querySelector('.ind-required');
+				fld.querySelectorAll('input[data-field], select[data-field], textarea[data-field]').forEach(function (inp) {
+					if (txt && !inp.getAttribute('aria-label')) inp.setAttribute('aria-label', txt);
+					if (req) inp.setAttribute('aria-required', 'true');
+				});
+			});
 		}
 
 		function collect() {
@@ -490,6 +517,7 @@
 				var i = S.form.services.indexOf(it);
 				if (i >= 0) S.form.services.splice(i, 1); else S.form.services.push(it);
 				t.classList.toggle('on');
+				t.setAttribute('aria-pressed', t.classList.contains('on') ? 'true' : 'false');
 				return;
 			}
 			var act = t.getAttribute('data-act');
@@ -507,10 +535,41 @@
 			if (act === 'submit') { collect(); if (!valid()) { flashInvalid(); return; } submit(t); return; }
 		}
 
+		/* Welche Pflichtangaben fehlen? (spiegelt valid()) — auch für Chips/Consent,
+		   die kein markierbares Input haben und sonst stumm scheitern würden. */
+		function missingMsg() {
+			var m = [];
+			var add = function (cond, label) { if (!cond) m.push(label); };
+			if (S.mode === 'quick') {
+				add(S.form.occasion, 'Anlass auswählen');
+				add(S.form.firstName, 'Vorname');
+				add(S.form.email, 'E-Mail');
+				add(S.form.consent, 'Zustimmung zur Datenverarbeitung');
+			} else if (S.step === 0) {
+				add(S.form.occasion, 'Anlass auswählen');
+			} else {
+				add(S.form.company, 'Firma');
+				add(S.form.firstName, 'Vorname');
+				add(S.form.lastName, 'Nachname');
+				add(S.form.email, 'E-Mail');
+				add(S.form.consent, 'Zustimmung zur Datenverarbeitung');
+			}
+			return m.length ? 'Es fehlt noch: ' + m.join(', ') + '.' : 'Bitte fülle die markierten Pflichtfelder aus.';
+		}
+
 		function flashInvalid() {
 			overlay.querySelectorAll('[data-field]').forEach(function (inp) {
-				if (inp.required && !inp.value) inp.classList.add('fg-input-err');
+				if (inp.required && !inp.value) { inp.classList.add('fg-input-err'); inp.setAttribute('aria-invalid', 'true'); }
 			});
+			var box = overlay.querySelector('.rw-error');
+			if (!box) {
+				box = document.createElement('div');
+				box.className = 'rw-error';
+				box.setAttribute('role', 'alert');
+				var foot = overlay.querySelector('.rw-foot');
+				if (foot && foot.parentNode) { foot.parentNode.insertBefore(box, foot); } else { overlay.appendChild(box); }
+			}
+			box.textContent = missingMsg();
 			var first = overlay.querySelector('.fg-input-err');
 			if (first) first.focus();
 		}

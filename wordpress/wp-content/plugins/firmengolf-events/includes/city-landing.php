@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function fge_get_cities(): array {
 	$reason = static function ( $ic, $t, $b ) { return [ 'ic' => $ic, 't' => $t, 'b' => $b ]; };
 	$faq    = static function ( $q, $a ) { return [ 'q' => $q, 'a' => $a ]; };
-	$team   = $reason( 'users', 'Für jedes Team', 'Von kompletten Einsteigenden bis zu Stammspielern. Schläger werden gestellt, ein Golflehrer führt an, jedes Format passend zusammengestellt.' );
+	$team   = $reason( 'users', 'Für jedes Team', 'Ob 10 oder 80 Gäste — Gruppengröße, Ablauf und Catering stellen wir passend zu eurem Anlass zusammen.' );
 	$local  = $reason( 'flag', 'Lokale Partnerplätze', 'Wir arbeiten direkt mit den Clubs vor Ort. Kurze Wege, verlässliche Termine, echte Ansprechpartner.' );
 	$f_anf  = $faq( 'Müssen unsere Mitarbeitenden Golf spielen können?', 'Nein. Unsere Schnupperkurse und Teamevents sind genau für Teams ohne Vorerfahrung gedacht. Schläger werden gestellt, ein Golflehrer führt euch an, der gemeinsame Tag steht im Vordergrund, nicht das Handicap.' );
 	$f_size = $faq( 'Wie groß darf die Gruppe sein?', 'Vom Coaching für zwei Personen bis zum Firmenturnier mit rund 80 Teilnehmenden ist alles möglich. Sag uns einfach eure Gruppengröße in der Anfrage, dann wählen wir Platz und Format passend aus.' );

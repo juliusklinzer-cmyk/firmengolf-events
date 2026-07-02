@@ -1117,9 +1117,13 @@ function fge_onboarding_form_open( int $step, int $partner_id, string $token ): 
 	}
 }
 
-function fge_onboarding_error( array $errors, string $field ): void {
+function fge_onboarding_error( array $errors, string $field, string $desc_id = '' ): void {
 	if ( isset( $errors[ $field ] ) ) {
-		printf( '<p class="ob-field-error">%s</p>', esc_html( $errors[ $field ] ) );
+		printf(
+			'<p class="ob-field-error"%s>%s</p>',
+			$desc_id !== '' ? ' id="' . esc_attr( $desc_id ) . '"' : '',
+			esc_html( $errors[ $field ] )
+		);
 	}
 }
 
@@ -1136,9 +1140,10 @@ function fge_onboarding_input( string $id, string $name, string $label, string $
 		       id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>"
 		       value="<?php echo esc_attr( $val ); ?>"
 		       <?php echo $placeholder !== '' ? 'placeholder="' . esc_attr( $placeholder ) . '"' : ''; ?>
+		       <?php echo isset( $errors[ $name ] ) ? 'aria-invalid="true" aria-describedby="' . esc_attr( $id ) . '-error"' : ''; ?>
 		       <?php echo $required ? 'required' : ''; ?> <?php echo $attrs; // phpcs:ignore WordPress.Security.EscapeOutput -- static attribute strings from callers ?>>
 		<?php echo $hint_below ? $hint_html : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped above ?>
-		<?php fge_onboarding_error( $errors, $name ); ?>
+		<?php fge_onboarding_error( $errors, $name, $id . '-error' ); ?>
 	</div>
 	<?php
 }

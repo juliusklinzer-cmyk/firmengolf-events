@@ -124,7 +124,7 @@ get_header();
 <div class="trust-strip" aria-label="Auf einen Blick">
 	<div class="trust-inner">
 		<div class="trust-cell"><div class="trust-t"><?php echo esc_html( $city_region ); ?></div><div class="trust-b">Region in unserem Netz</div></div>
-		<div class="trust-cell"><div class="trust-t">&lt; 24 h</div><div class="trust-b">Antwort auf jede Anfrage</div></div>
+		<div class="trust-cell"><div class="trust-t">1 Werktag</div><div class="trust-b">Antwort auf jede Anfrage</div></div>
 		<div class="trust-cell"><div class="trust-t">Ein Kontakt</div><div class="trust-b">Vom Erstkontakt bis nach dem Event</div></div>
 		<div class="trust-cell"><div class="trust-t">Eine Rechnung</div><div class="trust-b">Sauber abgerechnet</div></div>
 	</div>
