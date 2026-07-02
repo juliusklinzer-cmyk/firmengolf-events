@@ -22,12 +22,13 @@ function fge_company(): array {
 		'whatsapp_number'  => '4915234348249',
 		'whatsapp_url'     => 'https://wa.me/4915234348249',
 
-		// E-Mail (alle @visionpunch.de)
-		'email_general'    => 'hallo@visionpunch.de',
-		'email_events'     => 'events@visionpunch.de',
-		'email_partner'    => 'partner@visionpunch.de',
-		'email_press'      => 'presse@visionpunch.de',
-		'email_jobs'       => 'jobs@visionpunch.de',
+		// E-Mail (alle @firmengolf-events.de)
+		'email_general'    => 'hallo@firmengolf-events.de',
+		'email_events'     => 'events@firmengolf-events.de',
+		'email_partner'    => 'partner@firmengolf-events.de',
+		'email_press'      => 'presse@firmengolf-events.de',
+		'email_jobs'       => 'jobs@firmengolf-events.de',
+		'email_privacy'    => 'datenschutz@firmengolf-events.de',
 
 		// Firma
 		'legal_name'       => 'Visionpunch UG (haftungsbeschränkt)',

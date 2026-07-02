@@ -1,4 +1,8 @@
-# Go-Live-Runbook — visionpunch.de
+# Go-Live-Runbook — visionpunch.de (historisch, erledigt 2026-06-21)
+
+> **Hinweis (2026-07-02):** Die Site zieht auf **firmengolf-events.de** um —
+> siehe `docs/domain-migration-runbook.md`. Dieses Dokument beschreibt den
+> ursprünglichen Go-Live auf visionpunch.de und bleibt als Referenz erhalten.
 
 **Methode:** Duplicator-Plugin klont Dateien + DB + URL-Tausch in einem Rutsch.
 Zugang One.com = **File-Manager + phpMyAdmin** (kein SSH/WP-CLI).

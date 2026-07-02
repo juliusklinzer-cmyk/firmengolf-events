@@ -1044,7 +1044,7 @@ function fge_onboarding_render_footer( int $step, string $token ): void {
  */
 function fge_onboarding_render_help(): void {
 	$co        = function_exists( 'fge_company' ) ? fge_company() : [];
-	$email     = $co['email_partner'] ?? 'partner@visionpunch.de';
+	$email     = $co['email_partner'] ?? 'partner@firmengolf-events.de';
 	$phone     = $co['phone_display'] ?? '+49 (0) 89 1225 1010';
 	$phone_tel = $co['phone_tel'] ?? '+498912251010';
 	?>

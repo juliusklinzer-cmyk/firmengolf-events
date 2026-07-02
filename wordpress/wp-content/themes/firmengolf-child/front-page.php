@@ -579,7 +579,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 				Event anfragen
 				<span class="fg-arrow" style="background:var(--fairway-200)"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 			</a>
-			<a class="mk-cta-mail" href="mailto:events@visionpunch.de">events@visionpunch.de</a>
+			<a class="mk-cta-mail" href="mailto:<?php echo esc_attr( fge_company()['email_events'] ); ?>"><?php echo esc_html( fge_company()['email_events'] ); ?></a>
 		</div>
 	</div>
 </section>

@@ -83,7 +83,7 @@ $faq_groups = [
 		<h2 class="mk-cta-h">Schreibt uns — wir helfen bei der <em class="mk-italic">Aufnahme</em>.</h2>
 		<div class="mk-cta-ctas">
 			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $url_onboarding ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Platz anbieten</a>
-			<a class="mk-cta-mail" href="mailto:partner@visionpunch.de">partner@visionpunch.de</a>
+			<a class="mk-cta-mail" href="mailto:<?php echo esc_attr( fge_company()['email_partner'] ); ?>"><?php echo esc_html( fge_company()['email_partner'] ); ?></a>
 		</div>
 	</div>
 </section>

@@ -760,7 +760,7 @@ function fge_portal_render(): void {
 		?>
 		<div class="fg-portal-standalone">
 			<p class="fg-portal-standalone-title">Dein Partnerprofil ist noch nicht freigeschaltet.</p>
-			<p>Bitte wende dich an das Firmengolf Team: <a href="mailto:events@visionpunch.de">events@visionpunch.de</a></p>
+			<p>Bitte wende dich an das Firmengolf Team: <a href="mailto:<?php echo esc_attr( fge_company()['email_events'] ); ?>"><?php echo esc_html( fge_company()['email_events'] ); ?></a></p>
 		</div>
 		<?php
 		return;

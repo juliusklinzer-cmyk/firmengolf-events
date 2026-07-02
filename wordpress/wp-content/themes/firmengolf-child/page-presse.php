@@ -80,7 +80,7 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 		<h2 class="mk-cta-h">Julius Klinzer · Presse &amp; Kommunikation</h2>
 		<p class="mk-cta-sub">Firmengolf · Visionpunch UG, München</p>
 		<div class="mk-cta-ctas">
-			<a class="mk-cta-mail" href="mailto:presse@visionpunch.de">presse@visionpunch.de</a>
+			<a class="mk-cta-mail" href="mailto:<?php echo esc_attr( fge_company()['email_press'] ); ?>"><?php echo esc_html( fge_company()['email_press'] ); ?></a>
 		</div>
 	</div>
 </section>

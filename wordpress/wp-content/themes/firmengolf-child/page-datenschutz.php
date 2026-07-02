@@ -11,9 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 get_header();
 $co        = fge_company();
 $addr      = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
-$mail_ds   = 'datenschutz@visionpunch.de';
+$mail_ds   = $co['email_privacy'] ?? 'datenschutz@firmengolf-events.de';
 $mail_gen  = $co['email_general'];
-$mail_jobs = $co['email_jobs'] ?? 'jobs@visionpunch.de';
+$mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 ?>
 <div class="fge-page" id="fge-main" role="main" tabindex="-1">
 

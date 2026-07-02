@@ -78,7 +78,7 @@ $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12"
 		<h2 class="mk-cta-h">Erzähl uns trotzdem <em class="mk-italic">von dir</em>.</h2>
 		<p class="mk-cta-sub">Wir wachsen schnell — und gute Leute finden bei uns fast immer einen Platz.</p>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="mailto:jobs@visionpunch.de" style="background:var(--paper-100);color:var(--fairway-900)">
+			<a class="fg-btn-ink fg-btn-lg" href="mailto:<?php echo esc_attr( fge_company()['email_jobs'] ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">
 				Initiativ bewerben <?php echo $arrow; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 			</a>
 		</div>

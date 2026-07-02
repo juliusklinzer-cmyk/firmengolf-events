@@ -758,7 +758,7 @@ function fge_email_wrap( string $title, string $body_html ): string {
 		. ( ! empty( $co['managing_director'] ) ? '<br>Geschäftsführer: ' . esc_html( (string) $co['managing_director'] ) : '' )
 		. ( ! empty( $co['register_court'] ) ? ' &nbsp;·&nbsp; ' . esc_html( (string) $co['register_court'] . ' ' . ( $co['register_no'] ?? '' ) ) : '' )
 		. ( ! empty( $co['ust_id'] ) ? ' &nbsp;·&nbsp; USt-IdNr. ' . esc_html( (string) $co['ust_id'] ) : '' );
-	$email_events = (string) ( $co['email_events'] ?? 'events@visionpunch.de' );
+	$email_events = (string) ( $co['email_events'] ?? 'events@firmengolf-events.de' );
 	return '<!DOCTYPE html>
 <html lang="de">
 <head>

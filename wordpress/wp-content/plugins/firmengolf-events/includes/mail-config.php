@@ -8,7 +8,7 @@
  * From/From-Name/Reply-To hier zentral (aus fge_company()).
  *
  * PRODUKTIV ZUSÄTZLICH NÖTIG (siehe Go-Live-Plan): echter SMTP-Versand über
- * visionpunch.de (One.com) + SPF/DKIM/DMARC — sonst landen Mails im Spam.
+ * firmengolf-events.de (One.com) + SPF/DKIM/DMARC — sonst landen Mails im Spam.
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
