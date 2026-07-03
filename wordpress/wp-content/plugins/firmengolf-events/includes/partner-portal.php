@@ -513,7 +513,7 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	// Badges („Indoor-Backup" etc.) ohne eigenes Checkbox-Grid gültig bleiben.
 	$inc_raw      = mb_strtolower( (string) wp_unslash( $_POST['fge_event_includes'] ?? '' ) );
 	$flag_needles = [
-		'has_golf_teacher'      => [ 'pga', 'coaching', 'golflehrer', 'schnupperkurs' ],
+		'has_golf_teacher'      => [ 'pga', 'coaching', 'golflehrer', 'schnupperkurs', 'platzreife' ],
 		'has_range_usage'       => [ 'range' ],
 		'has_rental_clubs'      => [ 'leihschläger' ],
 		'has_range_balls'       => [ 'bälle' ],

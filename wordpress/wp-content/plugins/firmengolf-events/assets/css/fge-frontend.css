@@ -5,12 +5,9 @@
    ========================================================================== */
 
 /* ---------- 1. FONTS ---------- */
-/* Redesign 2026-07: Rajdhani (Hero) + Roboto (alles andere) — self-hosted statt
-   Google-Fonts-<link> (DSGVO: kein externer Request vor Consent). */
-@font-face { font-family: "Rajdhani"; src: url("../fonts/Rajdhani-Medium.woff2")   format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Rajdhani"; src: url("../fonts/Rajdhani-SemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Rajdhani"; src: url("../fonts/Rajdhani-Bold.woff2")     format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
-
+/* Redesign 2026-07: Roboto überall — self-hosted statt Google-Fonts-<link>
+   (DSGVO: kein externer Request vor Consent). Rajdhani war kurz als Hero-Schrift
+   drin, wurde am 2026-07-03 wieder verworfen (Hero = wie übrige Heros). */
 @font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Italic.woff2")  format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
 @font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Medium.woff2")  format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
@@ -82,7 +79,7 @@
   --border-strong: var(--ink-300);
   --border-brand:  var(--fairway-200);
 
-  /* Fonts (Redesign 2026-07: Roboto überall, Rajdhani nur Hero via fge-type-system.css) */
+  /* Fonts (Redesign 2026-07: Roboto überall) */
   --font-display: "Roboto", ui-sans-serif, system-ui, sans-serif;
   --font-body:    "Roboto", ui-sans-serif, system-ui, -apple-system, sans-serif;
   /* Serif-Kursive ist raus — Alt-Verweise (Portal/Onboarding/Termin) fallen auf Roboto zurück. */
@@ -2485,14 +2482,20 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 /* ── Hero ── */
 .mk-hero { max-width: 1280px; margin: 16px auto 0; padding: 0 24px; position: relative; }
 .mk-hero-photo { position: relative; aspect-ratio: 16/9; border-radius: 24px; overflow: hidden; background-size: cover; background-position: center; min-height: 560px; }
-.mk-hero-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,19,16,.15) 0%, rgba(14,19,16,0) 35%, rgba(14,19,16,.7) 100%); }
-.mk-hero-content { position: absolute; left: 48px; bottom: 48px; right: 48px; color: var(--paper-100); max-width: 820px; z-index: 1; }
+/* Content vertikal mittig links (2026-07-03) → Scrim von links statt von unten */
+.mk-hero-scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,19,16,.6) 0%, rgba(14,19,16,.3) 45%, rgba(14,19,16,0) 72%); }
+.mk-hero-content { position: absolute; left: 48px; top: 50%; transform: translateY(-50%); right: 48px; color: var(--paper-100); max-width: 820px; z-index: 1; }
 .mk-hero-content * { color: inherit; }
 .mk-hero-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
-.mk-hero-title { font-family: var(--font-display); font-weight: 500; font-size: 80px; line-height: .98; letter-spacing: -.035em; margin-top: 16px; color: var(--paper-100); text-wrap: balance; }
+/* Typo identisch zum Individuelle-Events-Hero (.ind-hero-title), 2026-07-03 */
+.mk-hero-title { font-family: var(--font-display); font-weight: 500; font-size: 52px; line-height: 1.08; letter-spacing: -.03em; margin-top: 16px; color: var(--paper-100); text-wrap: balance; }
 .mk-hero-sub { font-size: 18px; line-height: 1.5; margin-top: 20px; max-width: 580px; opacity: .9; }
 .mk-hero-ctas { display: flex; gap: 12px; margin-top: 28px; align-items: center; flex-wrap: wrap; }
-.mk-hero-floating { position: absolute; right: 56px; top: 72px; display: flex; gap: 12px; align-items: center; padding: 10px; padding-right: 20px; background: rgba(255,255,255,.18); backdrop-filter: blur(14px); border-radius: 18px; border: 1px solid rgba(255,255,255,.25); z-index: 1; color: var(--paper-100); }
+.mk-hero-floating { position: absolute; right: 56px; top: 72px; display: flex; gap: 12px; align-items: center; padding: 10px; padding-right: 20px; background: rgba(255,255,255,.18); backdrop-filter: blur(14px); border-radius: 18px; border: 1px solid rgba(255,255,255,.25); z-index: 1; color: var(--paper-100); text-decoration: none; transition: background 160ms var(--ease-out), transform 160ms var(--ease-out); }
+/* .fge-page a (color:inherit) ist spezifischer als .mk-hero-floating → Weiß hier erzwingen */
+.fge-page a.mk-hero-floating { color: var(--paper-100); }
+a.mk-hero-floating:hover { background: rgba(255,255,255,.28); transform: translateY(-1px); }
+a.mk-hero-floating:focus-visible { outline: 2px solid var(--paper-100); outline-offset: 2px; }
 .mk-floating-thumb { width: 88px; height: 64px; border-radius: 12px; background-size: cover; background-position: center; flex: none; }
 .mk-floating-chip { font-size: 13px; font-weight: 500; }
 .mk-floating-meta { font-size: 12px; opacity: .8; margin-top: 2px; }
@@ -2505,18 +2508,6 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 /* ── Partners strip ── */
 .mk-partners { max-width: 1280px; margin: 56px auto 0; padding: 0 24px; text-align: center; }
 
-/* Hero trust bullets (ported 1:1 from design site.css) */
-.mk-hero-trust { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 28px; font-size: 14px; font-weight: 500; color: rgba(251,250,246,0.9); }
-.mk-hero-trust-dot { width: 4px; height: 4px; border-radius: 999px; background: var(--fairway-300); flex: none; }
-
-/* Hero rotating word (ported 1:1 from design site.css) */
-/* Standardtext eigene Zeile (fix), variables Wort eigene Zeile ohne Umbruch → kein Springen. */
-.mk-hero-lead { display: block; text-wrap: balance; }
-.rot-wrap { display: block; white-space: nowrap; min-height: 1em; margin-top: 2px; }
-.rot-word { display: inline-block; color: #E7C987; transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out); will-change: opacity, transform; }
-.rot-word.in  { opacity: 1; transform: translateY(0); }
-.rot-word.out { opacity: 0; transform: translateY(-0.32em); }
-.rot-dot { display: inline-block; color: #E7C987; }
 
 /* Experience section ("Warum Golf" — ported 1:1 from design site.css) */
 .home-exp { background: var(--paper-100); color: var(--ink-900); padding: 104px 24px; }
@@ -2695,11 +2686,10 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 @media (max-width: 720px) {
   /* Mobile-Hero: handytaugliche Höhe statt erzwungener 560px, kompaktere Typo */
   .mk-hero { padding: 0 16px; margin-top: 12px; }
-  .mk-hero-photo { aspect-ratio: auto; min-height: 78vh; display: flex; align-items: flex-end; background-image: url('../imagery/hero-korb.jpg') !important; }
+  .mk-hero-photo { aspect-ratio: auto; min-height: 78vh; display: flex; align-items: center; background-image: url('../imagery/hero-korb.jpg') !important; }
   .mk-hero-title { font-size: clamp(32px, 8.5vw, 44px); line-height: 1.04; margin-top: 10px; }
   .mk-hero-sub { font-size: 15px; margin-top: 14px; }
   .mk-hero-ctas { margin-top: 20px; gap: 10px; }
-  .mk-hero-trust { margin-top: 18px; font-size: 13px; gap: 10px; }
   /* Section-Kopf mit Button: auf Mobile stapeln, sonst läuft der Button aus dem Bild */
   .mk-section-head.between { flex-direction: column; align-items: flex-start; gap: 16px; }
   .mk-h2 { font-size: 32px; }
@@ -2713,7 +2703,7 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
   .home-blog-grid { grid-template-columns: 1fr; }
   .mk-steps-grid { grid-template-columns: 1fr; }
   .mk-hero-floating { display: none; }
-  .mk-hero-content { position: static; left: auto; right: auto; bottom: auto; max-width: none; width: 100%; padding: 24px; }
+  .mk-hero-content { position: static; left: auto; right: auto; bottom: auto; top: auto; transform: none; max-width: none; width: 100%; padding: 24px; }
   .mk-testimonial-body { padding: 32px 28px; }
   .home-numbers-grid { grid-template-columns: 1fr; }
   .home-num-v { font-size: clamp(40px, 13vw, 56px); }

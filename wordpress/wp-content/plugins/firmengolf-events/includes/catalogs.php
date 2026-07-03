@@ -163,6 +163,7 @@ function fge_catalog_cap_keys(): array {
 function fge_catalog_partner_formats(): array {
 	return [
 		'schnupperkurs'  => 'Schnupperkurs',
+		'platzreife'     => 'Platzreife',
 		'teamevent'      => 'Teamevent',
 		'firmenturnier'  => 'Firmenturnier',
 		'kundenevent'    => 'Kundenevent',

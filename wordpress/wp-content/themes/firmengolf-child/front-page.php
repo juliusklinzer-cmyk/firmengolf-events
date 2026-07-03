@@ -69,10 +69,10 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		<div class="mk-hero-content">
 			<div class="mk-hero-eyebrow">Firmenevents · Golf für Unternehmen</div>
 			<h1 class="mk-hero-title">
-				Wir machen den <span class="hero-tq">Golfplatz</span> zur <span class="hero-tq">Eventlocation</span>
+				Wir machen den <em class="mk-italic">Golfplatz</em> zur <em class="mk-italic">Eventlocation</em>
 			</h1>
 			<p class="mk-hero-sub">
-				Vom Schnupperkurs bis zum Firmenturnier — Golf-Formate auf Partnerplätzen
+				Von der Platzreife bis zum Firmenturnier: Golf-Formate auf Partnerplätzen
 				in ganz Deutschland. Eine Anfrage, eine Rechnung, ein Ansprechpartner.
 			</p>
 			<div class="mk-hero-ctas">
@@ -84,23 +84,31 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 					Individuelles Event planen →
 				</a>
 			</div>
-			<div class="mk-hero-trust">
-				<span>Keine Mitgliedschaft nötig</span>
-				<span class="mk-hero-trust-dot" aria-hidden="true"></span>
-				<span>Schläger werden gestellt</span>
-				<span class="mk-hero-trust-dot" aria-hidden="true"></span>
-				<span>Antwort in einem Werktag</span>
-			</div>
 		</div>
 	</div>
 
-	<div class="mk-hero-floating" aria-hidden="true">
-		<div class="mk-floating-thumb" style="background-image:url('<?php echo esc_url( $img( 'golf-coaching-einzel.jpg' ) ); ?>')"></div>
+	<?php
+	// Floating-Karte: verlinkt auf die Eventliste, Zähler = aktuell öffentliche Events.
+	$fge_live_event_ids = get_posts( [
+		'post_type'     => 'firmengolf_event',
+		'post_status'   => 'publish',
+		'numberposts'   => -1,
+		'fields'        => 'ids',
+		'no_found_rows' => true,
+	] );
+	$fge_live_count = function_exists( 'fge_event_is_public' )
+		? count( array_filter( $fge_live_event_ids, 'fge_event_is_public' ) )
+		: count( $fge_live_event_ids );
+	?>
+	<?php if ( $fge_live_count > 0 ) : ?>
+	<a class="mk-hero-floating" href="<?php echo esc_url( $url_events ); ?>">
+		<div class="mk-floating-thumb" aria-hidden="true" style="background-image:url('<?php echo esc_url( $img( 'golf-coaching-einzel.jpg' ) ); ?>')"></div>
 		<div>
-			<div class="mk-floating-chip">12 Sommer-Slots im Juni</div>
+			<div class="mk-floating-chip"><?php echo esc_html( (string) $fge_live_count ); ?> Events aktuell live</div>
 			<div class="mk-floating-meta">Hamburg · München · Berlin · Köln</div>
 		</div>
-	</div>
+	</a>
+	<?php endif; ?>
 
 	<form method="get" action="<?php echo esc_url( $url_events ); ?>" class="home-quicksearch fg-search-bar" role="search" aria-label="Events filtern">
 
@@ -210,16 +218,16 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			<div class="mk-eyebrow">Warum Golf</div>
 			<h2 class="home-exp-h">Es geht nicht ums Golf. Es geht um das, was <span class="mk-italic">dabei</span> passiert.</h2>
 			<p class="home-exp-lead">
-				Niemand muss spielen können. Verbindet euer Meeting mit ein paar Stunden draußen —
-				und merkt, wie viel leichter Gespräche laufen, wenn zwischendurch Bewegung dazukommt.
+				Niemand muss spielen können. Ein paar Stunden draußen, etwas Bewegung zwischendurch,
+				und Gespräche laufen plötzlich viel leichter als im Konferenzraum.
 			</p>
 		</div>
 		<div class="home-exp-cards">
 			<?php
 			$exp_points = [
-				[ 'k' => 'Bewegung',      't' => 'Vier, fünf Kilometer an der frischen Luft — ohne dass es sich nach Sport anfühlt.',       'img' => 'driving-range-uebung.jpg' ],
-				[ 'k' => 'Natur',         't' => 'Grün, Weite, Himmel — die perfekte Ergänzung zu einem Tag voller Gespräche.',             'img' => 'golf-gruen-fahne.jpg' ],
-				[ 'k' => 'Konzentration', 't' => 'Ein Spiel, das ganz im Moment verlangt — und genau dadurch den Kopf frei macht.',         'img' => 'golf-sandbunker.jpg' ],
+				[ 'k' => 'Bewegung',      't' => 'Vier, fünf Kilometer an der frischen Luft, ohne dass es sich nach Sport anfühlt.',        'img' => 'driving-range-uebung.jpg' ],
+				[ 'k' => 'Natur',         't' => 'Grün, Weite, Himmel. Die perfekte Ergänzung zu einem Tag voller Gespräche.',              'img' => 'golf-gruen-fahne.jpg' ],
+				[ 'k' => 'Konzentration', 't' => 'Ein Spiel, das volle Aufmerksamkeit verlangt und genau dadurch den Kopf frei macht.',     'img' => 'golf-sandbunker.jpg' ],
 				[ 'k' => 'Zusammenhalt',  't' => 'Vier Stunden Seite an Seite, ohne Bildschirm. Teams wachsen hier unangestrengt zusammen.', 'img' => 'golfer-gruppe-fairway.png' ],
 			];
 			foreach ( $exp_points as $p ) : ?>
@@ -245,9 +253,9 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	<div class="mk-steps-grid">
 		<?php
 		$steps = [
-			[ '01', 'Du sagst uns, was du planst.',     'Anlass, Gruppe, Zeitraum. Eine Anfrage — mehr brauchen wir nicht.' ],
+			[ '01', 'Du sagst uns, was du planst.',     'Anlass, Gruppe, Zeitraum. Eine Anfrage, mehr brauchen wir nicht.' ],
 			[ '02', 'Wir kuratieren passende Plätze.',  'Innerhalb eines Werktags bekommst du zwei bis drei Optionen mit Format, Preis und Verfügbarkeit.' ],
-			[ '03', 'Du wählst, wir koordinieren.',     'Ein Ansprechpartner, eine Rechnung. Der Platz organisiert vor Ort — du bist nur Gastgeberin.' ],
+			[ '03', 'Du wählst, wir koordinieren.',     'Ein Ansprechpartner, eine Rechnung. Der Platz organisiert vor Ort, du bist nur Gastgeberin.' ],
 		];
 		foreach ( $steps as $step ) : ?>
 			<div class="mk-step">
@@ -264,7 +272,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	<div class="mk-section-head between">
 		<div>
 			<div class="mk-eyebrow">Beliebte Formate</div>
-			<h2 class="mk-h2">Vom Schnupperkurs bis zum Firmenturnier.</h2>
+			<h2 class="mk-h2">Von der Platzreife bis zum Firmenturnier.</h2>
 		</div>
 		<a class="fg-btn-ghost" href="<?php echo esc_url( $url_events ); ?>">
 			Alle Events ansehen <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
@@ -311,9 +319,9 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			// Fallback: neutrale Format-Karten, wenn (noch) keine Events publiziert sind.
 			// Bewusst OHNE erfundene Orte/Preise (UWG!) — nur echte Format-Beschreibungen.
 			$static_formats = [
-				[ 'label' => 'Schnupperkurs',  'title' => 'Schnupperkurs an einem Nachmittag', 'desc' => 'Einsteigerfreundlich. Golflehrer, Schläger gestellt, Range-Bälle inklusive.',            'price' => 'Auf Anfrage', 'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
-				[ 'label' => 'Teamevent',      'title' => 'Golf-Teamevent für euer Team',      'desc' => 'Stationen, Team-Challenge, gemeinsames Essen — ganz ohne Vorkenntnisse.',                'price' => 'Auf Anfrage', 'img' => 'firmenevent-afterwork-golf.jpg',  'dark' => true  ],
-				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',           'desc' => 'Shotgun-Start, Fotograf, Siegerehrung — wir kümmern uns um alles.',                      'price' => 'Auf Anfrage', 'img' => 'clubhaus-aussenansicht.jpg',      'dark' => false ],
+				[ 'label' => 'Platzreife',     'title' => 'Platzreife als Firmenprogramm',    'desc' => 'Kompakter Kurs mit PGA-Golflehrer, Regeln und offizieller Prüfung.',                    'price' => 'Auf Anfrage', 'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
+				[ 'label' => 'Teamevent',      'title' => 'Golf-Teamevent für euer Team',      'desc' => 'Stationen, Team-Challenge, gemeinsames Essen. Ganz ohne Vorkenntnisse.',                 'price' => 'Auf Anfrage', 'img' => 'firmenevent-afterwork-golf.jpg',  'dark' => true  ],
+				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',           'desc' => 'Shotgun-Start, Fotograf, Siegerehrung. Wir kümmern uns um alles.',                       'price' => 'Auf Anfrage', 'img' => 'clubhaus-aussenansicht.jpg',      'dark' => false ],
 				[ 'label' => 'Incentive',      'title' => 'Incentive mit Golf & Genuss',       'desc' => 'Besondere Plätze, private Dinings, bleibende Erinnerungen für eure Top-Leute.',          'price' => 'Auf Anfrage', 'img' => 'golfplatz-meerblick.jpg',         'dark' => true  ],
 			];
 			foreach ( $static_formats as $f ) : ?>
@@ -346,7 +354,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 <section class="mk-section home-occasions-section" aria-label="Für welchen Anlass?">
 	<div class="mk-section-head">
 		<div class="mk-eyebrow">Für welchen Anlass?</div>
-		<h2 class="mk-h2">Sag uns, was ihr vorhabt — wir kennen das passende Format.</h2>
+		<h2 class="mk-h2">Sag uns, was ihr vorhabt. Wir kennen das passende Format.</h2>
 		<p class="mk-sub">Suche nach dem, was ihr erreichen wollt, nicht nach dem Format-Namen.</p>
 	</div>
 	<div class="home-occasions">
@@ -375,9 +383,9 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			],
 			[
 				'eyebrow' => 'Einsteiger',
-				'title'   => 'Auch ganz ohne Golf-Erfahrung.',
-				'body'    => 'Halbtags-Schnupperkurs mit Trainer — jeder kann mit.',
-				'url'     => add_query_arg( 'format', 'schnupperkurs', $url_events ),
+				'title'   => 'Vom ersten Schwung zur Platzreife.',
+				'body'    => 'Kompakter Kurs mit PGA-Pro und Prüfung. Der Benefit, der bleibt.',
+				'url'     => add_query_arg( 'format', 'platzreife', $url_events ),
 				'img'     => 'work-life-balance-golf.jpg',
 			],
 			[
@@ -421,7 +429,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 				Nichts dabei? <em class="mk-italic">Wir planen</em> dein Event nach deinen Ansprüchen.
 			</h2>
 			<p class="mk-sub">
-				Sonderwünsche, eigene Location, mehrtägiges Programm, internationale Gruppe — beschreib uns kurz,
+				Sonderwünsche, eigene Location, mehrtägiges Programm, internationale Gruppe? Beschreib uns kurz,
 				was du vorhast. Wir bauen das Format für euch und schlagen die passenden Plätze vor.
 			</p>
 			<div class="home-ind-points">
@@ -451,7 +459,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		</h2>
 		<p class="home-benefit-sub">
 			50 € steuerfreier Sachbezug pro Monat, Zugang zu Partnerplätzen, Coaching-Stunden zum Mitarbeiterpreis.
-			Bewegung statt Obstkorb — und die HR-Abrechnung läuft sauber.
+			Bewegung statt Obstkorb. Und die HR-Abrechnung läuft sauber.
 		</p>
 		<div class="home-benefit-ctas">
 			<a class="fg-btn-ink fg-btn-lg" href="https://firmen.golf" target="_blank" rel="noopener noreferrer"
@@ -536,8 +544,8 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		<?php else : ?>
 			<?php
 			$static_posts = [
-				[ 'Benefits', 'Warum Golf zum Corporate Benefit passt', 'golf-coaching-gruppe.jpg', '6 Min.', 'Julius Klinzer', '14. Mai 2026', '50 € steuerfreier Sachbezug, fittere Mitarbeitende — wir erklären die wichtigsten Punkte.' ],
-				[ 'Praxis', 'Die 12-Punkte-Checkliste für dein erstes Firmen-Golfevent', 'firmenevent-afterwork-golf.jpg', '4 Min.', 'Julius Klinzer', '2. Mai 2026', 'Vom richtigen Zeitfenster bis zum Wetter-Backup — was du im Blick haben solltest.' ],
+				[ 'Benefits', 'Warum Golf zum Corporate Benefit passt', 'golf-coaching-gruppe.jpg', '6 Min.', 'Julius Klinzer', '14. Mai 2026', '50 € steuerfreier Sachbezug und fittere Mitarbeitende. Wir erklären die wichtigsten Punkte.' ],
+				[ 'Praxis', 'Die 12-Punkte-Checkliste für dein erstes Firmen-Golfevent', 'firmenevent-afterwork-golf.jpg', '4 Min.', 'Julius Klinzer', '2. Mai 2026', 'Vom richtigen Zeitfenster bis zum Wetter-Backup. Das solltest du im Blick haben.' ],
 				[ 'Einsteiger', '"Aber wir können doch alle nicht Golf spielen"', 'golfplatz-rasen-qualitaet.jpg', '5 Min.', 'Julius Klinzer', '18. April 2026', 'Genau das ist der Punkt. Wie ein Schnupperkurs für absolute Einsteigende funktioniert.' ],
 			];
 			foreach ( $static_posts as $p ) : ?>
@@ -570,8 +578,8 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			Lasst uns euer nächstes Event <em class="mk-italic">zusammen</em> planen.
 		</h2>
 		<p class="mk-cta-sub">
-			Antwort innerhalb eines Werktags. Kein Vertriebs-Druck, kein Telefon-Marathon.
-			Du beschreibst kurz, was du vorhast — wir kümmern uns um den Rest.
+			Antwort innerhalb eines Werktags. Kein Vertriebsdruck, kein Telefon-Marathon.
+			Du beschreibst kurz, was du vorhast. Wir kümmern uns um den Rest.
 		</p>
 		<div class="mk-cta-ctas">
 			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $url_ind ); ?>"

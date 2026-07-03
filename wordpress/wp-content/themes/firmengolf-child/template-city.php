@@ -18,14 +18,14 @@ $city_name   = $city['name'];
 $city_region = $city['region'];
 $canonical   = home_url( '/golf-events/' . $slug . '/' );
 $seo_title   = 'Firmen-Golfevents in ' . $city_name . ' — Teamevents & Turniere | Firmengolf';
-$seo_desc    = 'Firmenevents auf Golfplätzen in ' . $city_name . ': Teamevents, Firmenturniere, Schnupperkurse und individuelle Events. Eine Anfrage, ein Ansprechpartner, eine Rechnung.';
+$seo_desc    = 'Firmenevents auf Golfplätzen in ' . $city_name . ': Teamevents, Firmenturniere, Platzreife und individuelle Events. Eine Anfrage, ein Ansprechpartner, eine Rechnung.';
 $events_url  = (string) get_post_type_archive_link( 'firmengolf_event' );
 $ind_url     = ( $p = get_page_by_path( 'individuelle-events' ) ) ? (string) get_permalink( $p->ID ) : home_url( '/individuelle-events/' );
 
 // City FAQ: aus der Stadt-Config (eigener Inhalt), sonst generischer Fallback.
 $faqs = ! empty( $city['faqs'] ) ? $city['faqs'] : [
 	[ 'q' => 'Welche Golfplätze gibt es für Firmenevents in ' . $city_name . '?', 'a' => 'Wir arbeiten mit ausgewählten Partnerplätzen in der Region ' . $city_region . ' zusammen, von der Übungsanlage für Einsteigende bis zur 18-Loch-Anlage für Firmenturniere.' ],
-	[ 'q' => 'Müssen unsere Mitarbeitenden Golf spielen können?', 'a' => 'Nein. Unsere Schnupperkurse und Teamevents sind für Einsteigende konzipiert, Golflehrer vor Ort, Schläger werden gestellt.' ],
+	[ 'q' => 'Müssen unsere Mitarbeitenden Golf spielen können?', 'a' => 'Nein. Unsere Teamevents enthalten immer einen Schnupper- und Grundlagenteil, Golflehrer vor Ort, Schläger werden gestellt.' ],
 	[ 'q' => 'Wie schnell bekommen wir eine Antwort?', 'a' => 'Innerhalb eines Werktags meldet sich ein persönlicher Ansprechpartner mit passenden Optionen für ' . $city_name . '.' ],
 	[ 'q' => 'Wie wird abgerechnet?', 'a' => 'Eine Sammelrechnung von Firmengolf mit allen Posten, einfach für HR und Buchhaltung.' ],
 ];
@@ -113,7 +113,7 @@ get_header();
 			<div class="ev-hero-eyebrow">Golf-Events · <?php echo esc_html( $city_name ); ?></div>
 			<h1 class="ev-hero-title">Firmen-Golfevents in <em class="mk-italic"><?php echo esc_html( $city_name ); ?></em>.</h1>
 			<p class="ev-hero-sub">
-				Teamevents, Firmenturniere, Schnupperkurse und individuelle Events auf Partnerplätzen rund um
+				Teamevents, Firmenturniere, Platzreife und individuelle Events auf Partnerplätzen rund um
 				<?php echo esc_html( $city_name ); ?>. Eine Anfrage, ein Ansprechpartner, eine Rechnung.
 			</p>
 		</div>

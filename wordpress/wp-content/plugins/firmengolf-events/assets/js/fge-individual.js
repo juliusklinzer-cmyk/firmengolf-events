@@ -210,7 +210,7 @@
 	var Wizard = (function () {
 		var FULL_STEPS = ['Anlass', 'Eckdaten', 'Leistungen', 'Budget', 'Kontakt'];
 		var SERVICE_GROUPS = [
-			{ group: 'Sport & Programm', items: ['Golflehrer / Coaching', 'Schnupperkurs', 'Firmenturnier', 'Putting-Challenge'] },
+			{ group: 'Sport & Programm', items: ['Golflehrer / Coaching', 'Schnupperkurs', 'Platzreife', 'Firmenturnier', 'Putting-Challenge'] },
 			{ group: 'Gastronomie', items: ['Frühstück', 'Lunch', 'Abendessen', 'Bar & Drinks'] },
 			{ group: 'Technik & Show', items: ['Eventtechnik: Bühne + Personal', 'DJ', 'Licht & Sound', 'Flutlicht / Nacht-Event'] },
 			{ group: 'Foto & Content', items: ['Fotograf', 'Content-Team für Social'] },

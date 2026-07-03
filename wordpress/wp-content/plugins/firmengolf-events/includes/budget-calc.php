@@ -32,6 +32,7 @@ function fge_bc_defaults(): array {
 		[ 'id' => 'vip_shuttle',   'label' => 'VIP-Shuttle',                            'cat' => 'transport','icon' => 'star', 'pp' => 0,   'flat' => 1200, 'wiz' => 'Shuttle / Transport' ],
 		// Golf-Leistung (Platznutzung/Greenfee inkludiert).
 		[ 'id' => 'schnupperkurs', 'label' => 'Schnupperkurs (inkl. Platz, Golflehrer & Leihschläger)', 'cat' => 'programm', 'icon' => 'coaching', 'pp' => 99, 'flat' => 0, 'wiz' => 'Schnupperkurs' ],
+		[ 'id' => 'platzreife',    'label' => 'Platzreifekurs (PGA-Pro, Regeln & Prüfung)',            'cat' => 'programm', 'icon' => 'coaching', 'pp' => 299, 'flat' => 0, 'wiz' => 'Platzreife' ],
 		[ 'id' => 'coaching',      'label' => 'Trainerstunde / Golftraining',           'cat' => 'programm', 'icon' => 'club', 'pp' => 48,  'flat' => 0,    'wiz' => 'Golflehrer / Coaching' ],
 		[ 'id' => 'turnier',       'label' => 'Firmenturnier (9 oder 18 Loch, inkl. Greenfee & Scoring)', 'cat' => 'venue', 'icon' => 'trophy', 'pp' => 145, 'flat' => 0, 'wiz' => 'Firmenturnier' ],
 		[ 'id' => 'putting',       'label' => 'Putting-Turnier',                        'cat' => 'programm', 'icon' => 'target','pp' => 0,   'flat' => 600,  'wiz' => 'Putting-Challenge' ],
@@ -70,6 +71,12 @@ function fge_bc_defaults(): array {
 			'services'   => [ 'shuttle', 'schnupperkurs', 'coaching', 'putting', 'catering', 'getraenke', 'meetingraum', 'foto' ],
 			'default_on' => [ 'schnupperkurs' ],
 			'required'   => [],
+		],
+		[
+			'id' => 'platzreife', 'label' => 'Platzreife', 'wiz' => 'Platzreife',
+			'services'   => [ 'shuttle', 'platzreife', 'catering', 'getraenke', 'meetingraum', 'foto' ],
+			'default_on' => [ 'platzreife' ],
+			'required'   => [ 'platzreife' ],
 		],
 		[
 			'id' => 'turnier', 'label' => 'Firmenturnier', 'wiz' => 'Firmenturnier',

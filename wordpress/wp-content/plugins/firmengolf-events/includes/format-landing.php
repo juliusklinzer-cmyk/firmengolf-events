@@ -31,10 +31,10 @@ function fge_get_event_format_pages(): array {
 			'eyebrow' => 'Format · Teamevent',
 			'h1'      => 'Golf-Teamevents für Firmen',
 			'lead'    => 'Ein gemeinsamer Tag auf dem Platz, der euer Team wirklich zusammenbringt — auch ohne Golferfahrung.',
-			'intro'   => 'Ein Golf-Teamevent holt euer Team raus aus dem Büro und rein ins Grüne. Anders als beim klassischen Teambuilding entsteht hier ganz nebenbei Nähe: gemeinsam üben, lachen, anfeuern. Ein Golflehrer führt auch komplette Einsteigende sicher an, Schläger und Material werden gestellt. Wir stellen Platz, Ablauf und Verpflegung passend zu eurer Gruppe zusammen — deutschlandweit.',
+			'intro'   => 'Ein Golf-Teamevent holt euer Team raus aus dem Büro und rein ins Grüne. Anders als beim klassischen Teambuilding entsteht hier ganz nebenbei Nähe: gemeinsam üben, lachen, anfeuern. Ein Schnupper- und Grundlagenkurs ist immer dabei: Ein Golflehrer führt auch komplette Einsteigende sicher an, Schläger und Material werden gestellt. Wir stellen Platz, Ablauf und Verpflegung passend zu eurer Gruppe zusammen, deutschlandweit.',
 			'reasons' => [ $r_team, $reason( 'leaf', 'Wirkt nach', 'Bewegung, frische Luft und gemeinsame Erlebnisse statt Stuhlkreis — bleibt länger in Erinnerung als das nächste Meeting.' ), $reason( 'clock', 'Halber oder ganzer Tag', 'Vom kompakten Nachmittag bis zum vollen Eventtag, passend zu Kalender und Budget.' ), $r_one ],
 			'faqs'    => [ $f_anf, $faq( 'Wie groß darf das Team sein?', 'Von der kleinen Abteilung bis zu rund 80 Teilnehmenden ist alles möglich. Sag uns eure Gruppengröße, dann wählen wir Platz und Format passend aus.' ), $f_fast, $f_bill ],
-			'types'   => [ 'teamevent', 'team-building', 'team_challenge', 'azubi_event' ],
+			'types'   => [ 'teamevent', 'team-building', 'team_challenge', 'azubi_event', 'schnupperkurs', 'schnuppergolf' ],
 		],
 		'golfturnier' => [
 			'name'    => 'Firmen-Golfturnier',
@@ -46,15 +46,15 @@ function fge_get_event_format_pages(): array {
 			'faqs'    => [ $faq( 'Können auch Anfänger an einem Firmenturnier teilnehmen?', 'Ja. Mit dem Scramble-Format spielen gemischte Teams gemeinsam — Erfahrene tragen das Feld, Einsteigende sind voll dabei. So wird niemand vorgeführt.' ), $faq( 'Übernehmt ihr die komplette Organisation?', 'Ja, von Startliste und Zählweise über Bewirtung bis zur Siegerehrung. Ihr müsst nur erscheinen und spielen.' ), $f_fast, $f_bill ],
 			'types'   => [ 'firmen_golfturnier', 'firmenturnier', '9hole_turnier', '18hole_turnier' ],
 		],
-		'schnupperkurs' => [
-			'name'    => 'Golf-Schnupperkurs',
-			'eyebrow' => 'Format · Einsteiger',
-			'h1'      => 'Golf-Schnupperkurs für Teams',
-			'lead'    => 'Der einfachste Einstieg: in wenigen Stunden vom ersten Schwung zum gemeinsamen Erfolgserlebnis.',
-			'intro'   => 'Der Golf-Schnupperkurs ist ideal, wenn euer Team Golf noch nie ausprobiert hat. Ein Golflehrer erklärt die Grundlagen, vom Putten bis zum ersten vollen Schwung — locker, mit viel Humor und ohne Leistungsdruck. Alles Material wird gestellt. Am Ende steht ein gemeinsames Erfolgserlebnis, das verbindet. Perfekt als Teamtag, Azubi-Event oder lockerer Einstieg vor einem größeren Format.',
-			'reasons' => [ $reason( 'users', 'Null Vorkenntnisse nötig', 'Genau für Teams ohne Golferfahrung gemacht. Golflehrer vor Ort, Schläger und Bälle inklusive.' ), $reason( 'clock', 'In ein paar Stunden', 'Kompaktes Format für den Nachmittag, leicht in den Arbeitstag integrierbar.' ), $reason( 'leaf', 'Spaß vor Leistung', 'Lockerer Rahmen, gemeinsames Lachen, kein Handicap-Druck.' ), $r_one ],
-			'faqs'    => [ $f_anf, $faq( 'Was ist im Schnupperkurs enthalten?', 'Golftraining, Leihschläger, Bälle und die Platz-/Range-Nutzung. Auf Wunsch ergänzen wir Verpflegung und einen kleinen Abschluss-Wettbewerb.' ), $f_fast, $f_bill ],
-			'types'   => [ 'schnupperkurs', 'schnuppergolf', 'range_training' ],
+		'platzreife' => [
+			'name'    => 'Platzreife',
+			'eyebrow' => 'Format · Platzreife',
+			'h1'      => 'Platzreife für Firmen & Teams',
+			'lead'    => 'Der offizielle Einstieg in den Golfsport: kompakter Kurs mit Prüfung, als Firmenprogramm oder Benefit mit bleibendem Wert.',
+			'intro'   => 'Die Platzreife ist die Eintrittskarte auf den Golfplatz. In einem kompakten Kurs lernt euer Team Technik, Regeln und Etikette, angeleitet von einem PGA-Golflehrer, und legt am Ende die offizielle Platzreifeprüfung ab. Als Firmenprogramm ist das mehr als ein Event: Mitarbeitende können danach eigenständig golfen und bleiben dem Sport verbunden. Schläger und Material werden während des Kurses gestellt, wir organisieren Platz, Pro und Ablauf.',
+			'reasons' => [ $reason( 'trophy', 'Offizieller Abschluss', 'Am Ende steht die anerkannte Platzreife, die Eintrittskarte für Golfplätze in ganz Deutschland.' ), $reason( 'clock', 'Kompakt planbar', 'Als Intensivkurs an zwei bis drei Tagen oder verteilt über mehrere Termine, passend zum Arbeitskalender.' ), $reason( 'gift', 'Benefit mit Substanz', 'Ein Programm, das bleibt: kein einmaliges Event, sondern der Start in einen Sport fürs Leben.' ), $r_one ],
+			'faqs'    => [ $f_anf, $faq( 'Was gehört zum Platzreifekurs?', 'Training mit PGA-Golflehrer, Regel- und Etikettekunde, Leihschläger, Range-Bälle und die Prüfung. Auf Wunsch ergänzen wir Verpflegung und ein gemeinsames Abschlussspiel.' ), $faq( 'Wie lange dauert die Platzreife?', 'Üblich sind zwei bis drei Tage. Wir planen den Kurs am Stück oder verteilt über mehrere Wochen, ganz wie es in euren Kalender passt.' ), $f_bill ],
+			'types'   => [ 'platzreife' ],
 		],
 		'kundenevent' => [
 			'name'    => 'Kundenevent Golf',
@@ -129,6 +129,23 @@ add_filter( 'query_vars', static function ( array $vars ): array {
 	$vars[] = 'fge_format';
 	return $vars;
 } );
+
+/**
+ * 301: alte Schnupperkurs-Landing-URLs (seit Launch indexiert!) auf das
+ * Teamevent-Pendant — der Schnupper-/Grundlagenteil lebt dort weiter.
+ * Gilt für /firmenevent/schnupperkurs/ UND /golf-events/<stadt>/schnupperkurs/.
+ */
+add_action( 'template_redirect', static function () {
+	if ( get_query_var( 'fge_format' ) !== 'schnupperkurs' ) {
+		return;
+	}
+	$city = (string) get_query_var( 'fge_city' );
+	$url  = $city !== ''
+		? home_url( '/golf-events/' . rawurlencode( $city ) . '/teamevent/' )
+		: home_url( '/firmenevent/teamevent/' );
+	wp_safe_redirect( $url, 301 );
+	exit;
+}, 1 );
 
 add_filter( 'template_include', static function ( $template ) {
 	$slug = get_query_var( 'fge_format' );

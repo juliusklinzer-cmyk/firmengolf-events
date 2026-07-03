@@ -18,7 +18,7 @@ function fge_get_cities(): array {
 	$faq    = static function ( $q, $a ) { return [ 'q' => $q, 'a' => $a ]; };
 	$team   = $reason( 'users', 'Für jedes Team', 'Ob 10 oder 80 Gäste — Gruppengröße, Ablauf und Catering stellen wir passend zu eurem Anlass zusammen.' );
 	$local  = $reason( 'flag', 'Lokale Partnerplätze', 'Wir arbeiten direkt mit den Clubs vor Ort. Kurze Wege, verlässliche Termine, echte Ansprechpartner.' );
-	$f_anf  = $faq( 'Müssen unsere Mitarbeitenden Golf spielen können?', 'Nein. Unsere Schnupperkurse und Teamevents sind genau für Teams ohne Vorerfahrung gedacht. Schläger werden gestellt, ein Golflehrer führt euch an, der gemeinsame Tag steht im Vordergrund, nicht das Handicap.' );
+	$f_anf  = $faq( 'Müssen unsere Mitarbeitenden Golf spielen können?', 'Nein. Unsere Teamevents starten immer mit einem Schnupper- und Grundlagenteil und sind genau für Teams ohne Vorerfahrung gedacht. Schläger werden gestellt, ein Golflehrer führt euch an, der gemeinsame Tag steht im Vordergrund, nicht das Handicap.' );
 	$f_size = $faq( 'Wie groß darf die Gruppe sein?', 'Vom Coaching für zwei Personen bis zum Firmenturnier mit rund 80 Teilnehmenden ist alles möglich. Sag uns einfach eure Gruppengröße in der Anfrage, dann wählen wir Platz und Format passend aus.' );
 	$f_fast = static function ( $city ) use ( $faq ) { return $faq( 'Wie schnell bekomme ich eine Rückmeldung?', 'Nach eurer Anfrage meldet sich innerhalb eines Werktags ein persönlicher Ansprechpartner mit konkreten Vorschlägen für Platz, Format und Termin in ' . $city . '.' ); };
 
@@ -31,7 +31,7 @@ function fge_get_cities(): array {
 		],
 		'hamburg' => [
 			'name' => 'Hamburg', 'region' => 'Nord', 'match' => [ 'Hamburg' ],
-			'intro' => 'Hamburg lebt vom Wasser und vom Wind, und genau das macht Golf hier besonders. Die Plätze im Hamburger Umland liegen zwischen Knicks, Wiesen und alten Alleen, viele nur eine kurze Fahrt vom Zentrum. Ob After-Work-Teamevent, Schnupperkurs für die ganze Abteilung oder mehrtägiges Offsite: Wir organisieren euer Event im Norden von A bis Z.',
+			'intro' => 'Hamburg lebt vom Wasser und vom Wind, und genau das macht Golf hier besonders. Die Plätze im Hamburger Umland liegen zwischen Knicks, Wiesen und alten Alleen, viele nur eine kurze Fahrt vom Zentrum. Ob After-Work-Teamevent, Platzreife für die ganze Abteilung oder mehrtägiges Offsite: Wir organisieren euer Event im Norden von A bis Z.',
 			'reasons' => [ $reason( 'clock', 'Stadtnah & erreichbar', 'Die Plätze im Norden Hamburgs sind schnell erreichbar, ideal für ein Event nach Feierabend.' ), $team, $reason( 'castle', 'Offsite mit Übernachtung', 'Einige Anlagen verbinden Tagung, Golf und Hotel an einem Ort, perfekt für Strategie-Tage.' ), $local ],
 			'faqs' => [ $faq( 'Welche Golfplätze in Hamburg kann ich für ein Firmenevent buchen?', 'Im Hamburger Raum arbeiten wir mit ausgewählten Partnerplätzen. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $faq( 'Geht auch ein mehrtägiges Offsite mit Übernachtung?', 'Ja. Mehrere Anlagen verbinden Tagungsräume, Golf und Hotel an einem Ort, ideal für ein Strategie-Offsite. Wir planen Ablauf, Verpflegung und Golfprogramm gemeinsam mit euch.' ), $f_fast( 'Hamburg' ) ],
 		],

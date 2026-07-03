@@ -22,7 +22,7 @@ add_action( 'wp_head', function () {
 		return;
 	}
 	$GLOBALS['fge_seo_meta_done'] = true;
-	$desc = 'Firmenevents auf Deutschlands schönsten Golfplätzen: Teamevents, Firmenturniere, Schnupperkurse und Incentives. Passenden Platz finden und schnell anfragen.';
+	$desc = 'Firmenevents auf Deutschlands schönsten Golfplätzen: Teamevents, Firmenturniere, Platzreife und Incentives. Passenden Platz finden und schnell anfragen.';
 	echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
 	echo '<meta property="og:type" content="website">' . "\n";
 	echo '<meta property="og:title" content="Firmenevents auf dem Golfplatz | Firmengolf">' . "\n";
@@ -42,7 +42,7 @@ add_action( 'wp_head', function () {
 		'@type'       => 'Organization',
 		'name'        => 'Firmengolf',
 		'url'         => home_url( '/' ),
-		'description' => 'Firmenevents auf Golfplätzen in ganz Deutschland: Teamevents, Firmenturniere, Schnupperkurse und Incentives. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
+		'description' => 'Firmenevents auf Golfplätzen in ganz Deutschland: Teamevents, Firmenturniere, Platzreife und Incentives. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
 		'sameAs'      => [
 			'https://www.instagram.com/firmengolf/',
 			'https://www.facebook.com/Firmengolf',
@@ -221,7 +221,7 @@ add_action( 'wp_enqueue_scripts', function() {
 		defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
 	);
 	// Type-System (Redesign 2026-07): global, bewusst NACH fge-frontend geladen —
-	// gewinnt bei gleicher Spezifität (Headline-/Highlight-Regeln, Rajdhani-Hero).
+	// gewinnt bei gleicher Spezifität (Headline-/Highlight-Regeln).
 	wp_enqueue_style(
 		'fge-type-system',
 		plugins_url( 'assets/css/fge-type-system.css', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),

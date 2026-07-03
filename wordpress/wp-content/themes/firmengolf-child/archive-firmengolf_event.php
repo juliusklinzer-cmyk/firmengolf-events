@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // SEO: Title + Meta + OpenGraph für die Event-Übersicht (vor get_header, damit es greift).
 $arch_title = 'Firmenevents auf dem Golfplatz: alle Formate | Firmengolf';
-$arch_desc  = 'Alle Firmenevent-Formate auf einen Blick: Teamevents, Firmenturniere, Schnupperkurse und Incentives auf Golfplätzen in ganz Deutschland. Nach Region und Gruppengröße filtern und anfragen.';
+$arch_desc  = 'Alle Firmenevent-Formate auf einen Blick: Teamevents, Firmenturniere, Platzreife und Incentives auf Golfplätzen in ganz Deutschland. Nach Region und Gruppengröße filtern und anfragen.';
 add_filter( 'pre_get_document_title', function () use ( $arch_title ) { return $arch_title; } );
 add_action( 'wp_head', function () use ( $arch_title, $arch_desc ) {
 	$GLOBALS['fge_seo_meta_done'] = true;
@@ -30,6 +30,11 @@ $kontakt_url = ( $kp = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink(
 
 // ── Sanitize GET params ──────────────────────────────────────────────────────
 $active_format = sanitize_key( $_GET['format'] ?? 'all' );        // phpcs:ignore WordPress.Security.NonceVerification
+// Abgeschaffte Format-Keys (z. B. schnupperkurs → teamevent) auf Nachfolger normalisieren,
+// damit alte Links/Bookmarks weiter sinnvolle Ergebnisse zeigen.
+if ( 'all' !== $active_format && function_exists( 'fge_get_event_format_legacy_map' ) ) {
+	$active_format = fge_get_event_format_legacy_map()[ $active_format ] ?? $active_format;
+}
 $active_region = sanitize_text_field( $_GET['region'] ?? '' );    // phpcs:ignore WordPress.Security.NonceVerification
 $active_pax    = max( 0, (int) ( $_GET['pax'] ?? 0 ) );           // phpcs:ignore WordPress.Security.NonceVerification — default 0 = kein Filter (alle anzeigen)
 $active_sort   = sanitize_key( $_GET['sort'] ?? 'curated' );      // phpcs:ignore WordPress.Security.NonceVerification
@@ -660,7 +665,7 @@ if ( ! $has_filters ) :
 			$faqs = [
 				[
 					'q' => 'Müssen meine Mitarbeitenden Golf spielen können?',
-					'a' => 'Nein. Unsere Schnupperkurse und Team-Building-Formate sind komplett für Einsteigende konzipiert. Es gibt einen Golflehrer vor Ort, alle Schläger werden gestellt und niemand wird mit einem 18-Loch-Turnier konfrontiert, wenn er noch nie einen Schläger gehalten hat.',
+					'a' => 'Nein. Unsere Teamevents enthalten immer einen Schnupper- und Grundlagenteil und sind komplett für Einsteigende konzipiert. Es gibt einen Golflehrer vor Ort, alle Schläger werden gestellt und niemand wird mit einem 18-Loch-Turnier konfrontiert, wenn er noch nie einen Schläger gehalten hat.',
 				],
 				[
 					'q' => 'Wie kurzfristig können wir buchen?',
@@ -672,7 +677,7 @@ if ( ! $has_filters ) :
 				],
 				[
 					'q' => 'Gibt es eine Mindestgruppengröße?',
-					'a' => 'Je nach Format ab 4 Personen (Coaching, Schnupperkurs) bis 24 Personen (Firmenturnier mit Shotgun-Start). Für kleinere oder größere Gruppen planen wir individuell.',
+					'a' => 'Je nach Format ab 4 Personen (Coaching, After-Work, Platzreife) bis 24 Personen (Firmenturnier mit Shotgun-Start). Für kleinere oder größere Gruppen planen wir individuell.',
 				],
 				[
 					'q' => 'Wie wird abgerechnet?',

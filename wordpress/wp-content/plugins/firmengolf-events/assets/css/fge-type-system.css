@@ -5,17 +5,9 @@
    liegen in fge-frontend.css :root.
    ========================================================================== */
 
-/* ── Hero: Rajdhani Bold, kompakt gesetzt ── */
-.mk-hero-title {
-  font-family: "Rajdhani", var(--font-display);
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 0.95;
-  max-width: 13ch;
-}
-
-/* ── Alle übrigen Headlines: Roboto Bold, engere Laufweite ──
-   (Familie kommt über --font-display; hier nur Stärke + Tracking) */
+/* ── Headlines: Roboto Bold, engere Laufweite ──
+   (Familie kommt über --font-display; hier nur Stärke + Tracking.
+   Startseiten-Hero bewusst NICHT dabei: läuft typografisch wie .ind-hero-title, w500.) */
 .mk-h2, .home-exp-h, .mk-step-t, .mk-format-t, .home-occ-t,
 .home-numbers-h, .home-benefit-h, .home-blog-t, .mk-cta-h,
 .ev-hero-title, .ev-inline-h, .ev-sheet-title, .ev-catsec-h,
@@ -33,10 +25,10 @@
    (dunkle Sektionen setzen inline eine helle Farbe — Inline gewinnt) */
 .mk-eyebrow { color: var(--fairway-700); }
 
-/* ── Türkis nur an den starken Momenten (Hero + dunkle Sektionen) ──
-   Prinzip: Farbe nur, wo sie knallt. Alle anderen Hervorhebungen laufen
-   über font-weight 900 in gleicher Tinte (Basisregel in fge-frontend.css). */
-.mk-hero-title .hero-tq,
+/* ── Türkis nur an den starken Momenten (dunkle Sektionen) ──
+   Prinzip: Farbe nur, wo sie knallt. Hero-Türkis am 2026-07-03 wieder entfernt.
+   Alle anderen Hervorhebungen laufen über font-weight 900 in gleicher Tinte
+   (Basisregel in fge-frontend.css). */
 .home-numbers-h .mk-italic,
 .home-benefit-h .mk-italic,
 .mk-cta-h .mk-italic {

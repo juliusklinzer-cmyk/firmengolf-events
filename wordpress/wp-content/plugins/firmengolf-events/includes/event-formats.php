@@ -9,7 +9,7 @@ function fge_get_event_formats(): array {
 		'standard' => [
 			'teamevent'          => 'Teamevent',
 			'after_work_golf'    => 'After-Work Golf',
-			'schnupperkurs'      => 'Schnupperkurs',
+			'platzreife'         => 'Platzreife',
 			'kundenevent'        => 'Kundenevent',
 			'gesundheitstag'     => 'Gesundheitstag',
 			'offsite'            => 'Offsite',
@@ -117,6 +117,8 @@ function fge_get_event_format_legacy_map(): array {
 	return [
 		'firmenturnier'       => 'firmen_golfturnier',
 		'team-building'       => 'teamevent',
+		// Schnupperkurs als eigener Typ abgeschafft (2026-07): Grundlagen-/Schnupperteil
+		// gehört zum Teamevent; neuer eigenständiger Kurs-Typ ist 'platzreife'.
 		'schnupperkurs'       => 'teamevent',
 		'coaching'            => 'after_work_golf',
 		'anderes_event'       => 'andere',

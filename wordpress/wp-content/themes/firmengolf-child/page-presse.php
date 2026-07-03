@@ -48,7 +48,7 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 	<p class="mk-sub" style="max-width:var(--width-prose);">
 		Firmengolf macht Golf für Unternehmen zugänglich — als Firmenevent, als Offsite-Location und als
 		wiederkehrenden Mitarbeiter-Benefit. Über eine kuratierte Plattform buchen Firmen Teamevents, Turniere,
-		Schnupperkurse und individuelle Veranstaltungen deutschlandweit auf Golfplätzen in ganz Deutschland:
+		Platzreifekurse und individuelle Veranstaltungen deutschlandweit auf Golfplätzen in ganz Deutschland:
 		eine Anfrage, ein Ansprechpartner, eine Rechnung. Gegründet 2024 in München, verfolgt Firmengolf ein klares
 		Ziel — Golf nicht als exklusives Statussymbol, sondern als offenen, gesunden Ausgleich, der Teams aus dem
 		Büro und in Bewegung bringt.

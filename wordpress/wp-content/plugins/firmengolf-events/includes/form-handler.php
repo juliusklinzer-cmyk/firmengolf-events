@@ -291,6 +291,7 @@ function fge_ajax_general_request(): void {
 	$svc_map = [
 		'Golflehrer / Coaching'    => 'golf_teacher',
 		'Schnupperkurs'            => 'golf_teacher',
+		'Platzreife'               => 'golf_teacher',
 		'Firmenturnier'            => 'tournament_mode',
 		'Putting-Challenge'        => 'tournament_mode',
 		'Frühstück'                => 'breakfast',

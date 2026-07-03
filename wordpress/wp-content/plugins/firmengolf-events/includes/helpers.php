@@ -16,7 +16,7 @@ function fge_include_icon( string $label ): string {
 		'coffee'        => [ 'kaffee', 'kuchen', 'frühstück', 'pause' ],
 		'drinks'        => [ 'getränk', 'begrüßung', 'sekt', 'bar' ],
 		'grill'         => [ 'bbq', 'grill' ],
-		'coach'         => [ 'coaching', 'pga', 'golflehrer', 'schnupperkurs', 'kurs', 'training' ],
+		'coach'         => [ 'coaching', 'pga', 'golflehrer', 'schnupperkurs', 'platzreife', 'kurs', 'training' ],
 		'clubs'         => [ 'leihschläger', 'schläger' ],
 		'balls'         => [ 'bälle', 'ball' ],
 		'driving-range' => [ 'range', 'übungsanlage', 'greenfee' ],

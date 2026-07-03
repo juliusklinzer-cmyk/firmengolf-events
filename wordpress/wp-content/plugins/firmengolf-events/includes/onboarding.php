@@ -1281,7 +1281,7 @@ function fge_onboarding_icon_map(): array {
 		'lounge' => 'drinks', 'catering' => 'restaurant', 'breakfast' => 'coffee', 'lunch' => 'restaurant',
 		'dinner' => 'restaurant', 'bbq' => 'grill', 'drinks-flat' => 'drinks', 'coffee-break' => 'coffee',
 		// Event formats (canonical ids from event-formats.php)
-		'teamevent' => 'team-challenge', 'after_work_golf' => 'afterwork', 'schnupperkurs' => 'intro-golf',
+		'teamevent' => 'team-challenge', 'after_work_golf' => 'afterwork', 'schnupperkurs' => 'intro-golf', 'platzreife' => 'intro-golf',
 		'kundenevent' => 'kunden', 'gesundheitstag' => 'health', 'offsite' => 'offsite',
 		'networking' => 'networking', 'firmen_golfturnier' => 'turnier-18', 'nacht_event' => 'nacht-event',
 		'andere' => 'custom', 'sommerfest' => 'sommerfest', 'tagung' => 'meeting',

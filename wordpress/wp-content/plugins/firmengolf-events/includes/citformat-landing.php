@@ -4,7 +4,7 @@
  *
  * Dritte Ebene über City- (city-landing.php) und Format-Hubs (format-landing.php):
  * fängt die lokalen Long-Tail-Keywords mit Format- UND Stadtbezug ab
- * (z. B. „Teamevent München", „Golf-Schnupperkurs Hamburg").
+ * (z. B. „Teamevent München", „Platzreife Hamburg").
  *
  * Scharf geschaltet (eigener Intro-Text + Sitemap) nur für die Städte aus
  * fge_citformat_enabled_cities(). Andere Stadt×Format-Kombis liefern 404,
@@ -42,11 +42,11 @@ function fge_citformat_format_meta(): array {
 			'title' => 'Firmenturnier in %s organisieren — Firmengolf',
 			'desc'  => 'Firmen-Golfturnier in %s: Startlisten, Scramble für gemischte Level, Siegerehrung und Branding. Komplett organisiert von Firmengolf.',
 		],
-		'schnupperkurs' => [
-			'h1'    => 'Golf-Schnupperkurse für Teams in %s',
-			'eyeb'  => 'Schnupperkurs · %s',
-			'title' => 'Golf-Schnupperkurs in %s für Firmen — Firmengolf',
-			'desc'  => 'Golf-Schnupperkurs für euer Team in %s: ohne Vorkenntnisse, Golflehrer, Material inklusive. Der lockere Einstieg ins Golf.',
+		'platzreife' => [
+			'h1'    => 'Platzreife für Firmen & Teams in %s',
+			'eyeb'  => 'Platzreife · %s',
+			'title' => 'Platzreife in %s für Firmen — Firmengolf',
+			'desc'  => 'Platzreifekurs für euer Team in %s: PGA-Golflehrer, Regeln, Prüfung. Der offizielle Einstieg in den Golfsport als Firmenprogramm.',
 		],
 		'kundenevent' => [
 			'h1'    => 'Kundenevents auf dem Golfplatz in %s',
@@ -78,7 +78,7 @@ function fge_citformat_intros(): array {
 		'muenchen' => [
 			'teamevent'       => 'Ein Golf-Teamevent rund um München bringt euer Team in rund 30 Minuten von der Innenstadt ins Grüne, zwischen Isar-Auen und Alpenpanorama. Statt Stuhlkreis und Flipchart entsteht hier ganz nebenbei Nähe: gemeinsam üben, lachen, anfeuern. Ein Golflehrer führt auch komplette Einsteigende sicher an, Schläger und Material werden gestellt, und wir stellen Platz, Ablauf und Verpflegung passend zu eurer Gruppe zusammen.',
 			'golfturnier'     => 'Ein Firmen-Golfturnier in München ist der Klassiker für Kundenbindung und Teamwettbewerb, und kaum eine Region hat so viele Top-Plätze direkt vor der Tür wie das Münchner Umland. Wir richten es komplett aus: Startlisten, faire Zählformate wie Scramble für gemischte Level, Bewirtung am Platz und eine stimmungsvolle Siegerehrung, auf Wunsch mit Sponsoren-Branding und Goodie-Bags.',
-			'schnupperkurs'   => 'Ein Golf-Schnupperkurs ist der lockere Einstieg, wenn euer Team in München Golf noch nie ausprobiert hat. Auf einer stadtnahen Anlage, oft in rund 30 Minuten erreichbar, erklärt ein Golflehrer die Grundlagen vom Putten bis zum ersten vollen Schwung, mit viel Humor und ohne Leistungsdruck. Alles Material wird gestellt, am Ende steht ein gemeinsames Erfolgserlebnis.',
+			'platzreife'      => 'Die Platzreife rund um München ist der offizielle Einstieg in den Golfsport, auf stadtnahen Anlagen, oft in rund 30 Minuten erreichbar. Ein PGA-Golflehrer bringt eurem Team Technik, Regeln und Etikette bei, am Ende steht die anerkannte Prüfung. Als Firmenprogramm oder Benefit gedacht: Wer sie besteht, kann danach eigenständig auf Plätzen im Münchner Umland spielen. Material wird während des Kurses gestellt.',
 			'kundenevent'     => 'Ein Kundenevent auf dem Golfplatz gibt euch in München Zeit und Atmosphäre, um Kunden einmal anders zu erleben, mit Blick aufs Bergpanorama und kurzen Wegen aus der Stadt. Ob Hospitality-Tag, Turnier oder Schnupperteil mit Dinner, wir kümmern uns um Platz, Ablauf, Catering und Rahmenprogramm, damit ihr euch ganz auf eure Gäste konzentrieren könnt.',
 			'incentive'       => 'Ein Golf-Incentive belohnt Leistung mit einem Erlebnis statt einem Bonus auf dem Konto, und rund um München liegen dafür einige der reizvollsten Anlagen Deutschlands, vom stadtnahen Platz bis zur Bergkulisse am Tegernsee. Wir verbinden Golf mit Hotellerie, Rahmenprogramm und Verpflegung zu einem runden Paket, ein- oder mehrtägig, von der Idee bis zur Abrechnung.',
 			'after-work-golf' => 'After-Work Golf ist das niedrigschwellige Format für zwischendurch, und in München seid ihr nach Feierabend schnell auf einer stadtnahen Range oder dem Kurzplatz. Ein Pro leitet locker an, danach ein entspannter Ausklang, kein ganzer Tag und kein großer Aufwand. Ideal als regelmäßiger Teamabend oder lockerer Einstieg ins Thema Golf.',
@@ -86,7 +86,7 @@ function fge_citformat_intros(): array {
 		'hamburg' => [
 			'teamevent'       => 'Ein Golf-Teamevent rund um Hamburg holt euer Team raus zwischen Knicks, Wiesen und alte Alleen, viele Plätze nur eine kurze Fahrt vom Zentrum. Anders als beim klassischen Teambuilding entsteht hier ganz nebenbei Nähe: gemeinsam üben, lachen, anfeuern. Ein Golflehrer führt auch komplette Einsteigende sicher an, Schläger und Material werden gestellt, und wir stellen Platz, Ablauf und Verpflegung passend zu eurer Gruppe zusammen.',
 			'golfturnier'     => 'Ein Firmen-Golfturnier in Hamburg verbindet Wettbewerb mit der besonderen Atmosphäre des Nordens, auf weitläufigen Plätzen, wo Wind und Weite das Spiel zur Herausforderung machen. Wir richten es komplett aus: Startlisten, faire Zählformate wie Scramble für gemischte Level, Bewirtung am Platz und eine stimmungsvolle Siegerehrung, auf Wunsch mit Sponsoren-Branding und Goodie-Bags.',
-			'schnupperkurs'   => 'Ein Golf-Schnupperkurs ist der ideale Einstieg, wenn euer Team in Hamburg Golf noch nie ausprobiert hat. Auf einer Anlage im Hamburger Umland erklärt ein Golflehrer die Grundlagen vom Putten bis zum ersten vollen Schwung, locker und ohne Leistungsdruck. Alles Material wird gestellt, am Ende steht ein gemeinsames Erfolgserlebnis, das verbindet.',
+			'platzreife'      => 'Die Platzreife in Hamburg ist der offizielle Einstieg in den Golfsport, auf weitläufigen Anlagen im Hamburger Umland. Ein PGA-Golflehrer bringt eurem Team Technik, Regeln und Etikette bei, am Ende steht die anerkannte Prüfung. Als Firmenprogramm oder Benefit gedacht: Wer sie besteht, kann danach eigenständig auf Plätzen im Norden spielen. Material wird während des Kurses gestellt.',
 			'kundenevent'     => 'Ein Kundenevent auf dem Golfplatz gibt euch in Hamburg Zeit und Atmosphäre, um Kunden einmal anders zu erleben, im Grünen und doch nah an der Stadt. Ob Hospitality-Tag, Turnier oder Schnupperteil mit Dinner, wir kümmern uns um Platz, Ablauf, Catering und Rahmenprogramm, damit ihr euch ganz auf eure Gäste konzentrieren könnt.',
 			'incentive'       => 'Ein Golf-Incentive belohnt Leistung mit einem Erlebnis statt einem Bonus auf dem Konto. Rund um Hamburg verbinden mehrere Anlagen Golf, Tagung und Hotel an einem Ort, ideal für ein mehrtägiges Offsite im Norden. Wir verbinden Golf mit Hotellerie, Rahmenprogramm und Verpflegung zu einem runden Paket, von der Idee bis zur Abrechnung.',
 			'after-work-golf' => 'After-Work Golf ist das niedrigschwellige Format für zwischendurch, und in Hamburg seid ihr nach Feierabend schnell auf einer stadtnahen Range oder dem Kurzplatz. Ein Pro leitet locker an, danach ein entspannter Ausklang, kein ganzer Tag und kein großer Aufwand. Ideal als regelmäßiger Teamabend oder lockerer Einstieg ins Thema Golf.',
