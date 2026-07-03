@@ -185,6 +185,22 @@ get_header();
 </section>
 <?php endif; ?>
 
+<?php /* Optionale Cross-Promo (z. B. Platzreife → Firmengolf-Benefit) */ ?>
+<?php if ( ! empty( $format['promo'] ) ) : $fmt_promo = $format['promo']; ?>
+<section class="mk-section" aria-label="<?php echo esc_attr( $fmt_promo['title'] ); ?>">
+	<div class="fmt-promo">
+		<div>
+			<div class="mk-eyebrow"><?php echo esc_html( $fmt_promo['eyebrow'] ); ?></div>
+			<h2 class="mk-h2" style="font-size:30px;"><?php echo esc_html( $fmt_promo['title'] ); ?></h2>
+			<p class="mk-sub"><?php echo esc_html( $fmt_promo['text'] ); ?></p>
+		</div>
+		<a class="fg-btn-brand" href="<?php echo esc_url( $fmt_promo['url'] ); ?>" target="_blank" rel="noopener noreferrer">
+			<?php echo esc_html( $fmt_promo['cta'] ); ?>
+		</a>
+	</div>
+</section>
+<?php endif; ?>
+
 <?php /* FAQ */ ?>
 <?php if ( ! empty( $faqs ) ) : ?>
 <section class="mk-section faq-section" aria-label="FAQ">

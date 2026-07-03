@@ -688,6 +688,9 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   box-shadow: var(--shadow-md);
   display: flex; flex-direction: column; gap: 16px;
 }
+/* Footer: „Grüne" bewusst grün (Julius, 2026-07-03) */
+.fg-footer-gruen { color: #3D6B4A; }
+
 /* „Angebot live seit …": bewusst GRÜN (Live-Signal), nicht Markenblau (Julius, 2026-07-03) */
 .fg-rail-live {
   display: inline-flex; align-items: center; gap: 8px;
@@ -2732,10 +2735,14 @@ a.mk-hero-floating:focus-visible { outline: 2px solid var(--paper-100); outline-
    ══════════════════════════════════════════════════════════════════════════════ */
 
 /* ── Event hero (compact) ── */
-.ev-hero { max-width: 1280px; margin: 16px auto 0; padding: 0 24px; }
+/* 1328 = 1280 + 2×24 Padding → Bildkante fluchtet mit Header/Sektions-Containern */
+.ev-hero { max-width: 1328px; margin: 16px auto 0; padding: 0 24px; }
 .ev-hero-photo { position: relative; aspect-ratio: 16/6; min-height: 380px; border-radius: var(--radius-xl); overflow: hidden; background-size: cover; background-position: center; }
 .ev-hero-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,19,16,.15) 0%, rgba(14,19,16,0) 35%, rgba(14,19,16,.65) 100%); }
 .ev-hero-content { position: absolute; left: 48px; bottom: 48px; right: 48px; color: var(--paper-100); max-width: 720px; z-index: 1; }
+/* City-Hero mit überlappendem Zahlen-Band: Text sitzt höher, damit ihn die Karten nicht verdecken */
+.ev-hero--stats .ev-hero-content { bottom: 110px; }
+.ev-hero--stats .ev-hero-photo { min-height: 460px; }
 .ev-hero-content * { color: inherit; }
 .ev-hero-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
 .ev-hero-title { font-family: var(--font-display); font-weight: 500; font-size: 64px; line-height: 1; letter-spacing: -.035em; margin-top: 14px; color: var(--paper-100); text-wrap: balance; }
@@ -4490,6 +4497,39 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   text-wrap: pretty;
 }
 
+/* ── Format-Landing: Cross-Promo-Band (z. B. Platzreife → Benefit) ── */
+.fmt-promo {
+  display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap;
+  background: var(--fairway-100); border: 1px solid var(--fairway-200);
+  border-radius: var(--radius-xl); padding: 32px 36px;
+}
+.fmt-promo .mk-sub { max-width: 560px; }
+.fmt-promo .fg-btn-brand { flex: none; }
+
+/* ── City-Seiten: Zahlen-Band (überlappt den Hero → nahtloser Übergang) ── */
+.cty-stats {
+  max-width: 1328px; margin: -56px auto 0; padding: 0 48px;
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+.cty-stat {
+  background: var(--paper-50); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md); padding: 22px 26px;
+}
+.cty-stat-v { font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.02em; color: var(--fairway-700); }
+.cty-stat-l { font-size: 14px; font-weight: 600; color: var(--ink-900); margin-top: 2px; }
+.cty-stat-s { font-size: 12px; color: var(--ink-500); margin-top: 4px; }
+@media (max-width: 900px) {
+  .cty-stats { grid-template-columns: 1fr; margin-top: -32px; padding: 0 24px; }
+}
+
+/* City-Format-Karten: 3 Spalten, klickbar mit Nutzen-Satz */
+.cty-formats { grid-template-columns: repeat(3, 1fr); }
+.cty-fmt { text-decoration: none; transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.cty-fmt:hover { border-color: var(--fairway-400); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+.cty-fmt-go { display: block; margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--fairway-700); }
+@media (max-width: 900px) { .cty-formats { grid-template-columns: 1fr; } }
+
 /* ── Golfplatz-Verzeichnis auf City-Seiten ── */
 .gpd-map {
   height: 440px; margin: 8px 0 20px;
@@ -4526,8 +4566,7 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   padding: 2px 8px; border-radius: 999px;
 }
 .gpd-meta { font-size: 13px; color: var(--ink-500); }
-.gpd-note { margin-top: 18px; font-size: 14px; color: var(--ink-600); }
-.gpd-note a { color: var(--fairway-700); font-weight: 600; text-decoration: none; }
+.gpd-note { margin-top: 32px; display: flex; align-items: center; flex-wrap: wrap; gap: 14px; font-size: 14px; color: var(--ink-600); }
 @media (max-width: 720px) { .gpd-list { grid-template-columns: 1fr; } }
 
 /* Quick channels */

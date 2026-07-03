@@ -17,7 +17,7 @@ if ( ! $city ) {
 $city_name   = $city['name'];
 $city_region = $city['region'];
 $canonical   = home_url( '/golf-events/' . $slug . '/' );
-$seo_title   = 'Firmen-Golfevents in ' . $city_name . ' — Teamevents & Turniere | Firmengolf';
+$seo_title   = 'Firmen-Golfevents in ' . $city_name . ': Teamevents & Turniere | Firmengolf';
 $seo_desc    = 'Firmenevents auf Golfplätzen in ' . $city_name . ': Teamevents, Firmenturniere, Platzreife und individuelle Events. Eine Anfrage, ein Ansprechpartner, eine Rechnung.';
 $events_url  = (string) get_post_type_archive_link( 'firmengolf_event' );
 $ind_url     = ( $p = get_page_by_path( 'individuelle-events' ) ) ? (string) get_permalink( $p->ID ) : home_url( '/individuelle-events/' );
@@ -31,9 +31,48 @@ $faqs = ! empty( $city['faqs'] ) ? $city['faqs'] : [
 ];
 
 // Events der lokalen Partnerplätze (Stadt → Platz-Standort), Fallback verhindert leere Seite.
-$city_events = function_exists( 'fge_city_events' ) ? fge_city_events( $city, 6 ) : [];
+$city_events_all   = function_exists( 'fge_city_events' ) ? fge_city_events( $city, 99 ) : [];
+$city_events_count = count( $city_events_all );
+$city_events       = array_slice( $city_events_all, 0, 4 ); // eine saubere 4er-Reihe im Grid
 if ( empty( $city_events ) ) {
-	$city_events = fge_get_featured_events( 6 );
+	$city_events = fge_get_featured_events( 4 );
+}
+
+// ── Stats fürs Zahlen-Band (echte Daten: Verzeichnis + Events + DGV) ─────────
+$gp_coords = function_exists( 'fge_city_coords' ) ? ( fge_city_coords()[ $slug ] ?? null ) : null;
+
+$stat_land_map = [
+	'muenchen'    => [ 'Bayern', 'Bayern' ],
+	'tegernsee'   => [ 'Bayern', 'Bayern' ],
+	'koeln'       => [ 'Nordrhein-Westfalen', 'NRW' ],
+	'duesseldorf' => [ 'Nordrhein-Westfalen', 'NRW' ],
+	'stuttgart'   => [ 'Baden-Wuerttemberg', 'Baden-Württemberg' ],
+	'frankfurt'   => [ 'Hessen', 'Hessen' ],
+];
+$stat_courses = 0;
+$stat_courses_label = '';
+if ( function_exists( 'fge_verzeichnis_table' ) ) {
+	global $wpdb;
+	if ( isset( $stat_land_map[ $slug ] ) ) {
+		$stat_courses       = (int) $wpdb->get_var( $wpdb->prepare(
+			'SELECT COUNT(*) FROM ' . fge_verzeichnis_table() . ' WHERE bundesland = %s', // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$stat_land_map[ $slug ][0]
+		) );
+		$stat_courses_label = 'Golfplätze in ' . $stat_land_map[ $slug ][1];
+	} elseif ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) ) {
+		// Stadtstaaten (Hamburg, Berlin): Umkreis statt Bundesland.
+		$stat_courses       = count( fge_verzeichnis_nearby( $gp_coords[0], $gp_coords[1], 60, 500 ) );
+		$stat_courses_label = 'Golfplätze im Umkreis von 60 km';
+	}
+}
+
+// Events aktuell live: bevorzugt in der Stadt, sonst deutschlandweit.
+$stat_events_label = 'Events aktuell in ' . $city_name;
+$stat_events       = $city_events_count;
+if ( $stat_events < 1 ) {
+	$stat_all_ids = get_posts( [ 'post_type' => 'firmengolf_event', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'no_found_rows' => true ] );
+	$stat_events  = function_exists( 'fge_event_is_public' ) ? count( array_filter( $stat_all_ids, 'fge_event_is_public' ) ) : count( $stat_all_ids );
+	$stat_events_label = 'Events deutschlandweit live';
 }
 
 // Icon-Set für die „Gründe"-Kacheln.
@@ -106,7 +145,7 @@ get_header();
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
 
 <?php /* Hero */ ?>
-<section class="ev-hero" aria-label="Golf-Events in <?php echo esc_attr( $city_name ); ?>">
+<section class="ev-hero ev-hero--stats" aria-label="Golf-Events in <?php echo esc_attr( $city_name ); ?>">
 	<?php
 	// Stadtspezifisches Hero-Bild (stadt-<slug>.jpg), sonst generisches Panorama.
 	$city_hero = 'stadt-' . $slug . '.jpg';
@@ -127,13 +166,24 @@ get_header();
 	</div>
 </section>
 
-<?php /* Stats */ ?>
-<div class="trust-strip" aria-label="Auf einen Blick">
-	<div class="trust-inner">
-		<div class="trust-cell"><div class="trust-t"><?php echo esc_html( $city_region ); ?></div><div class="trust-b">Region in unserem Netz</div></div>
-		<div class="trust-cell"><div class="trust-t">1 Werktag</div><div class="trust-b">Antwort auf jede Anfrage</div></div>
-		<div class="trust-cell"><div class="trust-t">Ein Kontakt</div><div class="trust-b">Vom Erstkontakt bis nach dem Event</div></div>
-		<div class="trust-cell"><div class="trust-t">Eine Rechnung</div><div class="trust-b">Sauber abgerechnet</div></div>
+<?php /* Zahlen-Band: weiße Karten, die den Hero unten überlappen (nahtloser Übergang) */ ?>
+<div class="cty-stats" aria-label="Zahlen auf einen Blick">
+	<?php if ( $stat_courses > 0 ) : ?>
+	<div class="cty-stat">
+		<div class="cty-stat-v"><?php echo esc_html( (string) $stat_courses ); ?></div>
+		<div class="cty-stat-l"><?php echo esc_html( $stat_courses_label ); ?></div>
+		<div class="cty-stat-s">Quelle: DGV / Landesgolfverband</div>
+	</div>
+	<?php endif; ?>
+	<div class="cty-stat">
+		<div class="cty-stat-v">695.000+</div>
+		<div class="cty-stat-l">Golferinnen &amp; Golfer in Deutschland</div>
+		<div class="cty-stat-s">Quelle: DGV, Stand 09/2025</div>
+	</div>
+	<div class="cty-stat">
+		<div class="cty-stat-v"><?php echo esc_html( (string) $stat_events ); ?></div>
+		<div class="cty-stat-l"><?php echo esc_html( $stat_events_label ); ?></div>
+		<div class="cty-stat-s">Direkt anfragbar, Antwort in einem Werktag</div>
 	</div>
 </div>
 
@@ -141,7 +191,7 @@ get_header();
 <section class="mk-section" aria-label="Über Golf-Events in <?php echo esc_attr( $city_name ); ?>">
 	<div class="mk-section-head">
 		<div class="mk-eyebrow">Golf für Unternehmen in <?php echo esc_html( $city_name ); ?></div>
-		<h2 class="mk-h2">Raus aus dem Büro, rein ins Grüne — in <?php echo esc_html( $city_name ); ?>.</h2>
+		<h2 class="mk-h2">Raus aus dem Büro, rein ins Grüne.</h2>
 		<p class="mk-sub" style="max-width:var(--width-prose);"><?php echo esc_html( $city['intro'] ); ?></p>
 	</div>
 </section>
@@ -161,55 +211,50 @@ get_header();
 </section>
 <?php endif; ?>
 
-<?php /* Events in region */ ?>
+<?php /* Events in der Region: dieselben Karten wie auf der Events-Seite */ ?>
 <?php if ( ! empty( $city_events ) ) : ?>
-<section class="fg-grid-section" aria-label="Formate in <?php echo esc_attr( $city_name ); ?>">
-	<div class="fg-grid-head">
-		<h2 class="fg-grid-title">Beliebte Formate rund um <?php echo esc_html( $city_name ); ?></h2>
-		<a class="fg-chip" href="<?php echo esc_url( $events_url ); ?>">Alle ansehen</a>
+<section class="mk-section" aria-label="Events rund um <?php echo esc_attr( $city_name ); ?>">
+	<div class="mk-section-head between">
+		<div>
+			<div class="mk-eyebrow">Events · <?php echo esc_html( $city_name ); ?></div>
+			<h2 class="mk-h2">Beliebte Events rund um <?php echo esc_html( $city_name ); ?>.</h2>
+		</div>
+		<a class="fg-btn-ghost" href="<?php echo esc_url( $events_url ); ?>">Alle Events ansehen →</a>
 	</div>
-	<div class="fg-grid">
-		<?php foreach ( $city_events as $ev ) :
-			$eid    = $ev->ID;
-			$elabel = fge_format_event_type( fge_get_event_meta( $eid, 'event_type' ) );
-			$dur    = fge_get_event_meta( $eid, 'duration' );
-			$pmax   = (int) fge_get_event_meta( $eid, 'participants_max' );
-			$price  = fge_get_event_price_display( $eid );
-			$thumb  = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $eid, 'large' ) : ( has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' ) );
-		?>
-		<article class="fg-event">
-			<a href="<?php echo esc_url( get_permalink( $eid ) ); ?>" target="_blank" rel="noopener noreferrer">
-				<div class="fg-event-photo" style="background-image:url('<?php echo esc_url( $thumb ); ?>')">
-					<?php if ( $elabel ) : ?><div class="fg-event-chips"><span class="fg-photo-chip"><?php echo esc_html( $elabel ); ?></span></div><?php endif; ?>
-				</div>
-				<div class="fg-event-body">
-					<h3 class="fg-event-title"><?php echo esc_html( $ev->post_title ); ?></h3>
-					<div class="fg-event-meta">
-						<?php if ( $dur ) : ?><span><?php echo esc_html( $dur ); ?></span><?php endif; ?>
-						<?php if ( $pmax ) : ?><span class="dot">·</span><span>bis <?php echo esc_html( (string) $pmax ); ?> Gäste</span><?php endif; ?>
-					</div>
-					<div class="fg-event-foot">
-						<span class="fg-event-price"><?php echo $price ? esc_html( $price ) : 'Auf Anfrage'; ?></span>
-					</div>
-				</div>
-			</a>
-		</article>
-		<?php endforeach; ?>
+	<div class="fg-grid ev-grid4">
+		<?php foreach ( $city_events as $ev ) {
+			get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $ev->ID, 'dist' => null ] );
+		} ?>
 	</div>
 </section>
 <?php endif; ?>
 
-<?php /* Format×Stadt-Spokes (nur scharf geschaltete Städte) */ ?>
+<?php /* Format×Stadt-Spokes: Karten mit Nutzen-Satz statt nackter Links (nur scharf geschaltete Städte) */ ?>
 <?php if ( function_exists( 'fge_citformat_enabled_cities' ) && in_array( $slug, fge_citformat_enabled_cities(), true ) && function_exists( 'fge_citformat_format_meta' ) ) : ?>
 <section class="mk-section" aria-label="Formate in <?php echo esc_attr( $city_name ); ?>">
 	<div class="mk-section-head">
-		<div class="mk-eyebrow">Formate in <?php echo esc_html( $city_name ); ?></div>
-		<h2 class="mk-h2">Wähle dein Format in <?php echo esc_html( $city_name ); ?>.</h2>
+		<div class="mk-eyebrow">Formate · <?php echo esc_html( $city_name ); ?></div>
+		<h2 class="mk-h2">Das passende Format für euer Team.</h2>
+		<p class="mk-sub">Jedes Format mit eigener Seite: was drinsteckt, für wen es passt und was es kostet.</p>
 	</div>
-	<div class="city-reasons">
-		<?php foreach ( fge_citformat_format_meta() as $fslug => $fm ) : ?>
-			<a class="city-reason" style="text-decoration:none;" href="<?php echo esc_url( home_url( '/golf-events/' . $slug . '/' . $fslug . '/' ) ); ?>">
-				<h3 class="city-reason-t"><?php echo esc_html( sprintf( $fm['eyeb'], $city_name ) ); ?> →</h3>
+	<div class="city-reasons cty-formats">
+		<?php
+		$cty_fmt_icons = [
+			'teamevent'       => 'users',
+			'golfturnier'     => 'flag',
+			'platzreife'      => 'leaf',
+			'kundenevent'     => 'gift',
+			'incentive'       => 'mountain',
+			'after-work-golf' => 'clock',
+		];
+		foreach ( fge_citformat_format_meta() as $fslug => $fm ) :
+			$fmt_title = trim( (string) strtok( sprintf( $fm['eyeb'], $city_name ), '·' ) );
+		?>
+			<a class="city-reason cty-fmt" href="<?php echo esc_url( home_url( '/golf-events/' . $slug . '/' . $fslug . '/' ) ); ?>">
+				<span class="city-reason-ic" aria-hidden="true"><?php echo fge_city_ico( $cty_fmt_icons[ $fslug ] ?? 'flag' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				<h3 class="city-reason-t"><?php echo esc_html( $fmt_title ); ?></h3>
+				<p class="city-reason-b"><?php echo esc_html( sprintf( $fm['desc'], $city_name ) ); ?></p>
+				<span class="cty-fmt-go"><?php echo esc_html( $fmt_title ); ?> in <?php echo esc_html( $city_name ); ?> ansehen →</span>
 			</a>
 		<?php endforeach; ?>
 	</div>
@@ -232,7 +277,7 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 		<h2 class="mk-h2">Golfplätze rund um <?php echo esc_html( $city_name ); ?>.</h2>
 		<p class="mk-sub">
 			Zur Orientierung: Anlagen im Umkreis von 60 km. Als <strong>Partnerplatz</strong> markierte
-			Anlagen gehören zum Firmengolf-Netz — auf allen anderen organisieren wir Events auf Anfrage.
+			Anlagen gehören zum Firmengolf-Netz. Auf allen anderen organisieren wir Events auf Anfrage.
 		</p>
 	</div>
 	<?php if ( function_exists( 'fge_gmaps_api_key' ) && fge_gmaps_api_key() !== '' ) : ?>
@@ -244,7 +289,7 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 	</div>
 	<?php endif; ?>
 	<div class="gpd-list">
-		<?php foreach ( $gp_nearby as $gp ) : $gp_is_partner = (int) $gp->partner_id > 0; ?>
+		<?php foreach ( $gp_nearby as $gp ) : $gp_is_partner = 1 === (int) $gp->ist_partner; ?>
 		<div class="gpd-row<?php echo $gp_is_partner ? ' gpd-row--partner' : ''; ?>"
 		     data-gp-id="<?php echo (int) $gp->id; ?>" tabindex="0" role="button"
 		     aria-label="<?php echo esc_attr( $gp->name . ' auf der Karte zeigen' ); ?>">
@@ -263,10 +308,10 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 		</div>
 		<?php endforeach; ?>
 	</div>
-	<p class="gpd-note">
-		Du vertrittst einen dieser Plätze?
-		<a href="<?php echo esc_url( home_url( '/partner-onboarding/' ) ); ?>">Werde Firmengolf-Partner →</a>
-	</p>
+	<div class="gpd-note">
+		<span>Du vertrittst einen dieser Plätze?</span>
+		<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/partner-onboarding/' ) ); ?>">Firmengolf-Partner werden →</a>
+	</div>
 </section>
 <?php endif; ?>
 
@@ -275,7 +320,7 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 	<div class="faq-shell">
 		<div class="faq-aside">
 			<div class="mk-eyebrow">Häufige Fragen</div>
-			<h2 class="mk-h2" style="margin-top:8px;">Golf-Events in <?php echo esc_html( $city_name ); ?> — kurz erklärt.</h2>
+			<h2 class="mk-h2" style="margin-top:8px;">Firmenevents in <?php echo esc_html( $city_name ); ?>, kurz erklärt.</h2>
 		</div>
 		<ul class="faq-list">
 			<?php foreach ( $faqs as $faq ) : ?>

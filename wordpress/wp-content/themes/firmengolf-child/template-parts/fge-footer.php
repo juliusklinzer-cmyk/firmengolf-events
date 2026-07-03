@@ -30,7 +30,7 @@ $url_karriere   = $get_page_url( 'karriere' );
 				Erlebnis, das Teams verbindet.
 			</p>
 			<p class="fg-footer-tag">
-				Bringt euer Team raus aus dem Büro und rein ins <span class="mk-italic">Grüne</span>.
+				Bringt euer Team raus aus dem Büro und rein ins <span class="mk-italic fg-footer-gruen">Grüne</span>.
 			</p>
 			<div class="fg-footer-socials">
 				<a aria-label="Instagram" href="https://www.instagram.com/firmengolf/" target="_blank" rel="noopener noreferrer">

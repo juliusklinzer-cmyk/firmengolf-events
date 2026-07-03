@@ -593,18 +593,51 @@ get_header();
 			if ( $fq !== '' ) { $faq_items[] = [ 'q' => $fq, 'a' => $fa ]; }
 		}
 	}
-	if ( ! $faq_items ) { $faq_items = [
+	// Fallback-FAQ: für die Platzreife ein komplett eigener, thematisch passender Satz
+	// (mehrtägiges Kurs-Programm mit Prüfung), sonst die generischen Event-Fragen.
+	if ( ! $faq_items && 'platzreife' === $event_type_raw ) {
+		$faq_items = [
+			[
+				'q' => 'Brauchen die Teilnehmenden Vorkenntnisse?',
+				'a' => 'Nein, der Kurs startet bei null. Der PGA-Golflehrer holt alle beim ersten Schwung ab, Leihschläger und Bälle sind dabei. Wer schon Erfahrung hat, kann trotzdem mitmachen und gezielt an Schwächen arbeiten.',
+			],
+			[
+				'q' => 'Was ist im Preis enthalten?',
+				'a' => 'Rund 12 Trainerstunden mit PGA-Golflehrer, die Platzbegehung, Leihschläger und Range-Bälle, Regel- und Etikettekunde sowie Prüfungsrunde und Theorieprüfung. Nicht enthalten: Verpflegung (buchen wir auf Wunsch dazu) und persönliche Ausrüstung.',
+			],
+			[
+				'q' => 'Müssen die vier Kurstage am Stück sein?',
+				'a' => 'Nein. Ihr könnt die Tage als kompakten Block legen oder über mehrere Wochen verteilen, zum Beispiel ein Kurstag pro Woche. Wir planen den Rhythmus gemeinsam mit euch und dem Golflehrer.',
+			],
+			[
+				'q' => 'Was passiert, wenn jemand die Prüfung nicht besteht?',
+				'a' => 'Kein Drama. Die Prüfung lässt sich unkompliziert wiederholen, der Pro bereitet gezielt nach. Die allermeisten bestehen nach unserem Kursaufbau beim ersten Anlauf.',
+			],
+			[
+				'q' => 'Was passiert bei Regen?',
+				'a' => 'Einzelne Kurstage lassen sich verschieben oder wir ziehen Theorie- und Regelteile vor. Der Kurs geht dadurch nicht verloren, wir planen flexibel mit dem Platz.',
+			],
+			[
+				'q' => 'Darf ein Unternehmen Mitarbeitende zur Platzreife einladen?',
+				'a' => 'Ja, grundsätzlich darf ein Unternehmen seine Mitarbeitenden als Teambuilding-Maßnahme zu einem Platzreifekurs einladen. Steuerlich gilt: Bei einer Betriebsveranstaltung bleiben in der Regel 110 Euro pro Person steuerfrei. Der Betrag darüber kann als geldwerter Vorteil gelten und lässt sich in vielen Fällen vom Arbeitgeber pauschal versteuern, dann entsteht für die Mitarbeitenden meist kein zusätzlicher Aufwand. Am besten vorher mit der Steuerberatung oder Lohnbuchhaltung abstimmen.',
+			],
+		];
+	} elseif ( ! $faq_items ) {
+		$faq_items = [
 		[
 			'q' => 'Was ist im Preis enthalten?',
-			'a' => 'Alle Punkte aus der Liste oben — Coaching, Ausrüstung, Green-Fee, Catering wo angegeben. Was nicht enthalten ist: persönliche Getränke an der Bar, optionale Add-ons (Fotograf, Trophäen), eventuelle Übernachtungen.',
+			'a' => 'Alle Punkte aus der Liste oben: Coaching, Ausrüstung, Green-Fee, Catering wo angegeben. Was nicht enthalten ist: persönliche Getränke an der Bar, optionale Add-ons (Fotograf, Trophäen), eventuelle Übernachtungen.',
 		],
 		[
 			'q' => 'Können Begleitpersonen mitkommen?',
-			'a' => 'Ja — Partner und Familien sind auf den meisten Plätzen willkommen. Sag uns Bescheid, wir sprechen mit dem Platz und melden uns mit Optionen.',
+			'a' => 'Ja. Partner und Familien sind auf den meisten Plätzen willkommen. Sag uns Bescheid, wir sprechen mit dem Platz und melden uns mit Optionen.',
 		],
 		[
 			'q' => 'Wie viel Vorlauf brauchen wir?',
-			'a' => 'Für dieses Format empfehlen wir 4–6 Wochen Vorlauf. Kurzfristiger ist oft möglich — frag einfach an, wir prüfen Verfügbarkeit.',
+			// Teamevents sind schlank organisiert (Julius, 2026-07-03): eine Woche reicht.
+			'a' => in_array( $event_type_raw, [ 'teamevent', 'schnupperkurs' ], true )
+				? 'Eine Woche Vorlauf reicht in der Regel. Auch kurzfristiger geht oft, frag einfach an und wir prüfen sofort die Verfügbarkeit.'
+				: 'Für dieses Format empfehlen wir 4 bis 6 Wochen Vorlauf. Kurzfristiger ist oft möglich, frag einfach an und wir prüfen Verfügbarkeit.',
 		],
 		[
 			'q' => 'Was passiert bei Regen?',

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function fge_get_cities(): array {
 	$reason = static function ( $ic, $t, $b ) { return [ 'ic' => $ic, 't' => $t, 'b' => $b ]; };
 	$faq    = static function ( $q, $a ) { return [ 'q' => $q, 'a' => $a ]; };
-	$team   = $reason( 'users', 'Für jedes Team', 'Ob 10 oder 80 Gäste — Gruppengröße, Ablauf und Catering stellen wir passend zu eurem Anlass zusammen.' );
+	$team   = $reason( 'users', 'Für jedes Team', 'Ob 10 oder 80 Gäste: Gruppengröße, Ablauf und Catering stellen wir passend zu eurem Anlass zusammen.' );
 	$local  = $reason( 'flag', 'Lokale Partnerplätze', 'Wir arbeiten direkt mit den Clubs vor Ort. Kurze Wege, verlässliche Termine, echte Ansprechpartner.' );
 	$f_anf  = $faq( 'Müssen unsere Mitarbeitenden Golf spielen können?', 'Nein. Unsere Teamevents starten immer mit einem Schnupper- und Grundlagenteil und sind genau für Teams ohne Vorerfahrung gedacht. Schläger werden gestellt, ein Golflehrer führt euch an, der gemeinsame Tag steht im Vordergrund, nicht das Handicap.' );
 	$f_size = $faq( 'Wie groß darf die Gruppe sein?', 'Vom Coaching für zwei Personen bis zum Firmenturnier mit rund 80 Teilnehmenden ist alles möglich. Sag uns einfach eure Gruppengröße in der Anfrage, dann wählen wir Platz und Format passend aus.' );
@@ -27,7 +27,14 @@ function fge_get_cities(): array {
 			'name' => 'München', 'region' => 'Süd & Oberbayern', 'match' => [ 'München', 'Oberbayern' ],
 			'intro' => 'München ist Firmenstandort und Naherholung in einem, und kaum eine Stadt hat so viele Top-Plätze direkt vor der Tür. In rund 30 Minuten seid ihr von der Innenstadt im Grünen, zwischen Isar-Auen und Alpenpanorama. Ob Teamevent, Firmenturnier, Kundenevent oder Sommerfest: Wir kennen die passenden Plätze im Münchner Umland.',
 			'reasons' => [ $reason( 'clock', '30 Min. ins Grüne', 'Die besten Plätze liegen stadtnah, Eichenried und Co. sind schnell erreichbar, auch mit der S-Bahn.' ), $team, $reason( 'mountain', 'Bergpanorama inklusive', 'An klaren Tagen spielt ihr mit Blick auf die Alpen, ein Erlebnis, das in Erinnerung bleibt.' ), $local ],
-			'faqs' => [ $faq( 'Welche Golfplätze in München kann ich für ein Firmenevent buchen?', 'Rund um München arbeiten wir mit mehreren Partnerplätzen. Je nach Gruppengröße, Anlass und Wunschtermin schlagen wir euch die passenden vor, alle in rund 30 Minuten vom Stadtkern.' ), $f_anf, $f_size, $f_fast( 'München' ) ],
+			'faqs' => [
+				$faq( 'Welche Golfplätze rund um München eignen sich für Firmenevents?', 'In Bayern gibt es über 160 Golfanlagen, viele davon in rund 30 Minuten vom Münchner Stadtkern erreichbar, etwa Richtung Eichenried, Erding oder ins Oberland. Wir schlagen euch je nach Gruppengröße, Anlass und Termin die passenden Plätze vor.' ),
+				$faq( 'Was kostet ein Firmenevent auf dem Golfplatz in München?', 'Als Orientierung: After-Work-Formate starten bei rund 69 Euro pro Person, Teamevents liegen um 129 Euro, mehrtägige Formate wie die Platzreife bei etwa 299 Euro. Der genaue Preis hängt von Platz, Gruppengröße und Verpflegung ab. Ihr bekommt vorab ein transparentes Angebot mit allen Posten.' ),
+				$f_anf,
+				$faq( 'Erreichen wir die Plätze auch ohne Auto?', 'Ja. Einige Anlagen im Münchner Umland sind mit S-Bahn oder U-Bahn plus kurzem Fußweg erreichbar. Für Gruppen organisieren wir auf Wunsch einen Shuttle direkt ab eurem Büro.' ),
+				$faq( 'Wie weit im Voraus sollten wir buchen?', 'Beliebte Termine zwischen Mai und September sind meist 4 bis 6 Wochen im Voraus vergeben. Im Frühjahr und Herbst geht es oft auch kurzfristiger. Schickt uns einfach euren Wunschzeitraum, wir prüfen sofort, was möglich ist.' ),
+				$faq( 'Geht ein Golfevent auch nach Feierabend?', 'Sehr gut sogar. After-Work-Golf dauert zwei bis drei Stunden auf Range und Kurzplatz, locker angeleitet und mit entspanntem Ausklang. Viele Münchner Teams machen daraus einen festen Termin.' ),
+			],
 		],
 		'hamburg' => [
 			'name' => 'Hamburg', 'region' => 'Nord', 'match' => [ 'Hamburg' ],

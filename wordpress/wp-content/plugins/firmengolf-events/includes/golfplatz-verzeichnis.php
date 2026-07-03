@@ -142,7 +142,9 @@ add_action( 'wp_enqueue_scripts', function (): void {
 			'name'    => $gp->name,
 			'lat'     => (float) $gp->lat,
 			'lng'     => (float) $gp->lng,
-			'partner' => (int) $gp->partner_id > 0,
+			// Quelle der Wahrheit für „Partner": das Vertrags-Flag aus Julius' Liste,
+			// nicht der CPT-Link (dort können Alt-Einträge liegen, s. Maxlrain 2026-07).
+			'partner' => 1 === (int) $gp->ist_partner,
 			'meta'    => $gp->ort . ' · ' . round( $gp->dist ) . ' km',
 		];
 	}
