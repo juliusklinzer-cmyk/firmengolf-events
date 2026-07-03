@@ -121,6 +121,94 @@ function fge_portal_request_status( int $req ): array {
 }
 
 /**
+ * Partner-Sicht auf eine Anfrage: wer ist am Zug und was passiert als Nächstes.
+ * Übersetzt die internen Pipeline-Status in eine einfache Sprache für Golfplatz-
+ * Nutzer (keine Techies): 'who' = du | wir | fertig | zu, plus Schritt 0–3 für
+ * die Timeline (Eingegangen → Verfügbarkeit → Termin fix → Angebot & Buchung).
+ */
+function fge_portal_partner_phase( int $req ): array {
+	[ $sid, $slabel ] = fge_portal_request_status( $req );
+	$m = function_exists( 'fge_rr_matrix' ) ? fge_rr_matrix( $req ) : [ 'dates' => [], 'responders' => [], 'all_responded' => false, 'overall' => 'offen' ];
+	$final = function_exists( 'fge_rr_final_index' ) ? fge_rr_final_index( $req ) : 0;
+	$total = count( $m['responders'] );
+
+	if ( 'abgeschlossen' === $sid ) {
+		return [
+			'who'   => 'fertig',
+			'pill'  => 'Gebucht' === $slabel ? 'Gebucht' : 'Abgeschlossen',
+			'title' => 'Alles erledigt.',
+			'text'  => 'Gebucht' === $slabel
+				? 'Das Event ist gebucht. Alle Details stimmen wir rechtzeitig vor dem Termin mit dir ab.'
+				: 'Diese Anfrage ist abgeschlossen. Du musst nichts weiter tun.',
+			'cta'   => '',
+			'step'  => 3,
+		];
+	}
+	if ( 'abgelehnt' === $sid ) {
+		return [
+			'who'   => 'zu',
+			'pill'  => 'Abgesagt',
+			'title' => 'Diese Anfrage kam nicht zustande.',
+			'text'  => 'Kein passender Termin oder das Unternehmen hat abgesagt. Du musst nichts weiter tun.',
+			'cta'   => '',
+			'step'  => 1,
+		];
+	}
+	if ( 'bestaetigt' === $sid || $final > 0 ) {
+		return [
+			'who'   => 'wir',
+			'pill'  => 'Termin fix — Firmengolf übernimmt',
+			'title' => 'Firmengolf ist am Zug.',
+			'text'  => 'Der Termin steht. Wir erstellen jetzt das Angebot für das Unternehmen und kümmern uns um die Buchung. Du musst nichts tun — wir melden uns, sobald es fix ist.',
+			'cta'   => '',
+			'step'  => 3,
+		];
+	}
+
+	// Verfügbarkeit wird noch geklärt.
+	$avail = 0;
+	foreach ( $m['dates'] as $d ) {
+		$avail = max( $avail, (int) ( $d['confirmed'] ?? 0 ) );
+	}
+	if ( $total > 0 && ! $m['all_responded'] ) {
+		$done = 0;
+		foreach ( $m['responders'] as $c ) {
+			if ( fge_rr_contact_answered_any( $req, (int) $c['id'] ) ) {
+				$done++;
+			}
+		}
+		return [
+			'who'   => 'du',
+			'pill'  => 'Verfügbarkeit klären',
+			'title' => 'Dein Team ist am Zug.',
+			'text'  => sprintf( '%d von %d Ansprechpartnern haben zu den Wunschterminen reagiert. Erinnere die übrigen — den Abstimmungs-Link kannst du unten bei jeder Person kopieren.', $done, $total ),
+			'cta'   => 'Zu den Wunschterminen',
+			'step'  => 1,
+		];
+	}
+	if ( $total > 0 && $m['all_responded'] && $avail > 0 ) {
+		return [
+			'who'   => 'du',
+			'pill'  => 'Termin bestätigen',
+			'title' => 'Du bist am Zug: Bestätige den finalen Termin.',
+			'text'  => 'Alle haben reagiert. Wähle unten den Termin aus, der bei euch passt — danach übernimmt Firmengolf.',
+			'cta'   => 'Termin auswählen',
+			'step'  => 2,
+		];
+	}
+	return [
+		'who'   => 'du',
+		'pill'  => 'Neu — Verfügbarkeit prüfen',
+		'title' => 'Du bist am Zug: Prüfe die Wunschtermine.',
+		'text'  => $total > 0
+			? 'Eine neue Anfrage ist da. Deine Ansprechpartner wurden zu den Wunschterminen befragt — unten siehst du den Stand.'
+			: 'Eine neue Anfrage ist da. Schau dir die Wunschtermine an und bestätige, was bei euch möglich ist.',
+		'cta'   => 'Zu den Wunschterminen',
+		'step'  => 1,
+	];
+}
+
+/**
  * PRG handler for the Ansprechpartner (contacts) tab — add / edit / remove
  * no-account contacts in fge_partner_contacts. Nonce + partner-ownership checked.
  */
@@ -363,6 +451,9 @@ function fge_portal_handle_profile_update(): void {
 			break;
 
 		case 'kontakt':
+			update_post_meta( $partner_id, '_fge_main_contact_name',   sanitize_text_field( $P['fge_main_contact_name'] ?? '' ) );
+			update_post_meta( $partner_id, '_fge_main_contact_email',  sanitize_email( $P['fge_main_contact_email'] ?? '' ) );
+			update_post_meta( $partner_id, '_fge_main_contact_phone',  sanitize_text_field( $P['fge_main_contact_phone'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_event_contact_name',  sanitize_text_field( $P['fge_event_contact_name'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_event_contact_email', sanitize_email( $P['fge_event_contact_email'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_event_contact_phone', sanitize_text_field( $P['fge_event_contact_phone'] ?? '' ) );
@@ -1268,31 +1359,11 @@ function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 	$time     = fge_portal_relative_time( $req->post_date );
 	$is_new   = ( time() - (int) strtotime( $req->post_date ) ) < 172800;
 
-	$status_labels = [
-		'neu'                           => 'Neu',
-		'eingangsbestaetigung_gesendet' => 'Bestätigt',
-		'verfuegbarkeit_wird_geprueft'  => 'In Prüfung',
-		'partner_angefragt'             => 'Angefragt',
-		'teilweise_verfuegbar'          => 'Teilweise verfügbar',
-		'vollstaendig_verfuegbar'       => 'Verfügbar',
-		'nicht_verfuegbar'              => 'Nicht verfügbar',
-		'in_uebernahme'                 => 'In Übernahme',
-		'bestaetigt'                    => 'Termin bestätigt',
-		'telefonat_offen'               => 'Telefonat offen',
-		'telefonat_erledigt'            => 'Telefonat erledigt',
-		'angebot_in_lexoffice_erstellt' => 'Angebot erstellt',
-		'angebot_versendet'             => 'Angebot versendet',
-		'angebot_rueckfrage'            => 'Rückfrage offen',
-		'angebot_angenommen'            => 'Angenommen',
-		'angebot_abgelehnt'             => 'Abgelehnt',
-		'event_durchgefuehrt'           => 'Durchgeführt',
-		'rechnung_in_lexoffice_erstellt' => 'Rechnung erstellt',
-		'abgeschlossen'                 => 'Abgeschlossen',
-		'verloren'                      => 'Verloren',
-	];
-	$st_label      = $status_labels[ $status ] ?? ( $status ?: 'Neu' );
-	$is_new_status = $status === 'neu' || $status === '';
-	$detail_url    = fge_portal_page_url() . '?tab=anfragen&req=' . $req->ID;
+	// Partner-Sprache statt interner Pipeline-Status (Julius: „jeder muss wissen, was als Nächstes passiert").
+	$phase      = fge_portal_partner_phase( $req->ID );
+	$st_label   = $phase['pill'];
+	$is_du      = 'du' === $phase['who'];
+	$detail_url = fge_portal_page_url() . '?tab=anfragen&req=' . $req->ID;
 	?>
 	<a class="fp-inbox-row" href="<?php echo esc_url( $detail_url ); ?>">
 		<div class="fp-inbox-avatar <?php echo esc_attr( $color ); ?>"><?php echo esc_html( $initials ); ?></div>
@@ -1323,8 +1394,8 @@ function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 		</div>
 		<div class="fp-inbox-meta">
 			<span><?php echo esc_html( $time ); ?></span>
-			<span class="fp-pill<?php echo $is_new_status ? ' green' : ''; ?>">
-				<?php if ( $is_new_status ) : ?><span class="dot"></span><?php endif; ?>
+			<span class="fp-pill<?php echo $is_du ? ' green' : ''; ?>">
+				<?php if ( $is_du ) : ?><span class="dot"></span><?php endif; ?>
 				<?php echo esc_html( $st_label ); ?>
 			</span>
 		</div>
@@ -1497,8 +1568,9 @@ function fge_portal_render_request_list( int $partner_id, string $base ): void {
 	$rows   = [];
 	$counts = array_fill_keys( array_keys( $filters ), 0 );
 	foreach ( $requests as $r ) {
-		[ $sid, $slabel ] = fge_portal_request_status( $r->ID );
-		$rows[]           = [ 'post' => $r, 'sid' => $sid, 'slabel' => $slabel ];
+		[ $sid ] = fge_portal_request_status( $r->ID );
+		$phase   = fge_portal_partner_phase( $r->ID );
+		$rows[]  = [ 'post' => $r, 'sid' => $sid, 'slabel' => $phase['pill'], 'du' => 'du' === $phase['who'] ];
 		$counts['alle']++;
 		$counts[ $sid ] = ( $counts[ $sid ] ?? 0 ) + 1;
 	}
@@ -1521,7 +1593,7 @@ function fge_portal_render_request_list( int $partner_id, string $base ): void {
 			<?php else : ?>
 				<div class="req-list">
 					<?php foreach ( $shown as $row ) {
-						fge_portal_render_request_item( $row['post'], $row['sid'], $row['slabel'], $base );
+						fge_portal_render_request_item( $row['post'], $row['sid'], $row['slabel'], $base, ! empty( $row['du'] ) );
 					} ?>
 				</div>
 			<?php endif; ?>
@@ -1530,7 +1602,7 @@ function fge_portal_render_request_list( int $partner_id, string $base ): void {
 	<?php
 }
 
-function fge_portal_render_request_item( WP_Post $r, string $sid, string $slabel, string $base ): void {
+function fge_portal_render_request_item( WP_Post $r, string $sid, string $slabel, string $base, bool $is_du = false ): void {
 	$id      = $r->ID;
 	$company = (string) get_post_meta( $id, '_fge_company_name', true ) ?: 'Unternehmen';
 	$pax     = (int) get_post_meta( $id, '_fge_expected_participants', true );
@@ -1542,10 +1614,10 @@ function fge_portal_render_request_item( WP_Post $r, string $sid, string $slabel
 	$when    = get_the_date( 'd.m.Y', $id );
 	$meta    = $etype . ( $pax ? ' · ' . $pax . ' Pers.' : '' ) . ( count( $wish ) > 1 ? ' · ' . count( $wish ) . ' Wunschtermine' : '' );
 	?>
-	<a class="req-item" href="<?php echo esc_url( $base . '?tab=anfragen&req=' . $id ); ?>">
+	<a class="req-item<?php echo $is_du ? ' is-du' : ''; ?>" href="<?php echo esc_url( $base . '?tab=anfragen&req=' . $id ); ?>">
 		<span class="av green"><?php echo esc_html( fge_portal_initials( $company ) ); ?></span>
 		<span class="ri-main">
-			<span class="ri-co"><?php echo esc_html( $company ); ?></span>
+			<span class="ri-co"><?php echo esc_html( $company ); ?><?php if ( $is_du ) : ?> <span class="ri-du">Du bist dran</span><?php endif; ?></span>
 			<span class="ri-meta"><?php echo esc_html( $meta ); ?></span>
 			<?php if ( '' !== $msg ) : ?><span class="ri-msg"><?php echo esc_html( $msg ); ?></span><?php endif; ?>
 		</span>
@@ -1583,13 +1655,37 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 		}
 	}
 	$nonce = wp_create_nonce( 'fge_portal_request' );
+	$phase = fge_portal_partner_phase( $req );
+	$steps = [ 'Anfrage eingegangen', 'Verfügbarkeit klären', 'Termin bestätigen', 'Angebot & Buchung' ];
 	?>
 	<div class="fgpp"><div class="page-wide">
 		<p style="margin:24px 0 14px;"><a class="btn btn-ghost btn-sm" href="<?php echo esc_url( $base . '?tab=anfragen' ); ?>">← Alle Anfragen</a></p>
+
+		<div class="req-next req-next--<?php echo esc_attr( $phase['who'] ); ?>">
+			<div class="req-next-main">
+				<div class="req-next-who"><?php echo 'du' === $phase['who'] ? 'Jetzt bist du dran' : ( 'wir' === $phase['who'] ? 'Firmengolf kümmert sich' : 'Kein Handlungsbedarf' ); ?></div>
+				<div class="req-next-title"><?php echo esc_html( $phase['title'] ); ?></div>
+				<p class="req-next-text"><?php echo esc_html( $phase['text'] ); ?></p>
+			</div>
+			<?php if ( '' !== $phase['cta'] ) : ?>
+				<a class="btn btn-brand" href="#wunschtermine"><?php echo esc_html( $phase['cta'] ); ?> ↓</a>
+			<?php endif; ?>
+		</div>
+
+		<div class="req-steps" aria-label="Wo steht diese Anfrage?">
+			<?php foreach ( $steps as $i => $step_label ) :
+				$cls = $i < $phase['step'] ? 'done' : ( $i === $phase['step'] && 'zu' !== $phase['who'] ? 'now' : 'todo' ); ?>
+				<div class="req-step <?php echo esc_attr( $cls ); ?>">
+					<span class="req-step-dot"><?php echo 'done' === $cls ? '✓' : (int) ( $i + 1 ); ?></span>
+					<span class="req-step-label"><?php echo esc_html( $step_label ); ?></span>
+				</div>
+			<?php endforeach; ?>
+		</div>
+
 		<div class="req-detail">
 			<div class="req-detail-head">
 				<span class="req-no"><span class="req-no-hash">#<?php echo esc_html( $ref ); ?></span></span>
-				<span class="spill s-<?php echo esc_attr( $sid ); ?>" style="margin-left:10px;"><?php echo esc_html( $slabel ); ?></span>
+				<span class="spill s-<?php echo esc_attr( $sid ); ?>" style="margin-left:10px;"><?php echo esc_html( $phase['pill'] ); ?></span>
 				<div class="req-detail-top" style="margin-top:14px;">
 					<span class="av green"><?php echo esc_html( fge_portal_initials( $company ) ); ?></span>
 					<div>
@@ -1633,7 +1729,7 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 				<?php endif; ?>
 
 				<?php if ( ! empty( $wish ) && $total > 0 ) : ?>
-					<div class="coord-head">
+					<div class="coord-head" id="wunschtermine">
 						<div class="req-section-label" style="margin:0;">Wunschtermine</div>
 						<div class="coord-prog"><b><?php echo (int) $done_cnt; ?></b> von <?php echo (int) $total; ?> haben reagiert</div>
 					</div>
@@ -1719,7 +1815,7 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 						<?php endforeach; ?>
 					</div>
 				<?php elseif ( ! empty( $wish ) ) : ?>
-					<div class="req-section-label">Wunschtermine</div>
+					<div class="req-section-label" id="wunschtermine">Wunschtermine</div>
 					<p style="font-size:13px;color:var(--ink-500);margin:-4px 0 12px;">Diese Anfrage gibst du selbst frei — bestätige den passenden Termin. (Du kannst im Tab <a href="<?php echo esc_url( $base . '?tab=team' ); ?>" style="color:var(--fairway-700);">Ansprechpartner</a> Personen mit „Terminabstimmung" hinterlegen, dann stimmen sie automatisch mit ab.)</p>
 					<div class="wishdates">
 						<?php foreach ( $wish as $idx => $label ) :
@@ -1824,7 +1920,7 @@ function fge_portal_section_kalender( int $partner_id ): void {
  */
 function fge_portal_section_team( int $partner_id ): void {
 	$base       = fge_portal_page_url();
-	$platz_edit = esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => '1' ], $base ) );
+	$platz_edit = esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => 'kontakt' ], $base ) );
 
 	$owner_name  = (string) get_post_meta( $partner_id, '_fge_main_contact_name', true );
 	$owner_email = (string) get_post_meta( $partner_id, '_fge_main_contact_email', true );
@@ -2113,26 +2209,31 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 				</div>
 			</section>
 
-			<?php if ( $infra ) : ?>
 			<section class="section">
 				<div class="section-head">
 					<div><div class="eyebrow">Ausstattung</div><h2>Was euch <em>erwartet</em></h2></div>
 					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'ausstattung' ); ?>">Bearbeiten</a></div>
 				</div>
-				<?php fge_render_amenities_grid( $partner_id ); ?>
-				<?php $fge_extra_eq = $m( 'additional_equipment' ); ?>
-				<?php if ( '' !== $fge_extra_eq ) : ?>
-				<p class="fgpp-extra-equipment"><strong>Außerdem vor Ort:</strong> <?php echo esc_html( $fge_extra_eq ); ?></p>
+				<?php if ( $infra ) : ?>
+					<?php fge_render_amenities_grid( $partner_id ); ?>
+					<?php $fge_extra_eq = $m( 'additional_equipment' ); ?>
+					<?php if ( '' !== $fge_extra_eq ) : ?>
+					<p class="fgpp-extra-equipment"><strong>Außerdem vor Ort:</strong> <?php echo esc_html( $fge_extra_eq ); ?></p>
+					<?php endif; ?>
+				<?php else : ?>
+					<div class="panel pe-empty">
+						<p>Noch keine Ausstattung angegeben. Hake einfach an, was es bei euch gibt — Firmen filtern danach.</p>
+						<a class="btn btn-brand btn-sm" href="<?php echo $edit_sec( 'ausstattung' ); ?>">Ausstattung angeben</a>
+					</div>
 				<?php endif; ?>
 			</section>
-			<?php endif; ?>
 
-			<?php if ( $gallery ) : ?>
 			<section class="section" id="galerie">
 				<div class="section-head">
 					<div><div class="eyebrow">Bildergalerie</div><h2>Fotos deines <em>Platzes</em></h2></div>
 					<div class="actions"><a class="btn btn-brand btn-sm" href="<?php echo $edit_sec( 'medien' ); ?>">Fotos verwalten</a></div>
 				</div>
+				<?php if ( $gallery ) : ?>
 				<div class="gallery-grid">
 					<?php foreach ( $gallery as $gid ) :
 						$gurl = (string) wp_get_attachment_image_url( $gid, 'large' );
@@ -2140,20 +2241,31 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 						<div class="gallery-item" style="background-image:url('<?php echo esc_url( $gurl ); ?>')"></div>
 					<?php endforeach; ?>
 				</div>
+				<?php else : ?>
+					<div class="panel pe-empty">
+						<p>Noch keine Fotos hochgeladen. Gute Bilder sind das Erste, was Firmen sehen — Platz, Clubhaus, Terrasse.</p>
+						<a class="btn btn-brand btn-sm" href="<?php echo $edit_sec( 'medien' ); ?>">Fotos hochladen</a>
+					</div>
+				<?php endif; ?>
 			</section>
-			<?php endif; ?>
 
 			<?php
 			$plat = (float) get_post_meta( $partner_id, '_fge_latitude', true );
 			$plng = (float) get_post_meta( $partner_id, '_fge_longitude', true );
 			$paddr = trim( $m( 'street' ) . ' ' . $m( 'house_number' ) . ', ' . $m( 'postal_code' ) . ' ' . $m( 'city' ), ' ,' );
 			$pmq  = ( $plat && $plng ) ? $plat . ',' . $plng : $paddr;
-			if ( $pmq !== '' ) : ?>
+			?>
 			<section class="section" id="standort">
 				<div class="section-head">
 					<div><div class="eyebrow">Standort</div><h2>Wo ihr uns <em>findet</em></h2></div>
 					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'standort' ); ?>">Bearbeiten</a></div>
 				</div>
+				<?php if ( $pmq === '' ) : ?>
+					<div class="panel pe-empty">
+						<p>Noch keine Adresse hinterlegt. Mit der Adresse zeigen wir Firmen die Karte und die Anfahrt.</p>
+						<a class="btn btn-brand btn-sm" href="<?php echo $edit_sec( 'standort' ); ?>">Adresse eintragen</a>
+					</div>
+				<?php else : ?>
 				<div class="fgpp-map">
 					<iframe data-name="googlemaps" data-src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
 				</div>
@@ -2166,8 +2278,8 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 					<?php endforeach; ?>
 				</div>
 				<?php endif; ?>
+				<?php endif; ?>
 			</section>
-			<?php endif; ?>
 
 			<section class="section" id="bewertungen">
 				<div class="two-col">
@@ -2184,7 +2296,7 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 						<?php endif; ?>
 					</div>
 					<div class="panel">
-						<div class="panel-head"><h3 style="font-size:18px;">Ansprechpartner</h3></div>
+						<div class="panel-head"><h3 style="font-size:18px;">Dein Hauptkontakt</h3></div>
 						<div class="facts" style="background:var(--paper-200);">
 							<div class="fact-row"><span class="lbl">Name</span><span class="val"><?php echo esc_html( $m( 'main_contact_name' ) ?: '—' ); ?></span></div>
 							<div class="fact-row"><span class="lbl">E-Mail</span><span class="val"><?php echo esc_html( $m( 'main_contact_email' ) ?: '—' ); ?></span></div>
@@ -2218,22 +2330,50 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 	$titles = [
 		'steckbrief'  => 'Über den Platz',
 		'ausstattung' => 'Ausstattung',
-		'standort'    => 'Standort',
+		'standort'    => 'Standort & Anfahrt',
 		'medien'      => 'Fotos & Logo',
-		'kontakt'     => 'Ansprechpartner',
+		'kontakt'     => 'Kontaktdaten',
+	];
+	$intros = [
+		'steckbrief'  => 'Name, Beschreibung und Eckdaten — der erste Eindruck deines Platzes für Firmen.',
+		'ausstattung' => 'Hake einfach an, was es bei euch gibt. Mehr Häkchen = mehr Treffer bei Firmen.',
+		'standort'    => 'Adresse und Anfahrt — damit Firmen wissen, wie sie zu euch kommen.',
+		'medien'      => 'Gute Fotos verkaufen deinen Platz. Das erste Foto ist dein Titelbild.',
+		'kontakt'     => 'Wen erreichen wir bei euch — und wer bekommt Terminanfragen?',
+	];
+	$helps = [
+		'steckbrief'  => [ 'Alles hier erscheint auf deiner öffentlichen Platzseite.', 'Beschreibung: 2–3 Sätze reichen. Was macht euren Platz für Firmen besonders — Lage, Gastronomie, Atmosphäre?', 'Die Veranstaltungstypen entscheiden, für welche Anfragen Firmen dich finden.' ],
+		'ausstattung' => [ 'Die Ausstattung erscheint als Icon-Liste auf deiner öffentlichen Platzseite.', 'Fehlt etwas in der Liste? Trag es unten bei „Weitere Ausstattung" ein.' ],
+		'standort'    => [ 'Die Adresse setzt den Karten-Pin auf deiner Platzseite und bei deinen Events.', 'Die Anfahrts-Felder (Auto, Bahn, Parken, Shuttle) helfen Firmen bei der Planung — kurz und konkret, z. B. „100 kostenfreie Parkplätze".', 'Breiten-/Längengrad nur ändern, wenn der Pin falsch sitzt.' ],
+		'medien'      => [ 'Empfehlung: mindestens 5 Fotos im Querformat — Platz, Clubhaus, Terrasse, Gastronomie.', 'Das Titelbild ist das große Bild auf deiner Platzseite und deinen Event-Karten.', 'Fotos werden sofort hochgeladen — „Speichern" bestätigt nur die Reihenfolge.' ],
+		'kontakt'     => [ 'Der Hauptkontakt ist unsere erste Anlaufstelle und steht nur intern im Portal — nicht öffentlich.', 'Terminanfragen gehen an den Verfügbarkeits-Kontakt. Leer lassen = Hauptkontakt bekommt sie.', 'Mehrere Personen (Gastro, Head Pro, Sekretariat) für die Terminabstimmung verwaltest du im Tab „Ansprechpartner".' ],
 	];
 	$title = $titles[ $section ] ?? 'Bearbeiten';
 	?>
-	<div style="padding-top:32px;">
-		<a href="<?php echo $back; ?>" class="fg-btn fg-btn-outline" style="margin-bottom:18px;">← Zurück zum Platz</a>
-		<div class="fp-section-head"><div><div class="fp-eyebrow">Platz bearbeiten</div><h2><?php echo esc_html( $title ); ?></h2></div></div>
+	<div class="fgpp"><div class="page-wide">
+		<div class="pe-top">
+			<a href="<?php echo $back; ?>" class="btn btn-ghost btn-sm">← Zurück zum Platz</a>
+			<nav class="pe-chips" aria-label="Bereiche">
+				<?php foreach ( $titles as $sec_id => $sec_label ) : ?>
+					<a class="pe-chip<?php echo $sec_id === $section ? ' active' : ''; ?>" href="<?php echo esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => $sec_id ], $base ) ); ?>"><?php echo esc_html( $sec_label ); ?></a>
+				<?php endforeach; ?>
+			</nav>
+		</div>
+		<div class="section-head" style="margin-bottom:22px;">
+			<div>
+				<div class="eyebrow">Platz bearbeiten</div>
+				<h2><?php echo esc_html( $title ); ?></h2>
+				<p><?php echo esc_html( $intros[ $section ] ?? '' ); ?></p>
+			</div>
+		</div>
 
 		<form method="post" action="<?php echo esc_url( $base ); ?>" enctype="multipart/form-data" class="fp-platz-editform">
 			<input type="hidden" name="fge_action" value="portal_profile_update">
 			<input type="hidden" name="fge_platz_section" value="<?php echo esc_attr( $section ); ?>">
 			<?php wp_nonce_field( 'fge_portal_profile_update', 'fge_portal_nonce' ); ?>
 
-			<div class="fp-form-sec">
+			<div class="pe-grid">
+			<div class="panel pe-main">
 			<?php
 			switch ( $section ) {
 				case 'steckbrief':
@@ -2341,11 +2481,25 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 
 				case 'kontakt':
 					?>
-					<p class="fp-help">Wird intern für Verfügbarkeitsanfragen genutzt.</p>
+					<div class="pe-subhead">Hauptkontakt</div>
+					<p class="fp-help">Deine erste Anlaufstelle für Firmengolf — z. B. Clubmanagement oder Sekretariat.</p>
+					<div class="fg-form-row fg-form-row--3col">
+						<div><label class="fg-form-label" for="fge_main_contact_name">Name</label><input class="fg-form-input" type="text" id="fge_main_contact_name" name="fge_main_contact_name" value="<?php echo esc_attr( $m( 'main_contact_name' ) ); ?>"></div>
+						<div><label class="fg-form-label" for="fge_main_contact_email">E-Mail</label><input class="fg-form-input" type="email" id="fge_main_contact_email" name="fge_main_contact_email" value="<?php echo esc_attr( $m( 'main_contact_email' ) ); ?>"></div>
+						<div><label class="fg-form-label" for="fge_main_contact_phone">Telefon</label><input class="fg-form-input" type="tel" id="fge_main_contact_phone" name="fge_main_contact_phone" value="<?php echo esc_attr( $m( 'main_contact_phone' ) ); ?>"></div>
+					</div>
+
+					<div class="pe-subhead" style="margin-top:26px;">Kontakt für Terminanfragen</div>
+					<p class="fp-help">Diese Person fragen wir an, wenn ein Unternehmen Wunschtermine nennt. Leer lassen, wenn das der Hauptkontakt übernehmen soll.</p>
 					<div class="fg-form-row fg-form-row--3col">
 						<div><label class="fg-form-label" for="fge_event_contact_name">Name</label><input class="fg-form-input" type="text" id="fge_event_contact_name" name="fge_event_contact_name" value="<?php echo esc_attr( $m( 'event_contact_name' ) ); ?>"></div>
 						<div><label class="fg-form-label" for="fge_event_contact_email">E-Mail</label><input class="fg-form-input" type="email" id="fge_event_contact_email" name="fge_event_contact_email" value="<?php echo esc_attr( $m( 'event_contact_email' ) ); ?>"></div>
 						<div><label class="fg-form-label" for="fge_event_contact_phone">Telefon</label><input class="fg-form-input" type="tel" id="fge_event_contact_phone" name="fge_event_contact_phone" value="<?php echo esc_attr( $m( 'event_contact_phone' ) ); ?>"></div>
+					</div>
+
+					<div class="pe-hintbox">
+						Mehrere Personen sollen bei Terminen mitentscheiden (z. B. Gastronomie, Head Pro)?
+						<a href="<?php echo esc_url( add_query_arg( [ 'tab' => 'team' ], $base ) ); ?>">Ansprechpartner verwalten →</a>
 					</div>
 					<?php
 					break;
@@ -2360,11 +2514,24 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 			?>
 			</div>
 
-			<div style="margin-top:24px;">
-				<button type="submit" class="fp-btn fp-btn-brand"><?php echo esc_html( $title ); ?> speichern <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></button>
+			<aside class="pe-aside">
+				<div class="pe-help">
+					<h4>Gut zu wissen</h4>
+					<ul>
+						<?php foreach ( $helps[ $section ] ?? [] as $h ) : ?>
+							<li><?php echo esc_html( $h ); ?></li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			</aside>
+			</div>
+
+			<div class="pe-savebar">
+				<a href="<?php echo $back; ?>" class="btn btn-ghost">Abbrechen</a>
+				<button type="submit" class="btn btn-brand">Speichern <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></button>
 			</div>
 		</form>
-	</div>
+	</div></div>
 	<?php
 }
 
@@ -2832,10 +2999,72 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						</div>
 
 						<div class="fg-form-row" style="margin-top:24px;">
-							<label class="fg-form-label" for="fge_event_dayflow">So läuft der Tag ab</label>
-							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="9" placeholder="Wir holen euch um 9:00 Uhr direkt in eurer Firma ab.&#10;&#10;Treffpunkt ist der Pro-Shop. Dort begrüßen wir euch und stellen euch Platz und Anlage kurz vor.&#10;&#10;9:30 Uhr: Erster Teil des Schnupperkurses auf der Range (ca. 1 Stunde) mit unseren Golflehrer.&#10;&#10;Mittags: gemeinsames Lunch auf der Terrasse.&#10;&#10;Am Nachmittag geht es aufs Grün. Zum Abschluss bringt euch unser Shuttle bequem zurück."><?php echo esc_textarea( $event_id ? (string) get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ); ?></textarea>
-							<p class="fp-help">Beschreib den Ablauf Schritt für Schritt, von der Ankunft bis zur Heimfahrt. Dieser Text erscheint auf der Event-Seite.</p>
+							<label class="fg-form-label">So läuft der Tag ab</label>
+							<p class="fp-help" style="margin-bottom:12px;">Baue den Ablauf in Schritten, von der Ankunft bis zur Heimfahrt — so erscheint er als Timeline auf deiner Event-Seite.</p>
+							<div id="fp-dayflow-builder" hidden>
+								<div id="fp-dayflow-steps"></div>
+								<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fp-dayflow-add">+ Schritt hinzufügen</button>
+							</div>
+							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="9" placeholder="Ankunft &amp; Begrüßung&#10;Treffpunkt ist der Pro-Shop. Wir begrüßen euch und stellen Platz und Anlage kurz vor.&#10;&#10;Schnupperkurs auf der Range&#10;Ca. 1 Stunde mit unseren Golflehrern: Abschlag, Grundtechnik und die ersten Erfolgserlebnisse."><?php echo esc_textarea( $event_id ? (string) get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ); ?></textarea>
 						</div>
+						<script>
+						(function(){
+							var src = document.getElementById('fge_event_dayflow');
+							var builder = document.getElementById('fp-dayflow-builder');
+							var list = document.getElementById('fp-dayflow-steps');
+							if (!src || !builder || !list) return;
+
+							function sync(){
+								var blocks = [];
+								list.querySelectorAll('.fp-dfs').forEach(function(row){
+									var h = row.querySelector('.fp-dfs-h').value.trim();
+									var t = row.querySelector('.fp-dfs-t').value.trim();
+									if (h === '' && t === '') return;
+									blocks.push(h + (t ? '\n' + t : ''));
+								});
+								src.value = blocks.join('\n\n');
+								list.querySelectorAll('.fp-dfs-num').forEach(function(n, i){ n.textContent = i + 1; });
+							}
+
+							function addStep(heading, text){
+								var row = document.createElement('div');
+								row.className = 'fp-dfs';
+								row.innerHTML = '<span class="fp-dfs-num"></span>'
+									+ '<div class="fp-dfs-fields">'
+									+ '<input type="text" class="fg-form-input fp-dfs-h" placeholder="Überschrift, z. B. Ankunft &amp; Begrüßung" maxlength="80">'
+									+ '<textarea class="fg-form-textarea fp-dfs-t" rows="2" placeholder="Kurze Beschreibung dieses Schritts"></textarea>'
+									+ '</div>'
+									+ '<button type="button" class="fp-dfs-del" title="Schritt entfernen" aria-label="Schritt entfernen">×</button>';
+								row.querySelector('.fp-dfs-h').value = heading || '';
+								row.querySelector('.fp-dfs-t').value = text || '';
+								row.querySelector('.fp-dfs-del').addEventListener('click', function(){ row.remove(); sync(); });
+								row.addEventListener('input', sync);
+								list.appendChild(row);
+								sync();
+								return row;
+							}
+
+							// Bestehenden Text in Schritte parsen (Block = Leerzeile-getrennt, Zeile 1 = Überschrift).
+							var val = src.value.trim();
+							if (val !== '') {
+								val.split(/\n\s*\n/).forEach(function(block){
+									var lines = block.split('\n');
+									addStep(lines.shift().trim(), lines.join('\n').trim());
+								});
+							} else {
+								addStep('', '');
+							}
+
+							document.getElementById('fp-dayflow-add').addEventListener('click', function(){
+								var row = addStep('', '');
+								row.querySelector('.fp-dfs-h').focus();
+							});
+
+							// Builder an, Roh-Textfeld aus (bleibt das submit-Feld; ohne JS bleibt es sichtbar).
+							builder.hidden = false;
+							src.style.display = 'none';
+						})();
+						</script>
 					</div>
 
 					<!-- Verfügbarkeit -->
