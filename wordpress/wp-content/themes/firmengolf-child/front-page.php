@@ -226,10 +226,10 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		<div class="home-exp-cards">
 			<?php
 			$exp_points = [
-				[ 'k' => 'Bewegung',      't' => 'Vier, fünf Kilometer an der frischen Luft, ohne dass es sich nach Sport anfühlt.',        'img' => 'pool/teamevent-kurzspieltraining.jpg' ],
+				[ 'k' => 'Bewegung',      't' => 'Vier, fünf Kilometer an der frischen Luft, ohne dass es sich nach Sport anfühlt.',        'img' => 'golfer-auf-gruen-herbst.jpg' ],
 				[ 'k' => 'Natur',         't' => 'Grün, Weite, Himmel. Die perfekte Ergänzung zu einem Tag voller Gespräche.',              'img' => 'golfplatz-huegel-abendlicht.jpg' ],
 				[ 'k' => 'Konzentration', 't' => 'Ein Spiel, das volle Aufmerksamkeit verlangt und genau dadurch den Kopf frei macht.',     'img' => 'golfer-putt-abendlicht.jpg' ],
-				[ 'k' => 'Zusammenhalt',  't' => 'Vier Stunden Seite an Seite, ohne Bildschirm. Teams wachsen hier unangestrengt zusammen.', 'img' => 'pool/teamevent-zwei-kolleginnen.jpg' ],
+				[ 'k' => 'Zusammenhalt',  't' => 'Vier Stunden Seite an Seite, ohne Bildschirm. Teams wachsen hier unangestrengt zusammen.', 'img' => 'kolleginnen-teambuilding.jpg' ],
 			];
 			foreach ( $exp_points as $p ) : ?>
 				<article class="home-exp-card">
@@ -360,48 +360,51 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	</div>
 	<div class="home-occasions">
 		<?php
+		// Kacheln leiten zur Eventliste (mit Format-Filter) ODER zu Individuellen Events (Julius, 2026-07-03).
 		$occasions = [
 			[
-				'eyebrow' => 'Onboarding',
-				'title'   => 'Neue Mitarbeitende willkommen heißen.',
-				'body'    => 'Ein entspannter Halbtag auf dem Platz, der das Eis bricht.',
-				'url'     => add_query_arg( 'format', 'after_work_golf', $url_events ),
-				'img'     => 'golfer-gruppe-fairway.png',
+				'eyebrow' => 'Teamevent',
+				'title'   => 'Einen gemeinsamen Tag draußen verbringen.',
+				'body'    => 'Stationen, Team-Challenge, gemeinsames Essen. Ganz ohne Vorkenntnisse.',
+				'url'     => add_query_arg( 'format', 'teamevent', $url_events ),
+				'img'     => 'golfer-trio-spaziergang.png',
 			],
 			[
-				'eyebrow' => 'Vertrieb',
-				'title'   => 'Kunden und Partner zusammenbringen.',
-				'body'    => 'Ganztägiges Firmenturnier oder Networking-Runde.',
+				'eyebrow' => 'Führungskräfte',
+				'title'   => 'Führungskräfte-Treffen mit Weitblick.',
+				'body'    => 'Strategie besprechen, wo der Kopf frei ist. Exklusiver Rahmen für kleine Runden.',
+				'url'     => $url_ind,
+				'cta'     => 'Individuell planen',
+				'img'     => 'buero-dachterrasse-panorama.jpg',
+			],
+			[
+				'eyebrow' => 'Firmenturnier',
+				'title'   => 'Wettbewerb, der verbindet.',
+				'body'    => 'Shotgun-Start, faire Formate für alle Level, Siegerehrung. Komplett organisiert.',
 				'url'     => add_query_arg( 'format', 'firmen_golfturnier', $url_events ),
 				'img'     => 'firmenevent-afterwork-golf.jpg',
 			],
 			[
-				'eyebrow' => 'Kundenbindung',
-				'title'   => 'Kunden aufs Grün einladen.',
-				'body'    => 'Entspannter Tag, der Geschäftsbeziehungen pflegt.',
-				'url'     => add_query_arg( 'format', 'kundenevent', $url_events ),
-				'img'     => 'clubhaus-aussenansicht.jpg',
-			],
-			[
-				'eyebrow' => 'Einsteiger',
-				'title'   => 'Vom ersten Schwung zur Platzreife.',
-				'body'    => 'Kompakter Kurs mit PGA-Pro und Prüfung. Der Benefit, der bleibt.',
+				'eyebrow' => 'Platzreife',
+				'title'   => 'Über mehrere Tage zur Platzreife.',
+				'body'    => 'Gemeinsam lernen, gemeinsam bestehen. Das schweißt ein Team zusammen.',
 				'url'     => add_query_arg( 'format', 'platzreife', $url_events ),
-				'img'     => 'work-life-balance-golf.jpg',
+				'img'     => 'platzreife-kursszene.jpg',
 			],
 			[
-				'eyebrow' => 'Top-Performer',
-				'title'   => 'Eure besten Leute besonders behandeln.',
-				'body'    => 'Incentive-Reise mit Übernachtung und privatem Dinner.',
-				'url'     => add_query_arg( 'format', 'incentive', $url_events ),
+				'eyebrow' => 'After-Work',
+				'title'   => 'After-Work-Golf nach Feierabend.',
+				'body'    => 'Zwei, drei Stunden auf der Range, locker angeleitet, mit entspanntem Ausklang.',
+				'url'     => add_query_arg( 'format', 'after_work_golf', $url_events ),
+				'img'     => 'golfer-gruppe-fairway.png',
+			],
+			[
+				'eyebrow' => 'Sommerfest',
+				'title'   => 'Das Sommerfest, über das alle reden.',
+				'body'    => 'Golf-Stationen, BBQ und laue Abendstimmung für die ganze Firma.',
+				'url'     => $url_ind,
+				'cta'     => 'Individuell planen',
 				'img'     => 'golfplatz-meerblick.jpg',
-			],
-			[
-				'eyebrow' => 'Team-Tag',
-				'title'   => 'Ein gemeinsamer Nachmittag draußen.',
-				'body'    => 'Team-Building mit gemischten Zweier-Teams.',
-				'url'     => add_query_arg( 'format', 'teamevent', $url_events ),
-				'img'     => 'golfer-trio-spaziergang.png',
 			],
 		];
 		foreach ( $occasions as $occ ) : ?>
@@ -412,7 +415,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 					<h3 class="home-occ-t"><?php echo esc_html( $occ['title'] ); ?></h3>
 					<p class="home-occ-b"><?php echo esc_html( $occ['body'] ); ?></p>
 					<div class="home-occ-foot">
-						Passende Events ansehen <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						<?php echo esc_html( $occ['cta'] ?? 'Passende Events ansehen' ); ?> <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 					</div>
 				</div>
 			</a>
