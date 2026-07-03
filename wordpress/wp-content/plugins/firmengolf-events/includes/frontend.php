@@ -487,12 +487,19 @@ function fge_placeholder_pool(): array {
 	if ( $buckets !== null ) {
 		return $buckets;
 	}
-	$buckets = [ 'event' => [], 'course' => [], 'range' => [], 'clubhouse' => [], 'founder' => [], 'misc' => [], 'all' => [] ];
+	$buckets = [
+		'event' => [], 'course' => [], 'range' => [], 'clubhouse' => [], 'founder' => [], 'misc' => [], 'all' => [],
+		// Format-Gruppen (2026-07): Dateiname-Präfix bestimmt die Gruppe, z. B. pool/platzreife-*.jpg.
+		// Die Alt-Bestände tragen das teamevent-Präfix (Julius' Entscheidung: bisherige Bilder = Teamevent-Topf).
+		'teamevent' => [], 'platzreife' => [], 'turnier' => [], 'kundenevent' => [], 'afterwork' => [], 'incentive' => [], 'nachtevent' => [],
+	];
 	$dir     = FGE_DIR . 'assets/imagery/pool';
 	foreach ( glob( $dir . '/*.jpg' ) ?: [] as $path ) {
 		$file = basename( $path );
 		$buckets['all'][] = $file;
-		if ( strpos( $file, 'gruender' ) !== false ) {
+		if ( preg_match( '/^(teamevent|platzreife|turnier|kundenevent|afterwork|incentive|nachtevent)-/', $file, $m ) ) {
+			$cat = $m[1];
+		} elseif ( strpos( $file, 'gruender' ) !== false ) {
 			$cat = 'founder';
 		} elseif ( preg_match( '/hund|tennis|ubahn|pilot|cockpit|handgepaeck|burnout|buerodach/', $file ) ) {
 			$cat = 'misc'; // off-topic marketing/blog imagery — not used for event/course covers
@@ -508,6 +515,34 @@ function fge_placeholder_pool(): array {
 		$buckets[ $cat ][] = $file;
 	}
 	return $buckets;
+}
+
+/**
+ * Format-spezifische Pool-Gruppe eines Events (per _fge_event_type, inkl. Legacy-Mapping).
+ * Leerstring, wenn es für den Typ (noch) keine gefüllte Gruppe gibt → Aufrufer fällt
+ * auf die Namens-Kategorie zurück.
+ */
+function fge_event_pool_category( int $event_id ): string {
+	$type = (string) get_post_meta( $event_id, '_fge_event_type', true );
+	if ( function_exists( 'fge_get_event_format_legacy_map' ) ) {
+		$type = fge_get_event_format_legacy_map()[ $type ] ?? $type;
+	}
+	$map = [
+		'teamevent'          => 'teamevent',
+		'platzreife'         => 'platzreife',
+		'firmen_golfturnier' => 'turnier',
+		'kundenevent'        => 'kundenevent',
+		'after_work_golf'    => 'afterwork',
+		'incentive'          => 'incentive',
+		'offsite'            => 'incentive',
+		'nacht_event'        => 'nachtevent',
+	];
+	$cat = $map[ $type ] ?? '';
+	if ( $cat === '' ) {
+		return '';
+	}
+	$pool = fge_placeholder_pool();
+	return ! empty( $pool[ $cat ] ) ? $cat : '';
 }
 
 /** Map a legacy placeholder filename to a pool category. */
@@ -535,13 +570,23 @@ function fge_placeholder_category( string $name ): string {
  * pool (assets/imagery/pool/) by the name's category. This is only for golf-course / event items
  * that have no own image — so empty events/places show varied golf photos instead of one repeat.
  */
-function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahme.jpg', int $seed = 0 ): string {
+function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahme.jpg', int $seed = 0, int $offset = 0 ): string {
 	if ( $seed > 0 ) {
-		$cat  = fge_placeholder_category( $name );
+		$cat = fge_placeholder_category( $name );
+		// Events ziehen bevorzugt aus der Format-Gruppe ihres Typs (teamevent/platzreife/…),
+		// damit Platzhalter-Events pro Typ eine eigene, stimmige Bildwelt bekommen.
+		if ( get_post_type( $seed ) === 'firmengolf_event' ) {
+			$type_cat = fge_event_pool_category( $seed );
+			if ( $type_cat !== '' ) {
+				$cat = $type_cat;
+			}
+		}
 		$pool = fge_placeholder_pool();
 		$list = ! empty( $pool[ $cat ] ) ? $pool[ $cat ] : ( $pool['all'] ?? [] );
 		if ( ! empty( $list ) ) {
-			$idx = abs( crc32( $cat . '|' . $seed ) ) % count( $list );
+			// $offset: garantiert unterschiedliche Bilder für mehrere Slots derselben Seite
+			// (Event-Hero: Cover + 2 Galerie-Kacheln), solange die Gruppe genug Bilder hat.
+			$idx = ( abs( crc32( $cat . '|' . $seed ) ) + $offset ) % count( $list );
 			return plugins_url( 'assets/imagery/pool/' . $list[ $idx ], FGE_DIR . 'firmengolf-events.php' );
 		}
 	}

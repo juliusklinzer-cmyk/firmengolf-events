@@ -225,10 +225,10 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		<div class="home-exp-cards">
 			<?php
 			$exp_points = [
-				[ 'k' => 'Bewegung',      't' => 'Vier, fünf Kilometer an der frischen Luft, ohne dass es sich nach Sport anfühlt.',        'img' => 'driving-range-uebung.jpg' ],
-				[ 'k' => 'Natur',         't' => 'Grün, Weite, Himmel. Die perfekte Ergänzung zu einem Tag voller Gespräche.',              'img' => 'golf-gruen-fahne.jpg' ],
-				[ 'k' => 'Konzentration', 't' => 'Ein Spiel, das volle Aufmerksamkeit verlangt und genau dadurch den Kopf frei macht.',     'img' => 'golf-sandbunker.jpg' ],
-				[ 'k' => 'Zusammenhalt',  't' => 'Vier Stunden Seite an Seite, ohne Bildschirm. Teams wachsen hier unangestrengt zusammen.', 'img' => 'golfer-gruppe-fairway.png' ],
+				[ 'k' => 'Bewegung',      't' => 'Vier, fünf Kilometer an der frischen Luft, ohne dass es sich nach Sport anfühlt.',        'img' => 'pool/teamevent-kurzspieltraining.jpg' ],
+				[ 'k' => 'Natur',         't' => 'Grün, Weite, Himmel. Die perfekte Ergänzung zu einem Tag voller Gespräche.',              'img' => 'golfplatz-huegel-abendlicht.jpg' ],
+				[ 'k' => 'Konzentration', 't' => 'Ein Spiel, das volle Aufmerksamkeit verlangt und genau dadurch den Kopf frei macht.',     'img' => 'golfer-putt-abendlicht.jpg' ],
+				[ 'k' => 'Zusammenhalt',  't' => 'Vier Stunden Seite an Seite, ohne Bildschirm. Teams wachsen hier unangestrengt zusammen.', 'img' => 'pool/teamevent-zwei-kolleginnen.jpg' ],
 			];
 			foreach ( $exp_points as $p ) : ?>
 				<article class="home-exp-card">
@@ -422,7 +422,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 <?php /* ══════════════════ 6. INDIVIDUAL TEASER ══════════════════ */ ?>
 <section class="mk-section home-individual" aria-label="Individuelle Events">
 	<div class="home-individual-grid">
-		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'buero-dachterrasse-panorama.jpg' ) ); ?>')"></div>
+		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'buerodach-golfplatz.jpg' ) ); ?>')"></div>
 		<div class="home-ind-text">
 			<div class="mk-eyebrow">Individuelle Events</div>
 			<h2 class="mk-h2">

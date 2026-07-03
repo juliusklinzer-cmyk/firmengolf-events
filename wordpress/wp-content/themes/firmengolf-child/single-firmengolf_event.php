@@ -200,8 +200,9 @@ foreach ( $gallery_ids as $gid ) {
 		$gallery_urls[] = $gurl;
 	}
 }
-$gallery_img_1 = $gallery_urls[0] ?? fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg', $post_id );
-$gallery_img_2 = $gallery_urls[1] ?? fge_get_placeholder_image_url( 'clubhaus-aussenansicht.jpg', $post_id );
+// Offsets 1/2: Kacheln zeigen garantiert ANDERE Pool-Bilder als das Cover (Offset 0).
+$gallery_img_1 = $gallery_urls[0] ?? fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg', $post_id, 1 );
+$gallery_img_2 = $gallery_urls[1] ?? fge_get_placeholder_image_url( 'clubhaus-aussenansicht.jpg', $post_id, 2 );
 
 // Related events
 $related_query = new WP_Query( [

@@ -107,7 +107,14 @@ get_header();
 
 <?php /* Hero */ ?>
 <section class="ev-hero" aria-label="Golf-Events in <?php echo esc_attr( $city_name ); ?>">
-	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( 'golfplatz-panorama.jpg' ) ); ?>')">
+	<?php
+	// Stadtspezifisches Hero-Bild (stadt-<slug>.jpg), sonst generisches Panorama.
+	$city_hero = 'stadt-' . $slug . '.jpg';
+	if ( ! defined( 'FGE_DIR' ) || ! file_exists( FGE_DIR . 'assets/imagery/' . $city_hero ) ) {
+		$city_hero = 'golfplatz-panorama.jpg';
+	}
+	?>
+	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( $city_hero ) ); ?>')">
 		<div class="ev-hero-scrim" aria-hidden="true"></div>
 		<div class="ev-hero-content">
 			<div class="ev-hero-eyebrow">Golf-Events · <?php echo esc_html( $city_name ); ?></div>
