@@ -96,6 +96,72 @@ function fge_verzeichnis_nearby( float $lat, float $lng, int $radius_km = 60, in
 	return array_slice( $out, 0, $limit );
 }
 
+/**
+ * City-Seiten: Klaro-gegatete Google-Karte mit den Plätzen der Region.
+ * Nutzt dasselbe Gating wie die Onboarding-Karte (script_loader_tag am Handle
+ * 'google-maps' in der Theme-functions.php) — lädt erst nach Einwilligung.
+ */
+add_action( 'wp_enqueue_scripts', function (): void {
+	if ( ! function_exists( 'fge_gmaps_api_key' ) ) {
+		return;
+	}
+	$key = fge_gmaps_api_key();
+	if ( '' === $key ) {
+		return;
+	}
+
+	$coords = null;
+	$radius = 60;
+
+	// Fall 1: City-Landingpage (nicht die Format×Stadt-Kombi).
+	$city = (string) get_query_var( 'fge_city' );
+	if ( '' !== $city && ! get_query_var( 'fge_format' ) ) {
+		$coords = fge_city_coords()[ $city ] ?? null;
+	}
+
+	// Fall 2: Platzhalter-Event ohne zugeordneten Golfplatz → Karte der
+	// infrage kommenden Plätze rund um die Event-Region (Julius, 2026-07-03).
+	if ( ! $coords && is_singular( 'firmengolf_event' ) ) {
+		$eid = get_the_ID();
+		$pid = (int) get_post_meta( $eid, '_fge_assigned_partner_id', true );
+		$lat = (float) get_post_meta( $eid, '_fge_geo_lat', true );
+		$lng = (float) get_post_meta( $eid, '_fge_geo_lng', true );
+		if ( 0 === $pid && $lat && $lng ) {
+			$coords = [ $lat, $lng ];
+			$radius = 45;
+		}
+	}
+
+	if ( ! $coords ) {
+		return;
+	}
+	$places = [];
+	foreach ( fge_verzeichnis_nearby( $coords[0], $coords[1], $radius, 80 ) as $gp ) {
+		$places[] = [
+			'name'    => $gp->name,
+			'lat'     => (float) $gp->lat,
+			'lng'     => (float) $gp->lng,
+			'partner' => (int) $gp->partner_id > 0,
+			'meta'    => $gp->ort . ' · ' . round( $gp->dist ) . ' km',
+		];
+	}
+	if ( ! $places ) {
+		return;
+	}
+	$src = plugins_url( 'assets/js/fge-city-map.js', FGE_DIR . 'firmengolf-events.php' );
+	wp_enqueue_script( 'fge-city-map', $src, [], FGE_VERSION, true );
+	wp_localize_script( 'fge-city-map', 'FGE_CITY_MAP', [
+		'lat'    => $coords[0],
+		'lng'    => $coords[1],
+		'places' => $places,
+	] );
+	$maps_url = add_query_arg(
+		[ 'key' => rawurlencode( $key ), 'callback' => 'fgeCityMapInit', 'loading' => 'async', 'language' => 'de', 'region' => 'DE' ],
+		'https://maps.googleapis.com/maps/api/js'
+	);
+	wp_enqueue_script( 'google-maps', $maps_url, [ 'fge-city-map' ], null, true );
+} );
+
 /** Gesamtzahl der Verzeichnis-Einträge (für „730 Golfplätze"-Claims). */
 function fge_verzeichnis_count(): int {
 	global $wpdb;

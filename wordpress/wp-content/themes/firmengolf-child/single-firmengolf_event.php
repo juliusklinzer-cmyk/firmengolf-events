@@ -549,8 +549,24 @@ get_header();
 				</a>
 				<?php endif; ?>
 			</div>
+			<?php
+			// Platzhalter-Events: statt leerer Deko-Karte die infrage kommenden Plätze
+			// der Region zeigen (Verzeichnis-Karte, Klaro-gegated wie auf den City-Seiten).
+			$evd_dir_map = $is_self
+				&& function_exists( 'fge_gmaps_api_key' ) && fge_gmaps_api_key() !== ''
+				&& function_exists( 'fge_verzeichnis_nearby' )
+				&& (float) get_post_meta( $post_id, '_fge_geo_lat', true );
+			?>
 			<?php if ( $map_embed && ! $is_self ) : ?>
 				<iframe class="evd-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $map_embed ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $venue ?: get_the_title() ); ?>"></iframe>
+			<?php elseif ( $evd_dir_map ) : ?>
+				<div class="gpd-map evd-map-directory" id="fge-city-map">
+					<div class="gpd-map-consent">
+						<p>Die Karte lädt erst nach deiner Einwilligung für Google&nbsp;Maps.</p>
+						<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
+					</div>
+				</div>
+				<p class="evd-map-note">Golfplätze im Raum <?php echo esc_html( $region ?: $location ); ?> — blau markiert sind Firmengolf-Partnerplätze.</p>
 			<?php else : ?>
 				<div class="evd-map" role="img" aria-label="Ungefähre Lage des Platzes">
 					<div class="evd-map-grid"></div>

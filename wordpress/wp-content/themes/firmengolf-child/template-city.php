@@ -235,6 +235,14 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 			Anlagen gehören zum Firmengolf-Netz — auf allen anderen organisieren wir Events auf Anfrage.
 		</p>
 	</div>
+	<?php if ( function_exists( 'fge_gmaps_api_key' ) && fge_gmaps_api_key() !== '' ) : ?>
+	<div class="gpd-map" id="fge-city-map">
+		<div class="gpd-map-consent">
+			<p>Die Karte lädt erst nach deiner Einwilligung für Google&nbsp;Maps.</p>
+			<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
+		</div>
+	</div>
+	<?php endif; ?>
 	<div class="gpd-list">
 		<?php foreach ( $gp_nearby as $gp ) : $gp_is_partner = (int) $gp->partner_id > 0; ?>
 		<div class="gpd-row<?php echo $gp_is_partner ? ' gpd-row--partner' : ''; ?>">

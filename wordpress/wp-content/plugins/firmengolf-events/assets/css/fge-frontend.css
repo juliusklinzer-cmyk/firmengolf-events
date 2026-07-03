@@ -688,9 +688,10 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   box-shadow: var(--shadow-md);
   display: flex; flex-direction: column; gap: 16px;
 }
+/* „Angebot live seit …": bewusst GRÜN (Live-Signal), nicht Markenblau (Julius, 2026-07-03) */
 .fg-rail-live {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 500; color: var(--fairway-800);
+  font-size: 13px; font-weight: 500; color: #2F6E45;
   background: rgba(94,138,101,0.1);
   border: 1px solid rgba(94,138,101,0.3);
   border-radius: 999px;
@@ -699,7 +700,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
 }
 .fg-live-dot {
   width: 9px; height: 9px; border-radius: 999px;
-  background: var(--fairway-500);
+  background: #5E8A65;
   box-shadow: 0 0 0 0 rgba(94,138,101,0.6);
   animation: fg-live-pulse 2.4s var(--ease-out) infinite;
   flex: none;
@@ -4490,6 +4491,18 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
 }
 
 /* ── Golfplatz-Verzeichnis auf City-Seiten ── */
+.gpd-map {
+  height: 440px; margin: 8px 0 20px;
+  border-radius: var(--radius-xl); overflow: hidden;
+  background: var(--paper-200); border: 1px solid var(--ink-100);
+  display: flex; align-items: center; justify-content: center;
+}
+.gpd-map-consent { text-align: center; padding: 24px; max-width: 380px; }
+.gpd-map-consent p { font-size: 14px; color: var(--ink-600); margin: 0 0 14px; }
+@media (max-width: 720px) { .gpd-map { height: 320px; } }
+.evd-map-directory { height: 360px; margin: 16px 0 0; }
+.evd-map-note { font-size: 13px; color: var(--ink-500); margin: 10px 0 0; }
+
 .gpd-list {
   display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 20px;
   margin-top: 8px;
