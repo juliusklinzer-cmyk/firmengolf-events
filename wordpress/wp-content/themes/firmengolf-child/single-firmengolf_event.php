@@ -204,6 +204,18 @@ foreach ( $gallery_ids as $gid ) {
 $gallery_img_1 = $gallery_urls[0] ?? fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg', $post_id, 1 );
 $gallery_img_2 = $gallery_urls[1] ?? fge_get_placeholder_image_url( 'clubhaus-aussenansicht.jpg', $post_id, 2 );
 
+// Hero-Layout nach Zahl der ECHTEN Bilder (Julius-Regel 2026-07-03):
+// 1 → vollflächig · 2 → groß links + 1 Kachel rechts · 3 → Standard (Cover + 2 Kacheln)
+// · >3 → Standard + „alle Fotos"-Button. 0 echte (Platzhalter-Events) → Standard aus dem Pool.
+$cover_is_real = function_exists( 'fge_event_cover_id' ) && fge_event_cover_id( $post_id ) > 0;
+$real_count    = ( $cover_is_real ? 1 : 0 ) + count( $gallery_urls );
+$gal_class     = '';
+if ( 1 === $real_count ) {
+	$gal_class = ' fg-detail-gallery--single';
+} elseif ( 2 === $real_count ) {
+	$gal_class = ' fg-detail-gallery--duo';
+}
+
 // Related events
 $related_query = new WP_Query( [
 	'post_type'      => 'firmengolf_event',
@@ -340,21 +352,24 @@ get_header();
 			</div>
 		</header>
 
-		<?php /* ── Gallery ── */ ?>
-		<div class="fg-detail-gallery">
+		<?php /* ── Gallery (Layout-Varianten nach $real_count, s. o.) ── */ ?>
+		<div class="fg-detail-gallery<?php echo esc_attr( $gal_class ); ?>">
 			<div class="fg-gallery-main" role="img" aria-label="<?php echo esc_attr( get_the_title() . ' – Foto 1' ); ?>" style="background-image:url('<?php echo esc_url( $thumb_url ); ?>')">
 			</div>
+			<?php if ( 1 !== $real_count ) : ?>
 			<div class="fg-gallery-side">
 				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ' – Foto 2' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"></div>
+				<?php if ( 2 !== $real_count ) : ?>
 				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ' – Foto 3' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_2 ); ?>')">
-					<?php /* Nur zeigen, wenn es mehr Galeriebilder gibt als im Hero sichtbar (Cover + 2 Kacheln). */ ?>
-					<?php if ( count( $gallery_urls ) > 2 ) : ?>
+					<?php if ( $real_count > 3 ) : ?>
 					<button class="fg-gallery-more fg-btn-ghost-light" type="button" aria-expanded="false" aria-controls="fg-gallery-all">+ alle Fotos</button>
 					<?php endif; ?>
 				</div>
+				<?php endif; ?>
 			</div>
+			<?php endif; ?>
 		</div>
-		<?php if ( count( $gallery_urls ) > 2 ) : ?>
+		<?php if ( $real_count > 3 ) : ?>
 		<div class="fg-gallery-all" id="fg-gallery-all" hidden>
 			<?php foreach ( $gallery_urls as $g_i => $g_url ) : ?>
 				<img src="<?php echo esc_url( $g_url ); ?>" alt="<?php echo esc_attr( get_the_title() . ' – Foto ' . ( $g_i + 1 ) ); ?>" loading="lazy">

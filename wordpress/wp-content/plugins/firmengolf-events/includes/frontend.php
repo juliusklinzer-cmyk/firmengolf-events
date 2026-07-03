@@ -584,9 +584,26 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 		$pool = fge_placeholder_pool();
 		$list = ! empty( $pool[ $cat ] ) ? $pool[ $cat ] : ( $pool['all'] ?? [] );
 		if ( ! empty( $list ) ) {
-			// $offset: garantiert unterschiedliche Bilder für mehrere Slots derselben Seite
-			// (Event-Hero: Cover + 2 Galerie-Kacheln), solange die Gruppe genug Bilder hat.
-			$idx = ( abs( crc32( $cat . '|' . $seed ) ) + $offset ) % count( $list );
+			// Seiten-weiter Dedup (Julius: „nie ein Bild zweimal"): pro Request wird jedes
+			// Pool-Bild nur EINMAL vergeben — kollidiert der Seed-Index, rückt der nächste
+			// freie nach. $memo hält identische Aufrufe stabil (og:image == Hero-Cover).
+			// Erst wenn eine Gruppe komplett vergeben ist, wiederholt sich zwangsläufig etwas.
+			static $used = [], $memo = [];
+			$key = $cat . '|' . $seed . '|' . $offset;
+			if ( isset( $memo[ $key ] ) ) {
+				return plugins_url( 'assets/imagery/pool/' . $memo[ $key ], FGE_DIR . 'firmengolf-events.php' );
+			}
+			$count = count( $list );
+			$idx   = ( abs( crc32( $cat . '|' . $seed ) ) + $offset ) % $count;
+			for ( $i = 0; $i < $count; $i++ ) {
+				$try = ( $idx + $i ) % $count;
+				if ( empty( $used[ $list[ $try ] ] ) ) {
+					$idx = $try;
+					break;
+				}
+			}
+			$used[ $list[ $idx ] ] = true;
+			$memo[ $key ]          = $list[ $idx ];
 			return plugins_url( 'assets/imagery/pool/' . $list[ $idx ], FGE_DIR . 'firmengolf-events.php' );
 		}
 	}

@@ -195,7 +195,7 @@ add_action( 'wp_head', function () {
 	}
 	$img = '';
 	if ( is_front_page() ) {
-		$img = 'golfplatz-drohnenaufnahme.jpg';
+		$img = 'hero-golfloch-abendlicht.jpg';
 	} elseif ( get_query_var( 'fge_city' ) || get_query_var( 'fge_format' ) ) {
 		$img = 'golfplatz-panorama.jpg';
 	}
