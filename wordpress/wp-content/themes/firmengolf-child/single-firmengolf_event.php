@@ -639,7 +639,7 @@ get_header();
 			],
 			[
 				'q' => 'Wie viel Vorlauf brauchen wir?',
-				'a' => 'Für ein Firmenturnier empfehlen wir 4 bis 6 Wochen Vorlauf, damit Startzeiten, Bewirtung und Preise entspannt geplant sind. Kurzfristiger ist oft möglich, frag einfach an.',
+				'a' => 'Für ein Firmenturnier empfehlen wir 4 bis 6 Wochen Vorlauf. Der erste Schritt ist die Terminfindung mit dem Platz. Sobald der Termin steht, planen wir gemeinsam alle Details: Spielformat, Bewirtung, Preise und Rahmenprogramm.',
 			],
 			[
 				'q' => 'Was passiert bei Regen?',

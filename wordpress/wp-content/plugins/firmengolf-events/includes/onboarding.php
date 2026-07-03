@@ -503,6 +503,7 @@ function fge_onboarding_create_or_assign_user( string $email, string $first, str
 
 function fge_onboarding_submit( int $partner_id ): void {
 	update_post_meta( $partner_id, '_fge_partner_status', 'in_pruefung' );
+	update_post_meta( $partner_id, '_fge_submitted_at', current_time( 'mysql' ) ); // fürs Status-Panel im Portal
 	wp_update_post( [ 'ID' => $partner_id, 'post_status' => 'publish' ] );
 
 	// Tracking defaults.

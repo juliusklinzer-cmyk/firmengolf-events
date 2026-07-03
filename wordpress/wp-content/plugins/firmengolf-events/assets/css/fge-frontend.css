@@ -1199,6 +1199,24 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   margin: 0 0 8px;
 }
 .fg-portal-standalone p { margin: 0 0 8px; font-size: 15px; color: var(--ink-600); }
+.fg-portal-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #FDF3E3;
+  border: 1px solid #F0D9AE;
+  color: #9A6A1B;
+  font-size: 13px;
+  font-weight: 600;
+}
+.fg-portal-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #E09A2F;
+}
 
 /* ── Portal header ── */
 .fg-portal-header {
@@ -1258,6 +1276,23 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   background: #D9F6EC;
   color: var(--success);
   border: 1px solid #B7E5D6;
+}
+.fg-portal-global-notice--pending {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: #FDF6E9;
+  color: #7A5A1E;
+  border: 1px solid #F0D9AE;
+}
+.fg-portal-global-notice--pending .fg-portal-status-pill {
+  flex-shrink: 0;
+  background: var(--paper-100);
+}
+.fg-portal-global-notice--pending span:not(.fg-portal-status-pill):not(.fg-portal-status-dot) {
+  flex: 1;
+  min-width: 260px;
 }
 
 /* ── Tab nav ── */

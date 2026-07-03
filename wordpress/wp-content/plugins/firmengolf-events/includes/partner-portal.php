@@ -407,7 +407,9 @@ function fge_portal_access_check(): void {
 		$user = wp_get_current_user();
 		if ( ! current_user_can( 'manage_options' ) && ! in_array( 'firmengolf_partner', (array) $user->roles, true ) ) {
 			wp_die(
-				'<p>Du hast keine Berechtigung für diesen Bereich.</p><p><a href="' . esc_url( home_url( '/' ) ) . '">Zurück zur Startseite</a></p>',
+				'<p>Du hast keine Berechtigung für diesen Bereich.</p>'
+				. '<p><a href="' . esc_url( wp_logout_url( fge_portal_page_url() ) ) . '">Abmelden und mit anderem Konto anmelden</a></p>'
+				. '<p><a href="' . esc_url( home_url( '/' ) ) . '">Zurück zur Startseite</a></p>',
 				'Kein Zugriff',
 				[ 'response' => 403 ]
 			);
@@ -746,11 +748,15 @@ function fge_portal_render(): void {
 
 	$partner_id = fge_portal_get_partner_id();
 
+	// Ausweg aus allen Sackgassen-Screens: abmelden und mit anderem Konto rein.
+	$switch_url = wp_logout_url( fge_portal_page_url() );
+
 	if ( current_user_can( 'manage_options' ) ) {
 		?>
 		<div class="fg-portal-standalone">
 			<p class="fg-portal-standalone-title">Du bist als Administrator angemeldet.</p>
 			<p>Das Partnerportal ist für Golfplatz-Partner-Nutzer konzipiert. Alle Daten verwaltest du über die <a href="<?php echo esc_url( admin_url() ); ?>">WordPress-Administrationsoberfläche</a>.</p>
+			<p><a href="<?php echo esc_url( $switch_url ); ?>">Abmelden und mit anderem Konto anmelden →</a></p>
 		</div>
 		<?php
 		return;
@@ -759,11 +765,27 @@ function fge_portal_render(): void {
 	if ( $partner_id === -1 ) {
 		?>
 		<div class="fg-portal-standalone">
-			<p class="fg-portal-standalone-title">Dein Partnerprofil ist noch nicht freigeschaltet.</p>
-			<p>Bitte wende dich an das Firmengolf Team: <a href="mailto:<?php echo esc_attr( fge_company()['email_events'] ); ?>"><?php echo esc_html( fge_company()['email_events'] ); ?></a></p>
+			<p class="fg-portal-standalone-title">Mit diesem Konto ist kein Partnerprofil verknüpft.</p>
+			<p>Vielleicht bist du mit dem falschen Konto angemeldet? Du kannst dich abmelden und mit einem anderen Konto anmelden.</p>
+			<p><a class="fg-btn-brand" href="<?php echo esc_url( $switch_url ); ?>" style="display:inline-block;margin-top:4px;">Abmelden &amp; Konto wechseln</a></p>
+			<p style="margin-top:16px;">Du kommst trotzdem nicht rein? Wende dich an das Firmengolf-Team: <a href="mailto:<?php echo esc_attr( fge_company()['email_partner'] ?? fge_company()['email_events'] ); ?>"><?php echo esc_html( fge_company()['email_partner'] ?? fge_company()['email_events'] ); ?></a></p>
 		</div>
 		<?php
 		return;
+	}
+
+	// Frisch eingereichte Partner (noch in Prüfung) kommen voll ins Portal (Julius:
+	// sollen direkt Events erstellen können) — sie sehen nur ein Status-Banner oben.
+	$p_pending       = 'in_pruefung' === (string) get_post_meta( $partner_id, '_fge_partner_status', true );
+	$p_number        = '';
+	$p_submitted_fmt = '';
+	if ( $p_pending ) {
+		$p_number    = function_exists( 'fge_partner_number' ) ? fge_partner_number( $partner_id ) : '';
+		$p_submitted = (string) get_post_meta( $partner_id, '_fge_submitted_at', true );
+		if ( '' === $p_submitted ) {
+			$p_submitted = (string) get_post_field( 'post_modified', $partner_id );
+		}
+		$p_submitted_fmt = $p_submitted ? date_i18n( 'j. F Y', strtotime( $p_submitted ) ) : '';
 	}
 
 	$active_tab    = fge_portal_get_active_tab();
@@ -817,6 +839,16 @@ function fge_portal_render(): void {
 	</div>
 
 	<div class="fp-page-wrap">
+
+		<?php if ( $p_pending ) : ?>
+			<div class="fg-portal-global-notice fg-portal-global-notice--pending" role="status">
+				<span class="fg-portal-status-pill"><span class="fg-portal-status-dot"></span>In Prüfung</span>
+				<span>
+					Dein Partnerprofil ist eingereicht<?php if ( $p_submitted_fmt !== '' ) : ?> (am <?php echo esc_html( $p_submitted_fmt ); ?><?php echo $p_number !== '' ? ', Vorgang ' . esc_html( $p_number ) : ''; ?>)<?php endif; ?> und wird von Firmengolf geprüft, in der Regel innerhalb von zwei Werktagen.
+					Du kannst schon jetzt alles einrichten und Events erstellen. Sobald dein Profil freigeschaltet ist, geht dein Platz öffentlich online.
+				</span>
+			</div>
+		<?php endif; ?>
 
 		<?php if ( $success !== '' ) : ?>
 			<div class="fg-portal-global-notice fg-portal-global-notice--success" role="status">
