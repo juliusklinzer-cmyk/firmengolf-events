@@ -689,7 +689,8 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   display: flex; flex-direction: column; gap: 16px;
 }
 /* Footer: „Grüne" bewusst grün (Julius, 2026-07-03) */
-.fg-footer-gruen { color: #3D6B4A; }
+/* .mk-italic (color:inherit) steht später im Stylesheet → Doppel-Klasse nötig, sonst bleibt „Grüne" schwarz */
+.fg-footer-gruen, .mk-italic.fg-footer-gruen { color: #3D6B4A; }
 
 /* „Angebot live seit …": bewusst GRÜN (Live-Signal), nicht Markenblau (Julius, 2026-07-03) */
 .fg-rail-live {
@@ -1709,10 +1710,11 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   text-decoration: none;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-.fp-btn-brand { background: var(--fairway-700); color: var(--paper-100); }
-.fp-btn-brand:hover { background: var(--fairway-600); color: var(--paper-100); }
-.fp-btn-ghost { color: var(--ink-900); background: transparent; border: 1px solid var(--ink-200); }
-.fp-btn-ghost:hover { background: var(--paper-200); }
+/* a-/button-Selektoren nötig: .fge-page a (color:inherit) und der .fge-page-button-Reset schlagen sonst die Button-Optik */
+.fp-btn-brand, a.fp-btn-brand, button.fp-btn-brand { background: var(--fairway-700); color: var(--paper-100); }
+.fp-btn-brand:hover, a.fp-btn-brand:hover, button.fp-btn-brand:hover { background: var(--fairway-600); color: var(--paper-100); }
+.fp-btn-ghost, a.fp-btn-ghost, button.fp-btn-ghost { color: var(--ink-900); background: transparent; border: 1px solid var(--ink-200); }
+.fp-btn-ghost:hover, a.fp-btn-ghost:hover, button.fp-btn-ghost:hover { background: var(--paper-200); }
 .fp-btn-sm { padding: 7px 12px; font-size: 13px; }
 
 /* ── Hero ── */
@@ -1911,9 +1913,13 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
 .fp-inbox-row {
   display: grid; grid-template-columns: 44px 1fr auto;
   gap: 14px; align-items: center;
-  padding: 14px 0; border-top: 1px solid var(--ink-200);
+  padding: 14px 12px; margin: 0 -12px; border-radius: 10px;
+  border-top: 1px solid var(--ink-200);
+  text-decoration: none; color: inherit;
 }
-.fp-inbox-row:first-child { border-top: 0; padding-top: 0; }
+.fp-inbox-row:first-child { border-top: 0; }
+a.fp-inbox-row:hover { background: var(--paper-200); border-top-color: transparent; }
+a.fp-inbox-row:hover + .fp-inbox-row { border-top-color: transparent; }
 .fp-inbox-avatar {
   width: 44px; height: 44px; border-radius: 999px;
   background: var(--paper-200); color: var(--ink-700);

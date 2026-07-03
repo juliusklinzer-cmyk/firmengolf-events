@@ -813,9 +813,8 @@ function fge_portal_render(): void {
 	<div class="fgpp">
 	<nav class="nav">
 		<div class="nav-inner">
-			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="brand">
+			<a href="<?php echo esc_url( fge_portal_page_url() ); ?>" class="brand">
 				<img src="<?php echo esc_url( $logo_url ); ?>" alt="Firmengolf">
-				<span class="brand-divider"></span>
 				<span class="brand-context">Partner-Portal <span class="pill">Live</span></span>
 			</a>
 
@@ -1293,8 +1292,9 @@ function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 	];
 	$st_label      = $status_labels[ $status ] ?? ( $status ?: 'Neu' );
 	$is_new_status = $status === 'neu' || $status === '';
+	$detail_url    = fge_portal_page_url() . '?tab=anfragen&req=' . $req->ID;
 	?>
-	<div class="fp-inbox-row">
+	<a class="fp-inbox-row" href="<?php echo esc_url( $detail_url ); ?>">
 		<div class="fp-inbox-avatar <?php echo esc_attr( $color ); ?>"><?php echo esc_html( $initials ); ?></div>
 		<div class="fp-inbox-body">
 			<div class="fp-inbox-top">
@@ -1328,7 +1328,7 @@ function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 				<?php echo esc_html( $st_label ); ?>
 			</span>
 		</div>
-	</div>
+	</a>
 	<?php
 }
 
@@ -1359,7 +1359,7 @@ function fge_portal_render_anfragen_preview( int $partner_id ): void {
 					Noch keine Anfragen eingegangen.
 				</div>
 			<?php else : ?>
-				<div class="panel" style="padding:0;">
+				<div class="panel">
 					<div class="fp-inbox-list">
 						<?php foreach ( $requests as $i => $req ) : ?>
 							<?php fge_portal_render_inbox_row( $req, $i ); ?>
