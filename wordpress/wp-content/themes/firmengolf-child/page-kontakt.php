@@ -85,47 +85,7 @@ $faqs = [
 	</p>
 </section>
 
-<?php /* ===== Quick channels ===== */ ?>
-<section class="ct-channels" aria-label="Direkte Kontaktwege">
-	<a class="ct-channel" href="tel:<?php echo esc_attr( $co['phone_tel'] ); ?>">
-		<span class="ct-channel-ic"><?php echo $cicon( 'phone' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-		<span class="ct-channel-body">
-			<span class="ct-channel-l">Anrufen</span>
-			<span class="ct-channel-v"><?php echo esc_html( $co['phone_display'] ); ?></span>
-			<span class="ct-channel-m">Mo–Fr · 9–18 Uhr</span>
-		</span>
-		<span class="ct-channel-go"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-	</a>
-	<a class="ct-channel ct-channel-wa" href="<?php echo esc_url( $co['whatsapp_url'] ); ?>" target="_blank" rel="noopener noreferrer">
-		<span class="ct-channel-ic"><?php echo $cicon( 'chat' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-		<span class="ct-channel-body">
-			<span class="ct-channel-l">WhatsApp</span>
-			<span class="ct-channel-v">Kurz schreiben</span>
-			<span class="ct-channel-m">Antwort meist in Minuten</span>
-		</span>
-		<span class="ct-channel-go"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-	</a>
-	<a class="ct-channel" href="mailto:<?php echo esc_attr( $co['email_general'] ); ?>">
-		<span class="ct-channel-ic"><?php echo $cicon( 'mail' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-		<span class="ct-channel-body">
-			<span class="ct-channel-l">E-Mail</span>
-			<span class="ct-channel-v"><?php echo esc_html( $co['email_general'] ); ?></span>
-			<span class="ct-channel-m">Antwort in einem Werktag</span>
-		</span>
-		<span class="ct-channel-go"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-	</a>
-	<a class="ct-channel" href="#callback" data-scroll-focus="cb-phone">
-		<span class="ct-channel-ic"><?php echo $cicon( 'phone' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-		<span class="ct-channel-body">
-			<span class="ct-channel-l">Rückruf anfordern</span>
-			<span class="ct-channel-v">Wir rufen dich an</span>
-			<span class="ct-channel-m">Du nennst Zeit &amp; Nummer</span>
-		</span>
-		<span class="ct-channel-go"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-	</a>
-</section>
-
-<?php /* ===== Form + sidebar ===== */ ?>
+<?php /* ===== Form + sidebar (Redesign 2026-07: Formular primär, alle anderen Wege kompakt in der Sidebar) ===== */ ?>
 <section class="contact-shell" id="kontaktformular">
 	<aside class="contact-form-card">
 		<?php if ( $danke ) : ?>
@@ -230,6 +190,90 @@ $faqs = [
 	</aside>
 
 	<div class="contact-left">
+
+		<?php /* Direkte Wege — kompakt */ ?>
+		<div class="ct-ways" aria-label="Direkte Kontaktwege">
+			<a class="ct-way" href="tel:<?php echo esc_attr( $co['phone_tel'] ); ?>">
+				<span class="ct-way-ic"><?php echo $cicon( 'phone', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				<span class="ct-way-l">Anrufen</span>
+				<span class="ct-way-v"><?php echo esc_html( $co['phone_display'] ); ?></span>
+			</a>
+			<a class="ct-way ct-way-wa" href="<?php echo esc_url( $co['whatsapp_url'] ); ?>" target="_blank" rel="noopener noreferrer">
+				<span class="ct-way-ic"><?php echo $cicon( 'chat', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				<span class="ct-way-l">WhatsApp</span>
+				<span class="ct-way-v">Antwort meist in Minuten</span>
+			</a>
+			<a class="ct-way" href="mailto:<?php echo esc_attr( $co['email_general'] ); ?>">
+				<span class="ct-way-ic"><?php echo $cicon( 'mail', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				<span class="ct-way-l">E-Mail</span>
+				<span class="ct-way-v"><?php echo esc_html( $co['email_general'] ); ?></span>
+			</a>
+		</div>
+
+		<?php /* Rückruf — aufklappbar (offen nach Absenden/Fehler) */ ?>
+		<details class="ct-fold" id="callback" <?php echo ( $cb_danke || $cb_err ) ? 'open' : ''; ?>>
+			<summary class="ct-fold-s">
+				<span class="ct-way-ic"><?php echo $cicon( 'phone', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				<span class="ct-fold-t">Lass dich zurückrufen</span>
+				<span class="ct-fold-chev" aria-hidden="true"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+			</summary>
+			<div class="ct-fold-body">
+				<?php if ( $cb_danke ) : ?>
+					<p class="ct-fold-p" role="status"><strong>Alles klar — wir rufen dich an.</strong> Wir melden uns zur gewünschten Zeit.</p>
+				<?php else : ?>
+					<form method="post" action="<?php echo esc_url( $self_url ); ?>">
+						<input type="hidden" name="fge_action" value="rueckruf_submit">
+						<?php wp_nonce_field( 'fge_rueckruf', 'fge_rueckruf_nonce' ); ?>
+						<input type="text" name="fge_hp_url" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+						<p class="ct-fold-p">Nummer rein, wir melden uns — kein Tippen, keine Warteschleife.</p>
+						<?php if ( $cb_err ) : ?>
+							<p class="ct-fold-p" style="color:var(--danger);">Bitte gib eine Telefonnummer an.</p>
+						<?php endif; ?>
+						<div class="fg-field">
+							<label class="fg-field-label" for="cb-phone">Deine Nummer</label>
+							<input id="cb-phone" name="fge_rueckruf_phone" class="fg-input" type="tel" inputmode="tel" placeholder="+49 …" required>
+						</div>
+						<div class="fg-field" style="margin-top:10px;">
+							<label class="fg-field-label" for="cb-when">Wann passt's?</label>
+							<select id="cb-when" name="fge_rueckruf_when" class="fg-input">
+								<option>Egal</option>
+								<option>Vormittags</option>
+								<option>Nachmittags</option>
+								<option>Früher Abend</option>
+							</select>
+						</div>
+						<button class="fg-btn-brand" type="submit" style="margin-top:14px;width:100%;">Rückruf anfordern</button>
+					</form>
+				<?php endif; ?>
+			</div>
+		</details>
+
+		<?php /* Termin & Besuch — aufklappbar */ ?>
+		<details class="ct-fold">
+			<summary class="ct-fold-s">
+				<span class="ct-way-ic"><?php echo $cicon( 'calendar', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				<span class="ct-fold-t">Termin buchen oder vorbeikommen</span>
+				<span class="ct-fold-chev" aria-hidden="true"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+			</summary>
+			<div class="ct-fold-body">
+				<p class="ct-fold-p">15 Minuten Kennenlern-Gespräch — Video oder Telefon, ganz wie du magst.</p>
+				<a class="fg-btn-brand" href="<?php echo esc_url( $hubspot_url ); ?>" target="_blank" rel="noopener noreferrer" style="width:100%;">
+					Termin buchen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				</a>
+				<p class="ct-fold-p" style="margin-top:18px;">
+					<strong>Oder komm auf einen Kaffee vorbei:</strong><br>
+					<?php echo esc_html( $co['office_name'] ); ?>, <?php echo esc_html( $office_addr ); ?> (<?php echo esc_html( $co['office_floor'] ); ?>).
+					Kurz vorher anrufen, dann ist jemand da.
+				</p>
+				<div class="ct-fold-map">
+					<iframe class="ct-extra-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $office_map ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $co['office_name'] . ', ' . $office_addr ); ?>"></iframe>
+				</div>
+				<a class="fg-btn-ghost" href="<?php echo esc_url( $maps_url ); ?>" target="_blank" rel="noopener noreferrer" style="margin-top:10px;">
+					Route anzeigen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				</a>
+			</div>
+		</details>
+
 		<div class="ct-person">
 			<span class="ct-person-photo" role="img" aria-label="Julius Klinzer" style="background-image:url('<?php echo esc_url( $img( 'gruender-julius-klinzer-2.jpg' ) ); ?>')"></span>
 			<div>
@@ -270,80 +314,6 @@ $faqs = [
 			<a class="ct-dir-row" href="mailto:<?php echo esc_attr( $co['email_events'] ); ?>"><span>Event-Anfragen</span><span class="ct-dir-v"><?php echo esc_html( $co['email_events'] ); ?></span></a>
 			<a class="ct-dir-row" href="mailto:<?php echo esc_attr( $co['email_partner'] ); ?>"><span>Partnerplätze</span><span class="ct-dir-v"><?php echo esc_html( $co['email_partner'] ); ?></span></a>
 			<a class="ct-dir-row" href="mailto:<?php echo esc_attr( $co['email_press'] ); ?>"><span>Presse &amp; Medien</span><span class="ct-dir-v"><?php echo esc_html( $co['email_press'] ); ?></span></a>
-		</div>
-	</div>
-</section>
-
-<?php /* ===== Callback band ===== */ ?>
-<section class="ct-callback-section" aria-label="Rückruf">
-	<div class="ct-callback" id="callback">
-		<?php if ( $cb_danke ) : ?>
-			<div class="ct-callback-done" role="status">
-				<span class="ct-callback-ic done"><?php echo $cicon( 'check', 20 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				<div>
-					<h3 class="ct-callback-h">Alles klar — wir rufen dich an.</h3>
-					<p class="ct-callback-p">Wir melden uns zur gewünschten Zeit bei dir.</p>
-				</div>
-			</div>
-		<?php else : ?>
-			<form method="post" action="<?php echo esc_url( $self_url ); ?>">
-				<input type="hidden" name="fge_action" value="rueckruf_submit">
-				<?php wp_nonce_field( 'fge_rueckruf', 'fge_rueckruf_nonce' ); ?>
-				<input type="text" name="fge_hp_url" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
-				<div class="ct-callback-head">
-					<span class="ct-callback-ic"><?php echo $cicon( 'phone', 20 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-					<div>
-						<h3 class="ct-callback-h">Lass dich zurückrufen.</h3>
-						<p class="ct-callback-p">Keine Lust zu tippen oder in der Warteschleife zu hängen? Nummer rein, wir melden uns.</p>
-						<?php if ( $cb_err ) : ?>
-							<p class="ct-callback-p" style="color:#ffd9cc;">Bitte gib eine Telefonnummer an.</p>
-						<?php endif; ?>
-					</div>
-				</div>
-				<div class="ct-callback-row">
-					<div class="fg-field" style="flex:2;">
-						<label class="fg-field-label" for="cb-phone">Deine Nummer</label>
-						<input id="cb-phone" name="fge_rueckruf_phone" class="fg-input" type="tel" inputmode="tel" placeholder="+49 …" required>
-					</div>
-					<div class="fg-field" style="flex:1;">
-						<label class="fg-field-label" for="cb-when">Wann passt's?</label>
-						<select id="cb-when" name="fge_rueckruf_when" class="fg-input">
-							<option>Egal</option>
-							<option>Vormittags</option>
-							<option>Nachmittags</option>
-							<option>Früher Abend</option>
-						</select>
-					</div>
-					<button class="fg-btn-brand ct-callback-btn" type="submit">Rückruf anfordern</button>
-				</div>
-			</form>
-		<?php endif; ?>
-	</div>
-</section>
-
-<?php /* ===== Termin + Besuch ===== */ ?>
-<section class="ct-extra" aria-label="Termin oder Besuch">
-	<div class="ct-extra-grid">
-		<div class="ct-extra-card">
-			<span class="ct-extra-ic"><?php echo $cicon( 'calendar', 24 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-			<h3 class="ct-extra-h">Lieber ein fester Termin?</h3>
-			<p class="ct-extra-p">Buch dir 15 Minuten für ein lockeres Kennenlern-Gespräch — Video oder Telefon, ganz wie du magst.</p>
-			<a class="fg-btn-brand" href="<?php echo esc_url( $hubspot_url ); ?>" target="_blank" rel="noopener noreferrer">
-				Termin buchen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-			</a>
-		</div>
-		<div class="ct-extra-card ct-extra-card-visit">
-			<div class="ct-extra-map">
-				<iframe class="ct-extra-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $office_map ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $co['office_name'] . ', ' . $office_addr ); ?>"></iframe>
-			</div>
-			<div class="ct-extra-map-body">
-				<span class="ct-extra-ic"><?php echo $cicon( 'pin', 24 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				<h3 class="ct-extra-h">Komm vorbei.</h3>
-				<p class="ct-extra-p"><?php echo esc_html( $co['legal_name'] ); ?> · <?php echo esc_html( $co['office_name'] ); ?>, <?php echo esc_html( $office_addr ); ?> (<?php echo esc_html( $co['office_floor'] ); ?>). Auf einen Kaffee — kurz vorher anrufen, dann ist jemand da.</p>
-				<a class="fg-btn-ghost" href="<?php echo esc_url( $maps_url ); ?>" target="_blank" rel="noopener noreferrer">
-					Route anzeigen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-				</a>
-			</div>
 		</div>
 	</div>
 </section>
@@ -394,14 +364,6 @@ $faqs = [
 	});
 
 	// Quick-channel "Rückruf" → scroll to callback + focus phone
-	document.querySelectorAll('[data-scroll-focus]').forEach(function (a) {
-		a.addEventListener('click', function (e) {
-			e.preventDefault();
-			document.getElementById('callback')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-			document.getElementById(a.getAttribute('data-scroll-focus'))?.focus();
-		});
-	});
-
 	// FAQ accordion
 	document.querySelectorAll('.faq-q').forEach(function (btn) {
 		btn.addEventListener('click', function () {

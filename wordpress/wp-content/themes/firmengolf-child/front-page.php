@@ -64,13 +64,13 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 
 <?php /* ══════════════════ 1. HERO ══════════════════ */ ?>
 <section class="mk-hero" aria-label="Hero">
-	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'hero-golfloch-abendlicht.jpg' ) ); ?>')">
+	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'hero-team-blau.jpg' ) ); ?>')">
 		<div class="mk-hero-scrim" aria-hidden="true"></div>
 		<div class="mk-hero-content">
 			<div class="mk-hero-eyebrow">Firmenevents · Golf für Unternehmen</div>
 			<h1 class="mk-hero-title">
 				<span class="mk-hero-lead">Wir machen den Golfplatz</span>
-				<span class="rot-wrap"><span class="rot-word in" id="fg-rot-word">zur Eventlocation</span><span class="rot-dot">.</span></span>
+				<span class="rot-wrap"><span class="rot-word in" id="fg-rot-word"><span class="rot-art">zur </span><span class="rot-key">Eventlocation</span></span><span class="rot-dot">.</span></span>
 			</h1>
 			<p class="mk-hero-sub">
 				Von der Platzreife bis zum Firmenturnier: Golf-Formate auf Partnerplätzen
@@ -746,14 +746,22 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
   /* ── Hero: rotierendes Satzende (mit Artikel, damit die Grammatik stimmt) ── */
   var rotEl = document.getElementById('fg-rot-word');
   if (rotEl && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-    var rotWords = ['zur Eventlocation', 'zum Afterwork-Spot', 'zur Turnier-Bühne', 'zum Team-Erlebnis', 'zur Sommerfest-Location'];
+    /* Artikel (weiß) + Schlüsselwort (mint) getrennt, damit nur das Keyword farbig ist */
+    var rotWords = [['zur ', 'Eventlocation'], ['zum ', 'Afterwork-Spot'], ['zur ', 'Turnier-Bühne'], ['zum ', 'Team-Erlebnis'], ['zur ', 'Sommerfest-Location']];
+    var artEl = rotEl.querySelector('.rot-art');
+    var keyEl = rotEl.querySelector('.rot-key');
     var rotI = 0;
     setInterval(function () {
       rotEl.classList.remove('in');
       rotEl.classList.add('out');
       setTimeout(function () {
         rotI = (rotI + 1) % rotWords.length;
-        rotEl.textContent = rotWords[rotI];
+        if (artEl && keyEl) {
+          artEl.textContent = rotWords[rotI][0];
+          keyEl.textContent = rotWords[rotI][1];
+        } else {
+          rotEl.textContent = rotWords[rotI][0] + rotWords[rotI][1];
+        }
         rotEl.classList.remove('out');
         rotEl.classList.add('in');
       }, 380);
