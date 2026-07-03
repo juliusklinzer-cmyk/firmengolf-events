@@ -245,7 +245,9 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 	<?php endif; ?>
 	<div class="gpd-list">
 		<?php foreach ( $gp_nearby as $gp ) : $gp_is_partner = (int) $gp->partner_id > 0; ?>
-		<div class="gpd-row<?php echo $gp_is_partner ? ' gpd-row--partner' : ''; ?>">
+		<div class="gpd-row<?php echo $gp_is_partner ? ' gpd-row--partner' : ''; ?>"
+		     data-gp-id="<?php echo (int) $gp->id; ?>" tabindex="0" role="button"
+		     aria-label="<?php echo esc_attr( $gp->name . ' auf der Karte zeigen' ); ?>">
 			<div class="gpd-main">
 				<span class="gpd-name"><?php echo esc_html( $gp->name ); ?></span>
 				<?php if ( $gp_is_partner ) : ?><span class="gpd-badge">Partnerplatz</span><?php endif; ?>

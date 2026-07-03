@@ -4514,6 +4514,10 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   border-radius: var(--radius-md);
 }
 .gpd-row--partner { border-color: var(--fairway-300); background: var(--fairway-100); }
+.gpd-row[data-gp-id] { cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.gpd-row[data-gp-id]:hover { border-color: var(--fairway-400); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.gpd-row[data-gp-id]:focus-visible { outline: 2px solid var(--fairway-600); outline-offset: 2px; }
+.gpd-row--active { border-color: var(--fairway-700) !important; box-shadow: 0 0 0 3px var(--fairway-200); }
 .gpd-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .gpd-name { font-weight: 600; font-size: 15px; color: var(--ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gpd-badge {

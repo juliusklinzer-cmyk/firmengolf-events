@@ -138,6 +138,7 @@ add_action( 'wp_enqueue_scripts', function (): void {
 	$places = [];
 	foreach ( fge_verzeichnis_nearby( $coords[0], $coords[1], $radius, 80 ) as $gp ) {
 		$places[] = [
+			'id'      => (int) $gp->id,
 			'name'    => $gp->name,
 			'lat'     => (float) $gp->lat,
 			'lng'     => (float) $gp->lng,
