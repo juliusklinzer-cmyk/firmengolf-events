@@ -603,7 +603,7 @@ get_header();
 			],
 			[
 				'q' => 'Was ist im Preis enthalten?',
-				'a' => 'Rund 12 Trainerstunden mit PGA-Golflehrer, die Platzbegehung, Leihschläger und Range-Bälle, Regel- und Etikettekunde sowie Prüfungsrunde und Theorieprüfung. Nicht enthalten: Verpflegung (buchen wir auf Wunsch dazu) und persönliche Ausrüstung.',
+				'a' => 'Rund 12 Trainerstunden mit PGA-Golflehrer, die Platzbegehung, Leihschläger und Range-Bälle, Lernmaterial samt App-Zugang, Regel- und Etikettekunde sowie Prüfungsrunde und Theorieprüfung. Nicht enthalten: Verpflegung (buchen wir auf Wunsch dazu) und persönliche Ausrüstung.',
 			],
 			[
 				'q' => 'Müssen die vier Kurstage am Stück sein?',
@@ -620,6 +620,30 @@ get_header();
 			[
 				'q' => 'Darf ein Unternehmen Mitarbeitende zur Platzreife einladen?',
 				'a' => 'Ja, grundsätzlich darf ein Unternehmen seine Mitarbeitenden als Teambuilding-Maßnahme zu einem Platzreifekurs einladen. Steuerlich gilt: Bei einer Betriebsveranstaltung bleiben in der Regel 110 Euro pro Person steuerfrei. Der Betrag darüber kann als geldwerter Vorteil gelten und lässt sich in vielen Fällen vom Arbeitgeber pauschal versteuern, dann entsteht für die Mitarbeitenden meist kein zusätzlicher Aufwand. Am besten vorher mit der Steuerberatung oder Lohnbuchhaltung abstimmen.',
+			],
+		];
+	} elseif ( ! $faq_items && 'firmen_golfturnier' === $event_type_raw ) {
+		// Turnier-spezifische FAQ (Julius, 2026-07-03: Nicht-Golfer, Skalierung, Rahmenprogramm).
+		$faq_items = [
+			[
+				'q' => 'Können auch Nicht-Golfer am Firmenturnier teilnehmen?',
+				'a' => 'Ja. Mit dem Scramble-Format spielen gemischte Teams gemeinsam: Erfahrene tragen das Team, Einsteigende sind voll dabei. Für komplette Neulinge richten wir parallel ein zweites Rahmenprogramm ein, zum Beispiel einen Schnupperkurs auf der Range. Bei Siegerehrung und Dinner kommen dann alle wieder zusammen.',
+			],
+			[
+				'q' => 'Was, wenn wir mehr Teilnehmende haben, als ein Platz schafft?',
+				'a' => 'Dann skalieren wir. Wir finden Partner mit mehreren Plätzen an einem Standort und bringen so bis zu 200 Personen im Turnier unter, dazu bis zu 40 weitere auf der Range mit vier Golflehrern. Nach oben sind praktisch keine Grenzen gesetzt.',
+			],
+			[
+				'q' => 'Was ist im Preis enthalten?',
+				'a' => 'Startunterlagen und Scorekarten, das Startgeschenk, Greenfee und Platznutzung, Startlisten und Flight-Einteilung, Half-Way-Verpflegung, Siegerehrung mit Preisen und das Dinner. Optional zubuchbar: Live-Scoring, Fotograf, gebrandete Abschläge und mehr.',
+			],
+			[
+				'q' => 'Wie viel Vorlauf brauchen wir?',
+				'a' => 'Für ein Firmenturnier empfehlen wir 4 bis 6 Wochen Vorlauf, damit Startzeiten, Bewirtung und Preise entspannt geplant sind. Kurzfristiger ist oft möglich, frag einfach an.',
+			],
+			[
+				'q' => 'Was passiert bei Regen?',
+				'a' => 'Wir kommunizieren am Vortag, ob das Programm angepasst wird: verkürzte Runde, verschobener Start oder Indoor-Alternative. Bei kompletter Absage durch den Platz gilt voller Storno bis 24 Stunden vor dem Termin.',
 			],
 		];
 	} elseif ( ! $faq_items ) {
