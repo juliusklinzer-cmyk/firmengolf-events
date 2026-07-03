@@ -48,6 +48,7 @@ require_once FGE_DIR . 'includes/partner-portal.php';
 require_once FGE_DIR . 'includes/onboarding.php';
 require_once FGE_DIR . 'includes/rest-media.php';
 require_once FGE_DIR . 'includes/media-widget.php';
+require_once FGE_DIR . 'includes/golfplatz-verzeichnis.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once FGE_DIR . 'includes/cli-migrations.php';

@@ -216,6 +216,50 @@ get_header();
 </section>
 <?php endif; ?>
 
+<?php
+/* Golfplatz-Verzeichnis: alle Anlagen im Umkreis (Fakten-Liste, SEO + Orientierung).
+   Partnerplätze bekommen ein Badge; bewusst KEINE Links auf Nicht-Partner (kein Link-Out-Spam)
+   und noch keine Partner-Links (Golfplatz-Seiten erst öffentlich, wenn Partner-Events live sind). */
+$gp_coords = function_exists( 'fge_city_coords' ) ? ( fge_city_coords()[ $slug ] ?? null ) : null;
+$gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
+	? fge_verzeichnis_nearby( $gp_coords[0], $gp_coords[1], 60, 18 )
+	: [];
+?>
+<?php if ( ! empty( $gp_nearby ) ) : ?>
+<section class="mk-section gpd-section" aria-label="Golfplätze rund um <?php echo esc_attr( $city_name ); ?>">
+	<div class="mk-section-head">
+		<div class="mk-eyebrow">Golfplätze · <?php echo esc_html( $city_name ); ?></div>
+		<h2 class="mk-h2">Golfplätze rund um <?php echo esc_html( $city_name ); ?>.</h2>
+		<p class="mk-sub">
+			Zur Orientierung: Anlagen im Umkreis von 60 km. Als <strong>Partnerplatz</strong> markierte
+			Anlagen gehören zum Firmengolf-Netz — auf allen anderen organisieren wir Events auf Anfrage.
+		</p>
+	</div>
+	<div class="gpd-list">
+		<?php foreach ( $gp_nearby as $gp ) : $gp_is_partner = (int) $gp->partner_id > 0; ?>
+		<div class="gpd-row<?php echo $gp_is_partner ? ' gpd-row--partner' : ''; ?>">
+			<div class="gpd-main">
+				<span class="gpd-name"><?php echo esc_html( $gp->name ); ?></span>
+				<?php if ( $gp_is_partner ) : ?><span class="gpd-badge">Partnerplatz</span><?php endif; ?>
+			</div>
+			<span class="gpd-meta">
+				<?php
+				// „Löcher" nur an reine Zahlwerte hängen („18+9"), Freitexte („9-Loch Kurzplatz") unverändert.
+				$gp_holes = $gp->loecher !== ''
+					? ( preg_match( '/^[0-9+\/\s]+$/', $gp->loecher ) ? $gp->loecher . ' Löcher' : $gp->loecher )
+					: '';
+				echo esc_html( $gp->ort ); ?> · <?php echo esc_html( (string) round( $gp->dist ) ); ?> km<?php echo $gp_holes !== '' ? ' · ' . esc_html( $gp_holes ) : ''; ?>
+			</span>
+		</div>
+		<?php endforeach; ?>
+	</div>
+	<p class="gpd-note">
+		Du vertrittst einen dieser Plätze?
+		<a href="<?php echo esc_url( home_url( '/partner-onboarding/' ) ); ?>">Werde Firmengolf-Partner →</a>
+	</p>
+</section>
+<?php endif; ?>
+
 <?php /* FAQ */ ?>
 <section class="mk-section faq-section" aria-label="FAQ">
 	<div class="faq-shell">

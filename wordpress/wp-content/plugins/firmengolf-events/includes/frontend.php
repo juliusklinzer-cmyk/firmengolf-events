@@ -593,10 +593,27 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 			if ( isset( $memo[ $key ] ) ) {
 				return plugins_url( 'assets/imagery/pool/' . $memo[ $key ], FGE_DIR . 'firmengolf-events.php' );
 			}
+			// Detail-Motive (Dateisuffix "-detail": Essen-/Deko-Closeups, Schriftzüge …)
+			// sind fürs HAUPTBILD (Offset 0) nur letzte Reserve — als Galerie-Kacheln erwünscht.
+			if ( 0 === $offset ) {
+				$primary = array_values( array_filter( $list, static fn( $f ) => false === strpos( $f, '-detail.' ) ) );
+				$detail  = array_values( array_diff( $list, $primary ) );
+				$list    = array_merge( $primary, $detail );
+				$span    = count( $primary ) > 0 ? count( $primary ) : count( $list );
+			} else {
+				$span = count( $list );
+			}
 			$count = count( $list );
-			$idx   = ( abs( crc32( $cat . '|' . $seed ) ) + $offset ) % $count;
-			for ( $i = 0; $i < $count; $i++ ) {
-				$try = ( $idx + $i ) % $count;
+			$idx   = ( abs( crc32( $cat . '|' . $seed ) ) + $offset ) % $span;
+			// Kandidaten-Reihenfolge: zirkulär durch die Primär-Bilder, Details erst danach.
+			$order = [];
+			for ( $i = 0; $i < $span; $i++ ) {
+				$order[] = ( $idx + $i ) % $span;
+			}
+			for ( $i = $span; $i < $count; $i++ ) {
+				$order[] = $i;
+			}
+			foreach ( $order as $try ) {
 				if ( empty( $used[ $list[ $try ] ] ) ) {
 					$idx = $try;
 					break;
