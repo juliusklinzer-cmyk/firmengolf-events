@@ -220,6 +220,14 @@ add_action( 'wp_enqueue_scripts', function() {
 		[],
 		defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
 	);
+	// Type-System (Redesign 2026-07): global, bewusst NACH fge-frontend geladen —
+	// gewinnt bei gleicher Spezifität (Headline-/Highlight-Regeln, Rajdhani-Hero).
+	wp_enqueue_style(
+		'fge-type-system',
+		plugins_url( 'assets/css/fge-type-system.css', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
+		[ 'fge-frontend' ],
+		defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
+	);
 
 	// Partner-Portal (neu): gekapseltes Stylesheet, nur auf der Portalseite.
 	if ( is_page( 'partnerportal' ) ) {
@@ -296,7 +304,7 @@ add_action( 'wp_enqueue_scripts', function() {
 // Blockt einwilligungspflichtige Einbettungen (Google Maps) bis zur Zustimmung.
 // Banner mit gleichwertigem „Ablehnen" (DSGVO/TTDSG). Konfig als JSON ins Frontend.
 function fge_klaro_config(): array {
-	$icon = '<svg viewBox="0 0 24 24" fill="none" stroke="#2C5036" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 1 0 9.8 12 3.4 3.4 0 0 1-4.3-4.3A3.4 3.4 0 0 1 12.3 5.4 2 2 0 0 1 12 2z"/><circle cx="9.5" cy="10" r="1" fill="#2C5036" stroke="none"/><circle cx="14.5" cy="14" r="1" fill="#2C5036" stroke="none"/><circle cx="9.5" cy="15" r="1" fill="#2C5036" stroke="none"/></svg>';
+	$icon = '<svg viewBox="0 0 24 24" fill="none" stroke="#4279D1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 1 0 9.8 12 3.4 3.4 0 0 1-4.3-4.3A3.4 3.4 0 0 1 12.3 5.4 2 2 0 0 1 12 2z"/><circle cx="9.5" cy="10" r="1" fill="#4279D1" stroke="none"/><circle cx="14.5" cy="14" r="1" fill="#4279D1" stroke="none"/><circle cx="9.5" cy="15" r="1" fill="#4279D1" stroke="none"/></svg>';
 	$notice = '<span class="fge-cc-head">' . $icon . 'Diese Webseite verwendet Cookies</span>'
 		. '<span class="fge-cc-body">Wir verwenden Cookies und ähnliche Technologien, um die Nutzung unserer Website zu analysieren, Funktionen anzubieten und Inhalte wie Karten, Videos, unseren Terminkalender oder Newsletter-Formulare einzubinden. Manche Dienste übertragen dabei Daten an Anbieter wie Google oder HubSpot. Du entscheidest selbst, was geladen wird, und kannst deine Wahl jederzeit über „Cookie-Einstellungen" im Footer ändern.</span>';
 
@@ -373,7 +381,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_style( 'fge-klaro', $base . 'klaro.css', [], $cver );
 	wp_enqueue_style( 'fge-klaro-custom', $base . 'klaro-custom.css', [ 'fge-klaro' ], $ccver );
 	// Markenfarbe für Klaro-eigene Elemente (Schalter etc.).
-	wp_add_inline_style( 'fge-klaro-custom', '.klaro{--green1:#2C5036;--green2:#24412c;}' );
+	wp_add_inline_style( 'fge-klaro-custom', '.klaro{--green1:#4279D1;--green2:#3768C0;}' );
 	wp_enqueue_script( 'fge-klaro', $base . 'klaro.js', [], $cver, true );
 	wp_add_inline_script( 'fge-klaro', 'window.klaroConfig = ' . wp_json_encode( fge_klaro_config() ) . ';', 'before' );
 	// A11y/Agentic: Klaro-Cookie-Dialog bekommt einen barrierefreien Namen (role=dialog war ohne Name).
@@ -384,15 +392,15 @@ add_action( 'wp_enqueue_scripts', function () {
 // das Preset aber ERHALTEN. Die globale Body-Schrift (theme.json styles.typography) zeigt auf
 // var:preset|font-family|manrope – entfernt man die Family ganz, fällt ALLE Block-/Standard-
 // Inhalte (Blog, Standardseiten) auf Browser-Serif zurück. Daher: fontFace streichen (kein
-// Download) und die Family auf unsere bereits sitewide geladene Marken-Schrift (Instrument Sans)
-// umbiegen.
+// Download) und die Family auf unsere bereits sitewide geladene Marken-Schrift (Roboto,
+// Redesign 2026-07) umbiegen.
 add_filter( 'wp_theme_json_data_theme', function ( $theme_json ) {
 	$data = $theme_json->get_data();
 	if ( ! empty( $data['settings']['typography']['fontFamilies']['theme'] ) ) {
 		foreach ( $data['settings']['typography']['fontFamilies']['theme'] as &$f ) {
 			$id = (string) ( ( $f['slug'] ?? '' ) . ( $f['name'] ?? '' ) );
 			if ( false !== stripos( $id, 'manrope' ) ) {
-				$f['fontFamily'] = '"Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
+				$f['fontFamily'] = '"Roboto", ui-sans-serif, system-ui, -apple-system, sans-serif';
 				unset( $f['fontFace'] );
 			}
 		}

@@ -170,7 +170,7 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
   transition: border-color var(--dur-fast, .15s) var(--ease-out, ease);
 }
-.fge-pick-cover:hover { border-color: var(--fairway-700, #2a6e32); }
+.fge-pick-cover:hover { border-color: var(--fairway-700, #4279D1); }
 .fge-pick-cover.is-filled { border-style: solid; border-color: var(--ink-200); }
 .fge-pick-ico { width: 30px; height: 30px; color: var(--ink-500); }
 .fge-pick-ico svg { width: 100%; height: 100%; }
@@ -211,7 +211,7 @@
   font: inherit; font-size: 12px; font-weight: 600;
   transition: border-color var(--dur-fast, .15s) var(--ease-out, ease), color var(--dur-fast, .15s) var(--ease-out, ease);
 }
-.fge-picker .fge-pick-add:hover { border-color: var(--fairway-700, #2a6e32); color: var(--fairway-700, #2a6e32); background: var(--fairway-100, var(--paper-200)); }
+.fge-picker .fge-pick-add:hover { border-color: var(--fairway-700, #4279D1); color: var(--fairway-700, #4279D1); background: var(--fairway-100, var(--paper-200)); }
 
 /* ── Event image picker ────────────────────────────────────────────────────── */
 .fge-picker-grid {

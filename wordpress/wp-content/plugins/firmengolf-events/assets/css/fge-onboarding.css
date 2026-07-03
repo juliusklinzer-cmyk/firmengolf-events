@@ -710,7 +710,7 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   color: var(--ink-900);
 }
 .ob-stepper-input:focus { outline: none; }
-.ob-stepper-input:focus-visible { outline: 2px solid var(--fairway-600, #2e5b3f); outline-offset: 2px; }
+.ob-stepper-input:focus-visible { outline: 2px solid var(--fairway-600, #3768C0); outline-offset: 2px; }
 
 /* Reduzierte Bewegung respektieren (Audit 2026-07) */
 @media (prefers-reduced-motion: reduce) {

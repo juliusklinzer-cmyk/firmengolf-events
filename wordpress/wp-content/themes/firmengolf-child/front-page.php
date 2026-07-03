@@ -69,8 +69,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		<div class="mk-hero-content">
 			<div class="mk-hero-eyebrow">Firmenevents · Golf für Unternehmen</div>
 			<h1 class="mk-hero-title">
-				<span class="mk-hero-lead">Bringt euer Team raus aus dem Büro und rein in</span>
-				<span class="rot-wrap"><span class="rot-word mk-italic in" id="fg-rot-word">Bewegung</span><span class="rot-dot">.</span></span>
+				Wir machen den <span class="hero-tq">Golfplatz</span> zur <span class="hero-tq">Eventlocation</span>
 			</h1>
 			<p class="mk-hero-sub">
 				Vom Schnupperkurs bis zum Firmenturnier — Golf-Formate auf Partnerplätzen
@@ -735,22 +734,6 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
   if (incBtn) incBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) + 1); });
   if (decBtn) decBtn.addEventListener('click', function () { updatePax((parseInt(paxVal.value) || 10) - 1); });
 
-  /* ── Hero rotating word ── */
-  var rotEl = document.getElementById('fg-rot-word');
-  if (rotEl) {
-    var rotWords = ['Bewegung', 'neue Energie', 'den Austausch', 'frische Luft'];
-    var rotI = 0;
-    setInterval(function () {
-      rotEl.classList.remove('in');
-      rotEl.classList.add('out');
-      setTimeout(function () {
-        rotI = (rotI + 1) % rotWords.length;
-        rotEl.textContent = rotWords[rotI];
-        rotEl.classList.remove('out');
-        rotEl.classList.add('in');
-      }, 380);
-    }, 3000);
-  }
 }());
 </script>
 

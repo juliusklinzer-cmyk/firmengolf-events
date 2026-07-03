@@ -63,7 +63,7 @@ $mtabs = [
 <nav class="fg-topnav" aria-label="Hauptnavigation">
 	<div class="fg-topnav-inner">
 		<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="fg-brand">
-			<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="120" height="24">
+			<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="104" height="24">
 		</a>
 		<div class="fg-nav-items">
 			<?php foreach ( $nav_items as $item ) : ?>

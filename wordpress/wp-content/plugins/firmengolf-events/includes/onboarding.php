@@ -911,7 +911,7 @@ function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void 
 	?>
 <header class="ob-topbar">
 	<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="ob-brand" data-ob-brand aria-label="Firmengolf Startseite">
-		<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="120" height="24">
+		<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="104" height="24">
 	</a>
 	<div class="ob-top-actions">
 		<button type="button" class="ob-top-pill" data-ob-help>Noch Fragen?</button>

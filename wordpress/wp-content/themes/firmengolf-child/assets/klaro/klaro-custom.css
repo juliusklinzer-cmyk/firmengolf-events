@@ -38,7 +38,7 @@
 	font-size: 21px;
 	font-weight: 700;
 	line-height: 1.2;
-	color: var(--fairway-900, #1c3322);
+	color: var(--fairway-900, #283A6E);
 	margin-bottom: 12px;
 }
 .klaro .cookie-modal-notice .fge-cc-head svg {
@@ -93,8 +93,8 @@
 	text-align: center;
 	cursor: pointer;
 	background: #fff !important;
-	color: #2C5036 !important;
-	border: 1px solid #2C5036 !important;
+	color: #4279D1 !important;
+	border: 1px solid #4279D1 !important;
 	text-decoration: none !important;
 	transition: filter 120ms ease, background 120ms ease;
 }
@@ -104,12 +104,12 @@
 }
 /* Primär: „Alle akzeptieren" gefüllt grün */
 .klaro .cookie-modal-notice .cn-ok .cm-btn.cm-btn-success {
-	background: #2C5036 !important;
+	background: #4279D1 !important;
 	color: #fff !important;
-	border-color: #2C5036 !important;
+	border-color: #4279D1 !important;
 }
 .klaro .cookie-modal-notice .cn-ok .cm-btn.cm-btn-success:hover {
-	background: #24412c !important;
+	background: #3768C0 !important;
 }
 /* Schmale Screens: Buttons untereinander stapeln (volle Breite) statt zu zerquetschen */
 @media (max-width: 520px) {
@@ -133,7 +133,7 @@
 /* Datenschutz-Link im Fließtext gebrandet (kein Button) */
 .klaro .cookie-modal-notice .fge-cc-body a,
 .klaro .cookie-modal-notice p a {
-	color: #2C5036;
+	color: #4279D1;
 	text-decoration: underline;
 	text-underline-offset: 2px;
 }
@@ -192,15 +192,15 @@
 	font-family: var(--font-display, inherit);
 	font-size: 21px;
 	font-weight: 700;
-	color: #1c3322 !important;
+	color: #283A6E !important;
 	margin: 0;
 }
 /* Schließen-X sichtbar machen (Default-Stroke ist hell) */
-.klaro .cookie-modal .cm-modal .hide svg { stroke: #1c3322; }
+.klaro .cookie-modal .cm-modal .hide svg { stroke: #283A6E; }
 
 /* Body + Dienste-Liste */
 .klaro .cookie-modal .cm-modal .cm-body { padding: 18px 24px; }
-.klaro .cookie-modal .cm-list-title { font-weight: 600; color: #1c3322 !important; }
+.klaro .cookie-modal .cm-list-title { font-weight: 600; color: #283A6E !important; }
 .klaro .cookie-modal .cm-list-description { color: #6a726c !important; }
 .klaro .cookie-modal .cm-modal .cm-body ul.cm-purposes li.cm-purpose,
 .klaro .cookie-modal .cm-modal .cm-body ul.cm-services li.cm-service { border-bottom: 1px solid #eef0ed; }
@@ -213,9 +213,9 @@
 /* Schalter: aus = hellgrau, an = Markengrün, Knopf weiß */
 .klaro .cookie-modal .slider { background-color: #d7dbd6 !important; box-shadow: none !important; }
 .klaro .cookie-modal .slider::before { background-color: #fff !important; }
-.klaro .cookie-modal .cm-list-input:checked + .cm-list-label .slider { background-color: #2C5036 !important; }
+.klaro .cookie-modal .cm-list-input:checked + .cm-list-label .slider { background-color: #4279D1 !important; }
 .klaro .cookie-modal .cm-list-input.only-required + .cm-list-label .slider,
-.klaro .cookie-modal .cm-list-input.required:checked + .cm-list-label .slider { background-color: #6f8f78 !important; }
+.klaro .cookie-modal .cm-list-input.required:checked + .cm-list-label .slider { background-color: #6E9BDD !important; }
 
 /* Footer + Buttons gebrandet (wie die Notice-Pills) */
 .klaro .cookie-modal .cm-modal .cm-footer {
@@ -242,19 +242,19 @@
 	text-align: center;
 	cursor: pointer;
 	background: #fff !important;
-	color: #2C5036 !important;
-	border: 1px solid #2C5036 !important;
+	color: #4279D1 !important;
+	border: 1px solid #4279D1 !important;
 }
 .klaro .cookie-modal .cm-modal .cm-btn.cm-btn-success {
-	background: #2C5036 !important;
+	background: #4279D1 !important;
 	color: #fff !important;
-	border-color: #2C5036 !important;
+	border-color: #4279D1 !important;
 }
 .klaro .cookie-modal .cm-modal .cm-footer .cm-powered-by,
 .klaro .cookie-modal .cm-modal .cm-footer .cm-powered-by a { color: #9aa29a !important; }
 
 /* Links im Dialog gebrandet */
-.klaro .cookie-modal .cm-modal a { color: #2C5036 !important; }
+.klaro .cookie-modal .cm-modal a { color: #4279D1 !important; }
 
 /* Schmale Screens: Footer-Buttons stapeln */
 @media (max-width: 520px) {

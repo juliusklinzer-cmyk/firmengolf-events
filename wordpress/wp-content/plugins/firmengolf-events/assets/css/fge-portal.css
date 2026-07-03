@@ -48,7 +48,7 @@
 .fgpp .cat-status-pos { position: absolute; right: 14px; top: 14px; z-index: 1; }
 .fgpp .cat-status { position: absolute; right: 14px; top: 14px; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; padding: 5px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; z-index: 1; text-transform: uppercase; background: var(--paper-100); }
 .fgpp .cat-status .dot { width: 6px; height: 6px; border-radius: 999px; }
-.fgpp .cat-status.published { color: var(--fairway-700); } .fgpp .cat-status.published .dot { background: #5BCB7E; }
+.fgpp .cat-status.published { color: var(--fairway-700); } .fgpp .cat-status.published .dot { background: #00C896; }
 .fgpp .cat-status.draft { color: var(--warning, #C8932B); } .fgpp .cat-status.draft .dot { background: var(--warning, #C8932B); }
 .fgpp .cat-status.pruefung { color: #9A6B12; } .fgpp .cat-status.pruefung .dot { background: #C8932B; }
 .fgpp .cat-status.paused { color: var(--ink-500); } .fgpp .cat-status.paused .dot { background: var(--ink-400); }
@@ -86,7 +86,7 @@
 }
 .fgpp .hero-top { position: absolute; top: 24px; left: 28px; right: 28px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 1; }
 .fgpp .hero-status { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.18); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.25); border-radius: 999px; padding: 7px 14px 7px 10px; color: var(--paper-100); font-size: 13px; font-weight: 500; white-space: nowrap; }
-.fgpp .hero-status .dot { width: 8px; height: 8px; border-radius: 999px; background: #5BCB7E; box-shadow: 0 0 0 3px rgba(91,203,126,0.25); }
+.fgpp .hero-status .dot { width: 8px; height: 8px; border-radius: 999px; background: #00C896; box-shadow: 0 0 0 3px rgba(0,200,150,0.25); }
 .fgpp .hero-actions { display: flex; gap: 8px; }
 .fgpp .hero-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; font-size: 13px; font-weight: 500; background: rgba(255,255,255,0.16); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.22); color: var(--paper-100); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); white-space: nowrap; }
 .fgpp .hero-btn:hover { background: rgba(255,255,255,0.28); }
@@ -512,7 +512,7 @@
 .fgpp .req-wish-sub { font-size: 13px; font-weight: 600; color: var(--ink-700); margin: 2px 0 8px; }
 .fgpp .req-wish-note { font-weight: 500; color: var(--ink-400); font-size: 12px; }
 .fgpp .req-wish-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-.fgpp .req-wish-chip { font-size: 13px; font-weight: 500; color: var(--fairway-800); background: var(--fairway-100); border: 1px solid var(--fairway-200, #D5E1D6); border-radius: 999px; padding: 5px 12px; }
+.fgpp .req-wish-chip { font-size: 13px; font-weight: 500; color: var(--fairway-800); background: var(--fairway-100); border: 1px solid var(--fairway-200, #DCE7F7); border-radius: 999px; padding: 5px 12px; }
 .fgpp .req-wish-chip.is-fg { color: var(--ink-700); background: var(--paper-200); border-color: var(--ink-200); }
 .fgpp .req-timeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 22px; }
 .fgpp .req-tl { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding-bottom: 14px; position: relative; }

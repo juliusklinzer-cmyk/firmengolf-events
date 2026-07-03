@@ -93,8 +93,8 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 			<li style="margin-bottom:6px;">Wir sehen uns deine Angaben in Ruhe an und prüfen passende Optionen.</li>
 			<li style="margin-bottom:6px;">Innerhalb eines Werktags meldet sich ein:e echte:r Ansprechpartner:in persönlich bei dir.</li>
 		</ul>
-		<p style="margin:0 0 16px;">Du musst nichts weiter tun. Fällt dir in der Zwischenzeit noch etwas ein, antworte einfach auf diese E-Mail oder schreib uns an <a href="mailto:' . esc_attr( $events_email ) . '" style="color:#2a6e32;">' . esc_html( $events_email ) . '</a>.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( fge_offer_link( $request_id ) ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:11px 22px;border-radius:999px;font-weight:600;">Status meiner Anfrage ansehen</a></p>
+		<p style="margin:0 0 16px;">Du musst nichts weiter tun. Fällt dir in der Zwischenzeit noch etwas ein, antworte einfach auf diese E-Mail oder schreib uns an <a href="mailto:' . esc_attr( $events_email ) . '" style="color:#4279D1;">' . esc_html( $events_email ) . '</a>.</p>
+		<p style="margin:0 0 22px;"><a href="' . esc_url( fge_offer_link( $request_id ) ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:11px 22px;border-radius:999px;font-weight:600;">Status meiner Anfrage ansehen</a></p>
 		<p style="margin:24px 0 0;">Sportliche Grüße<br><strong>Dein Firmengolf-Team</strong></p>
 	';
 
@@ -126,7 +126,7 @@ function fge_wishes_email_html( int $request_id ): string {
 	$pill = static function ( array $items ): string {
 		$html = '';
 		foreach ( $items as $it ) {
-			$html .= '<span style="display:inline-block;background:#EEF3EE;border:1px solid #D5E1D6;border-radius:999px;padding:3px 11px;margin:0 6px 6px 0;font-size:13px;color:#2C5036;">' . esc_html( $it ) . '</span>';
+			$html .= '<span style="display:inline-block;background:#EDF3FB;border:1px solid #DCE7F7;border-radius:999px;padding:3px 11px;margin:0 6px 6px 0;font-size:13px;color:#4279D1;">' . esc_html( $it ) . '</span>';
 		}
 		return $html;
 	};
@@ -155,7 +155,7 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 		'Golfplatz'   => esc_html( $data['partner_title'] ?: '—' ),
 		'Unternehmen' => esc_html( $company ),
 		'Kontakt'     => esc_html( trim( $data['first_name'] . ' ' . $data['last_name'] ) ?: '—' ),
-		'E-Mail'      => '<a href="mailto:' . esc_attr( $data['contact_email'] ) . '" style="color:#2a6e32;">' . esc_html( $data['contact_email'] ) . '</a>',
+		'E-Mail'      => '<a href="mailto:' . esc_attr( $data['contact_email'] ) . '" style="color:#4279D1;">' . esc_html( $data['contact_email'] ) . '</a>',
 		'Telefon'     => esc_html( $data['phone'] ?: '—' ),
 		'Teilnehmer'  => esc_html( $data['participants'] ?: '—' ),
 		'Budget'      => esc_html( $data['budget'] ?: '—' ),
@@ -187,7 +187,7 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;">' . $table_rows . '</table>
 		' . ( $wishes_html !== '' ? '<div style="margin-top:18px;">' . $wishes_html . '</div>' : '' ) . '
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $admin_link ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Anfrage im Admin öffnen</a>
+			<a href="' . esc_url( $admin_link ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Anfrage im Admin öffnen</a>
 		</p>
 	';
 
@@ -276,7 +276,7 @@ function fge_send_contact_termin_emails( int $request_id, array $data ): int {
 			<ul style="margin:0 0 18px;padding-left:20px;">' . ( $dates_html ?: '<li>Nach Absprache</li>' ) . '</ul>
 			' . ( $wishes_html !== '' ? '<div style="margin:0 0 18px;">' . $wishes_html . '</div>' : '' ) . '
 			<p style="margin:0 0 22px;">Sag uns mit einem Klick, welche Termine bei dir gehen — kein Login nötig, der Link ist persönlich für dich.</p>
-			<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Jetzt Termine bestätigen</a></p>
+			<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Jetzt Termine bestätigen</a></p>
 			<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
 		';
 		if ( wp_mail( $c['email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] ) ) {
@@ -301,7 +301,7 @@ function fge_send_contact_reminder( int $request_id, array $contact ): bool {
 	$content = '
 		<p style="margin:0 0 16px;">Hallo ' . esc_html( $first ) . ',</p>
 		<p style="margin:0 0 16px;">die Anfrage von <strong>' . esc_html( $data['company_name'] ?: 'einem Unternehmen' ) . '</strong> für <strong>' . esc_html( $venue ) . '</strong> wartet noch auf deine Rückmeldung. Es dauert nur einen Moment.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Jetzt Termine bestätigen</a></p>
+		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Jetzt Termine bestätigen</a></p>
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
 	';
 	return (bool) wp_mail( $contact['email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
@@ -336,7 +336,7 @@ function fge_notify_all_responded( int $request_id ): void {
 	$content = '
 		<p style="margin:0 0 16px;">Hallo,</p>
 		<p style="margin:0 0 16px;">für die Anfrage <strong>' . esc_html( $ref ) . '</strong> haben alle Ansprechpartner reagiert. Du kannst jetzt im Portal den passenden Termin bestätigen.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( $portal ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Im Portal öffnen</a></p>
+		<p style="margin:0 0 22px;"><a href="' . esc_url( $portal ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Im Portal öffnen</a></p>
 	';
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -388,7 +388,7 @@ function fge_send_offer_email( int $request_id ): bool {
 	$contact_block = ( '' !== $cname )
 		? '<p style="margin:0 0 16px;color:#1a1a1a;font-size:13px;">Euer Ansprechpartner: <strong>' . esc_html( $cname ) . '</strong>'
 			. ( '' !== $cphone ? ' &nbsp;·&nbsp; ' . esc_html( $cphone ) : '' )
-			. ( '' !== $cmail ? ' &nbsp;·&nbsp; <a href="mailto:' . esc_attr( $cmail ) . '" style="color:#2a6e32;">' . esc_html( $cmail ) . '</a>' : '' )
+			. ( '' !== $cmail ? ' &nbsp;·&nbsp; <a href="mailto:' . esc_attr( $cmail ) . '" style="color:#4279D1;">' . esc_html( $cmail ) . '</a>' : '' )
 			. '</p>'
 		: '';
 
@@ -405,8 +405,8 @@ function fge_send_offer_email( int $request_id ): bool {
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
 		' . ( $incl !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Das ist dabei</p><ul style="margin:0 0 14px;padding-left:20px;">' . $incl . '</ul>' : '' ) . '
 		' . ( $wish !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Eure Zusatzwünsche</p><p style="margin:0 0 6px;color:#6C736E;font-size:13px;">Auf Wunsch organisiert — wird separat ausgewiesen, noch nicht im oben genannten Preis enthalten.</p><ul style="margin:0 0 14px;padding-left:20px;">' . $wish . '</ul>' : '' ) . '
-		<p style="margin:0 0 14px;color:#6C736E;font-size:13px;">Alle Preise zzgl. gesetzl. USt. Es gelten unsere <a href="' . esc_url( home_url( '/agb/' ) ) . '" style="color:#2a6e32;">AGB</a> inkl. Storno- und Zahlungsbedingungen.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 26px;border-radius:999px;font-weight:600;">Angebot ansehen &amp; bestätigen</a></p>
+		<p style="margin:0 0 14px;color:#6C736E;font-size:13px;">Alle Preise zzgl. gesetzl. USt. Es gelten unsere <a href="' . esc_url( home_url( '/agb/' ) ) . '" style="color:#4279D1;">AGB</a> inkl. Storno- und Zahlungsbedingungen.</p>
+		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 26px;border-radius:999px;font-weight:600;">Angebot ansehen &amp; bestätigen</a></p>
 		' . $contact_block . '
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '. Bei Fragen einfach auf diese Mail antworten.</p>
 	';
@@ -497,7 +497,7 @@ function fge_send_offer_reminder( int $request_id ): bool {
 	$content = '
 		<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ',</p>
 		<p style="margin:0 0 16px;">euer Angebot für <strong>' . esc_html( (string) ( $snap['event_title'] ?? 'euer Event' ) ) . '</strong> am <strong>' . esc_html( (string) ( $snap['date'] ?? '' ) ) . '</strong> wartet noch auf eure Rückmeldung.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#2C5036;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Angebot ansehen &amp; bestätigen</a></p>
+		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Angebot ansehen &amp; bestätigen</a></p>
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
 	';
 	return (bool) wp_mail( $data['contact_email'], 'Erinnerung: euer Angebot (' . $ref . ')', fge_email_wrap( 'Erinnerung: euer Angebot (' . $ref . ')', $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
@@ -534,9 +534,9 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 		<p>Firmengolf prüft deine Angaben und meldet sich bei dir, sobald das Profil freigeschaltet ist oder noch Informationen fehlen.</p>
 		' . $pw_notice . '
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $portal_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
+			<a href="' . esc_url( $portal_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
 		</p>
-		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
+		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
 	';
 
 	$sent = wp_mail(
@@ -555,11 +555,11 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 			<tr><td style="padding:6px 16px 6px 0;color:#555;width:130px;"><strong>Golfplatz</strong></td><td>' . esc_html( $name ) . '</td></tr>
 			' . ( $ref !== '' ? '<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>Vorgangs-Nr.</strong></td><td>' . esc_html( $ref ) . '</td></tr>' : '' ) . '
 			<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>Kontakt</strong></td><td>' . esc_html( $contact ) . '</td></tr>
-			<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>E-Mail</strong></td><td><a href="mailto:' . esc_attr( $email ) . '" style="color:#2a6e32;">' . esc_html( $email ) . '</a></td></tr>
+			<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>E-Mail</strong></td><td><a href="mailto:' . esc_attr( $email ) . '" style="color:#4279D1;">' . esc_html( $email ) . '</a></td></tr>
 			' . ( $final_note !== '' ? '<tr><td style="padding:6px 16px 6px 0;color:#555;vertical-align:top;"><strong>Hinweis</strong></td><td>' . nl2br( esc_html( $final_note ) ) . '</td></tr>' : '' ) . '
 		</table>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $admin_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Im Admin öffnen</a>
+			<a href="' . esc_url( $admin_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Im Admin öffnen</a>
 		</p>
 	';
 	wp_mail(
@@ -596,11 +596,11 @@ function fge_send_partner_welcome_email( int $user_id, int $partner_id ): bool {
 		<p>schön, dass <strong>' . esc_html( $name ) . '</strong> dabei ist! Dein persönlicher Zugang zum Firmengolf Partner-Portal wurde erstellt.</p>
 		<p><strong>Deine Anmelde-E-Mail:</strong> ' . esc_html( $user->user_email ) . '</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $set_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Passwort festlegen</a>
+			<a href="' . esc_url( $set_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Passwort festlegen</a>
 		</p>
 		<p style="font-size:13px;color:#888;">Der Link ist aus Sicherheitsgründen 24 Stunden gültig. Danach kannst du jederzeit über „Passwort vergessen" auf der Anmeldeseite einen neuen Link anfordern.</p>
 		<p>Im Partner-Portal verwaltest du euer Platzprofil, Fotos und alle Event-Anfragen.</p>
-		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
+		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
 	';
 
 	return (bool) wp_mail(
@@ -628,9 +628,9 @@ function fge_send_partner_account_linked_email( int $user_id, int $partner_id ):
 		<p>dein bestehendes Firmengolf-Konto (<strong>' . esc_html( $user->user_email ) . '</strong>) ist jetzt mit dem Golfplatz <strong>' . esc_html( $name ) . '</strong> verknüpft.</p>
 		<p>Du kannst das Profil ab sofort mit deinem gewohnten Login im Partner-Portal verwalten.</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $portal_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
+			<a href="' . esc_url( $portal_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
 		</p>
-		<p style="font-size:13px;color:#888;">Du hast diese Verknüpfung nicht angestoßen? Dann antworte bitte kurz auf diese E-Mail oder kontaktiere uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
+		<p style="font-size:13px;color:#888;">Du hast diese Verknüpfung nicht angestoßen? Dann antworte bitte kurz auf diese E-Mail oder kontaktiere uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
 	';
 
 	return (bool) wp_mail(
@@ -684,11 +684,11 @@ function fge_send_partner_approved_email( int $partner_id ): bool {
 		<p>' . $greeting . '</p>
 		<p>gute Nachrichten: <strong>' . esc_html( $name ) . '</strong> ist geprüft, freigeschaltet und ab sofort für Unternehmen sichtbar.</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $new_event ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Erstes Event erstellen</a>
+			<a href="' . esc_url( $new_event ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Erstes Event erstellen</a>
 		</p>
 		<p>Tipp für den Start: Das meistgebuchte Format ist das <strong>Teamevent</strong>. Leg eins an und du bist für Anfragen aus deiner Region sofort buchbar.</p>
-		' . ( $public_url !== '' ? '<p style="font-size:13px;color:#888;">Dein öffentliches Profil: <a href="' . esc_url( $public_url ) . '" style="color:#2a6e32;">' . esc_html( $public_url ) . '</a></p>' : '' ) . '
-		<p style="font-size:13px;color:#888;">Fragen? Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_partner'] ) . '</a>.</p>
+		' . ( $public_url !== '' ? '<p style="font-size:13px;color:#888;">Dein öffentliches Profil: <a href="' . esc_url( $public_url ) . '" style="color:#4279D1;">' . esc_html( $public_url ) . '</a></p>' : '' ) . '
+		<p style="font-size:13px;color:#888;">Fragen? Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_partner'] ) . '</a>.</p>
 	';
 	return (bool) wp_mail( $email, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -706,9 +706,9 @@ function fge_send_partner_inquiry_email( int $partner_id ): bool {
 		<p>bei der Prüfung von <strong>' . esc_html( $name ) . '</strong> sind ein paar Fragen aufgekommen. Wir melden uns dazu in Kürze per E-Mail oder Telefon bei dir.</p>
 		<p>Du kannst dein Profil in der Zwischenzeit jederzeit im Partner-Portal anpassen und ergänzen.</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $portal ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
+			<a href="' . esc_url( $portal ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
 		</p>
-		<p style="font-size:13px;color:#888;">Du erreichst uns direkt unter <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_partner'] ) . '</a>. Antworte gern auch einfach auf diese E-Mail.</p>
+		<p style="font-size:13px;color:#888;">Du erreichst uns direkt unter <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_partner'] ) . '</a>. Antworte gern auch einfach auf diese E-Mail.</p>
 	';
 	return (bool) wp_mail( $email, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -724,7 +724,7 @@ function fge_send_partner_rejected_email( int $partner_id ): bool {
 		<p>' . $greeting . '</p>
 		<p>danke für dein Interesse an Firmengolf. Nach der Prüfung können wir <strong>' . esc_html( $name ) . '</strong> aktuell leider nicht freischalten.</p>
 		<p>Wenn du die Gründe besprechen möchtest oder sich bei euch etwas ändert, melde dich jederzeit. Oft lässt sich gemeinsam ein Weg finden.</p>
-		<p style="font-size:13px;color:#888;">Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#2a6e32;">' . esc_html( fge_company()['email_partner'] ) . '</a>.</p>
+		<p style="font-size:13px;color:#888;">Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_partner'] ) . '</a>.</p>
 	';
 	return (bool) wp_mail( $email, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -739,7 +739,7 @@ function fge_send_onboarding_resume_email( string $to, string $resume_url, strin
 		<p>Hallo,</p>
 		<p>dein Stand' . ( $name !== '' ? ' für <strong>' . esc_html( $name ) . '</strong>' : '' ) . ' ist gespeichert. Mit diesem Link machst du genau dort weiter, wo du aufgehört hast:</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $resume_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Onboarding fortsetzen</a>
+			<a href="' . esc_url( $resume_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Onboarding fortsetzen</a>
 		</p>
 		<p style="font-size:13px;color:#888;">Behandle den Link bitte vertraulich, er führt direkt zu deinen Eingaben. Wenn du das Onboarding nicht gestartet hast, ignoriere diese E-Mail einfach.</p>
 	';
@@ -770,14 +770,14 @@ function fge_email_wrap( string $title, string $body_html ): string {
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f2;padding:32px 16px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;">
-  <tr><td style="background:#1a3a1f;padding:20px 32px;">
+  <tr><td style="background:#20294D;padding:20px 32px;">
     <span style="color:#ffffff;font-size:17px;font-weight:bold;letter-spacing:0.03em;">Firmengolf</span>
   </td></tr>
   <tr><td style="padding:32px;color:#1a1a1a;font-size:15px;line-height:1.65;">
     ' . $body_html . '
   </td></tr>
   <tr><td style="background:#f0f0ee;padding:16px 32px;font-size:12px;color:#888;border-top:1px solid #e4e4e0;line-height:1.6;">
-    <p style="margin:0 0 6px;">Firmengolf &nbsp;·&nbsp; <a href="mailto:' . $email_events . '" style="color:#2a6e32;text-decoration:none;">' . $email_events . '</a></p>
+    <p style="margin:0 0 6px;">Firmengolf &nbsp;·&nbsp; <a href="mailto:' . $email_events . '" style="color:#4279D1;text-decoration:none;">' . $email_events . '</a></p>
     <p style="margin:0;color:#a0a098;">' . $imprint . '</p>
   </td></tr>
 </table>

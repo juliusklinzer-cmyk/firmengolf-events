@@ -16,7 +16,7 @@ add_action( 'admin_head', function() {
 	?>
 	<style>
 	.fge-badge { display:inline-block; font-size:11px; font-weight:600; padding:2px 9px; border-radius:100px; white-space:nowrap; line-height:1.6; }
-	.fge-badge--green  { background:#E6F4EA; color:#1A6B38; }
+	.fge-badge--green  { background:#D9F6EC; color:#00795C; }
 	.fge-badge--orange { background:#FFF3E0; color:#9A4E00; }
 	.fge-badge--red    { background:#FDECEA; color:#9B1C1C; }
 	.fge-badge--gray   { background:#F1F1F0; color:#555; }
@@ -258,7 +258,7 @@ add_action( 'admin_head', function() {
 	}
 	echo '<style>
 	.fge-badge { display:inline-block; font-size:11px; font-weight:600; padding:2px 9px; border-radius:100px; white-space:nowrap; line-height:1.6; }
-	.fge-badge--green  { background:#E6F4EA; color:#1A6B38; }
+	.fge-badge--green  { background:#D9F6EC; color:#00795C; }
 	.fge-badge--orange { background:#FFF3E0; color:#9A4E00; }
 	.fge-badge--red    { background:#FDECEA; color:#9B1C1C; }
 	.fge-badge--gray   { background:#F1F1F0; color:#555; }

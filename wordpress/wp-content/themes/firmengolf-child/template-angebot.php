@@ -154,7 +154,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 				</div>
 				<div id="tl-q-wrap" style="display:none;margin-top:12px;">
 					<textarea name="fge_offer_message" rows="3" placeholder="Was möchtet ihr ändern oder wissen?" style="width:100%;padding:10px 12px;border:1px solid #d8d8d2;border-radius:8px;font:inherit;box-sizing:border-box;"></textarea>
-					<button type="submit" name="fge_offer_action" value="request" class="tl-btn" style="margin-top:8px;padding:11px 22px;background:#2C5036;color:#fff;border:none;border-radius:999px;cursor:pointer;">Rückfrage senden</button>
+					<button type="submit" name="fge_offer_action" value="request" class="tl-btn" style="margin-top:8px;padding:11px 22px;background:#4279D1;color:#fff;border:none;border-radius:999px;cursor:pointer;">Rückfrage senden</button>
 				</div>
 			</form>
 			<p class="tl-note">Mit „Angebot annehmen" bucht ihr verbindlich. Lieber erst etwas klären? Nutzt „Rückfrage / Änderung" — euer Termin bleibt reserviert.</p>
@@ -163,10 +163,10 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 			<div class="tl-contact" style="margin-top:22px;padding-top:16px;border-top:1px solid #ece9e2;font-size:13px;color:#555;">
 				Euer Ansprechpartner: <strong><?php echo esc_html( (string) ( $snap['contact_name'] ?? 'Firmengolf' ) ); ?></strong><?php
 				if ( '' !== (string) ( $snap['contact_phone'] ?? '' ) ) {
-					echo ' · <a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', (string) $snap['contact_phone'] ) ) . '" style="color:#2a6e32;">' . esc_html( (string) $snap['contact_phone'] ) . '</a>';
+					echo ' · <a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', (string) $snap['contact_phone'] ) ) . '" style="color:#4279D1;">' . esc_html( (string) $snap['contact_phone'] ) . '</a>';
 				}
 				if ( '' !== (string) ( $snap['contact_email'] ?? '' ) ) {
-					echo ' · <a href="mailto:' . esc_attr( (string) $snap['contact_email'] ) . '" style="color:#2a6e32;">' . esc_html( (string) $snap['contact_email'] ) . '</a>';
+					echo ' · <a href="mailto:' . esc_attr( (string) $snap['contact_email'] ) . '" style="color:#4279D1;">' . esc_html( (string) $snap['contact_email'] ) . '</a>';
 				}
 				?>
 			</div>

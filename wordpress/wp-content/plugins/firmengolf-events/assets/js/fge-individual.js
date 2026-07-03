@@ -34,9 +34,9 @@
 	// Distinkte, markennahe Farbpalette — jede gewählte Leistung bekommt nach ihrer
 	// Position in der Typ-Liste eine eigene Farbe (innerhalb eines Events alle verschieden).
 	var SVC_PALETTE = [
-		'#2C5036', '#C9B488', '#C77D4A', '#5E8A65', '#6C736E', '#B45A37',
-		'#D8B26A', '#3D6A47', '#8AA98F', '#9C5A45', '#4A5A8A', '#A8894E',
-		'#6E5AA0', '#B0A48C', '#7A8B6A', '#D2693E'
+		'#4279D1', '#C9B488', '#C77D4A', '#6E9BDD', '#6C736E', '#009E78',
+		'#D8B26A', '#3768C0', '#9BBAE8', '#9C5A45', '#4A5A8A', '#A8894E',
+		'#6E5AA0', '#B0A48C', '#3768C0', '#D2693E'
 	];
 	function svcColor(i) { return SVC_PALETTE[((i % SVC_PALETTE.length) + SVC_PALETTE.length) % SVC_PALETTE.length]; }
 

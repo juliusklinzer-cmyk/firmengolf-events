@@ -52,7 +52,7 @@ function fge_retrieve_password_message( $message, $key, $user_login, $user_data 
 		<p>' . $greeting . '</p>
 		<p>für dein Firmengolf-Konto (<strong>' . esc_html( $user_data->user_email ) . '</strong>) wurde ein neues Passwort angefordert.</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $reset_url ) . '" style="display:inline-block;background:#2a6e32;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Neues Passwort festlegen</a>
+			<a href="' . esc_url( $reset_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Neues Passwort festlegen</a>
 		</p>
 		<p style="font-size:13px;color:#888;">Der Link ist aus Sicherheitsgründen 24 Stunden gültig. Wenn du das nicht warst, kannst du diese E-Mail einfach ignorieren, dein Passwort bleibt unverändert.</p>
 	';

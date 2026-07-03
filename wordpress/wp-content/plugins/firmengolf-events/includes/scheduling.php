@@ -162,10 +162,10 @@ function fge_render_mb_scheduling( WP_Post $post ): void {
 
 	$overdue    = fge_request_is_overdue( $req );
 	$taken_over = fge_request_is_taken_over( $req );
-	$badges     = [ 'confirmed' => [ 'Zusage', '#2F6E45' ], 'declined' => [ 'Absage', '#B4332B' ], 'pending' => [ 'Offen', '#C58A1D' ] ];
+	$badges     = [ 'confirmed' => [ 'Zusage', '#00A87E' ], 'declined' => [ 'Absage', '#B4332B' ], 'pending' => [ 'Offen', '#C58A1D' ] ];
 
 	if ( $taken_over ) {
-		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#EAF2EC;border-radius:6px;"><strong>Von Firmengolf übernommen.</strong> Koordination läuft direkt mit der Firma.</p>';
+		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#D9F6EC;border-radius:6px;"><strong>Von Firmengolf übernommen.</strong> Koordination läuft direkt mit der Firma.</p>';
 	} elseif ( $overdue ) {
 		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#FBEFD6;border-radius:6px;"><strong>Überfällig</strong> — Reaktionsfrist überschritten, noch nicht alle haben reagiert.</p>';
 	}
@@ -249,12 +249,12 @@ function fge_render_manual_offer_panel( int $req, array $wish, int $event_id, bo
 		$offer_status = (string) get_post_meta( $req, '_fge_offer_status', true );
 		$badges       = [
 			'pending'  => [ 'Wartet auf Antwort', '#C58A1D' ],
-			'accepted' => [ 'Angenommen', '#2F6E45' ],
+			'accepted' => [ 'Angenommen', '#00A87E' ],
 			'declined' => [ 'Abgelehnt', '#B4332B' ],
 		];
 		$b    = $badges[ $offer_status ] ?? [ 'Versendet', '#646970' ];
 		$conf = (int) get_post_meta( $req, '_fge_final_date_index', true );
-		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#EAF2EC;border-radius:6px;"><strong>Angebot versendet.</strong> Termin: <strong>' . esc_html( $wish[ $conf ] ?? '—' ) . '</strong> · Status: <span style="display:inline-block;padding:1px 8px;border-radius:9px;color:#fff;font-size:11px;background:' . esc_attr( $b[1] ) . ';">' . esc_html( $b[0] ) . '</span></p>';
+		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#D9F6EC;border-radius:6px;"><strong>Angebot versendet.</strong> Termin: <strong>' . esc_html( $wish[ $conf ] ?? '—' ) . '</strong> · Status: <span style="display:inline-block;padding:1px 8px;border-radius:9px;color:#fff;font-size:11px;background:' . esc_attr( $b[1] ) . ';">' . esc_html( $b[0] ) . '</span></p>';
 		if ( function_exists( 'fge_offer_link' ) ) {
 			echo '<p style="margin:0;"><a href="' . esc_url( fge_offer_link( $req ) ) . '" target="_blank" rel="noopener" class="button">Angebots-Seite ansehen</a></p>';
 		}

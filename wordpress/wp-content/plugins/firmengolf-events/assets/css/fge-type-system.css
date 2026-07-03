@@ -1,0 +1,44 @@
+/* ==========================================================================
+   FIRMENGOLF — Type-System & Highlight-Regeln (Redesign Blau, 2026-07)
+   Wird als LETZTES globales Stylesheet geladen: gewinnt bei gleicher
+   Spezifität gegen fge-frontend.css. Token-Werte (Blau/Mint, Roboto)
+   liegen in fge-frontend.css :root.
+   ========================================================================== */
+
+/* ── Hero: Rajdhani Bold, kompakt gesetzt ── */
+.mk-hero-title {
+  font-family: "Rajdhani", var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.95;
+  max-width: 13ch;
+}
+
+/* ── Alle übrigen Headlines: Roboto Bold, engere Laufweite ──
+   (Familie kommt über --font-display; hier nur Stärke + Tracking) */
+.mk-h2, .home-exp-h, .mk-step-t, .mk-format-t, .home-occ-t,
+.home-numbers-h, .home-benefit-h, .home-blog-t, .mk-cta-h,
+.ev-hero-title, .ev-inline-h, .ev-sheet-title, .ev-catsec-h,
+.page-hero-title, .blog-featured-h, .blog-card-h, .blog-newsletter-h,
+.blog-article-h, .blog-h2, .blog-cta-h, .blog-related-h,
+.ind-tile-t, .ind-tstep-t, .ind-process-foot-h, .ind-form-h,
+.ind-fsec-t, .ind-next-h, .fg-dayflow-h, .fg-modal-title,
+.rw-h, .rw-success-h, .legal-h,
+.fg-page-intro-title, .fg-form-block-title, .fg-anfrage-success-title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ── Eyebrows auf hellen Flächen: Primär-Blau ──
+   (dunkle Sektionen setzen inline eine helle Farbe — Inline gewinnt) */
+.mk-eyebrow { color: var(--fairway-700); }
+
+/* ── Türkis nur an den starken Momenten (Hero + dunkle Sektionen) ──
+   Prinzip: Farbe nur, wo sie knallt. Alle anderen Hervorhebungen laufen
+   über font-weight 900 in gleicher Tinte (Basisregel in fge-frontend.css). */
+.mk-hero-title .hero-tq,
+.home-numbers-h .mk-italic,
+.home-benefit-h .mk-italic,
+.mk-cta-h .mk-italic {
+  color: var(--clay-500); /* #00C896 */
+}

@@ -471,7 +471,8 @@ function fge_get_event_price_display( int $post_id ): string {
 }
 
 function fge_get_logo_url( bool $light = false ): string {
-	$file = $light ? 'firmengolf-wordmark-light.png' : 'firmengolf-wordmark.png';
+	// Neues Marken-Logo (SVG, 2026-07); light = weiße Variante für dunkle Flächen.
+	$file = $light ? 'firmengolf-logo-light.svg' : 'firmengolf-logo.svg';
 	return plugins_url( 'assets/logo/' . $file, FGE_DIR . 'firmengolf-events.php' );
 }
 

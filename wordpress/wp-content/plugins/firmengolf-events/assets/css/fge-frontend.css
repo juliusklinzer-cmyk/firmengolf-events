@@ -5,21 +5,17 @@
    ========================================================================== */
 
 /* ---------- 1. FONTS ---------- */
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-ExtraLight.woff2") format("woff2"); font-weight: 200; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Light.woff2")      format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Regular.woff2")    format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Medium.woff2")     format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-SemiBold.woff2")   format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Bricolage Grotesque"; src: url("../fonts/BricolageGrotesque-Bold.woff2")       format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+/* Redesign 2026-07: Rajdhani (Hero) + Roboto (alles andere) — self-hosted statt
+   Google-Fonts-<link> (DSGVO: kein externer Request vor Consent). */
+@font-face { font-family: "Rajdhani"; src: url("../fonts/Rajdhani-Medium.woff2")   format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Rajdhani"; src: url("../fonts/Rajdhani-SemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Rajdhani"; src: url("../fonts/Rajdhani-Bold.woff2")     format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Regular.woff2")        format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Italic.woff2")         format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Medium.woff2")         format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-SemiBold.woff2")       format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans-Bold.woff2")           format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
-
-@font-face { font-family: "Instrument Serif"; src: url("../fonts/InstrumentSerif-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Instrument Serif"; src: url("../fonts/InstrumentSerif-Italic.woff2")  format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Italic.woff2")  format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Medium.woff2")  format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Bold.woff2")    format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Black.woff2")   format("woff2"); font-weight: 900; font-style: normal; font-display: swap; }
 
 @font-face { font-family: "JetBrains Mono"; src: url("../fonts/JetBrainsMono-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 
@@ -42,27 +38,27 @@
   --paper-200: #F4F1E9;
   --paper-300: #ECE7DA;
 
-  /* Brand greens */
-  --fairway-900: #14241A;
-  --fairway-800: #1F3826;
-  --fairway-700: #2C5036;
-  --fairway-600: #3D6A47;
-  --fairway-500: #5E8A65;
-  --fairway-400: #8AA98F;
-  --fairway-300: #B8CDB9;
-  --fairway-200: #D7E2D2;
-  --fairway-100: #ECF1E6;
+  /* Brand — Blau (Redesign 2026-07; Token-Namen bleiben --fairway-*, nur Werte getauscht) */
+  --fairway-900: #20294D;
+  --fairway-800: #283A6E;
+  --fairway-700: #4279D1;
+  --fairway-600: #3768C0;
+  --fairway-500: #6E9BDD;
+  --fairway-400: #9BBAE8;
+  --fairway-300: #C2D4F2;
+  --fairway-200: #DCE7F7;
+  --fairway-100: #EDF3FB;
 
-  /* Accents */
-  --clay-600: #B45A37;
-  --clay-500: #C97A57;
-  --clay-100: #F3E1D6;
+  /* Accents — Mint/Türkis (ehem. Terra/Clay) */
+  --clay-600: #009E78;
+  --clay-500: #00C896;
+  --clay-100: #D9F6EC;
   --sand-500: #C9B488;
   --sand-200: #E8DEC6;
   --flag-500: #C24A3E;
 
   /* Semantic */
-  --success: #2F6E45;
+  --success: #00A87E;
   --warning: #C58A1D;
   --danger:  #B4332B;
   --info:    #3F6E8A;
@@ -86,10 +82,11 @@
   --border-strong: var(--ink-300);
   --border-brand:  var(--fairway-200);
 
-  /* Fonts */
-  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --font-body:    "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif:   "Instrument Serif", Georgia, serif;
+  /* Fonts (Redesign 2026-07: Roboto überall, Rajdhani nur Hero via fge-type-system.css) */
+  --font-display: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-body:    "Roboto", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* Serif-Kursive ist raus — Alt-Verweise (Portal/Onboarding/Termin) fallen auf Roboto zurück. */
+  --font-serif:   "Roboto", Georgia, serif;
   --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --fw-regular:  400;
@@ -268,7 +265,7 @@ a.fg-nav-cta {
 .fg-btn-brand:hover, a.fg-btn-brand:hover { background: var(--fairway-600); color: var(--paper-100); }
 .fg-btn-cta:active, .fg-btn-brand:active { transform: translateY(1px); }
 /* CTA button fix — overrides .fge-page button reset (line 157) so a real <button> keeps its background */
-button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper-100); }
+button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper-100); }
 .fg-btn-ink, a.fg-btn-ink, button.fg-btn-ink {
   background: var(--ink-900); color: var(--paper-100);
   border-radius: var(--radius-pill);
@@ -1257,9 +1254,9 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   font-weight: 500;
 }
 .fg-portal-global-notice--success {
-  background: #E6F4EA;
+  background: #D9F6EC;
   color: var(--success);
-  border: 1px solid #B7DCC1;
+  border: 1px solid #B7E5D6;
 }
 
 /* ── Tab nav ── */
@@ -1378,7 +1375,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   border-radius: 100px;
   white-space: nowrap;
 }
-.fg-portal-status--green  { background: #E6F4EA; color: #2F6E45; }
+.fg-portal-status--green  { background: #D9F6EC; color: #00A87E; }
 .fg-portal-status--orange { background: #FFF3E0; color: #B25C00; }
 .fg-portal-status--red    { background: #FDECEA; color: #B71C1C; }
 .fg-portal-status--gray   { background: var(--ink-100); color: var(--ink-600); }
@@ -1586,7 +1583,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 }
 .fp-pill .dot { width: 7px; height: 7px; border-radius: 999px; background: var(--ink-400, #9AA09B); flex: none; }
 .fp-pill.green  { background: var(--fairway-100); color: var(--fairway-700); border-color: var(--fairway-200); }
-.fp-pill.green .dot { background: #5BCB7E; }
+.fp-pill.green .dot { background: #00C896; }
 .fp-pill.orange { background: #FBF3E0; color: #9A6B12; border-color: #E2C36B; }
 .fp-pill.orange .dot { background: #C8932B; }
 .fp-pill.gray   { background: var(--paper-200); color: var(--ink-600, #6C736E); border-color: var(--ink-200); }
@@ -1709,7 +1706,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 }
 .fp-hero-status .dot {
   width: 8px; height: 8px; border-radius: 999px;
-  background: #5BCB7E; box-shadow: 0 0 0 3px rgba(91,203,126,0.25); flex: none;
+  background: #00C896; box-shadow: 0 0 0 3px rgba(0,200,150,0.25); flex: none;
 }
 .fp-hero-actions { display: flex; gap: 8px; }
 .fp-hero-btn {
@@ -1815,7 +1812,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 }
 .fp-cat-status .dot { width: 6px; height: 6px; border-radius: 999px; flex: none; }
 .fp-cat-status.published { background: var(--paper-100); color: var(--fairway-700); }
-.fp-cat-status.published .dot { background: #5BCB7E; }
+.fp-cat-status.published .dot { background: #00C896; }
 .fp-cat-status.draft { background: var(--paper-100); color: var(--warning); }
 .fp-cat-status.draft .dot { background: var(--warning); }
 .fp-cat-status.paused { background: var(--paper-200); color: var(--ink-500); }
@@ -1920,7 +1917,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 .fp-inbox-meta .fp-pill .dot {
   width: 5px; height: 5px; border-radius: 999px; background: var(--ink-400); flex: none;
 }
-.fp-inbox-meta .fp-pill.green .dot { background: #5BCB7E; }
+.fp-inbox-meta .fp-pill.green .dot { background: #00C896; }
 
 /* ── Placeholder ── */
 .fp-placeholder {
@@ -2116,17 +2113,17 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 }
 .fp-gate-card #loginform input[type="text"]:focus,
 .fp-gate-card #loginform input[type="password"]:focus {
-  outline: none; border-color: var(--fairway-600, #2a6e32);
+  outline: none; border-color: var(--fairway-600, #4279D1);
   box-shadow: 0 0 0 3px rgba(42,110,50,.12);
 }
 .fp-gate-card #loginform .forgetmenot { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-500, #888); }
 .fp-gate-card #loginform .forgetmenot input { margin: 0; }
 .fp-gate-card #loginform #fp_gate_submit {
   width: 100%; padding: 12px; font-size: 15px; font-weight: 600;
-  background: var(--fairway-700, #1f5225); color: #fff; border: none;
+  background: var(--fairway-700, #4279D1); color: #fff; border: none;
   border-radius: 8px; cursor: pointer; margin-top: 4px; transition: background 0.15s;
 }
-.fp-gate-card #loginform #fp_gate_submit:hover { background: var(--fairway-800, #173d1b); }
+.fp-gate-card #loginform #fp_gate_submit:hover { background: var(--fairway-800, #283A6E); }
 
 .fp-gate-divider {
   display: flex; align-items: center; gap: 12px; margin: 24px 0;
@@ -2139,11 +2136,11 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 .fp-gate-cta {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; padding: 12px; font-size: 15px; font-weight: 600; box-sizing: border-box;
-  border: 1.5px solid var(--fairway-700, #1f5225); border-radius: 8px;
-  color: var(--fairway-700, #1f5225); text-decoration: none;
+  border: 1.5px solid var(--fairway-700, #4279D1); border-radius: 8px;
+  color: var(--fairway-700, #4279D1); text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
-.fp-gate-cta:hover { background: var(--fairway-700, #1f5225); color: #fff; }
+.fp-gate-cta:hover { background: var(--fairway-700, #4279D1); color: #fff; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
    25 — PARTNER ONBOARDING WIZARD (.ob-*)
@@ -2180,8 +2177,8 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 }
 .ob-step-label {
   display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--fairway-600, #2a6e32);
-  background: var(--fairway-50, #edf6ee); border-radius: 20px;
+  text-transform: uppercase; color: var(--fairway-600, #4279D1);
+  background: var(--fairway-50, #F0F5FC); border-radius: 20px;
   padding: 3px 12px; margin-bottom: 20px;
 }
 .ob-title {
@@ -2215,7 +2212,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 .ob-input:focus,
 .ob-select:focus,
 .ob-textarea:focus {
-  outline: none; border-color: var(--fairway-600, #2a6e32);
+  outline: none; border-color: var(--fairway-600, #4279D1);
   box-shadow: 0 0 0 3px rgba(42,110,50,0.12);
 }
 .ob-textarea { min-height: 100px; resize: vertical; }
@@ -2246,10 +2243,10 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   transition: border-color 0.12s, background 0.12s, color 0.12s;
   display: flex; align-items: center; gap: 8px; user-select: none;
 }
-.ob-card:hover { border-color: var(--fairway-400, #5a9e61); }
+.ob-card:hover { border-color: var(--fairway-400, #9BBAE8); }
 .ob-card.is-selected {
-  background: var(--fairway-700, #1f5225); color: #fff;
-  border-color: var(--fairway-700, #1f5225);
+  background: var(--fairway-700, #4279D1); color: #fff;
+  border-color: var(--fairway-700, #4279D1);
 }
 .ob-card input[type="checkbox"] { display: none; }
 
@@ -2274,7 +2271,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   width: 18px; height: 18px; border-radius: 50%; background: #fff;
   transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
-.ob-toggle input:checked + .ob-toggle-track { background: var(--fairway-600, #2a6e32); }
+.ob-toggle input:checked + .ob-toggle-track { background: var(--fairway-600, #4279D1); }
 .ob-toggle input:checked + .ob-toggle-track::after { transform: translateX(20px); }
 
 /* ── Weekday picker ── */
@@ -2285,10 +2282,10 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   color: var(--ink-600, #666); background: #fff; user-select: none;
   transition: border-color 0.12s, background 0.12s, color 0.12s;
 }
-.ob-day:hover { border-color: var(--fairway-400, #5a9e61); }
+.ob-day:hover { border-color: var(--fairway-400, #9BBAE8); }
 .ob-day.is-selected {
-  background: var(--fairway-700, #1f5225); color: #fff;
-  border-color: var(--fairway-700, #1f5225);
+  background: var(--fairway-700, #4279D1); color: #fff;
+  border-color: var(--fairway-700, #4279D1);
 }
 .ob-day input[type="checkbox"] { display: none; }
 
@@ -2303,7 +2300,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   padding: 28px; text-align: center; cursor: pointer;
   transition: border-color 0.15s, background 0.15s; position: relative;
 }
-.ob-upload-area:hover { border-color: var(--fairway-500, #3a8e42); background: var(--fairway-50, #edf6ee); }
+.ob-upload-area:hover { border-color: var(--fairway-500, #6E9BDD); background: var(--fairway-50, #F0F5FC); }
 .ob-upload-area input[type="file"] {
   position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
 }
@@ -2334,9 +2331,9 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   border-radius: 99px; padding: 2px 10px; color: var(--ink-600, #555);
 }
 .ob-submit-notice {
-  background: var(--fairway-50, #edf6ee); border: 1px solid var(--fairway-200, #b8d9bb);
+  background: var(--fairway-50, #F0F5FC); border: 1px solid var(--fairway-200, #DCE7F7);
   border-radius: 10px; padding: 16px 20px; margin-bottom: 28px;
-  font-size: 14px; color: var(--fairway-900, #1a3a1f);
+  font-size: 14px; color: var(--fairway-900, #20294D);
 }
 
 /* ── Confirmation page ── */
@@ -2345,7 +2342,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 }
 .ob-confirmation-icon {
   width: 64px; height: 64px; border-radius: 50%;
-  background: var(--fairway-700, #1f5225); color: #fff;
+  background: var(--fairway-700, #4279D1); color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 28px; margin: 0 auto 28px;
 }
@@ -2369,10 +2366,10 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 }
 .ob-saved-url-copy {
   padding: 9px 16px; font-size: 13px; font-weight: 600;
-  background: var(--fairway-700, #1f5225); color: #fff;
+  background: var(--fairway-700, #4279D1); color: #fff;
   border: none; border-radius: 7px; cursor: pointer; white-space: nowrap;
 }
-.ob-saved-url-copy:hover { background: var(--fairway-800, #173d1b); }
+.ob-saved-url-copy:hover { background: var(--fairway-800, #283A6E); }
 
 /* ── Footer bar ── */
 .ob-footer {
@@ -2395,23 +2392,23 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
   width: 100%; height: 4px; background: var(--ink-100, #eee); border-radius: 99px; overflow: hidden;
 }
 .ob-progress-fill {
-  height: 100%; background: var(--fairway-600, #2a6e32);
+  height: 100%; background: var(--fairway-600, #4279D1);
   border-radius: 99px; transition: width 0.3s ease;
 }
 .ob-progress-text { font-size: 11px; color: var(--ink-400, #aaa); }
 .ob-btn-next {
-  background: var(--fairway-700, #1f5225); color: #fff;
+  background: var(--fairway-700, #4279D1); color: #fff;
   border: none; border-radius: 8px; padding: 12px 28px;
   font-size: 15px; font-weight: 600; cursor: pointer;
   white-space: nowrap; transition: background 0.15s;
 }
-.ob-btn-next:hover { background: var(--fairway-800, #173d1b); }
+.ob-btn-next:hover { background: var(--fairway-800, #283A6E); }
 .ob-btn-next:disabled { background: var(--ink-300, #bbb); cursor: not-allowed; }
 
 /* ── Welcome step ── */
 .ob-welcome-visual {
   width: 80px; height: 80px; border-radius: 50%;
-  background: var(--fairway-700, #1f5225); color: #fff;
+  background: var(--fairway-700, #4279D1); color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 36px; margin-bottom: 32px;
 }
@@ -2424,8 +2421,8 @@ button.fg-btn-cta, button.fg-btn-brand { background: #2C5036; color: var(--paper
 }
 .ob-feature-dot {
   width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
-  background: var(--fairway-100, #c8e6ca); display: flex; align-items: center; justify-content: center;
-  font-size: 12px; color: var(--fairway-700, #1f5225); font-weight: 700;
+  background: var(--fairway-100, #C9EFE2); display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--fairway-700, #4279D1); font-weight: 700;
 }
 
 /* ── Responsive (ob-) ── */
@@ -2472,8 +2469,10 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 .fg-search-btn:hover, a.fg-search-btn:hover { background: var(--fairway-600); color: var(--paper-100); }
 
 /* ── Shared marketing utilities ── */
-.mk-italic { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
-.fg-italic { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+/* Hervorhebung (Redesign 2026-07): gleiche Schrift/Tinte, Betonung NUR über Stärke.
+   Türkis gibt's ausschließlich an den starken Momenten — siehe fge-type-system.css. */
+.mk-italic { font-family: inherit; font-style: normal; font-weight: 900; color: inherit; }
+.fg-italic { font-family: inherit; font-style: normal; font-weight: 900; color: inherit; }
 
 /* ── Section frame ── */
 .mk-section { max-width: 1280px; margin: 0 auto; padding: 96px 24px; }
@@ -2525,7 +2524,6 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 .home-exp-head { display: flex; flex-direction: column; gap: 18px; }
 .home-exp-head .mk-eyebrow { color: var(--fairway-700); }
 .home-exp-h { margin: 0; padding: 0; font-family: var(--font-display); font-weight: 500; font-size: 48px; line-height: 1.04; letter-spacing: -0.03em; color: var(--ink-900); text-wrap: balance; }
-.home-exp-h .mk-italic { color: var(--fairway-700); }
 .home-exp-lead { margin: 0; font-size: 18px; line-height: 1.55; color: var(--ink-700); max-width: 440px; text-wrap: pretty; }
 .home-exp-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .home-exp-card { background: var(--paper-50); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; }
@@ -3683,7 +3681,6 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 
 /* ---------- request wizard: warm intro screen ---------- */
 .rw-intro { max-width: 600px; }
-.rw-intro .rw-h .mk-italic { color: var(--fairway-700); }
 .rw-intro-contact {
   display: flex; align-items: center; gap: 16px;
   margin-top: 28px; padding: 18px 20px;
@@ -3942,7 +3939,6 @@ button.bc-chip {
   color: var(--paper-50);
   text-wrap: balance;
 }
-.ind-night-h .mk-italic { color: var(--sand-500); }
 .ind-night-sub {
   font-size: 18px; line-height: 1.6;
   color: rgba(251,250,246,0.82);
@@ -4189,7 +4185,7 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
 .rw-receipt > div > span:last-child { color: var(--ink-900); font-weight: 500; }
 .rw-success-ctas { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; justify-content: center; }
 
-.fg-input-err { border-color: var(--clay-600, #B45A37) !important; box-shadow: 0 0 0 3px rgba(180,90,55,.12); }
+.fg-input-err { border-color: var(--danger, #B4332B) !important; box-shadow: 0 0 0 3px rgba(180,51,43,.12); }
 
 /* ============================================================= */
 /* Über uns (About) — ported pixel-for-pixel from _design site.css */
@@ -4513,7 +4509,7 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   color: var(--fairway-700);
   display: inline-flex; align-items: center; justify-content: center;
 }
-.ct-channel-wa .ct-channel-ic { background: #DCF8E8; color: #1F8A4C; }
+.ct-channel-wa .ct-channel-ic { background: #D9F6EC; color: #00A87E; }
 .ct-channel-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .ct-channel-l {
   font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
@@ -5234,8 +5230,8 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
 .rw-error {
   margin: 14px 28px 0; padding: 12px 16px;
   border-radius: 12px;
-  background: rgba(180, 90, 55, .1);
-  color: var(--clay-600, #B45A37);
+  background: rgba(180, 51, 43, .08);
+  color: var(--danger, #B4332B);
   font-size: 14px; font-weight: 500;
 }
 
