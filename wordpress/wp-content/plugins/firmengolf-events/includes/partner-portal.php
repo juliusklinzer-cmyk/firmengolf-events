@@ -610,6 +610,26 @@ function fge_portal_validate_event_fields(): array {
 	if ( sanitize_text_field( wp_unslash( $_POST['fge_event_type'] ?? '' ) ) === '' ) {
 		$errors['fge_event_type'] = 'Bitte wähle eine Eventart aus.';
 	}
+	// Gemischte Einzelposten (pro Person + pauschal): ohne max. Teilnehmerzahl kann
+	// kein ehrlicher „ab"-Preis pro Person berechnet werden (Pauschale wird umgelegt).
+	if ( sanitize_text_field( wp_unslash( $_POST['fge_price_mode'] ?? '' ) ) === 'einzel'
+		&& absint( $_POST['fge_participants_max'] ?? 0 ) < 1 ) {
+		$has_pp = $has_flat = false;
+		foreach ( preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_line_items'] ?? '' ) ) as $vline ) {
+			$vparts = explode( '|', $vline, 3 );
+			if ( '' === trim( $vparts[0] ?? '' ) ) {
+				continue;
+			}
+			if ( trim( $vparts[2] ?? '' ) === 'person' ) {
+				$has_pp = true;
+			} else {
+				$has_flat = true;
+			}
+		}
+		if ( $has_pp && $has_flat ) {
+			$errors['fge_participants_max'] = 'Bitte gib die maximale Teilnehmerzahl an — bei Posten „pro Person" plus Pauschalen berechnen wir daraus den „ab"-Preis pro Person.';
+		}
+	}
 	return $errors;
 }
 
@@ -3342,18 +3362,23 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 								<div class="fp-price-item">
 									<input class="fg-form-input" type="text" value="<?php echo esc_attr( (string) ( $pit['label'] ?? '' ) ); ?>" placeholder="Bezeichnung (z. B. Golflehrer)" data-fp-item-label>
 									<input class="fg-form-input" type="text" inputmode="decimal" value="<?php echo esc_attr( (string) ( $pit['cost'] ?? '' ) ); ?>" placeholder="80" data-fp-item-cost>
+									<select class="fg-form-input fp-item-basis" data-fp-item-basis aria-label="Preisbasis">
+										<option value="pauschal" <?php selected( ( $pit['basis'] ?? 'pauschal' ), 'pauschal' ); ?>>pauschal</option>
+										<option value="person" <?php selected( ( $pit['basis'] ?? 'pauschal' ), 'person' ); ?>>pro Person</option>
+									</select>
 									<button type="button" class="x" data-fp-item-remove aria-label="Entfernen">×</button>
 								</div>
 								<?php endforeach; ?>
 							</div>
 							<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fp-price-additem">+ Kosten hinzufügen</button>
-							<textarea name="fge_line_items" id="fge_line_items" hidden><?php echo esc_textarea( implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ), $pitems ) ) ); ?></textarea>
+							<textarea name="fge_line_items" id="fge_line_items" hidden><?php echo esc_textarea( implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ) . ' | ' . ( ( $i['basis'] ?? 'pauschal' ) === 'person' ? 'person' : 'pauschal' ), $pitems ) ) ); ?></textarea>
 						</div>
 
 						<div class="fp-price-summary" id="fp-price-summary" data-markup="<?php echo (int) $markup; ?>">
 							<div class="row"><span>Netto-Summe</span><span class="v" id="fp-sum-net">€0</span></div>
 							<div class="row"><span>+ Vermittlung Firmengolf (<?php echo (int) $markup; ?> %)</span><span class="v" id="fp-sum-fee">€0</span></div>
 							<div class="row total"><span>Gesamtpreis für das Unternehmen</span><span class="v" id="fp-sum-total">€0</span></div>
+							<div class="row" style="font-size:12px;color:var(--ink-500);border:0;padding-top:6px;"><span>Alle Beträge netto — die gesetzliche MwSt. kommt auf der Rechnung oben drauf.</span><span></span></div>
 						</div>
 						<div class="fg-form-row fg-form-row--3col">
 							<div>
@@ -3831,13 +3856,17 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 				else if ((s.match(/\./g) || []).length > 1 || /\.\d{3}$/.test(s)) { s = s.replace(/\./g, ''); }
 				return parseFloat(s) || 0;
 				}
-				function netSum() {
-					if (modeIn && modeIn.value === 'einzel' && items) {
-						var s = 0;
-						items.querySelectorAll('[data-fp-item-cost]').forEach(function (i) { s += parseNum(i.value); });
-						return s;
+				function itemSums() {
+					var pp = 0, flat = 0;
+					if (items) {
+						items.querySelectorAll('.fp-price-item').forEach(function (row) {
+							var c = row.querySelector('[data-fp-item-cost]');
+							var b = row.querySelector('[data-fp-item-basis]');
+							var v = c ? parseNum(c.value) : 0;
+							if (b && b.value === 'person') { pp += v; } else { flat += v; }
+						});
 					}
-					return amount ? parseNum(amount.value) : 0;
+					return { pp: pp, flat: flat };
 				}
 				function syncItems() {
 					if (!items || !itemsTa) { return; }
@@ -3845,20 +3874,39 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					items.querySelectorAll('.fp-price-item').forEach(function (row) {
 						var l = row.querySelector('[data-fp-item-label]');
 						var c = row.querySelector('[data-fp-item-cost]');
-						if (l && l.value.trim() !== '') { lines.push(l.value.trim() + ' | ' + (c ? c.value.trim() : '')); }
+						var b = row.querySelector('[data-fp-item-basis]');
+						if (l && l.value.trim() !== '') { lines.push(l.value.trim() + ' | ' + (c ? c.value.trim() : '') + ' | ' + (b ? b.value : 'pauschal')); }
 					});
 					itemsTa.value = lines.join('\n');
 				}
 				function recalc() {
 					if (!summary) { return; }
-					var net = netSum();
-					var perPerson = modeIn && modeIn.value === 'gesamt' && basisIn && basisIn.value === 'person';
-					byId('fp-sum-net').textContent   = fmt(net) + (perPerson ? ' pro Person' : '');
-					byId('fp-sum-fee').textContent   = fmt(net * markup / 100);
-					byId('fp-sum-total').textContent = fmt(net * (1 + markup / 100)) + (perPerson ? ' pro Person' : '');
+					var paxIn  = byId('fge_participants_max');
+					var paxMax = paxIn ? parseInt(paxIn.value, 10) || 0 : 0;
+					var einzel = modeIn && modeIn.value === 'einzel';
+					var net, perPerson, netLabel;
+					if (einzel) {
+						var su = itemSums();
+						perPerson = su.pp > 0;
+						// „ab"-Preis p.P.: Pauschalen auf die maximale Gruppengröße umgelegt
+						net = perPerson ? su.pp + (paxMax > 0 ? su.flat / paxMax : 0) : su.flat;
+						netLabel = perPerson && su.flat > 0
+							? fmt(su.pp) + ' p.P. + ' + fmt(su.flat) + ' pauschal'
+							: fmt(net) + (perPerson ? ' pro Person' : '');
+						if (perPerson && su.flat > 0 && !paxMax) { netLabel += ' — bitte max. Teilnehmer angeben'; }
+					} else {
+						perPerson = basisIn && basisIn.value === 'person';
+						net = amount ? parseNum(amount.value) : 0;
+						netLabel = fmt(net) + (perPerson ? ' pro Person' : '');
+					}
+					byId('fp-sum-net').textContent   = netLabel;
+					byId('fp-sum-fee').textContent   = fmt(net * markup / 100) + (perPerson ? ' pro Person' : '');
+					byId('fp-sum-total').textContent = (einzel && perPerson ? 'ab ' : '') + fmt(net * (1 + markup / 100)) + (perPerson ? ' pro Person' : '') + (einzel && perPerson && paxMax ? ' (bei ' + paxMax + ' Personen)' : '');
 					var pv = byId('fp-pv-price');
 					if (pv) { pv.textContent = net > 0 ? 'ab ' + fmt(net * (1 + markup / 100)) + (perPerson ? ' /p.P.' : '') : 'Preis'; }
 				}
+				var paxMaxIn = byId('fge_participants_max');
+				if (paxMaxIn) { paxMaxIn.addEventListener('input', recalc); }
 				document.querySelectorAll('[data-fp-mode]').forEach(function (b) {
 					b.addEventListener('click', function () {
 						if (modeIn) { modeIn.value = b.dataset.fpMode; }
@@ -3875,14 +3923,16 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						recalc();
 					});
 				});
-				function addItemRow(label, cost) {
+				function addItemRow(label, cost, basis) {
 					var row = document.createElement('div');
 					row.className = 'fp-price-item';
 					row.innerHTML = '<input class="fg-form-input" type="text" placeholder="Bezeichnung (z. B. Golflehrer)" data-fp-item-label>' +
 						'<input class="fg-form-input" type="text" inputmode="decimal" placeholder="80" data-fp-item-cost>' +
+						'<select class="fg-form-input fp-item-basis" data-fp-item-basis aria-label="Preisbasis"><option value="pauschal">pauschal</option><option value="person">pro Person</option></select>' +
 						'<button type="button" class="x" data-fp-item-remove aria-label="Entfernen">×</button>';
 					row.querySelector('[data-fp-item-label]').value = label || '';
 					row.querySelector('[data-fp-item-cost]').value  = cost || '';
+					row.querySelector('[data-fp-item-basis]').value = basis === 'person' ? 'person' : 'pauschal';
 					items.appendChild(row);
 				}
 				var addBtn = byId('fp-price-additem');

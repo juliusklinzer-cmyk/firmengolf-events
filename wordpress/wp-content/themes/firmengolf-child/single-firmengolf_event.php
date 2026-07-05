@@ -722,6 +722,7 @@ get_header();
 							<?php echo esc_html( $price_main ); ?>
 							<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
 						</div>
+						<?php if ( $price_label ) : ?><div style="font-size:11.5px;color:var(--ink-500);margin-top:2px;">zzgl. gesetzl. MwSt.</div><?php endif; ?>
 					</div>
 
 					<div class="fg-rail-fields">
