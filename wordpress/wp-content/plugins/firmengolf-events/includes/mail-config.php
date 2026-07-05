@@ -7,8 +7,11 @@
  * Damit produktiv nicht `wordpress@<domain>` als Absender erscheint, setzen wir
  * From/From-Name/Reply-To hier zentral (aus fge_company()).
  *
- * PRODUKTIV ZUSÄTZLICH NÖTIG (siehe Go-Live-Plan): echter SMTP-Versand über
- * firmengolf-events.de (One.com) + SPF/DKIM/DMARC — sonst landen Mails im Spam.
+ * PRODUKTIV ZUSÄTZLICH NÖTIG (siehe Go-Live-Plan): echter SMTP-Versand via
+ * Brevo (smtp-relay.brevo.com, WP-SMTP-Plugin auf dem Hetzner-Server) mit
+ * authentifizierter Domain firmengolf-events.de (Brevo-Code, DKIM, DMARC;
+ * SPF in den bestehenden M365-Record integrieren) — sonst landen Mails im Spam.
+ * Postfächer laufen über Microsoft 365 (geteiltes Postfach „Events" + Aliase).
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
