@@ -749,3 +749,41 @@
    als der Hero (Julius: „alle Container so breit wie der Hero"). */
 .fp-page-wrap .fgpp .page-wide { max-width: none; padding: 0; }
 .fp-page-wrap .fgpp .foot { max-width: none; padding-left: 0; padding-right: 0; }
+
+/* ── Willkommens-Panel (erstes Login nach Einladung) ───────────────────────── */
+.fgpp .fp-welcome, .fp-welcome { background: var(--fairway-100); border: 1px solid var(--fairway-200); border-radius: var(--radius-lg, 16px); padding: 22px 26px; margin-bottom: 20px; }
+.fp-welcome-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fp-welcome-head h3 { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.015em; color: var(--ink-900); margin: 0 0 4px; }
+.fp-welcome-close { color: var(--ink-500); text-decoration: none; font-size: 16px; padding: 2px 6px; border-radius: 6px; }
+.fp-welcome-close:hover { background: rgba(14,19,16,0.06); color: var(--ink-900); }
+.fp-welcome p { font-size: 14.5px; color: var(--ink-700); margin: 0 0 10px; line-height: 1.55; }
+.fp-welcome ol { margin: 0 0 14px; padding-left: 20px; }
+.fp-welcome li { font-size: 14.5px; color: var(--ink-800); line-height: 1.7; }
+.fp-welcome li a { color: var(--fairway-700); font-weight: 600; text-decoration: none; }
+.fp-welcome li a:hover { text-decoration: underline; }
+.fp-welcome-foot { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 0 !important; }
+.fp-welcome-foot span { font-size: 13.5px; color: var(--ink-600); }
+.fp-welcome-foot span a { color: var(--fairway-700); font-weight: 600; text-decoration: none; }
+
+/* ── Sichtbarkeit steigern (Leitfaden + Übersicht-Teaser) ──────────────────── */
+.fgpp .vis-list { display: flex; flex-direction: column; }
+.fgpp .vis-item { display: flex; align-items: flex-start; gap: 14px; padding: 13px 4px; border-top: 1px solid var(--ink-200); text-decoration: none; color: inherit; }
+.fgpp .vis-item:first-child { border-top: 0; }
+.fgpp a.vis-item:hover .vis-main b { color: var(--fairway-700); }
+.fgpp .vis-check { width: 26px; height: 26px; border-radius: 999px; flex: none; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; border: 1.5px solid var(--ink-300); color: transparent; margin-top: 2px; }
+.fgpp .vis-item.is-done .vis-check { background: #EAF7F0; border-color: #5E8A65; color: #2F6E45; }
+.fgpp .vis-item.is-tip .vis-check { border: 0; background: var(--fairway-100); color: var(--fairway-700); }
+.fgpp .vis-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fgpp .vis-main b { font-size: 14.5px; font-weight: 600; color: var(--ink-900); }
+.fgpp .vis-item.is-done .vis-main b { color: var(--ink-500); text-decoration: line-through; text-decoration-color: rgba(20,35,26,0.25); }
+.fgpp .vis-main span { font-size: 13px; color: var(--ink-500); line-height: 1.5; }
+.fgpp .vis-item .todo-arrow { margin-left: auto; align-self: center; }
+
+.fgpp .vis-teaser { display: flex; align-items: center; gap: 22px; margin-top: 40px; padding: 20px 26px; background: var(--fairway-100); border: 1px solid var(--fairway-200); border-radius: var(--radius-lg, 16px); text-decoration: none; color: inherit; flex-wrap: wrap; transition: border-color var(--dur-fast) var(--ease-out); }
+.fgpp .vis-teaser:hover { border-color: var(--fairway-300, var(--fairway-200)); }
+.fgpp .vis-teaser-main { flex: 1; min-width: 260px; }
+.fgpp .vis-teaser-title { font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -0.015em; color: var(--ink-900); margin-bottom: 4px; }
+.fgpp .vis-teaser p { font-size: 14px; color: var(--ink-700); margin: 0; line-height: 1.5; max-width: 640px; }
+.fgpp .vis-teaser-bar { width: 140px; height: 7px; border-radius: 999px; background: rgba(14,19,16,0.10); overflow: hidden; flex: none; }
+.fgpp .vis-teaser-bar span { display: block; height: 100%; border-radius: 999px; background: #2F6E45; }
+.fgpp .vis-teaser .btn { flex: none; }

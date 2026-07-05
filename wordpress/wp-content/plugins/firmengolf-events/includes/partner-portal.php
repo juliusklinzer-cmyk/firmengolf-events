@@ -60,6 +60,20 @@ function fge_portal_handle_ics(): void {
 	exit;
 }
 
+/** Willkommens-Panel ausblenden (einmaliger Erste-Schritte-Kasten). */
+function fge_portal_handle_dismiss_welcome(): void {
+	if ( 'dismiss_welcome' !== sanitize_key( $_GET['portal_action'] ?? '' ) || ! is_user_logged_in() ) {
+		return;
+	}
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'fge_dismiss_welcome' ) ) {
+		return;
+	}
+	delete_user_meta( get_current_user_id(), 'fge_welcome_pending' );
+	wp_safe_redirect( fge_portal_page_url() );
+	exit;
+}
+add_action( 'template_redirect', 'fge_portal_handle_dismiss_welcome', 4 );
+
 /** PRG handler for the Anfragen tab — confirm a final wish date. Nonce + ownership. */
 function fge_portal_handle_request(): void {
 	$action = sanitize_key( $_POST['portal_action'] ?? '' );
@@ -583,7 +597,7 @@ function fge_portal_render_gate(): void {
 }
 
 function fge_portal_get_active_tab(): string {
-	$allowed = [ 'uebersicht', 'angebote', 'anfragen', 'kalender', 'platz', 'team', 'kennzahlen' ];
+	$allowed = [ 'uebersicht', 'angebote', 'anfragen', 'kalender', 'platz', 'team', 'kennzahlen', 'sichtbarkeit' ];
 	$tab     = sanitize_key( $_GET['tab'] ?? 'uebersicht' );
 	return in_array( $tab, $allowed, true ) ? $tab : 'uebersicht';
 }
@@ -979,6 +993,30 @@ function fge_portal_render(): void {
 		<?php endif; ?>
 
 		<?php
+		// Willkommens-Panel beim ersten Login nach Einladung/Onboarding (einmalig, wegklickbar).
+		if ( '1' === (string) get_user_meta( get_current_user_id(), 'fge_welcome_pending', true ) ) :
+			$wp_dismiss = wp_nonce_url( add_query_arg( [ 'portal_action' => 'dismiss_welcome' ], fge_portal_page_url() ), 'fge_dismiss_welcome' );
+			$wp_phone   = fge_company()['phone_display'] ?? '';
+			?>
+			<div class="fp-welcome">
+				<div class="fp-welcome-head">
+					<h3>Willkommen, <?php echo esc_html( $partner_name ); ?>! 👋</h3>
+					<a href="<?php echo esc_url( $wp_dismiss ); ?>" class="fp-welcome-close" aria-label="Ausblenden">✕</a>
+				</div>
+				<p>Wir haben dein Profil schon komplett eingerichtet — du musst nichts von vorn anlegen. Drei Schritte zum Start:</p>
+				<ol>
+					<li><a href="<?php echo esc_url( fge_portal_page_url() . '?tab=platz' ); ?>">Profil prüfen</a> und Feinheiten anpassen — Beschreibung, Ausstattung, Kontakt</li>
+					<li><a href="<?php echo esc_url( fge_portal_page_url() . '?tab=platz&edit=medien' ); ?>">Fotos ansehen</a> — gern eigene Bilder hochladen, die verkaufen am besten</li>
+					<li><a href="<?php echo esc_url( fge_portal_page_url() . '?tab=angebote&portal_action=new' ); ?>">Erstes Event-Angebot anlegen</a> — erst damit geht deine Seite öffentlich live</li>
+				</ol>
+				<p class="fp-welcome-foot">
+					<a class="btn btn-ghost btn-sm" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" target="_blank" rel="noopener">Vorschau deiner Seite ↗</a>
+					<?php if ( '' !== $wp_phone ) : ?><span>Fragen? Ruf uns an: <a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $wp_phone ) ); ?>"><?php echo esc_html( $wp_phone ); ?></a></span><?php endif; ?>
+				</p>
+			</div>
+		<?php endif; ?>
+
+		<?php
 		$err_notice = sanitize_key( $_GET['portal_err_notice'] ?? '' );
 		$err_texts  = [
 			'expired'         => 'Deine Sitzung war abgelaufen — die Aktion wurde nicht ausgeführt. Bitte versuch es noch einmal.',
@@ -1025,6 +1063,7 @@ function fge_portal_render(): void {
 			'platz'      => 'fge_portal_section_platz',
 			'team'       => 'fge_portal_section_team',
 			'kennzahlen' => 'fge_portal_section_stats',
+			'sichtbarkeit' => 'fge_portal_section_sichtbarkeit',
 		];
 		$section_fn = $sections_map[ $active_tab ] ?? 'fge_portal_section_uebersicht';
 		?>
@@ -1130,6 +1169,104 @@ function fge_portal_render(): void {
 // SECTION: ÜBERSICHT
 // ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Profil-Vollständigkeit als Checkliste: jeder Punkt zahlt messbar auf die
+ * Sichtbarkeit ein (vollständige Profile wirken besser und konvertieren besser).
+ */
+function fge_portal_visibility_checklist( int $partner_id ): array {
+	$m       = static fn( string $k ): string => (string) get_post_meta( $partner_id, '_fge_' . $k, true );
+	$base    = fge_portal_page_url();
+	$gallery = array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $partner_id, '_fge_gallery_attachment_ids', true ) ) ) );
+	$infra   = (array) get_post_meta( $partner_id, '_fge_infra', true );
+	$events  = get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
+	] );
+	$types = [];
+	foreach ( $events as $eid ) {
+		$types[ (string) get_post_meta( $eid, '_fge_event_type', true ) ] = true;
+	}
+	$pois = function_exists( 'fge_partner_arrival_pois' ) ? fge_partner_arrival_pois( $partner_id ) : [];
+
+	return [
+		[ 'done' => '' !== trim( $m( 'public_short_description' ) ), 'label' => 'Beschreibung deines Platzes', 'hint' => '2–3 Sätze, was euch für Firmen besonders macht', 'url' => $base . '?tab=platz&edit=steckbrief' ],
+		[ 'done' => (int) $m( 'logo_attachment_id' ) > 0, 'label' => 'Euer Logo', 'hint' => 'erscheint auf Profil und Event-Karten', 'url' => $base . '?tab=platz&edit=medien' ],
+		[ 'done' => count( $gallery ) >= 3, 'label' => 'Mindestens 3 eigene Fotos', 'hint' => 'Angebote mit echten Fotos bekommen deutlich mehr Anfragen', 'url' => $base . '?tab=platz&edit=medien' ],
+		[ 'done' => count( array_filter( $infra ) ) >= 5, 'label' => 'Ausstattung angehakt', 'hint' => 'Firmen filtern nach Gastro, Räumen & Co.', 'url' => $base . '?tab=platz&edit=ausstattung' ],
+		[ 'done' => ! empty( $pois ), 'label' => 'Anfahrt & Parken beschrieben', 'hint' => 'nimmt Planern die häufigsten Fragen ab', 'url' => $base . '?tab=platz&edit=standort' ],
+		[ 'done' => count( $types ) >= 2, 'label' => 'Mindestens 2 Event-Kategorien mit Angebot', 'hint' => 'jede Kategorie ist ein eigener Sucheinstieg', 'url' => $base . '?tab=angebote' ],
+	];
+}
+
+/** Sichtbarkeit steigern — eigener Bereich, verlinkt aus der Übersicht (kein Nav-Tab). */
+function fge_portal_section_sichtbarkeit( int $partner_id ): void {
+	$base      = fge_portal_page_url();
+	$items     = fge_portal_visibility_checklist( $partner_id );
+	$done      = count( array_filter( array_column( $items, 'done' ) ) );
+	$pct       = (int) round( $done / max( 1, count( $items ) ) * 100 );
+	$is_public = function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id );
+	$slug      = get_post_field( 'post_name', $partner_id );
+	$badge     = '<a href="' . esc_url( home_url( '/golfplatz/' . $slug . '/' ) . '?utm_source=partner-badge' ) . '" target="_blank" rel="noopener">' . "\n"
+		. '  <img src="' . esc_url( function_exists( 'fge_get_logo_url' ) ? fge_get_logo_url() : '' ) . '" alt="Offizieller Partner von Firmengolf" height="32" style="height:32px">' . "\n" . '</a>';
+	?>
+	<div class="fgpp"><div class="page-wide">
+		<section class="section">
+			<div class="section-head">
+				<div>
+					<div class="eyebrow">Mehr Anfragen bekommen</div>
+					<h2>Sichtbarkeit <em>steigern</em></h2>
+					<p>Je vollständiger und aktiver dein Auftritt, desto öfter wirst du gefunden — auf Firmengolf und über eure eigene Website. Alles hier dauert nur Minuten.</p>
+				</div>
+				<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo esc_url( $base ); ?>">← Zur Übersicht</a></div>
+			</div>
+
+			<div class="panel" style="margin-bottom:18px;">
+				<div class="panel-head"><h3>1 · Profil vervollständigen</h3><span class="todo-pill<?php echo 100 === $pct ? ' done' : ''; ?>"><?php echo (int) $pct; ?> %</span></div>
+				<div class="vis-list">
+					<?php foreach ( $items as $it ) : ?>
+					<a class="vis-item<?php echo $it['done'] ? ' is-done' : ''; ?>" href="<?php echo esc_url( $it['url'] ); ?>">
+						<span class="vis-check"><?php echo $it['done'] ? '✓' : ''; ?></span>
+						<span class="vis-main"><b><?php echo esc_html( $it['label'] ); ?></b><span><?php echo esc_html( $it['hint'] ); ?></span></span>
+						<?php if ( ! $it['done'] ) : ?><span class="todo-arrow">›</span><?php endif; ?>
+					</a>
+					<?php endforeach; ?>
+				</div>
+			</div>
+
+			<div class="panel" style="margin-bottom:18px;">
+				<div class="panel-head"><h3>2 · Eure Website arbeiten lassen</h3></div>
+				<p style="font-size:14.5px;color:var(--ink-600);margin:0 0 14px;line-height:1.55;">Zeigt eure Firmengolf-Events direkt auf eurer Club-Website (immer aktuell, ohne Pflege) und verlinkt uns mit dem Partner-Logo — das stärkt euer Profil bei Google und bringt Firmen direkt zu euren Angeboten.</p>
+				<?php if ( $is_public ) : ?>
+					<div style="display:flex;gap:10px;flex-wrap:wrap;">
+						<a class="btn btn-brand btn-sm" href="<?php echo esc_url( $base . '?tab=platz#embed' ); ?>">Event-Widget einbauen →</a>
+					</div>
+					<div style="margin-top:18px;">
+						<div style="font-size:13px;font-weight:600;color:var(--ink-800);margin-bottom:8px;">Partner-Logo mit Link (für Footer oder „Partner"-Seite eurer Website):</div>
+						<textarea id="fge-badge-snippet" readonly rows="3" style="width:100%;font:12.5px/1.5 ui-monospace,Consolas,monospace;color:var(--ink-800);background:var(--paper-200);border:1px solid var(--ink-200);border-radius:8px;padding:12px 14px;resize:none;box-sizing:border-box;" onclick="this.select()"><?php echo esc_textarea( $badge ); ?></textarea>
+						<button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="var t=document.getElementById('fge-badge-snippet');t.select();document.execCommand('copy');this.textContent='Kopiert ✓';">Logo-Snippet kopieren</button>
+					</div>
+				<?php else : ?>
+					<div class="pe-empty" style="border:1px dashed var(--ink-200);border-radius:10px;padding:16px 18px;"><p style="margin:0;">Widget und Partner-Logo bekommst du hier, sobald dein Platz öffentlich ist (erstes Event freigegeben).</p></div>
+				<?php endif; ?>
+			</div>
+
+			<div class="panel">
+				<div class="panel-head"><h3>3 · Aktiv bleiben</h3></div>
+				<div class="vis-list">
+					<div class="vis-item is-tip"><span class="vis-check">→</span><span class="vis-main"><b>Schnell auf Terminanfragen reagieren</b><span>Plätze, die binnen 24 Stunden zusagen, gewinnen die meisten Buchungen — Firmen fragen oft mehrere Termine parallel an.</span></span></div>
+					<div class="vis-item is-tip"><span class="vis-check">→</span><span class="vis-main"><b>Eure Event-Seite teilen</b><span>Link zu euren Angeboten in Newsletter, Social Media und ins Google-Unternehmensprofil („Neuigkeiten") stellen.</span></span></div>
+					<div class="vis-item is-tip"><span class="vis-check">→</span><span class="vis-main"><b>Mehr Kategorien anbieten</b><span>After-Work, Platzreife, Turnier: jede Kategorie erscheint in einer eigenen Suche und auf eigenen Themen-Seiten.</span></span></div>
+					<div class="vis-item is-tip"><span class="vis-check">→</span><span class="vis-main"><b>Bald: Bewertungen</b><span>Nach durchgeführten Events können Firmen euch bewerten — gute Bewertungen werden prominent angezeigt.</span></span></div>
+				</div>
+			</div>
+		</section>
+	</div></div>
+	<?php
+}
+
 function fge_portal_section_uebersicht( int $partner_id ): void {
 	$base = fge_portal_page_url();
 
@@ -1151,6 +1288,22 @@ function fge_portal_section_uebersicht( int $partner_id ): void {
 		</section>
 	</div></div>
 	<?php fge_portal_render_cat_grid( $partner_id, $base, true ); ?>
+
+	<?php
+	$vis_items = fge_portal_visibility_checklist( $partner_id );
+	$vis_done  = count( array_filter( array_column( $vis_items, 'done' ) ) );
+	$vis_pct   = (int) round( $vis_done / max( 1, count( $vis_items ) ) * 100 );
+	?>
+	<div class="fgpp"><div class="page-wide">
+		<a class="vis-teaser" href="<?php echo esc_url( $base . '?tab=sichtbarkeit' ); ?>">
+			<div class="vis-teaser-main">
+				<div class="vis-teaser-title">Sichtbarkeit steigern</div>
+				<p>Vollständiges Profil, Events auf eurer eigenen Website, Partner-Logo mit Link: kleine Handgriffe, die messbar mehr Anfragen bringen. Dein Profil ist zu <b><?php echo (int) $vis_pct; ?> %</b> vollständig.</p>
+			</div>
+			<span class="vis-teaser-bar"><span style="width:<?php echo (int) $vis_pct; ?>%"></span></span>
+			<span class="btn btn-ghost btn-sm">Zum Leitfaden →</span>
+		</a>
+	</div></div>
 
 	<?php fge_portal_render_anfragen_preview( $partner_id ); ?>
 
@@ -2608,6 +2761,29 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 						<a class="btn btn-ghost btn-sm" style="margin-top:14px;" href="<?php echo $edit_sec( 'kontakt' ); ?>">Kontaktdaten bearbeiten</a>
 					</div>
 				</div>
+			</section>
+
+			<section class="section" id="embed">
+				<div class="section-head">
+					<div>
+						<div class="eyebrow">Für eure Website</div>
+						<h2>Eure Events auf <em>eurer Seite</em></h2>
+						<p>Zwei Zeilen für euren Webmaster — dann erscheinen eure Firmengolf-Angebote automatisch auch auf eurer Club-Website. Immer aktuell, ohne Pflege, ohne Cookie-Banner-Anpassung.</p>
+					</div>
+				</div>
+				<?php if ( function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) && function_exists( 'fge_embed_snippet' ) ) : ?>
+				<div class="panel">
+					<textarea id="fge-embed-snippet" readonly rows="3" style="width:100%;font:12.5px/1.5 ui-monospace,Consolas,monospace;color:var(--ink-800);background:var(--paper-200);border:1px solid var(--ink-200);border-radius:8px;padding:12px 14px;resize:none;box-sizing:border-box;" onclick="this.select()"><?php echo esc_textarea( fge_embed_snippet( $partner_id ) ); ?></textarea>
+					<div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap;">
+						<button type="button" class="btn btn-brand btn-sm" onclick="var t=document.getElementById('fge-embed-snippet');t.select();document.execCommand('copy');this.textContent='Kopiert ✓';">Snippet kopieren</button>
+						<a class="btn btn-ghost btn-sm" href="<?php echo esc_url( home_url( '/embed/platz/' . get_post_field( 'post_name', $partner_id ) . '/' ) ); ?>" target="_blank" rel="noopener">Vorschau ansehen ↗</a>
+					</div>
+				</div>
+				<?php else : ?>
+				<div class="panel pe-empty">
+					<p>Sobald dein Platz öffentlich ist (mindestens ein freigegebenes Event), bekommst du hier den fertigen Einbau-Code für eure Website.</p>
+				</div>
+				<?php endif; ?>
 			</section>
 
 		</div>
