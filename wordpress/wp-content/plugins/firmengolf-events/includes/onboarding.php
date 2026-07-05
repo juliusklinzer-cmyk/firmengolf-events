@@ -594,7 +594,8 @@ function fge_onboarding_handle_step(): void {
 	$errors = fge_onboarding_validate_slide( $id, $_POST );
 	if ( ! empty( $errors ) ) {
 		$trans_key = 'fge_ob_err_' . $partner_id . '_' . $step;
-		set_transient( $trans_key, $errors, 120 );
+		// Eingaben mitspeichern, damit die Slide nach dem Fehler nicht leer ist (Audit: Onboarding-Redisplay).
+		set_transient( $trans_key, [ '_errors' => $errors, '_data' => wp_unslash( $_POST ) ], 300 );
 		$err_url = add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) );
 		if ( $return_review ) {
 			$err_url = add_query_arg( 'ob_return', '1', $err_url );
@@ -617,7 +618,7 @@ function fge_onboarding_handle_step(): void {
 			if ( $user_id === -1 ) {
 				// E-Mail bereits registriert → nicht einloggen, zum Login leiten.
 				$trans_key = 'fge_ob_err_' . $partner_id . '_' . $step;
-				set_transient( $trans_key, [ 'fge_contact_email' => 'Diese E-Mail ist bereits registriert. Bitte logge dich zuerst in dein Partnerkonto ein, dann kannst du das Onboarding fortsetzen.' ], 120 );
+				set_transient( $trans_key, [ '_errors' => [ 'fge_contact_email' => 'Diese E-Mail ist bereits registriert. Bitte logge dich zuerst in dein Partnerkonto ein, dann kannst du das Onboarding fortsetzen.' ], '_data' => wp_unslash( $_POST ) ], 300 );
 				wp_redirect( add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) ) );
 				exit;
 			}
@@ -782,8 +783,47 @@ function fge_onboarding_render(): void {
 	$errors = [];
 	if ( isset( $_GET['ob_err'] ) && $partner_id > 0 ) {
 		$trans_key = 'fge_ob_err_' . $partner_id . '_' . $step;
-		$errors    = (array) get_transient( $trans_key );
+		$raw       = get_transient( $trans_key );
 		delete_transient( $trans_key );
+		if ( isset( $raw['_errors'] ) ) {
+			$errors = (array) $raw['_errors'];
+			// Getippte Eingaben der Slide wiederherstellen (per JS im Footer, generisch über Feldnamen).
+			$refill = array_filter(
+				(array) ( $raw['_data'] ?? [] ),
+				static fn( $k ): bool => str_starts_with( (string) $k, 'fge_' ) && ! in_array( $k, [ 'fge_ob_nonce', 'fge_ob_action', 'fge_ob_step', 'fge_ob_return', 'fge_ob_token' ], true ),
+				ARRAY_FILTER_USE_KEY
+			);
+			if ( ! empty( $refill ) ) {
+				add_action( 'wp_footer', static function () use ( $refill ): void {
+					?>
+					<script id="fge-ob-refill" type="application/json"><?php echo wp_json_encode( $refill ); ?></script>
+					<script>
+					(function () {
+						var node = document.getElementById('fge-ob-refill');
+						if (!node) return;
+						var data; try { data = JSON.parse(node.textContent || '{}'); } catch (e) { return; }
+						Object.keys(data).forEach(function (k) {
+							var v = data[k];
+							if (Array.isArray(v)) {
+								var els = document.getElementsByName(k + '[]');
+								Array.prototype.forEach.call(els, function (el) {
+									if (el.type === 'checkbox' || el.type === 'radio') { el.checked = v.map(String).indexOf(String(el.value)) !== -1; }
+								});
+								return;
+							}
+							Array.prototype.forEach.call(document.getElementsByName(k), function (el) {
+								if (el.type === 'checkbox' || el.type === 'radio') { el.checked = String(el.value) === String(v); }
+								else if (el.type !== 'file' && el.type !== 'hidden') { el.value = v; }
+							});
+						});
+					})();
+					</script>
+					<?php
+				} );
+			}
+		} else {
+			$errors = (array) $raw;
+		}
 	}
 
 	$save_exit_url = ( fge_onboarding_uses_token( $step ) && $token !== '' )

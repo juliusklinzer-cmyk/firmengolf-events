@@ -62,9 +62,23 @@ function fge_request_number( int $request_id ): string {
 function fge_generate_request_ref(): string {
 	$yy  = (int) current_time( 'y' );
 	$opt = 'fge_request_seq_' . $yy;
-	$seq = (int) get_option( $opt, 0 ) + 1;
-	update_option( $opt, $seq, false );
-	return sprintf( 'FG-%02d-%03d', $yy, $seq );
+	return sprintf( 'FG-%02d-%03d', $yy, fge_atomic_sequence( $opt ) );
+}
+
+/**
+ * Atomarer Jahres-Zähler direkt auf der Options-Tabelle: get_option+update_option
+ * war nicht atomar → doppelte Vorgangsnummern bei gleichzeitigen Anfragen möglich.
+ */
+function fge_atomic_sequence( string $option ): int {
+	global $wpdb;
+	add_option( $option, 0, '', false ); // legt die Zeile an, falls neu (no-op sonst)
+	// LAST_INSERT_ID-Trick: der gelesene Wert ist verbindungslokal → wirklich race-frei.
+	$wpdb->query( $wpdb->prepare(
+		"UPDATE {$wpdb->options} SET option_value = LAST_INSERT_ID(option_value + 1) WHERE option_name = %s",
+		$option
+	) );
+	wp_cache_delete( $option, 'options' );
+	return (int) $wpdb->get_var( 'SELECT LAST_INSERT_ID()' );
 }
 
 /** Wish dates of a request as [index => label] (1..3, non-empty only). */

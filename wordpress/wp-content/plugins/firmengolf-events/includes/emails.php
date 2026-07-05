@@ -107,7 +107,7 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 
 	update_post_meta( $request_id, '_fge_customer_email_sent', $sent ? 1 : 0 );
 	if ( $sent ) {
-		update_post_meta( $request_id, '_fge_request_status', 'eingangsbestaetigung_gesendet' );
+		if ( function_exists( 'fge_request_set_status' ) ) { fge_request_set_status( $request_id, 'eingangsbestaetigung_gesendet' ); } else { update_post_meta( $request_id, '_fge_request_status', 'eingangsbestaetigung_gesendet' ); }
 	}
 
 	return $sent;

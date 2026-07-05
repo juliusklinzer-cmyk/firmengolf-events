@@ -46,7 +46,7 @@ function fge_request_by_customer_token( string $token ): int {
 	}
 	$q = get_posts( [
 		'post_type'   => 'firmengolf_request',
-		'post_status' => 'any',
+		'post_status' => [ 'publish', 'draft' ], // Papierkorb-Anfragen sind über den Link nicht mehr erreichbar
 		'numberposts' => 1,
 		'fields'      => 'ids',
 		'meta_key'    => '_fge_customer_token', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key

@@ -51,8 +51,11 @@ function fge_partner_number( int $partner_id ): string {
 	}
 	$yy  = (int) current_time( 'y' );
 	$opt = 'fge_partner_seq_' . $yy;
-	$seq = (int) get_option( $opt, 0 ) + 1;
-	update_option( $opt, $seq, false );
+	// Atomar hochzählen — doppelte Vorgangsnummern bei Gleichzeitigkeit ausgeschlossen.
+	$seq = function_exists( 'fge_atomic_sequence' ) ? fge_atomic_sequence( $opt ) : (int) get_option( $opt, 0 ) + 1;
+	if ( ! function_exists( 'fge_atomic_sequence' ) ) {
+		update_option( $opt, $seq, false );
+	}
 	$ref = sprintf( 'FG-P-%02d-%03d', $yy, $seq );
 	update_post_meta( $partner_id, '_fge_partner_ref', $ref );
 	return $ref;
