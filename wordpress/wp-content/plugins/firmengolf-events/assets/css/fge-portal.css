@@ -743,3 +743,9 @@
 .fp-hero-next-cta { font-size: 12.5px; font-weight: 600; color: rgba(251, 250, 246, 0.85); margin-top: 5px; }
 .fp-hero-next:hover .fp-hero-next-cta { color: #fff; }
 @media (max-width: 760px) { .fp-hero-next { position: static; margin-bottom: 14px; max-width: none; } }
+
+/* Innerhalb des Portal-Wrappers (.fp-page-wrap, bereits max-width+padding) darf
+   .page-wide nicht NOCHMAL einrücken — sonst sind alle Sektionen 32px schmaler
+   als der Hero (Julius: „alle Container so breit wie der Hero"). */
+.fp-page-wrap .fgpp .page-wide { max-width: none; padding: 0; }
+.fp-page-wrap .fgpp .foot { max-width: none; padding-left: 0; padding-right: 0; }

@@ -957,7 +957,8 @@ function fge_portal_render(): void {
 			</div>
 
 			<div class="nav-end">
-				<?php if ( $archive_url ) : ?><a href="<?php echo esc_url( $archive_url ); ?>" class="nav-link" target="_blank" rel="noopener">Vorschau</a><?php endif; ?>
+				<?php // Vorschau = die EIGENE Golfplatz-Seite (verknüpfter Nutzer darf sie auch vor Freischaltung sehen), nicht das Event-Archiv. ?>
+				<a href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" class="nav-link" target="_blank" rel="noopener">Vorschau</a>
 				<a href="<?php echo esc_url( wp_logout_url( home_url( '/' ) ) ); ?>" class="nav-link">Abmelden</a>
 				<div class="nav-avatar" title="<?php echo esc_attr( $user->display_name ); ?>"><?php echo esc_html( $user_initials ?: 'P' ); ?></div>
 			</div>
@@ -1149,7 +1150,7 @@ function fge_portal_section_uebersicht( int $partner_id ): void {
 			</div>
 		</section>
 	</div></div>
-	<?php fge_portal_render_cat_grid( $partner_id, $base ); ?>
+	<?php fge_portal_render_cat_grid( $partner_id, $base, true ); ?>
 
 	<?php fge_portal_render_anfragen_preview( $partner_id ); ?>
 
@@ -1502,7 +1503,7 @@ function fge_portal_render_todo_row( int $partner_id ): void {
 // CATEGORY GRID
 // ══════════════════════════════════════════════════════════════════════════════
 
-function fge_portal_render_cat_grid( int $partner_id, string $base ): void {
+function fge_portal_render_cat_grid( int $partner_id, string $base, bool $compact = false ): void {
 	$types = fge_get_event_formats()['standard'];
 	?>
 	<div class="fgpp"><div class="cat-grid">
@@ -1521,6 +1522,9 @@ function fge_portal_render_cat_grid( int $partner_id, string $base ): void {
 			] );
 
 			if ( empty( $events ) ) :
+				if ( $compact ) {
+					continue; // Übersicht: leere Kategorien nicht auflisten — eine Anlegen-Kachel reicht (s. u.)
+				}
 				$new_url = esc_url( $base . '?tab=angebote&portal_action=new&preset_type=' . $type_key );
 				?>
 				<a href="<?php echo $new_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>" class="cat is-empty">
@@ -1540,7 +1544,17 @@ function fge_portal_render_cat_grid( int $partner_id, string $base ): void {
 				}
 			endif;
 		endforeach;
-		?>
+
+		if ( $compact ) : ?>
+			<a href="<?php echo esc_url( $base . '?tab=angebote&portal_action=new' ); ?>" class="cat is-empty">
+				<div class="empty-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14"/></svg>
+				</div>
+				<div class="cat-title">Neues Angebot anlegen</div>
+				<div class="cat-sub"><?php echo 0 === $idx ? 'Leg dein erstes Event-Angebot an — Firmen finden dich pro Kategorie.' : 'Mehr Kategorien = mehr Anfragen. Alle Kategorien findest du unter „Angebote".'; ?></div>
+				<span class="btn btn-brand btn-sm">+ Angebot erstellen</span>
+			</a>
+		<?php endif; ?>
 	</div></div>
 	<?php
 }
