@@ -60,8 +60,9 @@ $fehler_txt = [
 		.inv-field label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-700, #3A443E); margin-bottom: 6px; }
 		.inv-field input { width: 100%; font: inherit; font-size: 15px; color: var(--ink-900, #14231A); background: var(--paper-100, #FBFAF6); border: 1px solid var(--ink-200, #E4E2DA); border-radius: 10px; padding: 12px 14px; }
 		.inv-field input:focus { outline: 2px solid var(--fairway-700, #4279D1); outline-offset: 1px; border-color: transparent; }
-		.inv-cta { margin-top: 6px; width: 100%; font: inherit; font-size: 15.5px; font-weight: 600; color: #fff; background: var(--fairway-700, #4279D1); border: 0; border-radius: 999px; padding: 14px 26px; cursor: pointer; transition: background 0.15s ease; }
-		.inv-cta:hover { background: var(--fairway-600, #3568BC); }
+		/* button./a.-Präfix: schlägt den globalen .fge-page-button/-a-Reset (0-1-1) */
+		.inv-cta, button.inv-cta, a.inv-cta { margin-top: 6px; width: 100%; font: inherit; font-size: 15.5px; font-weight: 600; color: #fff; background: var(--fairway-700, #4279D1); border: 0; border-radius: 999px; padding: 14px 26px; cursor: pointer; transition: background 0.15s ease; text-align: center; }
+		.inv-cta:hover, button.inv-cta:hover, a.inv-cta:hover { background: var(--fairway-600, #3568BC); color: #fff; }
 		.inv-legal { font-size: 12px; color: var(--ink-500, #7C857F); line-height: 1.55; margin: 14px 0 0; }
 		.inv-legal a { color: var(--fairway-700, #4279D1); text-decoration: none; }
 		.inv-help { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--ink-200, #E4E2DA); font-size: 13.5px; color: var(--ink-600, #5C6660); }

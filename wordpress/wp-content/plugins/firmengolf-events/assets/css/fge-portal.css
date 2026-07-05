@@ -96,7 +96,9 @@
 .fgpp .hero-id { display: flex; gap: 22px; align-items: flex-end; max-width: 760px; }
 .fgpp .hero-monogram { width: 96px; height: 96px; border-radius: var(--radius-lg); background: var(--paper-100); color: var(--fairway-800); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 36px; letter-spacing: -0.02em; flex: none; box-shadow: 0 8px 24px rgba(14,19,16,0.25); }
 /* Logo shown in place of the monogram; transparent bg + rounded so transparent-PNG and white-bg logos both look clean. */
-.fgpp .hero-monogram.hero-logo { background-color: var(--paper-50); background-size: contain; background-position: center; background-repeat: no-repeat; background-origin: content-box; padding: 12px; overflow: hidden; color: transparent; font-size: 0; }
+/* Wie der Übersichts-Hero: <img> füllt die Kachel satt (thumbnail = quadratischer Zuschnitt). */
+.fgpp .hero-monogram.hero-logo { background: var(--paper-50); padding: 0; overflow: hidden; color: transparent; font-size: 0; }
+.fgpp .hero-monogram.hero-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: inherit; display: block; }
 .fgpp .hero-text { padding-bottom: 6px; }
 .fgpp .hero-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(251,250,246,0.78); }
 .fgpp .hero-name { font-family: var(--font-display); font-weight: 500; font-size: 56px; line-height: 1.0; letter-spacing: -0.03em; margin-top: 10px; color: var(--paper-100); }
@@ -787,3 +789,11 @@
 .fgpp .vis-teaser-bar { width: 140px; height: 7px; border-radius: 999px; background: rgba(14,19,16,0.10); overflow: hidden; flex: none; }
 .fgpp .vis-teaser-bar span { display: block; height: 100%; border-radius: 999px; background: #2F6E45; }
 .fgpp .vis-teaser .btn { flex: none; }
+
+/* ── Angebote: Info-Box „So funktioniert's" ────────────────────────────────── */
+.fgpp .ang-info { background: var(--fairway-100); border: 1px solid var(--fairway-200); border-radius: var(--radius-lg, 16px); padding: 18px 24px; margin: 4px 0 24px; }
+.fgpp .ang-info p { font-size: 14.5px; color: var(--ink-700); line-height: 1.6; margin: 0 0 8px; max-width: 860px; }
+.fgpp .ang-info p:last-child { margin-bottom: 0; }
+.fgpp .ang-info b { color: var(--ink-900); }
+.fgpp .ang-info a { color: var(--fairway-700); font-weight: 600; text-decoration: none; }
+.fgpp .ang-info a:hover { text-decoration: underline; }

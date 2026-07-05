@@ -1590,7 +1590,7 @@ function fge_portal_render_todo_row( int $partner_id ): void {
 	}
 	$empty_types = 0;
 	foreach ( array_keys( fge_get_event_formats()['standard'] ) as $tk ) {
-		if ( empty( $has_type[ $tk ] ) ) {
+		if ( empty( $has_type[ $tk ] ) && ! in_array( $tk, fge_portal_hidden_empty_types(), true ) ) {
 			$empty_types++;
 		}
 	}
@@ -1656,6 +1656,15 @@ function fge_portal_render_todo_row( int $partner_id ): void {
 // CATEGORY GRID
 // ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Nischen-Kategorien, die NICHT als leere Kacheln beworben werden (wirkt sonst
+ * nach viel Arbeit). Anlegen bleibt möglich: im Formular unter „Eventart" bzw.
+ * über die „Andere"-Kachel — als Inspiration statt Pflichtprogramm.
+ */
+function fge_portal_hidden_empty_types(): array {
+	return [ 'offsite', 'gesundheitstag', 'networking', 'nacht_event' ];
+}
+
 function fge_portal_render_cat_grid( int $partner_id, string $base, bool $compact = false ): void {
 	$types = fge_get_event_formats()['standard'];
 	?>
@@ -1675,8 +1684,8 @@ function fge_portal_render_cat_grid( int $partner_id, string $base, bool $compac
 			] );
 
 			if ( empty( $events ) ) :
-				if ( $compact ) {
-					continue; // Übersicht: leere Kategorien nicht auflisten — eine Anlegen-Kachel reicht (s. u.)
+				if ( $compact || in_array( $type_key, fge_portal_hidden_empty_types(), true ) ) {
+					continue; // Übersicht bzw. Nischen-Typ: keine leere Kachel — Anlegen geht über „Andere"/Formular
 				}
 				$new_url = esc_url( $base . '?tab=angebote&portal_action=new&preset_type=' . $type_key );
 				?>
@@ -1954,6 +1963,12 @@ function fge_portal_section_angebote( int $partner_id ): void {
 				</a>
 			</div>
 		</div>
+
+		<div class="fgpp"><div class="ang-info">
+			<p><b>So funktioniert's:</b> Du legst dein Angebot an — Firmen aus deiner Region sehen es und fragen ein Datum bei dir an. Den Umfang stimmt ihr danach gemeinsam ab, nichts ist in Stein gemeißelt.</p>
+			<p>Brauchst du Orientierung? <a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ?: home_url( '/firmenevents/' ) ); ?>" target="_blank" rel="noopener">Schau dir die Angebote der anderen Plätze an</a>. Ansonsten sind deiner Kreativität keine Grenzen gesetzt — probieren wir aus, was bei euch am besten funktioniert. Mach deinen Golfplatz zur Event-Location für die Unternehmen deiner Region.</p>
+		</div></div>
+
 		<?php fge_portal_render_cat_grid( $partner_id, $base ); ?>
 	</div>
 	<?php
@@ -2607,10 +2622,11 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 						<div class="hero-id">
 							<?php
 							$logo_id  = (int) $m( 'logo_attachment_id' );
-							$logo_url = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
+							// 'thumbnail' (quadratischer Zuschnitt) + <img> wie im Übersichts-Hero — füllt die Kachel satt.
+							$logo_url = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
 							?>
 							<?php if ( $logo_url !== '' ) : ?>
-								<div class="hero-monogram hero-logo" style="background-image:url('<?php echo esc_url( $logo_url ); ?>')" role="img" aria-label="<?php echo esc_attr( $name ); ?> Logo"></div>
+								<div class="hero-monogram hero-logo"><img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $name ); ?> Logo"></div>
 							<?php else : ?>
 								<div class="hero-monogram"><?php echo esc_html( $mono ); ?></div>
 							<?php endif; ?>
