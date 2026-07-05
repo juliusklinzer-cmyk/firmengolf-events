@@ -118,6 +118,39 @@ function fge_handle_admin_confirm_offer(): void {
 	exit;
 }
 
+// Admin action: zurückgehaltenes Angebot nach der Feinplanung senden (Zusatzleistungen-Gate).
+add_action( 'admin_post_fge_send_held_offer', 'fge_handle_send_held_offer' );
+function fge_handle_send_held_offer(): void {
+	$req = absint( $_POST['request_id'] ?? 0 );
+	if ( $req <= 0 || ! current_user_can( 'edit_post', $req ) ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
+	}
+	check_admin_referer( 'fge_send_held_offer_' . $req );
+
+	$idx = function_exists( 'fge_rr_final_index' ) ? fge_rr_final_index( $req ) : 0;
+	$err = '';
+	if ( $idx < 1 ) {
+		$err = 'no_date';
+	} elseif ( '1' === (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
+		$err = 'already_sent';
+	}
+
+	if ( '' === $err ) {
+		update_post_meta( $req, '_fge_offer_review_done', 1 ); // Feinplanung erledigt → Gate offen
+		// Direktaufruf statt Hook: die interne „Termin bestätigt"-Mail soll nicht erneut rausgehen.
+		if ( function_exists( 'fge_offer_on_date_confirmed' ) ) {
+			fge_offer_on_date_confirmed( $req, $idx );
+		}
+		if ( '1' !== (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
+			$err = 'no_event';
+		}
+	}
+
+	$arg = ( '' === $err ) ? [ 'fge_offer_ok' => 1 ] : [ 'fge_offer_err' => $err ];
+	wp_safe_redirect( add_query_arg( $arg, get_edit_post_link( $req, 'raw' ) ) );
+	exit;
+}
+
 // Admin-Notice nach dem manuellen Angebots-Auslöser.
 add_action( 'admin_notices', static function () {
 	if ( isset( $_GET['fge_offer_ok'] ) ) {

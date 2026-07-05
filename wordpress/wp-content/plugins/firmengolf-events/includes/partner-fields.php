@@ -659,6 +659,10 @@ function fge_save_partner_fields( int $post_id ) {
 	if ( function_exists( 'fge_notify_partner_status_change' ) && '' !== $new_pstatus ) {
 		fge_notify_partner_status_change( $post_id, $old_pstatus, $new_pstatus );
 	}
+	// Golfplatz-Verzeichnis: Partner-Flag (blauer Pin / Partner-Badge) mitziehen.
+	if ( function_exists( 'fge_verzeichnis_sync_partner' ) && '' !== $new_pstatus ) {
+		fge_verzeichnis_sync_partner( $post_id, $new_pstatus );
+	}
 	update_post_meta( $post_id, '_fge_partner_since',            sanitize_text_field( wp_unslash( $_POST['fge_partner_since'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_public_short_description', sanitize_textarea_field( wp_unslash( $_POST['fge_public_short_description'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_rating', max( 0.0, min( 5.0, (float) str_replace( ',', '.', (string) wp_unslash( $_POST['fge_rating'] ?? '' ) ) ) ) );

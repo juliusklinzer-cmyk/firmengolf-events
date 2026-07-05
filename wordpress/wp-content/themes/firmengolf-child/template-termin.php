@@ -11,7 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 $token    = (string) get_query_var( 'fge_termin' );
 $req      = isset( $_GET['req'] ) ? absint( $_GET['req'] ) : 0;
 $resolved = function_exists( 'fge_rr_resolve_landing' ) ? fge_rr_resolve_landing( $token, $req ) : null;
-$done     = isset( $_GET['done'] );
+$done        = isset( $_GET['done'] );
+$done_locked = ( sanitize_key( wp_unslash( $_GET['done'] ?? '' ) ) === 'locked' );
 
 ?><!doctype html>
 <html <?php language_attributes(); ?>>
@@ -72,8 +73,13 @@ $done     = isset( $_GET['done'] );
 			<div class="tl-done-ic">
 				<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
 			</div>
+			<?php if ( $done_locked ) : ?>
+			<h2>Die Abstimmung ist geschlossen.</h2>
+			<p>Der Termin für diese Anfrage ist bereits fix — deine Änderung wurde nicht gespeichert. Falls sich bei euch etwas geändert hat, melde dich bitte direkt bei Firmengolf.</p>
+			<?php else : ?>
 			<h2>Danke, <?php echo esc_html( $first ?: 'dir' ); ?> — gespeichert.</h2>
 			<p>Deine Rückmeldung ist da. Sobald alle Beteiligten reagiert haben und ein Termin bestätigt ist, kümmert sich Firmengolf um Angebot und Buchung.</p>
+			<?php endif; ?>
 			<?php if ( $m_total > 0 && null !== $lead_idx ) : $ld = $matrix['dates'][ $lead_idx ]; ?>
 			<div class="tl-done-stand">
 				<?php if ( $final_idx ) : ?>
@@ -83,7 +89,9 @@ $done     = isset( $_GET['done'] );
 				<?php endif; ?>
 			</div>
 			<?php endif; ?>
+			<?php if ( ! $final_idx ) : ?>
 			<p style="margin-top:18px;"><a class="tl-btn" href="<?php echo esc_url( fge_termin_contact_link( $req, $contact ) ); ?>">Antwort ändern</a></p>
+			<?php endif; ?>
 		</div>
 		<?php else : ?>
 		<div class="tl-eyebrow">Anfrage <?php echo esc_html( $ref ); ?></div>
@@ -103,6 +111,15 @@ $done     = isset( $_GET['done'] );
 			</div>
 		</div>
 
+		<?php if ( $final_idx ) : // Termin fix → Abstimmung geschlossen, nur noch Ansicht (Audit B3) ?>
+			<div class="tl-date" style="border-color:#5E8A65;box-shadow:0 0 0 1px #5E8A65;">
+				<div class="tl-date-top">
+					<div><div class="tl-date-d">✓ <?php echo esc_html( $matrix['dates'][ $final_idx ]['label'] ?? 'Termin' ); ?></div></div>
+					<span class="tl-lead-badge final">Bestätigter Termin</span>
+				</div>
+			</div>
+			<p class="tl-note">Die Terminabstimmung ist abgeschlossen — Firmengolf kümmert sich um Angebot und Buchung. Falls sich bei euch etwas geändert hat, melde dich bitte direkt bei Firmengolf.</p>
+		<?php else : ?>
 		<form method="post" action="<?php echo esc_url( fge_termin_contact_link( $req, $contact ) ); ?>">
 			<input type="hidden" name="fge_termin_action" value="respond_dates">
 			<input type="hidden" name="fge_termin_token" value="<?php echo esc_attr( $token ); ?>">
@@ -150,6 +167,7 @@ $done     = isset( $_GET['done'] );
 			</div>
 			<p class="tl-note">Deine Angaben werden ausschließlich zur Bearbeitung dieser Firmenanfrage verwendet (Art. 6 Abs. 1 lit. b/f DSGVO).</p>
 		</form>
+		<?php endif; ?>
 		<?php endif; ?>
 	<?php endif; ?>
 	</div>

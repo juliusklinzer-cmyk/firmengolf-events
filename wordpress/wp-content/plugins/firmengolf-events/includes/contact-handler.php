@@ -50,6 +50,12 @@ function fge_handle_kontakt_submit() {
 		exit;
 	}
 
+	// Rate-Limit gegen Mail-Bombing (Audit A7) — still als Erfolg abtun, kein Oracle für Bots.
+	if ( function_exists( 'fge_form_rate_limited' ) && fge_form_rate_limited( 5, 600, 'kontakt' ) ) {
+		wp_redirect( esc_url_raw( $base . '?kontakt=danke#kontaktformular' ), 303 );
+		exit;
+	}
+
 	$topics = [
 		'event'   => 'Event anfragen',
 		'individ' => 'Individuelles Event',
@@ -167,6 +173,12 @@ function fge_handle_rueckruf_submit() {
 	}
 
 	if ( ! empty( $_POST['fge_hp_url'] ) ) {
+		wp_redirect( esc_url_raw( $base . '?rueckruf=danke#callback' ), 303 );
+		exit;
+	}
+
+	// Rate-Limit gegen Mail-Bombing (Audit A7).
+	if ( function_exists( 'fge_form_rate_limited' ) && fge_form_rate_limited( 5, 600, 'rueckruf' ) ) {
 		wp_redirect( esc_url_raw( $base . '?rueckruf=danke#callback' ), 303 );
 		exit;
 	}

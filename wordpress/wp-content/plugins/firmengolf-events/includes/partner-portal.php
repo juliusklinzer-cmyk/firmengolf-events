@@ -67,7 +67,9 @@ function fge_portal_handle_request(): void {
 		return;
 	}
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['fge_portal_nonce'] ?? '' ) ), 'fge_portal_request' ) ) {
-		return;
+		// Abgelaufene Sitzung: nicht still schlucken, sondern Hinweis zeigen (Audit C7).
+		wp_redirect( esc_url_raw( fge_portal_page_url() . '?tab=anfragen&portal_err_notice=expired' ), 303 );
+		exit;
 	}
 	$partner_id = fge_portal_get_partner_id();
 	if ( $partner_id <= 0 ) {
@@ -77,13 +79,27 @@ function fge_portal_handle_request(): void {
 	if ( $req <= 0 || (int) get_post_meta( $req, '_fge_assigned_partner_id', true ) !== $partner_id ) {
 		return;
 	}
-	$idx = absint( $_POST['date_index'] ?? 0 );
-	if ( $idx > 0 && function_exists( 'fge_rr_set_final' ) ) {
+
+	// Idempotenz: bereits final/Angebot raus → Termin darf nicht mehr umgestoßen werden (Audit A4).
+	$already_final = ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 )
+		|| '1' === (string) get_post_meta( $req, '_fge_offer_sent', true )
+		|| '1' === (string) get_post_meta( $req, '_fge_offer_hold', true );
+	if ( $already_final ) {
+		wp_redirect( esc_url_raw( fge_portal_page_url() . '?tab=anfragen&req=' . $req . '&portal_err_notice=already_final' ), 303 );
+		exit;
+	}
+
+	// Index muss auf einen echten Wunschtermin zeigen.
+	$idx   = absint( $_POST['date_index'] ?? 0 );
+	$label = $idx > 0 ? trim( (string) get_post_meta( $req, '_fge_preferred_date_' . $idx, true ) ) : '';
+	if ( $idx > 0 && '' !== $label && function_exists( 'fge_rr_set_final' ) ) {
 		fge_rr_set_final( $req, $idx );
 		fge_request_set_status( $req, 'bestaetigt' );
 		do_action( 'fge_request_date_confirmed', $req, $idx );
+		wp_redirect( esc_url_raw( fge_portal_page_url() . '?tab=anfragen&req=' . $req . '&portal_success=date_confirmed' ), 303 );
+		exit;
 	}
-	wp_redirect( esc_url_raw( fge_portal_page_url() . '?tab=anfragen&req=' . $req . '&portal_success=date_confirmed' ), 303 );
+	wp_redirect( esc_url_raw( fge_portal_page_url() . '?tab=anfragen&req=' . $req . '&portal_err_notice=invalid_date' ), 303 );
 	exit;
 }
 
@@ -244,15 +260,23 @@ function fge_portal_handle_contacts(): void {
 		'role'       => sanitize_text_field( wp_unslash( $_POST['contact_role'] ?? '' ) ),
 		'permission' => sanitize_text_field( wp_unslash( $_POST['contact_permission'] ?? '' ) ),
 	];
+
+	// Server-Validierung: sonst meldet der Redirect „gespeichert", obwohl nichts passierte (Audit C8).
+	if ( '' === $data['name'] || ! is_email( $data['email'] ) ) {
+		wp_redirect( esc_url_raw( $base . '?tab=team&portal_err_notice=contact_invalid' ), 303 );
+		exit;
+	}
+
+	$saved_ok = false;
 	if ( $cid > 0 ) {
 		$c = fge_contact_get( $cid );
 		if ( $c && (int) $c['partner_id'] === $partner_id && (int) $c['user_id'] === 0 ) {
-			fge_contact_update( $cid, $data );
+			$saved_ok = false !== fge_contact_update( $cid, $data );
 		}
 	} else {
-		fge_contact_add( $partner_id, $data );
+		$saved_ok = (int) fge_contact_add( $partner_id, $data ) > 0;
 	}
-	wp_redirect( esc_url_raw( $base . '?tab=team&portal_success=contact_saved' ), 303 );
+	wp_redirect( esc_url_raw( $base . ( $saved_ok ? '?tab=team&portal_success=contact_saved' : '?tab=team&portal_err_notice=contact_invalid' ) ), 303 );
 	exit;
 }
 
@@ -312,7 +336,7 @@ function fge_portal_handle_new_event(): void {
 
 	if ( ! empty( $errors ) ) {
 		$token = wp_generate_uuid4();
-		set_transient( 'fge_portal_err_' . $token, [ 'errors' => $errors, 'data' => wp_unslash( $_POST ) ], 300 );
+		set_transient( 'fge_form_err_' . $token, [ 'errors' => $errors, 'data' => wp_unslash( $_POST ) ], 300 );
 		wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_action=new&portal_err=' . rawurlencode( $token ) ), 303 );
 		exit;
 	}
@@ -335,6 +359,8 @@ function fge_portal_handle_new_event(): void {
 	update_post_meta( $post_id, '_fge_assigned_partner_id', $partner_id );
 	fge_portal_save_event_meta( $post_id );
 	fge_event_save_images( $post_id, $partner_id, wp_unslash( $_POST ) );
+
+	do_action( 'fge_event_submitted', $post_id, $partner_id, true );
 
 	wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_saved' ), 303 );
 	exit;
@@ -368,7 +394,7 @@ function fge_portal_handle_edit_event(): void {
 
 	if ( ! empty( $errors ) ) {
 		$token = wp_generate_uuid4();
-		set_transient( 'fge_portal_err_' . $token, [ 'errors' => $errors, 'data' => wp_unslash( $_POST ) ], 300 );
+		set_transient( 'fge_form_err_' . $token, [ 'errors' => $errors, 'data' => wp_unslash( $_POST ) ], 300 );
 		wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_action=edit&event_id=' . $event_id . '&portal_err=' . rawurlencode( $token ) ), 303 );
 		exit;
 	}
@@ -384,9 +410,15 @@ function fge_portal_handle_edit_event(): void {
 	wp_update_post( $upd );
 
 	$current_status = (string) get_post_meta( $event_id, '_fge_event_status', true );
+	if ( 'pausiert' === $current_status ) {
+		// Merken: nach der Freigabe soll das Event pausiert bleiben, nicht ungewollt live gehen.
+		update_post_meta( $event_id, '_fge_was_paused', 1 );
+	}
 	update_post_meta( $event_id, '_fge_event_status', $current_status === 'freigegeben' ? 'aenderung_in_pruefung' : 'zur_pruefung' );
 	fge_portal_save_event_meta( $event_id );
 	fge_event_save_images( $event_id, $partner_id, wp_unslash( $_POST ) );
+
+	do_action( 'fge_event_submitted', $event_id, $partner_id, false );
 
 	wp_redirect( esc_url_raw( $base . '?tab=angebote&portal_success=event_updated' ), 303 );
 	exit;
@@ -675,7 +707,7 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	// ── Preismodell + Inhalt (rev. 2) ──
 	$price_mode = in_array( $_POST['fge_price_mode'] ?? '', [ 'gesamt', 'einzel' ], true ) ? $_POST['fge_price_mode'] : 'gesamt';
 	update_post_meta( $post_id, '_fge_price_mode', $price_mode );
-	update_post_meta( $post_id, '_fge_price_amount', (float) str_replace( ',', '.', preg_replace( '/[^\d.,]/', '', (string) wp_unslash( $_POST['fge_price_amount'] ?? '' ) ) ) );
+	update_post_meta( $post_id, '_fge_price_amount', fge_parse_de_amount( wp_unslash( $_POST['fge_price_amount'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_price_basis', in_array( $_POST['fge_price_basis'] ?? '', [ 'person', 'pauschal' ], true ) ? $_POST['fge_price_basis'] : 'person' );
 	$pli = [];
 	foreach ( preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_line_items'] ?? '' ) ) as $line ) {
@@ -685,7 +717,7 @@ function fge_portal_save_event_meta( int $post_id ): void {
 		}
 		$parts = explode( '|', $line, 2 );
 		$lbl   = sanitize_text_field( trim( $parts[0] ?? '' ) );
-		$cst   = (float) str_replace( ',', '.', preg_replace( '/[^\d.,]/', '', $parts[1] ?? '' ) );
+		$cst   = fge_parse_de_amount( $parts[1] ?? '' );
 		if ( $lbl !== '' ) {
 			$pli[] = [ 'label' => $lbl, 'cost' => $cst ];
 		}
@@ -703,6 +735,10 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	if ( $pr['gross'] > 0 ) {
 		update_post_meta( $post_id, '_fge_sale_price_net', $pr['gross'] );
 		update_post_meta( $post_id, '_fge_public_price_label', fge_event_price_label( $post_id ) );
+	} else {
+		// Preis auf 0/leer gesetzt → alten öffentlichen Preis nicht stehen lassen (Audit C9).
+		delete_post_meta( $post_id, '_fge_sale_price_net' );
+		delete_post_meta( $post_id, '_fge_public_price_label' );
 	}
 	// Verfügbarkeits-Kontakt: Felder existieren im Portal-Formular nicht mehr,
 	// vorhandene Werte (z. B. aus dem Admin) bleiben erhalten.
@@ -899,6 +935,7 @@ function fge_portal_render(): void {
 		'kalender'   => [ 'Kalender',        '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>' ],
 		'platz'      => [ 'Platz',           '<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' ],
 		'team'       => [ 'Ansprechpartner', '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>' ],
+		'kennzahlen' => [ 'Kennzahlen',      '<path d="M12 20V10M18 20V4M6 20v-4"/>' ],
 	];
 	?>
 	<div class="fgpp">
@@ -940,6 +977,20 @@ function fge_portal_render(): void {
 			</div>
 		<?php endif; ?>
 
+		<?php
+		$err_notice = sanitize_key( $_GET['portal_err_notice'] ?? '' );
+		$err_texts  = [
+			'expired'         => 'Deine Sitzung war abgelaufen — die Aktion wurde nicht ausgeführt. Bitte versuch es noch einmal.',
+			'already_final'   => 'Für diese Anfrage ist der Termin bereits fix — er kann nicht mehr geändert werden. Melde dich bei uns, falls sich etwas geändert hat.',
+			'invalid_date'    => 'Dieser Termin konnte nicht bestätigt werden. Bitte lade die Seite neu und versuch es erneut.',
+			'contact_invalid' => 'Der Ansprechpartner konnte nicht gespeichert werden — bitte gib mindestens Name und eine gültige E-Mail-Adresse an.',
+		];
+		if ( isset( $err_texts[ $err_notice ] ) ) : ?>
+			<div class="fg-portal-global-notice fg-portal-global-notice--error" role="alert">
+				<?php echo esc_html( $err_texts[ $err_notice ] ); ?>
+			</div>
+		<?php endif; ?>
+
 		<?php if ( $success !== '' ) : ?>
 			<div class="fg-portal-global-notice fg-portal-global-notice--success" role="status">
 				<?php if ( $success === 'event_saved' ) : ?>
@@ -962,33 +1013,34 @@ function fge_portal_render(): void {
 			</div>
 		<?php endif; ?>
 
-		<div id="fp-tab-uebersicht"  class="fp-section<?php echo $active_tab !== 'uebersicht'  ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_uebersicht( $partner_id ); ?></div>
-		<div id="fp-tab-angebote"    class="fp-section<?php echo $active_tab !== 'angebote'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_angebote( $partner_id ); ?></div>
-		<div id="fp-tab-anfragen"    class="fp-section<?php echo $active_tab !== 'anfragen'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_requests( $partner_id ); ?></div>
-		<div id="fp-tab-kalender"    class="fp-section<?php echo $active_tab !== 'kalender'    ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_kalender( $partner_id ); ?></div>
-		<div id="fp-tab-platz"       class="fp-section<?php echo $active_tab !== 'platz'       ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_platz( $partner_id ); ?></div>
-		<div id="fp-tab-team"        class="fp-section<?php echo $active_tab !== 'team'        ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_team( $partner_id ); ?></div>
-		<div id="fp-tab-kennzahlen"  class="fp-section<?php echo $active_tab !== 'kennzahlen'  ? ' fp-section--hidden' : ''; ?>"><?php fge_portal_section_stats( $partner_id ); ?></div>
+		<?php
+		// Nur die aktive Sektion rendern (Audit C11): vorher liefen bei jedem Aufruf
+		// alle 7 Sektionen inkl. sämtlicher Queries. Tab-Wechsel navigiert jetzt per URL.
+		$sections_map = [
+			'uebersicht' => 'fge_portal_section_uebersicht',
+			'angebote'   => 'fge_portal_section_angebote',
+			'anfragen'   => 'fge_portal_section_requests',
+			'kalender'   => 'fge_portal_section_kalender',
+			'platz'      => 'fge_portal_section_platz',
+			'team'       => 'fge_portal_section_team',
+			'kennzahlen' => 'fge_portal_section_stats',
+		];
+		$section_fn = $sections_map[ $active_tab ] ?? 'fge_portal_section_uebersicht';
+		?>
+		<div id="fp-tab-<?php echo esc_attr( $active_tab ); ?>" class="fp-section"><?php $section_fn( $partner_id ); ?></div>
 
 	</div>
 
 	<script>
 	(function () {
-		var tabs     = document.querySelectorAll('.nav-tab');
-		var sections = document.querySelectorAll('.fp-section');
-		tabs.forEach(function (btn) {
+		document.querySelectorAll('.nav-tab').forEach(function (btn) {
 			btn.addEventListener('click', function () {
-				tabs.forEach(function (b) { b.classList.remove('active'); });
-				sections.forEach(function (s) { s.classList.add('fp-section--hidden'); });
-				btn.classList.add('active');
-				var el = document.getElementById('fp-tab-' + btn.dataset.tab);
-				if (el) { el.classList.remove('fp-section--hidden'); }
 				var url = new URL(window.location.href);
 				url.searchParams.set('tab', btn.dataset.tab);
-				['portal_action', 'event_id', 'portal_success', 'portal_err', 'preset_type'].forEach(function (p) {
+				['portal_action', 'event_id', 'portal_success', 'portal_err', 'portal_err_notice', 'preset_type', 'req', 'edit', 'filter'].forEach(function (p) {
 					url.searchParams.delete(p);
 				});
-				history.replaceState(null, '', url.toString());
+				window.location.href = url.toString();
 			});
 		});
 	})();
@@ -1126,8 +1178,8 @@ function fge_portal_render_hero( int $partner_id ): void {
 	$partner_status = (string) get_post_meta( $partner_id, '_fge_partner_status', true );
 	$monogram       = fge_portal_make_monogram( $partner_name );
 	$base           = fge_portal_page_url();
-	$archive_url    = get_post_type_archive_link( 'firmengolf_event' ) ?: home_url( '/firmenevents/' );
-	$is_live        = in_array( $partner_status, [ 'aktiv', '' ], true );
+	$is_public      = function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id );
+	$is_live        = 'aktiv' === $partner_status; // '' zählt NICHT als live (Audit C1)
 
 	$hero_img_id  = (int) get_post_meta( $partner_id, '_fge_hero_image_attachment_id', true );
 	$hero_img     = $hero_img_id > 0
@@ -1141,7 +1193,7 @@ function fge_portal_render_hero( int $partner_id ): void {
 	$live_since = $post_date ? date_i18n( 'F Y', (int) strtotime( $post_date ) ) : '';
 	$status_label = $is_live
 		? ( $live_since ? 'Live auf Firmengolf · seit ' . $live_since : 'Live auf Firmengolf' )
-		: fge_portal_format_partner_status( $partner_status );
+		: ( '' !== $partner_status ? fge_portal_format_partner_status( $partner_status ) : 'Noch nicht eingereicht' );
 	?>
 	<section class="fp-hero">
 		<div class="fp-hero-photo" style="background-image: url('<?php echo esc_url( $hero_img ); ?>')">
@@ -1152,10 +1204,12 @@ function fge_portal_render_hero( int $partner_id ): void {
 					<?php echo esc_html( $status_label ); ?>
 				</div>
 				<div class="fp-hero-actions">
-					<a href="<?php echo esc_url( $archive_url ); ?>" class="fp-hero-btn" target="_blank" rel="noopener">
+					<?php if ( $is_public ) : // Button führte vorher aufs Event-Archiv statt zur Platzseite (Audit C2) ?>
+					<a href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" class="fp-hero-btn" target="_blank" rel="noopener">
 						<?php echo fge_icon_external(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 						Öffentliches Profil
 					</a>
+					<?php endif; ?>
 					<a href="<?php echo esc_url( $base . '?tab=platz' ); ?>" class="fp-hero-btn solid">
 						<?php echo fge_icon_edit_pencil(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 						Profil bearbeiten
@@ -1316,7 +1370,9 @@ function fge_portal_render_cat_card( WP_Post $event, string $type_label, string 
 		</div>
 		<div class="cat-body">
 			<div class="cat-title"><?php echo esc_html( $event->post_title ); ?></div>
-			<?php if ( $desc !== '' ) : ?><div class="cat-sub"><?php echo esc_html( wp_trim_words( $desc, 16, '…' ) ); ?></div><?php endif; ?>
+			<?php if ( 'abgelehnt' === $status ) : // Sackgasse auflösen: erklären + Weg zurück (Audit C5) ?>
+				<div class="cat-sub" style="color:#8C3B2F;">Dieses Angebot wurde so noch nicht freigegeben — meist fehlen nur Kleinigkeiten. Überarbeite es und reiche es neu ein, oder frag uns kurz per Mail.</div>
+			<?php elseif ( $desc !== '' ) : ?><div class="cat-sub"><?php echo esc_html( wp_trim_words( $desc, 16, '…' ) ); ?></div><?php endif; ?>
 			<div class="cat-stats">
 				<?php if ( $duration !== '' ) : ?><span class="chip"><?php echo esc_html( $duration ); ?></span><?php endif; ?>
 				<?php if ( $group !== '' ) : ?><span class="chip"><?php echo esc_html( $group ); ?> Pers.</span><?php endif; ?>
@@ -1331,8 +1387,8 @@ function fge_portal_render_cat_card( WP_Post $event, string $type_label, string 
 					<?php endif; ?>
 				</div>
 				<div style="display:flex;gap:2px;align-items:center;">
-					<?php if ( $lc ) : ?><a class="cat-edit" href="<?php echo esc_url( $lc['url'] ); ?>"><?php echo esc_html( $lc['label'] ); ?></a><?php endif; ?>
-					<a class="cat-edit" href="<?php echo $edit_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>">Bearbeiten →</a>
+					<?php if ( $lc ) : ?><a class="cat-edit" href="<?php echo esc_url( $lc['url'] ); ?>" onclick="return confirm('<?php echo 'Pausieren' === $lc['label'] ? 'Dieses Angebot pausieren? Es ist dann nicht mehr öffentlich sichtbar.' : 'Dieses Angebot reaktivieren? Es ist dann wieder öffentlich sichtbar.'; ?>');"><?php echo esc_html( $lc['label'] ); ?></a><?php endif; ?>
+					<a class="cat-edit" href="<?php echo $edit_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>"><?php echo 'abgelehnt' === $status ? 'Überarbeiten & neu einreichen →' : 'Bearbeiten →'; ?></a>
 				</div>
 			</div>
 		</div>
@@ -1699,11 +1755,19 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 				</div>
 			</div>
 			<div class="req-detail-body">
+				<?php
+				// Ohne Kundenbudget den Preis des angefragten Angebots zeigen (Julius: „Fixpreis wird nicht angezeigt").
+				$price_label = ( $eid && function_exists( 'fge_event_price_label' ) ) ? (string) fge_event_price_label( $eid ) : '';
+				?>
 				<div class="req-facts">
 					<div class="req-fact"><div class="l">Veranstaltungstyp</div><div class="v"><?php echo esc_html( $etype ); ?></div></div>
 					<div class="req-fact"><div class="l">Teilnehmer</div><div class="v"><?php echo $pax ? esc_html( $pax . ' Personen' ) : '—'; ?></div></div>
 					<div class="req-fact"><div class="l">Zeitfenster</div><div class="v"><?php echo esc_html( $slot ); ?></div></div>
-					<div class="req-fact"><div class="l">Budget</div><div class="v"><?php echo esc_html( $budget ?: '—' ); ?></div></div>
+					<?php if ( '' !== $budget ) : ?>
+						<div class="req-fact"><div class="l">Budget</div><div class="v"><?php echo esc_html( $budget ); ?></div></div>
+					<?php else : ?>
+						<div class="req-fact"><div class="l">Preis laut Angebot</div><div class="v"><?php echo esc_html( $price_label ?: '—' ); ?></div></div>
+					<?php endif; ?>
 				</div>
 				<?php if ( '' !== $msg ) : ?>
 					<div class="req-section-label">Nachricht</div>
@@ -2140,7 +2204,22 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 				<div class="hero-photo" style="background-image:url('<?php echo esc_url( $cover ); ?>')">
 					<div class="hero-scrim"></div>
 					<div class="hero-top">
-						<div class="hero-status"><span class="dot"></span> <?php echo $status === 'pausiert' ? 'Pausiert — nicht öffentlich sichtbar' : 'Öffentlich sichtbar auf Firmengolf'; ?></div>
+						<?php
+					// Ehrlicher Sichtbarkeits-Status statt pauschal „Öffentlich sichtbar" (Audit C1).
+					$vis_public = function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id );
+					if ( 'aktiv' === $status ) {
+						$vis_label = $vis_public ? 'Öffentlich sichtbar auf Firmengolf' : 'Freigeschaltet — öffentlich, sobald ein Event freigegeben ist';
+					} elseif ( 'pausiert' === $status ) {
+						$vis_label = 'Pausiert — nicht öffentlich sichtbar';
+					} elseif ( 'in_pruefung' === $status ) {
+						$vis_label = 'In Prüfung — noch nicht öffentlich';
+					} elseif ( 'abgelehnt' === $status ) {
+						$vis_label = 'Nicht freigeschaltet';
+					} else {
+						$vis_label = 'Noch nicht eingereicht — nicht öffentlich';
+					}
+					?>
+					<div class="hero-status"><span class="dot"></span> <?php echo esc_html( $vis_label ); ?></div>
 						<div class="hero-actions">
 							<?php if ( function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) ) : ?>
 								<a class="hero-btn" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" target="_blank" rel="noopener">Öffentliches Profil ansehen&nbsp;↗</a>
@@ -2791,10 +2870,21 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<p class="fp-help">Diese Eckdaten erscheinen auf der Angebotskarte.</p>
 
 						<?php
-						$pmode   = $event_id ? ( get_post_meta( $event_id, '_fge_price_mode', true ) ?: 'gesamt' ) : 'gesamt';
-						$pamount = $event_id ? get_post_meta( $event_id, '_fge_price_amount', true ) : '';
-						$pbasis  = $event_id ? ( get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person' ) : 'person';
-						$pitems  = $event_id ? (array) get_post_meta( $event_id, '_fge_line_items', true ) : [];
+						// Nach Validierungsfehlern POST-Daten ($saved) bevorzugen, sonst DB-Stand (Audit C6).
+						$pmode   = (string) ( $saved['fge_price_mode'] ?? '' ) ?: ( $event_id ? ( get_post_meta( $event_id, '_fge_price_mode', true ) ?: 'gesamt' ) : 'gesamt' );
+						$pamount = $saved['fge_price_amount'] ?? ( $event_id ? get_post_meta( $event_id, '_fge_price_amount', true ) : '' );
+						$pbasis  = (string) ( $saved['fge_price_basis'] ?? '' ) ?: ( $event_id ? ( get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person' ) : 'person' );
+						if ( isset( $saved['fge_line_items'] ) ) {
+							$pitems = [];
+							foreach ( preg_split( '/\r?\n/', (string) $saved['fge_line_items'] ) as $pi_line ) {
+								$pi_parts = explode( '|', $pi_line, 2 );
+								if ( '' !== trim( $pi_parts[0] ?? '' ) ) {
+									$pitems[] = [ 'label' => trim( $pi_parts[0] ), 'cost' => trim( $pi_parts[1] ?? '' ) ];
+								}
+							}
+						} else {
+							$pitems = $event_id ? (array) get_post_meta( $event_id, '_fge_line_items', true ) : [];
+						}
 						$markup  = defined( 'FGE_MARKUP_PERCENT' ) ? (int) FGE_MARKUP_PERCENT : 20;
 						?>
 						<p class="fp-help">Hinterlege deinen <strong>Netto</strong>-Preis. Die Vermittlung von Firmengolf (<?php echo (int) $markup; ?> %) kommt automatisch oben drauf.</p>
@@ -2848,7 +2938,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 							</div>
 							<div>
 								<label class="fg-form-label" for="fge_participants_min">Min. Teilnehmer</label>
-								<input class="fg-form-input" type="number" id="fge_participants_min" name="fge_participants_min" value="<?php echo esc_attr( $saved['fge_participants_min'] ?: '' ); ?>" min="1" placeholder="z.B. 8">
+								<input class="fg-form-input" type="number" id="fge_participants_min" name="fge_participants_min" value="<?php echo esc_attr( ( $saved['fge_participants_min'] ?? '' ) ?: '' ); ?>" min="1" placeholder="z.B. 8">
 							</div>
 							<div>
 								<label class="fg-form-label" for="fge_participants_max">Max. Teilnehmer</label>
@@ -2856,7 +2946,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 								$platz_cap = (array) get_post_meta( $partner_id, '_fge_cap', true );
 								$platz_max = (int) ( $platz_cap['max'] ?? 0 );
 								// Neues Event: mit dem Platz-Maximum vorbelegen.
-								$pmax_val = $saved['fge_participants_max'] ?: ( ( ! $is_edit && $platz_max > 0 ) ? (string) $platz_max : '' );
+								$pmax_val = ( $saved['fge_participants_max'] ?? '' ) ?: ( ( ! $is_edit && $platz_max > 0 ) ? (string) $platz_max : '' );
 								?>
 								<input class="fg-form-input" type="number" id="fge_participants_max" name="fge_participants_max" value="<?php echo esc_attr( $pmax_val ); ?>" min="1" placeholder="z.B. 40">
 								<?php if ( $platz_max > 0 ) : ?>
@@ -2946,7 +3036,9 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 							'Turnierorganisation', 'Übernachtung',
 						];
 
-						$cur_includes = $event_id ? array_map( 'strval', (array) get_post_meta( $event_id, '_fge_event_includes', true ) ) : [];
+						$cur_includes = isset( $saved['fge_event_includes'] )
+							? array_values( array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $saved['fge_event_includes'] ) ) ) )
+							: ( $event_id ? array_map( 'strval', (array) get_post_meta( $event_id, '_fge_event_includes', true ) ) : [] );
 						?>
 						<div class="fp-inc-chips" id="fp-inc-chips">
 							<?php foreach ( $cur_includes as $inc ) : ?>
@@ -3005,7 +3097,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 								<div id="fp-dayflow-steps"></div>
 								<button type="button" class="fp-btn fp-btn-ghost fp-btn-sm" id="fp-dayflow-add">+ Schritt hinzufügen</button>
 							</div>
-							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="9" placeholder="Ankunft &amp; Begrüßung&#10;Treffpunkt ist der Pro-Shop. Wir begrüßen euch und stellen Platz und Anlage kurz vor.&#10;&#10;Schnupperkurs auf der Range&#10;Ca. 1 Stunde mit unseren Golflehrern: Abschlag, Grundtechnik und die ersten Erfolgserlebnisse."><?php echo esc_textarea( $event_id ? (string) get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ); ?></textarea>
+							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="9" placeholder="Ankunft &amp; Begrüßung&#10;Treffpunkt ist der Pro-Shop. Wir begrüßen euch und stellen Platz und Anlage kurz vor.&#10;&#10;Schnupperkurs auf der Range&#10;Ca. 1 Stunde mit unseren Golflehrern: Abschlag, Grundtechnik und die ersten Erfolgserlebnisse."><?php echo esc_textarea( (string) ( $saved['fge_event_dayflow'] ?? ( $event_id ? get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ) ) ); ?></textarea>
 						</div>
 						<script>
 						(function(){
@@ -3095,7 +3187,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						</div>
 
 						<?php
-						$fge_release  = $event_id ? ( (string) get_post_meta( $event_id, '_fge_release_mode', true ) ?: 'us' ) : 'us';
+						$fge_release  = (string) ( $saved['fge_release_mode'] ?? '' ) ?: ( $event_id ? ( (string) get_post_meta( $event_id, '_fge_release_mode', true ) ?: 'us' ) : 'us' );
 						$fge_resp_sel = $event_id ? array_map( 'absint', (array) get_post_meta( $event_id, '_fge_event_responder_ids', true ) ) : [];
 						// Hauptkontakt (Platz) stimmt immer mit ab → nicht als abwählbares Team-Mitglied zeigen.
 						$fge_owner_id = function_exists( 'fge_partner_ensure_owner_contact' ) ? fge_partner_ensure_owner_contact( $partner_id ) : 0;
@@ -3215,7 +3307,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 							$lc_label  = $lc_status === 'freigegeben' ? 'Angebot pausieren' : 'Angebot reaktivieren';
 							$lc_url    = wp_nonce_url( add_query_arg( [ 'tab' => 'angebote', 'portal_action' => $lc_action, 'event_id' => $event_id ], fge_portal_page_url() ), 'fge_portal_lifecycle_' . $event_id );
 						?>
-						<a href="<?php echo esc_url( $lc_url ); ?>" class="fp-btn fp-btn-ghost fp-btn-sm" style="margin-top:14px;display:inline-flex;"><?php echo esc_html( $lc_label ); ?></a>
+						<a href="<?php echo esc_url( $lc_url ); ?>" class="fp-btn fp-btn-ghost fp-btn-sm" style="margin-top:14px;display:inline-flex;" onclick="return confirm('<?php echo 'pause' === $lc_action ? 'Dieses Angebot pausieren? Es ist dann nicht mehr öffentlich sichtbar.' : 'Dieses Angebot reaktivieren? Es ist dann wieder öffentlich sichtbar.'; ?>');"><?php echo esc_html( $lc_label ); ?></a>
 						<?php endif; ?>
 					</div>
 
@@ -3287,7 +3379,12 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 				var summary = byId('fp-price-summary');
 				var markup  = summary ? parseInt(summary.dataset.markup || '20', 10) : 20;
 
-				function parseNum(v) { return parseFloat(String(v || '').replace(/[^\d.,]/g, '').replace(',', '.')) || 0; }
+				function parseNum(v) {
+				var s = String(v || '').replace(/[^\d.,]/g, '');
+				if (s.indexOf(',') !== -1) { s = s.replace(/\./g, ''); var i = s.lastIndexOf(','); s = s.slice(0, i).replace(/,/g, '') + '.' + s.slice(i + 1); }
+				else if ((s.match(/\./g) || []).length > 1 || /\.\d{3}$/.test(s)) { s = s.replace(/\./g, ''); }
+				return parseFloat(s) || 0;
+				}
 				function netSum() {
 					if (modeIn && modeIn.value === 'einzel' && items) {
 						var s = 0;

@@ -38,6 +38,7 @@ function fge_register_request_metaboxes() {
 	add_meta_box( 'fge_rmb_leistungen',  'Gewünschte Zusatzleistungen', 'fge_render_rmb_leistungen',  $screen, 'normal', 'default' );
 	add_meta_box( 'fge_rmb_kit_hubspot', 'Kit und HubSpot (intern)',    'fge_render_rmb_kit_hubspot', $screen, 'normal', 'default' );
 	add_meta_box( 'fge_rmb_lexoffice',   'Lexoffice (intern, manuell)', 'fge_render_rmb_lexoffice',   $screen, 'normal', 'default' );
+	add_meta_box( 'fge_rmb_angebot',     'Angebot an den Kunden',       'fge_render_rmb_angebot',     $screen, 'side',   'high' );
 	add_meta_box( 'fge_rmb_tracking',    'Quelle und Tracking',         'fge_render_rmb_tracking',    $screen, 'side',   'default' );
 }
 add_action( 'add_meta_boxes', 'fge_register_request_metaboxes' );
@@ -326,25 +327,32 @@ function fge_render_rmb_termine( WP_Post $post ) {
 		'full_day'  => 'Ganztägig',
 		'open'      => 'Offen',
 	];
+	// Sobald Abstimmungen existieren, kleben die Zu-/Absagen am Termin-INDEX — ein
+	// nachträglich geändertes Label würde die Votes stillschweigend umdeuten (Audit C13).
+	$has_votes = function_exists( 'fge_rr_get' ) && ! empty( fge_rr_get( $post->ID ) );
+	$ro        = $has_votes ? ' readonly style="background:#f6f7f7;"' : '';
 	?>
+	<?php if ( $has_votes ) : ?>
+		<p style="color:#9A6B12;"><strong>⚠ Terminabstimmung läuft bereits</strong> — die Wunschtermine sind gesperrt, weil vorhandene Zu-/Absagen sonst für ein anderes Datum gelten würden.</p>
+	<?php endif; ?>
 	<table class="form-table">
 		<tr>
 			<th scope="row"><label for="fge_preferred_date_1">Wunschtermin 1</label></th>
 			<td>
 				<input type="text" id="fge_preferred_date_1" name="fge_preferred_date_1"
-				       value="<?php echo esc_attr( $preferred_date_1 ); ?>" class="regular-text">
+				       value="<?php echo esc_attr( $preferred_date_1 ); ?>" class="regular-text"<?php echo $ro; // phpcs:ignore WordPress.Security.EscapeOutput ?>>
 				<p class="description">Wird als Label gespeichert (z.B. „Do, 18.06.2026"), so wie es in der Terminabstimmung erscheint.</p>
 			</td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_preferred_date_2">Wunschtermin 2</label></th>
 			<td><input type="text" id="fge_preferred_date_2" name="fge_preferred_date_2"
-			           value="<?php echo esc_attr( $preferred_date_2 ); ?>" class="regular-text"></td>
+			           value="<?php echo esc_attr( $preferred_date_2 ); ?>" class="regular-text"<?php echo $ro; // phpcs:ignore WordPress.Security.EscapeOutput ?>></td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_preferred_date_3">Wunschtermin 3</label></th>
 			<td><input type="text" id="fge_preferred_date_3" name="fge_preferred_date_3"
-			           value="<?php echo esc_attr( $preferred_date_3 ); ?>" class="regular-text"></td>
+			           value="<?php echo esc_attr( $preferred_date_3 ); ?>" class="regular-text"<?php echo $ro; // phpcs:ignore WordPress.Security.EscapeOutput ?>></td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_alternative_period">Alternativer Zeitraum</label></th>
@@ -366,6 +374,56 @@ function fge_render_rmb_termine( WP_Post $post ) {
 			</td>
 		</tr>
 	</table>
+	<?php
+}
+
+// ── Render: Angebot (Status + manueller Versand nach Feinplanung) ─────────────
+
+function fge_render_rmb_angebot( WP_Post $post ) {
+	$req    = $post->ID;
+	$sent   = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
+	$hold   = '1' === (string) get_post_meta( $req, '_fge_offer_hold', true );
+	$status = (string) get_post_meta( $req, '_fge_offer_status', true );
+	$final  = function_exists( 'fge_rr_final_index' ) ? fge_rr_final_index( $req ) : 0;
+
+	if ( $sent ) {
+		$labels = [ 'pending' => 'Versendet — Antwort offen', 'accepted' => '✓ Angenommen', 'declined' => 'Abgelehnt' ];
+		echo '<p><strong>' . esc_html( $labels[ $status ] ?? $status ) . '</strong></p>';
+		$deadline = (int) get_post_meta( $req, '_fge_offer_deadline', true );
+		if ( 'pending' === $status && $deadline ) {
+			echo '<p style="margin:4px 0;">Frist: ' . esc_html( date_i18n( 'j. F Y', $deadline ) ) . '</p>';
+		}
+		if ( function_exists( 'fge_offer_link' ) ) {
+			echo '<p style="margin:4px 0;"><a href="' . esc_url( fge_offer_link( $req ) ) . '" target="_blank" rel="noopener">Kunden-Angebotsseite öffnen ↗</a></p>';
+		}
+		return;
+	}
+
+	if ( $final < 1 ) {
+		echo '<p style="color:#6C736E;">Noch kein finaler Termin bestätigt — das Angebot wird ausgelöst, sobald der Platz (oder ihr) einen Termin bestätigt.</p>';
+		return;
+	}
+
+	// Termin fix, Angebot noch nicht raus → Feinplanungs-Gate.
+	if ( $hold && function_exists( 'fge_request_wish_groups' ) ) {
+		$g      = fge_request_wish_groups( $req );
+		$wishes = implode( ', ', array_merge( (array) $g['platz'], (array) $g['firmengolf'] ) );
+		if ( '' !== $wishes ) {
+			echo '<p><strong style="color:#9A6B12;">⚠ Zurückgehalten: Zusatzleistungen in Feinplanung</strong></p>';
+			echo '<p style="margin:4px 0;">' . esc_html( $wishes ) . '</p>';
+		} else {
+			echo '<p><strong style="color:#9A6B12;">⚠ Zurückgehalten: kein bepreistes Event zugeordnet</strong></p>';
+			echo '<p style="margin:4px 0;">Erst Event/Preis zuordnen oder den Preis mit dem Kunden klären — sonst wäre das Angebot „Auf Anfrage" und trotzdem verbindlich buchbar.</p>';
+		}
+		echo '<p style="margin:4px 0;color:#6C736E;">Der Kunde hat eine Termin-Bestätigung erhalten und wartet auf das Angebot.</p>';
+	}
+	?>
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
+		<input type="hidden" name="action" value="fge_send_held_offer">
+		<input type="hidden" name="request_id" value="<?php echo (int) $req; ?>">
+		<?php wp_nonce_field( 'fge_send_held_offer_' . $req ); ?>
+		<button type="submit" class="button button-primary" onclick="return confirm('Angebot jetzt an den Kunden senden?');">Angebot jetzt senden</button>
+	</form>
 	<?php
 }
 
@@ -632,7 +690,18 @@ function fge_save_request_fields( int $post_id ) {
 
 	$raw_partner_id = absint( $_POST['fge_assigned_partner_id'] ?? 0 );
 	update_post_meta( $post_id, '_fge_assigned_partner_id', ( $raw_partner_id > 0 && get_post_type( $raw_partner_id ) === 'firmengolf_partner' ) ? $raw_partner_id : 0 );
-	update_post_meta( $post_id, '_fge_request_status',      $new_status );
+
+	// Status über die zentrale Funktion (validiert, Zeitstempel, Hook) — leerer/ungültiger
+	// Wert überschreibt den Bestand NICHT mehr (Audit A5).
+	if ( '' !== $new_status && $new_status !== $old_status && function_exists( 'fge_request_set_status' ) ) {
+		fge_request_set_status( $post_id, $new_status );
+		// Terminale Status müssen das Kundenangebot mitschließen, sonst bleibt der
+		// Magic-Link verbindlich buchbar und der Erinnerungs-Cron mahnt weiter.
+		if ( in_array( $new_status, [ 'verloren', 'angebot_abgelehnt', 'nicht_verfuegbar' ], true )
+			&& 'pending' === (string) get_post_meta( $post_id, '_fge_offer_status', true ) ) {
+			update_post_meta( $post_id, '_fge_offer_status', 'declined' );
+		}
+	}
 
 	// ── Metabox 2: Unternehmen ──
 	update_post_meta( $post_id, '_fge_company_name',        sanitize_text_field( wp_unslash( $_POST['fge_company_name'] ?? '' ) ) );
@@ -660,9 +729,12 @@ function fge_save_request_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_message',               sanitize_textarea_field( wp_unslash( $_POST['fge_message'] ?? '' ) ) );
 
 	// ── Metabox 5: Termine ──
-	update_post_meta( $post_id, '_fge_preferred_date_1',   sanitize_text_field( wp_unslash( $_POST['fge_preferred_date_1'] ?? '' ) ) );
-	update_post_meta( $post_id, '_fge_preferred_date_2',   sanitize_text_field( wp_unslash( $_POST['fge_preferred_date_2'] ?? '' ) ) );
-	update_post_meta( $post_id, '_fge_preferred_date_3',   sanitize_text_field( wp_unslash( $_POST['fge_preferred_date_3'] ?? '' ) ) );
+	// Gesperrt, sobald Abstimmungen existieren: Votes hängen am Index (Audit C13).
+	if ( ! ( function_exists( 'fge_rr_get' ) && ! empty( fge_rr_get( $post_id ) ) ) ) {
+		update_post_meta( $post_id, '_fge_preferred_date_1',   sanitize_text_field( wp_unslash( $_POST['fge_preferred_date_1'] ?? '' ) ) );
+		update_post_meta( $post_id, '_fge_preferred_date_2',   sanitize_text_field( wp_unslash( $_POST['fge_preferred_date_2'] ?? '' ) ) );
+		update_post_meta( $post_id, '_fge_preferred_date_3',   sanitize_text_field( wp_unslash( $_POST['fge_preferred_date_3'] ?? '' ) ) );
+	}
 	update_post_meta( $post_id, '_fge_alternative_period', sanitize_text_field( wp_unslash( $_POST['fge_alternative_period'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_preferred_time',     $san_select( 'fge_preferred_time', $allowed_preferred_times ) );
 
@@ -702,10 +774,7 @@ function fge_save_request_fields( int $post_id ) {
 		add_post_meta( $post_id, '_fge_request_date', current_datetime()->format( 'Y-m-d H:i:s' ), true );
 	}
 
-	// ── System: last_status_change (update on status delta) ──
-	if ( $new_status !== $old_status ) {
-		update_post_meta( $post_id, '_fge_last_status_change', current_datetime()->format( 'Y-m-d H:i:s' ) );
-	}
+	// last_status_change setzt fge_request_set_status inzwischen selbst (oben).
 }
 add_action( 'save_post', 'fge_save_request_fields' );
 

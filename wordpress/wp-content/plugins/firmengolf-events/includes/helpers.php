@@ -58,7 +58,27 @@ function fge_partner_number( int $partner_id ): string {
 	return $ref;
 }
 
+/**
+ * Deutschen Geldbetrag robust parsen: „2.400" → 2400, „1.200,50" → 1200.50,
+ * „67,5" → 67.5, „12.34" → 12.34. Punkt vor genau 3 Ziffern = Tausendertrenner.
+ */
+function fge_parse_de_amount( $raw ): float {
+	$s = (string) preg_replace( '/[^\d,.]/', '', (string) $raw );
+	if ( '' === $s ) {
+		return 0.0;
+	}
+	if ( str_contains( $s, ',' ) ) {
+		$s   = str_replace( '.', '', $s ); // Punkte sind Tausendertrenner
+		$pos = strrpos( $s, ',' );
+		$s   = str_replace( ',', '', substr( $s, 0, $pos ) ) . '.' . substr( $s, $pos + 1 );
+	} elseif ( substr_count( $s, '.' ) > 1 || preg_match( '/\.\d{3}$/', $s ) ) {
+		$s = str_replace( '.', '', $s ); // 1.200.000 / 2.400
+	}
+	return (float) $s;
+}
+
 /** Monatsnamen 1–12 (für Saison von/bis). */
+
 function fge_month_names(): array {
 	return [
 		1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April',

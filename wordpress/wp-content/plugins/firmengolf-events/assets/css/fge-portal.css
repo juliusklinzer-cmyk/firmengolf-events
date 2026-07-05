@@ -554,7 +554,7 @@
 .fgpp .wishdate-avail { font-size: 12px; font-weight: 600; white-space: nowrap; padding-top: 2px; }
 .fgpp .wishdate-avail.ok { color: #2F6E45; }
 .fgpp .wishdate-avail.mixed { color: #9A6B12; }
-.fgpp .wishdate-avail.no { color: var(--clay-600); }
+.fgpp .wishdate-avail.no { color: #C0584A; }
 
 /* per-person vote chips inside a date */
 .fgpp .vote-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
@@ -568,7 +568,7 @@
 .fgpp .vote .va.clay { background: var(--clay-100); color: var(--clay-600); }
 .fgpp .vote .va.sand { background: var(--sand-200); color: var(--ink-800); }
 .fgpp .vote.confirmed { border-color: #CBE8D8; background: #EAF7F0; color: #2F6E45; }
-.fgpp .vote.declined { border-color: #E7CFC6; background: #F7ECE7; color: var(--clay-600); }
+.fgpp .vote.declined { border-color: #E5B8B0; background: #F9EDEA; color: #C0584A; }
 .fgpp .vote.pending { border-style: dashed; color: var(--ink-400); }
 .fgpp .vote .vmark { display: inline-flex; }
 
@@ -583,7 +583,7 @@
 }
 .fgpp .minibtn:hover { border-color: var(--ink-300); }
 .fgpp .minibtn.yes.on { background: #2F6E45; border-color: #2F6E45; color: var(--paper-50); }
-.fgpp .minibtn.no.on { background: var(--clay-600); border-color: var(--clay-600); color: var(--paper-50); }
+.fgpp .minibtn.no.on { background: #C0584A; border-color: #C0584A; color: var(--paper-50); }
 .fgpp .minibtn.confirm { margin-left: auto; background: var(--fairway-700); border-color: var(--fairway-700); color: var(--paper-50); }
 .fgpp .minibtn.confirm:hover { background: var(--fairway-800); }
 .fgpp .wishdate-final-tag { margin-left: auto; font-size: 12px; font-weight: 600; color: #2F6E45; display: inline-flex; align-items: center; gap: 6px; }

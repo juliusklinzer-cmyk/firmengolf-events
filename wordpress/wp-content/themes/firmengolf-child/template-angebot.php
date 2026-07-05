@@ -73,7 +73,16 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 		};
 
 		// 1) Frisch bestätigt/abgelehnt/Rückfrage → Bestätigung.
-		if ( 'query' === $done_val ) : ?>
+		if ( 'expired' === $done_val ) : ?>
+			<div class="tl-done">
+				<div class="tl-done-ic">
+					<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+				</div>
+				<h2>Danke, <?php echo esc_html( $first ?: '' ); ?>!</h2>
+				<p>Eure Zusage ist bei uns — die Reservierungsfrist war allerdings schon abgelaufen. Wir prüfen sofort, ob der Termin noch frei ist, und melden uns umgehend bei euch.</p>
+			</div>
+
+		<?php elseif ( 'query' === $done_val ) : ?>
 			<div class="tl-done">
 				<div class="tl-done-ic">
 					<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -103,6 +112,8 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 			<p class="tl-lead">Der Termin steht. Schaut es euch an und nehmt es mit einem Klick an.</p>
 			<?php if ( $deadline > time() ) : ?>
 			<div class="tl-deadline">Wir halten den Termin bis <strong><?php echo esc_html( wp_date( 'D, d.m.Y', $deadline ) ); ?></strong> für euch. Sagt ihr bis dahin zu, ist er verbindlich gebucht.</div>
+			<?php elseif ( $deadline > 0 ) : ?>
+			<div class="tl-deadline">Die Reservierungsfrist ist abgelaufen — der Termin ist nicht mehr garantiert. Ihr könnt trotzdem zusagen: wir prüfen dann sofort, ob er noch frei ist, und melden uns umgehend.</div>
 			<?php endif; ?>
 
 			<div class="tl-summary">
@@ -112,11 +123,8 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 					<?php if ( '' !== (string) ( $snap['location'] ?? '' ) ) : ?><div class="tl-sum-item"><div class="k">Ort</div><div class="v"><?php echo esc_html( (string) $snap['location'] ); ?></div></div><?php endif; ?>
 					<?php if ( (int) ( $snap['participants'] ?? 0 ) > 0 ) : ?><div class="tl-sum-item"><div class="k">Teilnehmer</div><div class="v">ca. <?php echo (int) $snap['participants']; ?> Personen</div></div><?php endif; ?>
 					<div class="tl-sum-item"><div class="k">Preis</div><div class="v"><?php
+						// Kein „zzgl. 19 % USt ergibt ca. X" am Preis — USt-Hinweis steht unten im Kleingedruckten.
 						echo esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' );
-						$incl = function_exists( 'fge_offer_gross_incl_vat_text' ) ? fge_offer_gross_incl_vat_text( $snap ) : '';
-						if ( '' !== $incl ) {
-							echo '<br><span style="color:#6C736E;font-size:13px;">' . esc_html( $incl ) . '</span>';
-						}
 					?></div></div>
 				</div>
 			</div>

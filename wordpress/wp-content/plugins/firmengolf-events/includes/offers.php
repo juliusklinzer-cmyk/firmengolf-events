@@ -108,12 +108,11 @@ function fge_offer_price_text( array $snap ): string {
 		return 'Auf Anfrage';
 	}
 	$unit = (string) ( $snap['price_unit'] ?? '' );
-	$vat  = (int) ( $snap['vat_percent'] ?? 19 );
 	$s    = '€' . number_format_i18n( $gross, 0 ) . ( 'pro Person' === $unit ? ' p.P.' : ' gesamt' );
 	if ( 'pro Person' === $unit && (int) ( $snap['participants'] ?? 0 ) > 0 ) {
 		$s .= ' · ca. €' . number_format_i18n( (float) $snap['price_total'], 0 ) . ' bei ' . (int) $snap['participants'] . ' Personen';
 	}
-	$s .= ' zzgl. ' . $vat . ' % USt';
+	// Kein „zzgl. X % USt ergibt ca. Y" am Preis (Julius, 2026-07-04) — USt-Hinweis steht einmal im Kleingedruckten.
 	return $s;
 }
 
@@ -132,21 +131,74 @@ function fge_offer_gross_incl_vat_text( array $snap ): string {
 
 // ── Auslöser: Termin bestätigt → Angebot erzeugen + senden ────────────────────
 
+/**
+ * Braucht die Anfrage Feinplanung durch Firmengolf, bevor das Angebot rausgeht?
+ * Ja, sobald Zusatzleistungen gewählt wurden: der Event-Preis deckt nur das
+ * Grundangebot, die Zusätze sind noch unbepreist (Julius, 2026-07-04).
+ * Nach der Feinplanung setzt der Admin-Button _fge_offer_review_done → Angebot geht raus.
+ */
+function fge_offer_needs_review( int $req ): bool {
+	if ( '1' === (string) get_post_meta( $req, '_fge_offer_review_done', true ) ) {
+		return false;
+	}
+	$g     = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ];
+	$needs = ! empty( $g['platz'] ) || ! empty( $g['firmengolf'] );
+	if ( ! $needs ) {
+		// Ohne bepreisbares Event kein Auto-Angebot: „Auf Anfrage" wäre sonst verbindlich buchbar (Audit A6).
+		$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+		$pricing  = ( $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id ) && function_exists( 'fge_event_pricing' ) )
+			? fge_event_pricing( $event_id )
+			: [ 'gross' => 0 ];
+		$needs = (float) ( $pricing['gross'] ?? 0 ) <= 0;
+	}
+	return (bool) apply_filters( 'fge_offer_needs_review', $needs, $req );
+}
+
 add_action( 'fge_request_date_confirmed', 'fge_offer_on_date_confirmed', 20, 2 );
 function fge_offer_on_date_confirmed( int $req, int $date_index ): void {
 	if ( '1' === (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
 		return; // einmalig
 	}
+	if ( fge_offer_needs_review( $req ) ) {
+		// Zusatzleistungen ohne Preis → kein Auto-Angebot. Kunde bekommt eine
+		// Termin-Bestätigung, Firmengolf plant die Feinheiten und löst das
+		// Angebot danach manuell aus (Metabox „Angebot" in der Anfrage).
+		update_post_meta( $req, '_fge_offer_hold', 1 );
+		fge_request_set_status( $req, 'in_uebernahme' );
+		if ( function_exists( 'fge_send_date_confirmation_email' ) ) {
+			fge_send_date_confirmation_email( $req, $date_index );
+		}
+		return;
+	}
+	// Atomarer Guard gegen Doppelversand (Portal + Admin gleichzeitig, Audit B6):
+	// add_post_meta mit unique=true gewinnt nur einmal.
+	if ( ! add_post_meta( $req, '_fge_offer_sent', 1, true ) ) {
+		return;
+	}
+	delete_post_meta( $req, '_fge_offer_hold' );
 	$snap = fge_build_offer_snapshot( $req, $date_index );
 	update_post_meta( $req, '_fge_offer_snapshot', $snap );
 	update_post_meta( $req, '_fge_offer_date_index', $date_index );
 	update_post_meta( $req, '_fge_offer_status', 'pending' );
 	$days = (int) apply_filters( 'fge_offer_response_days', 7 );
 	update_post_meta( $req, '_fge_offer_deadline', time() + $days * DAY_IN_SECONDS );
-	update_post_meta( $req, '_fge_offer_sent', 1 );
+	update_post_meta( $req, '_fge_offer_sent_at', time() );
 
 	fge_send_offer_email( $req );
 	fge_request_set_status( $req, 'angebot_versendet' );
+}
+
+// ── Buchungs-KPIs: bei Annahme hochzählen (waren vorher dauerhaft 0, Audit C3) ─
+add_action( 'fge_offer_accepted', 'fge_offer_count_booking', 5 );
+function fge_offer_count_booking( int $req ): void {
+	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+	if ( $event_id > 0 ) {
+		update_post_meta( $event_id, '_fge_bookings_count', (int) get_post_meta( $event_id, '_fge_bookings_count', true ) + 1 );
+	}
+	$partner_id = (int) get_post_meta( $req, '_fge_assigned_partner_id', true );
+	if ( $partner_id > 0 ) {
+		update_post_meta( $partner_id, '_fge_bookings_total', (int) get_post_meta( $partner_id, '_fge_bookings_total', true ) + 1 );
+	}
 }
 
 // ── Routing: /angebot/<token>/ ────────────────────────────────────────────────
@@ -202,6 +254,16 @@ function fge_offer_handle_post(): void {
 			// Verbindliche Buchung nur mit AGB-Zustimmung.
 			if ( '1' !== (string) ( $_POST['fge_offer_agb'] ?? '' ) ) {
 				wp_safe_redirect( fge_offer_link( $req ) . '?agb=1' );
+				exit;
+			}
+			// Nach Fristablauf ist der Slot nicht mehr garantiert: keine Auto-Buchung,
+			// sondern Rückfrage an Firmengolf — Termin prüfen, dann manuell bestätigen (Audit B2).
+			$deadline = (int) get_post_meta( $req, '_fge_offer_deadline', true );
+			if ( $deadline > 0 && time() > $deadline ) {
+				update_post_meta( $req, '_fge_offer_query', 'Kunde möchte nach Ablauf der Reservierungsfrist annehmen — bitte Termin prüfen und Buchung manuell bestätigen.' );
+				fge_request_set_status( $req, 'angebot_rueckfrage' );
+				do_action( 'fge_offer_query', $req, 'Annahme nach Fristablauf — Termin bitte prüfen.' );
+				wp_safe_redirect( fge_offer_link( $req ) . '?done=expired' );
 				exit;
 			}
 			update_post_meta( $req, '_fge_offer_status', 'accepted' );

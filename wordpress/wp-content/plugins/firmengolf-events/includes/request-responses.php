@@ -498,6 +498,13 @@ function fge_rr_handle_landing_post(): void {
 		wp_die( 'Link ungültig oder abgelaufen.', '', [ 'response' => 404 ] );
 	}
 	$contact = $resolved['contact'];
+
+	// Termin bereits final bestätigt → Abstimmung ist geschlossen; nachträgliche
+	// Änderungen würden unbemerkt einen gebuchten Termin kippen (Audit B3).
+	if ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 ) {
+		wp_safe_redirect( fge_termin_contact_link( $req, $contact ) . '&done=locked' );
+		exit;
+	}
 	$alt     = sanitize_text_field( wp_unslash( $_POST['fge_alt_date'] ?? '' ) );
 	$note    = sanitize_textarea_field( wp_unslash( $_POST['fge_note'] ?? '' ) );
 	$votes   = is_array( $_POST['vote'] ?? null ) ? $_POST['vote'] : [];

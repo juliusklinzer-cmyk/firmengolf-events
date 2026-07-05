@@ -208,7 +208,18 @@ function fge_handle_set_event_status(): void {
 		wp_die( 'Keine Berechtigung zum Freigeben.', '', [ 'response' => 403 ] );
 	}
 
-	update_post_meta( $post_id, '_fge_event_status', $new_status );
+	$was_paused = '1' === (string) get_post_meta( $post_id, '_fge_was_paused', true );
+	if ( 'freigegeben' === $new_status && $was_paused ) {
+		// Event war vor der Bearbeitung vom Partner pausiert → Freigabe stellt Pausiert wieder her.
+		update_post_meta( $post_id, '_fge_event_status', 'pausiert' );
+		delete_post_meta( $post_id, '_fge_was_paused' );
+	} else {
+		update_post_meta( $post_id, '_fge_event_status', $new_status );
+		delete_post_meta( $post_id, '_fge_was_paused' );
+	}
+
+	// Partner über das Prüfergebnis informieren (freigegeben/abgelehnt).
+	do_action( 'fge_event_reviewed', $post_id, $new_status, $was_paused );
 
 	wp_redirect( esc_url_raw( add_query_arg(
 		[ 'post_type' => 'firmengolf_event', 'fge_notice' => $new_status ],
@@ -372,6 +383,11 @@ function fge_handle_set_partner_status(): void {
 	// Partner über Freischaltung, Rückfragen oder Ablehnung informieren.
 	if ( function_exists( 'fge_notify_partner_status_change' ) ) {
 		fge_notify_partner_status_change( $post_id, $old_status, $new_status );
+	}
+
+	// Golfplatz-Verzeichnis: Partner-Flag (blauer Pin / Partner-Badge) mitziehen.
+	if ( function_exists( 'fge_verzeichnis_sync_partner' ) ) {
+		fge_verzeichnis_sync_partner( $post_id, $new_status );
 	}
 
 	// When activating a partner, ensure portal is enabled and standard permissions are set.

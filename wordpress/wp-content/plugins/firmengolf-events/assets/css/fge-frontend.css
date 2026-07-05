@@ -1278,6 +1278,11 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   color: var(--success);
   border: 1px solid #B7E5D6;
 }
+.fg-portal-global-notice--error {
+  background: #F9EDEA;
+  color: #8C3B2F;
+  border: 1px solid #E5B8B0;
+}
 .fg-portal-global-notice--pending {
   display: flex;
   align-items: flex-start;

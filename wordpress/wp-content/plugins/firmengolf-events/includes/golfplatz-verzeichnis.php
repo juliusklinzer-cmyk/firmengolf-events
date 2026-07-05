@@ -171,3 +171,71 @@ function fge_verzeichnis_count(): int {
 	$table = fge_verzeichnis_table();
 	return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 }
+
+/**
+ * Hält das Verzeichnis mit dem Partner-System synchron: Wird ein Partner
+ * freigeschaltet (Status aktiv), bekommt sein Platz im Verzeichnis das
+ * Partner-Flag (blauer Pin auf allen Karten + „Partner"-Badge in den Listen).
+ * Match per bereits verknüpfter partner_id, sonst PLZ + Namensähnlichkeit;
+ * ohne Treffer wird eine neue Zeile angelegt (synthetische dgv_id, kein DGV-Import).
+ * Pausiert/abgelehnt nimmt das Flag wieder weg, die Zeile bleibt.
+ */
+function fge_verzeichnis_sync_partner( int $partner_id, string $status ): void {
+	global $wpdb;
+	if ( $partner_id <= 0 ) {
+		return;
+	}
+	$table = fge_verzeichnis_table();
+	$is    = ( 'aktiv' === $status ) ? 1 : 0;
+
+	$row_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE partner_id = %d LIMIT 1", $partner_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	if ( $row_id > 0 ) {
+		$wpdb->update( $table, [ 'ist_partner' => $is ], [ 'id' => $row_id ], [ '%d' ], [ '%d' ] );
+		return;
+	}
+	if ( 1 !== $is ) {
+		return; // nie verknüpft und nicht aktiv → nichts zu tun
+	}
+
+	$m    = static fn( string $k ): string => (string) get_post_meta( $partner_id, '_fge_' . $k, true );
+	$name = $m( 'public_golfclub_name' ) ?: get_the_title( $partner_id );
+	$plz  = $m( 'postal_code' );
+	$ort  = $m( 'city' );
+
+	$norm = static function ( string $s ): string {
+		$s = mb_strtolower( $s );
+		$s = str_replace( [ 'ä', 'ö', 'ü', 'ß' ], [ 'ae', 'oe', 'ue', 'ss' ], $s );
+		$s = (string) preg_replace( '/\b(golfclub|golf club|golfpark|golfanlage|golfplatz|golf|club|gc|e v|ev)\b/', '', $s );
+		return trim( (string) preg_replace( '/[^a-z0-9]+/', '', $s ) );
+	};
+
+	// Kandidaten mit gleicher PLZ (oder gleichem Ort) auf Namensähnlichkeit prüfen.
+	$cands = $wpdb->get_results( $wpdb->prepare(
+		"SELECT id, name FROM {$table} WHERE partner_id = 0 AND ( plz = %s OR ort = %s )", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$plz,
+		$ort
+	) );
+	$needle = $norm( $name );
+	foreach ( $cands as $c ) {
+		$hay = $norm( (string) $c->name );
+		if ( '' !== $needle && '' !== $hay && ( str_contains( $hay, $needle ) || str_contains( $needle, $hay ) ) ) {
+			$wpdb->update( $table, [ 'partner_id' => $partner_id, 'ist_partner' => 1 ], [ 'id' => (int) $c->id ], [ '%d', '%d' ], [ '%d' ] );
+			return;
+		}
+	}
+
+	// Kein DGV-Treffer → eigene Zeile anlegen (synthetische dgv_id, kollisionsfrei > Import-Bereich).
+	$wpdb->insert( $table, [
+		'dgv_id'      => 900000 + $partner_id,
+		'name'        => $name,
+		'plz'         => $plz,
+		'ort'         => $ort,
+		'strasse'     => trim( $m( 'street' ) . ' ' . $m( 'house_number' ) ),
+		'bundesland'  => $m( 'federal_state' ),
+		'lat'         => (float) $m( 'latitude' ),
+		'lng'         => (float) $m( 'longitude' ),
+		'website'     => $m( 'website_url' ),
+		'partner_id'  => $partner_id,
+		'ist_partner' => 1,
+	], [ '%d', '%s', '%s', '%s', '%s', '%s', '%f', '%f', '%s', '%d', '%d' ] );
+}
