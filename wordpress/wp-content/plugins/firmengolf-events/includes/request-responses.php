@@ -433,6 +433,10 @@ function fge_parse_german_date( string $s ): ?string {
 			return sprintf( '%04d%02d%02d', (int) $m[3], $mon, (int) $m[1] );
 		}
 	}
+	// Numerische Form „31.07.2026" (Standard aus der Terminabstimmung, ggf. mit Wochentags-Präfix).
+	if ( preg_match( '/(\d{1,2})\.(\d{1,2})\.(\d{4})/', $s, $m ) && (int) $m[2] >= 1 && (int) $m[2] <= 12 ) {
+		return sprintf( '%04d%02d%02d', (int) $m[3], (int) $m[2], (int) $m[1] );
+	}
 	return null;
 }
 

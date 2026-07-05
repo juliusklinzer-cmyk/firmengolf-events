@@ -936,7 +936,6 @@ function fge_portal_render(): void {
 		'kalender'   => [ 'Kalender',        '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>' ],
 		'platz'      => [ 'Platz',           '<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' ],
 		'team'       => [ 'Ansprechpartner', '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>' ],
-		'kennzahlen' => [ 'Kennzahlen',      '<path d="M12 20V10M18 20V4M6 20v-4"/>' ],
 	];
 	?>
 	<div class="fgpp">
@@ -1135,6 +1134,7 @@ function fge_portal_section_uebersicht( int $partner_id ): void {
 
 	fge_portal_render_hero( $partner_id );
 	fge_portal_render_stats_row( $partner_id );
+	fge_portal_render_todo_row( $partner_id );
 	?>
 
 	<div class="fgpp"><div class="page-wide">
@@ -1218,6 +1218,14 @@ function fge_portal_render_hero( int $partner_id ): void {
 				</div>
 			</div>
 			<div class="fp-hero-body">
+				<?php $next = fge_portal_next_booking( $partner_id ); ?>
+				<?php if ( $next ) : ?>
+				<a class="fp-hero-next" href="<?php echo esc_url( $base . '?tab=anfragen&req=' . (int) $next['req'] ); ?>">
+					<span class="fp-hero-next-lbl"><?php echo $next['booked'] ? 'Nächste Buchung' : 'Nächster fixierter Termin'; ?></span>
+					<span class="fp-hero-next-val"><?php echo esc_html( $next['label'] ); ?> — <?php echo esc_html( $next['company'] ); ?></span>
+					<span class="fp-hero-next-cta">Zur Anfrage ›</span>
+				</a>
+				<?php endif; ?>
 				<div class="fp-hero-id">
 					<div class="fp-hero-monogram">
 						<?php if ( $logo_img !== '' ) : ?>
@@ -1250,46 +1258,245 @@ function fge_portal_render_stats_row( int $partner_id ): void {
 		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
 		'fields'      => 'ids',
 	] );
-
-	$published      = 0;
-	$views          = 0;
-	$requests_total = 0;
-	$bookings       = 0;
+	$views = 0;
 	foreach ( $events as $eid ) {
-		if ( get_post_meta( $eid, '_fge_event_status', true ) === 'freigegeben' ) {
-			$published++;
-		}
-		$views          += (int) get_post_meta( $eid, '_fge_views_count', true );
-		$requests_total += (int) get_post_meta( $eid, '_fge_requests_count', true );
-		$bookings       += (int) get_post_meta( $eid, '_fge_bookings_count', true );
+		$views += (int) get_post_meta( $eid, '_fge_views_count', true );
 	}
 
-	$base = fge_portal_page_url();
+	// Anfragen: echte Monatsreihe aus post_date (letzte 6 Monate).
+	$requests = get_posts( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
+	] );
+	$months = [];
+	for ( $i = 5; $i >= 0; $i-- ) {
+		$months[ date_i18n( 'Y-m', strtotime( "-{$i} months" ) ) ] = 0;
+	}
+	$book_months = $months;
+	$year        = (int) current_time( 'Y' );
+	$bookings_y  = 0;
+	$revenue_y   = 0.0;
+	foreach ( $requests as $r ) {
+		$mk = substr( (string) $r->post_date, 0, 7 );
+		if ( isset( $months[ $mk ] ) ) {
+			$months[ $mk ]++;
+		}
+		// Buchung = angenommenes Angebot; Zeitpunkt: _fge_offer_accepted_at, sonst letzter Statuswechsel.
+		if ( 'accepted' === (string) get_post_meta( $r->ID, '_fge_offer_status', true ) ) {
+			$acc = (string) get_post_meta( $r->ID, '_fge_offer_accepted_at', true )
+				?: (string) get_post_meta( $r->ID, '_fge_last_status_change', true );
+			if ( '' !== $acc && (int) substr( $acc, 0, 4 ) === $year ) {
+				$bookings_y++;
+				$snap       = (array) get_post_meta( $r->ID, '_fge_offer_snapshot', true );
+				$revenue_y += (float) ( $snap['price_total'] ?? 0 );
+				$bmk        = substr( $acc, 0, 7 );
+				if ( isset( $book_months[ $bmk ] ) ) {
+					$book_months[ $bmk ]++;
+				}
+			}
+		}
+	}
+	$series      = array_values( $months );
+	$this_month  = (int) end( $series );
+	$prev_month  = (int) $series[ count( $series ) - 2 ];
+	$delta_pct   = $prev_month > 0 ? (int) round( ( $this_month - $prev_month ) / $prev_month * 100 ) : null;
+	$rev_label   = $revenue_y >= 1000
+		? number_format_i18n( $revenue_y / 1000, 1 ) . '<span class="kpi-unit">T€</span>'
+		: '<span class="kpi-unit">€</span>' . number_format_i18n( $revenue_y, 0 );
 	?>
-	<div class="fgpp"><div class="stats">
-		<div class="stat">
-			<div class="stat-lbl">Profilaufrufe</div>
-			<div class="stat-val"><?php echo esc_html( number_format( $views, 0, ',', '.' ) ); ?></div>
-			<div class="stat-foot">gesamt</div>
+	<div class="fgpp"><div class="page-wide"><div class="kpi-row">
+		<div class="kpi">
+			<div class="kpi-head"><span class="kpi-lbl">Profilaufrufe</span></div>
+			<div class="kpi-val"><?php echo esc_html( number_format( $views, 0, ',', '.' ) ); ?></div>
+			<div class="kpi-foot">über alle Angebote</div>
 		</div>
-		<div class="stat">
-			<div class="stat-lbl">Anfragen</div>
-			<div class="stat-val"><?php echo esc_html( $requests_total ); ?></div>
-			<div class="stat-foot">gesamt</div>
+		<div class="kpi">
+			<div class="kpi-head"><span class="kpi-lbl">Anfragen / Monat</span><?php echo fge_portal_sparkline( $series ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+			<div class="kpi-val"><?php echo esc_html( (string) $this_month ); ?></div>
+			<div class="kpi-foot">
+				<?php if ( null !== $delta_pct ) : ?>
+					<span class="kpi-delta <?php echo $delta_pct >= 0 ? 'up' : 'down'; ?>"><?php echo ( $delta_pct >= 0 ? '↑ +' : '↓ ' ) . esc_html( (string) $delta_pct ); ?> %</span> vs. Vormonat
+				<?php else : ?>
+					<?php echo esc_html( $prev_month . ' im Vormonat' ); ?>
+				<?php endif; ?>
+			</div>
 		</div>
-		<div class="stat">
-			<div class="stat-lbl">Buchungen</div>
-			<div class="stat-val"><?php echo esc_html( $bookings ); ?></div>
-			<div class="stat-foot">gesamt</div>
+		<div class="kpi">
+			<div class="kpi-head"><span class="kpi-lbl">Buchungen <?php echo esc_html( (string) $year ); ?></span><?php echo fge_portal_sparkline( array_values( $book_months ) ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+			<div class="kpi-val"><?php echo esc_html( (string) $bookings_y ); ?></div>
+			<div class="kpi-foot">seit Jahresbeginn</div>
 		</div>
-		<div class="stat">
-			<div class="stat-lbl">Veröffentlicht</div>
-			<div class="stat-val"><?php echo esc_html( $published ); ?></div>
-			<div class="stat-foot"><a href="<?php echo esc_url( $base . '?tab=kennzahlen' ); ?>">Details →</a></div>
+		<div class="kpi">
+			<div class="kpi-head"><span class="kpi-lbl">Umsatz <?php echo esc_html( (string) $year ); ?></span></div>
+			<div class="kpi-val"><?php echo $rev_label; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+			<div class="kpi-foot"><?php echo $bookings_y > 0 ? 'aus ' . (int) $bookings_y . ' Buchung' . ( 1 === $bookings_y ? '' : 'en' ) . ' (netto laut Angebot)' : 'noch keine Buchung dieses Jahr'; ?></div>
 		</div>
+	</div></div></div>
+	<?php
+}
+
+/** Mini-Sparkline (Inline-SVG) aus einer Zahlenreihe; leer wenn alles 0. */
+function fge_portal_sparkline( array $series ): string {
+	$max = max( $series );
+	if ( $max <= 0 || count( $series ) < 2 ) {
+		return '';
+	}
+	$w   = 72;
+	$h   = 24;
+	$n   = count( $series ) - 1;
+	$pts = [];
+	foreach ( $series as $i => $v ) {
+		$x     = round( $i / $n * $w, 1 );
+		$y     = round( $h - 3 - ( $v / $max ) * ( $h - 6 ), 1 );
+		$pts[] = $x . ',' . $y;
+	}
+	return '<svg class="kpi-spark" viewBox="0 0 ' . $w . ' ' . $h . '" width="' . $w . '" height="' . $h . '" aria-hidden="true"><polyline fill="none" stroke="#2F6E45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="' . esc_attr( implode( ' ', $pts ) ) . '"/></svg>';
+}
+
+/** Nächste gebuchte/fixierte Buchung des Partners (Datum in der Zukunft), oder null. */
+function fge_portal_next_booking( int $partner_id ): ?array {
+	$reqs = get_posts( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_query'  => [
+			'relation' => 'AND',
+			[ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ],
+			[ 'key' => '_fge_final_date_index', 'value' => 0, 'compare' => '>', 'type' => 'NUMERIC' ],
+		],
+	] );
+	$best = null;
+	foreach ( $reqs as $rid ) {
+		$idx   = (int) get_post_meta( $rid, '_fge_final_date_index', true );
+		$label = (string) get_post_meta( $rid, '_fge_preferred_date_' . $idx, true );
+		$ymd   = function_exists( 'fge_parse_german_date' ) ? fge_parse_german_date( $label ) : null; // Format Ymd
+		if ( null === $ymd || $ymd < current_time( 'Ymd' ) ) {
+			continue;
+		}
+		if ( null === $best || $ymd < $best['ymd'] ) {
+			$best = [
+				'ymd'     => $ymd,
+				'label'   => $label,
+				'company' => (string) get_post_meta( $rid, '_fge_company_name', true ) ?: 'Unternehmen',
+				'req'     => $rid,
+				'booked'  => 'accepted' === (string) get_post_meta( $rid, '_fge_offer_status', true ),
+			];
+		}
+	}
+	return $best;
+}
+
+/** „Zu erledigen"-Zeile: echte offene Aufgaben des Platzes mit Ein-Klick-Zielen. */
+function fge_portal_render_todo_row( int $partner_id ): void {
+	$base = fge_portal_page_url();
+
+	// Anfragen, bei denen der Platz am Zug ist.
+	$reqs = get_posts( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
+	] );
+	$neu = 0;
+	$fix = 0;
+	foreach ( $reqs as $rid ) {
+		$ph = fge_portal_partner_phase( $rid );
+		if ( 'du' !== $ph['who'] ) {
+			continue;
+		}
+		if ( 2 === (int) $ph['step'] ) {
+			$fix++;
+		} else {
+			$neu++;
+		}
+	}
+
+	// Events: abgelehnt/Entwurf = überarbeiten; in Prüfung = Info; leere Kategorien = anlegen.
+	$events = get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
+	] );
+	$rework    = 0;
+	$pruefung  = 0;
+	$has_type  = [];
+	foreach ( $events as $ev ) {
+		$st = (string) get_post_meta( $ev->ID, '_fge_event_status', true );
+		$has_type[ (string) get_post_meta( $ev->ID, '_fge_event_type', true ) ] = true;
+		if ( in_array( $st, [ 'abgelehnt', '' ], true ) ) {
+			$rework++;
+		} elseif ( in_array( $st, [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) ) {
+			$pruefung++;
+		}
+	}
+	$empty_types = 0;
+	foreach ( array_keys( fge_get_event_formats()['standard'] ) as $tk ) {
+		if ( empty( $has_type[ $tk ] ) ) {
+			$empty_types++;
+		}
+	}
+
+	$open = $neu + $fix + $rework;
+	$ico  = static function ( string $path ): string {
+		return '<span class="todo-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg></span>';
+	};
+	?>
+	<div class="fgpp"><div class="page-wide">
+		<div class="todo-head">
+			<span class="todo-title">Zu erledigen</span>
+			<?php if ( $open > 0 ) : ?>
+				<span class="todo-pill"><?php echo (int) $open; ?> offen</span>
+			<?php elseif ( 0 === $pruefung + $empty_types ) : ?>
+				<span class="todo-pill done">alles erledigt ✓</span>
+			<?php endif; ?>
+		</div>
+		<?php if ( $open + $pruefung + $empty_types > 0 ) : ?>
+		<div class="todo-row">
+			<?php if ( $neu > 0 ) : ?>
+			<a class="todo" href="<?php echo esc_url( $base . '?tab=anfragen' ); ?>">
+				<?php echo $ico( '<path d="M22 12h-5l-2 3h-6l-2-3H2"/><path d="M5 5h14l3 7v7H2v-7z"/>' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				<span class="todo-main"><b><?php echo (int) $neu; ?> <?php echo 1 === $neu ? 'Neue Anfrage' : 'Neue Anfragen'; ?></b><span>Warten auf deine Reaktion</span></span>
+				<span class="todo-arrow">›</span>
+			</a>
+			<?php endif; ?>
+			<?php if ( $fix > 0 ) : ?>
+			<a class="todo" href="<?php echo esc_url( $base . '?tab=anfragen' ); ?>">
+				<?php echo $ico( '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/>' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				<span class="todo-main"><b><?php echo (int) $fix; ?> <?php echo 1 === $fix ? 'Terminfreigabe' : 'Terminfreigaben'; ?></b><span>Wunschtermine brauchen deine Freigabe</span></span>
+				<span class="todo-arrow">›</span>
+			</a>
+			<?php endif; ?>
+			<?php if ( $rework > 0 ) : ?>
+			<a class="todo" href="<?php echo esc_url( $base . '?tab=angebote' ); ?>">
+				<?php echo $ico( '<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				<span class="todo-main"><b><?php echo (int) $rework; ?> <?php echo 1 === $rework ? 'Angebot überarbeiten' : 'Angebote überarbeiten'; ?></b><span>Noch nicht freigegeben — bitte anpassen</span></span>
+				<span class="todo-arrow">›</span>
+			</a>
+			<?php endif; ?>
+			<?php if ( $empty_types > 0 ) : ?>
+			<a class="todo" href="<?php echo esc_url( $base . '?tab=angebote' ); ?>">
+				<?php echo $ico( '<path d="M12 5v14m-7-7h14"/>' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				<span class="todo-main"><b><?php echo (int) $empty_types; ?> <?php echo 1 === $empty_types ? 'Kategorie ohne Angebot' : 'Kategorien ohne Angebot'; ?></b><span>Mehr Angebote = mehr Anfragen</span></span>
+				<span class="todo-arrow">›</span>
+			</a>
+			<?php endif; ?>
+			<?php if ( $pruefung > 0 ) : ?>
+			<div class="todo is-wait">
+				<?php echo $ico( '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				<span class="todo-main"><b><?php echo (int) $pruefung; ?> in Prüfung bei Firmengolf</b><span>Du musst nichts tun — wir melden uns</span></span>
+			</div>
+			<?php endif; ?>
+		</div>
+		<?php endif; ?>
 	</div></div>
 	<?php
 }
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CATEGORY GRID
@@ -3357,6 +3564,17 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<p style="font-size:14px;line-height:1.5;color:rgba(251,250,246,0.85);margin-bottom:0;">
 							Angebote mit eigenem Foto vom Platz erhalten <strong style="color:var(--paper-100);">3× mehr Anfragen</strong> als solche ohne Foto.
 						</p>
+					</div>
+
+					<?php $help_co = fge_company(); ?>
+					<div class="fp-rail-card">
+						<h4>Du brauchst Hilfe?</h4>
+						<p style="font-size:14px;line-height:1.5;color:var(--ink-600);margin:0 0 12px;">
+							Dann ruf uns einfach an — wir richten dein Angebot gern gemeinsam mit dir ein.
+						</p>
+						<a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', (string) ( $help_co['phone_display'] ?? '' ) ) ); ?>" class="fp-btn fp-btn-ghost fp-btn-sm" style="display:inline-flex;">
+							<?php echo esc_html( $help_co['phone_display'] ?? '' ); ?>
+						</a>
 					</div>
 
 				</div><!-- /rail -->

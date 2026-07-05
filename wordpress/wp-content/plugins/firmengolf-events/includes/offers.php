@@ -267,6 +267,7 @@ function fge_offer_handle_post(): void {
 				exit;
 			}
 			update_post_meta( $req, '_fge_offer_status', 'accepted' );
+			update_post_meta( $req, '_fge_offer_accepted_at', current_time( 'mysql' ) ); // fürs Übersichts-Dashboard (Buchungen/Umsatz je Monat)
 			fge_request_set_status( $req, 'angebot_angenommen' );
 			do_action( 'fge_offer_accepted', $req );
 		} elseif ( 'decline' === $action ) {
