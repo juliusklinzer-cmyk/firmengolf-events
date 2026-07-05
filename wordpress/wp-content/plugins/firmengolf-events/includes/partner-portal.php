@@ -484,6 +484,7 @@ function fge_portal_handle_profile_update(): void {
 
 		case 'kontakt':
 			update_post_meta( $partner_id, '_fge_main_contact_name',   sanitize_text_field( $P['fge_main_contact_name'] ?? '' ) );
+			update_post_meta( $partner_id, '_fge_main_contact_role',   sanitize_text_field( $P['fge_main_contact_role'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_main_contact_email',  sanitize_email( $P['fge_main_contact_email'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_main_contact_phone',  sanitize_text_field( $P['fge_main_contact_phone'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_event_contact_name',  sanitize_text_field( $P['fge_event_contact_name'] ?? '' ) );
@@ -1419,6 +1420,7 @@ function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 	$phase      = fge_portal_partner_phase( $req->ID );
 	$st_label   = $phase['pill'];
 	$is_du      = 'du' === $phase['who'];
+	$is_new     = $is_new && $is_du; // erledigte Anfragen nicht mehr als 'Neu' markieren (Audit D13)
 	$detail_url = fge_portal_page_url() . '?tab=anfragen&req=' . $req->ID;
 	?>
 	<a class="fp-inbox-row" href="<?php echo esc_url( $detail_url ); ?>">
@@ -2347,6 +2349,7 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 				<?php else : ?>
 				<div class="fgpp-map">
 					<iframe data-name="googlemaps" data-src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
+					<p class="fgpp-map-consent" style="font-size:13px;color:var(--ink-500);margin:10px 0 0;">Karte leer? Sie lädt erst nach deiner Einwilligung in „Google Maps". <button type="button" onclick="window.klaro&amp;&amp;window.klaro.show()" style="border:0;background:none;color:var(--fairway-700);font:inherit;font-weight:600;cursor:pointer;padding:0;text-decoration:underline;">Cookie-Einstellungen öffnen</button></p>
 				</div>
 				<?php if ( $paddr !== '' ) : ?><p class="fgpp-map-addr"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $paddr ); ?></p><?php endif; ?>
 				<?php $apois = fge_partner_arrival_pois( $partner_id ); ?>
@@ -2567,6 +2570,10 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 						<div><label class="fg-form-label" for="fge_main_contact_email">E-Mail</label><input class="fg-form-input" type="email" id="fge_main_contact_email" name="fge_main_contact_email" value="<?php echo esc_attr( $m( 'main_contact_email' ) ); ?>"></div>
 						<div><label class="fg-form-label" for="fge_main_contact_phone">Telefon</label><input class="fg-form-input" type="tel" id="fge_main_contact_phone" name="fge_main_contact_phone" value="<?php echo esc_attr( $m( 'main_contact_phone' ) ); ?>"></div>
 					</div>
+					<div class="fg-form-row" style="max-width:320px;">
+						<label class="fg-form-label" for="fge_main_contact_role">Rolle / Funktion</label>
+						<input class="fg-form-input" type="text" id="fge_main_contact_role" name="fge_main_contact_role" value="<?php echo esc_attr( $m( 'main_contact_role' ) ); ?>" placeholder="z. B. Clubmanagerin">
+					</div>
 
 					<div class="pe-subhead" style="margin-top:26px;">Kontakt für Terminanfragen</div>
 					<p class="fp-help">Diese Person fragen wir an, wenn ein Unternehmen Wunschtermine nennt. Leer lassen, wenn das der Hauptkontakt übernehmen soll.</p>
@@ -2606,8 +2613,12 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 			</div>
 
 			<div class="pe-savebar">
-				<a href="<?php echo $back; ?>" class="btn btn-ghost">Abbrechen</a>
-				<button type="submit" class="btn btn-brand">Speichern <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></button>
+				<?php if ( 'medien' === $section ) : // Fotos speichern sofort per Upload — ein „Speichern" wäre ein No-op (Audit D9) ?>
+					<a href="<?php echo $back; ?>" class="btn btn-brand">Fertig <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
+				<?php else : ?>
+					<a href="<?php echo $back; ?>" class="btn btn-ghost">Abbrechen</a>
+					<button type="submit" class="btn btn-brand">Speichern <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></button>
+				<?php endif; ?>
 			</div>
 		</form>
 	</div></div>
@@ -3353,10 +3364,21 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 			</div><!-- .fp-edit-grid -->
 
 			<div class="fp-edit-actionbar">
-				<span style="font-size:13px;color:var(--ink-500);display:inline-flex;align-items:center;gap:8px;">
+				<span id="fp-unsaved-hint" style="font-size:13px;color:var(--ink-500);display:inline-flex;align-items:center;gap:8px;<?php echo $is_edit ? 'visibility:hidden;' : ''; ?>">
 					<span class="fp-unsaved-dot" style="width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none;display:inline-block;"></span>
 					<?php echo $is_edit ? 'Änderungen noch nicht gespeichert' : 'Noch nicht eingereicht'; ?>
 				</span>
+				<script>
+				// Hinweis erst zeigen, wenn wirklich etwas geändert wurde (Audit D8).
+				(function () {
+					var hint = document.getElementById('fp-unsaved-hint');
+					var form = document.getElementById('fp-event-form');
+					if (hint && form && hint.style.visibility === 'hidden') {
+						form.addEventListener('input', function () { hint.style.visibility = 'visible'; }, { once: true });
+						form.addEventListener('change', function () { hint.style.visibility = 'visible'; }, { once: true });
+					}
+				})();
+				</script>
 				<button type="submit" class="fp-btn fp-btn-brand">
 					<?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 					<?php echo $is_edit ? 'Änderungen speichern' : 'Event einreichen'; ?>
@@ -3621,37 +3643,3 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 	<?php
 }
 
-function fge_portal_render_event_leistungen_block( callable $checked, string $additional = '' ): void {
-	$labels = [
-		'has_golf_teacher'      => 'Golflehrer',
-		'has_range_usage'       => 'Range Nutzung inklusive',
-		'has_rental_clubs'      => 'Leihschläger inklusive',
-		'has_range_balls'       => 'Rangebälle inklusive',
-		'has_putting_shortgame' => 'Putting / Kurzspiel inklusive',
-		'has_meeting_room'      => 'Meetingraum',
-		'has_breakfast'         => 'Frühstück',
-		'has_lunch'             => 'Lunch',
-		'has_dinner'            => 'Abendessen',
-		'has_shuttle'           => 'Shuttle möglich',
-		'has_branding'          => 'Branding / individuelle Anpassung möglich',
-	];
-	?>
-	<div class="fg-form-block">
-		<p class="fg-form-block-title">Enthaltene Leistungen</p>
-		<div class="fg-form-checkgrid">
-			<?php foreach ( $labels as $key => $label ) : ?>
-				<label class="fg-form-check">
-					<input type="checkbox" name="fge_<?php echo esc_attr( $key ); ?>" value="1" <?php checked( $checked( 'fge_' . $key ) ); ?>>
-					<span><?php echo esc_html( $label ); ?></span>
-				</label>
-			<?php endforeach; ?>
-		</div>
-		<div class="fg-form-row" style="margin-top:16px;">
-			<label class="fg-form-label" for="fge_additional_services">Weitere Leistungen</label>
-			<div class="fg-form-field">
-				<textarea class="fg-form-textarea" id="fge_additional_services" name="fge_additional_services" rows="2" placeholder="Sonstige enthaltene Leistungen"><?php echo esc_textarea( $additional ); ?></textarea>
-			</div>
-		</div>
-	</div>
-	<?php
-}

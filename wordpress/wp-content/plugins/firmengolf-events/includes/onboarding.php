@@ -1314,7 +1314,7 @@ function fge_onboarding_icon_map(): array {
 		'shower' => 'shower', 'beamer' => 'beamer', 'screen' => 'screen', 'mic' => 'mic', 'wifi' => 'wifi',
 		'flipchart' => 'flipchart', 'whiteboard' => 'flipchart', 'moderation' => 'branding',
 		'catering-area' => 'plate', 'coach' => 'coach', 'trial-course' => 'intro-golf',
-		'platzreife' => 'intro-golf', 'company-course' => 'team-challenge', 'advanced-course' => 'range-training',
+		'company-course' => 'team-challenge', 'advanced-course' => 'range-training',
 		'rental-clubs' => 'clubs', 'range-balls' => 'balls',
 		// Gastronomy
 		'restaurant' => 'restaurant', 'club-restaurant' => 'restaurant', 'bistro' => 'coffee', 'cafe' => 'coffee',

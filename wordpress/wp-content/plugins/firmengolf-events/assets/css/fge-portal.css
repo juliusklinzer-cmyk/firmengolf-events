@@ -10,14 +10,14 @@
 
 /* ── Topnav ── */
 .fgpp .nav { position: sticky; top: 0; z-index: 30; background: rgba(251,250,246,0.88); backdrop-filter: blur(14px) saturate(120%); border-bottom: 1px solid rgba(14,19,16,0.06); }
-.fgpp .nav-inner { max-width: var(--width-page-wide); margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; gap: 32px; }
+.fgpp .nav-inner { max-width: var(--width-page-wide); margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; gap: 18px; }
 /* Logo + „Partner-Portal Live" gestapelt, damit die Tabs daneben in eine Reihe passen */
 .fgpp .brand { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; flex: none; text-decoration: none; }
 .fgpp .brand img { height: 22px; display: block; }
 .fgpp .brand-context { font-size: 12px; color: var(--ink-700); font-weight: 500; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .fgpp .brand-context .pill { font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fairway-700); background: var(--fairway-100); padding: 3px 8px; border-radius: 999px; }
 .fgpp .nav-tabs { display: flex; gap: 4px; margin: 0 auto; flex-wrap: wrap; }
-.fgpp .nav-tab { padding: 8px 14px; font-size: 14px; font-weight: 500; color: var(--ink-500); background: transparent; border: 0; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.fgpp .nav-tab { padding: 8px 11px; font-size: 13.5px; font-weight: 500; color: var(--ink-500); background: transparent; border: 0; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
 .fgpp .nav-tab:hover { color: var(--ink-900); background: var(--paper-200); }
 .fgpp .nav-tab.active { color: var(--ink-900); background: var(--paper-200); }
 .fgpp .nav-tab svg { width: 15px; height: 15px; }

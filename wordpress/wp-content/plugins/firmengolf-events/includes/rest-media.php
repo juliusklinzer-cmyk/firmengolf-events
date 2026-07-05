@@ -141,6 +141,10 @@ function fge_rest_gallery_upload( WP_REST_Request $req ) {
 	$pid = (int) $req['id'];
 	$lim = fge_onboarding_media_limits();
 
+	// Limit auch serverseitig durchsetzen — vorher nur im Browser geprüft (Audit D10).
+	if ( count( fge_partner_gallery_ids( $pid ) ) >= (int) ( $lim['gallery_max'] ?? 6 ) ) {
+		return new WP_Error( 'fge_gallery_full', 'Maximale Fotoanzahl erreicht — lösche zuerst ein Foto.', [ 'status' => 400 ] );
+	}
 	$err = fge_rest_validate_upload( 'file', $lim['gallery'], $lim['mimes'] );
 	if ( is_wp_error( $err ) ) {
 		return $err;
@@ -157,10 +161,19 @@ function fge_rest_gallery_upload( WP_REST_Request $req ) {
 	], 201 );
 }
 
-/** DELETE — remove one photo from the gallery (keeps the underlying file). */
+/** DELETE — remove one photo from the gallery (and its file, unless still used as logo/cover). */
 function fge_rest_gallery_delete( WP_REST_Request $req ) {
 	$pid = (int) $req['id'];
-	$ids = fge_partner_gallery_remove( $pid, (int) $req['att'] );
+	$att = (int) $req['att'];
+	$ids = fge_partner_gallery_remove( $pid, $att );
+	// Verwaiste Dateien nicht liegen lassen (Audit D15) — nur löschen, wenn das
+	// Attachment diesem Partner gehört und nicht noch als Logo/Titelbild dient.
+	if ( $att > 0
+		&& (int) get_post_field( 'post_parent', $att ) === $pid
+		&& $att !== (int) get_post_meta( $pid, '_fge_logo_attachment_id', true )
+		&& $att !== (int) get_post_meta( $pid, '_fge_hero_image_attachment_id', true ) ) {
+		wp_delete_attachment( $att, true );
+	}
 	return [
 		'gallery' => array_map( 'fge_rest_photo_payload', $ids ),
 		'cover'   => fge_partner_cover_id( $pid ),

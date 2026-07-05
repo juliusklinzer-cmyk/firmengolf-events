@@ -211,6 +211,11 @@ function fge_handle_rueckruf_submit() {
 	update_post_meta( $request_id, '_fge_preferred_contact_method', 'phone' );
 	update_post_meta( $request_id, '_fge_message', sprintf( "[Rückruf gewünscht] Bevorzugte Zeit: %s\nTelefon: %s", $when, $phone ) );
 	add_post_meta( $request_id, '_fge_request_date', current_datetime()->format( 'Y-m-d H:i:s' ), true );
+	// Verarbeitungsgrundlage dokumentieren (Art. 6 Abs. 1 lit. b — Anbahnung auf Anfrage des Betroffenen).
+	add_post_meta( $request_id, '_fge_consent_timestamp', current_datetime()->format( 'Y-m-d H:i:s' ), true );
+	if ( function_exists( 'fge_request_number' ) ) {
+		fge_request_number( $request_id ); // Vorgangsnummer sofort vergeben (war die einzige Quelle ohne Ref)
+	}
 
 	$date = current_datetime()->format( 'Y-m-d' );
 	fge_kontakt_set_title( $request_id, 'Rückruf: ' . $phone . ' · ' . $date );
