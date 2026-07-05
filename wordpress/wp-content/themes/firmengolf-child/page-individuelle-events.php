@@ -83,10 +83,10 @@ $start_req = $bc_start_type_cfg['required'] ?? [];
 
 // Veranstaltungstyp-Kacheln
 $type_tiles = [
-	[ 't' => 'Sommerfest',    'sub' => 'Der Abend unter freiem Himmel', 'img' => 'event-summer.jpg',   'occasion' => 'Sommerfest' ],
-	[ 't' => 'Firmenturnier', 'sub' => 'Pokale, Flights & Siegerehrung', 'img' => 'event-corporate.jpg', 'occasion' => 'Firmenturnier' ],
-	[ 't' => 'Teamevent',     'sub' => 'Spielerisch zusammenwachsen',    'img' => 'event-team.jpg',      'occasion' => 'Teamevent' ],
-	[ 't' => 'Kundenevent',   'sub' => 'Golf, Dinner & echte Gespräche', 'img' => 'event-toast.jpg',     'occasion' => 'Kundenevent' ],
+	[ 't' => 'Sommerfest',    'sub' => 'Der Abend unter freiem Himmel', 'img' => 'hero-golfloch-abendlicht.jpg',    'occasion' => 'Sommerfest' ],
+	[ 't' => 'Firmenturnier', 'sub' => 'Pokale, Flights & Siegerehrung', 'img' => 'golf-gruen-fahne.jpg',            'occasion' => 'Firmenturnier' ],
+	[ 't' => 'Teamevent',     'sub' => 'Spielerisch zusammenwachsen',    'img' => 'golferinnen-duo-green.png',       'occasion' => 'Teamevent' ],
+	[ 't' => 'Kundenevent',   'sub' => 'Golf, Dinner & echte Gespräche', 'img' => 'pool/kundenevent-handshake.jpg',  'occasion' => 'Kundenevent' ],
 ];
 
 // Golf-Erfahrung
@@ -284,7 +284,7 @@ get_header();
 
 	<?php /* ── Nacht-Event ── */ ?>
 	<section class="ind-night">
-		<div class="ind-night-photo" style="background-image:url('<?php echo $img( 'golfplatz-luftaufnahme-2.jpg' ); ?>')"></div>
+		<div class="ind-night-photo" style="background-image:url('<?php echo $img( 'pool/nachtevent-flutlicht-gruen.jpg' ); ?>')"></div>
 		<div class="ind-night-scrim"></div>
 		<div class="ind-night-glow"></div>
 		<div class="ind-night-inner">

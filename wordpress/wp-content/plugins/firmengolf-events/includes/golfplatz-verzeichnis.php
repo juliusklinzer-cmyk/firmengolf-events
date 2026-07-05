@@ -132,10 +132,45 @@ add_action( 'wp_enqueue_scripts', function (): void {
 		}
 	}
 
+	// Fall 3: öffentliche Golfplatz-Seite → nur der eigene Pin (Partner-Pin, blau mit Fahne).
+	$self_place = null;
+	if ( ! $coords && is_singular( 'firmengolf_partner' ) ) {
+		$pid  = get_the_ID();
+		$plat = (float) get_post_meta( $pid, '_fge_latitude', true );
+		$plng = (float) get_post_meta( $pid, '_fge_longitude', true );
+		if ( ! ( $plat && $plng ) ) {
+			// Die 20 Bestands-Partner haben keine Meta-Koordinaten — das DGV-Verzeichnis
+			// (verlinkt über partner_id) kennt sie aber.
+			global $wpdb;
+			$row = $wpdb->get_row( $wpdb->prepare(
+				'SELECT lat, lng FROM ' . fge_verzeichnis_table() . ' WHERE partner_id = %d LIMIT 1', // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$pid
+			) );
+			if ( $row ) {
+				$plat = (float) $row->lat;
+				$plng = (float) $row->lng;
+			}
+		}
+		if ( $plat && $plng ) {
+			$coords     = [ $plat, $plng ];
+			$self_place = [
+				'id'      => 0,
+				'name'    => (string) get_post_meta( $pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $pid ),
+				'lat'     => $plat,
+				'lng'     => $plng,
+				'partner' => true,
+				'meta'    => (string) get_post_meta( $pid, '_fge_city', true ),
+			];
+		}
+	}
+
 	if ( ! $coords ) {
 		return;
 	}
 	$places = [];
+	if ( $self_place ) {
+		$places[] = $self_place;
+	} else {
 	foreach ( fge_verzeichnis_nearby( $coords[0], $coords[1], $radius, 80 ) as $gp ) {
 		$places[] = [
 			'id'      => (int) $gp->id,
@@ -147,6 +182,7 @@ add_action( 'wp_enqueue_scripts', function (): void {
 			'partner' => 1 === (int) $gp->ist_partner,
 			'meta'    => $gp->ort . ' · ' . round( $gp->dist ) . ' km',
 		];
+	}
 	}
 	if ( ! $places ) {
 		return;

@@ -29,6 +29,25 @@ $cover_att = function_exists( 'fge_partner_cover_id' ) ? fge_partner_cover_id( $
 $cover     = $cover_att > 0 ? (string) wp_get_attachment_image_url( $cover_att, '2048x2048' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $pid );
 $mono      = function_exists( 'fge_portal_make_monogram' ) ? fge_portal_make_monogram( $name ) : strtoupper( mb_substr( $name, 0, 2 ) );
 $events    = function_exists( 'fge_partner_public_event_ids' ) ? fge_partner_public_event_ids( $pid ) : [];
+// Vorschau für den verknüpften Betreiber: auch Events in Prüfung anzeigen (markiert),
+// damit die Seite nach dem Anlegen nicht leer wirkt.
+$is_owner_preview = is_user_logged_in() && (int) get_post_meta( $pid, '_fge_assigned_wp_user_id', true ) === get_current_user_id();
+$preview_ids      = [];
+if ( $is_owner_preview ) {
+	$own = get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_query'  => [
+			'relation' => 'AND',
+			[ 'key' => '_fge_assigned_partner_id', 'value' => $pid, 'type' => 'NUMERIC' ],
+			[ 'key' => '_fge_event_status', 'value' => [ 'zur_pruefung', 'aenderung_in_pruefung' ], 'compare' => 'IN' ],
+		],
+	] );
+	$preview_ids = array_map( 'intval', $own );
+	$events      = array_values( array_unique( array_merge( array_map( 'intval', $events ), $preview_ids ) ) );
+}
 $fmt_lbl   = function_exists( 'fge_get_event_formats_flat' ) ? fge_get_event_formats_flat( false ) : [];
 $ind_url   = ( $ip = get_page_by_path( 'individuelle-events' ) ) ? get_permalink( $ip->ID ) : home_url( '/individuelle-events/' );
 
@@ -136,10 +155,10 @@ get_header();
 						<div class="hero-id">
 							<?php
 							$logo_id  = (int) $m( 'logo_attachment_id' );
-							$logo_url = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
+							$logo_url = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
 							?>
 							<?php if ( $logo_url !== '' ) : ?>
-								<div class="hero-monogram hero-logo" style="background-image:url('<?php echo esc_url( $logo_url ); ?>')" role="img" aria-label="<?php echo esc_attr( $name ); ?> Logo"></div>
+								<div class="hero-monogram hero-logo"><img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $name ); ?> Logo"></div>
 							<?php else : ?>
 								<div class="hero-monogram"><?php echo esc_html( $mono ); ?></div>
 							<?php endif; ?>
@@ -207,11 +226,27 @@ get_header();
 			<?php endif; ?>
 
 
+			<?php if ( ! $events && $is_owner_preview ) : ?>
+			<section class="section">
+				<div class="section-head"><div><div class="eyebrow">Veranstaltungen</div><h2>Noch keine <em>Events</em></h2></div></div>
+				<div class="panel" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+					<p style="margin:0;font-size:14.5px;color:var(--ink-600);max-width:560px;line-height:1.55;">Hier erscheinen deine Event-Angebote, sobald sie freigegeben sind — erst dann wird deine Seite auch öffentlich sichtbar. Dieser Hinweis ist nur für dich.</p>
+					<a class="btn btn-brand btn-sm" href="<?php echo esc_url( home_url( '/partnerportal/?tab=angebote&portal_action=new' ) ); ?>">+ Erstes Angebot anlegen</a>
+				</div>
+			</section>
+			<?php endif; ?>
+
 			<?php if ( $events ) : ?>
 			<section class="section">
 				<div class="section-head"><div><div class="eyebrow">Veranstaltungen</div><h2>Alle Formate auf <em><?php echo esc_html( $name ); ?></em></h2></div></div>
 				<div class="gp-events">
 					<?php foreach ( $events as $eid ) {
+						if ( in_array( (int) $eid, $preview_ids, true ) ) {
+							echo '<div class="gp-preview-card">';
+							get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $eid ] );
+							echo '<span class="gp-preview-tag">In Prüfung — nur für dich sichtbar</span></div>';
+							continue;
+						}
 						get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $eid ] );
 					} ?>
 				</div>
@@ -226,9 +261,14 @@ get_header();
 			if ( $pmq !== '' ) : ?>
 			<section class="section">
 				<div class="section-head"><div><div class="eyebrow">Standort</div><h2>Wo ihr uns <em>findet</em></h2></div></div>
+				<?php if ( wp_script_is( 'fge-city-map', 'enqueued' ) ) : // Partner-Pin (blau mit Fahne) wie auf den Stadtseiten ?>
+				<div class="fgpp-map"><div id="fge-city-map" style="width:100%;height:100%;"></div></div>
+				<p class="fgpp-map-consent" style="font-size:13px;color:var(--ink-500);margin:10px 0 0;">Karte leer? Sie lädt erst nach deiner Einwilligung in „Google Maps". <button type="button" onclick="window.klaro&amp;&amp;window.klaro.show()" style="border:0;background:none;color:var(--fairway-700);font:inherit;font-weight:600;cursor:pointer;padding:0;text-decoration:underline;">Cookie-Einstellungen öffnen</button></p>
+				<?php else : ?>
 				<div class="fgpp-map">
 					<iframe data-name="googlemaps" data-src="https://www.google.com/maps?q=<?php echo rawurlencode( $pmq ); ?>&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $name ); ?>"></iframe>
 				</div>
+				<?php endif; ?>
 				<?php if ( $paddr !== '' ) : ?><p class="fgpp-map-addr"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $paddr ); ?></p><?php endif; ?>
 				<?php $apois = function_exists( 'fge_partner_arrival_pois' ) ? fge_partner_arrival_pois( $pid ) : []; ?>
 				<?php if ( $apois ) : ?>
