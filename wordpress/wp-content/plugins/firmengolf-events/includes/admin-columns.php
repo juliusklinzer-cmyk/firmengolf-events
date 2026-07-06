@@ -190,3 +190,68 @@ function fge_request_column_content( string $column, int $post_id ) {
 	}
 }
 add_action( 'manage_firmengolf_request_posts_custom_column', 'fge_request_column_content', 10, 2 );
+
+// ── Benutzer-Liste: Golfplatz + Telefon (Julius, 2026-07-07) ──────────────────
+// So sieht man in der WP-Benutzerübersicht auf einen Blick, zu welchem Platz ein
+// Kontakt gehört und wie man ihn erreicht.
+
+/**
+ * Einmaliges Mapping WP-User-ID → verknüpfter Golfplatz (id/name/telefon).
+ * Statt pro Zeile einzeln zu suchen: eine Abfrage, danach aus dem statischen Cache.
+ *
+ * @return array<int,array{id:int,name:string,phone:string}>
+ */
+function fge_user_partner_map(): array {
+	static $map = null;
+	if ( null !== $map ) {
+		return $map;
+	}
+	$map      = [];
+	$partners = get_posts( [
+		'post_type'      => 'firmengolf_partner',
+		'post_status'    => 'any',
+		'numberposts'    => -1,
+		'fields'         => 'ids',
+		'meta_key'       => '_fge_assigned_wp_user_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		'no_found_rows'  => true,
+	] );
+	foreach ( $partners as $pid ) {
+		$uid = (int) get_post_meta( $pid, '_fge_assigned_wp_user_id', true );
+		if ( $uid <= 0 ) {
+			continue;
+		}
+		$map[ $uid ] = [
+			'id'    => (int) $pid,
+			'name'  => (string) get_post_meta( $pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $pid ),
+			'phone' => (string) get_post_meta( $pid, '_fge_main_contact_phone', true )
+				?: (string) get_post_meta( $pid, '_fge_event_contact_phone', true ),
+		];
+	}
+	return $map;
+}
+
+function fge_user_columns( array $columns ): array {
+	$columns['fge_user_partner'] = 'Golfplatz';
+	$columns['fge_user_phone']   = 'Telefon';
+	return $columns;
+}
+add_filter( 'manage_users_columns', 'fge_user_columns' );
+
+function fge_user_column_content( string $output, string $column, int $user_id ): string {
+	$map = fge_user_partner_map();
+	$row = $map[ $user_id ] ?? null;
+	if ( 'fge_user_partner' === $column ) {
+		if ( ! $row ) {
+			return '—';
+		}
+		return '<a href="' . esc_url( admin_url( 'post.php?post=' . $row['id'] . '&action=edit' ) ) . '">' . esc_html( $row['name'] ) . '</a>';
+	}
+	if ( 'fge_user_phone' === $column ) {
+		if ( ! $row || '' === $row['phone'] ) {
+			return '—';
+		}
+		return '<a href="tel:' . esc_attr( preg_replace( '/[^\d+]/', '', $row['phone'] ) ) . '">' . esc_html( $row['phone'] ) . '</a>';
+	}
+	return $output;
+}
+add_filter( 'manage_users_custom_column', 'fge_user_column_content', 10, 3 );
