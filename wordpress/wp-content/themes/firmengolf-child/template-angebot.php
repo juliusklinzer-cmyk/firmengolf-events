@@ -121,11 +121,20 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 				<div class="tl-sum-grid">
 					<div class="tl-sum-item"><div class="k">Termin</div><div class="v"><?php echo esc_html( (string) ( $snap['date'] ?? '' ) ); ?></div></div>
 					<?php if ( '' !== (string) ( $snap['location'] ?? '' ) ) : ?><div class="tl-sum-item"><div class="k">Ort</div><div class="v"><?php echo esc_html( (string) $snap['location'] ); ?></div></div><?php endif; ?>
-					<?php if ( (int) ( $snap['participants'] ?? 0 ) > 0 ) : ?><div class="tl-sum-item"><div class="k">Teilnehmer</div><div class="v">ca. <?php echo (int) $snap['participants']; ?> Personen</div></div><?php endif; ?>
-					<div class="tl-sum-item"><div class="k">Preis</div><div class="v"><?php
-						// Kein „zzgl. 19 % USt ergibt ca. X" am Preis — USt-Hinweis steht unten im Kleingedruckten.
+					<?php if ( (int) ( $snap['participants'] ?? 0 ) > 0 ) : ?><div class="tl-sum-item"><div class="k">Teilnehmer</div><div class="v"><?php echo (int) $snap['participants']; ?> Personen</div></div><?php endif; ?>
+					<div class="tl-sum-item"><div class="k">Preis (netto)</div><div class="v"><?php
 						echo esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' );
 					?></div></div>
+					<?php
+					// MwSt. + Endpreis explizit ausweisen (Julius, 2026-07-06).
+					$tl_vatp     = (int) ( $snap['vat_percent'] ?? 19 );
+					$tl_net_base = ( 'pro Person' === (string) ( $snap['price_unit'] ?? '' ) )
+						? ( (int) ( $snap['participants'] ?? 0 ) > 0 ? (float) ( $snap['price_total'] ?? 0 ) : 0.0 )
+						: (float) ( $snap['price_gross'] ?? 0 );
+					if ( $tl_net_base > 0 ) : ?>
+					<div class="tl-sum-item"><div class="k">zzgl. <?php echo (int) $tl_vatp; ?> % MwSt.</div><div class="v">€<?php echo esc_html( number_format_i18n( round( $tl_net_base * $tl_vatp / 100 ), 0 ) ); ?></div></div>
+					<div class="tl-sum-item"><div class="k">Endpreis inkl. MwSt.</div><div class="v"><strong>€<?php echo esc_html( number_format_i18n( round( $tl_net_base * ( 1 + $tl_vatp / 100 ) ), 0 ) ); ?></strong></div></div>
+					<?php endif; ?>
 				</div>
 			</div>
 

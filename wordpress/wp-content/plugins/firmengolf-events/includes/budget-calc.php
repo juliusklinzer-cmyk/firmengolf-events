@@ -40,15 +40,15 @@ function fge_bc_defaults(): array {
 		// Verpflegung (im Tagesverlauf).
 		[ 'id' => 'startgeschenk', 'label' => 'Startgeschenk / Goodie-Bag',             'cat' => 'extras',   'icon' => 'gift', 'pp' => 35,  'flat' => 0,    'wiz' => 'Individuelle Artikel' ],
 		[ 'id' => 'welcome_drink', 'label' => 'Welcome Drink',                          'cat' => 'catering', 'icon' => 'drink','pp' => 12,  'flat' => 0,    'wiz' => 'Bar & Drinks' ],
-		[ 'id' => 'halfway',       'label' => 'Half-Way-Verpflegung (auf der Runde)',   'cat' => 'catering', 'icon' => 'catering','pp' => 18, 'flat' => 0, 'wiz' => 'Lunch' ],
-		[ 'id' => 'cominghome',    'label' => 'Coming Home (Imbiss nach der Runde)',    'cat' => 'catering', 'icon' => 'catering','pp' => 16, 'flat' => 0, 'wiz' => 'Lunch' ],
-		[ 'id' => 'catering',      'label' => 'Bewirtung / Catering',                   'cat' => 'catering', 'icon' => 'catering','pp' => 62, 'flat' => 0, 'wiz' => 'Lunch' ],
+		[ 'id' => 'halfway',       'label' => 'Half-Way-Verpflegung (auf der Runde)',   'cat' => 'catering', 'icon' => 'catering','pp' => 18, 'flat' => 0, 'wiz' => 'Mittagessen' ],
+		[ 'id' => 'cominghome',    'label' => 'Coming Home (Imbiss nach der Runde)',    'cat' => 'catering', 'icon' => 'catering','pp' => 16, 'flat' => 0, 'wiz' => 'Mittagessen' ],
+		[ 'id' => 'catering',      'label' => 'Bewirtung / Catering',                   'cat' => 'catering', 'icon' => 'catering','pp' => 62, 'flat' => 0, 'wiz' => 'Mittagessen' ],
 		[ 'id' => 'dinner',        'label' => 'Dinner / Abendveranstaltung',            'cat' => 'catering', 'icon' => 'catering','pp' => 78, 'flat' => 0, 'wiz' => 'Abendessen' ],
 		[ 'id' => 'getraenke',     'label' => 'Getränkepauschale',                      'cat' => 'catering', 'icon' => 'drink','pp' => 28,  'flat' => 0,    'wiz' => 'Bar & Drinks' ],
 		[ 'id' => 'bar',           'label' => 'Bar & Drinks',                           'cat' => 'catering', 'icon' => 'drink','pp' => 35,  'flat' => 0,    'wiz' => 'Bar & Drinks' ],
 		// Unterhaltung & Technik.
-		[ 'id' => 'musik',         'label' => 'DJ oder Live-Band',                      'cat' => 'technik',  'icon' => 'music','pp' => 0,   'flat' => 1600, 'wiz' => 'DJ' ],
-		[ 'id' => 'technik',       'label' => 'Bühne & Eventtechnik',                   'cat' => 'technik',  'icon' => 'show', 'pp' => 0,   'flat' => 3200, 'wiz' => 'Eventtechnik: Bühne + Personal' ],
+		[ 'id' => 'musik',         'label' => 'DJ oder Live-Band',                      'cat' => 'technik',  'icon' => 'music','pp' => 0,   'flat' => 1600, 'wiz' => 'Musik und DJ' ],
+		[ 'id' => 'technik',       'label' => 'Bühne & Eventtechnik',                   'cat' => 'technik',  'icon' => 'show', 'pp' => 0,   'flat' => 3200, 'wiz' => 'Bühne mit Licht und Ton' ],
 		// Turnier-Extras.
 		[ 'id' => 'siegerehrung',  'label' => 'Siegerehrung & Preise',                  'cat' => 'extras',   'icon' => 'trophy','pp' => 0,  'flat' => 900,  'wiz' => 'Pokale & Preise' ],
 		[ 'id' => 'sonderwertung', 'label' => 'Sonderwertungen (Longest Drive / Nearest to Pin)', 'cat' => 'extras', 'icon' => 'target', 'pp' => 0, 'flat' => 400, 'wiz' => 'Firmenturnier' ],
@@ -59,8 +59,8 @@ function fge_bc_defaults(): array {
 		[ 'id' => 'uebernachtung', 'label' => 'Übernachtung',                           'cat' => 'uebernachtung','icon' => 'bed','pp' => 155,'flat' => 0,  'wiz' => 'Übernachtung' ],
 		[ 'id' => 'foto',          'label' => 'Fotograf / Content',                     'cat' => 'foto',     'icon' => 'cam',  'pp' => 0,   'flat' => 1400, 'wiz' => 'Fotograf' ],
 		// Nacht.
-		[ 'id' => 'flutlicht',     'label' => 'Flutlicht / Einleuchten des Platzes',    'cat' => 'venue',    'icon' => 'bulb', 'pp' => 0,   'flat' => 2800, 'wiz' => 'Flutlicht / Nacht-Event' ],
-		[ 'id' => 'leuchtball',    'label' => 'Leucht-Equipment / Nacht-Bälle',         'cat' => 'programm', 'icon' => 'ball', 'pp' => 9,   'flat' => 0,    'wiz' => 'Flutlicht / Nacht-Event' ],
+		[ 'id' => 'flutlicht',     'label' => 'Flutlicht / Einleuchten des Platzes',    'cat' => 'venue',    'icon' => 'bulb', 'pp' => 0,   'flat' => 2800, 'wiz' => 'Flutlicht und Nacht-Event' ],
+		[ 'id' => 'leuchtball',    'label' => 'Leucht-Equipment / Nacht-Bälle',         'cat' => 'programm', 'icon' => 'ball', 'pp' => 9,   'flat' => 0,    'wiz' => 'Flutlicht und Nacht-Event' ],
 	];
 
 	$all_ids = array_column( $services, 'id' );

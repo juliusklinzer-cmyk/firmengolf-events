@@ -26,6 +26,21 @@ $fehler_txt = [
 	'email_vergeben' => 'Für diese E-Mail existiert schon ein Konto. Melde dich damit im Portal an oder ruf uns kurz an — wir verknüpfen es für dich.',
 	'rate'           => 'Zu viele Versuche — bitte warte ein paar Minuten.',
 ][ $fehler ] ?? '';
+
+// E-Mail-Verifizierung: Zwischenschritt mit Code-Eingabe (Julius, 2026-07-06).
+$verify   = ! empty( $_GET['verify'] );
+$evfehler = sanitize_key( wp_unslash( $_GET['evfehler'] ?? '' ) );
+$ev_txt   = [
+	'wrong'    => 'Der Code stimmt nicht — schau nochmal in die Mail.',
+	'expired'  => 'Der Code ist abgelaufen — fordere einfach einen neuen an.',
+	'toomany'  => 'Zu viele Versuche. Bitte fordere einen neuen Code an oder melde dich bei uns.',
+	'cooldown' => 'Wir haben dir gerade erst einen Code geschickt — schau kurz in dein Postfach.',
+	'nomail'   => 'Der Code konnte nicht verschickt werden. Bitte prüfe die E-Mail-Adresse.',
+][ $evfehler ] ?? '';
+$pending  = $verify ? (array) get_transient( 'fge_invite_pending_' . $token ) : [];
+$pf_first = (string) ( $pending['first'] ?? '' );
+$pf_last  = (string) ( $pending['last'] ?? '' );
+$pf_email = (string) ( $pending['email'] ?? '' );
 ?><!doctype html>
 <html <?php language_attributes(); ?>>
 <head>
@@ -63,6 +78,9 @@ $fehler_txt = [
 		/* button./a.-Präfix: schlägt den globalen .fge-page-button/-a-Reset (0-1-1) */
 		.inv-cta, button.inv-cta, a.inv-cta { margin-top: 6px; width: 100%; font: inherit; font-size: 15.5px; font-weight: 600; color: #fff; background: var(--fairway-700, #4279D1); border: 0; border-radius: 999px; padding: 14px 26px; cursor: pointer; transition: background 0.15s ease; text-align: center; }
 		.inv-cta:hover, button.inv-cta:hover, a.inv-cta:hover { background: var(--fairway-600, #3568BC); color: #fff; }
+		.inv-resend { font-size: 13px; color: var(--ink-600, #5C6660); margin: 12px 0 0; text-align: center; }
+		.inv-linkbtn, button.inv-linkbtn { font: inherit; font-size: 13px; font-weight: 600; color: var(--fairway-700, #4279D1); background: none; border: 0; padding: 0; margin: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; width: auto; }
+		.inv-linkbtn:hover, button.inv-linkbtn:hover { color: var(--fairway-600, #3568BC); }
 		.inv-legal { font-size: 12px; color: var(--ink-500, #7C857F); line-height: 1.55; margin: 14px 0 0; }
 		.inv-legal a { color: var(--fairway-700, #4279D1); text-decoration: none; }
 		.inv-help { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--ink-200, #E4E2DA); font-size: 13.5px; color: var(--ink-600, #5C6660); }
@@ -107,22 +125,31 @@ $fehler_txt = [
 				</div>
 			</div>
 			<div class="inv-right">
-				<h2 class="inv-title">Leg deine Zugangsdaten fest</h2>
-				<p class="inv-sub">Eine Minute, dann bist du drin: Du siehst euer vorbereitetes Profil, kannst alles anpassen und euer erstes Event-Angebot anlegen.</p>
+				<h2 class="inv-title"><?php echo $verify ? 'Bestätige deine E-Mail' : 'Leg deine Zugangsdaten fest'; ?></h2>
+				<p class="inv-sub"><?php echo $verify
+					? 'Fast geschafft: Wir haben dir einen 6-stelligen Code geschickt. Gib ihn hier ein, dann legen wir deinen Zugang an.'
+					: 'Eine Minute, dann bist du drin: Du siehst euer vorbereitetes Profil, kannst alles anpassen und euer erstes Event-Angebot anlegen.'; ?></p>
 
 				<?php if ( '' !== $fehler_txt ) : ?><div class="inv-error"><?php echo esc_html( $fehler_txt ); ?></div><?php endif; ?>
+				<?php if ( '' !== $ev_txt ) : ?><div class="inv-error"><?php echo esc_html( $ev_txt ); ?></div><?php endif; ?>
 
 				<form class="inv-form" method="post" action="<?php echo esc_url( $post_url ); ?>">
 					<input type="hidden" name="fge_action" value="invite_accept">
 					<input type="hidden" name="fge_invite_token" value="<?php echo esc_attr( $token ); ?>">
 					<?php wp_nonce_field( 'fge_invite_' . $token, 'fge_invite_nonce' ); ?>
 					<div class="inv-row2">
-						<div class="inv-field"><label for="fge_first">Vorname</label><input type="text" id="fge_first" name="fge_first" required autocomplete="given-name"></div>
-						<div class="inv-field"><label for="fge_last">Nachname</label><input type="text" id="fge_last" name="fge_last" autocomplete="family-name"></div>
+						<div class="inv-field"><label for="fge_first">Vorname</label><input type="text" id="fge_first" name="fge_first" value="<?php echo esc_attr( $pf_first ); ?>" required autocomplete="given-name"></div>
+						<div class="inv-field"><label for="fge_last">Nachname</label><input type="text" id="fge_last" name="fge_last" value="<?php echo esc_attr( $pf_last ); ?>" autocomplete="family-name"></div>
 					</div>
-					<div class="inv-field"><label for="fge_email">E-Mail-Adresse (dein Login)</label><input type="email" id="fge_email" name="fge_email" required autocomplete="email"></div>
+					<div class="inv-field"><label for="fge_email">E-Mail-Adresse (dein Login)</label><input type="email" id="fge_email" name="fge_email" value="<?php echo esc_attr( $pf_email ); ?>" required autocomplete="email"></div>
 					<div class="inv-field"><label for="fge_pass">Passwort (mindestens 8 Zeichen)</label><input type="password" id="fge_pass" name="fge_pass" required minlength="8" autocomplete="new-password"></div>
-					<button type="submit" class="inv-cta">Zugang anlegen &amp; Profil ansehen</button>
+					<?php if ( $verify ) : ?>
+					<div class="inv-field"><label for="fge_code">Bestätigungscode</label><input type="text" id="fge_code" name="fge_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="6-stelliger Code" required></div>
+					<?php endif; ?>
+					<button type="submit" class="inv-cta"><?php echo $verify ? 'Code bestätigen &amp; Zugang anlegen' : 'Zugang anlegen &amp; Profil ansehen'; ?></button>
+					<?php if ( $verify ) : ?>
+					<p class="inv-resend">Keinen Code bekommen? <button type="submit" name="fge_resend" value="1" class="inv-linkbtn" formnovalidate>Code erneut senden</button></p>
+					<?php endif; ?>
 				</form>
 
 				<p class="inv-legal">Mit dem Anlegen akzeptierst du unsere <a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">Partner-Bedingungen</a>. Deine Daten nutzen wir nur für den Portal-Betrieb (<a href="<?php echo esc_url( home_url( '/datenschutz/' ) ); ?>" target="_blank" rel="noopener">Datenschutz</a>).</p>

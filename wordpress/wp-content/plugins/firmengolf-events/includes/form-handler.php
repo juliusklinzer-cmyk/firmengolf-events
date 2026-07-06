@@ -295,7 +295,8 @@ function fge_ajax_general_request(): void {
 		'Firmenturnier'            => 'tournament_mode',
 		'Putting-Challenge'        => 'tournament_mode',
 		'Frühstück'                => 'breakfast',
-		'Lunch'                    => 'lunch',
+		'Mittagessen'              => 'lunch', // war „Lunch" (Wizard-Wording 2026-07-06)
+		'Grill'                    => 'dinner',
 		'Abendessen'               => 'dinner',
 		'Bar & Drinks'             => 'dinner',
 		'Meetingraum'              => 'meeting_room',

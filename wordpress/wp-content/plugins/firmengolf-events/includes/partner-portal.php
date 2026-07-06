@@ -497,13 +497,43 @@ function fge_portal_handle_profile_update(): void {
 			break;
 
 		case 'kontakt':
+			// Alle Felder AUSSER der Hauptkontakt-E-Mail sofort speichern.
 			update_post_meta( $partner_id, '_fge_main_contact_name',   sanitize_text_field( $P['fge_main_contact_name'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_main_contact_role',   sanitize_text_field( $P['fge_main_contact_role'] ?? '' ) );
-			update_post_meta( $partner_id, '_fge_main_contact_email',  sanitize_email( $P['fge_main_contact_email'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_main_contact_phone',  sanitize_text_field( $P['fge_main_contact_phone'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_event_contact_name',  sanitize_text_field( $P['fge_event_contact_name'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_event_contact_email', sanitize_email( $P['fge_event_contact_email'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_event_contact_phone', sanitize_text_field( $P['fge_event_contact_phone'] ?? '' ) );
+
+			// Hauptkontakt-E-Mail: Änderung nur nach Code-Bestätigung an der NEUEN Adresse
+			// übernehmen (Julius, 2026-07-06) — sonst kann ein Tippfehler den Login
+			// unbemerkt umleiten. Die alte Adresse wird über den Wechsel informiert.
+			$new_email = sanitize_email( $P['fge_main_contact_email'] ?? '' );
+			$cur_email = (string) get_post_meta( $partner_id, '_fge_main_contact_email', true );
+			if ( $new_email !== $cur_email && is_email( $new_email ) ) {
+				$ev_ctx = 'portalmail_' . $partner_id;
+				if ( ! fge_ev_is_verified( $new_email, $ev_ctx ) ) {
+					set_transient( 'fge_portalmail_' . $partner_id, $new_email, 15 * MINUTE_IN_SECONDS );
+					$code = sanitize_text_field( $P['fge_mail_code'] ?? '' );
+					if ( ! empty( $P['fge_mail_resend'] ) || '' === $code ) {
+						$send = fge_ev_send_code( $new_email, $ev_ctx );
+						wp_redirect( esc_url_raw( fge_portal_page_url() . '?tab=platz&edit=kontakt&mailverify=1' . ( is_wp_error( $send ) ? '&mailerr=' . $send->get_error_code() : '' ) ), 303 );
+						exit;
+					}
+					$chk = fge_ev_check_code( $new_email, $ev_ctx, $code );
+					if ( is_wp_error( $chk ) ) {
+						wp_redirect( esc_url_raw( fge_portal_page_url() . '?tab=platz&edit=kontakt&mailverify=1&mailerr=' . $chk->get_error_code() ), 303 );
+						exit;
+					}
+				}
+				// Verifiziert: Info an die alte Adresse, dann übernehmen.
+				if ( is_email( $cur_email ) ) {
+					fge_portal_notify_contact_email_change( $partner_id, $cur_email, $new_email );
+				}
+				fge_ev_forget( $new_email, $ev_ctx );
+				delete_transient( 'fge_portalmail_' . $partner_id );
+			}
+			update_post_meta( $partner_id, '_fge_main_contact_email', $new_email );
 			break;
 
 		case 'medien':
@@ -515,6 +545,26 @@ function fge_portal_handle_profile_update(): void {
 	$base = fge_portal_page_url();
 	wp_redirect( esc_url_raw( $base . '?tab=platz&portal_success=profile_saved' ), 303 );
 	exit;
+}
+
+/**
+ * Info an die BISHERIGE Kontaktadresse, wenn die Hauptkontakt-E-Mail gewechselt
+ * wird — damit ein unbefugter Wechsel auffällt (Julius, 2026-07-06).
+ */
+function fge_portal_notify_contact_email_change( int $partner_id, string $old_email, string $new_email ): void {
+	if ( ! function_exists( 'fge_email_wrap' ) ) {
+		return;
+	}
+	$name    = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+	$portal  = fge_portal_page_url();
+	$subject = 'Kontakt-E-Mail eures Firmengolf-Portals geändert';
+	$content = '
+		<p style="margin:0 0 16px;">Die Kontakt-E-Mail-Adresse für <strong>' . esc_html( $name ) . '</strong> wurde soeben geändert:</p>
+		<p style="margin:0 0 16px;">von <strong>' . esc_html( $old_email ) . '</strong><br>zu <strong>' . esc_html( $new_email ) . '</strong></p>
+		<p style="margin:0 0 16px;">Warst du das nicht, antworte einfach auf diese Mail oder melde dich bei uns — wir prüfen das sofort.</p>
+		<p style="margin:0;">' . ( function_exists( 'fge_email_button' ) ? fge_email_button( $portal, 'Zum Partnerportal' ) : '' ) . '</p>
+	';
+	wp_mail( $old_email, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2995,14 +3045,34 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 					break;
 
 				case 'kontakt':
+					// Läuft gerade eine E-Mail-Bestätigung? Dann die noch nicht übernommene
+					// (neue) Adresse im Feld zeigen und das Code-Feld einblenden.
+					$mail_pending = ( isset( $_GET['mailverify'] ) && $partner_id > 0 ) ? (string) get_transient( 'fge_portalmail_' . $partner_id ) : '';
+					$mail_val     = '' !== $mail_pending ? $mail_pending : $m( 'main_contact_email' );
+					$mail_err     = sanitize_key( wp_unslash( $_GET['mailerr'] ?? '' ) );
+					$mail_err_txt = [
+						'wrong'    => 'Der Code stimmt nicht — schau nochmal in die Mail.',
+						'expired'  => 'Der Code ist abgelaufen — fordere einen neuen an.',
+						'toomany'  => 'Zu viele Versuche. Bitte fordere einen neuen Code an.',
+						'cooldown' => 'Wir haben dir gerade erst einen Code geschickt.',
+						'nomail'   => 'Der Code konnte nicht verschickt werden. Bitte prüfe die Adresse.',
+					][ $mail_err ] ?? '';
 					?>
 					<div class="pe-subhead">Hauptkontakt</div>
 					<p class="fp-help">Deine erste Anlaufstelle für Firmengolf — z. B. Clubmanagement oder Sekretariat.</p>
 					<div class="fg-form-row fg-form-row--3col">
 						<div><label class="fg-form-label" for="fge_main_contact_name">Name</label><input class="fg-form-input" type="text" id="fge_main_contact_name" name="fge_main_contact_name" value="<?php echo esc_attr( $m( 'main_contact_name' ) ); ?>"></div>
-						<div><label class="fg-form-label" for="fge_main_contact_email">E-Mail</label><input class="fg-form-input" type="email" id="fge_main_contact_email" name="fge_main_contact_email" value="<?php echo esc_attr( $m( 'main_contact_email' ) ); ?>"></div>
+						<div><label class="fg-form-label" for="fge_main_contact_email">E-Mail</label><input class="fg-form-input" type="email" id="fge_main_contact_email" name="fge_main_contact_email" value="<?php echo esc_attr( $mail_val ); ?>"></div>
 						<div><label class="fg-form-label" for="fge_main_contact_phone">Telefon</label><input class="fg-form-input" type="tel" id="fge_main_contact_phone" name="fge_main_contact_phone" value="<?php echo esc_attr( $m( 'main_contact_phone' ) ); ?>"></div>
 					</div>
+					<?php if ( '' !== $mail_pending ) : ?>
+					<div class="fp-mailverify">
+						<?php if ( '' !== $mail_err_txt ) : ?><div class="fp-mailverify-err"><?php echo esc_html( $mail_err_txt ); ?></div><?php endif; ?>
+						<label class="fg-form-label" for="fge_mail_code">Bestätigungscode für die neue E-Mail</label>
+						<input class="fg-form-input" type="text" id="fge_mail_code" name="fge_mail_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="6-stelliger Code" style="max-width:220px;">
+						<p class="fp-help" style="margin-top:8px;">Wir haben einen Code an <strong><?php echo esc_html( $mail_pending ); ?></strong> geschickt — erst nach Bestätigung wird die Adresse übernommen. <button type="submit" name="fge_mail_resend" value="1" class="fp-linkbtn" formnovalidate>Code erneut senden</button></p>
+					</div>
+					<?php endif; ?>
 					<div class="fg-form-row" style="max-width:320px;">
 						<label class="fg-form-label" for="fge_main_contact_role">Rolle / Funktion</label>
 						<input class="fg-form-input" type="text" id="fge_main_contact_role" name="fge_main_contact_role" value="<?php echo esc_attr( $m( 'main_contact_role' ) ); ?>" placeholder="z. B. Clubmanagerin">

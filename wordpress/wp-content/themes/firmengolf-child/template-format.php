@@ -175,7 +175,7 @@ get_header();
 						<?php if ( $pmax ) : ?><span class="dot">·</span><span>bis <?php echo esc_html( (string) $pmax ); ?> Gäste</span><?php endif; ?>
 					</div>
 					<div class="fg-event-foot">
-						<span class="fg-event-price"><?php echo $price ? esc_html( $price ) : 'Auf Anfrage'; ?></span>
+						<span class="fg-event-price"><?php echo $price ? esc_html( $price ) : 'Auf Anfrage'; ?><?php if ( $price && false === stripos( $price, 'netto' ) && false === stripos( $price, 'Anfrage' ) ) : ?> <span class="fg-price-netto">netto</span><?php endif; ?></span>
 					</div>
 				</div>
 			</a>

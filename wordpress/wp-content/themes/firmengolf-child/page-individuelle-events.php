@@ -235,7 +235,7 @@ get_header();
 				</div>
 				<div class="bc-donut" id="bc-donut"></div>
 				<div class="bc-total">
-					<div class="bc-total-h">Gesamtbudget · Richtwert</div>
+					<div class="bc-total-h">Gesamtbudget · Richtwert <span style="font-weight:400;">(netto, zzgl. 19&nbsp;% MwSt.)</span></div>
 					<div class="bc-total-num" id="bc-total">€0</div>
 					<div class="bc-total-meta" id="bc-total-meta"></div>
 					<button type="button" class="fg-btn-ink lg bc-total-cta" id="bc-request">

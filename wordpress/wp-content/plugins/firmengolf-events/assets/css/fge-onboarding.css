@@ -1328,3 +1328,9 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 .ob-shell .ob-exit-dialog .ob-exit-leave { background: var(--paper-200); color: var(--ink-900); }
 .ob-shell .ob-exit-dialog .ob-exit-leave:hover { background: var(--paper-300); }
 .ob-shell .ob-exit-dialog .ob-exit-cancel { background: transparent; color: var(--ink-500); }
+
+/* E-Mail-Verifizierung: Code-Feld im Hauptkontakt-Slide (Julius, 2026-07-06) */
+.ob-verify { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--ink-200, #E4E2DA); }
+.ob-verify-resend { font-size: 13px; color: var(--ink-600, #5C6660); margin: 8px 0 0; }
+.ob-shell button.ob-linkbtn, button.ob-linkbtn { font: inherit; font-size: 13px; font-weight: 600; color: var(--fairway-700, #4279D1); background: none; border: 0; padding: 0; margin: 0; width: auto; min-height: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.ob-shell button.ob-linkbtn:hover { color: var(--fairway-600, #3568BC); background: none; }

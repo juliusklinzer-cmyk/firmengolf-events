@@ -81,7 +81,7 @@ $arrow     = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke
 			<?php endif; ?>
 			<div class="fg-event-foot ev-card2-foot">
 				<div class="fg-event-price">
-					<?php if ( $price ) : ?><?php echo esc_html( $price ); ?><?php else : ?><span style="font-size:13px;color:var(--ink-500)">Auf Anfrage</span><?php endif; ?>
+					<?php if ( $price ) : ?><?php echo esc_html( $price ); ?><?php if ( false === stripos( $price, 'netto' ) && false === stripos( $price, 'Anfrage' ) ) : ?> <span class="fg-price-netto">netto</span><?php endif; ?><?php else : ?><span style="font-size:13px;color:var(--ink-500)">Auf Anfrage</span><?php endif; ?>
 				</div>
 				<span class="ev-card2-cta">Ansehen <?php echo $arrow; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 			</div>

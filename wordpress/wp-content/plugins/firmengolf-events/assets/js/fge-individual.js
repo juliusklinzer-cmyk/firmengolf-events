@@ -209,14 +209,45 @@
 	 * ================================================================= */
 	var Wizard = (function () {
 		var FULL_STEPS = ['Anlass', 'Eckdaten', 'Leistungen', 'Budget', 'Kontakt'];
+		/* Gruppen/Reihenfolge/Wording nach Julius (2026-07-06): Mittagessen statt Lunch,
+		   Grill + Einfach/Gehoben in der Gastro, Logistik direkt nach Gastronomie,
+		   Technik & Show mit neuen Posten. */
 		var SERVICE_GROUPS = [
 			{ group: 'Sport & Programm', items: ['Golflehrer / Coaching', 'Schnupperkurs', 'Platzreife', 'Firmenturnier', 'Putting-Challenge'] },
-			{ group: 'Gastronomie', items: ['Frühstück', 'Lunch', 'Abendessen', 'Bar & Drinks'] },
-			{ group: 'Technik & Show', items: ['Eventtechnik: Bühne + Personal', 'DJ', 'Licht & Sound', 'Flutlicht / Nacht-Event'] },
+			{ group: 'Gastronomie', items: ['Frühstück', 'Mittagessen', 'Abendessen', 'Grill', 'Bar & Drinks', 'Einfach', 'Gehoben'] },
+			{ group: 'Logistik', items: ['Meetingraum', 'Shuttle / Transport', 'Übernachtung', 'Schlechtwetter-Alternative'] },
+			{ group: 'Technik & Show', items: ['Bildschirme', 'Musik und DJ', 'Bühne mit Licht und Ton', 'Band', 'Flutlicht und Nacht-Event'] },
 			{ group: 'Foto & Content', items: ['Fotograf', 'Content-Team für Social'] },
-			{ group: 'Branding & Merch', items: ['Branding & Banner', 'Individuelle Artikel', 'Pokale & Preise'] },
-			{ group: 'Logistik', items: ['Meetingraum', 'Shuttle / Transport', 'Übernachtung', 'Schlechtwetter-Alternative'] }
+			{ group: 'Branding & Merch', items: ['Branding & Banner', 'Individuelle Artikel', 'Pokale & Preise'] }
 		];
+		/* Icon je Leistung (Kachel-Design wie in der Partnerplatz-Anlage). */
+		function svcIcon(it) {
+			var svg = function (p) { return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>'; };
+			var s = it.toLowerCase();
+			if (s.indexOf('golflehrer') >= 0)                          return svg('<path d="M6 21V4l11 3.5L6 11"/><path d="M6 21h6"/>');
+			if (s.indexOf('schnupper') >= 0)                           return svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>');
+			if (s.indexOf('platzreife') >= 0)                          return svg('<path d="M4 12l5 5L20 6"/><path d="M4 19h16"/>');
+			if (s.indexOf('turnier') >= 0 || s.indexOf('pokale') >= 0) return svg('<path d="M8 21h8M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>');
+			if (s.indexOf('putting') >= 0)                             return svg('<circle cx="12" cy="17" r="1.4"/><path d="M12 3v10"/><path d="M12 3l6 2-6 2"/>');
+			if (s.indexOf('frühstück') >= 0)                           return svg('<path d="M4 8h12v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M16 9h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M7 3v2M11 3v2"/>');
+			if (s.indexOf('mittagessen') >= 0 || s === 'einfach')      return svg('<path d="M5 3v8M8 3v8M6.5 11v10"/><path d="M15 3c-2 2-2 6 0 8v10"/><path d="M15 3h3v8h-3"/>');
+			if (s.indexOf('abendessen') >= 0 || s === 'gehoben')       return svg('<path d="M12 4a8 8 0 0 1 8 8H4a8 8 0 0 1 8-8z"/><path d="M3 15h18"/><path d="M12 2v2"/>');
+			if (s.indexOf('grill') >= 0)                               return svg('<path d="M4 9h16a8 8 0 0 1-16 0z"/><path d="M8 17l-2 4M16 17l2 4M12 17v4"/><path d="M9 4c0 1-1 1-1 2M13 4c0 1-1 1-1 2M17 4c0 1-1 1-1 2"/>');
+			if (s.indexOf('bar') >= 0)                                 return svg('<path d="M4 4h16l-8 9z"/><path d="M12 13v6M8 21h8"/>');
+			if (s.indexOf('bildschirm') >= 0)                          return svg('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 21h8M12 16v5"/>');
+			if (s.indexOf('musik') >= 0 || s === 'band')               return svg('<path d="M9 18V6l10-2v11"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="15" r="2.5"/>');
+			if (s.indexOf('bühne') >= 0)                               return svg('<path d="M12 3l4 6H8z"/><path d="M4 21l4-7M20 21l-4-7M12 14v7"/>');
+			if (s.indexOf('flutlicht') >= 0 || s.indexOf('nacht') >= 0) return svg('<path d="M21 13A8 8 0 1 1 11 3a6.5 6.5 0 0 0 10 10z"/>');
+			if (s.indexOf('fotograf') >= 0)                            return svg('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.5-3h5L16 7"/><circle cx="12" cy="13" r="3.5"/>');
+			if (s.indexOf('content') >= 0)                             return svg('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>');
+			if (s.indexOf('branding') >= 0)                            return svg('<path d="M20 12l-8 8-9-9V4h7z"/><circle cx="7.5" cy="7.5" r="1.3"/>');
+			if (s.indexOf('artikel') >= 0)                             return svg('<rect x="4" y="8" width="16" height="12" rx="1.5"/><path d="M4 12h16M12 8v12"/><path d="M12 8c-3 0-4-4-1.5-4S12 8 12 8zM12 8c3 0 4-4 1.5-4S12 8 12 8z"/>');
+			if (s.indexOf('meetingraum') >= 0)                         return svg('<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/><path d="M7 8h6M7 11h4"/>');
+			if (s.indexOf('shuttle') >= 0)                             return svg('<rect x="3" y="5" width="18" height="11" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/>');
+			if (s.indexOf('übernachtung') >= 0)                        return svg('<path d="M3 18v-8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8"/><path d="M3 18h18M6 8V6h5v2"/>');
+			if (s.indexOf('schlechtwetter') >= 0)                      return svg('<path d="M12 3a8 8 0 0 1 8 8H4a8 8 0 0 1 8-8z"/><path d="M12 11v7a2 2 0 0 1-4 0"/>');
+			return svg('<path d="M12 3l2.2 5.4L20 9l-4.4 3.8L17 19l-5-3-5 3 1.4-6.2L4 9l5.8-.6z"/>');
+		}
 		var BUDGETS = [
 			{ v: 'Unter €5.000', h: 'Kleinere Halbtags-Formate' },
 			{ v: '€5.000 – €10.000', h: 'Eintägig für 20–40 Gäste' },
@@ -232,8 +263,8 @@
 		function blank(preset) {
 			var f = {
 				occasion: '', goal: '', size: '40', region: '', place: '', experience: '',
-				budget: '€10.000 – €20.000', when: '', flex: 'flexibel', duration: 'Halbtag',
-				date1: '', date2: '', date3: '', services: ['Lunch', 'Golflehrer / Coaching'],
+				budget: '€10.000 – €20.000', when: '', flex: 'flexibel', duration: '',
+				date1: '', date2: '', date3: '', services: ['Mittagessen', 'Golflehrer / Coaching'],
 				company: '', city: '', firstName: '', lastName: '', email: '', phone: '',
 				contactPref: 'E-Mail', diet: '', notes: '', consent: false
 			};
@@ -259,15 +290,15 @@
 				+ (req ? '<span class="ind-required">*</span>' : '')
 				+ (hint ? '<span class="ind-flabel-hint">' + esc(hint) + '</span>' : '') + '</span>';
 		}
-		// Optionaler „Konkreter Golfplatz"-Dropdown (nur wenn Plätze übergeben wurden).
+		// Konkreter Platzwunsch: Suchfeld mit Autocomplete über ALLE deutschen Plätze
+		// (Datalist; die Namen kommen aus dem DGV-Verzeichnis). Julius, 2026-07-06.
 		function placeField() {
 			var places = CFG.places || [];
 			if (!places.length) return '';
-			var opts = '<option value="">Kein bestimmter Platz</option>' + places.map(function (p) {
-				return '<option value="' + esc(p) + '"' + (S.form.place === p ? ' selected' : '') + '>' + esc(p) + '</option>';
-			}).join('');
-			return '<div class="rw-field">' + label('Konkreter Golfplatz?', false, 'Optional')
-				+ '<select class="fg-input" data-field="place">' + opts + '</select></div>';
+			var opts = places.map(function (p) { return '<option value="' + esc(p) + '">'; }).join('');
+			return '<div class="rw-field">' + label('Konkreter Platzwunsch?', false, 'Optional — tippen zum Suchen')
+				+ '<input class="fg-input" data-field="place" list="rw-place-list" value="' + esc(S.form.place) + '" placeholder="Golfplatz oder Ort eintippen …" autocomplete="off">'
+				+ '<datalist id="rw-place-list">' + opts + '</datalist></div>';
 		}
 
 		function topBar() {
@@ -303,9 +334,8 @@
 				+ '<p class="rw-lead">Du willst nicht durch alle Schritte? Völlig okay. Gib uns die Basics, wir melden uns mit Rückfragen.</p>'
 				+ '<div class="rw-form">'
 				+ '<div class="rw-field">' + label('Anlass', true) + chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Offsite', 'Nacht-Event', 'Etwas anderes']) + '</div>'
-				+ '<div class="rw-row"><div class="rw-field">' + label('Teilnehmerzahl')
-				+ '<div class="ind-input-row">' + input('size', 'type="number" min="1"', '40') + '<span class="ind-input-suffix">Personen</span></div></div>'
-				+ '<div class="rw-field">' + label('Gewünschter Zeitraum') + input('when', '', 'z.B. Juli 2026') + '</div></div>'
+				+ '<div class="rw-field">' + label('Teilnehmerzahl')
+				+ '<div class="ind-input-row">' + input('size', 'type="number" min="1" max="999" inputmode="numeric"', '40') + '<span class="ind-input-suffix">Personen</span></div></div>'
 				+ '<div class="rw-row"><div class="rw-field">' + label('Vor- & Nachname', true) + input('firstName', 'required', 'Vor- und Nachname') + '</div>'
 				+ '<div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div></div>'
 				+ '<div class="rw-field">' + label('Firma') + input('company', '', 'Musterfirma GmbH') + '</div>'
@@ -324,37 +354,41 @@
 					+ '<p class="rw-lead">Wähl den nächstpassenden Anlass — wir verfeinern alles im Gespräch.</p>'
 					+ '<div class="rw-form"><div class="rw-field">'
 					+ chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Offsite', 'Incentive-Reise', 'Charity-Event', 'Gesundheitstag', 'Nacht-Event', 'Etwas anderes'])
-					+ '</div><div class="rw-field">' + label('Was wollt ihr erreichen?', false, 'Ein Satz reicht')
-					+ input('goal', '', 'z.B. Team zusammenbringen · Kunden begeistern · Mitarbeitende belohnen') + '</div></div>';
+					+ '</div>'
+					/* „Was wollt ihr erreichen?" nur bei „Etwas anderes" (Julius, 2026-07-06) */
+					+ (S.form.occasion === 'Etwas anderes'
+						? '<div class="rw-field">' + label('Was wollt ihr erreichen?', false, 'Ein Satz reicht')
+							+ input('goal', '', 'z.B. Team zusammenbringen · Kunden begeistern · Mitarbeitende belohnen') + '</div>'
+						: '')
+					+ '</div>';
 			}
 			if (step === 1) {
 				return '<div class="rw-eyebrow">Schritt 2 · ' + FULL_STEPS[1] + '</div>'
 					+ '<h2 class="rw-h">Wann, wo und mit wie vielen?</h2>'
 					+ '<p class="rw-lead">Genau müssen die Angaben jetzt nicht sein.</p>'
-					+ '<div class="rw-form"><div class="rw-row"><div class="rw-field">' + label('Teilnehmerzahl', true)
-					+ '<div class="ind-input-row">' + input('size', 'type="number" min="1"', '40') + '<span class="ind-input-suffix">Personen</span></div></div>'
-					+ '<div class="rw-field">' + label('Gewünschter Zeitraum') + input('when', '', 'z.B. Juli 2026 · KW 28') + '</div></div>'
+					+ '<div class="rw-form"><div class="rw-field">' + label('Teilnehmerzahl', true)
+					+ '<div class="ind-input-row">' + input('size', 'type="number" min="1" max="999" inputmode="numeric"', '40') + '<span class="ind-input-suffix">Personen</span></div></div>'
 					+ '<div class="rw-field">' + label('Bis zu drei Wunschtermine', false, 'Optional')
 					+ '<div class="rw-row rw-row-3">' + input('date1', 'type="date" min="' + MIN_DATE + '"', '1. Termin') + input('date2', 'type="date" min="' + MIN_DATE + '"', '2. Termin') + input('date3', 'type="date" min="' + MIN_DATE + '"', '3. Termin') + '</div></div>'
-					+ '<div class="rw-row"><div class="rw-field">' + label('Wie flexibel beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
-					+ '<div class="rw-field">' + label('Dauer') + chips('duration', ['Halbtag', 'Ganztag', '2 Tage', 'Mehrtägig']) + '</div></div>'
+					+ '<div class="rw-field">' + label('Wie flexibel beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
 					+ '<div class="rw-field">' + label('Golf-Erfahrung im Team', false, 'Optional') + chips('experience', ['Überwiegend Anfänger', 'Gemischt', 'Erfahrene Golfer', 'Weiß noch nicht']) + '</div>'
 					+ '<div class="rw-field">' + label('Wo soll euer Event stattfinden?')
-					+ chips('region', ['In der Nähe / Bundesland', 'Mitte Deutschlands', 'In den Alpen', 'Stadtnah', 'Am Meer / Sylt', 'In Europa', 'An einem besonderen Ort', 'Noch offen'])
+					+ chips('region', ['In der Nähe', 'Mitte Deutschlands', 'In den Alpen', 'Am Meer / Sylt', 'In Europa', 'An einem besonderen Ort', 'Noch offen'])
 					+ '</div>' + placeField() + '</div>';
 			}
 			if (step === 2) {
+				/* Icon-Kacheln wie in der Partnerplatz-Anlage (Julius, 2026-07-06) statt Text-Toggles. */
 				var groups = SERVICE_GROUPS.map(function (g) {
-					return '<div class="ind-svc-pick-group"><div class="ind-svc-pick-h">' + esc(g.group) + '</div><div class="ind-toggles">'
+					return '<div class="ind-svc-pick-group"><div class="ind-svc-pick-h">' + esc(g.group) + '</div><div class="ind-cards">'
 						+ g.items.map(function (it) {
 							var on = S.form.services.indexOf(it) >= 0;
-							return '<button type="button" class="ind-toggle' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
-								+ '" data-svc="' + esc(it) + '"><span class="ind-toggle-dot"></span><span>' + esc(it) + '</span></button>';
+							return '<button type="button" class="ind-card' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
+								+ '" data-svc="' + esc(it) + '"><span class="ind-card-ico">' + svcIcon(it) + '</span><span class="ind-card-l">' + esc(it) + '</span></button>';
 						}).join('') + '</div></div>';
 				}).join('');
 				return '<div class="rw-eyebrow">Schritt 3 · ' + FULL_STEPS[2] + '</div>'
 					+ '<h2 class="rw-h">Was soll dabei sein?</h2>'
-					+ '<p class="rw-lead">Mehrfachauswahl — alles kombinierbar. Nur ein Startpunkt, festlegen musst du dich nicht.</p>'
+					+ '<p class="rw-lead">Sag uns deine Vorstellungen — wir besprechen anschließend alles mit dir und bereiten das Event entsprechend vor.</p>'
 					+ '<div class="rw-form"><div class="ind-svc-pick">' + groups + '</div></div>';
 			}
 			if (step === 3) {
@@ -366,7 +400,7 @@
 				}).join('');
 				return '<div class="rw-eyebrow">Schritt 4 · ' + FULL_STEPS[3] + '</div>'
 					+ '<h2 class="rw-h">Was wäre euer Budget-Rahmen?</h2>'
-					+ '<p class="rw-lead">Nur eine Richtschnur — wir verhandeln nicht nach oben.</p>'
+					+ '<p class="rw-lead">Ein Richtwert genügt — so kommen wir direkt mit passenden Angeboten auf euch zu.</p>'
 					+ '<div class="rw-form"><div class="ind-budget-grid">' + cards + '</div>'
 					+ '<div class="rw-field" style="margin-top:8px;">' + label('Verpflegung & Diät', false, 'Optional') + input('diet', '', 'z.B. 5× vegetarisch, 1× vegan, Nussallergie') + '</div>'
 					+ '<div class="rw-field" style="margin-top:8px;">' + label('Was ist euch wichtig?')
@@ -518,6 +552,7 @@
 				if (i >= 0) S.form.services.splice(i, 1); else S.form.services.push(it);
 				t.classList.toggle('on');
 				t.setAttribute('aria-pressed', t.classList.contains('on') ? 'true' : 'false');
+				t.classList.remove('just-toggled'); void t.offsetWidth; t.classList.add('just-toggled');
 				return;
 			}
 			var act = t.getAttribute('data-act');

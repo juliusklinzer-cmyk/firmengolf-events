@@ -96,6 +96,19 @@ function fge_invite_handle_accept(): void {
 	$last  = sanitize_text_field( wp_unslash( $_POST['fge_last'] ?? '' ) );
 	$email = sanitize_email( wp_unslash( $_POST['fge_email'] ?? '' ) );
 	$pass  = (string) wp_unslash( $_POST['fge_pass'] ?? '' );
+	$ev_ctx = 'invite_' . $token;
+
+	// „Code erneut senden": ohne Passwort-Zwang, nur E-Mail nötig (Julius, 2026-07-06).
+	if ( ! empty( $_POST['fge_resend'] ) ) {
+		if ( is_email( $email ) && ! fge_ev_is_verified( $email, $ev_ctx ) ) {
+			set_transient( 'fge_invite_pending_' . $token, [ 'first' => $first, 'last' => $last, 'email' => $email ], 15 * MINUTE_IN_SECONDS );
+			$send = fge_ev_send_code( $email, $ev_ctx );
+			wp_safe_redirect( add_query_arg( is_wp_error( $send ) ? [ 'verify' => 1, 'evfehler' => $send->get_error_code() ] : [ 'verify' => 1 ], $back ) );
+			exit;
+		}
+		wp_safe_redirect( add_query_arg( 'verify', 1, $back ) );
+		exit;
+	}
 
 	if ( '' === $first || ! is_email( $email ) ) {
 		wp_safe_redirect( add_query_arg( 'fehler', 'felder', $back ) );
@@ -110,6 +123,24 @@ function fge_invite_handle_accept(): void {
 	if ( get_user_by( 'email', $email ) ) {
 		wp_safe_redirect( add_query_arg( 'fehler', 'email_vergeben', $back ) );
 		exit;
+	}
+
+	// E-Mail-Verifizierung (Julius, 2026-07-06): die selbst getippte Login-Adresse
+	// muss per 6-stelligem Code bestätigt sein, BEVOR das Konto entsteht —
+	// ein Tippfehler würde den Partner sonst dauerhaft von allen Mails abschneiden.
+	if ( ! fge_ev_is_verified( $email, $ev_ctx ) ) {
+		set_transient( 'fge_invite_pending_' . $token, [ 'first' => $first, 'last' => $last, 'email' => $email ], 15 * MINUTE_IN_SECONDS );
+		$code = sanitize_text_field( wp_unslash( $_POST['fge_code'] ?? '' ) );
+		if ( '' === $code ) {
+			$send = fge_ev_send_code( $email, $ev_ctx );
+			wp_safe_redirect( add_query_arg( is_wp_error( $send ) ? [ 'verify' => 1, 'evfehler' => $send->get_error_code() ] : [ 'verify' => 1 ], $back ) );
+			exit;
+		}
+		$chk = fge_ev_check_code( $email, $ev_ctx, $code );
+		if ( is_wp_error( $chk ) ) {
+			wp_safe_redirect( add_query_arg( [ 'verify' => 1, 'evfehler' => $chk->get_error_code() ], $back ) );
+			exit;
+		}
 	}
 
 	$user_id = wp_create_user( $email, $pass, $email );
@@ -138,6 +169,9 @@ function fge_invite_handle_accept(): void {
 	// Token entwerten, Willkommens-Panel fürs erste Login vormerken.
 	delete_post_meta( $partner_id, '_fge_invite_token' );
 	update_user_meta( $user_id, 'fge_welcome_pending', 1 );
+	// Verifizierungs-Status + zwischengeparkte Formulardaten abräumen.
+	fge_ev_forget( $email, $ev_ctx );
+	delete_transient( 'fge_invite_pending_' . $token );
 
 	// Intern Bescheid geben — Julius sieht, wer die Übergabe angenommen hat.
 	$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );

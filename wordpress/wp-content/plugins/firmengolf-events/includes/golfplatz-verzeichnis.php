@@ -132,8 +132,46 @@ add_action( 'wp_enqueue_scripts', function (): void {
 		}
 	}
 
-	// Fall 3: öffentliche Golfplatz-Seite → nur der eigene Pin (Partner-Pin, blau mit Fahne).
+	// Fall 2b: Event MIT zugeordnetem Golfplatz → ein einzelner blauer Fahnen-Pin auf
+	// den Partnerplatz statt des roten Standard-Pins der iframe-Karte (Julius, 2026-07-06).
 	$self_place = null;
+	if ( ! $coords && is_singular( 'firmengolf_event' ) ) {
+		$eid = get_the_ID();
+		$pid = (int) get_post_meta( $eid, '_fge_assigned_partner_id', true );
+		if ( $pid > 0 ) {
+			$plat = (float) get_post_meta( $pid, '_fge_latitude', true );
+			$plng = (float) get_post_meta( $pid, '_fge_longitude', true );
+			if ( ! ( $plat && $plng ) ) {
+				// Bestands-Partner ohne Meta-Koordinaten: das Verzeichnis kennt sie (wie Fall 3).
+				global $wpdb;
+				$row = $wpdb->get_row( $wpdb->prepare(
+					'SELECT lat, lng FROM ' . fge_verzeichnis_table() . ' WHERE partner_id = %d LIMIT 1', // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$pid
+				) );
+				if ( $row ) {
+					$plat = (float) $row->lat;
+					$plng = (float) $row->lng;
+				}
+			}
+			if ( ! ( $plat && $plng ) ) {
+				$plat = (float) get_post_meta( $eid, '_fge_geo_lat', true );
+				$plng = (float) get_post_meta( $eid, '_fge_geo_lng', true );
+			}
+			if ( $plat && $plng ) {
+				$coords     = [ $plat, $plng ];
+				$self_place = [
+					'id'      => 0,
+					'name'    => (string) get_post_meta( $pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $pid ),
+					'lat'     => $plat,
+					'lng'     => $plng,
+					'partner' => true,
+					'meta'    => (string) get_post_meta( $pid, '_fge_city', true ),
+				];
+			}
+		}
+	}
+
+	// Fall 3: öffentliche Golfplatz-Seite → nur der eigene Pin (Partner-Pin, blau mit Fahne).
 	if ( ! $coords && is_singular( 'firmengolf_partner' ) ) {
 		$pid  = get_the_ID();
 		$plat = (float) get_post_meta( $pid, '_fge_latitude', true );

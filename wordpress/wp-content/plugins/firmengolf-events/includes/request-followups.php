@@ -58,7 +58,7 @@ function fge_request_run_followups(): array {
 				$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 				$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
 				$content = '<p style="margin:0 0 16px;">Die Event-Anfrage <strong>' . esc_html( $ref ) . '</strong> hat keinen einzigen Ansprechpartner für die Terminabstimmung und liegt seit Fristablauf unbearbeitet. Bitte manuell übernehmen.</p>'
-					. '<p style="margin:0;"><a href="' . esc_url( $admin ) . '">Anfrage im Admin öffnen</a></p>';
+					. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
 				if ( function_exists( 'fge_email_wrap' ) ) {
 					wp_mail( $to, 'Anfrage ohne Ansprechpartner: ' . $ref, fge_email_wrap( 'Anfrage ohne Ansprechpartner: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 				}
@@ -134,7 +134,7 @@ function fge_offer_hold_followups(): array {
 		$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 		$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
 		$content = '<p style="margin:0 0 16px;">Die Anfrage <strong>' . esc_html( $ref ) . '</strong> hat einen bestätigten Termin, aber das Angebot ist wegen unbepreister Zusatzleistungen zurückgehalten — seit ' . (int) $days . ' Tagen. Der Kunde wartet. Bitte Feinplanung abschließen und „Angebot jetzt senden" klicken.</p>'
-			. '<p style="margin:0;"><a href="' . esc_url( $admin ) . '">Anfrage im Admin öffnen</a></p>';
+			. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
 		if ( function_exists( 'fge_email_wrap' ) ) {
 			wp_mail( $to, 'Feinplanung offen: ' . $ref, fge_email_wrap( 'Feinplanung offen: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 		}
@@ -174,7 +174,7 @@ function fge_offer_run_followups(): array {
 				$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
 				$q       = (string) get_post_meta( $req, '_fge_offer_query', true );
 				$content = '<p style="margin:0 0 16px;">Die Kundenrückfrage zum Angebot <strong>' . esc_html( $ref ) . '</strong> ist seit 2 Tagen unbeantwortet' . ( '' !== $q ? ': <em>„' . esc_html( wp_trim_words( $q, 30, '…' ) ) . '"</em>' : '.' ) . ' Der Kunde wartet.</p>'
-					. '<p style="margin:0;"><a href="' . esc_url( $admin ) . '">Anfrage im Admin öffnen</a></p>';
+					. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
 				if ( function_exists( 'fge_email_wrap' ) ) {
 					wp_mail( $to, 'Rückfrage unbeantwortet: ' . $ref, fge_email_wrap( 'Rückfrage unbeantwortet: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 				}
@@ -202,7 +202,7 @@ function fge_offer_run_followups(): array {
 			$to  = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 			$admin = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
 			$content = '<p style="margin:0 0 16px;">Das Angebot <strong>' . esc_html( $ref ) . '</strong> ist seit der Frist offen, der Kunde hat noch nicht zugesagt. Bitte nachfassen.</p>'
-				. '<p style="margin:0;"><a href="' . esc_url( $admin ) . '">Anfrage im Admin öffnen</a></p>';
+				. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
 			if ( function_exists( 'fge_email_wrap' ) ) {
 				wp_mail( $to, 'Angebot überfällig: ' . $ref, fge_email_wrap( 'Angebot überfällig: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 			}

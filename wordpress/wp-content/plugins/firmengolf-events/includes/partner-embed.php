@@ -127,7 +127,7 @@ function fge_embed_render(): void {
 				<div class="t"><?php echo esc_html( $c['title'] ); ?></div>
 				<div class="m"><?php echo esc_html( trim( $c['duration'] . ( $c['duration'] && $c['group'] ? ' · ' : '' ) . $c['group'] ) ); ?></div>
 				<div class="foot">
-					<span class="p"><?php echo '' !== $c['price'] ? esc_html( $c['price'] ) : '<small>Preis</small>auf Anfrage'; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+					<span class="p"><?php echo '' !== $c['price'] ? esc_html( $c['price'] ) . ( false === stripos( $c['price'], 'netto' ) && false === stripos( $c['price'], 'Anfrage' ) ? ' <small>netto</small>' : '' ) : '<small>Preis</small>auf Anfrage'; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 					<span class="cta">Ansehen &amp; anfragen →</span>
 				</div>
 			</div>

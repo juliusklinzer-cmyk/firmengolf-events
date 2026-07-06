@@ -613,6 +613,32 @@ function fge_onboarding_handle_step(): void {
 		$phone = sanitize_text_field( wp_unslash( $_POST['fge_contact_phone'] ?? '' ) );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
+			// E-Mail-Verifizierung (Julius, 2026-07-06): die selbst getippte Login-Adresse
+			// muss per 6-stelligem Code bestätigt sein, BEVOR der Account entsteht — sonst
+			// schneidet ein Tippfehler den Partner dauerhaft von allen Mails ab.
+			$ev_ctx = 'onboarding_' . $partner_id;
+			if ( ! fge_ev_is_verified( $email, $ev_ctx ) ) {
+				$code         = sanitize_text_field( wp_unslash( $_POST['fge_contact_code'] ?? '' ) );
+				$code_sent_to = (string) get_transient( 'fge_ob_verify_' . $partner_id );
+				// Neuer Code, wenn: „erneut senden", noch kein Code eingegeben,
+				// oder die Adresse seit dem letzten Versand geändert wurde.
+				if ( ! empty( $_POST['fge_ob_resend'] ) || '' === $code || $code_sent_to !== $email ) {
+					$send = fge_ev_send_code( $email, $ev_ctx );
+					set_transient( 'fge_ob_verify_' . $partner_id, $email, 15 * MINUTE_IN_SECONDS );
+					$errs = is_wp_error( $send ) ? [ 'fge_contact_code' => $send->get_error_message() ] : [];
+					set_transient( 'fge_ob_err_' . $partner_id . '_' . $step, [ '_errors' => $errs, '_data' => wp_unslash( $_POST ) ], 300 );
+					wp_redirect( add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) ) );
+					exit;
+				}
+				$chk = fge_ev_check_code( $email, $ev_ctx, $code );
+				if ( is_wp_error( $chk ) ) {
+					set_transient( 'fge_ob_err_' . $partner_id . '_' . $step, [ '_errors' => [ 'fge_contact_code' => $chk->get_error_message() ], '_data' => wp_unslash( $_POST ) ], 300 );
+					wp_redirect( add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) ) );
+					exit;
+				}
+				delete_transient( 'fge_ob_verify_' . $partner_id );
+			}
+
 			$is_new  = false;
 			$user_id = fge_onboarding_create_or_assign_user( $email, $first, $last, $role, $phone, $partner_id, $is_new );
 			if ( $user_id === -1 ) {
@@ -626,6 +652,9 @@ function fge_onboarding_handle_step(): void {
 			if ( $user_id > 0 && $is_new ) {
 				wp_set_auth_cookie( $user_id );
 			}
+			// Verifizierungs-Status abräumen (Adresse ist jetzt „scharf").
+			fge_ev_forget( $email, 'onboarding_' . $partner_id );
+			delete_transient( 'fge_ob_verify_' . $partner_id );
 		} else {
 			fge_onboarding_save_slide( $partner_id, 'main', $_POST );
 		}
@@ -1613,6 +1642,16 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 		<div class="ob-info-l">Login wird so erstellt</div>
 		<div class="ob-info-v">Du bekommst eine E-Mail an <strong id="fge_login_email_preview"><?php echo esc_html( ( $v['main_contact_email'] ?? '' ) !== '' ? $v['main_contact_email'] : '— deine Mail —' ); ?></strong> mit einem Link, um dein Passwort zu setzen. Mit diesem Login verwaltest du euer Partnerprofil und Anfragen. Falls die E-Mail bereits registriert ist, verbinden wir das bestehende Konto.</div>
 	</div>
+	<?php
+	// E-Mail-Verifizierung: sobald ein Code an die eingegebene Adresse ging, hier
+	// das Eingabefeld + „erneut senden" zeigen (Julius, 2026-07-06).
+	$ob_verify_email = $partner_id > 0 ? (string) get_transient( 'fge_ob_verify_' . $partner_id ) : '';
+	if ( '' !== $ob_verify_email && ! fge_ev_is_verified( $ob_verify_email, 'onboarding_' . $partner_id ) ) : ?>
+	<div class="ob-verify">
+		<?php fge_onboarding_input( 'fge_contact_code', 'fge_contact_code', 'Bestätigungscode', '', 'text', false, '6-stelliger Code', $errors, 'Wir haben dir einen 6-stelligen Code an ' . $ob_verify_email . ' geschickt.' ); ?>
+		<p class="ob-verify-resend">Keinen Code bekommen? <button type="submit" name="fge_ob_resend" value="1" class="ob-linkbtn" formnovalidate>Code erneut senden</button></p>
+	</div>
+	<?php endif; ?>
 	<script>
 	(function () {
 		var input = document.getElementById('fge_contact_email');

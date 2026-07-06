@@ -331,7 +331,11 @@
 }
 .fp-price-modes .fp-price-mode:hover { border-color: var(--ink-500, var(--ink-400)); }
 .fp-price-modes .fp-price-mode.on { border-color: var(--ink-900); box-shadow: inset 0 0 0 1px var(--ink-900); color: var(--ink-900); background: var(--paper-200); }
-.fp-price-item { display: grid; grid-template-columns: 1fr 130px 34px; gap: 8px; margin-bottom: 8px; align-items: center; }
+.fp-price-item { display: grid; grid-template-columns: minmax(0, 1fr) 90px 130px 34px; gap: 8px; margin-bottom: 8px; align-items: center; }
+@media (max-width: 640px) {
+	.fp-price-item { grid-template-columns: minmax(0, 1fr) 130px 34px; }
+	.fp-price-item [data-fp-item-label] { grid-column: 1 / -1; }
+}
 .fp-price-item .x { border: 0; background: transparent; cursor: pointer; color: var(--ink-500); font-size: 18px; line-height: 1; }
 .fp-price-item .x:hover { color: var(--danger, #c0392b); }
 .fp-price-summary { margin-top: 16px; background: var(--paper-200); border-radius: 12px; padding: 14px 16px; font-size: 14px; }
@@ -797,3 +801,9 @@
 .fgpp .ang-info b { color: var(--ink-900); }
 .fgpp .ang-info a { color: var(--fairway-700); font-weight: 600; text-decoration: none; }
 .fgpp .ang-info a:hover { text-decoration: underline; }
+
+/* E-Mail-Verifizierung bei Kontaktadressen-Wechsel (Julius, 2026-07-06) */
+.fp-mailverify { margin: 4px 0 18px; padding: 14px 16px; border: 1px solid var(--ink-200, #E4E2DA); border-left: 3px solid var(--fairway-600, #4279D1); border-radius: 10px; background: var(--paper-50, #FBFAF6); }
+.fp-mailverify-err { color: #8C3B2F; background: #F9EDEA; border: 1px solid #E5B8B0; border-radius: 8px; padding: 8px 11px; font-size: 13.5px; margin-bottom: 10px; }
+.fgpp button.fp-linkbtn, button.fp-linkbtn { font: inherit; font-size: 13px; font-weight: 600; color: var(--fairway-700, #4279D1); background: none; border: 0; padding: 0; margin: 0; width: auto; min-height: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.fgpp button.fp-linkbtn:hover { color: var(--fairway-600, #3568BC); background: none; }

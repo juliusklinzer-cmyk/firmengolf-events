@@ -94,7 +94,7 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 			<li style="margin-bottom:6px;">Innerhalb eines Werktags meldet sich ein:e echte:r Ansprechpartner:in persönlich bei dir.</li>
 		</ul>
 		<p style="margin:0 0 16px;">Du musst nichts weiter tun. Fällt dir in der Zwischenzeit noch etwas ein, antworte einfach auf diese E-Mail oder schreib uns an <a href="mailto:' . esc_attr( $events_email ) . '" style="color:#4279D1;">' . esc_html( $events_email ) . '</a>.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( fge_offer_link( $request_id ) ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:11px 22px;border-radius:999px;font-weight:600;">Status meiner Anfrage ansehen</a></p>
+		<p style="margin:0 0 22px;">' . fge_email_button( fge_offer_link( $request_id ), 'Status meiner Anfrage ansehen' ) . '</p>
 		<p style="margin:24px 0 0;">Sportliche Grüße<br><strong>Dein Firmengolf-Team</strong></p>
 	';
 
@@ -187,7 +187,7 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;">' . $table_rows . '</table>
 		' . ( $wishes_html !== '' ? '<div style="margin-top:18px;">' . $wishes_html . '</div>' : '' ) . '
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $admin_link ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Anfrage im Admin öffnen</a>
+			' . fge_email_button( $admin_link, 'Anfrage im Admin öffnen' ) . '
 		</p>
 	';
 
@@ -276,7 +276,7 @@ function fge_send_contact_termin_emails( int $request_id, array $data ): int {
 			<ul style="margin:0 0 18px;padding-left:20px;">' . ( $dates_html ?: '<li>Nach Absprache</li>' ) . '</ul>
 			' . ( $wishes_html !== '' ? '<div style="margin:0 0 18px;">' . $wishes_html . '</div>' : '' ) . '
 			<p style="margin:0 0 22px;">Sag uns mit einem Klick, welche Termine bei dir gehen — kein Login nötig, der Link ist persönlich für dich.</p>
-			<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Jetzt Termine bestätigen</a></p>
+			<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Jetzt Termine bestätigen' ) . '</p>
 			<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
 		';
 		if ( wp_mail( $c['email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] ) ) {
@@ -301,7 +301,7 @@ function fge_send_contact_reminder( int $request_id, array $contact ): bool {
 	$content = '
 		<p style="margin:0 0 16px;">Hallo ' . esc_html( $first ) . ',</p>
 		<p style="margin:0 0 16px;">die Anfrage von <strong>' . esc_html( $data['company_name'] ?: 'einem Unternehmen' ) . '</strong> für <strong>' . esc_html( $venue ) . '</strong> wartet noch auf deine Rückmeldung. Es dauert nur einen Moment.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Jetzt Termine bestätigen</a></p>
+		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Jetzt Termine bestätigen' ) . '</p>
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
 	';
 	return (bool) wp_mail( $contact['email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
@@ -317,7 +317,7 @@ function fge_notify_overdue( int $request_id ): void {
 	$content = '
 		<p style="margin:0 0 16px;">Die Anfrage <strong>' . esc_html( $ref ) . '</strong> (' . esc_html( $data['company_name'] ?: '—' ) . ' · ' . esc_html( $data['partner_title'] ?: '—' ) . ') hat die Reaktionsfrist überschritten — noch nicht alle Beteiligten haben reagiert.</p>
 		<p style="margin:0 0 16px;">Bitte nachfassen oder die Koordination übernehmen (direkt mit der Firma einen Termin festlegen).</p>
-		<p style="margin:0;"><a href="' . esc_url( $admin ) . '">Anfrage im Admin öffnen</a></p>
+		<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>
 	';
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -338,7 +338,7 @@ function fge_notify_all_responded( int $request_id ): void {
 			$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $request_id ) : admin_url();
 			$subject = 'Kein Termin möglich: ' . $ref;
 			$content = '<p style="margin:0 0 16px;">Für die Anfrage <strong>' . esc_html( $ref ) . '</strong> haben alle Ansprechpartner alle Wunschtermine abgesagt — es gibt keinen bestätigbaren Termin. Bitte mit dem Kunden Alternativen klären (Alternativvorschläge stehen ggf. in der Anfrage).</p>'
-				. '<p style="margin:0;"><a href="' . esc_url( $admin ) . '">Anfrage im Admin öffnen</a></p>';
+				. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
 			wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 			return;
 		}
@@ -355,7 +355,7 @@ function fge_notify_all_responded( int $request_id ): void {
 	$content = '
 		<p style="margin:0 0 16px;">Hallo,</p>
 		<p style="margin:0 0 16px;">für die Anfrage <strong>' . esc_html( $ref ) . '</strong> haben alle Ansprechpartner reagiert. Du kannst jetzt im Portal den passenden Termin bestätigen.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( $portal ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Im Portal öffnen</a></p>
+		<p style="margin:0 0 22px;">' . fge_email_button( $portal, 'Im Portal öffnen' ) . '</p>
 	';
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -389,7 +389,7 @@ function fge_notify_date_confirmed( int $request_id, int $date_index ): void {
 		<strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: '—' ) . '<br>
 		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: '—' ) . '</p>
 		' . $next . '
-		<p style="margin:0;"><a href="' . esc_url( fge_format_request_admin_link( $request_id ) ) . '">Anfrage im Admin öffnen</a></p>
+		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -435,12 +435,21 @@ function fge_send_offer_email( int $request_id ): bool {
 	$link  = function_exists( 'fge_offer_link' ) ? fge_offer_link( $request_id ) : home_url();
 	$greet = $data['first_name'] !== '' ? 'Hallo ' . esc_html( $data['first_name'] ) . ',' : 'Hallo,';
 
+	// Netto-Basis fürs Ausweisen von MwSt. + Endpreis (Julius, 2026-07-06):
+	// bei p.P.-Preisen die Gesamtsumme über alle Teilnehmer, sonst der Gesamtpreis.
+	$vatp     = (int) ( $snap['vat_percent'] ?? 19 );
+	$net_base = ( 'pro Person' === (string) ( $snap['price_unit'] ?? '' ) )
+		? ( (int) ( $snap['participants'] ?? 0 ) > 0 ? (float) ( $snap['price_total'] ?? 0 ) : 0.0 )
+		: (float) ( $snap['price_gross'] ?? 0 );
+
 	$row  = static function ( $k, $v ) { return '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $v . '</td></tr>'; };
 	$rows = $row( 'Event', esc_html( (string) ( $snap['event_title'] ?? '' ) ) )
 		. $row( 'Termin', esc_html( (string) ( $snap['date'] ?? '' ) ) )
 		. ( '' !== (string) ( $snap['location'] ?? '' ) ? $row( 'Ort', esc_html( (string) $snap['location'] ) ) : '' )
-		. ( (int) ( $snap['participants'] ?? 0 ) > 0 ? $row( 'Teilnehmer', 'ca. ' . (int) $snap['participants'] . ' Personen' ) : '' )
-		. $row( 'Preis', esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' ) );
+		. ( (int) ( $snap['participants'] ?? 0 ) > 0 ? $row( 'Teilnehmer', (int) $snap['participants'] . ' Personen' ) : '' )
+		. $row( 'Preis (netto)', esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' ) )
+		. ( $net_base > 0 ? $row( 'zzgl. ' . $vatp . ' % MwSt.', '€' . number_format_i18n( round( $net_base * $vatp / 100 ), 0 ) ) : '' )
+		. ( $net_base > 0 ? $row( 'Endpreis inkl. MwSt.', '<strong>€' . number_format_i18n( round( $net_base * ( 1 + $vatp / 100 ) ), 0 ) . '</strong>' ) : '' );
 
 	$cname         = (string) ( $snap['contact_name'] ?? '' );
 	$cphone        = (string) ( $snap['contact_phone'] ?? '' );
@@ -466,7 +475,7 @@ function fge_send_offer_email( int $request_id ): bool {
 		' . ( $incl !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Das ist dabei</p><ul style="margin:0 0 14px;padding-left:20px;">' . $incl . '</ul>' : '' ) . '
 		' . ( $wish !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Eure Zusatzwünsche</p><p style="margin:0 0 6px;color:#6C736E;font-size:13px;">Auf Wunsch organisiert — wird separat ausgewiesen, noch nicht im oben genannten Preis enthalten.</p><ul style="margin:0 0 14px;padding-left:20px;">' . $wish . '</ul>' : '' ) . '
 		<p style="margin:0 0 14px;color:#6C736E;font-size:13px;">Alle Preise zzgl. gesetzl. USt. Es gelten unsere <a href="' . esc_url( home_url( '/agb/' ) ) . '" style="color:#4279D1;">AGB</a> inkl. Storno- und Zahlungsbedingungen.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 26px;border-radius:999px;font-weight:600;">Angebot ansehen &amp; bestätigen</a></p>
+		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Angebot ansehen & bestätigen' ) . '</p>
 		' . $contact_block . '
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '. Bei Fragen einfach auf diese Mail antworten.</p>
 	';
@@ -489,7 +498,7 @@ function fge_notify_offer_query( int $request_id, string $message = '' ): void {
 		<p style="margin:0 0 16px;"><strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: '—' ) . '<br>
 		<strong>Kontakt:</strong> ' . esc_html( $name ?: '—' ) . ' &nbsp;·&nbsp; ' . esc_html( $data['contact_email'] ?: '—' ) . '</p>
 		' . ( '' !== trim( $message ) ? '<p style="margin:0 0 16px;"><strong>Nachricht:</strong><br>' . nl2br( esc_html( $message ) ) . '</p>' : '<p style="margin:0 0 16px;color:#6C736E;">(Keine Nachricht hinterlegt.)</p>' ) . '
-		<p style="margin:0;"><a href="' . esc_url( fge_format_request_admin_link( $request_id ) ) . '">Anfrage im Admin öffnen</a></p>
+		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -511,7 +520,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: '—' ) . '<br>
 		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: '—' ) . '</p>
 		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen.</p>
-		<p style="margin:0;"><a href="' . esc_url( fge_format_request_admin_link( $request_id ) ) . '">Anfrage im Admin öffnen</a></p>
+		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
 	wp_mail( $to, 'Auftrag steht: ' . $ref, fge_email_wrap( 'Auftrag steht: ' . $ref, $ic ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 
@@ -540,7 +549,7 @@ function fge_notify_offer_declined( int $request_id ): void {
 	$content = '
 		<p style="margin:0 0 16px;">Der Kunde hat das Angebot <strong>' . esc_html( $ref ) . '</strong> (' . esc_html( $data['company_name'] ?: '—' ) . ') abgelehnt.</p>
 		<p style="margin:0 0 16px;">Bitte nachfassen oder eine Alternative anbieten.</p>
-		<p style="margin:0;"><a href="' . esc_url( fge_format_request_admin_link( $request_id ) ) . '">Anfrage im Admin öffnen</a></p>
+		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
 	wp_mail( $to, 'Angebot abgelehnt: ' . $ref, fge_email_wrap( 'Angebot abgelehnt: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -557,7 +566,7 @@ function fge_send_offer_reminder( int $request_id ): bool {
 	$content = '
 		<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ',</p>
 		<p style="margin:0 0 16px;">euer Angebot für <strong>' . esc_html( (string) ( $snap['event_title'] ?? 'euer Event' ) ) . '</strong> am <strong>' . esc_html( (string) ( $snap['date'] ?? '' ) ) . '</strong> wartet noch auf eure Rückmeldung.</p>
-		<p style="margin:0 0 22px;"><a href="' . esc_url( $link ) . '" style="display:inline-block;background:#4279D1;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;">Angebot ansehen &amp; bestätigen</a></p>
+		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Angebot ansehen & bestätigen' ) . '</p>
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
 	';
 	return (bool) wp_mail( $data['contact_email'], 'Erinnerung: euer Angebot (' . $ref . ')', fge_email_wrap( 'Erinnerung: euer Angebot (' . $ref . ')', $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
@@ -594,7 +603,7 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 		<p>Firmengolf prüft deine Angaben und meldet sich bei dir, sobald das Profil freigeschaltet ist oder noch Informationen fehlen.</p>
 		' . $pw_notice . '
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $portal_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
+			' . fge_email_button( $portal_url, 'Zum Partner-Portal' ) . '
 		</p>
 		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
 	';
@@ -619,7 +628,7 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 			' . ( $final_note !== '' ? '<tr><td style="padding:6px 16px 6px 0;color:#555;vertical-align:top;"><strong>Hinweis</strong></td><td>' . nl2br( esc_html( $final_note ) ) . '</td></tr>' : '' ) . '
 		</table>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $admin_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Im Admin öffnen</a>
+			' . fge_email_button( $admin_url, 'Im Admin öffnen' ) . '
 		</p>
 	';
 	wp_mail(
@@ -656,7 +665,7 @@ function fge_send_partner_welcome_email( int $user_id, int $partner_id ): bool {
 		<p>schön, dass <strong>' . esc_html( $name ) . '</strong> dabei ist! Dein persönlicher Zugang zum Firmengolf Partner-Portal wurde erstellt.</p>
 		<p><strong>Deine Anmelde-E-Mail:</strong> ' . esc_html( $user->user_email ) . '</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $set_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Passwort festlegen</a>
+			' . fge_email_button( $set_url, 'Passwort festlegen' ) . '
 		</p>
 		<p style="font-size:13px;color:#888;">Der Link ist aus Sicherheitsgründen 24 Stunden gültig. Danach kannst du jederzeit über „Passwort vergessen" auf der Anmeldeseite einen neuen Link anfordern.</p>
 		<p>Im Partner-Portal verwaltest du euer Platzprofil, Fotos und alle Event-Anfragen.</p>
@@ -688,7 +697,7 @@ function fge_send_partner_account_linked_email( int $user_id, int $partner_id ):
 		<p>dein bestehendes Firmengolf-Konto (<strong>' . esc_html( $user->user_email ) . '</strong>) ist jetzt mit dem Golfplatz <strong>' . esc_html( $name ) . '</strong> verknüpft.</p>
 		<p>Du kannst das Profil ab sofort mit deinem gewohnten Login im Partner-Portal verwalten.</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $portal_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
+			' . fge_email_button( $portal_url, 'Zum Partner-Portal' ) . '
 		</p>
 		<p style="font-size:13px;color:#888;">Du hast diese Verknüpfung nicht angestoßen? Dann antworte bitte kurz auf diese E-Mail oder kontaktiere uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
 	';
@@ -717,9 +726,24 @@ function fge_notify_event_submitted( int $event_id, int $partner_id, bool $is_ne
 	$content = '
 		<p style="margin:0 0 16px;"><strong>' . esc_html( $partner ) . '</strong> hat ' . ( $is_new ? 'ein neues Event-Angebot eingereicht' : 'ein Event-Angebot überarbeitet' ) . ': <strong>' . esc_html( $title ) . '</strong>.</p>
 		<p style="margin:0 0 16px;">Es ist erst öffentlich, wenn ihr es freigebt.</p>
-		<p style="margin:0;"><a href="' . esc_url( $edit ) . '">Event prüfen und freigeben</a></p>
+		<p style="margin:0;">' . fge_email_button( $edit, 'Event prüfen und freigeben' ) . '</p>
 	';
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+
+	// Eingangsbestätigung an den Partner (Julius, 2026-07-06): er soll sofort wissen,
+	// dass die Einreichung angekommen ist — nicht erst bei Freigabe/Ablehnung.
+	$partner_to = (string) get_post_meta( $partner_id, '_fge_main_contact_email', true )
+		?: (string) get_post_meta( $partner_id, '_fge_event_contact_email', true );
+	if ( '' !== $partner_to && is_email( $partner_to ) ) {
+		$portal     = function_exists( 'fge_portal_page_url' ) ? fge_portal_page_url() . '?tab=angebote' : home_url( '/partnerportal/' );
+		$p_subject  = ( $is_new ? 'Eingegangen: ' : 'Änderung eingegangen: ' ) . $title;
+		$p_content  = '
+			<p style="margin:0 0 16px;">' . ( $is_new ? 'Dein Event-Angebot' : 'Deine Änderung am Event-Angebot' ) . ' <strong>' . esc_html( $title ) . '</strong> ist bei uns eingegangen.</p>
+			<p style="margin:0 0 16px;">Wir prüfen es kurz und geben es dann frei — du bekommst eine E-Mail, sobald es öffentlich ist. In der Regel dauert das nicht lange.</p>
+			<p style="margin:0;">' . fge_email_button( $portal, 'Zum Partnerportal' ) . '</p>
+		';
+		wp_mail( $partner_to, $p_subject, fge_email_wrap( $p_subject, $p_content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	}
 }
 
 /** Mail an den Partner, wenn Firmengolf sein Event freigibt oder ablehnt. */
@@ -743,13 +767,13 @@ function fge_notify_event_reviewed( int $event_id, string $status, bool $was_pau
 		$subject = 'Freigegeben: ' . $title;
 		$content = '
 			<p style="margin:0 0 16px;">Gute Nachricht: dein Angebot <strong>' . esc_html( $title ) . '</strong> ist geprüft und freigegeben' . ( $was_paused ? ' — es bleibt aber pausiert, weil du es vor der Bearbeitung pausiert hattest. Du kannst es jederzeit im Portal reaktivieren.' : ' und ab sofort öffentlich auf Firmengolf sichtbar.' ) . '</p>
-			<p style="margin:0;"><a href="' . esc_url( $portal ) . '">Zum Partnerportal</a></p>
+			<p style="margin:0;">' . fge_email_button( $portal, 'Zum Partnerportal' ) . '</p>
 		';
 	} else {
 		$subject = 'Rückmeldung zu deinem Angebot: ' . $title;
 		$content = '
 			<p style="margin:0 0 16px;">Wir konnten dein Angebot <strong>' . esc_html( $title ) . '</strong> so noch nicht freigeben. Meist fehlen nur Kleinigkeiten — wir melden uns dazu bei dir, oder du überarbeitest es direkt im Portal und reichst es neu ein.</p>
-			<p style="margin:0 0 16px;"><a href="' . esc_url( $portal ) . '">Angebot im Portal überarbeiten</a></p>
+			<p style="margin:0 0 16px;">' . fge_email_button( $portal, 'Angebot im Portal überarbeiten' ) . '</p>
 			<p style="margin:0;color:#6C736E;font-size:13px;">Fragen? Antworte einfach auf diese Mail.</p>
 		';
 	}
@@ -796,7 +820,7 @@ function fge_send_partner_approved_email( int $partner_id ): bool {
 		<p>' . $greeting . '</p>
 		<p>gute Nachrichten: <strong>' . esc_html( $name ) . '</strong> ist geprüft, freigeschaltet und ab sofort für Unternehmen sichtbar.</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $new_event ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Erstes Event erstellen</a>
+			' . fge_email_button( $new_event, 'Erstes Event erstellen' ) . '
 		</p>
 		<p>Tipp für den Start: Das meistgebuchte Format ist das <strong>Teamevent</strong>. Leg eins an und du bist für Anfragen aus deiner Region sofort buchbar.</p>
 		' . ( $public_url !== '' ? '<p style="font-size:13px;color:#888;">Dein öffentliches Profil: <a href="' . esc_url( $public_url ) . '" style="color:#4279D1;">' . esc_html( $public_url ) . '</a></p>' : '' ) . '
@@ -818,7 +842,7 @@ function fge_send_partner_inquiry_email( int $partner_id ): bool {
 		<p>bei der Prüfung von <strong>' . esc_html( $name ) . '</strong> sind ein paar Fragen aufgekommen. Wir melden uns dazu in Kürze per E-Mail oder Telefon bei dir.</p>
 		<p>Du kannst dein Profil in der Zwischenzeit jederzeit im Partner-Portal anpassen und ergänzen.</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $portal ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Zum Partner-Portal</a>
+			' . fge_email_button( $portal, 'Zum Partner-Portal' ) . '
 		</p>
 		<p style="font-size:13px;color:#888;">Du erreichst uns direkt unter <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_partner'] ) . '</a>. Antworte gern auch einfach auf diese E-Mail.</p>
 	';
@@ -851,7 +875,7 @@ function fge_send_onboarding_resume_email( string $to, string $resume_url, strin
 		<p>Hallo,</p>
 		<p>dein Stand' . ( $name !== '' ? ' für <strong>' . esc_html( $name ) . '</strong>' : '' ) . ' ist gespeichert. Mit diesem Link machst du genau dort weiter, wo du aufgehört hast:</p>
 		<p style="margin-top:28px;">
-			<a href="' . esc_url( $resume_url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;padding:10px 22px;text-decoration:none;border-radius:4px;font-size:14px;">Onboarding fortsetzen</a>
+			' . fge_email_button( $resume_url, 'Onboarding fortsetzen' ) . '
 		</p>
 		<p style="font-size:13px;color:#888;">Behandle den Link bitte vertraulich, er führt direkt zu deinen Eingaben. Wenn du das Onboarding nicht gestartet hast, ignoriere diese E-Mail einfach.</p>
 	';
@@ -860,6 +884,15 @@ function fge_send_onboarding_resume_email( string $to, string $resume_url, strin
 
 function fge_format_request_admin_link( int $request_id ): string {
 	return admin_url( 'post.php?post=' . $request_id . '&action=edit' );
+}
+
+/**
+ * Einheitlicher CTA-Button für alle Plugin-Mails.
+ * Bewusst kompakt (Julius-Feedback: alte Buttons zu groß bzw. nackte Links) —
+ * Größenänderungen nur hier, nie per Inline-Style an einzelnen Mails.
+ */
+function fge_email_button( string $url, string $label ): string {
+	return '<a href="' . esc_url( $url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;text-decoration:none;padding:9px 18px;border-radius:6px;font-size:14px;font-weight:600;">' . esc_html( $label ) . '</a>';
 }
 
 function fge_email_wrap( string $title, string $body_html ): string {

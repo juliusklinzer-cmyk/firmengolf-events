@@ -181,6 +181,27 @@ function fge_leistung_to_want_map(): array {
  * @return string[] alphabetisch, dedupliziert
  */
 function fge_get_public_place_names(): array {
+	// Konkreter Platzwunsch im Anfrage-Wizard: ALLE deutschen Plätze aus dem
+	// DGV-Verzeichnis, nicht nur Partner (Julius, 2026-07-06). Ort dran für die Suche.
+	if ( function_exists( 'fge_verzeichnis_table' ) ) {
+		global $wpdb;
+		$table = fge_verzeichnis_table();
+		$rows  = $wpdb->get_results( "SELECT name, ort FROM {$table} ORDER BY name ASC" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $rows ) {
+			$names = [];
+			foreach ( $rows as $r ) {
+				$n = trim( (string) $r->name );
+				if ( '' === $n ) {
+					continue;
+				}
+				$ort     = trim( (string) $r->ort );
+				$names[] = ( '' !== $ort && false === stripos( $n, $ort ) ) ? $n . ' · ' . $ort : $n;
+			}
+			if ( $names ) {
+				return array_values( array_unique( $names ) );
+			}
+		}
+	}
 	$posts = get_posts( [
 		'post_type'   => 'firmengolf_partner',
 		'post_status' => 'publish',
@@ -448,6 +469,33 @@ function fge_get_featured_events( int $count = 3 ): array {
 			$out[] = $p;
 			if ( count( $out ) >= $count ) {
 				break;
+			}
+		}
+	}
+
+	// „Beliebte Formate": an erster Stelle steht immer ein Teamevent (Julius, 2026-07-06).
+	$is_team = static function ( $p ): bool {
+		$type = (string) get_post_meta( $p->ID, '_fge_event_type', true );
+		if ( function_exists( 'fge_get_event_format_legacy_map' ) ) {
+			$type = fge_get_event_format_legacy_map()[ $type ] ?? $type;
+		}
+		return 'teamevent' === $type;
+	};
+	if ( ! empty( $out ) && ! $is_team( $out[0] ) ) {
+		foreach ( $out as $i => $p ) {
+			if ( $is_team( $p ) ) {
+				array_unshift( $out, ...array_splice( $out, $i, 1 ) );
+				break;
+			}
+		}
+		if ( ! $is_team( $out[0] ) ) {
+			// Kein Teamevent in der Zufallsauswahl → aus den restlichen Kandidaten nachziehen.
+			foreach ( $candidates as $p ) {
+				if ( $is_team( $p ) && fge_event_is_public( $p->ID ) ) {
+					array_unshift( $out, $p );
+					array_pop( $out );
+					break;
+				}
 			}
 		}
 	}

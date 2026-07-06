@@ -370,22 +370,34 @@ get_header();
 			<?php endif; ?>
 		</div>
 		<?php if ( $real_count > 3 ) : ?>
-		<div class="fg-gallery-all" id="fg-gallery-all" hidden>
-			<?php foreach ( $gallery_urls as $g_i => $g_url ) : ?>
-				<img src="<?php echo esc_url( $g_url ); ?>" alt="<?php echo esc_attr( get_the_title() . ' – Foto ' . ( $g_i + 1 ) ); ?>" loading="lazy">
-			<?php endforeach; ?>
+		<?php /* Alle Fotos als Popup statt Inline-Grid (Julius, 2026-07-06): auf der Seite bleiben immer nur die 3 Galerie-Kacheln. */ ?>
+		<div class="fg-gallery-modal" id="fg-gallery-all" hidden role="dialog" aria-modal="true" aria-label="Alle Fotos">
+			<div class="fg-gallery-modal-backdrop" data-gal-close></div>
+			<div class="fg-gallery-modal-panel">
+				<div class="fg-gallery-modal-head">
+					<span><?php echo esc_html( get_the_title() ); ?> — alle Fotos</span>
+					<button class="fg-gallery-modal-close" type="button" data-gal-close aria-label="Schließen">&times;</button>
+				</div>
+				<div class="fg-gallery-modal-grid">
+					<?php foreach ( $gallery_urls as $g_i => $g_url ) : ?>
+						<img src="<?php echo esc_url( $g_url ); ?>" alt="<?php echo esc_attr( get_the_title() . ' – Foto ' . ( $g_i + 1 ) ); ?>" loading="lazy">
+					<?php endforeach; ?>
+				</div>
+			</div>
 		</div>
 		<script>
 		(function () {
 			var btn = document.querySelector('.fg-gallery-more'), all = document.getElementById('fg-gallery-all');
 			if (!btn || !all) return;
-			btn.addEventListener('click', function () {
-				var open = all.hidden;
+			function setOpen(open) {
 				all.hidden = !open;
 				btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-				btn.textContent = open ? '– Fotos ausblenden' : '+ alle Fotos';
-				if (open) all.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-			});
+				document.body.style.overflow = open ? 'hidden' : '';
+				if (open) { var c = all.querySelector('.fg-gallery-modal-close'); if (c) c.focus(); } else { btn.focus(); }
+			}
+			btn.addEventListener('click', function () { setOpen(all.hidden); });
+			all.addEventListener('click', function (e) { if (e.target.closest('[data-gal-close]')) setOpen(false); });
+			document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !all.hidden) setOpen(false); });
 		})();
 		</script>
 		<?php endif; ?>
@@ -557,7 +569,16 @@ get_header();
 				&& function_exists( 'fge_verzeichnis_nearby' )
 				&& (float) get_post_meta( $post_id, '_fge_geo_lat', true );
 			?>
-			<?php if ( $map_embed && ! $is_self ) : ?>
+			<?php if ( ! $is_self && $partner_id && wp_script_is( 'fge-city-map', 'enqueued' ) ) : ?>
+				<?php /* Fahnen-Pin (blau = Partner) wie auf Golfplatz-/Regionsseiten statt rotem iframe-Pin (Julius, 2026-07-06) */ ?>
+				<div class="evd-map-partnertag"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> Firmengolf-Partnerplatz</div>
+				<div class="gpd-map evd-map-directory" id="fge-city-map">
+					<div class="gpd-map-consent">
+						<p>Die Karte lädt erst nach deiner Einwilligung für Google&nbsp;Maps.</p>
+						<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
+					</div>
+				</div>
+			<?php elseif ( $map_embed && ! $is_self ) : ?>
 				<iframe class="evd-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $map_embed ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $venue ?: get_the_title() ); ?>"></iframe>
 			<?php elseif ( $evd_dir_map ) : ?>
 				<div class="gpd-map evd-map-directory" id="fge-city-map">
@@ -722,7 +743,7 @@ get_header();
 							<?php echo esc_html( $price_main ); ?>
 							<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
 						</div>
-						<?php if ( $price_label ) : ?><div style="font-size:11.5px;color:var(--ink-500);margin-top:2px;">zzgl. gesetzl. MwSt.</div><?php endif; ?>
+						<?php if ( $price_label ) : ?><div style="font-size:11.5px;color:var(--ink-500);margin-top:2px;">netto, zzgl. 19&nbsp;% MwSt.</div><?php endif; ?>
 					</div>
 
 					<div class="fg-rail-fields">
@@ -1018,15 +1039,14 @@ get_header();
 		<?php /* Step 3 — success */ ?>
 		<div id="fg-modal-step-3" class="fg-modal-success" style="display:none;">
 			<div class="fg-success-mark"><?php echo fge_icon_check(); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
-			<div class="mk-eyebrow" style="margin-top:12px;">Anfrage eingegangen</div>
-			<h2 class="fg-modal-title" style="max-width:360px;margin:6px auto 0;">Wir freuen uns auf euch.</h2>
-			<p class="fg-modal-sub" style="margin-top:8px;">Eure Anfrage ist bei uns eingegangen — eine Rückmeldung folgt innerhalb eines Werktags.</p>
+			<div class="fg-receipt-tag" id="fg-receipt-ref">–</div>
+			<h2 class="fg-modal-title" style="max-width:400px;margin:14px auto 0;">Eure Anfrage ist eingegangen.</h2>
+			<p class="fg-modal-sub" style="margin-top:8px;">Das ist noch keine Buchungsbestätigung — wir melden uns, sobald der Platz die Termine einräumen kann, in der Regel innerhalb eines Werktags.</p>
 			<div class="fg-success-receipt" id="fg-success-receipt">
 				<div><span>Format</span><span><?php echo esc_html( $format_label ); ?></span></div>
 				<div><span>Platz</span><span><?php echo esc_html( $venue ?: get_the_title() ); ?></span></div>
 				<div><span>Datum</span><span id="fg-receipt-date">–</span></div>
 				<div><span>Gruppe</span><span id="fg-receipt-group">–</span></div>
-				<div><span>Anfrage-Nr.</span><span class="mono" id="fg-receipt-ref">–</span></div>
 			</div>
 			<div class="fg-modal-foot single">
 				<button class="fg-btn-brand" id="fg-modal-done" type="button">Schließen</button>

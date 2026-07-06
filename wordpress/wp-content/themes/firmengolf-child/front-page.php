@@ -259,11 +259,12 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			[ '03', 'Du wählst, wir koordinieren.',     'Ein Ansprechpartner, eine Rechnung. Der Platz organisiert vor Ort, du bist nur Gastgeberin.' ],
 		];
 		foreach ( $steps as $step ) : ?>
-			<div class="mk-step">
+			<?php /* Ganze Karte klickbar zur 30-Sekunden-Anfrage (Julius, 2026-07-06) */ ?>
+			<a class="mk-step" href="<?php echo esc_url( $url_ind . '#anfrage' ); ?>">
 				<div class="mk-step-n"><?php echo esc_html( $step[0] ); ?></div>
 				<h3 class="mk-step-t"><?php echo esc_html( $step[1] ); ?></h3>
 				<p class="mk-step-b"><?php echo esc_html( $step[2] ); ?></p>
-			</div>
+			</a>
 		<?php endforeach; ?>
 	</div>
 </section>
@@ -308,7 +309,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 							<p class="mk-format-desc"><?php echo esc_html( $excerpt ); ?></p>
 						<?php endif; ?>
 						<div class="mk-format-foot">
-							<span class="mk-format-price"><?php echo $price ? esc_html( $price ) : 'Auf Anfrage'; ?></span>
+							<span class="mk-format-price"><?php echo $price ? esc_html( $price ) : 'Auf Anfrage'; ?><?php if ( $price && false === stripos( $price, 'netto' ) && false === stripos( $price, 'Anfrage' ) ) : ?> <span class="fg-price-netto">netto</span><?php endif; ?></span>
 							<span class="mk-format-arrow" aria-hidden="true"><?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 						</div>
 					</div>
@@ -426,7 +427,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 <?php /* ══════════════════ 6. INDIVIDUAL TEASER ══════════════════ */ ?>
 <section class="mk-section home-individual" aria-label="Individuelle Events">
 	<div class="home-individual-grid">
-		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'buerodach-golfplatz.jpg' ) ); ?>')"></div>
+		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-luftaufnahme-2.jpg' ) ); ?>')"></div>
 		<div class="home-ind-text">
 			<div class="mk-eyebrow">Individuelle Events</div>
 			<h2 class="mk-h2">

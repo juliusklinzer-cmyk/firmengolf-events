@@ -33,6 +33,31 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 	</div>
 </section>
 
+<?php /* ===== Wir sind neu — euer Feedback (Julius, 2026-07-06) ===== */ ?>
+<section class="about-new" aria-label="Wir sind neu — euer Feedback zählt">
+	<div class="about-new-grid">
+		<div class="about-new-photo" role="img" aria-label="Greenkeeper bei der Rasenpflege auf dem Grün" style="background-image:url('<?php echo esc_url( $img( 'pool/greenkeeper.jpg' ) ); ?>')"></div>
+		<div class="about-new-text">
+			<div class="mk-eyebrow">In eigener Sache</div>
+			<h2 class="about-new-h">Wir sind neu — und arbeiten jeden Tag am Platz.</h2>
+			<p>
+				Firmen für unseren Sport zu begeistern ist für uns Neuland. Genau deshalb stecken
+				wir jeden Tag Arbeit in die neue Firmengolf-Events-Seite — so, wie ein Greenkeeper
+				jeden Morgen an seinem Grün feilt.
+			</p>
+			<p>
+				Umso mehr zählt dein Blick von außen: Stimmt ein Text nicht, passt ein Angebot
+				nicht zu dir — oder gefällt dir etwas richtig gut? Sag es uns. Kritik und Lob
+				nehmen wir beide dankend an.
+			</p>
+			<div class="about-new-ctas">
+				<a class="fg-btn-cta" href="mailto:<?php echo esc_attr( fge_company()['email_general'] ?? 'hallo@firmengolf-events.de' ); ?>?subject=Feedback%20zur%20Firmengolf-Seite">Feedback schicken</a>
+				<a class="fg-btn-ghost" href="<?php echo esc_url( $url_kontakt ); ?>">Zum Kontakt</a>
+			</div>
+		</div>
+	</div>
+</section>
+
 <?php /* ===== Founder video — centerpiece (poster placeholder) ===== */ ?>
 <section class="about-video-section" aria-label="In meinen Worten">
 	<div class="about-video-head">
