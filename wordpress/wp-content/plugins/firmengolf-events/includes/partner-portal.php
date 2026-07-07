@@ -3838,23 +3838,30 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					<div class="fp-rail-card">
 						<h4>Live-Vorschau</h4>
 						<p style="font-size:12px;color:var(--ink-500);margin:0 0 10px;">So erscheint dein Angebot in der Suche. Aktualisiert sich beim Tippen.</p>
-						<article class="fg-event ev-card2 fp-preview-card">
-							<div class="fg-event-photo" id="fp-pv-photo" style="<?php echo $pv_cover ? "background-image:url('" . esc_url( $pv_cover ) . "');" : 'background:var(--paper-300);'; // phpcs:ignore WordPress.Security.EscapeOutput ?>">
-								<div class="fg-event-chips"><span class="fg-photo-chip" id="fp-pv-chip"><?php echo esc_html( $event_type_label ?: 'Eventart' ); ?></span></div>
+						<?php
+						// Option E · Live-Vorschau. IDs werden vom JS (updPreview) beim Tippen gefüllt.
+						$pv_pin  = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+						$pv_usr  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+						$pv_clk  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+						$pv_desc0 = (string) ( $saved['fge_card_description'] ?? '' );
+						?>
+						<article class="fg-event evE-card fp-preview-card">
+							<div class="evE-photo">
+								<div class="evE-img" id="fp-pv-photo" style="<?php echo $pv_cover ? "background-image:url('" . esc_url( $pv_cover ) . "');" : 'background:var(--paper-300);'; // phpcs:ignore WordPress.Security.EscapeOutput ?>"></div>
+								<span class="evE-chip" id="fp-pv-chip"><?php echo esc_html( $event_type_label ?: 'Eventart' ); ?></span>
 							</div>
-							<div class="fg-event-body">
-								<div class="ev-card2-top">
-									<div class="fg-event-eyebrow" id="fp-pv-eyebrow"><?php echo esc_html( $event_type_label ?: 'Eventart' ); ?></div>
-									<?php if ( $pv_rating ) : ?><div class="fg-event-rating">★ <span><?php echo esc_html( $pv_rating ); ?></span></div><?php endif; ?>
+							<div class="evE-body">
+								<span class="evE-venue"><?php echo $pv_pin; // phpcs:ignore WordPress.Security.EscapeOutput ?><?php echo esc_html( $pv_name ?: '—' ); ?></span>
+								<h3 class="evE-title" id="fp-pv-title"><?php echo esc_html( $event_title ?: 'Titel deines Angebots' ); ?></h3>
+								<p class="evE-desc" id="fp-pv-desc"><?php echo esc_html( $pv_desc0 ); ?></p>
+								<div class="evE-meta">
+									<span class="m"><?php echo $pv_usr; // phpcs:ignore WordPress.Security.EscapeOutput ?><span id="fp-pv-guests">Teilnehmer</span></span>
+									<span class="m"><?php echo $pv_clk; // phpcs:ignore WordPress.Security.EscapeOutput ?><span id="fp-pv-duration">Dauer</span></span>
+									<?php if ( $pv_rating ) : ?><span class="m evE-rate"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg><b><?php echo esc_html( $pv_rating ); ?></b></span><?php endif; ?>
 								</div>
-								<h3 class="fg-event-title" id="fp-pv-title"><?php echo esc_html( $event_title ?: 'Titel deines Angebots' ); ?></h3>
-								<div class="ev-card2-loc">
-									<span><?php echo esc_html( $pv_name ); ?></span>
-									<span class="dot">·</span><span id="fp-pv-guests">Teilnehmer</span>
-									<span class="dot">·</span><span id="fp-pv-duration">Dauer</span>
-								</div>
-								<div class="fg-event-foot ev-card2-foot">
-									<div class="fg-event-price" id="fp-pv-price">Preis</div>
+								<div class="evE-foot">
+									<div class="evE-price" id="fp-pv-price">Preis</div>
+									<span class="evE-cta">Ansehen</span>
 								</div>
 							</div>
 						</article>
@@ -4139,18 +4146,19 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					if (pvT) { pvT.textContent = ( title && title.value.trim() ) ? title.value.trim() : 'Titel deines Angebots'; }
 					var pvC = byId('fp-pv-chip');
 					if (pvC) { pvC.textContent = typeLabel; }
-					var pvE = byId('fp-pv-eyebrow');
-					if (pvE) { pvE.textContent = typeLabel + ( dur && dur.value.trim() ? ' · ' + dur.value.trim() : '' ); }
+					var desc = byId('fge_card_description');
+					var pvDesc = byId('fp-pv-desc');
+					if (pvDesc) { pvDesc.textContent = ( desc && desc.value.trim() ) ? desc.value.trim() : ''; }
 					var pvD = byId('fp-pv-duration');
 					if (pvD) { pvD.textContent = ( dur && dur.value.trim() ) ? dur.value.trim() : 'Dauer'; }
 					var pvG = byId('fp-pv-guests');
 					if (pvG) {
 						pvG.textContent = ( minP && maxP && minP.value && maxP.value )
-							? minP.value + '–' + maxP.value + ' Gäste'
-							: ( maxP && maxP.value ? 'bis ' + maxP.value + ' Gäste' : 'Teilnehmer' );
+							? minP.value + '–' + maxP.value
+							: ( maxP && maxP.value ? 'bis ' + maxP.value : 'Teilnehmer' );
 					}
 				}
-				['fge_post_title', 'fge_duration', 'fge_participants_min', 'fge_participants_max'].forEach(function (id) {
+				['fge_post_title', 'fge_duration', 'fge_participants_min', 'fge_participants_max', 'fge_card_description'].forEach(function (id) {
 					bindPreview(id, updPreview);
 				});
 				var typeGrid = byId('fp-type-grid');

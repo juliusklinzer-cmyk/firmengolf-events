@@ -206,32 +206,9 @@ get_header();
 		<a class="fg-chip" href="<?php echo esc_url( $events_url ); ?>">Alle ansehen</a>
 	</div>
 	<div class="fg-grid">
-		<?php foreach ( $cf_events as $ev ) :
-			$eid    = $ev->ID;
-			$elabel = fge_format_event_type( fge_get_event_meta( $eid, 'event_type' ) );
-			$dur    = fge_get_event_meta( $eid, 'duration' );
-			$pmax   = (int) fge_get_event_meta( $eid, 'participants_max' );
-			$price  = fge_get_event_price_display( $eid );
-			$thumb  = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $eid, 'large' ) : ( has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' ) );
-		?>
-		<article class="fg-event">
-			<a href="<?php echo esc_url( get_permalink( $eid ) ); ?>" target="_blank" rel="noopener noreferrer">
-				<div class="fg-event-photo" style="background-image:url('<?php echo esc_url( $thumb ); ?>')">
-					<?php if ( $elabel ) : ?><div class="fg-event-chips"><span class="fg-photo-chip"><?php echo esc_html( $elabel ); ?></span></div><?php endif; ?>
-				</div>
-				<div class="fg-event-body">
-					<h3 class="fg-event-title"><?php echo esc_html( $ev->post_title ); ?></h3>
-					<div class="fg-event-meta">
-						<?php if ( $dur ) : ?><span><?php echo esc_html( $dur ); ?></span><?php endif; ?>
-						<?php if ( $pmax ) : ?><span class="dot">·</span><span>bis <?php echo esc_html( (string) $pmax ); ?> Gäste</span><?php endif; ?>
-					</div>
-					<div class="fg-event-foot">
-						<span class="fg-event-price"><?php echo $price ? esc_html( $price ) : 'Auf Anfrage'; ?><?php if ( $price && false === stripos( $price, 'netto' ) && false === stripos( $price, 'Anfrage' ) ) : ?> <span class="fg-price-netto">netto</span><?php endif; ?></span>
-					</div>
-				</div>
-			</a>
-		</article>
-		<?php endforeach; ?>
+		<?php foreach ( $cf_events as $ev ) : ?>
+			<?php get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $ev->ID ] ); ?>
+			<?php endforeach; ?>
 	</div>
 </section>
 <?php endif; ?>

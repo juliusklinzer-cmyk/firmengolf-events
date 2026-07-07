@@ -791,7 +791,7 @@ if ( ! $has_filters ) :
   }
 
   /* ── Card share (Teilen) buttons ── */
-  document.querySelectorAll('.fg-event-heart').forEach(function (btn) {
+  document.querySelectorAll('.evE-share').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
       var url = btn.getAttribute('data-share-url') || window.location.href;

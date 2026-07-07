@@ -28,33 +28,8 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 		<p class="about-hero-sub">
 			Ich habe Firmengolf gegründet, weil Golf einfach guttut: raus an die frische Luft,
 			rein in Bewegung, mitten ins Gespräch. Ein paar Stunden, die ein Team enger
-			zusammenbringen als zehn Meetings — und dabei richtig Spaß machen.
+			zusammenbringen als zehn Meetings. Und dabei macht es richtig Spaß.
 		</p>
-	</div>
-</section>
-
-<?php /* ===== Wir sind neu — euer Feedback (Julius, 2026-07-06) ===== */ ?>
-<section class="about-new" aria-label="Wir sind neu — euer Feedback zählt">
-	<div class="about-new-grid">
-		<div class="about-new-photo" role="img" aria-label="Greenkeeper bei der Rasenpflege auf dem Grün" style="background-image:url('<?php echo esc_url( $img( 'pool/greenkeeper.jpg' ) ); ?>')"></div>
-		<div class="about-new-text">
-			<div class="mk-eyebrow">In eigener Sache</div>
-			<h2 class="about-new-h">Wir sind neu — und arbeiten jeden Tag am Platz.</h2>
-			<p>
-				Firmen für unseren Sport zu begeistern ist für uns Neuland. Genau deshalb stecken
-				wir jeden Tag Arbeit in die neue Firmengolf-Events-Seite — so, wie ein Greenkeeper
-				jeden Morgen an seinem Grün feilt.
-			</p>
-			<p>
-				Umso mehr zählt dein Blick von außen: Stimmt ein Text nicht, passt ein Angebot
-				nicht zu dir — oder gefällt dir etwas richtig gut? Sag es uns. Kritik und Lob
-				nehmen wir beide dankend an.
-			</p>
-			<div class="about-new-ctas">
-				<a class="fg-btn-cta" href="mailto:<?php echo esc_attr( fge_company()['email_general'] ?? 'hallo@firmengolf-events.de' ); ?>?subject=Feedback%20zur%20Firmengolf-Seite">Feedback schicken</a>
-				<a class="fg-btn-ghost" href="<?php echo esc_url( $url_kontakt ); ?>">Zum Kontakt</a>
-			</div>
-		</div>
 	</div>
 </section>
 
@@ -66,7 +41,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 			Warum Golf für <em class="mk-italic">jeden</em> etwas Gutes hat.
 		</h2>
 		<p class="about-video-lead">
-			Eine Minute, in der ich dir erzähle, was Firmengolf ist, wovon wir träumen —
+			Eine Minute, in der ich dir erzähle, was Firmengolf ist, wovon wir träumen
 			und warum ein Schläger in der Hand mehr verändern kann, als man denkt.
 		</p>
 	</div>
@@ -106,7 +81,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 		</div>
 		<div class="about-video-caption">
 			<span class="about-video-cap-dot"></span>
-			<span>Eine Minute mit Julius — dem Gründer von Firmengolf.</span>
+			<span>Eine Minute mit Julius, dem Gründer von Firmengolf.</span>
 		</div>
 	</div>
 </section>
@@ -134,20 +109,20 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 				Lange dachte ich: Golf spiele ich, wenn ich mal <em class="mk-italic">alt</em> bin.
 			</h2>
 			<p class="about-p">
-				Dann machten mein Vater und mein Bruder ihre Platzreife — und sprachen von
+				Dann machten mein Vater und mein Bruder ihre Platzreife und sprachen von
 				nichts anderem mehr. Ich saß daneben und dachte: Wie kann man sich von so einem
 				Spiel derart anstecken lassen? Wenn ich das mal spiele, zeige ich euch, wie's geht.
 			</p>
 			<p class="about-p">
 				Tja. Als ich den Schläger dann in meiner eigenen Platzreife in der Hand hielt,
-				war alles klar — jetzt hatte es mich auch erwischt. Golf holt dich raus aus dem
+				war alles klar, jetzt hatte es mich auch erwischt. Golf holt dich raus aus dem
 				Alltag. Ein guter Schlag macht zehn schlechte wett. Und sich aufzuregen bringt
 				nichts: Der nächste Schlag wird davon kein Stück besser.
 			</p>
 			<p class="about-p">
 				Man lernt so viel nebenbei, das sich aufs echte Leben übertragen lässt. Gleichzeitig
 				bist du draußen, kannst den Kopf abschalten und triffst großartige, interessante
-				Menschen — vom Bodenleger bis zum Vorstand ist alles dabei.
+				Menschen. Vom Bodenleger bis zum Vorstand ist alles dabei.
 			</p>
 			<p class="about-p">
 				Genau das will ich mit Firmengolf zugänglich machen. Nicht als Erlebnis für wenige,
@@ -158,23 +133,23 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 	</div>
 </section>
 
-<?php /* ===== Philosophy — dark slab ===== */ ?>
-<section class="about-philo" aria-label="Unsere Überzeugung">
+<?php /* ===== Wie wir sind — ein dunkler 3er-Block (Philosophie + Werte zusammengeführt, Julius 2026-07-07) ===== */ ?>
+<section class="about-philo" aria-label="Wie wir sind">
 	<div class="about-philo-inner">
 		<div class="about-philo-head">
-			<div class="mk-eyebrow" style="color:var(--fairway-300)">Unsere Überzeugung</div>
+			<div class="mk-eyebrow" style="color:var(--fairway-300)">Wie wir sind</div>
 			<h2 class="about-philo-h">
-				Was Golf für uns <em class="mk-italic">wirklich</em> ist.
+				Drei Dinge, auf die du dich bei uns <em class="mk-italic">verlassen</em> kannst.
 			</h2>
 		</div>
 		<div class="about-philo-grid">
 			<?php
-			$philo = [
-				[ 'Bewegung',  'Eine Runde sind vier, fünf Kilometer an der frischen Luft — ganz ohne das Gefühl, Sport zu machen. Der Körper dankt es, der Kopf auch.' ],
-				[ 'Begegnung', 'Vier Stunden ohne Handy, Seite an Seite. Es gibt kaum ein Format, bei dem ein Team so unangestrengt zusammenwächst.' ],
-				[ 'Ruhe',      'Golf zwingt zur Konzentration auf den Moment. Genau das, was im Büroalltag am meisten fehlt — und am meisten heilt.' ],
+			$pillars = [
+				[ 'Unbeschwert',  'Wir haben Spaß und feiern ihn nicht. Kein VIP, kein „world-class", kein Druck. Einfach ein guter Tag draußen.' ],
+				[ 'Inspirierend', 'Wir verkaufen kein Produkt, wir verkaufen ein Gefühl: Bewegung, Natur, Konzentration und gemeinsame Zeit.' ],
+				[ 'Mitfühlend',   'Direkt, persönlich, niemals belehrend. Du bekommst immer einen echten Menschen ans Telefon, kein Ticketsystem.' ],
 			];
-			foreach ( $philo as $p ) : ?>
+			foreach ( $pillars as $p ) : ?>
 				<div class="about-philo-card">
 					<div class="about-philo-n"><?php echo esc_html( $p[0] ); ?></div>
 					<p><?php echo esc_html( $p[1] ); ?></p>
@@ -184,25 +159,28 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 	</div>
 </section>
 
-<?php /* ===== Values — three voice pillars ===== */ ?>
-<section class="mk-section" aria-label="Wie wir sind">
-	<div class="mk-section-head">
-		<div class="mk-eyebrow">Wie wir sind</div>
-		<h2 class="mk-h2">Drei Dinge, auf die du dich bei uns verlassen kannst.</h2>
-	</div>
-	<div class="about-values-grid">
-		<?php
-		$values = [
-			[ 'Unbeschwert',  'Wir haben Spaß und feiern ihn nicht. Kein VIP, kein „world-class", kein Druck — einfach ein guter Tag draußen.' ],
-			[ 'Inspirierend', 'Wir verkaufen kein Produkt, wir verkaufen ein Gefühl: Bewegung, Natur, Konzentration und gemeinsame Zeit.' ],
-			[ 'Mitfühlend',   'Direkt, persönlich, niemals belehrend. Du bekommst immer einen echten Menschen ans Telefon — kein Ticketsystem.' ],
-		];
-		foreach ( $values as $v ) : ?>
-			<div class="about-value-row">
-				<div class="about-value-k"><?php echo esc_html( $v[0] ); ?></div>
-				<p><?php echo esc_html( $v[1] ); ?></p>
+<?php /* ===== Wir sind neu — euer Feedback (Julius: vor dem CTA, 2026-07-07) ===== */ ?>
+<section class="about-new" aria-label="Wir sind neu, euer Feedback zählt">
+	<div class="about-new-grid">
+		<div class="about-new-photo" role="img" aria-label="Greenkeeper mäht das Puttinggrün" style="background-image:url('<?php echo esc_url( $img( 'pool/greenkeeping-maeher.jpg' ) ); ?>')"></div>
+		<div class="about-new-text">
+			<div class="mk-eyebrow">In eigener Sache</div>
+			<h2 class="about-new-h">Wir sind neu und arbeiten jeden Tag am Platz.</h2>
+			<p>
+				Firmen für unseren Sport zu begeistern ist für uns Neuland. Genau deshalb stecken
+				wir jeden Tag Arbeit in die neue Firmengolf-Events-Seite, so wie ein Greenkeeper
+				jeden Morgen an seinem Grün feilt.
+			</p>
+			<p>
+				Umso mehr zählt dein Blick von außen: Stimmt ein Text nicht, passt ein Angebot
+				nicht zu dir, oder gefällt dir etwas richtig gut? Sag es uns. Kritik und Lob
+				nehmen wir beide dankend an.
+			</p>
+			<div class="about-new-ctas">
+				<a class="fg-btn-cta" href="mailto:<?php echo esc_attr( fge_company()['email_general'] ?? 'hallo@firmengolf-events.de' ); ?>?subject=Feedback%20zur%20Firmengolf-Seite">Feedback schicken</a>
+				<a class="fg-btn-ghost" href="<?php echo esc_url( $url_kontakt ); ?>">Zum Kontakt</a>
 			</div>
-		<?php endforeach; ?>
+		</div>
 	</div>
 </section>
 
@@ -212,7 +190,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Lust auf eine Runde mit uns?</div>
 		<h2 class="mk-cta-h">Lass uns <em class="mk-italic">kennenlernen</em>.</h2>
 		<p class="mk-cta-sub">
-			Ob Event-Anfrage, Idee oder einfach eine Frage — schreib mir. Ich antworte persönlich.
+			Ob Event-Anfrage, Idee oder einfach eine Frage, schreib mir. Ich antworte persönlich.
 		</p>
 		<div class="mk-cta-ctas">
 			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $url_kontakt ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">
