@@ -23,7 +23,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 	<div class="about-hero-inner">
 		<div class="mk-eyebrow">Über uns</div>
 		<h1 class="about-hero-h">
-			Golf ist für jeden, der mal <em class="mk-italic">raus</em> will.
+			Golf ist für jeden, der mal <em class="mk-italic" style="color:var(--clay-500)">raus</em> will.
 		</h1>
 		<p class="about-hero-sub">
 			Ich habe Firmengolf gegründet, weil Golf einfach guttut: raus an die frische Luft,
@@ -36,14 +36,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 <?php /* ===== Founder video — centerpiece (poster placeholder) ===== */ ?>
 <section class="about-video-section" aria-label="In meinen Worten">
 	<div class="about-video-head">
-		<div class="mk-eyebrow">In meinen Worten</div>
-		<h2 class="about-video-title">
-			Warum Golf für <em class="mk-italic">jeden</em> etwas Gutes hat.
-		</h2>
-		<p class="about-video-lead">
-			Eine Minute, in der ich dir erzähle, was Firmengolf ist, wovon wir träumen
-			und warum ein Schläger in der Hand mehr verändern kann, als man denkt.
-		</p>
+		<div class="mk-eyebrow" style="color:var(--fairway-700)">In meinen Worten</div>
 	</div>
 	<div class="about-video-wrap">
 		<div class="about-video">
