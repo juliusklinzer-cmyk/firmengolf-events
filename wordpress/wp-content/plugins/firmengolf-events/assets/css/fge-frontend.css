@@ -2775,7 +2775,7 @@ a.mk-step:focus-visible { outline: 2px solid var(--fairway-700); outline-offset:
 @media (max-width: 720px) {
   /* Mobile-Hero: handytaugliche Höhe statt erzwungener 560px, kompaktere Typo */
   .mk-hero { padding: 0 16px; margin-top: 12px; }
-  .mk-hero-photo { aspect-ratio: auto; min-height: 78vh; display: flex; align-items: flex-end; background-image: url('../imagery/hero-team-grau.jpg') !important; }
+  .mk-hero-photo { aspect-ratio: auto; min-height: 78vh; display: flex; align-items: flex-end; background-image: url('../imagery/hero-golfer-alpen.jpg') !important; }
   .mk-hero-title { font-size: clamp(32px, 8.5vw, 44px); line-height: 1.04; margin-top: 10px; }
   .rot-wrap { white-space: normal; } /* lange Satzenden dürfen mobil umbrechen */
   .mk-hero-sub { font-size: 15px; margin-top: 14px; }
