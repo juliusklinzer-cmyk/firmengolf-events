@@ -143,7 +143,7 @@ function fge_rest_gallery_upload( WP_REST_Request $req ) {
 
 	// Limit auch serverseitig durchsetzen — vorher nur im Browser geprüft (Audit D10).
 	if ( count( fge_partner_gallery_ids( $pid ) ) >= (int) ( $lim['gallery_max'] ?? 6 ) ) {
-		return new WP_Error( 'fge_gallery_full', 'Maximale Fotoanzahl erreicht — lösche zuerst ein Foto.', [ 'status' => 400 ] );
+		return new WP_Error( 'fge_gallery_full', 'Maximale Fotoanzahl erreicht, lösche zuerst ein Foto.', [ 'status' => 400 ] );
 	}
 	$err = fge_rest_validate_upload( 'file', $lim['gallery'], $lim['mimes'] );
 	if ( is_wp_error( $err ) ) {

@@ -62,11 +62,11 @@ $prefs = [ 'Egal', 'E-Mail', 'Telefon', 'WhatsApp' ];
 
 $faqs = [
 	[ 'Wie schnell antwortet ihr?', 'Werktags innerhalb eines Arbeitstags, per WhatsApp meist in Minuten. Anfragen von Freitagnachmittag bis Sonntag beantworten wir Montag früh.' ],
-	[ 'Ich rede lieber, als zu tippen — geht das?', 'Klar. Ruf direkt an, schreib uns auf WhatsApp, oder fordere oben einen Rückruf an — dann melden wir uns zur gewünschten Zeit bei dir.' ],
-	[ 'Ich bin Golfplatz und will Partner werden — wohin?', 'Schreib an ' . $co['email_partner'] . ' oder starte direkt das Partner-Onboarding über „Partnerportal" oben. Bei größeren Anlagen kommen wir auch persönlich vorbei.' ],
-	[ 'Ich habe eine Frage zum Benefit-Programm.', 'Das läuft über firmen.golf — schreib uns trotzdem hier, wir leiten weiter und sorgen, dass du eine Antwort bekommst.' ],
-	[ 'Brauche ich ein Konto, um euch zu kontaktieren?', 'Nein. Kein Login, keine Registrierung — Formular, Mail, Anruf oder WhatsApp genügen.' ],
-	[ 'Geht das auch auf Englisch?', 'Yes — wir antworten gerne auf Deutsch oder Englisch. Schreib einfach in deiner Sprache.' ],
+	[ 'Ich rede lieber, als zu tippen, geht das?', 'Klar. Ruf direkt an, schreib uns auf WhatsApp, oder fordere oben einen Rückruf an, dann melden wir uns zur gewünschten Zeit bei dir.' ],
+	[ 'Ich bin Golfplatz und will Partner werden, wohin?', 'Schreib an ' . $co['email_partner'] . ' oder starte direkt das Partner-Onboarding über „Partnerportal" oben. Bei größeren Anlagen kommen wir auch persönlich vorbei.' ],
+	[ 'Ich habe eine Frage zum Benefit-Programm.', 'Das läuft über firmen.golf, schreib uns trotzdem hier, wir leiten weiter und sorgen, dass du eine Antwort bekommst.' ],
+	[ 'Brauche ich ein Konto, um euch zu kontaktieren?', 'Nein. Kein Login, keine Registrierung, Formular, Mail, Anruf oder WhatsApp genügen.' ],
+	[ 'Geht das auch auf Englisch?', 'Yes, wir antworten gerne auf Deutsch oder Englisch. Schreib einfach in deiner Sprache.' ],
 ];
 ?>
 <div class="fge-page" id="fge-main" role="main" tabindex="-1">
@@ -77,11 +77,11 @@ $faqs = [
 <section class="ct-hero" aria-label="Kontakt">
 	<div class="mk-eyebrow">Kontakt</div>
 	<h1 class="ct-hero-h">
-		Frag uns alles — du landest bei einem <em class="mk-italic">echten Menschen</em>.
+		Frag uns alles, du landest bei einem <em class="mk-italic">echten Menschen</em>.
 	</h1>
 	<p class="ct-hero-sub">
 		Kein Chatbot, kein Ticketsystem, keine Warteschleife ins Nichts. Wähl den Weg, der dir
-		am liebsten ist — wir antworten innerhalb eines Werktags, oft schneller.
+		am liebsten ist, wir antworten innerhalb eines Werktags, oft schneller.
 	</p>
 </section>
 
@@ -91,7 +91,7 @@ $faqs = [
 		<?php if ( $danke ) : ?>
 			<div class="contact-success" role="status" aria-live="polite">
 				<div class="fg-success-mark"><?php echo $cicon( 'check', 22 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
-				<h2 class="contact-form-h">Danke — wir haben dich.</h2>
+				<h2 class="contact-form-h">Danke, wir haben dich.</h2>
 				<p class="muted" style="margin-top:12px;max-width:420px;">
 					Deine Nachricht ist angekommen. Wir melden uns innerhalb eines Werktags.
 				</p>
@@ -151,7 +151,7 @@ $faqs = [
 					<div class="fg-field">
 						<label class="fg-field-label" for="ct-email">E-Mail <span class="ct-req">*</span></label>
 						<input id="ct-email" name="fge_kontakt_email" class="fg-input" type="email" placeholder="du@firma.de" required autocomplete="email" aria-describedby="ct-email-hint" value="<?php echo esc_attr( $dv( 'email' ) ); ?>">
-						<span class="fg-field-help" id="ct-email-hint">Nur für unsere Antwort — kein Newsletter.</span>
+						<span class="fg-field-help" id="ct-email-hint">Nur für unsere Antwort, kein Newsletter.</span>
 					</div>
 					<div class="fg-field">
 						<label class="fg-field-label" for="ct-phone">Telefon</label>
@@ -159,7 +159,7 @@ $faqs = [
 					</div>
 					<div class="fg-field fg-field-full">
 						<label class="fg-field-label" for="ct-msg">Deine Nachricht <span class="ct-req">*</span></label>
-						<textarea id="ct-msg" name="fge_kontakt_message" class="fg-input" rows="5" required placeholder="Anlass, Gruppengröße, Zeitraum — oder einfach deine Frage."><?php echo esc_textarea( $dv( 'message' ) ); ?></textarea>
+						<textarea id="ct-msg" name="fge_kontakt_message" class="fg-input" rows="5" required placeholder="Anlass, Gruppengröße, Zeitraum, oder einfach deine Frage."><?php echo esc_textarea( $dv( 'message' ) ); ?></textarea>
 					</div>
 
 					<fieldset class="ct-fieldset fg-field-full">
@@ -191,7 +191,7 @@ $faqs = [
 
 	<div class="contact-left">
 
-		<?php /* Direkte Wege — kompakt */ ?>
+		<?php /* Direkte Wege, kompakt */ ?>
 		<div class="ct-ways" aria-label="Direkte Kontaktwege">
 			<a class="ct-way" href="tel:<?php echo esc_attr( $co['phone_tel'] ); ?>">
 				<span class="ct-way-ic"><?php echo $cicon( 'phone', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
@@ -210,7 +210,7 @@ $faqs = [
 			</a>
 		</div>
 
-		<?php /* Rückruf — aufklappbar (offen nach Absenden/Fehler) */ ?>
+		<?php /* Rückruf, aufklappbar (offen nach Absenden/Fehler) */ ?>
 		<details class="ct-fold" id="callback" <?php echo ( $cb_danke || $cb_err ) ? 'open' : ''; ?>>
 			<summary class="ct-fold-s">
 				<span class="ct-way-ic"><?php echo $cicon( 'phone', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
@@ -219,13 +219,13 @@ $faqs = [
 			</summary>
 			<div class="ct-fold-body">
 				<?php if ( $cb_danke ) : ?>
-					<p class="ct-fold-p" role="status"><strong>Alles klar — wir rufen dich an.</strong> Wir melden uns zur gewünschten Zeit.</p>
+					<p class="ct-fold-p" role="status"><strong>Alles klar, wir rufen dich an.</strong> Wir melden uns zur gewünschten Zeit.</p>
 				<?php else : ?>
 					<form method="post" action="<?php echo esc_url( $self_url ); ?>">
 						<input type="hidden" name="fge_action" value="rueckruf_submit">
 						<?php wp_nonce_field( 'fge_rueckruf', 'fge_rueckruf_nonce' ); ?>
 						<input type="text" name="fge_hp_url" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
-						<p class="ct-fold-p">Nummer rein, wir melden uns — kein Tippen, keine Warteschleife.</p>
+						<p class="ct-fold-p">Nummer rein, wir melden uns, kein Tippen, keine Warteschleife.</p>
 						<?php if ( $cb_err ) : ?>
 							<p class="ct-fold-p" style="color:var(--danger);">Bitte gib eine Telefonnummer an.</p>
 						<?php endif; ?>
@@ -248,7 +248,7 @@ $faqs = [
 			</div>
 		</details>
 
-		<?php /* Termin & Besuch — aufklappbar */ ?>
+		<?php /* Termin & Besuch, aufklappbar */ ?>
 		<details class="ct-fold">
 			<summary class="ct-fold-s">
 				<span class="ct-way-ic"><?php echo $cicon( 'calendar', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
@@ -256,7 +256,7 @@ $faqs = [
 				<span class="ct-fold-chev" aria-hidden="true"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 			</summary>
 			<div class="ct-fold-body">
-				<p class="ct-fold-p">15 Minuten Kennenlern-Gespräch — Video oder Telefon, ganz wie du magst.</p>
+				<p class="ct-fold-p">15 Minuten Kennenlern-Gespräch, Video oder Telefon, ganz wie du magst.</p>
 				<a class="fg-btn-brand" href="<?php echo esc_url( $hubspot_url ); ?>" target="_blank" rel="noopener noreferrer" style="width:100%;">
 					Termin buchen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				</a>
@@ -277,7 +277,7 @@ $faqs = [
 		<div class="ct-person">
 			<span class="ct-person-photo" role="img" aria-label="Julius Klinzer" style="background-image:url('<?php echo esc_url( $img( 'gruender-julius-klinzer-2.jpg' ) ); ?>')"></span>
 			<div>
-				<div class="ct-person-q">„Anfragen landen direkt bei mir. Ich antworte persönlich — versprochen."</div>
+				<div class="ct-person-q">„Anfragen landen direkt bei mir. Ich antworte persönlich, versprochen."</div>
 				<div class="ct-person-id">
 					<span class="ct-person-name">Julius Klinzer</span>
 					<span class="ct-person-role">Gründer · Firmengolf</span>
@@ -290,7 +290,7 @@ $faqs = [
 				<span class="ct-promise-ic"><?php echo $cicon( 'clock', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				<div>
 					<div class="ct-promise-t">Antwort in einem Werktag</div>
-					<div class="ct-promise-m">Freitagnachmittag–Sonntag: Montag früh</div>
+					<div class="ct-promise-m">Freitagnachmittag, Sonntag: Montag früh</div>
 				</div>
 			</div>
 			<div class="ct-promise-row">
@@ -304,7 +304,7 @@ $faqs = [
 				<span class="ct-promise-ic"><?php echo $cicon( 'a11y', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				<div>
 					<div class="ct-promise-t">So, wie's dir passt</div>
-					<div class="ct-promise-m">Mail, Telefon, WhatsApp — oder einfache Sprache auf Wunsch</div>
+					<div class="ct-promise-m">Mail, Telefon, WhatsApp, oder einfache Sprache auf Wunsch</div>
 				</div>
 			</div>
 		</div>
@@ -324,7 +324,7 @@ $faqs = [
 		<div class="faq-aside">
 			<div class="mk-eyebrow">FAQ</div>
 			<h2 class="mk-h2" style="margin-top:8px;font-size:36px;">Antworten, bevor du fragst.</h2>
-			<p class="mk-sub">Vieles klärt sich in einem Satz. Was nicht hier steht — frag einfach, auf dem Weg, der dir passt.</p>
+			<p class="mk-sub">Vieles klärt sich in einem Satz. Was nicht hier steht, frag einfach, auf dem Weg, der dir passt.</p>
 		</div>
 		<ul class="faq-list">
 			<?php foreach ( $faqs as $i => $faq ) : ?>
@@ -377,7 +377,7 @@ $faqs = [
 			if (!isOpen) {
 				item.classList.add('open');
 				btn.setAttribute('aria-expanded', 'true');
-				btn.querySelector('.faq-toggle').textContent = '–';
+				btn.querySelector('.faq-toggle').textContent = 'k. A.';
 			}
 		});
 	});

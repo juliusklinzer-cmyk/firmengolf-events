@@ -91,7 +91,7 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 
 		<h2>7. Kontakt- und Event-Anfragen</h2>
 		<p>
-			Über unsere Formulare (Event-Anfrage, Kontakt) verarbeiten wir die angegebenen Daten – insbesondere
+			Über unsere Formulare (Event-Anfrage, Kontakt) verarbeiten wir die angegebenen Daten, insbesondere
 			Firma, Ansprechpartner, E-Mail, Telefon sowie Angaben zum geplanten Event (z. B. Termin, Gruppengröße,
 			Format, Region, Budget, Wünsche). Diese Daten werden gespeichert und zur Bearbeitung an die zuständigen
 			Stellen übermittelt. Rechtsgrundlage: Durchführung (vor-)vertraglicher Maßnahmen (Art. 6 Abs. 1 lit. b
@@ -100,7 +100,7 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			(i. d. R. 6 Jahre nach § 257 HGB bzw. 10 Jahre nach § 147 AO), danach erfolgt Löschung.
 		</p>
 
-		<h2>8. CRM – HubSpot</h2>
+		<h2>8. CRM, HubSpot</h2>
 		<p>
 			Wir nutzen HubSpot (Anbieter: HubSpot, Inc., USA) zur Bearbeitung von Anfragen, zur Verwaltung von
 			Unternehmens- und Kontaktdaten sowie zur Kommunikation mit Interessenten und Partnern. Dabei können
@@ -115,7 +115,7 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 		<h2>9. HubSpot-Terminkalender</h2>
 		<p>
 			Auf unserer Kontaktseite verlinken wir auf den HubSpot-Terminkalender (Meetings) zur Online-Terminbuchung.
-			Es handelt sich um eine einfache Verlinkung – beim bloßen Aufruf unserer Seite werden keine Daten an HubSpot
+			Es handelt sich um eine einfache Verlinkung, beim bloßen Aufruf unserer Seite werden keine Daten an HubSpot
 			übertragen. Erst wenn Sie auf den Link klicken, werden Sie zur HubSpot-Buchungsseite (HubSpot, Inc., USA)
 			weitergeleitet, für deren Datenverarbeitung dann HubSpot verantwortlich ist.
 		</p>
@@ -131,7 +131,7 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 		<h2>11. Google Analytics</h2>
 		<p>
 			Wir nutzen Google Analytics 4 zur pseudonymen, statistischen Auswertung der Websitenutzung (Google
-			Ireland Ltd. / Google LLC, USA) – ausschließlich nach Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO,
+			Ireland Ltd. / Google LLC, USA), ausschließlich nach Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO,
 			§ 25 Abs. 1 TDDDG). Dabei werden Cookies gesetzt und Nutzungsdaten ggf. in die USA übertragen
 			(Safeguards wie oben). Es besteht ein Auftragsverarbeitungsvertrag.
 		</p>
@@ -161,7 +161,7 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 		<h2>14. Social-Media-Profile</h2>
 		<p>
 			Wir verlinken auf unsere Profile bei Instagram, Facebook und LinkedIn. Es handelt sich um einfache
-			Verlinkungen – beim bloßen Aufruf unserer Seite werden keine Daten an diese Netzwerke übertragen. Erst
+			Verlinkungen, beim bloßen Aufruf unserer Seite werden keine Daten an diese Netzwerke übertragen. Erst
 			beim Klick werden Sie zur jeweiligen Plattform weitergeleitet, für deren Datenverarbeitung die Anbieter
 			verantwortlich sind.
 		</p>

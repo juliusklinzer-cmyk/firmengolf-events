@@ -79,7 +79,7 @@ function fge_render_pmb_basisdaten( WP_Post $post ) {
 			<th scope="row"><label for="fge_partner_status">Anbieter Status</label></th>
 			<td>
 				<select id="fge_partner_status" name="fge_partner_status">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $statuses as $val ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $partner_status, $val ); ?>><?php echo esc_html( $val ); ?></option>
 					<?php endforeach; ?>
@@ -195,7 +195,7 @@ function fge_render_pmb_standort( WP_Post $post ) {
 			<th scope="row"><label for="fge_federal_state">Bundesland</label></th>
 			<td>
 				<select id="fge_federal_state" name="fge_federal_state">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $federal_states as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $federal_state, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -260,7 +260,7 @@ function fge_render_pmb_profil( WP_Post $post ) {
 			<th scope="row"><label for="fge_golf_type">Golf-Angebot (Platztyp)</label></th>
 			<td>
 				<select id="fge_golf_type" name="fge_golf_type">
-					<option value="">— wählen —</option>
+					<option value="">wählen …</option>
 					<?php foreach ( fge_catalog_golf_types() as $id => $label ) : ?>
 						<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $golf_type, $id ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -294,7 +294,7 @@ function fge_render_pmb_profil( WP_Post $post ) {
 		<tr>
 			<th scope="row">Teilnehmer min / max</th>
 			<td>
-				<input type="number" min="0" name="fge_cap[min]" value="<?php echo esc_attr( $cap['min'] ?? '' ); ?>" style="width:90px;"> –
+				<input type="number" min="0" name="fge_cap[min]" value="<?php echo esc_attr( $cap['min'] ?? '' ); ?>" style="width:90px;"> bis
 				<input type="number" min="0" name="fge_cap[max]" value="<?php echo esc_attr( $cap['max'] ?? '' ); ?>" style="width:90px;">
 			</td>
 		</tr>
@@ -412,7 +412,7 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 			<th scope="row"><label for="fge_season">Saison</label></th>
 			<td>
 				<select id="fge_season" name="fge_season">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $seasons as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $season, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -570,8 +570,8 @@ function fge_render_pmb_tracking( WP_Post $post ) {
 	$bookings_total   = (int) get_post_meta( $post->ID, '_fge_bookings_total', true );
 	$last_req         = get_post_meta( $post->ID, '_fge_last_request_at', true );
 
-	$conv_vr = ( $views_total > 0 )    ? round( $requests_total / $views_total * 100, 1 ) . ' %' : '–';
-	$conv_rb = ( $requests_total > 0 ) ? round( $bookings_total / $requests_total * 100, 1 ) . ' %' : '–';
+	$conv_vr = ( $views_total > 0 )    ? round( $requests_total / $views_total * 100, 1 ) . ' %' : 'k. A.';
+	$conv_rb = ( $requests_total > 0 ) ? round( $bookings_total / $requests_total * 100, 1 ) . ' %' : 'k. A.';
 	?>
 	<table class="form-table">
 		<tr>

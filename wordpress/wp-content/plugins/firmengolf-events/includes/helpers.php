@@ -96,7 +96,9 @@ function fge_season_range_label( int $from, int $to ): string {
 		return 'Ganzjährig';
 	}
 	$m = fge_month_names();
-	return trim( ( $m[ $from ] ?? '' ) . ' – ' . ( $m[ $to ] ?? '' ), ' –' );
+	$fr = (string) ( $m[ $from ] ?? '' );
+	$to_n = (string) ( $m[ $to ] ?? '' );
+	return ( $fr !== '' && $to_n !== '' ) ? $fr . ' bis ' . $to_n : trim( $fr . $to_n );
 }
 
 /**
@@ -130,8 +132,8 @@ function fge_partner_offseason_note( int $partner_id ): string {
 function fge_season_label( string $value ): string {
 	$legacy = [
 		'year_round'       => 'Ganzjährig',
-		'march_to_october' => 'März – Oktober',
-		'april_to_october' => 'April – Oktober',
+		'march_to_october' => 'März bis Oktober',
+		'april_to_october' => 'April bis Oktober',
 		'on_request'       => 'Auf Anfrage',
 	];
 	return $legacy[ $value ] ?? $value;

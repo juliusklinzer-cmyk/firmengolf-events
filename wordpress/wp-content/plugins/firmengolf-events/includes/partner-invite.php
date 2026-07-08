@@ -85,9 +85,12 @@ function fge_invite_handle_accept(): void {
 		wp_die( 'Dieser Einladungslink ist ungültig oder wurde bereits verwendet.', '', [ 'response' => 404 ] );
 	}
 	if ( (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true ) > 0 ) {
-		wp_die( 'Dieses Partnerprofil ist bereits mit einem Konto verknüpft. Melde dich einfach im Portal an — oder ruf uns an, wenn etwas nicht stimmt.', '', [ 'response' => 409 ] );
+		wp_die( 'Dieses Partnerprofil ist bereits mit einem Konto verknüpft. Melde dich einfach im Portal an oder ruf uns an, wenn etwas nicht stimmt.', '', [ 'response' => 409 ] );
 	}
-	if ( function_exists( 'fge_form_rate_limited' ) && fge_form_rate_limited( 5, 600, 'einladung' ) ) {
+	// Limit 15 statt 5 (Kern-Audit H2): der Verifizierungs-Flow braucht mehrere POSTs
+	// (Code senden, ggf. erneut senden, Tippfehler) — die Code-Prüfung hat eigene
+	// Limits (5 Versuche, 60s-Cooldown, 8 Sends/h), das IP-Gate ist nur der Notanker.
+	if ( function_exists( 'fge_form_rate_limited' ) && empty( $_POST['fge_resend'] ) && fge_form_rate_limited( 15, 600, 'einladung' ) ) {
 		wp_safe_redirect( add_query_arg( 'fehler', 'rate', $back ) );
 		exit;
 	}
@@ -207,7 +210,8 @@ add_action( 'admin_post_fge_partner_invite', static function (): void {
 	check_admin_referer( 'fge_partner_invite_' . $partner_id );
 
 	$linked = (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true );
-	$url    = fge_invite_url( $partner_id );
+	// Kein Token für bereits verknüpfte Partner erzeugen/persistieren (Kern-Audit N6).
+	$url    = $linked > 0 ? '' : fge_invite_url( $partner_id );
 	$back   = admin_url( 'edit.php?post_type=firmengolf_partner' );
 	?><!doctype html><html lang="de"><head><meta charset="utf-8"><title>Einladungslink</title>
 	<style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f0f0f1;margin:0;padding:60px 20px;}
@@ -220,12 +224,14 @@ add_action( 'admin_post_fge_partner_invite', static function (): void {
 	<div class="card">
 		<h1>Einladungslink: <?php echo esc_html( get_the_title( $partner_id ) ); ?></h1>
 		<?php if ( $linked > 0 ) : ?>
-			<div class="warn">⚠ Dieser Partner ist bereits mit einem Konto verknüpft (User #<?php echo (int) $linked; ?>). Der Link würde beim Einlösen fehlschlagen — nur nötig, wenn du die Verknüpfung vorher löst.</div>
+			<div class="warn">⚠ Dieser Partner ist bereits mit einem Konto verknüpft (User #<?php echo (int) $linked; ?>). Der Link würde beim Einlösen fehlschlagen, nur nötig, wenn du die Verknüpfung vorher löst.</div>
 		<?php else : ?>
 			<p>Diesen persönlichen Link in deine Start-Mail an den Club kopieren. Der Club legt damit nur noch Zugangsdaten fest und landet direkt in seinem vorbereiteten Portal. Der Link ist einmalig gültig.</p>
 		<?php endif; ?>
+		<?php if ( '' !== $url ) : ?>
 		<input type="text" value="<?php echo esc_attr( $url ); ?>" id="fge-inv" readonly onclick="this.select()">
 		<button onclick="document.getElementById('fge-inv').select();document.execCommand('copy');this.textContent='Kopiert ✓';">Link kopieren</button>
+		<?php endif; ?>
 		<a class="back" href="<?php echo esc_url( $back ); ?>">← Zurück zur Partner-Liste</a>
 	</div></body></html><?php
 	exit;

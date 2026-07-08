@@ -108,9 +108,9 @@ function fge_offer_price_text( array $snap ): string {
 		return 'Auf Anfrage';
 	}
 	$unit = (string) ( $snap['price_unit'] ?? '' );
-	$s    = '€' . number_format_i18n( $gross, 0 ) . ( 'pro Person' === $unit ? ' p.P.' : ' gesamt' );
+	$s    = number_format_i18n( $gross, 0 ) . ' €' . ( 'pro Person' === $unit ? ' p.P.' : ' gesamt' );
 	if ( 'pro Person' === $unit && (int) ( $snap['participants'] ?? 0 ) > 0 ) {
-		$s .= ' · ca. €' . number_format_i18n( (float) $snap['price_total'], 0 ) . ' bei ' . (int) $snap['participants'] . ' Personen';
+		$s .= ' · ca. ' . number_format_i18n( (float) $snap['price_total'], 0 ) . ' € bei ' . (int) $snap['participants'] . ' Personen';
 	}
 	// Kein „zzgl. X % USt ergibt ca. Y" am Preis (Julius, 2026-07-04) — USt-Hinweis steht einmal im Kleingedruckten.
 	return $s;
@@ -126,7 +126,7 @@ function fge_offer_gross_incl_vat_text( array $snap ): string {
 	if ( $base <= 0 ) {
 		return '';
 	}
-	return 'ca. €' . number_format_i18n( $base * ( 1 + $vat / 100 ), 0 ) . ' inkl. USt';
+	return 'ca. ' . number_format_i18n( $base * ( 1 + $vat / 100 ), 0 ) . ' € inkl. MwSt.';
 }
 
 // ── Auslöser: Termin bestätigt → Angebot erzeugen + senden ────────────────────
@@ -243,6 +243,13 @@ function fge_offer_handle_post(): void {
 	}
 	$token = sanitize_text_field( wp_unslash( $_POST['fge_offer_token'] ?? '' ) );
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['fge_offer_nonce'] ?? '' ) ), 'fge_offer_' . $token ) ) {
+		// Abgelaufene Sitzung nicht still verwerfen (Kern-Audit N5): zurück zur
+		// Angebotsseite mit Hinweis, damit der Kunde erneut bestätigen kann.
+		$req_n = fge_request_by_customer_token( $token );
+		if ( $req_n > 0 ) {
+			wp_safe_redirect( fge_offer_link( $req_n ) . '?session=expired' );
+			exit;
+		}
 		return;
 	}
 	$req = fge_request_by_customer_token( $token );
@@ -260,9 +267,13 @@ function fge_offer_handle_post(): void {
 			// sondern Rückfrage an Firmengolf — Termin prüfen, dann manuell bestätigen (Audit B2).
 			$deadline = (int) get_post_meta( $req, '_fge_offer_deadline', true );
 			if ( $deadline > 0 && time() > $deadline ) {
-				update_post_meta( $req, '_fge_offer_query', 'Kunde möchte nach Ablauf der Reservierungsfrist annehmen — bitte Termin prüfen und Buchung manuell bestätigen.' );
-				fge_request_set_status( $req, 'angebot_rueckfrage' );
-				do_action( 'fge_offer_query', $req, 'Annahme nach Fristablauf — Termin bitte prüfen.' );
+				// Idempotent: erneute Klicks lösen keine weitere interne Mail aus (Kern-Audit M5).
+				if ( '1' !== (string) get_post_meta( $req, '_fge_offer_expired_query', true ) ) {
+					update_post_meta( $req, '_fge_offer_expired_query', '1' );
+					update_post_meta( $req, '_fge_offer_query', 'Kunde möchte nach Ablauf der Reservierungsfrist annehmen, bitte Termin prüfen und Buchung manuell bestätigen.' );
+					fge_request_set_status( $req, 'angebot_rueckfrage' );
+					do_action( 'fge_offer_query', $req, 'Annahme nach Fristablauf, Termin bitte prüfen.' );
+				}
 				wp_safe_redirect( fge_offer_link( $req ) . '?done=expired' );
 				exit;
 			}
@@ -277,6 +288,11 @@ function fge_offer_handle_post(): void {
 		} elseif ( 'request' === $action ) {
 			// Rückfrage / Änderungswunsch — Angebot bleibt offen (pending), kein Dead-End.
 			$msg = sanitize_textarea_field( wp_unslash( $_POST['fge_offer_message'] ?? '' ) );
+			if ( '' === trim( $msg ) ) {
+				// Leere Rückfragen feuern keine interne Mail (Kern-Audit M5).
+				wp_safe_redirect( fge_offer_link( $req ) );
+				exit;
+			}
 			update_post_meta( $req, '_fge_offer_query', $msg );
 			fge_request_set_status( $req, 'angebot_rueckfrage' );
 			do_action( 'fge_offer_query', $req, $msg );

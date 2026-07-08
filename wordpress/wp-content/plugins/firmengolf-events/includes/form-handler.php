@@ -102,7 +102,7 @@ function fge_ajax_modal_anfrage(): void {
 	}
 
 	$partner_id  = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
-	$event_title = $event_id > 0 ? get_the_title( $event_id ) : '–';
+	$event_title = $event_id > 0 ? get_the_title( $event_id ) : 'k. A.';
 	$ref = fge_generate_request_ref();
 
 	$request_id = wp_insert_post( [

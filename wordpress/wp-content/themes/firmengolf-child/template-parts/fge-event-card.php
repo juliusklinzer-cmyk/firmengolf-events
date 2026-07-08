@@ -44,7 +44,7 @@ $title     = get_the_title( $pid );
 
 // Gruppengröße als „min–max" bzw. „bis max".
 $group_txt = '';
-if ( $g_min > 0 && $g_max > 0 ) { $group_txt = $g_min . '–' . $g_max; }
+if ( $g_min > 0 && $g_max > 0 ) { $group_txt = $g_min . ' bis ' . $g_max; }
 elseif ( $g_max > 0 )           { $group_txt = 'bis ' . $g_max; }
 
 $ic_pin   = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
@@ -70,7 +70,7 @@ $arrow    = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke=
 			<?php endif; ?>
 		</div>
 		<div class="evE-body">
-			<span class="evE-venue"><?php echo $ic_pin; // phpcs:ignore WordPress.Security.EscapeOutput ?><?php echo esc_html( $venue ?: $region_m ?: '—' ); ?></span>
+			<span class="evE-venue"><?php echo $ic_pin; // phpcs:ignore WordPress.Security.EscapeOutput ?><?php echo esc_html( $venue ?: $region_m ?: 'k. A.' ); ?></span>
 			<h3 class="evE-title"><?php echo esc_html( $title ); ?></h3>
 			<?php if ( $card_desc !== '' ) : ?><p class="evE-desc"><?php echo esc_html( $card_desc ); ?></p><?php endif; ?>
 			<div class="evE-meta">

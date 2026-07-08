@@ -18,7 +18,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'ueber-uns' ] ); ?>
 
-<?php /* ===== Hero — vision statement ===== */ ?>
+<?php /* ===== Hero, vision statement ===== */ ?>
 <section class="about-hero" aria-label="Über uns">
 	<div class="about-hero-inner">
 		<div class="mk-eyebrow">Über uns</div>
@@ -33,7 +33,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 	</div>
 </section>
 
-<?php /* ===== Founder video — centerpiece (poster placeholder) ===== */ ?>
+<?php /* ===== Founder video, centerpiece (poster placeholder) ===== */ ?>
 <section class="about-video-section" aria-label="In meinen Worten">
 	<div class="about-video-head">
 		<div class="mk-eyebrow" style="color:var(--fairway-700)">In meinen Worten</div>
@@ -126,7 +126,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 	</div>
 </section>
 
-<?php /* ===== Wie wir sind — ein dunkler 3er-Block (Philosophie + Werte zusammengeführt, Julius 2026-07-07) ===== */ ?>
+<?php /* ===== Wie wir sind, ein dunkler 3er-Block (Philosophie + Werte zusammengeführt, Julius 2026-07-07) ===== */ ?>
 <section class="about-philo" aria-label="Wie wir sind">
 	<div class="about-philo-inner">
 		<div class="about-philo-head">
@@ -152,7 +152,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 	</div>
 </section>
 
-<?php /* ===== Wir sind neu — euer Feedback (Julius: vor dem CTA, 2026-07-07) ===== */ ?>
+<?php /* ===== Wir sind neu, euer Feedback (Julius: vor dem CTA, 2026-07-07) ===== */ ?>
 <section class="about-new" aria-label="Wir sind neu, euer Feedback zählt">
 	<div class="about-new-grid">
 		<div class="about-new-photo" role="img" aria-label="Greenkeeper mäht das Puttinggrün" style="background-image:url('<?php echo esc_url( $img( 'pool/greenkeeping-maeher.jpg' ) ); ?>')"></div>

@@ -62,7 +62,7 @@ $facts = [];
 if ( $golf_lbl ) { $facts[] = [ 'Platztyp', $golf_lbl ]; }
 if ( $loc )      { $facts[] = [ 'Standort', $loc ]; }
 if ( ! empty( $cap['min'] ) || ! empty( $cap['max'] ) ) {
-	$facts[] = [ 'Gruppengröße', trim( ( $cap['min'] ?? '?' ) . '–' . ( $cap['max'] ?? '?' ) . ' Personen' ) ];
+	$facts[] = [ 'Gruppengröße', trim( ( $cap['min'] ?? '?' ) . ' bis ' . ( $cap['max'] ?? '?' ) . ' Personen' ) ];
 }
 if ( $formats ) { $facts[] = [ 'Veranstaltungstypen', (string) count( $formats ) ]; }
 if ( $season )  { $facts[] = [ 'Saison', function_exists( 'fge_season_label' ) ? fge_season_label( $season ) : $season ]; }
@@ -230,7 +230,7 @@ get_header();
 			<section class="section">
 				<div class="section-head"><div><div class="eyebrow">Veranstaltungen</div><h2>Noch keine <em>Events</em></h2></div></div>
 				<div class="panel" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
-					<p style="margin:0;font-size:14.5px;color:var(--ink-600);max-width:560px;line-height:1.55;">Hier erscheinen deine Event-Angebote, sobald sie freigegeben sind — erst dann wird deine Seite auch öffentlich sichtbar. Dieser Hinweis ist nur für dich.</p>
+					<p style="margin:0;font-size:14.5px;color:var(--ink-600);max-width:560px;line-height:1.55;">Hier erscheinen deine Event-Angebote, sobald sie freigegeben sind, erst dann wird deine Seite auch öffentlich sichtbar. Dieser Hinweis ist nur für dich.</p>
 					<a class="btn btn-brand btn-sm" href="<?php echo esc_url( home_url( '/partnerportal/?tab=angebote&portal_action=new' ) ); ?>">+ Erstes Angebot anlegen</a>
 				</div>
 			</section>
@@ -244,7 +244,7 @@ get_header();
 						if ( in_array( (int) $eid, $preview_ids, true ) ) {
 							echo '<div class="gp-preview-card">';
 							get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $eid ] );
-							echo '<span class="gp-preview-tag">In Prüfung — nur für dich sichtbar</span></div>';
+							echo '<span class="gp-preview-tag">In Prüfung, nur für dich sichtbar</span></div>';
 							continue;
 						}
 						get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $eid ] );
@@ -297,7 +297,7 @@ get_header();
 					</div>
 					<div class="panel">
 						<div class="panel-head"><h3 style="font-size:18px;">Anfrage an diesen Platz</h3></div>
-						<p style="font-size:14px;color:var(--ink-600,var(--ink-500));margin:0 0 16px;">Plant euer Firmenevent bei <?php echo esc_html( $name ); ?> — wir holen Verfügbarkeit &amp; Angebot direkt beim Platz ein.</p>
+						<p style="font-size:14px;color:var(--ink-600,var(--ink-500));margin:0 0 16px;">Plant euer Firmenevent bei <?php echo esc_html( $name ); ?>, wir holen Verfügbarkeit &amp; Angebot direkt beim Platz ein.</p>
 						<a class="btn btn-brand" href="<?php echo esc_url( $ind_url ); ?>">Anfrage an diesen Platz</a>
 					</div>
 				</div>
@@ -308,7 +308,7 @@ get_header();
 					<div>
 						<div class="eyebrow">Maßgeschneidert</div>
 						<h2>Etwas Eigenes<?php echo $city ? ' in ' . esc_html( $city ) : ''; ?>?</h2>
-						<p>Sag uns, was ihr vorhabt — Sommerfest, Incentive, Kundentag oder Turnier. Wir stellen euch ein Event genau nach euren Wünschen zusammen.</p>
+						<p>Sag uns, was ihr vorhabt, Sommerfest, Incentive, Kundentag oder Turnier. Wir stellen euch ein Event genau nach euren Wünschen zusammen.</p>
 					</div>
 					<a class="btn btn-brand" href="<?php echo esc_url( $ind_url ); ?>">Individuelles Event anfragen</a>
 				</div>

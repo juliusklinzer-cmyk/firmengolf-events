@@ -114,7 +114,7 @@ get_header();
 		<div class="page-hero-inner">
 			<div class="mk-eyebrow">Magazin</div>
 			<h1 class="page-hero-title blog-hero">
-				Aus dem <em class="mk-italic">Fairway</em> — unser Magazin.
+				Aus dem <em class="mk-italic">Fairway</em>, unser Magazin.
 			</h1>
 			<p class="page-hero-sub">
 				Praxisleitfäden, Inspiration für eure nächste Veranstaltung und Gespräche mit
@@ -270,7 +270,7 @@ get_header();
 		<div class="blog-newsletter-inner">
 			<div>
 				<div class="mk-eyebrow">Newsletter</div>
-				<h2 class="blog-newsletter-h">Einmal im Monat — kurze Mail, gute Stories.</h2>
+				<h2 class="blog-newsletter-h">Einmal im Monat, kurze Mail, gute Stories.</h2>
 				<p class="muted">Lesetipps, neue Formate und Termine. Kein Spam, kein Vertrieb.</p>
 				<form class="blog-newsletter-form" method="post" action="<?php echo esc_url( home_url( '/' ) ); ?>">
 					<?php wp_nonce_field( 'fge_newsletter', 'fge_newsletter_nonce' ); ?>

@@ -133,7 +133,7 @@ function fge_offer_hold_followups(): array {
 		$ref     = function_exists( 'fge_request_number' ) ? fge_request_number( $req ) : 'FG-' . $req;
 		$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 		$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
-		$content = '<p style="margin:0 0 16px;">Die Anfrage <strong>' . esc_html( $ref ) . '</strong> hat einen bestätigten Termin, aber das Angebot ist wegen unbepreister Zusatzleistungen zurückgehalten — seit ' . (int) $days . ' Tagen. Der Kunde wartet. Bitte Feinplanung abschließen und „Angebot jetzt senden" klicken.</p>'
+		$content = '<p style="margin:0 0 16px;">Die Anfrage <strong>' . esc_html( $ref ) . '</strong> hat einen bestätigten Termin, aber das Angebot ist wegen unbepreister Zusatzleistungen zurückgehalten, seit ' . (int) $days . ' Tagen. Der Kunde wartet. Bitte Feinplanung abschließen und „Angebot jetzt senden" klicken.</p>'
 			. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
 		if ( function_exists( 'fge_email_wrap' ) ) {
 			wp_mail( $to, 'Feinplanung offen: ' . $ref, fge_email_wrap( 'Feinplanung offen: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );

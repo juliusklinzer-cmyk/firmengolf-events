@@ -92,7 +92,7 @@ $type_tiles = [
 // Golf-Erfahrung
 $exp_levels = [
 	[ 'level' => 1, 'badge' => 'Einsteiger', 't' => 'Erste Erfahrungen', 'img' => 'erfahrung-korb.jpg',
-		'b' => 'Noch nie einen Schläger gehalten? Genau richtig. Golflehrer, Leih-Ausrüstung und die ersten Schwünge auf der Range — locker, ohne Druck.',
+		'b' => 'Noch nie einen Schläger gehalten? Genau richtig. Golflehrer, Leih-Ausrüstung und die ersten Schwünge auf der Range, locker, ohne Druck.',
 		'meta' => [ 'Golflehrer', 'Schläger gestellt', 'Range & Putting' ] ],
 	[ 'level' => 2, 'badge' => 'Auffrischer', 't' => 'Schon mal gespielt', 'img' => 'erfahrung-sand.jpg',
 		'b' => 'Ein paar Runden Erfahrung? Wir frischen den Schwung auf, gehen ins Kurzspiel und spielen danach gemeinsam entspannte 9 Loch.',
@@ -103,12 +103,12 @@ $exp_levels = [
 ];
 
 $faqs = [
-	[ 'q' => 'Wie viel kostet ein individuelles Event?', 'a' => 'Sehr unterschiedlich. Ein abendliches Sommerfest für 80 Personen liegt typischerweise bei €15.000–€25.000, ein zweitägiges Strategie-Offsite für 20 Personen bei €30.000–€50.000. Wir gehen das nach der Anfrage transparent durch und du bekommst ein vollständiges Angebot mit allen Posten.' ],
-	[ 'q' => 'Wie viel Vorlauf brauchen wir?', 'a' => 'Idealerweise 3 Monate für mehrtägige Formate, 6–8 Wochen für eintägige. Kurzfristiger geht oft auch — das hängt vom Datum und der Region ab.' ],
-	[ 'q' => 'Können wir eigene Locations einbringen?', 'a' => 'Ja. Wenn ihr eine Wunsch-Location habt, sprechen wir mit dem Platz und integrieren das ins Konzept. Wir organisieren Events deutschlandweit — in Deutschland kommen rund 721 Golfplätze als Eventlocation in Frage, passt einer nicht, nehmen wir einfach den nächsten.' ],
-	[ 'q' => 'Was, wenn wir noch keinen festen Plan haben?', 'a' => 'Genau dafür gibt es uns. Sag uns Anlass, ungefähre Gruppe und Region — wir schicken zwei bis drei sehr unterschiedliche Konzept-Vorschläge zurück, aus denen du wählst.' ],
-	[ 'q' => 'Kommt jemand von euch vor Ort?', 'a' => 'Bei Events ab 30 Personen oder mehrtägigen Formaten — ja, immer. Ein Firmengolf-Host ist vor Ort und stimmt sich mit dem Platz ab.' ],
-	[ 'q' => 'Was, wenn wir das Event verschieben müssen?', 'a' => 'Bis 30 Tage vorher kostenlos. Danach gestaffelt — die genauen Konditionen schreiben wir in jedes Angebot rein. Wir sind kulant und finden Lösungen.' ],
+	[ 'q' => 'Wie viel kostet ein individuelles Event?', 'a' => 'Sehr unterschiedlich. Ein abendliches Sommerfest für 80 Personen liegt typischerweise bei €15.000 bis €25.000, ein zweitägiges Strategie-Offsite für 20 Personen bei €30.000 bis €50.000. Wir gehen das nach der Anfrage transparent durch und du bekommst ein vollständiges Angebot mit allen Posten.' ],
+	[ 'q' => 'Wie viel Vorlauf brauchen wir?', 'a' => 'Idealerweise 3 Monate für mehrtägige Formate, 6 bis 8 Wochen für eintägige. Kurzfristiger geht oft auch, das hängt vom Datum und der Region ab.' ],
+	[ 'q' => 'Können wir eigene Locations einbringen?', 'a' => 'Ja. Wenn ihr eine Wunsch-Location habt, sprechen wir mit dem Platz und integrieren das ins Konzept. Wir organisieren Events deutschlandweit, in Deutschland kommen rund 721 Golfplätze als Eventlocation in Frage, passt einer nicht, nehmen wir einfach den nächsten.' ],
+	[ 'q' => 'Was, wenn wir noch keinen festen Plan haben?', 'a' => 'Genau dafür gibt es uns. Sag uns Anlass, ungefähre Gruppe und Region, wir schicken zwei bis drei sehr unterschiedliche Konzept-Vorschläge zurück, aus denen du wählst.' ],
+	[ 'q' => 'Kommt jemand von euch vor Ort?', 'a' => 'Bei Events ab 30 Personen oder mehrtägigen Formaten, ja, immer. Ein Firmengolf-Host ist vor Ort und stimmt sich mit dem Platz ab.' ],
+	[ 'q' => 'Was, wenn wir das Event verschieben müssen?', 'a' => 'Bis 30 Tage vorher kostenlos. Danach gestaffelt, die genauen Konditionen schreiben wir in jedes Angebot rein. Wir sind kulant und finden Lösungen.' ],
 ];
 
 $nacht_preset = wp_json_encode( [
@@ -130,11 +130,11 @@ get_header();
 			<div class="ind-hero-content">
 				<div class="mk-hero-eyebrow">Individuelle Events</div>
 				<h1 class="ind-hero-title">
-					Euer Firmenevent — auf dem <em class="mk-italic">Golfplatz</em>.
+					Euer Firmenevent, auf dem <em class="mk-italic">Golfplatz</em>.
 				</h1>
 				<p class="ind-hero-sub">
 					Vom Teamevent bis zum Sommerfest, vom Turnier bis zur Incentive-Reise: Wir planen jeden
-					Veranstaltungstyp auf dem passenden Platz. Sag uns kurz, was ihr vorhabt — wir machen den Rest.
+					Veranstaltungstyp auf dem passenden Platz. Sag uns kurz, was ihr vorhabt, wir machen den Rest.
 				</p>
 				<div class="mk-hero-ctas">
 					<button type="button" class="fg-btn-cta fg-btn-lg" data-rw-open="full">
@@ -151,7 +151,7 @@ get_header();
 		<div class="iv-head">
 			<div class="mk-eyebrow">Veranstaltungstyp</div>
 			<h2 class="mk-h2">Wählt euren Veranstaltungstyp</h2>
-			<p class="mk-sub">Jeder Veranstaltungstyp findet auf dem Golfplatz statt — als Location, die garantiert in Erinnerung bleibt.</p>
+			<p class="mk-sub">Jeder Veranstaltungstyp findet auf dem Golfplatz statt, als Location, die garantiert in Erinnerung bleibt.</p>
 		</div>
 		<div class="iv-tiles">
 			<?php foreach ( $type_tiles as $tile ) :
@@ -179,7 +179,7 @@ get_header();
 			<div class="bcalc-head">
 				<div class="mk-eyebrow" style="color:var(--fairway-700);">Budget-Rechner</div>
 				<h2 class="mk-h2">Was kostet euer Event? <span class="mk-italic">Sofort</span> geschätzt.</h2>
-				<p class="mk-sub">Stell ein paar Eckdaten ein und sieh in Echtzeit einen realistischen Richtwert — ganz unverbindlich, bevor wir gemeinsam ins Detail gehen.</p>
+				<p class="mk-sub">Stell ein paar Eckdaten ein und sieh in Echtzeit einen realistischen Richtwert, ganz unverbindlich, bevor wir gemeinsam ins Detail gehen.</p>
 			</div>
 
 			<?php if ( $bc ) : ?>
@@ -241,7 +241,7 @@ get_header();
 					<button type="button" class="fg-btn-ink lg bc-total-cta" id="bc-request">
 						Unverbindliches Angebot anfragen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 					</button>
-					<p class="bc-total-note">Unverbindlicher Schätzwert. Das finale Angebot stellen wir nach kurzer Rücksprache zusammen — transparent, mit allen Posten.</p>
+					<p class="bc-total-note">Unverbindlicher Schätzwert. Das finale Angebot stellen wir nach kurzer Rücksprache zusammen, transparent, mit allen Posten.</p>
 				</div>
 			</div>
 			<?php else : ?>
@@ -255,7 +255,7 @@ get_header();
 		<div class="iv-head">
 			<div class="mk-eyebrow">Golf-Erfahrung</div>
 			<h2 class="mk-h2">Vom ersten Schwung bis zur <span class="mk-italic">Stammrunde</span></h2>
-			<p class="mk-sub">In jedem Team spielt jemand zum ersten Mal — und jemand seit Jahren. Wir stellen jedes Event so zusammen, dass alle Spaß haben, egal auf welchem Level.</p>
+			<p class="mk-sub">In jedem Team spielt jemand zum ersten Mal, und jemand seit Jahren. Wir stellen jedes Event so zusammen, dass alle Spaß haben, egal auf welchem Level.</p>
 		</div>
 		<div class="iv-exp-grid">
 			<?php foreach ( $exp_levels as $x ) : ?>
@@ -294,7 +294,7 @@ get_header();
 			</div>
 			<h2 class="ind-night-h">Das <span class="mk-italic">Nacht-Event</span>.<br>Wir machen die Nacht zum Tag.</h2>
 			<p class="ind-night-sub">
-				Wir leuchten einen ganzen Golfplatz aus und verwandeln ihn in eine Bühne — Flutlicht-Parcours,
+				Wir leuchten einen ganzen Golfplatz aus und verwandeln ihn in eine Bühne, Flutlicht-Parcours,
 				Live-DJ, Food &amp; Drinks unter freiem Himmel. Ein Firmenevent der etwas anderen Art,
 				das euer Team garantiert nicht vergisst.
 			</p>
@@ -318,7 +318,7 @@ get_header();
 				<div class="mk-eyebrow" style="color:var(--fairway-300);">Bereit?</div>
 				<h2 class="ind-launch-h">Erzählt uns von eurem Event.</h2>
 				<p class="ind-launch-p">
-					Geführte Anfrage in fünf kurzen Schritten — ca. zwei Minuten, unverbindlich.
+					Geführte Anfrage in fünf kurzen Schritten, ca. zwei Minuten, unverbindlich.
 					Ein Ansprechpartner, ein Angebot, eine Rechnung.
 				</p>
 				<div class="ind-launch-ctas">
@@ -377,7 +377,7 @@ get_header();
 			if (!isOpen) {
 				item.classList.add('open');
 				btn.setAttribute('aria-expanded', 'true');
-				btn.querySelector('.faq-toggle').textContent = '–';
+				btn.querySelector('.faq-toggle').textContent = 'k. A.';
 			}
 		});
 	});

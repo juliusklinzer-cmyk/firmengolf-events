@@ -22,7 +22,7 @@ get_header();
 		<header class="fg-page-intro">
 			<p class="fg-section-label">Allgemeine Anfrage</p>
 			<h1 class="fg-page-intro-title">Firmenevent anfragen</h1>
-			<p class="fg-page-intro-sub">Du weißt noch nicht genau, welches Golf Event passt? Sag uns, was ihr plant — wir suchen gemeinsam das passende Format.</p>
+			<p class="fg-page-intro-sub">Du weißt noch nicht genau, welches Golf Event passt? Sag uns, was ihr plant, wir suchen gemeinsam das passende Format.</p>
 			<p class="fg-page-intro-body">Firmengolf prüft passende Eventformate, Golfplätze und Dienstleister. Danach melden wir uns persönlich zur Abstimmung.</p>
 		</header>
 
@@ -30,7 +30,7 @@ get_header();
 			<button type="button" class="fg-btn-cta fg-btn-lg" data-rw-open="full" data-rw-intro data-rw-source="general_anfrage_page">
 				Anfrage starten <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 			</button>
-			<p class="fg-rail-note" style="margin-top:14px;">Geführte Anfrage in fünf kurzen Schritten — ca. zwei Minuten, unverbindlich. Antwort innerhalb eines Werktags.</p>
+			<p class="fg-rail-note" style="margin-top:14px;">Geführte Anfrage in fünf kurzen Schritten, ca. zwei Minuten, unverbindlich. Antwort innerhalb eines Werktags.</p>
 		</section>
 
 	</div><?php /* .fg-detail */ ?>

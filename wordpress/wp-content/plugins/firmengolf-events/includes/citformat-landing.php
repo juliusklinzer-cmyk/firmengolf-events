@@ -33,37 +33,37 @@ function fge_citformat_format_meta(): array {
 		'teamevent' => [
 			'h1'    => 'Golf-Teamevents für Firmen in %s',
 			'eyeb'  => 'Teamevent · %s',
-			'title' => 'Teamevent in %s auf dem Golfplatz — Firmengolf',
+			'title' => 'Teamevent in %s auf dem Golfplatz, Firmengolf',
 			'desc'  => 'Golf-Teamevent für euer Team in %s: Golflehrer, Leihschläger, ein Tag draußen statt Stuhlkreis. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
 		],
 		'golfturnier' => [
 			'h1'    => 'Firmen-Golfturniere in %s',
 			'eyeb'  => 'Firmenturnier · %s',
-			'title' => 'Firmenturnier in %s organisieren — Firmengolf',
+			'title' => 'Firmenturnier in %s organisieren, Firmengolf',
 			'desc'  => 'Firmen-Golfturnier in %s: Startlisten, Scramble für gemischte Level, Siegerehrung und Branding. Komplett organisiert von Firmengolf.',
 		],
 		'platzreife' => [
 			'h1'    => 'Platzreife für Firmen & Teams in %s',
 			'eyeb'  => 'Platzreife · %s',
-			'title' => 'Platzreife in %s für Firmen — Firmengolf',
+			'title' => 'Platzreife in %s für Firmen, Firmengolf',
 			'desc'  => 'Platzreifekurs für euer Team in %s: PGA-Golflehrer, Regeln, Prüfung. Der offizielle Einstieg in den Golfsport als Firmenprogramm.',
 		],
 		'kundenevent' => [
 			'h1'    => 'Kundenevents auf dem Golfplatz in %s',
 			'eyeb'  => 'Kundenevent · %s',
-			'title' => 'Kundenevent in %s auf dem Golfplatz — Firmengolf',
+			'title' => 'Kundenevent in %s auf dem Golfplatz, Firmengolf',
 			'desc'  => 'Kundenevent auf dem Golfplatz in %s: Hospitality, Turnier oder Schnupperteil mit Dinner. Zeit für eure Gäste, organisiert von Firmengolf.',
 		],
 		'incentive' => [
 			'h1'    => 'Golf-Incentives in %s & Umland',
 			'eyeb'  => 'Incentive · %s',
-			'title' => 'Golf-Incentive in %s für Unternehmen — Firmengolf',
+			'title' => 'Golf-Incentive in %s für Unternehmen, Firmengolf',
 			'desc'  => 'Golf-Incentive in %s: Golf, Hotellerie und Rahmenprogramm zu einem Paket. Leistung belohnen mit einem Erlebnis statt einem Bonus.',
 		],
 		'after-work-golf' => [
 			'h1'    => 'After-Work Golf für Teams in %s',
 			'eyeb'  => 'After-Work Golf · %s',
-			'title' => 'After-Work Golf in %s für Firmen — Firmengolf',
+			'title' => 'After-Work Golf in %s für Firmen, Firmengolf',
 			'desc'  => 'After-Work Golf in %s: nach Feierabend auf Range und Kurzplatz, locker angeleitet. Der kompakte Teamabend im Grünen.',
 		],
 	];

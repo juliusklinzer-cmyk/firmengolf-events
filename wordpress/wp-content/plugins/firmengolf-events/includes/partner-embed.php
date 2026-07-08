@@ -73,7 +73,7 @@ function fge_embed_render(): void {
 	foreach ( $event_ids as $eid ) {
 		$pmin    = (int) get_post_meta( $eid, '_fge_participants_min', true );
 		$pmax    = (int) get_post_meta( $eid, '_fge_participants_max', true );
-		$group   = ( $pmin > 0 && $pmax > 0 ) ? "{$pmin}–{$pmax} Pers." : ( $pmax > 0 ? "bis {$pmax} Pers." : '' );
+		$group   = ( $pmin > 0 && $pmax > 0 ) ? "{$pmin} bis {$pmax} Pers." : ( $pmax > 0 ? "bis {$pmax} Pers." : '' );
 		$cards[] = [
 			'url'      => get_permalink( $eid ),
 			'img'      => function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $eid, 'large' ) : '',
@@ -115,7 +115,7 @@ function fge_embed_render(): void {
 </head>
 <body>
 	<?php if ( empty( $cards ) ) : ?>
-		<div class="empty">Aktuell sind keine Event-Angebote online — schau bald wieder vorbei.</div>
+		<div class="empty">Aktuell sind keine Event-Angebote online, schau bald wieder vorbei.</div>
 	<?php else : ?>
 	<div class="grid">
 		<?php foreach ( $cards as $c ) : ?>

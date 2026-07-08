@@ -95,6 +95,6 @@ function fge_event_price_label( int $event_id ): string {
 	if ( $p['gross'] <= 0 ) {
 		return 'Auf Anfrage';
 	}
-	$amount = '€' . number_format_i18n( $p['gross'], 0 );
+	$amount = number_format_i18n( $p['gross'], 0 ) . ' €'; // Suffix-Format (Kern-Audit H6)
 	return $p['unit'] === 'pro Person' ? $amount . ' p.P.' : $amount . ' gesamt';
 }

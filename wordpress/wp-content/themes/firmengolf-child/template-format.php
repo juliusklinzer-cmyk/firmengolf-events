@@ -66,7 +66,7 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 			'@context'    => 'https://schema.org',
 			'@type'       => 'Service',
 			'serviceType' => $f_name,
-			'name'        => 'Firmengolf — ' . $f_name,
+			'name'        => 'Firmengolf, ' . $f_name,
 			'areaServed'  => [ '@type' => 'Country', 'name' => 'Deutschland' ],
 			'provider'    => [ '@type' => 'Organization', 'name' => 'Firmengolf', 'url' => home_url( '/' ) ],
 			'url'         => $canonical,
@@ -127,7 +127,7 @@ get_header();
 <section class="mk-section" aria-label="Über <?php echo esc_attr( $f_name ); ?>">
 	<div class="mk-section-head">
 		<div class="mk-eyebrow"><?php echo esc_html( $f_name ); ?> für Unternehmen</div>
-		<h2 class="mk-h2"><?php echo esc_html( $f_name ); ?> — gemeinsam erleben.</h2>
+		<h2 class="mk-h2"><?php echo esc_html( $f_name ); ?>, gemeinsam erleben.</h2>
 		<p class="mk-sub" style="max-width:var(--width-prose);"><?php echo esc_html( $format['intro'] ); ?></p>
 	</div>
 </section>
@@ -184,7 +184,7 @@ get_header();
 	<div class="faq-shell">
 		<div class="faq-aside">
 			<div class="mk-eyebrow">Häufige Fragen</div>
-			<h2 class="mk-h2" style="margin-top:8px;"><?php echo esc_html( $f_name ); ?> — kurz erklärt.</h2>
+			<h2 class="mk-h2" style="margin-top:8px;"><?php echo esc_html( $f_name ); ?>, kurz erklärt.</h2>
 		</div>
 		<ul class="faq-list">
 			<?php foreach ( $faqs as $faq ) : ?>
@@ -225,7 +225,7 @@ document.querySelectorAll('.fge-page .faq-q[aria-expanded]').forEach(function (b
 		var item = btn.closest('.faq-item');
 		var open = item.classList.toggle('open');
 		btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-		var t = btn.querySelector('.faq-toggle'); if (t) t.textContent = open ? '–' : '+';
+		var t = btn.querySelector('.faq-toggle'); if (t) t.textContent = open ? 'k. A.' : '+';
 	});
 });
 </script>

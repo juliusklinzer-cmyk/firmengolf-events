@@ -335,7 +335,7 @@ function fge_match_partners_for_request( int $req, int $limit = 8 ): array {
 		}
 		$score = 0;
 		$why   = [];
-		if ( true === $fits ) { $score += 3; $why[] = "Kapazität {$min}–{$max} passt"; }
+		if ( true === $fits ) { $score += 3; $why[] = "Kapazität {$min} bis {$max} passt"; }
 		$pcity   = (string) get_post_meta( $p->ID, '_fge_city', true );
 		$pregion = (string) get_post_meta( $p->ID, '_fge_free_region', true );
 		if ( '' !== $region && ( false !== stripos( $pcity, $region ) || false !== stripos( $pregion, $region ) || false !== stripos( $region, $pcity ) ) ) {
@@ -393,7 +393,7 @@ function fge_match_partners_for_request( int $req, int $limit = 8 ): array {
 			}
 		}
 
-		$out[] = [ 'id' => $p->ID, 'name' => get_the_title( $p->ID ), 'city' => $pcity, 'cap' => ( $min || $max ) ? "{$min}–{$max}" : '—', 'score' => $score, 'why' => $why, 'fits' => $fits ];
+		$out[] = [ 'id' => $p->ID, 'name' => get_the_title( $p->ID ), 'city' => $pcity, 'cap' => ( $min || $max ) ? "{$min} bis {$max}" : 'k. A.', 'score' => $score, 'why' => $why, 'fits' => $fits ];
 	}
 	usort( $out, static function ( $a, $b ) { return $b['score'] <=> $a['score']; } );
 	return array_slice( $out, 0, $limit );
@@ -407,7 +407,7 @@ add_action( 'add_meta_boxes', static function () {
 function fge_render_mb_match( WP_Post $post ): void {
 	$pax = (int) get_post_meta( $post->ID, '_fge_expected_participants', true );
 	$matches = fge_match_partners_for_request( $post->ID );
-	echo '<p style="margin:0 0 8px;color:#646970;font-size:12px;">Teilnehmer: ' . ( $pax ?: '—' ) . ' · Vorschläge nach Kapazität, Region &amp; Format.</p>';
+	echo '<p style="margin:0 0 8px;color:#646970;font-size:12px;">Teilnehmer: ' . ( $pax ?: 'k. A.' ) . ' · Vorschläge nach Kapazität, Region &amp; Format.</p>';
 	if ( empty( $matches ) ) {
 		echo '<p style="margin:0;">Keine passenden Plätze gefunden.</p>';
 		return;

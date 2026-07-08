@@ -119,16 +119,16 @@
 				var r = el('div', 'bc-break-row');
 				r.innerHTML = '<span class="bc-break-dot" style="background:' + esc(row.color) + '"></span>'
 					+ '<span class="bc-break-name">' + esc(row.label) + '</span>'
-					+ '<span class="bc-break-amt">€' + fmt(row.amount) + '</span>';
+					+ '<span class="bc-break-amt">' + fmt(row.amount) + ' €</span>';
 				breakList.appendChild(r);
 			});
 			renderDonut(res.rows, res.total);
 			if (donut) {
 				donut.setAttribute('role', 'img');
-				donut.setAttribute('aria-label', 'Budget-Aufteilung · Gesamt ca. €' + fmt(res.total));
+				donut.setAttribute('aria-label', 'Budget-Aufteilung · Gesamt ca. ' + fmt(res.total) + ' €');
 			}
 			var empty = res.total <= 0;
-			totalNum.textContent = '€' + fmt(res.total);
+			totalNum.textContent = fmt(res.total) + ' €';
 			totalMeta.textContent = empty
 				? 'Wähle mindestens eine Leistung'
 				: ('Für ' + state.participants + ' Personen · ' + res.type.label);
@@ -195,9 +195,9 @@
 				occasion: res.type.wiz || 'Teamevent',
 				size: String(state.participants),
 				services: svcWiz,
-				budget: '€' + lo.toLocaleString('de-DE') + ' – €' + hi.toLocaleString('de-DE'),
+				budget: lo.toLocaleString('de-DE') + ' bis ' + hi.toLocaleString('de-DE') + ' €',
 				notes: 'Über den Budget-Rechner geschätzt: ' + res.type.label + ', ' + state.participants
-					+ ' Personen, Preisniveau ' + state.range + ' — Richtwert ca. €' + fmt(res.total) + '.'
+					+ ' Personen, Preisniveau ' + state.range + ', Richtwert ca. ' + fmt(res.total) + ' €.'
 			});
 		});
 
@@ -249,11 +249,11 @@
 			return svg('<path d="M12 3l2.2 5.4L20 9l-4.4 3.8L17 19l-5-3-5 3 1.4-6.2L4 9l5.8-.6z"/>');
 		}
 		var BUDGETS = [
-			{ v: 'Unter €5.000', h: 'Kleinere Halbtags-Formate' },
-			{ v: '€5.000 – €10.000', h: 'Eintägig für 20–40 Gäste' },
-			{ v: '€10.000 – €20.000', h: 'Premium-Eintages-Events' },
-			{ v: '€20.000 – €50.000', h: 'Mehrtägig oder größere Gruppen' },
-			{ v: 'Über €50.000', h: 'Incentive-Reisen, Großformate' },
+			{ v: 'Unter 5.000 €', h: 'Kleinere Halbtags-Formate' },
+			{ v: '5.000 bis 10.000 €', h: 'Eintägig für 20 bis 40 Gäste' },
+			{ v: '10.000 bis 20.000 €', h: 'Premium-Eintages-Events' },
+			{ v: '20.000 bis 50.000 €', h: 'Mehrtägig oder größere Gruppen' },
+			{ v: 'Über 50.000 €', h: 'Incentive-Reisen, Großformate' },
 			{ v: 'Noch unklar', h: 'Wir gehen es gemeinsam durch' }
 		];
 		var CONTACT = { name: 'Julius Klinzer', role: 'Gründer' };
@@ -263,8 +263,10 @@
 		function blank(preset) {
 			var f = {
 				occasion: '', goal: '', size: '40', region: '', place: '', experience: '',
-				budget: '€10.000 – €20.000', when: '', flex: 'flexibel', duration: '',
-				date1: '', date2: '', date3: '', services: ['Mittagessen', 'Golflehrer / Coaching'],
+				budget: '10.000 bis 20.000 €', when: '', flex: 'flexibel', duration: '',
+				/* services OHNE Default: der Quick-Modus zeigt keinen Leistungs-Schritt und
+				   hat sonst nie gewählte Wünsche mitgesendet (Kern-Audit H1, 2026-07-08). */
+				date1: '', date2: '', date3: '', services: [],
 				company: '', city: '', firstName: '', lastName: '', email: '', phone: '',
 				contactPref: 'E-Mail', diet: '', notes: '', consent: false
 			};
@@ -296,7 +298,7 @@
 			var places = CFG.places || [];
 			if (!places.length) return '';
 			var opts = places.map(function (p) { return '<option value="' + esc(p) + '">'; }).join('');
-			return '<div class="rw-field">' + label('Konkreter Platzwunsch?', false, 'Optional — tippen zum Suchen')
+			return '<div class="rw-field">' + label('Konkreter Platzwunsch?', false, 'Optional, tippen zum Suchen')
 				+ '<input class="fg-input" data-field="place" list="rw-place-list" value="' + esc(S.form.place) + '" placeholder="Golfplatz oder Ort eintippen …" autocomplete="off">'
 				+ '<datalist id="rw-place-list">' + opts + '</datalist></div>';
 		}
@@ -314,13 +316,13 @@
 			var occ = S.form.occasion || 'Firmenevent';
 			return '<div class="rw-stage"><div class="rw-screen rw-intro">'
 				+ '<div class="rw-eyebrow">Schön, dass du da bist</div>'
-				+ '<h2 class="rw-h">Toll — ihr plant ein <span class="mk-italic">' + esc(occ) + '</span> für euer Team.</h2>'
+				+ '<h2 class="rw-h">Toll, ihr plant ein <span class="mk-italic">' + esc(occ) + '</span> für euer Team.</h2>'
 				+ '<p class="rw-lead">Lass uns kurz ein paar Infos sammeln. Danach meldet sich ' + esc(CONTACT.name)
-				+ ' persönlich bei dir — meist innerhalb eines Werktags, mit ersten Ideen und einem Richtpreis.</p>'
+				+ ' persönlich bei dir, meist innerhalb eines Werktags, mit ersten Ideen und einem Richtpreis.</p>'
 				+ '<div class="rw-intro-contact"><div><div class="rw-intro-c-name">' + esc(CONTACT.name) + '</div>'
 				+ '<div class="rw-intro-c-role">' + esc(CONTACT.role) + ' · Firmengolf</div>'
 				+ '<div class="rw-intro-c-note">„Ich kümmere mich persönlich um deine Anfrage."</div></div></div>'
-				+ '<ul class="rw-intro-steps"><li>Ein paar Eckdaten — keine zwei Minuten</li>'
+				+ '<ul class="rw-intro-steps"><li>Ein paar Eckdaten, keine zwei Minuten</li>'
 				+ '<li>Persönliche Rückmeldung statt Funnel</li><li>Unverbindlich und kostenlos</li></ul>'
 				+ '</div></div>'
 				+ '<div class="rw-foot rw-foot-quick"><button class="rw-back" data-act="close">Abbrechen</button>'
@@ -330,7 +332,7 @@
 		function screenQuick() {
 			var h = '<div class="rw-stage"><div class="rw-screen">'
 				+ '<div class="rw-eyebrow">Schnell-Anfrage · 30 Sekunden</div>'
-				+ '<h2 class="rw-h">Das Wichtigste — wir klären den Rest persönlich.</h2>'
+				+ '<h2 class="rw-h">Das Wichtigste, wir klären den Rest persönlich.</h2>'
 				+ '<p class="rw-lead">Du willst nicht durch alle Schritte? Völlig okay. Gib uns die Basics, wir melden uns mit Rückfragen.</p>'
 				+ '<div class="rw-form">'
 				+ '<div class="rw-field">' + label('Anlass', true) + chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Offsite', 'Nacht-Event', 'Etwas anderes']) + '</div>'
@@ -351,7 +353,7 @@
 			if (step === 0) {
 				return '<div class="rw-eyebrow">Schritt 1 · ' + FULL_STEPS[0] + '</div>'
 					+ '<h2 class="rw-h">Worum geht\'s bei eurem Event?</h2>'
-					+ '<p class="rw-lead">Wähl den nächstpassenden Anlass — wir verfeinern alles im Gespräch.</p>'
+					+ '<p class="rw-lead">Wähl den nächstpassenden Anlass, wir verfeinern alles im Gespräch.</p>'
 					+ '<div class="rw-form"><div class="rw-field">'
 					+ chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Offsite', 'Incentive-Reise', 'Charity-Event', 'Gesundheitstag', 'Nacht-Event', 'Etwas anderes'])
 					+ '</div>'
@@ -388,7 +390,7 @@
 				}).join('');
 				return '<div class="rw-eyebrow">Schritt 3 · ' + FULL_STEPS[2] + '</div>'
 					+ '<h2 class="rw-h">Was soll dabei sein?</h2>'
-					+ '<p class="rw-lead">Sag uns deine Vorstellungen — wir besprechen anschließend alles mit dir und bereiten das Event entsprechend vor.</p>'
+					+ '<p class="rw-lead">Sag uns deine Vorstellungen, wir besprechen anschließend alles mit dir und bereiten das Event entsprechend vor.</p>'
 					+ '<div class="rw-form"><div class="ind-svc-pick">' + groups + '</div></div>';
 			}
 			if (step === 3) {
@@ -400,15 +402,15 @@
 				}).join('');
 				return '<div class="rw-eyebrow">Schritt 4 · ' + FULL_STEPS[3] + '</div>'
 					+ '<h2 class="rw-h">Was wäre euer Budget-Rahmen?</h2>'
-					+ '<p class="rw-lead">Ein Richtwert genügt — so kommen wir direkt mit passenden Angeboten auf euch zu.</p>'
+					+ '<p class="rw-lead">Ein Richtwert genügt, so kommen wir direkt mit passenden Angeboten auf euch zu.</p>'
 					+ '<div class="rw-form"><div class="ind-budget-grid">' + cards + '</div>'
 					+ '<div class="rw-field" style="margin-top:8px;">' + label('Verpflegung & Diät', false, 'Optional') + input('diet', '', 'z.B. 5× vegetarisch, 1× vegan, Nussallergie') + '</div>'
 					+ '<div class="rw-field" style="margin-top:8px;">' + label('Was ist euch wichtig?')
-					+ '<textarea class="fg-input" data-field="notes" rows="4" placeholder="Stimmung, Hintergrund, besondere Wünsche — alles was hilft.">' + esc(S.form.notes) + '</textarea></div></div>';
+					+ '<textarea class="fg-input" data-field="notes" rows="4" placeholder="Stimmung, Hintergrund, besondere Wünsche, alles was hilft.">' + esc(S.form.notes) + '</textarea></div></div>';
 			}
 			// step 4
 			return '<div class="rw-eyebrow">Schritt 5 · ' + FULL_STEPS[4] + '</div>'
-				+ '<h2 class="rw-h">Wer seid ihr — und wie erreichen wir dich?</h2>'
+				+ '<h2 class="rw-h">Wer seid ihr, und wie erreichen wir dich?</h2>'
 				+ '<p class="rw-lead">Letzter Schritt. Danach melden wir uns innerhalb eines Werktags.</p>'
 				+ '<div class="rw-form"><div class="rw-row"><div class="rw-field">' + label('Unternehmen', true) + input('company', 'required', 'Musterfirma GmbH') + '</div>'
 				+ '<div class="rw-field">' + label('Ort') + input('city', '', 'München') + '</div></div>'
@@ -439,12 +441,12 @@
 			return '<div class="rw-stage"><div class="rw-success">'
 				+ '<div class="fg-success-mark"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'
 				+ '<div class="mk-eyebrow">Anfrage eingegangen</div>'
-				+ '<h2 class="rw-success-h">Danke — deine Anfrage ist angekommen.</h2>'
-				+ '<p class="rw-success-p">Deine Anfrage liegt jetzt bei uns. Bei einem individuellen Event übernehmen wir die Planung persönlich und stimmen den passenden Golfplatz für dich ab. Eine Bestätigung ist gerade per Mail an <strong>' + esc(resp.email || S.form.email || '—') + '</strong> unterwegs.</p>'
+				+ '<h2 class="rw-success-h">Danke, deine Anfrage ist angekommen.</h2>'
+				+ '<p class="rw-success-p">Deine Anfrage liegt jetzt bei uns. Bei einem individuellen Event übernehmen wir die Planung persönlich und stimmen den passenden Golfplatz für dich ab. Eine Bestätigung ist gerade per Mail an <strong>' + esc(resp.email || S.form.email || 'k. A.') + '</strong> unterwegs.</p>'
 				+ '<div class="rw-receipt">'
 				+ '<div><span>Anlass</span><span>' + esc(resp.occasion || S.form.occasion) + '</span></div>'
 				+ '<div><span>Gruppe</span><span>' + esc((resp.size || S.form.size) + ' Personen') + '</span></div>'
-				+ '<div><span>Unternehmen</span><span>' + esc(resp.company || S.form.company || '—') + '</span></div>'
+				+ '<div><span>Unternehmen</span><span>' + esc(resp.company || S.form.company || 'k. A.') + '</span></div>'
 				+ '<div><span>Status</span><span><span class="ob-pill-status">In Bearbeitung</span></span></div>'
 				+ '<div><span>Vorgangs-Nr.</span><span class="mono">' + esc(resp.ref || '') + '</span></div></div>'
 				+ '<div class="rw-success-ctas"><button class="fg-btn-brand" data-act="close">Schließen</button></div>'
@@ -496,6 +498,7 @@
 		function valid() {
 			if (S.mode === 'quick') return S.form.firstName && S.form.email && S.form.occasion && S.form.consent;
 			if (S.step === 0) return !!S.form.occasion;
+			if (S.step === 1) return parseInt(S.form.size, 10) > 0; // Pflichtfeld jetzt auch geprüft (Kern-Audit N1)
 			if (S.step === 4) return S.form.company && S.form.firstName && S.form.lastName && S.form.email && S.form.consent;
 			return true;
 		}

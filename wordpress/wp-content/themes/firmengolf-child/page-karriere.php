@@ -19,7 +19,7 @@ $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12"
 		<div class="mk-eyebrow">Karriere bei Firmengolf</div>
 		<h1 class="mk-h2" style="font-size:var(--fs-display-md);max-width:780px;">Komm ins Team, das andere <em class="mk-italic">rausbringt</em>.</h1>
 		<p class="mk-sub" style="max-width:680px;">
-			Wir machen Golf für Unternehmen zugänglich — und suchen Leute, die Lust haben, daraus das beste Stück
+			Wir machen Golf für Unternehmen zugänglich, und suchen Leute, die Lust haben, daraus das beste Stück
 			Arbeitswoche zu machen. Für sich und für tausende Teams da draußen.
 		</p>
 	</div>
@@ -32,8 +32,8 @@ $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12"
 		<?php
 		$values = [
 			[ 'Unbeschwert',        'Wir nehmen die Arbeit ernst, uns selbst nicht zu sehr. Gute Laune ist hier kein Nice-to-have.' ],
-			[ 'Eigenverantwortung', 'Kurze Wege, echtes Vertrauen. Du gestaltest deinen Bereich — niemand schaut dir über die Schulter.' ],
-			[ 'Nahbar & echt',      'Kein Konzern-Sprech, keine Politik. Wir sagen, was wir denken — freundlich und direkt.' ],
+			[ 'Eigenverantwortung', 'Kurze Wege, echtes Vertrauen. Du gestaltest deinen Bereich, niemand schaut dir über die Schulter.' ],
+			[ 'Nahbar & echt',      'Kein Konzern-Sprech, keine Politik. Wir sagen, was wir denken, freundlich und direkt.' ],
 			[ 'Wirkung',            'Wir bringen tausende Menschen raus in Bewegung. Was du baust, spürt man am nächsten Wochenende.' ],
 		];
 		foreach ( $values as $v ) : ?>
@@ -49,11 +49,11 @@ $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12"
 		<?php
 		$perks = [
 			[ 'Golf als Benefit',  'Schläger, Coaching und freie Runden auf unseren Partnerplätzen.' ],
-			[ '30 Tage Urlaub',    'Plus den Tag nach dem Sommerfest frei — versprochen.' ],
+			[ '30 Tage Urlaub',    'Plus den Tag nach dem Sommerfest frei, versprochen.' ],
 			[ 'Hybrid & flexibel', 'München-Office mit Terrasse, oder von zuhause. Du entscheidest.' ],
-			[ 'Lernbudget',        '1.500 € im Jahr für Kurse, Konferenzen, Bücher — oder die Platzreife.' ],
+			[ 'Lernbudget',        '1.500 € im Jahr für Kurse, Konferenzen, Bücher, oder die Platzreife.' ],
 			[ 'Mental Health',     'Zugang zu Coaching & Beratung, weil draußen sein nicht alles heilt.' ],
-			[ 'Team-Tage draußen', 'Wir testen, was wir verkaufen — regelmäßig gemeinsam auf dem Platz.' ],
+			[ 'Team-Tage draußen', 'Wir testen, was wir verkaufen, regelmäßig gemeinsam auf dem Platz.' ],
 		];
 		foreach ( $perks as $p ) : ?>
 			<div class="home-occ" style="cursor:default;">
@@ -67,7 +67,7 @@ $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12"
 <section class="mk-section" aria-label="Offene Stellen">
 	<div class="mk-section-head"><div class="mk-eyebrow">Offene Stellen</div><h2 class="mk-h2">Aktuell keine offenen Stellen.</h2></div>
 	<p class="mk-sub" style="text-align:center;max-width:640px;margin:0 auto;">
-		Gerade schreiben wir keine konkrete Position aus. Wir wachsen aber stetig — wenn du Lust hast,
+		Gerade schreiben wir keine konkrete Position aus. Wir wachsen aber stetig, wenn du Lust hast,
 		Firmengolf mitzugestalten, freuen wir uns über deine Initiativbewerbung.
 	</p>
 </section>
@@ -76,7 +76,7 @@ $arrow = '<span class="fg-arrow"><svg viewBox="0 0 24 24" width="12" height="12"
 	<div class="mk-cta-inner">
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Nichts Passendes dabei?</div>
 		<h2 class="mk-cta-h">Erzähl uns trotzdem <em class="mk-italic">von dir</em>.</h2>
-		<p class="mk-cta-sub">Wir wachsen schnell — und gute Leute finden bei uns fast immer einen Platz.</p>
+		<p class="mk-cta-sub">Wir wachsen schnell, und gute Leute finden bei uns fast immer einen Platz.</p>
 		<div class="mk-cta-ctas">
 			<a class="fg-btn-ink fg-btn-lg" href="mailto:<?php echo esc_attr( fge_company()['email_jobs'] ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">
 				Initiativ bewerben <?php echo $arrow; // phpcs:ignore WordPress.Security.EscapeOutput ?>

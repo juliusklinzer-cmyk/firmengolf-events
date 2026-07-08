@@ -19,7 +19,7 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 		<div class="mk-eyebrow">Newsroom · Presse</div>
 		<h1 class="mk-h2" style="font-size:var(--fs-display-md);">Golf, neu <em class="mk-italic">erzählt</em>.</h1>
 		<p class="mk-sub" style="max-width:680px;">
-			Material, Zahlen und O-Töne für eure Berichterstattung über Firmengolf — Logos, Fakten,
+			Material, Zahlen und O-Töne für eure Berichterstattung über Firmengolf, Logos, Fakten,
 			Pressemitteilungen und ein direkter Draht zu uns.
 		</p>
 	</div>
@@ -46,11 +46,11 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 		<h2 class="mk-h2">Boilerplate</h2>
 	</div>
 	<p class="mk-sub" style="max-width:var(--width-prose);">
-		Firmengolf macht Golf für Unternehmen zugänglich — als Firmenevent, als Offsite-Location und als
+		Firmengolf macht Golf für Unternehmen zugänglich, als Firmenevent, als Offsite-Location und als
 		wiederkehrenden Mitarbeiter-Benefit. Über eine kuratierte Plattform buchen Firmen Teamevents, Turniere,
 		Platzreifekurse und individuelle Veranstaltungen deutschlandweit auf Golfplätzen in ganz Deutschland:
 		eine Anfrage, ein Ansprechpartner, eine Rechnung. Gegründet 2024 in München, verfolgt Firmengolf ein klares
-		Ziel — Golf nicht als exklusives Statussymbol, sondern als offenen, gesunden Ausgleich, der Teams aus dem
+		Ziel, Golf nicht als exklusives Statussymbol, sondern als offenen, gesunden Ausgleich, der Teams aus dem
 		Büro und in Bewegung bringt.
 	</p>
 </section>
@@ -62,7 +62,7 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 		<?php
 		$releases = [];
 		if ( empty( $releases ) ) : ?>
-			<li class="faq-item"><div class="faq-q" style="cursor:default;"><span>Aktuell sind keine Pressemitteilungen veröffentlicht. Für Presseanfragen, O-Töne und Bildmaterial meldet euch jederzeit über den Pressekontakt — wir antworten kurzfristig.</span></div></li>
+			<li class="faq-item"><div class="faq-q" style="cursor:default;"><span>Aktuell sind keine Pressemitteilungen veröffentlicht. Für Presseanfragen, O-Töne und Bildmaterial meldet euch jederzeit über den Pressekontakt, wir antworten kurzfristig.</span></div></li>
 		<?php else : foreach ( $releases as $r ) : ?>
 			<li class="faq-item">
 				<div class="faq-q" style="cursor:default;">

@@ -184,7 +184,7 @@ get_header();
 <section class="mk-section city-reasons-section" aria-label="Gründe für <?php echo esc_attr( $h1 ); ?>">
 	<div class="mk-section-head">
 		<div class="mk-eyebrow">Warum <?php echo esc_html( $city_name ); ?></div>
-		<h2 class="mk-h2"><?php echo esc_html( sprintf( '%s in %s — gut aufgehoben.', $format['name'] ?? 'Golf', $city_name ) ); ?></h2>
+		<h2 class="mk-h2"><?php echo esc_html( sprintf( '%s in %s, gut aufgehoben.', $format['name'] ?? 'Golf', $city_name ) ); ?></h2>
 	</div>
 	<div class="city-reasons">
 		<?php foreach ( $reasons as $r ) : ?>
@@ -202,7 +202,7 @@ get_header();
 <?php if ( ! empty( $cf_events ) ) : ?>
 <section class="fg-grid-section" aria-label="Events in <?php echo esc_attr( $city_name ); ?>">
 	<div class="fg-grid-head">
-		<h2 class="fg-grid-title"><?php echo esc_html( $eyebrow ); ?> — passende Events</h2>
+		<h2 class="fg-grid-title"><?php echo esc_html( $eyebrow ); ?>, passende Events</h2>
 		<a class="fg-chip" href="<?php echo esc_url( $events_url ); ?>">Alle ansehen</a>
 	</div>
 	<div class="fg-grid">
@@ -218,7 +218,7 @@ get_header();
 	<div class="faq-shell">
 		<div class="faq-aside">
 			<div class="mk-eyebrow">Häufige Fragen</div>
-			<h2 class="mk-h2" style="margin-top:8px;"><?php echo esc_html( $eyebrow ); ?> — kurz erklärt.</h2>
+			<h2 class="mk-h2" style="margin-top:8px;"><?php echo esc_html( $eyebrow ); ?>, kurz erklärt.</h2>
 		</div>
 		<ul class="faq-list">
 			<?php foreach ( $faqs as $faq ) : ?>
@@ -278,7 +278,7 @@ document.querySelectorAll('.fge-page .faq-q[aria-expanded]').forEach(function (b
 		var item = btn.closest('.faq-item');
 		var open = item.classList.toggle('open');
 		btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-		var t = btn.querySelector('.faq-toggle'); if (t) t.textContent = open ? '–' : '+';
+		var t = btn.querySelector('.faq-toggle'); if (t) t.textContent = open ? 'k. A.' : '+';
 	});
 });
 </script>

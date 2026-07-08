@@ -79,7 +79,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 					<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
 				</div>
 				<h2>Danke, <?php echo esc_html( $first ?: '' ); ?>!</h2>
-				<p>Eure Zusage ist bei uns — die Reservierungsfrist war allerdings schon abgelaufen. Wir prüfen sofort, ob der Termin noch frei ist, und melden uns umgehend bei euch.</p>
+				<p>Eure Zusage ist bei uns, die Reservierungsfrist war allerdings schon abgelaufen. Wir prüfen sofort, ob der Termin noch frei ist, und melden uns umgehend bei euch.</p>
 			</div>
 
 		<?php elseif ( 'query' === $done_val ) : ?>
@@ -101,7 +101,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 					<p>Euer Event <strong><?php echo esc_html( (string) ( $snap['event_title'] ?? '' ) ); ?></strong> am <strong><?php echo esc_html( (string) ( $snap['date'] ?? '' ) ); ?></strong> ist verbindlich gebucht. Wir kümmern uns um die letzten Details und melden uns.</p>
 				<?php else : ?>
 					<h2>Schade, <?php echo esc_html( $first ?: '' ); ?>.</h2>
-					<p>Ihr habt das Angebot abgelehnt. Wenn ihr mögt, finden wir gern eine Alternative — antwortet einfach auf die Angebots-Mail oder schreibt uns, wir passen es gern an.</p>
+					<p>Ihr habt das Angebot abgelehnt. Wenn ihr mögt, finden wir gern eine Alternative, antwortet einfach auf die Angebots-Mail oder schreibt uns, wir passen es gern an.</p>
 				<?php endif; ?>
 			</div>
 
@@ -113,7 +113,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 			<?php if ( $deadline > time() ) : ?>
 			<div class="tl-deadline">Wir halten den Termin bis <strong><?php echo esc_html( wp_date( 'D, d.m.Y', $deadline ) ); ?></strong> für euch. Sagt ihr bis dahin zu, ist er verbindlich gebucht.</div>
 			<?php elseif ( $deadline > 0 ) : ?>
-			<div class="tl-deadline">Die Reservierungsfrist ist abgelaufen — der Termin ist nicht mehr garantiert. Ihr könnt trotzdem zusagen: wir prüfen dann sofort, ob er noch frei ist, und melden uns umgehend.</div>
+			<div class="tl-deadline">Die Reservierungsfrist ist abgelaufen, der Termin ist nicht mehr garantiert. Ihr könnt trotzdem zusagen: wir prüfen dann sofort, ob er noch frei ist, und melden uns umgehend.</div>
 			<?php endif; ?>
 
 			<div class="tl-summary">
@@ -128,12 +128,15 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 					<?php
 					// MwSt. + Endpreis explizit ausweisen (Julius, 2026-07-06).
 					$tl_vatp     = (int) ( $snap['vat_percent'] ?? 19 );
-					$tl_net_base = ( 'pro Person' === (string) ( $snap['price_unit'] ?? '' ) )
+					$tl_is_pp    = 'pro Person' === (string) ( $snap['price_unit'] ?? '' );
+					// Bei p.P.-Preisen hängt die Summe an der Teilnehmerzahl → als „ca." kennzeichnen (Kern-Audit M6).
+					$tl_ca       = $tl_is_pp ? 'ca. ' : '';
+					$tl_net_base = $tl_is_pp
 						? ( (int) ( $snap['participants'] ?? 0 ) > 0 ? (float) ( $snap['price_total'] ?? 0 ) : 0.0 )
 						: (float) ( $snap['price_gross'] ?? 0 );
 					if ( $tl_net_base > 0 ) : ?>
-					<div class="tl-sum-item"><div class="k">zzgl. <?php echo (int) $tl_vatp; ?> % MwSt.</div><div class="v">€<?php echo esc_html( number_format_i18n( round( $tl_net_base * $tl_vatp / 100 ), 0 ) ); ?></div></div>
-					<div class="tl-sum-item"><div class="k">Endpreis inkl. MwSt.</div><div class="v"><strong>€<?php echo esc_html( number_format_i18n( round( $tl_net_base * ( 1 + $tl_vatp / 100 ) ), 0 ) ); ?></strong></div></div>
+					<div class="tl-sum-item"><div class="k">zzgl. <?php echo (int) $tl_vatp; ?> % MwSt.</div><div class="v"><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net_base * $tl_vatp / 100 ), 0 ) ); ?> €</div></div>
+					<div class="tl-sum-item"><div class="k">Endpreis inkl. MwSt.</div><div class="v"><strong><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net_base * ( 1 + $tl_vatp / 100 ) ), 0 ) ); ?> €</strong></div></div>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -145,7 +148,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 
 			<?php if ( ! empty( $snap['wishes_platz'] ) || ! empty( $snap['wishes_firmengolf'] ) ) : ?>
 			<div class="tl-section-label">Eure Zusatzwünsche</div>
-			<p class="tl-note" style="margin:0 0 8px;">Auf Wunsch organisiert — wird separat ausgewiesen und ist noch nicht im oben genannten Preis enthalten.</p>
+			<p class="tl-note" style="margin:0 0 8px;">Auf Wunsch organisiert, wird separat ausgewiesen und ist noch nicht im oben genannten Preis enthalten.</p>
 			<ul class="tl-list">
 				<?php foreach ( (array) ( $snap['wishes_platz'] ?? [] ) as $i ) : ?><li><?php echo esc_html( $i ); ?> <span class="tl-src">am Platz</span></li><?php endforeach; ?>
 				<?php foreach ( (array) ( $snap['wishes_firmengolf'] ?? [] ) as $i ) : ?><li><?php echo esc_html( $i ); ?> <span class="tl-src">durch Firmengolf</span></li><?php endforeach; ?>
@@ -154,6 +157,9 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 
 			<?php if ( isset( $_GET['agb'] ) ) : ?>
 			<p class="tl-note" style="color:#B4332B;margin:0 0 10px;">Bitte bestätige die AGB, um verbindlich zu buchen.</p>
+			<?php endif; ?>
+			<?php if ( isset( $_GET['session'] ) ) : ?>
+			<p class="tl-note" style="color:#B4332B;margin:0 0 10px;">Die Sitzung war abgelaufen. Bitte bestätige deine Auswahl noch einmal.</p>
 			<?php endif; ?>
 			<p class="tl-note" style="margin:0 0 14px;">Alle Preise verstehen sich zzgl. der gesetzlichen Umsatzsteuer. Es gelten unsere <a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>
 
@@ -166,7 +172,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 				</label>
 				<div style="display:flex;gap:10px;flex-wrap:wrap;">
 					<button type="submit" name="fge_offer_action" value="accept" id="tl-accept" class="tl-btn yes" style="padding:13px 26px;opacity:.5;" disabled>Angebot annehmen</button>
-					<button type="submit" name="fge_offer_action" value="decline" class="tl-btn no" style="padding:13px 26px;">Leider absagen</button>
+					<button type="submit" name="fge_offer_action" value="decline" class="tl-btn no" style="padding:13px 26px;" onclick="return confirm('Angebot wirklich absagen? Der reservierte Termin wird dann freigegeben.');">Leider absagen</button>
 					<button type="button" id="tl-toggle-q" class="tl-btn" style="padding:13px 26px;background:#ECECE6;color:#333;border:none;border-radius:999px;cursor:pointer;">Rückfrage / Änderung</button>
 				</div>
 				<div id="tl-q-wrap" style="display:none;margin-top:12px;">
@@ -174,7 +180,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 					<button type="submit" name="fge_offer_action" value="request" class="tl-btn" style="margin-top:8px;padding:11px 22px;background:#4279D1;color:#fff;border:none;border-radius:999px;cursor:pointer;">Rückfrage senden</button>
 				</div>
 			</form>
-			<p class="tl-note">Mit „Angebot annehmen" bucht ihr verbindlich. Lieber erst etwas klären? Nutzt „Rückfrage / Änderung" — euer Termin bleibt reserviert.</p>
+			<p class="tl-note">Mit „Angebot annehmen" bucht ihr verbindlich. Lieber erst etwas klären? Nutzt „Rückfrage / Änderung", euer Termin bleibt reserviert.</p>
 
 			<?php if ( '' !== (string) ( $snap['contact_phone'] ?? '' ) || '' !== (string) ( $snap['contact_email'] ?? '' ) ) : ?>
 			<div class="tl-contact" style="margin-top:22px;padding-top:16px;border-top:1px solid #ece9e2;font-size:13px;color:#555;">

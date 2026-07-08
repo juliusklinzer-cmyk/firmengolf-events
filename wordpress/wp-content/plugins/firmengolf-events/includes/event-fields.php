@@ -43,7 +43,7 @@ function fge_render_mb_basisdaten( WP_Post $post ) {
 			<th scope="row"><label for="fge_event_type">Eventart</label></th>
 			<td>
 				<select id="fge_event_type" name="fge_event_type">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $event_types as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $event_type, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -54,7 +54,7 @@ function fge_render_mb_basisdaten( WP_Post $post ) {
 			<th scope="row"><label for="fge_provider_type">Anbieter Typ</label></th>
 			<td>
 				<select id="fge_provider_type" name="fge_provider_type">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $provider_types as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $provider_type, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -65,7 +65,7 @@ function fge_render_mb_basisdaten( WP_Post $post ) {
 			<th scope="row"><label for="fge_assigned_partner_id">Zugeordneter Golfplatz</label></th>
 			<td>
 				<select id="fge_assigned_partner_id" name="fge_assigned_partner_id">
-					<option value="0">— kein Golfplatz zugeordnet —</option>
+					<option value="0">kein Golfplatz zugeordnet</option>
 					<?php foreach ( fge_get_posts_select_options( 'firmengolf_partner' ) as $pid => $label ) : ?>
 						<option value="<?php echo esc_attr( $pid ); ?>" <?php selected( (int) $assigned_partner_id, $pid ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -76,7 +76,7 @@ function fge_render_mb_basisdaten( WP_Post $post ) {
 			<th scope="row"><label for="fge_event_status">Status</label></th>
 			<td>
 				<select id="fge_event_status" name="fge_event_status">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $statuses as $val ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $event_status, $val ); ?>><?php echo esc_html( $val ); ?></option>
 					<?php endforeach; ?>
@@ -233,8 +233,8 @@ function fge_render_mb_tracking( WP_Post $post ) {
 	$bookings = (int) get_post_meta( $post->ID, '_fge_bookings_count', true );
 	$last_req = get_post_meta( $post->ID, '_fge_last_request_at', true );
 
-	$conv_vr = ( $views > 0 )    ? round( $requests / $views * 100, 1 ) . ' %' : '–';
-	$conv_rb = ( $requests > 0 ) ? round( $bookings / $requests * 100, 1 ) . ' %' : '–';
+	$conv_vr = ( $views > 0 )    ? round( $requests / $views * 100, 1 ) . ' %' : 'k. A.';
+	$conv_rb = ( $requests > 0 ) ? round( $bookings / $requests * 100, 1 ) . ' %' : 'k. A.';
 	?>
 	<table class="form-table">
 		<tr>
@@ -277,10 +277,10 @@ function fge_render_mb_marktplatz( WP_Post $post ) {
 			<td><label><input type="checkbox" name="fge_featured" value="1" <?php checked( $featured, '1' ); ?>> Auf Startseite / Marktplatz hervorheben</label></td>
 		</tr>
 		<tr>
-			<th scope="row">Bewertung (0–5)</th>
+			<th scope="row">Bewertung (0 bis 5)</th>
 			<td>
 				<input type="number" name="fge_rating" min="0" max="5" step="0.1" value="<?php echo esc_attr( $rating ); ?>" style="width:90px;">
-				<p class="description">z. B. 4.9 — leer lassen bzw. 0, wenn keine Bewertung angezeigt werden soll.</p>
+				<p class="description">z. B. 4.9, leer lassen bzw. 0, wenn keine Bewertung angezeigt werden soll.</p>
 			</td>
 		</tr>
 		<tr>
@@ -316,7 +316,7 @@ function fge_render_mb_angebot_neu( WP_Post $post ) {
 	$includes   = (array) get_post_meta( $post->ID, '_fge_event_includes', true );
 	$dayflow    = (string) get_post_meta( $post->ID, '_fge_event_dayflow', true );
 	$release    = get_post_meta( $post->ID, '_fge_release_mode', true ) ?: 'us';
-	$items_text = implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ), $items ) );
+	$items_text = implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ) . ' | ' . ( ( $i['basis'] ?? 'pauschal' ) === 'person' ? 'person' : 'pauschal' ), $items ) );
 	$p          = fge_event_pricing( $post->ID );
 	?>
 	<p class="description">Partner hinterlegt <strong>netto</strong>; Firmengolf-Aufschlag fix <?php echo (int) FGE_MARKUP_PERCENT; ?> % oben drauf.</p>
@@ -343,16 +343,16 @@ function fge_render_mb_angebot_neu( WP_Post $post ) {
 		<tr>
 			<th scope="row"><label for="fge_line_items">Einzelposten</label></th>
 			<td>
-				<textarea id="fge_line_items" name="fge_line_items" rows="4" class="large-text" placeholder="Golflehrer | 80&#10;Meetingraum | 50"><?php echo esc_textarea( $items_text ); ?></textarea>
-				<p class="description">Pro Zeile: <code>Bezeichnung | Kosten netto</code>. Nur bei „Einzelauflistung" relevant.</p>
+				<textarea id="fge_line_items" name="fge_line_items" rows="4" class="large-text" placeholder="Golflehrer | 80 | person&#10;Meetingraum | 50 | pauschal"><?php echo esc_textarea( $items_text ); ?></textarea>
+				<p class="description">Pro Zeile: <code>Bezeichnung | Kosten netto | person oder pauschal</code>. Nur bei „Einzelauflistung" relevant.</p>
 			</td>
 		</tr>
 		<tr>
 			<th scope="row">Preis-Vorschau</th>
 			<td>
-				Netto <strong>€<?php echo esc_html( number_format_i18n( $p['net'], 2 ) ); ?></strong>
-				&nbsp;·&nbsp; Aufschlag <?php echo (int) FGE_MARKUP_PERCENT; ?> % <strong>€<?php echo esc_html( number_format_i18n( $p['markup'], 2 ) ); ?></strong>
-				&nbsp;·&nbsp; Brutto fürs Unternehmen <strong>€<?php echo esc_html( number_format_i18n( $p['gross'], 2 ) ); ?> <?php echo esc_html( $p['unit'] ); ?></strong>
+				Netto <strong><?php echo esc_html( number_format_i18n( $p['net'], 2 ) ); ?> €</strong>
+				&nbsp;·&nbsp; Aufschlag <?php echo (int) FGE_MARKUP_PERCENT; ?> % <strong><?php echo esc_html( number_format_i18n( $p['markup'], 2 ) ); ?> €</strong>
+				&nbsp;·&nbsp; Brutto fürs Unternehmen <strong><?php echo esc_html( number_format_i18n( $p['gross'], 2 ) ); ?> € <?php echo esc_html( $p['unit'] ); ?></strong>
 				<p class="description">Aktualisiert sich nach dem Speichern.</p>
 			</td>
 		</tr>
@@ -493,11 +493,13 @@ function fge_save_event_fields( int $post_id ) {
 		if ( $line === '' ) {
 			continue;
 		}
-		$parts = explode( '|', $line, 2 );
+		// 3 Spalten: label | cost | basis (Kern-Audit K1, 2026-07-08).
+		$parts = explode( '|', $line, 3 );
 		$label = sanitize_text_field( trim( $parts[0] ?? '' ) );
 		$cost  = (float) str_replace( ',', '.', preg_replace( '/[^\d.,]/', '', $parts[1] ?? '' ) );
+		$basis = 'person' === trim( $parts[2] ?? '' ) ? 'person' : 'pauschal';
 		if ( $label !== '' ) {
-			$line_items[] = [ 'label' => $label, 'cost' => $cost ];
+			$line_items[] = [ 'label' => $label, 'cost' => $cost, 'basis' => $basis ];
 		}
 	}
 	update_post_meta( $post_id, '_fge_line_items', $line_items );

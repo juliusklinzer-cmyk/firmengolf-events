@@ -41,7 +41,7 @@ function fge_ev_send_code( string $email, string $context ) {
 	// 60-Sekunden-Cooldown pro Kontext+Adresse.
 	$cool_key = 'fge_evcd_' . md5( $context . '|' . strtolower( $email ) );
 	if ( get_transient( $cool_key ) ) {
-		return new WP_Error( 'cooldown', 'Bitte warte kurz — wir haben dir gerade erst einen Code geschickt.' );
+		return new WP_Error( 'cooldown', 'Bitte warte kurz, wir haben dir gerade erst einen Code geschickt.' );
 	}
 
 	// Max. 8 Sends pro Stunde pro Adresse (kontextübergreifend), Missbrauchsschutz.
@@ -57,8 +57,6 @@ function fge_ev_send_code( string $email, string $context ) {
 		[ 'hash' => wp_hash( $code . '|' . strtolower( $email ) ), 'tries' => 0 ],
 		15 * MINUTE_IN_SECONDS
 	);
-	set_transient( $cool_key, 1, MINUTE_IN_SECONDS );
-	set_transient( $rate_key, $sent + 1, HOUR_IN_SECONDS );
 
 	$subject = 'Dein Firmengolf-Bestätigungscode';
 	$content = '
@@ -74,8 +72,14 @@ function fge_ev_send_code( string $email, string $context ) {
 		[ 'Content-Type: text/html; charset=UTF-8' ]
 	);
 	if ( ! $ok ) {
+		// Fehlversand kostet keinen Cooldown/Rate-Slot (Kern-Audit N7) — sofortiger
+		// zweiter Versuch bleibt möglich, der ungenutzte Code wird entwertet.
+		delete_transient( fge_ev_code_key( $email, $context ) );
 		return new WP_Error( 'nomail', 'Der Code konnte nicht verschickt werden. Bitte prüfe die Adresse oder versuch es gleich erneut.' );
 	}
+	// Cooldown + Stunden-Zähler erst NACH erfolgreichem Versand setzen (Kern-Audit N7).
+	set_transient( $cool_key, 1, MINUTE_IN_SECONDS );
+	set_transient( $rate_key, $sent + 1, HOUR_IN_SECONDS );
 	return true;
 }
 
@@ -91,7 +95,7 @@ function fge_ev_check_code( string $email, string $context, string $code ) {
 	$key   = fge_ev_code_key( $email, $context );
 	$rec   = get_transient( $key );
 	if ( ! is_array( $rec ) || empty( $rec['hash'] ) ) {
-		return new WP_Error( 'expired', 'Der Code ist abgelaufen — fordere einfach einen neuen an.' );
+		return new WP_Error( 'expired', 'Der Code ist abgelaufen, fordere einfach einen neuen an.' );
 	}
 	$tries = (int) ( $rec['tries'] ?? 0 ) + 1;
 	if ( $tries > 5 ) {
@@ -101,7 +105,7 @@ function fge_ev_check_code( string $email, string $context, string $code ) {
 	if ( ! hash_equals( (string) $rec['hash'], wp_hash( $code . '|' . strtolower( $email ) ) ) ) {
 		$rec['tries'] = $tries;
 		set_transient( $key, $rec, 15 * MINUTE_IN_SECONDS );
-		return new WP_Error( 'wrong', 'Der Code stimmt nicht — schau nochmal in die Mail.' );
+		return new WP_Error( 'wrong', 'Der Code stimmt nicht, schau nochmal in die Mail.' );
 	}
 	delete_transient( $key );
 	set_transient( fge_ev_verified_key( $email, $context ), 1, 2 * HOUR_IN_SECONDS );

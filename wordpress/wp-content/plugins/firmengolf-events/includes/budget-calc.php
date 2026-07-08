@@ -288,10 +288,10 @@ function fge_bc_render_settings_page(): void {
 	settings_errors( 'fge_bc' );
 	?>
 	<div class="wrap">
-		<h1>Budget-Rechner — Preise</h1>
+		<h1>Budget-Rechner, Preise</h1>
 		<p class="description" style="max-width:680px;">
 			Diese Preise speisen den Budget-Rechner auf der Seite <em>Individuelle Events</em>.
-			Ein Event-Typ hat <strong>keinen Grundpreis</strong> mehr — er bündelt nur die passenden
+			Ein Event-Typ hat <strong>keinen Grundpreis</strong> mehr, er bündelt nur die passenden
 			Dienstleistungen. Jede Dienstleistung kostet entweder <strong>pro Person</strong>
 			<em>oder</em> eine <strong>Pauschale</strong> (Pauschale &gt; 0 hat Vorrang). Die
 			Platzkosten/Greenfee stecken in der jeweiligen Golf-Leistung (z.&nbsp;B. „18-Loch-Turnier
@@ -301,7 +301,7 @@ function fge_bc_render_settings_page(): void {
 		<form method="post">
 			<?php wp_nonce_field( 'fge_bc_save', 'fge_bc_nonce' ); ?>
 
-			<h2>Event-Typen — Anzeigename</h2>
+			<h2>Event-Typen, Anzeigename</h2>
 			<table class="widefat striped" style="max-width:680px;">
 				<thead><tr><th>Typ (Anzeige)</th></tr></thead>
 				<tbody>
@@ -313,7 +313,7 @@ function fge_bc_render_settings_page(): void {
 				</tbody>
 			</table>
 
-			<h2 style="margin-top:28px;">Services — Preise</h2>
+			<h2 style="margin-top:28px;">Services, Preise</h2>
 			<p class="description">Trage entweder einen Preis <strong>pro Person</strong> <em>oder</em> eine <strong>Pauschale</strong> ein. Ist eine Pauschale &gt; 0 gesetzt, gilt diese (pro Person wird ignoriert).</p>
 			<table class="widefat striped" style="max-width:760px;">
 				<thead><tr><th>Service (Anzeige)</th><th style="width:150px;">€ / Person</th><th style="width:150px;">Pauschale €</th></tr></thead>
@@ -345,7 +345,7 @@ function fge_bc_render_settings_page(): void {
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="round_to">Rundung auf</label></th>
-					<td><input type="number" step="1" min="1" id="round_to" name="round_to" value="<?php echo esc_attr( (string) $cfg['round_to'] ); ?>"> <span class="description">€ — Anzeigewerte werden hierauf gerundet</span></td>
+					<td><input type="number" step="1" min="1" id="round_to" name="round_to" value="<?php echo esc_attr( (string) $cfg['round_to'] ); ?>"> <span class="description">€, Anzeigewerte werden hierauf gerundet</span></td>
 				</tr>
 			</table>
 

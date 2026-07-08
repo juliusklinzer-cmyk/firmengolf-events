@@ -613,6 +613,15 @@ function fge_onboarding_handle_step(): void {
 		$phone = sanitize_text_field( wp_unslash( $_POST['fge_contact_phone'] ?? '' ) );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
+			// Bereits registrierte E-Mail? Dann gar keinen Code versenden (Kern-Audit M8),
+			// sondern direkt zum Login leiten — gleiche Regel wie in create_or_assign (-1).
+			$existing_user = get_user_by( 'email', $email );
+			if ( $existing_user && get_current_user_id() !== (int) $existing_user->ID ) {
+				set_transient( 'fge_ob_err_' . $partner_id . '_' . $step, [ '_errors' => [ 'fge_contact_email' => 'Diese E-Mail ist bereits registriert. Bitte logge dich zuerst in dein Partnerkonto ein, dann kannst du das Onboarding fortsetzen.' ], '_data' => wp_unslash( $_POST ) ], 300 );
+				wp_redirect( add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) ) );
+				exit;
+			}
+
 			// E-Mail-Verifizierung (Julius, 2026-07-06): die selbst getippte Login-Adresse
 			// muss per 6-stelligem Code bestätigt sein, BEVOR der Account entsteht — sonst
 			// schneidet ein Tippfehler den Partner dauerhaft von allen Mails ab.
@@ -620,6 +629,13 @@ function fge_onboarding_handle_step(): void {
 			if ( ! fge_ev_is_verified( $email, $ev_ctx ) ) {
 				$code         = sanitize_text_field( wp_unslash( $_POST['fge_contact_code'] ?? '' ) );
 				$code_sent_to = (string) get_transient( 'fge_ob_verify_' . $partner_id );
+				// Leeres Code-Feld nach bereits verschicktem Code = Eingabe vergessen,
+				// kein Resend-Wunsch (Kern-Audit N8) → klarer Hinweis statt neuem Code.
+				if ( '' === $code && empty( $_POST['fge_ob_resend'] ) && $code_sent_to === $email ) {
+					set_transient( 'fge_ob_err_' . $partner_id . '_' . $step, [ '_errors' => [ 'fge_contact_code' => 'Bitte gib den 6-stelligen Code aus der E-Mail ein.' ], '_data' => wp_unslash( $_POST ) ], 300 );
+					wp_redirect( add_query_arg( 'ob_err', '1', fge_onboarding_step_url( $step, $token ) ) );
+					exit;
+				}
 				// Neuer Code, wenn: „erneut senden", noch kein Code eingegeben,
 				// oder die Adresse seit dem letzten Versand geändert wurde.
 				if ( ! empty( $_POST['fge_ob_resend'] ) || '' === $code || $code_sent_to !== $email ) {
@@ -986,7 +1002,7 @@ function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void 
 	<div class="ob-top-actions">
 		<button type="button" class="ob-top-pill" data-ob-help>Noch Fragen?</button>
 		<?php if ( 'form' === $kind ) : ?>
-		<?php // Saves the current slide (via the content form) and exits — handler redirects. ?>
+		<?php // Saves the current slide (via the content form) and exits, handler redirects. ?>
 		<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-top-pill ob-top-save">Speichern &amp; beenden</button>
 		<?php elseif ( 'review' === $kind ) : ?>
 		<a class="ob-top-pill ob-top-save" href="<?php echo esc_url( $save_exit_url ); ?>">Speichern &amp; beenden</a>
@@ -998,7 +1014,7 @@ function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void 
 <div class="ob-exit-scrim" data-ob-exit-scrim hidden>
 	<div class="ob-exit-dialog" role="dialog" aria-modal="true" aria-label="Onboarding verlassen">
 		<h3 class="ob-exit-h">Onboarding verlassen?</h3>
-		<p class="ob-exit-p">Speichere deinen Fortschritt, um später weiterzumachen — oder verlasse die Seite ohne zu speichern.</p>
+		<p class="ob-exit-p">Speichere deinen Fortschritt, um später weiterzumachen, oder verlasse die Seite ohne zu speichern.</p>
 		<?php if ( 'form' === $kind ) : ?>
 			<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-exit-btn ob-exit-primary">Speichern &amp; beenden</button>
 		<?php elseif ( 'review' === $kind ) : ?>
@@ -1099,7 +1115,7 @@ function fge_onboarding_render_footer( int $step, string $token ): void {
 				<?php elseif ( 'review' === $kind && ! $review_ready ) : ?>
 				<button type="button" class="ob-btn-primary" disabled><?php echo esc_html( $primary_label ); ?></button>
 				<?php else : ?>
-				<?php // Steps 2–12 submit their content form (id="ob-step-form") via the form attribute. ?>
+				<?php // Steps 2 bis 12 submit their content form (id="ob-step-form") via the form attribute. ?>
 				<button type="submit" form="ob-step-form" class="ob-btn-primary"><?php echo esc_html( $primary_label ); ?></button>
 				<?php endif; ?>
 			</div>
@@ -1123,7 +1139,7 @@ function fge_onboarding_render_help(): void {
 		<button type="button" class="ob-help-close" data-ob-help-close aria-label="Schließen">×</button>
 		<div class="ob-help-eyebrow">Hilfe</div>
 		<h2 class="ob-help-h">Wir sind erreichbar.</h2>
-		<p class="ob-help-p">Wenn du an einer Stelle hängen bleibst — schreib uns kurz oder ruf an. Wir helfen dir durch den Prozess und beantworten alle Fragen zur Partnerschaft.</p>
+		<p class="ob-help-p">Wenn du an einer Stelle hängen bleibst, schreib uns kurz oder ruf an. Wir helfen dir durch den Prozess und beantworten alle Fragen zur Partnerschaft.</p>
 		<div class="ob-help-channels">
 			<a href="mailto:<?php echo esc_attr( $email ); ?>" class="ob-help-channel">
 				<span class="ob-help-l">Partner-Team</span>
@@ -1136,7 +1152,7 @@ function fge_onboarding_render_help(): void {
 		</div>
 		<div class="ob-help-foot">
 			<span class="ob-help-l">Antwortzeit</span>
-			<span class="ob-help-v-sm">Innerhalb eines Werktags · Mo–Fr 09–18 Uhr</span>
+			<span class="ob-help-v-sm">Innerhalb eines Werktags · Mo bis Fr 09 bis 18 Uhr</span>
 		</div>
 	</aside>
 </div>
@@ -1235,7 +1251,7 @@ function fge_onboarding_select( string $id, string $name, string $label, string 
 	<div class="ob-field<?php echo $err_class ? ' ob-field--error' : ''; ?>">
 		<label class="ob-label" for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?><?php if ( $required ) : ?> <span class="ob-required">*</span><?php endif; ?></label>
 		<select class="ob-input ob-select<?php echo $err_class; ?>" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" <?php echo $required ? 'required' : ''; ?>>
-			<option value="">— bitte wählen —</option>
+			<option value="">bitte wählen …</option>
 			<?php foreach ( $options as $val => $lbl ) : ?>
 				<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $selected, $val ); ?>><?php echo esc_html( $lbl ); ?></option>
 			<?php endforeach; ?>
@@ -1374,7 +1390,7 @@ function fge_onboarding_card( string $type, string $name, string $id, string $la
 	?>
 	<label class="ob-card">
 		<input type="<?php echo esc_attr( $type ); ?>" class="ob-card-input" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $id ); ?>" <?php checked( $checked ); ?>>
-		<span class="ob-card-ico" aria-hidden="true"><?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput — static, trusted SVG ?></span>
+		<span class="ob-card-ico" aria-hidden="true"><?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput, static, trusted SVG ?></span>
 		<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
 	</label>
 	<?php
@@ -1444,8 +1460,8 @@ function fge_onboarding_render_intro( string $id ): void {
 		],
 		'intro-3' => [
 			'eyebrow' => 'Schritt 3 · Verfügbarkeit, Preis &amp; Medien',
-			'title'   => 'Fast geschafft — jetzt die <span class="ob-italic">Rahmenbedingungen</span>.',
-			'lead'    => 'Verfügbarkeit, Aufschlag und Bilder — danach prüfst du alles und reichst dein Profil bei uns ein. Wir melden uns innerhalb eines Werktags zurück.',
+			'title'   => 'Fast geschafft, jetzt die <span class="ob-italic">Rahmenbedingungen</span>.',
+			'lead'    => 'Verfügbarkeit, Aufschlag und Bilder, danach prüfst du alles und reichst dein Profil bei uns ein. Wir melden uns innerhalb eines Werktags zurück.',
 			'list'    => [ 'Verfügbarkeit &amp; Vorlauf', 'Preis-Aufschlag &amp; Abrechnung', 'Logo, Titelbild &amp; Galerie', 'Zusammenfassung &amp; Einreichung' ],
 			'meta'    => '',
 			'photo'   => $img( 'onboarding-chapter-3.jpg' ),
@@ -1498,7 +1514,7 @@ function fge_onboarding_render_basics( int $step, int $partner_id, string $token
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', '', $v['public_golfclub_name'] ?? '', 'text', true, 'z. B. GC Augusta National', $errors );
-	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Öffentliche Kurzbeschreibung', $v['public_short_description'] ?? '', 'z. B. 18-Loch-Anlage am Stadtrand, gemütliche Clubhaus-Terrasse, Driving Range mit 30 Plätzen…', '2–3 Sätze. Du kannst das später noch ausbauen.' );
+	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Öffentliche Kurzbeschreibung', $v['public_short_description'] ?? '', 'z. B. 18-Loch-Anlage am Stadtrand, gemütliche Clubhaus-Terrasse, Driving Range mit 30 Plätzen…', '2 bis 3 Sätze. Du kannst das später noch ausbauen.' );
 	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website', $v['website_url'] ?? '', 'url', false, 'https://…' );
 	echo '</form>';
 }
@@ -1530,7 +1546,7 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 		?>
 		<div class="ob-field full">
 			<label class="ob-field-label" for="fge_map_search">Golfplatz suchen</label>
-			<span class="ob-field-hint">Such deinen Golfplatz bei Google — Adresse, Bundesland und Kartenpin füllen sich automatisch.</span>
+			<span class="ob-field-hint">Such deinen Golfplatz bei Google, Adresse, Bundesland und Kartenpin füllen sich automatisch.</span>
 			<input type="text" id="fge_map_search" class="ob-input" placeholder="z. B. Golfclub Hamburg-Wendlohe…" autocomplete="off">
 		</div>
 		<?php
@@ -1640,7 +1656,7 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 	</div>
 	<div class="ob-info-box">
 		<div class="ob-info-l">Login wird so erstellt</div>
-		<div class="ob-info-v">Du bekommst eine E-Mail an <strong id="fge_login_email_preview"><?php echo esc_html( ( $v['main_contact_email'] ?? '' ) !== '' ? $v['main_contact_email'] : '— deine Mail —' ); ?></strong> mit einem Link, um dein Passwort zu setzen. Mit diesem Login verwaltest du euer Partnerprofil und Anfragen. Falls die E-Mail bereits registriert ist, verbinden wir das bestehende Konto.</div>
+		<div class="ob-info-v">Du bekommst eine E-Mail an <strong id="fge_login_email_preview"><?php echo esc_html( ( $v['main_contact_email'] ?? '' ) !== '' ? $v['main_contact_email'] : 'deine Mail' ); ?></strong> mit einem Link, um dein Passwort zu setzen. Mit diesem Login verwaltest du euer Partnerprofil und Anfragen. Falls die E-Mail bereits registriert ist, verbinden wir das bestehende Konto.</div>
 	</div>
 	<?php
 	// E-Mail-Verifizierung: sobald ein Code an die eingegebene Adresse ging, hier
@@ -1658,7 +1674,7 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 		var prev  = document.getElementById('fge_login_email_preview');
 		if (!input || !prev) { return; }
 		input.addEventListener('input', function () {
-			prev.textContent = input.value.trim() || '— deine Mail —';
+			prev.textContent = input.value.trim() || 'deine Mail';
 		});
 	})();
 	</script>
@@ -1814,7 +1830,7 @@ function fge_onboarding_render_gastro( int $step, int $partner_id, string $token
 }
 
 function fge_onboarding_render_step_7( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Wie viele Gäste passen wo?', 'Wie groß sind eure Bereiche? Das hilft uns, bei individuellen Anfragen sofort zu erkennen, ob ihr dafür in Frage kommt. Mindest- und Maximal-Teilnehmerzahl sind Pflicht — für eure ausgewählten Bereiche fragen wir die Kapazität ab.' );
+	fge_onboarding_render_step_header( $step, 'Wie viele Gäste passen wo?', 'Wie groß sind eure Bereiche? Das hilft uns, bei individuellen Anfragen sofort zu erkennen, ob ihr dafür in Frage kommt. Mindest- und Maximal-Teilnehmerzahl sind Pflicht, für eure ausgewählten Bereiche fragen wir die Kapazität ab.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$cap   = is_array( $v['cap'] ?? null ) ? $v['cap'] : [];
@@ -2042,7 +2058,7 @@ function fge_onboarding_render_step_10( int $step, int $partner_id, string $toke
 }
 
 function fge_onboarding_render_step_11( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Bilder, die euren Platz zeigen.', 'Logo und Titelbild sind wichtig, aber du kannst auch ohne weitermachen — wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.' );
+	fge_onboarding_render_step_header( $step, 'Bilder, die euren Platz zeigen.', 'Logo und Titelbild sind wichtig, aber du kannst auch ohne weitermachen, wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$rights_on = ( (string) ( $v['image_rights_confirmed'] ?? '' ) === '1' );
@@ -2134,7 +2150,7 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 		} ) );
 		$contact_rows = [];
 		foreach ( $further as $c ) {
-			$contact_rows[] = [ $c['role'] ?: 'Kontakt', trim( ( $c['name'] ?: '—' ) . ( $c['email'] ? ' · ' . $c['email'] : '' ) ) ];
+			$contact_rows[] = [ $c['role'] ?: 'Kontakt', trim( ( $c['name'] ?: 'k. A.' ) . ( $c['email'] ? ' · ' . $c['email'] : '' ) ) ];
 		}
 		if ( empty( $contact_rows ) ) {
 			$contact_rows[] = [ '', 'Keine weiteren Ansprechpartner hinzugefügt.' ];
@@ -2162,7 +2178,7 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 
 		// ── Kapazitäten ──
 		$cap      = is_array( $v['cap'] ?? null ) ? $v['cap'] : [];
-		$cap_rows = [ [ 'Gruppengröße', ( (int) ( $cap['min'] ?? 0 ) ?: '?' ) . ' – ' . ( (int) ( $cap['max'] ?? 0 ) ?: '?' ) . ' Gäste' ] ];
+		$cap_rows = [ [ 'Gruppengröße', ( (int) ( $cap['min'] ?? 0 ) ?: '?' ) . ' bis ' . ( (int) ( $cap['max'] ?? 0 ) ?: '?' ) . ' Gäste' ] ];
 		foreach ( fge_catalog_cap_rows() as $cr ) {
 			$cn = (int) ( $cap[ $cr['key'] ] ?? 0 );
 			if ( $cn > 0 && in_array( $cr['infra'], (array) ( $v['infra'] ?? [] ), true ) && isset( $infra_index[ (string) $cr['infra'] ] ) ) {
@@ -2277,7 +2293,7 @@ function fge_onboarding_rev_block( string $title, string $edit_url, array $rows 
 				?>
 			<div class="ob-rev-row<?php echo $multi ? ' multi' : ''; ?>">
 				<?php if ( '' !== $label ) : ?><span class="ob-rev-l"><?php echo esc_html( $label ); ?></span><?php endif; ?>
-				<span class="ob-rev-v"><?php echo esc_html( '' !== $value ? $value : '—' ); ?></span>
+				<span class="ob-rev-v"><?php echo esc_html( '' !== $value ? $value : 'k. A.' ); ?></span>
 			</div>
 			<?php endforeach; ?>
 		</div>
@@ -2322,8 +2338,8 @@ function fge_onboarding_render_confirmation(): void {
 			$done_ref     = fge_partner_number( $done_pid );
 		?>
 		<div class="ob-done-receipt">
-			<div><span>Platz</span><span><?php echo esc_html( $done_name ?: '—' ); ?></span></div>
-			<div><span>Hauptkontakt</span><span><?php echo esc_html( trim( $done_contact . ( $done_email ? ' · ' . $done_email : '' ) ) ?: '—' ); ?></span></div>
+			<div><span>Platz</span><span><?php echo esc_html( $done_name ?: 'k. A.' ); ?></span></div>
+			<div><span>Hauptkontakt</span><span><?php echo esc_html( trim( $done_contact . ( $done_email ? ' · ' . $done_email : '' ) ) ?: 'k. A.' ); ?></span></div>
 			<div><span>Status</span><span><span class="ob-done-pill"><span class="ob-done-dot"></span>In Prüfung</span></span></div>
 			<div><span>Vorgangs-Nr.</span><span class="ob-done-mono"><?php echo esc_html( $done_ref ); ?></span></div>
 		</div>

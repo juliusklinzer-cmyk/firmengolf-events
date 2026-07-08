@@ -58,7 +58,7 @@ function fge_media_widget_config( int $partner_id ): array {
 			'cancel'       => 'Abbrechen',
 			'upload'       => 'Hochladen',
 			'recommend'    => 'Noch %d Foto(s) bis zur Empfehlung (5).',
-			'recommendOk'  => 'Genug Fotos — sieht super aus!',
+			'recommendOk'  => 'Genug Fotos, sieht super aus!',
 			'logoLabel'    => 'Logo',
 			'logoHint'     => 'PNG mit transparentem Hintergrund, ideal ca. 400×400 px. Erscheint in der Trefferliste.',
 			'logoChoose'   => 'Logo wählen',
@@ -123,7 +123,7 @@ function fge_event_picker_render( int $cover_id, string $selected_csv ): void {
 function fge_event_save_images( int $event_id, int $partner_id, array $post ): void {
 	$library = fge_partner_gallery_ids( $partner_id );
 	if ( empty( $library ) ) {
-		return; // Nothing to pick from — leave any existing values untouched.
+		return; // Nothing to pick from, leave any existing values untouched.
 	}
 	$selected = array_values( array_filter(
 		array_filter( array_map( 'absint', explode( ',', (string) ( $post['fge_event_gallery_ids'] ?? '' ) ) ) ),
@@ -169,7 +169,7 @@ function fge_render_amenities_grid( int $partner_id ): void {
 		echo '<div class="gp-amenity-block"><div class="gp-amenity-label">' . esc_html( $gname ) . '</div><div class="gp-amenity-card">';
 		foreach ( $hits as $id => $label ) {
 			$icon = function_exists( 'fge_infra_icon' ) ? fge_infra_icon( (string) $id ) : '';
-			echo '<div class="gp-amenity-row"><span class="gp-amenity-ico">' . $icon . '</span><span>' . esc_html( $label ) . '</span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput — $icon is trusted SVG
+			echo '<div class="gp-amenity-row"><span class="gp-amenity-ico">' . $icon . '</span><span>' . esc_html( $label ) . '</span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput, $icon is trusted SVG
 		}
 		echo '</div></div>';
 	}

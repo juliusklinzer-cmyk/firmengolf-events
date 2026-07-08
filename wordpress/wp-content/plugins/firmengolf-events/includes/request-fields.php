@@ -69,7 +69,7 @@ function fge_render_rmb_basis( WP_Post $post ) {
 			<th scope="row"><label for="fge_request_type">Anfrageart</label></th>
 			<td>
 				<select id="fge_request_type" name="fge_request_type">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $request_types as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $request_type, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -80,7 +80,7 @@ function fge_render_rmb_basis( WP_Post $post ) {
 			<th scope="row"><label for="fge_assigned_event_id">Zugeordnetes Event</label></th>
 			<td>
 				<select id="fge_assigned_event_id" name="fge_assigned_event_id">
-					<option value="0">— kein Event zugeordnet —</option>
+					<option value="0">kein Event zugeordnet</option>
 					<?php foreach ( fge_get_posts_select_options( 'firmengolf_event' ) as $pid => $label ) : ?>
 						<option value="<?php echo esc_attr( $pid ); ?>" <?php selected( (int) $assigned_event_id, $pid ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -91,7 +91,7 @@ function fge_render_rmb_basis( WP_Post $post ) {
 			<th scope="row"><label for="fge_assigned_partner_id">Zugeordneter Golfplatz</label></th>
 			<td>
 				<select id="fge_assigned_partner_id" name="fge_assigned_partner_id">
-					<option value="0">— kein Golfplatz zugeordnet —</option>
+					<option value="0">kein Golfplatz zugeordnet</option>
 					<?php foreach ( fge_get_posts_select_options( 'firmengolf_partner' ) as $pid => $label ) : ?>
 						<option value="<?php echo esc_attr( $pid ); ?>" <?php selected( (int) $assigned_partner_id, $pid ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -102,7 +102,7 @@ function fge_render_rmb_basis( WP_Post $post ) {
 			<th scope="row"><label for="fge_request_status">Anfrage Status</label></th>
 			<td>
 				<select id="fge_request_status" name="fge_request_status">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $statuses as $val ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $request_status, $val ); ?>><?php echo esc_html( $val ); ?></option>
 					<?php endforeach; ?>
@@ -225,7 +225,7 @@ function fge_render_rmb_kontakt( WP_Post $post ) {
 			<th scope="row"><label for="fge_preferred_contact_method">Bevorzugte Kontaktart</label></th>
 			<td>
 				<select id="fge_preferred_contact_method" name="fge_preferred_contact_method">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $contact_methods as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $preferred_contact_method, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -268,7 +268,7 @@ function fge_render_rmb_rahmen( WP_Post $post ) {
 			<th scope="row"><label for="fge_event_goal">Eventziel</label></th>
 			<td>
 				<select id="fge_event_goal" name="fge_event_goal">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<optgroup label="Standard">
 						<?php foreach ( $format_tiers['standard'] as $val => $label ) : ?>
 							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $event_goal, $val ); ?>><?php echo esc_html( $label ); ?></option>
@@ -297,11 +297,11 @@ function fge_render_rmb_rahmen( WP_Post $post ) {
 		</tr>
 		<tr>
 			<th scope="row">Golf-Erfahrung (Team)</th>
-			<td><?php echo '' !== $group_experience ? esc_html( $group_experience ) : '—'; ?></td>
+			<td><?php echo '' !== $group_experience ? esc_html( $group_experience ) : 'k. A.'; ?></td>
 		</tr>
 		<tr>
 			<th scope="row">Verpflegung / Diät</th>
-			<td><?php echo '' !== $catering_notes ? esc_html( $catering_notes ) : '—'; ?></td>
+			<td><?php echo '' !== $catering_notes ? esc_html( $catering_notes ) : 'k. A.'; ?></td>
 		</tr>
 		<tr>
 			<th scope="row"><label for="fge_message">Nachricht / Sonderwünsche</label></th>
@@ -333,7 +333,7 @@ function fge_render_rmb_termine( WP_Post $post ) {
 	$ro        = $has_votes ? ' readonly style="background:#f6f7f7;"' : '';
 	?>
 	<?php if ( $has_votes ) : ?>
-		<p style="color:#9A6B12;"><strong>⚠ Terminabstimmung läuft bereits</strong> — die Wunschtermine sind gesperrt, weil vorhandene Zu-/Absagen sonst für ein anderes Datum gelten würden.</p>
+		<p style="color:#9A6B12;"><strong>⚠ Terminabstimmung läuft bereits</strong>, die Wunschtermine sind gesperrt, weil vorhandene Zu-/Absagen sonst für ein anderes Datum gelten würden.</p>
 	<?php endif; ?>
 	<table class="form-table">
 		<tr>
@@ -366,7 +366,7 @@ function fge_render_rmb_termine( WP_Post $post ) {
 			<th scope="row"><label for="fge_preferred_time">Uhrzeit Wunsch</label></th>
 			<td>
 				<select id="fge_preferred_time" name="fge_preferred_time">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $times as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $preferred_time, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -387,7 +387,7 @@ function fge_render_rmb_angebot( WP_Post $post ) {
 	$final  = function_exists( 'fge_rr_final_index' ) ? fge_rr_final_index( $req ) : 0;
 
 	if ( $sent ) {
-		$labels = [ 'pending' => 'Versendet — Antwort offen', 'accepted' => '✓ Angenommen', 'declined' => 'Abgelehnt' ];
+		$labels = [ 'pending' => 'Versendet, Antwort offen', 'accepted' => '✓ Angenommen', 'declined' => 'Abgelehnt' ];
 		echo '<p><strong>' . esc_html( $labels[ $status ] ?? $status ) . '</strong></p>';
 		$deadline = (int) get_post_meta( $req, '_fge_offer_deadline', true );
 		if ( 'pending' === $status && $deadline ) {
@@ -400,7 +400,7 @@ function fge_render_rmb_angebot( WP_Post $post ) {
 	}
 
 	if ( $final < 1 ) {
-		echo '<p style="color:#6C736E;">Noch kein finaler Termin bestätigt — das Angebot wird ausgelöst, sobald der Platz (oder ihr) einen Termin bestätigt.</p>';
+		echo '<p style="color:#6C736E;">Noch kein finaler Termin bestätigt, das Angebot wird ausgelöst, sobald der Platz (oder ihr) einen Termin bestätigt.</p>';
 		return;
 	}
 
@@ -413,7 +413,7 @@ function fge_render_rmb_angebot( WP_Post $post ) {
 			echo '<p style="margin:4px 0;">' . esc_html( $wishes ) . '</p>';
 		} else {
 			echo '<p><strong style="color:#9A6B12;">⚠ Zurückgehalten: kein bepreistes Event zugeordnet</strong></p>';
-			echo '<p style="margin:4px 0;">Erst Event/Preis zuordnen oder den Preis mit dem Kunden klären — sonst wäre das Angebot „Auf Anfrage" und trotzdem verbindlich buchbar.</p>';
+			echo '<p style="margin:4px 0;">Erst Event/Preis zuordnen oder den Preis mit dem Kunden klären, sonst wäre das Angebot „Auf Anfrage" und trotzdem verbindlich buchbar.</p>';
 		}
 		echo '<p style="margin:4px 0;color:#6C736E;">Der Kunde hat eine Termin-Bestätigung erhalten und wartet auf das Angebot.</p>';
 	}
@@ -508,7 +508,7 @@ function fge_render_rmb_kit_hubspot( WP_Post $post ) {
 			<th scope="row"><label for="fge_kit_status">Kit Status</label></th>
 			<td>
 				<select id="fge_kit_status" name="fge_kit_status">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $integration_statuses as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $kit_status, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -527,7 +527,7 @@ function fge_render_rmb_kit_hubspot( WP_Post $post ) {
 			<th scope="row"><label for="fge_hubspot_status">HubSpot Lead Status</label></th>
 			<td>
 				<select id="fge_hubspot_status" name="fge_hubspot_status">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $integration_statuses as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $hubspot_status, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
@@ -607,7 +607,7 @@ function fge_render_rmb_tracking( WP_Post $post ) {
 			<th scope="row"><label for="fge_request_source">Quelle</label></th>
 			<td>
 				<select id="fge_request_source" name="fge_request_source">
-					<option value="">— bitte wählen —</option>
+					<option value="">bitte wählen …</option>
 					<?php foreach ( $sources as $val => $label ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $request_source, $val ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>

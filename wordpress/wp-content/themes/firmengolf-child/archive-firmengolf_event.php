@@ -36,7 +36,7 @@ if ( 'all' !== $active_format && function_exists( 'fge_get_event_format_legacy_m
 	$active_format = fge_get_event_format_legacy_map()[ $active_format ] ?? $active_format;
 }
 $active_region = sanitize_text_field( $_GET['region'] ?? '' );    // phpcs:ignore WordPress.Security.NonceVerification
-$active_pax    = max( 0, (int) ( $_GET['pax'] ?? 0 ) );           // phpcs:ignore WordPress.Security.NonceVerification — default 0 = kein Filter (alle anzeigen)
+$active_pax    = max( 0, (int) ( $_GET['pax'] ?? 0 ) );           // phpcs:ignore WordPress.Security.NonceVerification, default 0 = kein Filter (alle anzeigen)
 $active_sort   = sanitize_key( $_GET['sort'] ?? 'curated' );      // phpcs:ignore WordPress.Security.NonceVerification
 
 // ── Geo (Umkreissuche) params ────────────────────────────────────────────────
@@ -204,8 +204,8 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events', 
 $group_bands = [
 	[ 'pax' => 0,   'label' => 'Jede Größe' ],
 	[ 'pax' => 12,  'label' => 'Bis 12' ],
-	[ 'pax' => 30,  'label' => '12–30' ],
-	[ 'pax' => 60,  'label' => '30–60' ],
+	[ 'pax' => 30,  'label' => '12 bis 30' ],
+	[ 'pax' => 60,  'label' => '30 bis 60' ],
 	[ 'pax' => 100, 'label' => '60+' ],
 ];
 ?>
@@ -404,7 +404,7 @@ $group_bands = [
 
 		<div class="fg-cell-divider" aria-hidden="true"></div>
 
-		<?php /* Cell 2: Wo? — Ort/PLZ-Autocomplete + Standort + Umkreis */ ?>
+		<?php /* Cell 2: Wo?, Ort/PLZ-Autocomplete + Standort + Umkreis */ ?>
 		<div class="fg-search-cell fg-loc-cell" id="fg-loc-cell"
 		     tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort oder PLZ wählen">
 			<div class="fg-cell-label">Wo?</div>
@@ -603,7 +603,7 @@ if ( ! $has_filters ) :
 	<?php else : ?>
 
 		<div class="fg-empty">
-			Noch nichts Passendes dabei. Plane dein Format individuell — wir kümmern uns drum.
+			Noch nichts Passendes dabei. Plane dein Format individuell, wir kümmern uns drum.
 			<div style="margin-top:16px">
 				<a class="fg-btn-cta" href="<?php echo esc_url( $ind_url ); ?>">
 					Individuelles Event anfragen
@@ -632,7 +632,7 @@ if ( ! $has_filters ) :
 	<div class="trust-inner">
 		<?php
 		$trust = [
-			[ '721 Golfplätze deutschlandweit', 'Events auf Golfplätzen in ganz Deutschland – passt einer nicht, nehmen wir den nächsten.' ],
+			[ '721 Golfplätze deutschlandweit', 'Events auf Golfplätzen in ganz Deutschland, passt einer nicht, nehmen wir den nächsten.' ],
 			[ 'Ein Ansprechpartner', 'Vom Erstkontakt bis nach dem Event.' ],
 			[ 'Eine Rechnung',       'Sauber abgerechnet, BGM-konform wenn nötig.' ],
 			[ 'Antwort < 24 h',      'Werktags innerhalb eines Arbeitstags.' ],
@@ -652,7 +652,7 @@ if ( ! $has_filters ) :
 		<div class="faq-aside">
 			<div class="mk-eyebrow">Häufige Fragen</div>
 			<h2 class="mk-h2" style="margin-top:8px">Was Firmen vor der Buchung wissen wollen.</h2>
-			<p class="mk-sub" style="margin-top:16px">Die häufigsten Fragen unserer Kunden — vor allem von HR und Office Management. Was hier nicht steht: einfach kurz schreiben.</p>
+			<p class="mk-sub" style="margin-top:16px">Die häufigsten Fragen unserer Kunden, vor allem von HR und Office Management. Was hier nicht steht: einfach kurz schreiben.</p>
 			<div class="faq-cta">
 				<a class="fg-btn-ghost" href="<?php echo esc_url( $kontakt_url ); ?>">
 					Etwas anderes fragen
@@ -669,11 +669,11 @@ if ( ! $has_filters ) :
 				],
 				[
 					'q' => 'Wie kurzfristig können wir buchen?',
-					'a' => 'Beliebte Termine im Mai–September gehen meist 4–6 Wochen im Voraus weg. Im Frühjahr und Herbst gibt es oft noch Slots innerhalb von 1–2 Wochen. Trag uns gern unverbindlich ein — wir prüfen, was kurzfristig möglich ist.',
+					'a' => 'Beliebte Termine im Mai bis September gehen meist 4 bis 6 Wochen im Voraus weg. Im Frühjahr und Herbst gibt es oft noch Slots innerhalb von 1 bis 2 Wochen. Trag uns gern unverbindlich ein, wir prüfen, was kurzfristig möglich ist.',
 				],
 				[
 					'q' => 'Was passiert bei schlechtem Wetter?',
-					'a' => 'Wir buchen immer mit Indoor-Backup an Plätzen, die das anbieten — z. B. überdachte Range oder Indoor-Simulatoren. Für reine Outdoor-Formate gibt es großzügige Stornoregeln 24 Stunden vor Termin.',
+					'a' => 'Wir buchen immer mit Indoor-Backup an Plätzen, die das anbieten, z. B. überdachte Range oder Indoor-Simulatoren. Für reine Outdoor-Formate gibt es großzügige Stornoregeln 24 Stunden vor Termin.',
 				],
 				[
 					'q' => 'Gibt es eine Mindestgruppengröße?',
@@ -681,18 +681,18 @@ if ( ! $has_filters ) :
 				],
 				[
 					'q' => 'Wie wird abgerechnet?',
-					'a' => 'Eine Sammelrechnung von Firmengolf, mit allen Posten ausgewiesen — Greenfees, Coaching, Catering, Trophäen. Das macht es für HR und Buchhaltung einfach.',
+					'a' => 'Eine Sammelrechnung von Firmengolf, mit allen Posten ausgewiesen, Greenfees, Coaching, Catering, Trophäen. Das macht es für HR und Buchhaltung einfach.',
 				],
 				[
 					'q' => 'Können wir das Event als Gesundheitsmaßnahme abrechnen?',
-					'a' => 'Ja — unsere Gesundheitstage und Coaching-Formate sind BGM-konform (§ 3 Nr. 34 EStG) abrechenbar. Wir stellen die nötigen Belege aus.',
+					'a' => 'Ja, unsere Gesundheitstage und Coaching-Formate sind BGM-konform (§ 3 Nr. 34 EStG) abrechenbar. Wir stellen die nötigen Belege aus.',
 				],
 			];
 			foreach ( $faqs as $i => $faq ) : ?>
 				<li class="faq-item<?php echo $i === 0 ? ' open' : ''; ?>" id="faq-<?php echo (int) $i; ?>">
-					<button class="faq-q" onclick="(function(b){var it=b.closest('.faq-item');var o=it.classList.toggle('open');b.setAttribute('aria-expanded',o);it.querySelector('.faq-toggle').textContent=o?'–':'+';})(this)" aria-expanded="<?php echo $i === 0 ? 'true' : 'false'; ?>">
+					<button class="faq-q" onclick="(function(b){var it=b.closest('.faq-item');var o=it.classList.toggle('open');b.setAttribute('aria-expanded',o);it.querySelector('.faq-toggle').textContent=o?'k. A.':'+';})(this)" aria-expanded="<?php echo $i === 0 ? 'true' : 'false'; ?>">
 						<span><?php echo esc_html( $faq['q'] ); ?></span>
-						<span class="faq-toggle" aria-hidden="true"><?php echo $i === 0 ? '–' : '+'; ?></span>
+						<span class="faq-toggle" aria-hidden="true"><?php echo $i === 0 ? 'k. A.' : '+'; ?></span>
 					</button>
 					<div class="faq-a"><?php echo esc_html( $faq['a'] ); ?></div>
 				</li>

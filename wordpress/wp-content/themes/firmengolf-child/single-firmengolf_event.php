@@ -55,13 +55,13 @@ $map_embed = $map_query !== '' ? 'https://www.google.com/maps?q=' . rawurlencode
 // Price display — neues Preismodell (rev. 2) bevorzugt, sonst Altfelder.
 $pricing_new = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $post_id ) : null;
 if ( $pricing_new && $pricing_new['gross'] > 0 ) {
-	$price_main   = '€' . number_format( $pricing_new['gross'], 0, ',', '.' );
+	$price_main   = number_format( $pricing_new['gross'], 0, ',', '.' ) . ' €';
 	$price_suffix = $pricing_new['unit'] === 'pro Person' ? ' p.P.' : ' gesamt';
 } elseif ( $price_label ) {
 	$price_main   = $price_label;
 	$price_suffix = '';
 } elseif ( $price_raw > 0 ) {
-	$price_main   = '€' . number_format( $price_raw, 0, ',', '.' );
+	$price_main   = number_format( $price_raw, 0, ',', '.' ) . ' €';
 	$price_suffix = ' p.P.';
 } else {
 	$price_main   = 'Auf Anfrage';
@@ -69,7 +69,7 @@ if ( $pricing_new && $pricing_new['gross'] > 0 ) {
 }
 // Orientierungspreis kennzeichnen, wenn von Firmengolf organisiert.
 if ( $is_self && $price_main !== 'Auf Anfrage' ) {
-	$price_suffix = trim( $price_suffix ) . ' · Orientierung';
+	$price_suffix = ( '' !== trim( $price_suffix ) ? ' ' . trim( $price_suffix ) : '' ) . ' · Orientierung';
 }
 
 // Venue string
@@ -99,7 +99,7 @@ $includes_new = array_values( array_filter( array_map( 'trim', array_map( 'strva
 
 // Participants string
 if ( $p_min && $p_max ) {
-	$guests_str = $p_min . '–' . $p_max . ' Gäste';
+	$guests_str = $p_min . ' bis ' . $p_max . ' Gäste';
 } elseif ( $p_max ) {
 	$guests_str = 'bis ' . $p_max . ' Gäste';
 } elseif ( $p_min ) {
@@ -354,13 +354,13 @@ get_header();
 
 		<?php /* ── Gallery (Layout-Varianten nach $real_count, s. o.) ── */ ?>
 		<div class="fg-detail-gallery<?php echo esc_attr( $gal_class ); ?>">
-			<div class="fg-gallery-main" role="img" aria-label="<?php echo esc_attr( get_the_title() . ' – Foto 1' ); ?>" style="background-image:url('<?php echo esc_url( $thumb_url ); ?>')">
+			<div class="fg-gallery-main" role="img" aria-label="<?php echo esc_attr( get_the_title() . ', Foto 1' ); ?>" style="background-image:url('<?php echo esc_url( $thumb_url ); ?>')">
 			</div>
 			<?php if ( 1 !== $real_count ) : ?>
 			<div class="fg-gallery-side">
-				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ' – Foto 2' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"></div>
+				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ', Foto 2' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"></div>
 				<?php if ( 2 !== $real_count ) : ?>
-				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ' – Foto 3' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_2 ); ?>')">
+				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ', Foto 3' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_2 ); ?>')">
 					<?php if ( $real_count > 3 ) : ?>
 					<button class="fg-gallery-more fg-btn-ghost-light" type="button" aria-expanded="false" aria-controls="fg-gallery-all">+ alle Fotos</button>
 					<?php endif; ?>
@@ -375,12 +375,12 @@ get_header();
 			<div class="fg-gallery-modal-backdrop" data-gal-close></div>
 			<div class="fg-gallery-modal-panel">
 				<div class="fg-gallery-modal-head">
-					<span><?php echo esc_html( get_the_title() ); ?> — alle Fotos</span>
+					<span><?php echo esc_html( get_the_title() ); ?>, alle Fotos</span>
 					<button class="fg-gallery-modal-close" type="button" data-gal-close aria-label="Schließen">&times;</button>
 				</div>
 				<div class="fg-gallery-modal-grid">
 					<?php foreach ( $gallery_urls as $g_i => $g_url ) : ?>
-						<img src="<?php echo esc_url( $g_url ); ?>" alt="<?php echo esc_attr( get_the_title() . ' – Foto ' . ( $g_i + 1 ) ); ?>" loading="lazy">
+						<img src="<?php echo esc_url( $g_url ); ?>" alt="<?php echo esc_attr( get_the_title() . ', Foto ' . ( $g_i + 1 ) ); ?>" loading="lazy">
 					<?php endforeach; ?>
 				</div>
 			</div>
@@ -413,12 +413,12 @@ get_header();
 					<span class="fg-selfbox-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11.5v4.5M12 8h.01"/></svg></span>
 					<div class="fg-selfbox-t">
 						<strong>Von Firmengolf für dich organisiert.</strong>
-						Du fragst dieses Event unverbindlich an – wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein. Der angezeigte Preis ist ein <strong>Orientierungswert</strong> und kann sich im finalen Angebot je nach Platz, Gruppe und Wünschen ändern.
+						Du fragst dieses Event unverbindlich an, wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein. Der angezeigte Preis ist ein <strong>Orientierungswert</strong> und kann sich im finalen Angebot je nach Platz, Gruppe und Wünschen ändern.
 					</div>
 				</div>
 				<?php endif; ?>
 
-				<?php /* So läuft der Tag — Phasen: Block = Überschrift (Zeile 1) + Text darunter, Blöcke per Leerzeile */ ?>
+				<?php /* So läuft der Tag, Phasen: Block = Überschrift (Zeile 1) + Text darunter, Blöcke per Leerzeile */ ?>
 				<?php
 				$dayflow_parts = [];
 				if ( $dayflow_new !== '' ) {
@@ -451,7 +451,7 @@ get_header();
 				</section>
 				<?php endif; ?>
 
-				<?php /* Im Preis enthalten — ausschließlich die im Editor kuratierten Leistungen */ ?>
+				<?php /* Im Preis enthalten, ausschließlich die im Editor kuratierten Leistungen */ ?>
 				<?php $inc_list = array_values( array_filter( array_map( 'strval', $includes_new ) ) ); ?>
 				<?php if ( $inc_list ) : ?>
 				<section>
@@ -467,7 +467,7 @@ get_header();
 				</section>
 				<?php endif; ?>
 
-				<?php /* Optional zubuchbar — Add-ons (z. B. Meetingraum, Abholservice) */ ?>
+				<?php /* Optional zubuchbar, Add-ons (z. B. Meetingraum, Abholservice) */ ?>
 				<?php
 				$addons_raw = get_post_meta( $post_id, '_fge_event_addons', true );
 				$addons     = is_array( $addons_raw ) ? $addons_raw : preg_split( '/\r\n|\r|\n/', (string) $addons_raw );
@@ -499,7 +499,7 @@ get_header();
 				</section>
 				<?php endif; ?>
 
-				<?php /* Vor Ort am Platz — Infrastruktur-Highlights des Golfplatzes */ ?>
+				<?php /* Vor Ort am Platz, Infrastruktur-Highlights des Golfplatzes */ ?>
 				<?php if ( $onsite ) : ?>
 				<section>
 					<div class="fg-section-eyebrow">Vor Ort am Platz</div>
@@ -514,13 +514,13 @@ get_header();
 				</section>
 				<?php endif; ?>
 
-				<?php /* Customer quote — nur wenn beim Golfplatz hinterlegt */ ?>
+				<?php /* Customer quote, nur wenn beim Golfplatz hinterlegt */ ?>
 				<?php if ( $review_quote !== '' ) : ?>
 				<section class="fg-quote">
 					<span class="fg-quote-mark">"</span>
 					<p><?php echo esc_html( $review_quote ); ?></p>
 					<?php if ( $review_author !== '' || $review_role !== '' ) : ?>
-						<div class="fg-quote-attr">— <?php echo esc_html( trim( $review_author . ( $review_role !== '' ? ', ' . $review_role : '' ) ) ); ?></div>
+						<div class="fg-quote-attr">k. A. <?php echo esc_html( trim( $review_author . ( $review_role !== '' ? ', ' . $review_role : '' ) ) ); ?></div>
 					<?php endif; ?>
 				</section>
 				<?php endif; ?>
@@ -532,7 +532,7 @@ get_header();
 				<div class="mk-eyebrow">Anfahrt & Location</div>
 				<h2 class="mk-h2" style="font-size:36px;margin-top:8px;"><?php echo esc_html( $is_self ? ( $location ?: $region ?: 'Nach Absprache' ) : ( $venue ?: get_the_title() ) ); ?></h2>
 				<?php if ( $is_self ) : ?>
-				<p class="evd-location-p">Den genauen Golfplatz wählen wir passend zu Gruppengröße, Termin und Anfahrt – flexibel im Raum <?php echo esc_html( $region ?: $location ?: 'eurer Region' ); ?>. Die Anfahrt hängt vom Platz ab, üblich sind:</p>
+				<p class="evd-location-p">Den genauen Golfplatz wählen wir passend zu Gruppengröße, Termin und Anfahrt, flexibel im Raum <?php echo esc_html( $region ?: $location ?: 'eurer Region' ); ?>. Die Anfahrt hängt vom Platz ab, üblich sind:</p>
 				<div class="evd-poi-grid">
 					<div class="evd-poi"><div class="evd-poi-l">Lage</div><div class="evd-poi-v">Stadtnahe Golfplätze (ca. 30 Min.)</div></div>
 					<div class="evd-poi"><div class="evd-poi-l">ÖPNV</div><div class="evd-poi-v">Mit Öffentlichen erreichbar</div></div>
@@ -587,7 +587,7 @@ get_header();
 						<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
 					</div>
 				</div>
-				<p class="evd-map-note">Golfplätze im Raum <?php echo esc_html( $region ?: $location ); ?> — blau markiert sind Firmengolf-Partnerplätze.</p>
+				<p class="evd-map-note">Golfplätze im Raum <?php echo esc_html( $region ?: $location ); ?>, blau markiert sind Firmengolf-Partnerplätze.</p>
 			<?php else : ?>
 				<div class="evd-map" role="img" aria-label="Ungefähre Lage des Platzes">
 					<div class="evd-map-grid"></div>
@@ -767,8 +767,8 @@ get_header();
 					</button>
 
 					<div class="fg-rail-note"><?php echo esc_html( $is_self
-						? 'Anfrage ist kostenlos und unverbindlich. Sie geht direkt an uns – wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein und melden uns innerhalb eines Werktags.'
-						: 'Anfrage ist kostenlos. Sie geht direkt an den Golfplatz zur Terminfreigabe und an uns — du bekommst eine Antwort innerhalb eines Werktags.' ); ?></div>
+						? 'Anfrage ist kostenlos und unverbindlich. Sie geht direkt an uns, wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein und melden uns innerhalb eines Werktags.'
+						: 'Anfrage ist kostenlos. Sie geht direkt an den Golfplatz zur Terminfreigabe und an uns, du bekommst eine Antwort innerhalb eines Werktags.' ); ?></div>
 				</div>
 
 				<div class="fg-rail-host">
@@ -952,7 +952,7 @@ get_header();
 			</div>
 			<?php endif; ?>
 
-			<p class="fg-wish-intro">Optionale Extras — nur wenn ihr mögt. Tippt an, was interessant klingt; alles Weitere schreibt ihr einfach unten rein. Wir stimmen es im Angebot ab.</p>
+			<p class="fg-wish-intro">Optionale Extras, nur wenn ihr mögt. Tippt an, was interessant klingt; alles Weitere schreibt ihr einfach unten rein. Wir stimmen es im Angebot ab.</p>
 
 			<div class="fg-wish-group-h">Beliebte Zusatzleistungen</div>
 			<div class="fg-cat-grid">
@@ -973,7 +973,7 @@ get_header();
 
 			<div class="fg-field" style="margin-top:18px;">
 				<label class="fg-field-label" for="fg-wish-notes">Sonstige Wünsche <span class="fg-opt">optional</span></label>
-				<textarea class="fg-input" id="fg-wish-notes" rows="3" placeholder="Von Fotograf über Shuttle bis Übernachtung — vieles ist möglich. Schreib einfach, was euch vorschwebt, und wir melden uns mit einem passenden Vorschlag."></textarea>
+				<textarea class="fg-input" id="fg-wish-notes" rows="3" placeholder="Von Fotograf über Shuttle bis Übernachtung, vieles ist möglich. Schreib einfach, was euch vorschwebt, und wir melden uns mit einem passenden Vorschlag."></textarea>
 			</div>
 
 			<div class="fg-modal-foot">
@@ -984,7 +984,7 @@ get_header();
 			</div>
 		</div>
 
-		<?php /* Step 2 — Kontakt */ ?>
+		<?php /* Step 2, Kontakt */ ?>
 		<div id="fg-modal-step-2" style="display:none;">
 			<div class="fg-form-grid">
 				<div class="fg-field">
@@ -1036,17 +1036,17 @@ get_header();
 			</div>
 		</div>
 
-		<?php /* Step 3 — success */ ?>
+		<?php /* Step 3, success */ ?>
 		<div id="fg-modal-step-3" class="fg-modal-success" style="display:none;">
 			<div class="fg-success-mark"><?php echo fge_icon_check(); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
-			<div class="fg-receipt-tag" id="fg-receipt-ref">–</div>
+			<div class="fg-receipt-tag" id="fg-receipt-ref">k. A.</div>
 			<h2 class="fg-modal-title" style="max-width:400px;margin:14px auto 0;">Eure Anfrage ist eingegangen.</h2>
-			<p class="fg-modal-sub" style="margin-top:8px;">Das ist noch keine Buchungsbestätigung — wir melden uns, sobald der Platz die Termine einräumen kann, in der Regel innerhalb eines Werktags.</p>
+			<p class="fg-modal-sub" style="margin-top:8px;">Das ist noch keine Buchungsbestätigung, wir melden uns, sobald der Platz die Termine einräumen kann, in der Regel innerhalb eines Werktags.</p>
 			<div class="fg-success-receipt" id="fg-success-receipt">
 				<div><span>Format</span><span><?php echo esc_html( $format_label ); ?></span></div>
 				<div><span>Platz</span><span><?php echo esc_html( $venue ?: get_the_title() ); ?></span></div>
-				<div><span>Datum</span><span id="fg-receipt-date">–</span></div>
-				<div><span>Gruppe</span><span id="fg-receipt-group">–</span></div>
+				<div><span>Datum</span><span id="fg-receipt-date">k. A.</span></div>
+				<div><span>Gruppe</span><span id="fg-receipt-group">k. A.</span></div>
 			</div>
 			<div class="fg-modal-foot single">
 				<button class="fg-btn-brand" id="fg-modal-done" type="button">Schließen</button>
@@ -1255,12 +1255,12 @@ get_header();
 			.then(function (r) { return r.json(); })
 			.then(function (data) {
 				if (data.success) {
-					setText('fg-receipt-date',  fmtDate(val('fg-date-1')) || '–');
-					setText('fg-receipt-group', val('fg-group-size') || '–');
-					setText('fg-receipt-ref',   (data.data && data.data.ref) || '–');
+					setText('fg-receipt-date',  fmtDate(val('fg-date-1')) || 'k. A.');
+					setText('fg-receipt-group', val('fg-group-size') || 'k. A.');
+					setText('fg-receipt-ref',   (data.data && data.data.ref) || 'k. A.');
 					show(3);
 				} else {
-					alert('Es ist ein Fehler aufgetreten. Bitte versuche es erneut.');
+					alert((data.data && data.data.message) || 'Es ist ein Fehler aufgetreten. Bitte versuche es erneut.');
 					btn.disabled = false;
 					btn.textContent = 'Anfrage senden';
 				}
@@ -1309,7 +1309,7 @@ get_header();
 			if (!isOpen) {
 				item.classList.add('open');
 				btn.setAttribute('aria-expanded', 'true');
-				btn.querySelector('.faq-toggle').textContent = '–';
+				btn.querySelector('.faq-toggle').textContent = 'k. A.';
 			}
 		});
 	});

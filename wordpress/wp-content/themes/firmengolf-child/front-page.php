@@ -136,7 +136,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 
 		<div class="fg-cell-divider" aria-hidden="true"></div>
 
-		<?php /* Wo? — Ort/PLZ-Autocomplete + Standort + Umkreis (identisch zur Events-Seite) */ ?>
+		<?php /* Wo?, Ort/PLZ-Autocomplete + Standort + Umkreis (identisch zur Events-Seite) */ ?>
 		<div class="fg-search-cell fg-loc-cell" id="qs-loc-cell"
 		     tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort oder PLZ wählen">
 			<div class="fg-cell-label">Wo?</div>
@@ -212,7 +212,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	<?php endforeach; ?>
 </div>
 
-<?php /* ══════════════════ 2b. EXPERIENCE — Warum Golf ══════════════════ */ ?>
+<?php /* ══════════════════ 2b. EXPERIENCE, Warum Golf ══════════════════ */ ?>
 <section class="home-exp" aria-label="Warum Golf">
 	<div class="home-exp-inner">
 		<div class="home-exp-head">
@@ -489,11 +489,11 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 			[ 'ic' => '<path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
 			  't' => 'Ein echter Mensch am Telefon', 'b' => 'Kein Ticketsystem. Du sprichst direkt mit dem, der dein Event plant.' ],
 			[ 'ic' => '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
-			  't' => 'Eine Anfrage, eine Rechnung', 'b' => 'Platz, Pro, Catering, Shuttle – alles über einen Ansprechpartner, sauber für HR und Buchhaltung.' ],
+			  't' => 'Eine Anfrage, eine Rechnung', 'b' => 'Platz, Pro, Catering, Shuttle, alles über einen Ansprechpartner, sauber für HR und Buchhaltung.' ],
 			[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
 			  't' => 'Auch ohne Golferfahrung', 'b' => 'Golflehrer führen Einsteiger an, Schläger werden gestellt. Niemand muss spielen können.' ],
 			[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
-			  't' => 'Deutschlandweit organisierbar', 'b' => 'Rund 721 Golfplätze in Deutschland kommen als Eventlocation in Frage – passt einer nicht, nehmen wir den nächsten.' ],
+			  't' => 'Deutschlandweit organisierbar', 'b' => 'Rund 721 Golfplätze in Deutschland kommen als Eventlocation in Frage, passt einer nicht, nehmen wir den nächsten.' ],
 		];
 		foreach ( $promises as $p ) : ?>
 			<div class="city-reason">
@@ -682,7 +682,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
       latEl.value = lat; lngEl.value = lng; locEl.value = label;
       if (textEl) textEl.textContent = label;
       if (display) display.classList.remove('fg-muted');
-      close(); // Startseite: KEIN Auto-Submit — Weiterleitung erst bei Klick auf "Suchen".
+      close(); // Startseite: KEIN Auto-Submit, Weiterleitung erst bei Klick auf "Suchen".
     }
 
     var t = null;

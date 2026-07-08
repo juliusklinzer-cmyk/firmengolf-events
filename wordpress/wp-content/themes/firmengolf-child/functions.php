@@ -331,7 +331,7 @@ function fge_klaro_config(): array {
 				'privacyPolicyUrl' => home_url( '/datenschutz/' ),
 				'consentModal'     => [
 					'title'       => 'Datenschutz-Einstellungen',
-					'description' => 'Hier entscheidest du, welche Dienste wir einbinden dürfen. Technisch notwendige Funktionen laufen immer. Alles andere – Statistik, Marketing und externe Inhalte – laden wir nur mit deiner Einwilligung.',
+					'description' => 'Hier entscheidest du, welche Dienste wir einbinden dürfen. Technisch notwendige Funktionen laufen immer. Alles andere, Statistik, Marketing und externe Inhalte, laden wir nur mit deiner Einwilligung.',
 				],
 				'consentNotice'    => [
 					'description' => $notice,

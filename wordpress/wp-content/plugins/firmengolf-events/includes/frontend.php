@@ -505,13 +505,14 @@ function fge_get_featured_events( int $count = 3 ): array {
 function fge_get_event_price_display( int $post_id ): string {
 	$label = get_post_meta( $post_id, '_fge_public_price_label', true );
 	if ( $label !== '' ) {
-		return $label;
+		// Alte gespeicherte Labels („€89 p.P.") on-the-fly aufs Suffix-Format normalisieren (Kern-Audit H6).
+		return preg_replace( '/€\s?([\d.,]+)/u', '$1 €', $label );
 	}
 	// Aktuelles Pricing-Modell (_fge_price_mode/-amount/-basis) – wie auf der Detailseite.
 	if ( function_exists( 'fge_event_pricing' ) ) {
 		$p = fge_event_pricing( $post_id );
 		if ( ( $p['gross'] ?? 0 ) > 0 ) {
-			$amount = '€' . number_format_i18n( $p['gross'], 0 );
+			$amount = number_format_i18n( $p['gross'], 0 ) . ' €';
 			return ( ( $p['unit'] ?? '' ) === 'pro Person' ) ? $amount . ' p.P.' : $amount . ' gesamt';
 		}
 	}
@@ -555,7 +556,7 @@ function fge_placeholder_pool(): array {
 		} elseif ( strpos( $file, 'gruender' ) !== false ) {
 			$cat = 'founder';
 		} elseif ( preg_match( '/hund|tennis|ubahn|pilot|cockpit|handgepaeck|burnout|buerodach/', $file ) ) {
-			$cat = 'misc'; // off-topic marketing/blog imagery — not used for event/course covers
+			$cat = 'misc'; // off-topic marketing/blog imagery, not used for event/course covers
 		} elseif ( preg_match( '/range|korb|driving/', $file ) ) {
 			$cat = 'range';
 		} elseif ( strpos( $file, 'club' ) !== false ) {

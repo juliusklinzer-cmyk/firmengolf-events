@@ -25,7 +25,7 @@ add_filter( 'manage_firmengolf_event_posts_columns', 'fge_event_columns' );
 function fge_event_column_content( string $column, int $post_id ) {
 	switch ( $column ) {
 		case 'fge_event_type':
-			echo esc_html( get_post_meta( $post_id, '_fge_event_type', true ) ?: '—' );
+			echo esc_html( get_post_meta( $post_id, '_fge_event_type', true ) ?: 'k. A.' );
 			break;
 		case 'fge_event_status':
 			$status_val    = (string) get_post_meta( $post_id, '_fge_event_status', true );
@@ -41,19 +41,19 @@ function fge_event_column_content( string $column, int $post_id ) {
 				[ $label, $color ] = $status_labels[ $status_val ];
 				echo '<span class="fge-badge fge-badge--' . esc_attr( $color ) . '">' . esc_html( $label ) . '</span>';
 			} else {
-				echo $status_val !== '' ? esc_html( $status_val ) : '—';
+				echo $status_val !== '' ? esc_html( $status_val ) : 'k. A.';
 			}
 			break;
 		case 'fge_provider_type':
-			echo esc_html( get_post_meta( $post_id, '_fge_provider_type', true ) ?: '—' );
+			echo esc_html( get_post_meta( $post_id, '_fge_provider_type', true ) ?: 'k. A.' );
 			break;
 		case 'fge_assigned_partner':
 			$pid = (int) get_post_meta( $post_id, '_fge_assigned_partner_id', true );
-			echo $pid > 0 ? esc_html( get_the_title( $pid ) ) : '—';
+			echo $pid > 0 ? esc_html( get_the_title( $pid ) ) : 'k. A.';
 			break;
 		case 'fge_sale_price_net':
 			$price = get_post_meta( $post_id, '_fge_sale_price_net', true );
-			echo $price !== '' ? esc_html( number_format( (float) $price, 2, ',', '.' ) ) . ' €' : '—';
+			echo $price !== '' ? esc_html( number_format( (float) $price, 2, ',', '.' ) ) . ' €' : 'k. A.';
 			break;
 		case 'fge_views_count':
 			echo esc_html( get_post_meta( $post_id, '_fge_views_count', true ) ?: '0' );
@@ -101,25 +101,25 @@ function fge_partner_column_content( string $column, int $post_id ) {
 				[ $lbl, $col ] = $ps_labels[ $ps_val ];
 				echo '<span class="fge-badge fge-badge--' . esc_attr( $col ) . '">' . esc_html( $lbl ) . '</span>';
 			} else {
-				echo $ps_val !== '' ? esc_html( $ps_val ) : '—';
+				echo $ps_val !== '' ? esc_html( $ps_val ) : 'k. A.';
 			}
 			break;
 		case 'fge_city':
-			echo esc_html( get_post_meta( $post_id, '_fge_city', true ) ?: '—' );
+			echo esc_html( get_post_meta( $post_id, '_fge_city', true ) ?: 'k. A.' );
 			break;
 		case 'fge_federal_state':
-			echo esc_html( get_post_meta( $post_id, '_fge_federal_state', true ) ?: '—' );
+			echo esc_html( get_post_meta( $post_id, '_fge_federal_state', true ) ?: 'k. A.' );
 			break;
 		case 'fge_main_contact':
 			$name = get_post_meta( $post_id, '_fge_main_contact_name', true );
-			echo $name ? esc_html( $name ) : '—';
+			echo $name ? esc_html( $name ) : 'k. A.';
 			break;
 		case 'fge_event_contact':
 			$name = get_post_meta( $post_id, '_fge_event_contact_name', true );
-			echo $name ? esc_html( $name ) : '—';
+			echo $name ? esc_html( $name ) : 'k. A.';
 			break;
 		case 'fge_portal_active':
-			echo get_post_meta( $post_id, '_fge_partner_portal_enabled', true ) == '1' ? '✓' : '—';
+			echo get_post_meta( $post_id, '_fge_partner_portal_enabled', true ) == '1' ? '✓' : 'k. A.';
 			break;
 		case 'fge_published_events_count':
 			echo esc_html( get_post_meta( $post_id, '_fge_published_events_count', true ) ?: '0' );
@@ -155,37 +155,37 @@ add_filter( 'manage_firmengolf_request_posts_columns', 'fge_request_columns' );
 function fge_request_column_content( string $column, int $post_id ) {
 	switch ( $column ) {
 		case 'fge_request_status':
-			echo esc_html( get_post_meta( $post_id, '_fge_request_status', true ) ?: '—' );
+			echo esc_html( get_post_meta( $post_id, '_fge_request_status', true ) ?: 'k. A.' );
 			break;
 		case 'fge_company_name':
-			echo esc_html( get_post_meta( $post_id, '_fge_company_name', true ) ?: '—' );
+			echo esc_html( get_post_meta( $post_id, '_fge_company_name', true ) ?: 'k. A.' );
 			break;
 		case 'fge_contact_name':
 			$first = get_post_meta( $post_id, '_fge_contact_first_name', true );
 			$last  = get_post_meta( $post_id, '_fge_contact_last_name', true );
 			$name  = trim( $first . ' ' . $last );
-			echo $name ? esc_html( $name ) : '—';
+			echo $name ? esc_html( $name ) : 'k. A.';
 			break;
 		case 'fge_assigned_event':
 			$eid = (int) get_post_meta( $post_id, '_fge_assigned_event_id', true );
-			echo $eid > 0 ? esc_html( get_the_title( $eid ) ) : '—';
+			echo $eid > 0 ? esc_html( get_the_title( $eid ) ) : 'k. A.';
 			break;
 		case 'fge_assigned_partner':
 			$pid = (int) get_post_meta( $post_id, '_fge_assigned_partner_id', true );
-			echo $pid > 0 ? esc_html( get_the_title( $pid ) ) : '—';
+			echo $pid > 0 ? esc_html( get_the_title( $pid ) ) : 'k. A.';
 			break;
 		case 'fge_participants':
-			echo esc_html( get_post_meta( $post_id, '_fge_expected_participants', true ) ?: '—' );
+			echo esc_html( get_post_meta( $post_id, '_fge_expected_participants', true ) ?: 'k. A.' );
 			break;
 		case 'fge_preferred_date_1':
-			echo esc_html( get_post_meta( $post_id, '_fge_preferred_date_1', true ) ?: '—' );
+			echo esc_html( get_post_meta( $post_id, '_fge_preferred_date_1', true ) ?: 'k. A.' );
 			break;
 		case 'fge_request_source':
 			$src = (string) get_post_meta( $post_id, '_fge_source', true );
-			echo esc_html( $src ? ( fge_request_source_options()[ $src ] ?? $src ) : '—' );
+			echo esc_html( $src ? ( fge_request_source_options()[ $src ] ?? $src ) : 'k. A.' );
 			break;
 		case 'fge_request_date':
-			echo esc_html( get_post_meta( $post_id, '_fge_request_date', true ) ?: '—' );
+			echo esc_html( get_post_meta( $post_id, '_fge_request_date', true ) ?: 'k. A.' );
 			break;
 	}
 }
@@ -242,13 +242,13 @@ function fge_user_column_content( string $output, string $column, int $user_id )
 	$row = $map[ $user_id ] ?? null;
 	if ( 'fge_user_partner' === $column ) {
 		if ( ! $row ) {
-			return '—';
+			return 'k. A.';
 		}
 		return '<a href="' . esc_url( admin_url( 'post.php?post=' . $row['id'] . '&action=edit' ) ) . '">' . esc_html( $row['name'] ) . '</a>';
 	}
 	if ( 'fge_user_phone' === $column ) {
 		if ( ! $row || '' === $row['phone'] ) {
-			return '—';
+			return 'k. A.';
 		}
 		return '<a href="tel:' . esc_attr( preg_replace( '/[^\d+]/', '', $row['phone'] ) ) . '">' . esc_html( $row['phone'] ) . '</a>';
 	}

@@ -64,7 +64,7 @@ $addr = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
 		<h2>§ 4 Leistungsumfang, Teilnehmerzahl, Änderungen</h2>
 		<p>
 			(1) Der Leistungsumfang ergibt sich aus dem jeweiligen Angebot bzw. der Buchungsbestätigung. Die Teilnehmerzahl
-			ist im Angebot als Spanne („von–bis Personen") angegeben.<br>
+			ist im Angebot als Spanne („von, bis Personen") angegeben.<br>
 			(2) Änderungen der Teilnehmerzahl innerhalb der angegebenen Spanne sind möglich; der Preis kann sich entsprechend
 			anpassen. Wesentliche Abweichungen außerhalb der Spanne bedürfen der Abstimmung und können zu Preis- bzw.
 			Leistungsänderungen führen.<br>
@@ -94,9 +94,9 @@ $addr = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
 		</p>
 		<ul>
 			<li>mehr als 42 Tage vor dem Termin: 10 %</li>
-			<li>42–29 Tage vorher: 25 %</li>
-			<li>28–15 Tage vorher: 50 %</li>
-			<li>14–7 Tage vorher: 75 %</li>
+			<li>42 bis 29 Tage vorher: 25 %</li>
+			<li>28 bis 15 Tage vorher: 50 %</li>
+			<li>14 bis 7 Tage vorher: 75 %</li>
 			<li>weniger als 7 Tage vorher oder Nichterscheinen: 90 %</li>
 		</ul>
 		<p>
@@ -139,7 +139,7 @@ $addr = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
 			und begrenzt auf den vertragstypischen, vorhersehbaren Schaden.<br>
 			(3) Firmengolf haftet für die ordnungsgemäße Vermittlung, Organisation und sorgfältige Auswahl der Leistungsträger.
 			Für die Leistungserbringung der Partner vor Ort (z. B. Trainingsdurchführung, Transport, Platzzustand, Verpflegung)
-			haften die jeweiligen Leistungsträger selbst; insoweit ist unsere Haftung – außer in den Fällen des Absatzes 1 – ausgeschlossen.<br>
+			haften die jeweiligen Leistungsträger selbst; insoweit ist unsere Haftung, außer in den Fällen des Absatzes 1, ausgeschlossen.<br>
 			(4) Im Übrigen ist die Haftung ausgeschlossen.
 		</p>
 
@@ -159,7 +159,7 @@ $addr = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
 		<h2>§ 14 Schlussbestimmungen</h2>
 		<p>
 			(1) Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts.<br>
-			(2) Ausschließlicher Gerichtsstand ist – soweit gesetzlich zulässig – <?php echo esc_html( $co['hq_city'] ); ?>.<br>
+			(2) Ausschließlicher Gerichtsstand ist, soweit gesetzlich zulässig, <?php echo esc_html( $co['hq_city'] ); ?>.<br>
 			(3) Änderungen und Ergänzungen bedürfen der Textform.<br>
 			(4) Sollte eine Bestimmung unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.
 		</p>

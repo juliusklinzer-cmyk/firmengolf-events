@@ -23,18 +23,18 @@ $fehler     = sanitize_key( wp_unslash( $_GET['fehler'] ?? '' ) );
 $fehler_txt = [
 	'felder'         => 'Bitte fülle Name und eine gültige E-Mail-Adresse aus.',
 	'passwort'       => 'Das Passwort braucht mindestens 8 Zeichen.',
-	'email_vergeben' => 'Für diese E-Mail existiert schon ein Konto. Melde dich damit im Portal an oder ruf uns kurz an — wir verknüpfen es für dich.',
-	'rate'           => 'Zu viele Versuche — bitte warte ein paar Minuten.',
+	'email_vergeben' => 'Für diese E-Mail existiert schon ein Konto. Melde dich damit im Portal an oder ruf uns kurz an, wir verknüpfen es für dich.',
+	'rate'           => 'Zu viele Versuche, bitte warte ein paar Minuten.',
 ][ $fehler ] ?? '';
 
 // E-Mail-Verifizierung: Zwischenschritt mit Code-Eingabe (Julius, 2026-07-06).
 $verify   = ! empty( $_GET['verify'] );
 $evfehler = sanitize_key( wp_unslash( $_GET['evfehler'] ?? '' ) );
 $ev_txt   = [
-	'wrong'    => 'Der Code stimmt nicht — schau nochmal in die Mail.',
-	'expired'  => 'Der Code ist abgelaufen — fordere einfach einen neuen an.',
+	'wrong'    => 'Der Code stimmt nicht, schau nochmal in die Mail.',
+	'expired'  => 'Der Code ist abgelaufen, fordere einfach einen neuen an.',
 	'toomany'  => 'Zu viele Versuche. Bitte fordere einen neuen Code an oder melde dich bei uns.',
-	'cooldown' => 'Wir haben dir gerade erst einen Code geschickt — schau kurz in dein Postfach.',
+	'cooldown' => 'Wir haben dir gerade erst einen Code geschickt, schau kurz in dein Postfach.',
 	'nomail'   => 'Der Code konnte nicht verschickt werden. Bitte prüfe die E-Mail-Adresse.',
 ][ $evfehler ] ?? '';
 $pending  = $verify ? (array) get_transient( 'fge_invite_pending_' . $token ) : [];
@@ -104,7 +104,7 @@ $pf_email = (string) ( $pending['email'] ?? '' );
 			<h1 class="inv-title"><?php echo $linked ? 'Schon erledigt!' : 'Dieser Link ist nicht mehr gültig'; ?></h1>
 			<p class="inv-sub" style="margin-bottom:0;">
 				<?php echo $linked
-					? 'Dieses Partnerprofil ist bereits mit einem Konto verknüpft — melde dich einfach im Portal an.'
+					? 'Dieses Partnerprofil ist bereits mit einem Konto verknüpft, melde dich einfach im Portal an.'
 					: 'Der Einladungslink wurde bereits verwendet oder ist abgelaufen. Ruf uns an, wir schicken dir sofort einen neuen.'; ?>
 			</p>
 			<a class="inv-cta" href="<?php echo esc_url( home_url( '/partnerportal/' ) ); ?>">Zum Partner-Portal →</a>
@@ -118,9 +118,9 @@ $pf_email = (string) ( $pending['email'] ?? '' );
 					<h1 class="inv-club"><?php echo esc_html( $club ); ?></h1>
 					<?php if ( '' !== $city ) : ?><div class="inv-city"><?php echo esc_html( $city ); ?></div><?php endif; ?>
 					<div class="inv-checks">
-						<div class="inv-check"><span class="ic">✓</span><span><b>Euer Profil ist fertig eingerichtet</b> — Beschreibung, Fotos, Ausstattung haben wir übernommen.</span></div>
+						<div class="inv-check"><span class="ic">✓</span><span><b>Euer Profil ist fertig eingerichtet</b>, Beschreibung, Fotos, Ausstattung haben wir übernommen.</span></div>
 						<div class="inv-check"><span class="ic">✓</span><span><b>Firmen aus eurer Region</b> suchen bei uns nach Plätzen für Teamevents, Turniere &amp; After-Work.</span></div>
-						<div class="inv-check"><span class="ic">✓</span><span><b>Kostenlos für euren Platz</b> — ihr passt nur noch Feinheiten an und schaltet euer erstes Angebot frei.</span></div>
+						<div class="inv-check"><span class="ic">✓</span><span><b>Kostenlos für euren Platz</b>, ihr passt nur noch Feinheiten an und schaltet euer erstes Angebot frei.</span></div>
 					</div>
 				</div>
 			</div>
@@ -142,7 +142,7 @@ $pf_email = (string) ( $pending['email'] ?? '' );
 						<div class="inv-field"><label for="fge_last">Nachname</label><input type="text" id="fge_last" name="fge_last" value="<?php echo esc_attr( $pf_last ); ?>" autocomplete="family-name"></div>
 					</div>
 					<div class="inv-field"><label for="fge_email">E-Mail-Adresse (dein Login)</label><input type="email" id="fge_email" name="fge_email" value="<?php echo esc_attr( $pf_email ); ?>" required autocomplete="email"></div>
-					<div class="inv-field"><label for="fge_pass">Passwort (mindestens 8 Zeichen)</label><input type="password" id="fge_pass" name="fge_pass" required minlength="8" autocomplete="new-password"></div>
+					<div class="inv-field"><label for="fge_pass"><?php echo $verify ? 'Passwort (zur Bestätigung bitte erneut eingeben)' : 'Passwort (mindestens 8 Zeichen)'; ?></label><input type="password" id="fge_pass" name="fge_pass" required minlength="8" autocomplete="new-password"></div>
 					<?php if ( $verify ) : ?>
 					<div class="inv-field"><label for="fge_code">Bestätigungscode</label><input type="text" id="fge_code" name="fge_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="6-stelliger Code" required></div>
 					<?php endif; ?>

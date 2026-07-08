@@ -154,7 +154,7 @@ function fge_handle_send_held_offer(): void {
 // Admin-Notice nach dem manuellen Angebots-Auslöser.
 add_action( 'admin_notices', static function () {
 	if ( isset( $_GET['fge_offer_ok'] ) ) {
-		echo '<div class="notice notice-success is-dismissible"><p>Termin bestätigt — das Angebot wurde erstellt und an den Kunden gesendet.</p></div>';
+		echo '<div class="notice notice-success is-dismissible"><p>Termin bestätigt, das Angebot wurde erstellt und an den Kunden gesendet.</p></div>';
 	} elseif ( isset( $_GET['fge_offer_err'] ) ) {
 		$map = [
 			'no_event'     => 'Bitte zuerst ein Event zuordnen und die Anfrage speichern.',
@@ -200,7 +200,7 @@ function fge_render_mb_scheduling( WP_Post $post ): void {
 	if ( $taken_over ) {
 		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#D9F6EC;border-radius:6px;"><strong>Von Firmengolf übernommen.</strong> Koordination läuft direkt mit der Firma.</p>';
 	} elseif ( $overdue ) {
-		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#FBEFD6;border-radius:6px;"><strong>Überfällig</strong> — Reaktionsfrist überschritten, noch nicht alle haben reagiert.</p>';
+		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#FBEFD6;border-radius:6px;"><strong>Überfällig</strong>, Reaktionsfrist überschritten, noch nicht alle haben reagiert.</p>';
 	}
 	?>
 	<p style="margin:0 0 12px;"><strong>Status:</strong>
@@ -208,7 +208,7 @@ function fge_render_mb_scheduling( WP_Post $post ): void {
 		if ( $final > 0 ) {
 			echo 'Termin bestätigt: <strong>' . esc_html( $wish[ $final ] ?? ('#' . $final) ) . '</strong>';
 		} elseif ( $m['all_responded'] ) {
-			echo 'Alle haben reagiert — Termin kann bestätigt werden.';
+			echo 'Alle haben reagiert, Termin kann bestätigt werden.';
 		} else {
 			echo 'Wartet auf Rückmeldungen.';
 		}
@@ -275,7 +275,7 @@ function fge_render_mb_scheduling( WP_Post $post ): void {
 function fge_render_manual_offer_panel( int $req, array $wish, int $event_id, bool $sent, int $final ): void {
 	$warn = 'margin:0;padding:8px 12px;background:#FBEFD6;border-radius:6px;';
 
-	echo '<p style="margin:0 0 12px;color:#646970;">Diese Anfrage hat keine Golfplatz-Terminabstimmung (z.&nbsp;B. ein von Firmengolf organisiertes Event). Bestätige hier direkt einen Wunschtermin — das Angebot wird erstellt und automatisch an den Kunden gesendet.</p>';
+	echo '<p style="margin:0 0 12px;color:#646970;">Diese Anfrage hat keine Golfplatz-Terminabstimmung (z.&nbsp;B. ein von Firmengolf organisiertes Event). Bestätige hier direkt einen Wunschtermin, das Angebot wird erstellt und automatisch an den Kunden gesendet.</p>';
 
 	// Bereits versendet → Status + Link, kein Button mehr.
 	if ( $sent ) {
@@ -287,7 +287,7 @@ function fge_render_manual_offer_panel( int $req, array $wish, int $event_id, bo
 		];
 		$b    = $badges[ $offer_status ] ?? [ 'Versendet', '#646970' ];
 		$conf = (int) get_post_meta( $req, '_fge_final_date_index', true );
-		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#D9F6EC;border-radius:6px;"><strong>Angebot versendet.</strong> Termin: <strong>' . esc_html( $wish[ $conf ] ?? '—' ) . '</strong> · Status: <span style="display:inline-block;padding:1px 8px;border-radius:9px;color:#fff;font-size:11px;background:' . esc_attr( $b[1] ) . ';">' . esc_html( $b[0] ) . '</span></p>';
+		echo '<p style="margin:0 0 10px;padding:8px 12px;background:#D9F6EC;border-radius:6px;"><strong>Angebot versendet.</strong> Termin: <strong>' . esc_html( $wish[ $conf ] ?? 'k. A.' ) . '</strong> · Status: <span style="display:inline-block;padding:1px 8px;border-radius:9px;color:#fff;font-size:11px;background:' . esc_attr( $b[1] ) . ';">' . esc_html( $b[0] ) . '</span></p>';
 		if ( function_exists( 'fge_offer_link' ) ) {
 			echo '<p style="margin:0;"><a href="' . esc_url( fge_offer_link( $req ) ) . '" target="_blank" rel="noopener" class="button">Angebots-Seite ansehen</a></p>';
 		}
