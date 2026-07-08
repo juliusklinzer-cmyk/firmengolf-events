@@ -895,7 +895,12 @@ function fge_format_request_admin_link( int $request_id ): string {
  * Größenänderungen nur hier, nie per Inline-Style an einzelnen Mails.
  */
 function fge_email_button( string $url, string $label ): string {
-	return '<a href="' . esc_url( $url ) . '" style="display:inline-block;background:#4279D1;color:#ffffff;text-decoration:none;padding:9px 18px;border-radius:6px;font-size:14px;font-weight:600;">' . esc_html( $label ) . '</a>';
+	// Tabellen-Bauweise, weil Outlook Padding auf <a> ignoriert (sah dort wie ein
+	// nackter blauer Kasten aus). Dunklere Unterkante = „drückbarer" 3D-Look.
+	return '<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse:separate;display:inline-table;"><tr>'
+		. '<td bgcolor="#4279D1" style="border-radius:8px;border-bottom:3px solid #2C55A0;">'
+		. '<a href="' . esc_url( $url ) . '" style="display:inline-block;padding:12px 26px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">' . esc_html( $label ) . '</a>'
+		. '</td></tr></table>';
 }
 
 function fge_email_wrap( string $title, string $body_html ): string {
