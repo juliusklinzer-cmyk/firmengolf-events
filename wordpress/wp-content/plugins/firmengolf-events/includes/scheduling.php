@@ -158,7 +158,7 @@ function fge_handle_send_held_offer(): void {
 add_action( 'admin_notices', static function () {
 	if ( isset( $_GET['fge_offer_ok'] ) ) {
 		if ( '2' === (string) sanitize_key( wp_unslash( $_GET['fge_offer_ok'] ) ) ) {
-			echo '<div class="notice notice-warning is-dismissible"><p>Termin bestätigt, der Kunde hat eine Termin-Bestätigung per Mail erhalten. Das Angebot ist zurückgehalten: erst in „Angebots-Positionen" bepreisen (oder ein Event zuordnen), dann in der Metabox „Angebot" auf „Angebot jetzt senden" klicken.</p></div>';
+			echo '<div class="notice notice-warning is-dismissible"><p>Termin bestätigt, der Kunde hat eine Termin-Bestätigung per Mail erhalten. Das Angebot ist zurückgehalten: erst in „Schritt 2: Angebots-Positionen" bepreisen (oder ein Event zuordnen), dann in „Schritt 3: Angebot" auf „Angebot jetzt senden" klicken.</p></div>';
 		} else {
 			echo '<div class="notice notice-success is-dismissible"><p>Termin bestätigt, das Angebot wurde erstellt und an den Kunden gesendet.</p></div>';
 		}
@@ -175,7 +175,8 @@ add_action( 'admin_notices', static function () {
 
 // ── Admin meta box: scheduling matrix (vote-contacts × wish dates) ────────────
 add_action( 'add_meta_boxes', static function () {
-	add_meta_box( 'fge_mb_scheduling', 'Terminabstimmung', 'fge_render_mb_scheduling', 'firmengolf_request', 'normal', 'high' );
+	// 'default' statt 'high': die Box soll NACH den Anfragedaten kommen (Workflow-Reihenfolge).
+	add_meta_box( 'fge_mb_scheduling', 'Schritt 1: Terminabstimmung', 'fge_render_mb_scheduling', 'firmengolf_request', 'normal', 'default' );
 } );
 
 function fge_render_mb_scheduling( WP_Post $post ): void {
@@ -314,7 +315,7 @@ function fge_render_manual_offer_panel( int $req, array $wish, int $event_id, bo
 	$has_event    = $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id );
 
 	if ( $needs_review ) {
-		echo '<p style="' . esc_attr( $warn ) . '">Noch nicht alles bepreist' . ( $has_event ? '' : ', kein Event zugeordnet' ) . '. Nach der Termin-Bestätigung bekommt der Kunde erst eine <strong>Termin-Bestätigung</strong>, das Angebot wird zurückgehalten. Danach in „Angebots-Positionen" Preise eintragen (oder ein Event zuordnen) und in der Metabox „Angebot" auf „Angebot jetzt senden" klicken.</p>';
+		echo '<p style="' . esc_attr( $warn ) . '">Noch nicht alles bepreist' . ( $has_event ? '' : ', kein Event zugeordnet' ) . '. Nach der Termin-Bestätigung bekommt der Kunde erst eine <strong>Termin-Bestätigung</strong>, das Angebot wird zurückgehalten. Danach in „Schritt 2: Angebots-Positionen" Preise eintragen (oder ein Event zuordnen) und in „Schritt 3: Angebot" auf „Angebot jetzt senden" klicken.</p>';
 	}
 
 	?>

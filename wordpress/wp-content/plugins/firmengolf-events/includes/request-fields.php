@@ -30,15 +30,18 @@ function fge_request_source_options(): array {
 function fge_register_request_metaboxes() {
 	$screen = 'firmengolf_request';
 
+	// Reihenfolge = Arbeitsablauf: erst die Anfragedaten, dann Schritt 1 Termin →
+	// Schritt 2 Positionen (extra-services.php) → Schritt 3 Angebot (Seitenleiste);
+	// interne Boxen (Kit/HubSpot, Lexoffice) mit 'low' ganz ans Ende.
 	add_meta_box( 'fge_rmb_basis',       'Anfrage Basis',               'fge_render_rmb_basis',       $screen, 'normal', 'high' );
 	add_meta_box( 'fge_rmb_unternehmen', 'Unternehmensdaten',           'fge_render_rmb_unternehmen', $screen, 'normal', 'default' );
 	add_meta_box( 'fge_rmb_kontakt',     'Ansprechpartner Unternehmen', 'fge_render_rmb_kontakt',     $screen, 'normal', 'default' );
 	add_meta_box( 'fge_rmb_rahmen',      'Event Rahmen',                'fge_render_rmb_rahmen',      $screen, 'normal', 'default' );
 	add_meta_box( 'fge_rmb_termine',     'Terminvorschläge',            'fge_render_rmb_termine',     $screen, 'normal', 'default' );
 	add_meta_box( 'fge_rmb_leistungen',  'Gewünschte Zusatzleistungen', 'fge_render_rmb_leistungen',  $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_kit_hubspot', 'Kit und HubSpot (intern)',    'fge_render_rmb_kit_hubspot', $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_lexoffice',   'Lexoffice (intern, manuell)', 'fge_render_rmb_lexoffice',   $screen, 'normal', 'default' );
-	add_meta_box( 'fge_rmb_angebot',     'Angebot an den Kunden',       'fge_render_rmb_angebot',     $screen, 'side',   'high' );
+	add_meta_box( 'fge_rmb_kit_hubspot', 'Kit und HubSpot (intern)',    'fge_render_rmb_kit_hubspot', $screen, 'normal', 'low' );
+	add_meta_box( 'fge_rmb_lexoffice',   'Lexoffice (intern, manuell)', 'fge_render_rmb_lexoffice',   $screen, 'normal', 'low' );
+	add_meta_box( 'fge_rmb_angebot',     'Schritt 3: Angebot an den Kunden', 'fge_render_rmb_angebot', $screen, 'side',  'high' );
 	add_meta_box( 'fge_rmb_tracking',    'Quelle und Tracking',         'fge_render_rmb_tracking',    $screen, 'side',   'default' );
 }
 add_action( 'add_meta_boxes', 'fge_register_request_metaboxes' );
@@ -412,7 +415,7 @@ function fge_render_rmb_angebot( WP_Post $post ) {
 		if ( '' !== $open ) {
 			echo '<p><strong style="color:#9A6B12;">⚠ Zurückgehalten: Zusatzleistungen noch unbepreist</strong></p>';
 			echo '<p style="margin:4px 0;">Offen: ' . esc_html( $open ) . '</p>';
-			echo '<p style="margin:4px 0;color:#6C736E;">Preise in der Metabox „Angebots-Positionen" eintragen (Einkauf + Marge, Dienstleister-Mail für die automatische Auftragsbestätigung). Der Kunde kann jede Position im Angebot einzeln abwählen.</p>';
+			echo '<p style="margin:4px 0;color:#6C736E;">Preise in „Schritt 2: Angebots-Positionen" eintragen (Einkauf + Marge, Dienstleister-Mail für die automatische Auftragsbestätigung). Der Kunde kann jede Position im Angebot einzeln abwählen.</p>';
 		} elseif ( $xs > 0 ) {
 			echo '<p><strong style="color:#2C7A3D;">✓ Alle Zusatzleistungen bepreist (' . (int) $xs . ' ' . ( 1 === $xs ? 'Position' : 'Positionen' ) . ')</strong></p>';
 			echo '<p style="margin:4px 0;color:#6C736E;">Das Angebot kann raus.</p>';

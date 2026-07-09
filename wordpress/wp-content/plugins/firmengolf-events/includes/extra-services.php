@@ -104,9 +104,10 @@ function fge_xs_parse_num( string $s ): float {
 
 // ── Metabox: Editor in der Anfrage ────────────────────────────────────────────
 
+// Hook-Priorität 20: erst nach der Terminabstimmung (Schritt 1) einsortieren.
 add_action( 'add_meta_boxes', static function () {
-	add_meta_box( 'fge_rmb_positionen', 'Angebots-Positionen (Feinplanung)', 'fge_render_rmb_positionen', 'firmengolf_request', 'normal', 'default' );
-} );
+	add_meta_box( 'fge_rmb_positionen', 'Schritt 2: Angebots-Positionen (Feinplanung)', 'fge_render_rmb_positionen', 'firmengolf_request', 'normal', 'default' );
+}, 20 );
 
 function fge_render_rmb_positionen( WP_Post $post ) {
 	$req   = $post->ID;
