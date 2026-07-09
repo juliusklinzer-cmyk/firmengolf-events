@@ -62,7 +62,7 @@ function fge_offer_link( int $req ): string {
 
 // ── Angebot bauen ─────────────────────────────────────────────────────────────
 
-/** Snapshot des Angebots aus Event-Preis + Wünschen. */
+/** Snapshot des Angebots aus Event-Preis + bepreisten Positionen + offenen Wünschen. */
 function fge_build_offer_snapshot( int $req, int $date_index ): array {
 	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
 	$pricing  = ( $event_id && function_exists( 'fge_event_pricing' ) ) ? fge_event_pricing( $event_id ) : [ 'gross' => 0, 'unit' => '' ];
@@ -71,11 +71,36 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 	$includes = $event_id ? get_post_meta( $event_id, '_fge_event_includes', true ) : [];
 	$includes = is_array( $includes ) ? $includes : array_filter( preg_split( '/\r\n|\r|\n/', (string) $includes ) );
 
-	$g = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ];
+	// Wünsche mit bepreister Position tauchen als Extras auf, nicht mehr als offener Wunsch.
+	$g = function_exists( 'fge_xs_uncovered_wishes' )
+		? fge_xs_uncovered_wishes( $req )
+		: ( function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ] );
 
 	$gross = (float) ( $pricing['gross'] ?? 0 );
 	$unit  = (string) ( $pricing['unit'] ?? '' );
+
+	// Telefonisch vereinbarter Preis übersteuert den Event-Standardpreis (Platzhalter-Events).
+	$override = (float) get_post_meta( $req, '_fge_offer_base_override', true );
+	if ( $override > 0 ) {
+		$gross = $override;
+		$unit  = 'person' === (string) get_post_meta( $req, '_fge_offer_base_override_unit', true ) ? 'pro Person' : 'pauschal';
+	}
 	$total = ( 'pro Person' === $unit && $pax > 0 ) ? $gross * $pax : $gross;
+
+	// Extras: NUR Verkaufspreis, Basis und Zeilenindex (src). Einkauf, Marge und
+	// Dienstleister-Kontakt bleiben bewusst außerhalb des Snapshots — die Kundenseite
+	// rendert ausschließlich hieraus und kann die Marge damit nicht leaken.
+	$extras = [];
+	if ( function_exists( 'fge_xs_priced' ) ) {
+		foreach ( fge_xs_priced( $req ) as $src => $item ) {
+			$extras[] = [
+				'label' => (string) $item['label'],
+				'price' => fge_xs_sale_price( $item ),
+				'basis' => (string) $item['basis'],
+				'src'   => (int) $src,
+			];
+		}
+	}
 
 	$co       = function_exists( 'fge_company' ) ? fge_company() : [];
 	$location = $event_id ? (string) get_post_meta( $event_id, '_fge_event_location', true ) : '';
@@ -91,6 +116,7 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 		'price_gross'       => $gross,
 		'price_unit'        => $unit,
 		'price_total'       => $total,
+		'extras'            => $extras,
 		'vat_percent'       => defined( 'FGE_VAT_PERCENT' ) ? (int) FGE_VAT_PERCENT : 19,
 		'includes'          => array_values( array_filter( array_map( 'strval', (array) $includes ) ) ),
 		'wishes_platz'      => array_values( (array) ( $g['platz'] ?? [] ) ),
@@ -114,6 +140,44 @@ function fge_offer_price_text( array $snap ): string {
 	}
 	// Kein „zzgl. X % USt ergibt ca. Y" am Preis (Julius, 2026-07-04) — USt-Hinweis steht einmal im Kleingedruckten.
 	return $s;
+}
+
+/** Preistext einer Extra-Position (Verkauf netto), z. B. "540 € pauschal" / "45 € p.P.". */
+function fge_offer_extra_price_text( array $extra ): string {
+	$p = (float) ( $extra['price'] ?? 0 );
+	$n = ( floor( $p ) === $p ) ? number_format_i18n( $p, 0 ) : number_format_i18n( $p, 2 );
+	return $n . ' €' . ( 'person' === (string) ( $extra['basis'] ?? '' ) ? ' p.P.' : ' pauschal' );
+}
+
+/**
+ * Netto-Gesamtsumme über Eventpreis + Extras (Basis für MwSt./Endpreis).
+ *
+ * @param array      $snap     Angebots-Snapshot.
+ * @param array|null $selected src-Indizes der gewählten Extras, null = alle.
+ * @return array{net:float,ca:bool} ca = enthält p.P.-Anteile (Summe hängt an der Teilnehmerzahl).
+ */
+function fge_offer_totals( array $snap, ?array $selected = null ): array {
+	$pax   = (int) ( $snap['participants'] ?? 0 );
+	$is_pp = 'pro Person' === (string) ( $snap['price_unit'] ?? '' );
+	$net   = $is_pp
+		? ( $pax > 0 ? (float) ( $snap['price_total'] ?? 0 ) : 0.0 )
+		: (float) ( $snap['price_gross'] ?? 0 );
+	$ca = $is_pp && $net > 0;
+	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
+		if ( null !== $selected && ! in_array( (int) ( $x['src'] ?? -1 ), $selected, true ) ) {
+			continue;
+		}
+		$p = (float) ( $x['price'] ?? 0 );
+		if ( 'person' === (string) ( $x['basis'] ?? '' ) ) {
+			if ( $pax > 0 ) {
+				$net += $p * $pax;
+				$ca   = true;
+			}
+		} else {
+			$net += $p;
+		}
+	}
+	return [ 'net' => $net, 'ca' => $ca ];
 }
 
 /** Brutto-Gesamtbetrag inkl. USt als Text, oder '' wenn kein konkreter Gesamtpreis vorliegt. */
@@ -141,15 +205,22 @@ function fge_offer_needs_review( int $req ): bool {
 	if ( '1' === (string) get_post_meta( $req, '_fge_offer_review_done', true ) ) {
 		return false;
 	}
-	$g     = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ];
+	// Wünsche mit bepreister Angebots-Position gelten als erledigt; nur offene halten zurück.
+	$g     = function_exists( 'fge_xs_uncovered_wishes' )
+		? fge_xs_uncovered_wishes( $req )
+		: ( function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ] );
 	$needs = ! empty( $g['platz'] ) || ! empty( $g['firmengolf'] );
 	if ( ! $needs ) {
-		// Ohne bepreisbares Event kein Auto-Angebot: „Auf Anfrage" wäre sonst verbindlich buchbar (Audit A6).
+		// Ohne bepreisbaren Inhalt kein Auto-Angebot: „Auf Anfrage" wäre sonst verbindlich
+		// buchbar (Audit A6). Bepreisbar sind Event-Preis, Preis-Override (Platzhalter-Events,
+		// telefonisch vereinbart) oder bepreiste Positionen.
 		$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
 		$pricing  = ( $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id ) && function_exists( 'fge_event_pricing' ) )
 			? fge_event_pricing( $event_id )
 			: [ 'gross' => 0 ];
-		$needs = (float) ( $pricing['gross'] ?? 0 ) <= 0;
+		$base  = max( (float) ( $pricing['gross'] ?? 0 ), (float) get_post_meta( $req, '_fge_offer_base_override', true ) );
+		$xs    = function_exists( 'fge_xs_priced' ) ? fge_xs_priced( $req ) : [];
+		$needs = $base <= 0 && empty( $xs );
 	}
 	return (bool) apply_filters( 'fge_offer_needs_review', $needs, $req );
 }
@@ -276,6 +347,14 @@ function fge_offer_handle_post(): void {
 				}
 				wp_safe_redirect( fge_offer_link( $req ) . '?done=expired' );
 				exit;
+			}
+			// Vom Kunden gewählte Zusatzleistungen festhalten (Checkbox je Position,
+			// abgewählte lösen eine Absage an den Dienstleister aus).
+			$snap_x = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
+			$valid  = array_map( static fn( $x ) => (int) ( $x['src'] ?? -1 ), (array) ( $snap_x['extras'] ?? [] ) );
+			if ( ! empty( $valid ) ) {
+				$picked = array_map( 'intval', (array) ( $_POST['fge_offer_extras'] ?? [] ) );
+				update_post_meta( $req, '_fge_offer_extras_selected', array_values( array_intersect( $valid, $picked ) ) );
 			}
 			update_post_meta( $req, '_fge_offer_status', 'accepted' );
 			update_post_meta( $req, '_fge_offer_accepted_at', current_time( 'mysql' ) ); // fürs Übersichts-Dashboard (Buchungen/Umsatz je Monat)

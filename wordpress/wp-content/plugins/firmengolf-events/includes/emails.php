@@ -436,23 +436,33 @@ function fge_send_offer_email( int $request_id ): bool {
 	$link  = function_exists( 'fge_offer_link' ) ? fge_offer_link( $request_id ) : home_url();
 	$greet = $data['first_name'] !== '' ? 'Hallo ' . esc_html( $data['first_name'] ) . ',' : 'Hallo,';
 
-	// Netto-Basis fürs Ausweisen von MwSt. + Endpreis (Julius, 2026-07-06):
-	// bei p.P.-Preisen die Gesamtsumme über alle Teilnehmer, sonst der Gesamtpreis.
-	$vatp     = (int) ( $snap['vat_percent'] ?? 19 );
-	$is_pp    = 'pro Person' === (string) ( $snap['price_unit'] ?? '' );
-	$ca       = $is_pp ? 'ca. ' : ''; // p.P.-Summen hängen an der Teilnehmerzahl (Kern-Audit M6)
-	$net_base = $is_pp
-		? ( (int) ( $snap['participants'] ?? 0 ) > 0 ? (float) ( $snap['price_total'] ?? 0 ) : 0.0 )
-		: (float) ( $snap['price_gross'] ?? 0 );
+	// Netto-Summe fürs Ausweisen von MwSt. + Endpreis (Julius, 2026-07-06):
+	// Eventpreis plus bepreiste Zusatzleistungen, p.P.-Anteile über alle Teilnehmer.
+	$vatp   = (int) ( $snap['vat_percent'] ?? 19 );
+	$extras = array_values( (array) ( $snap['extras'] ?? [] ) );
+	$totals = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap ) : [ 'net' => 0.0, 'ca' => false ];
+	$net    = (float) $totals['net'];
+	$ca     = $totals['ca'] ? 'ca. ' : ''; // p.P.-Summen hängen an der Teilnehmerzahl (Kern-Audit M6)
+	$pax    = (int) ( $snap['participants'] ?? 0 );
 
 	$row  = static function ( $k, $v ) { return '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $v . '</td></tr>'; };
 	$rows = $row( 'Event', esc_html( (string) ( $snap['event_title'] ?? '' ) ) )
 		. $row( 'Termin', esc_html( (string) ( $snap['date'] ?? '' ) ) )
 		. ( '' !== (string) ( $snap['location'] ?? '' ) ? $row( 'Ort', esc_html( (string) $snap['location'] ) ) : '' )
-		. ( (int) ( $snap['participants'] ?? 0 ) > 0 ? $row( 'Teilnehmer', (int) $snap['participants'] . ' Personen' ) : '' )
-		. $row( 'Preis (netto)', esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' ) )
-		. ( $net_base > 0 ? $row( 'zzgl. ' . $vatp . ' % MwSt.', $ca . number_format_i18n( round( $net_base * $vatp / 100 ), 0 ) . ' €' ) : '' )
-		. ( $net_base > 0 ? $row( 'Endpreis inkl. MwSt.', '<strong>' . $ca . number_format_i18n( round( $net_base * ( 1 + $vatp / 100 ) ), 0 ) . ' €</strong>' ) : '' );
+		. ( $pax > 0 ? $row( 'Teilnehmer', $pax . ' Personen' ) : '' );
+	if ( (float) ( $snap['price_gross'] ?? 0 ) > 0 || empty( $extras ) ) {
+		$rows .= $row( empty( $extras ) ? 'Preis (netto)' : 'Eventpreis (netto)', esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' ) );
+	}
+	foreach ( $extras as $x ) {
+		$rows .= $row( (string) ( $x['label'] ?? '' ), esc_html( function_exists( 'fge_offer_extra_price_text' ) ? fge_offer_extra_price_text( $x ) : '' ) );
+	}
+	if ( $net > 0 ) {
+		if ( ! empty( $extras ) ) {
+			$rows .= $row( 'Summe (netto)', $ca . number_format_i18n( round( $net ), 0 ) . ' €' );
+		}
+		$rows .= $row( 'zzgl. ' . $vatp . ' % MwSt.', $ca . number_format_i18n( round( $net * $vatp / 100 ), 0 ) . ' €' )
+			. $row( 'Endpreis inkl. MwSt.', '<strong>' . $ca . number_format_i18n( round( $net * ( 1 + $vatp / 100 ) ), 0 ) . ' €</strong>' );
+	}
 
 	$cname         = (string) ( $snap['contact_name'] ?? '' );
 	$cphone        = (string) ( $snap['contact_phone'] ?? '' );
@@ -476,6 +486,7 @@ function fge_send_offer_email( int $request_id ): bool {
 		<p style="margin:0 0 16px;">der Termin steht. Hier ist euer Angebot, ihr könnt es mit einem Klick annehmen.</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
 		' . ( $incl !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Das ist dabei</p><ul style="margin:0 0 14px;padding-left:20px;">' . $incl . '</ul>' : '' ) . '
+		' . ( ! empty( $extras ) ? '<p style="margin:0 0 14px;color:#6C736E;font-size:13px;">Die Zusatzleistungen sind in der Summe enthalten. Was ihr nicht braucht, könnt ihr auf der Angebotsseite einzeln abwählen, der Preis passt sich an.</p>' : '' ) . '
 		' . ( $wish !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Eure Zusatzwünsche</p><p style="margin:0 0 6px;color:#6C736E;font-size:13px;">Auf Wunsch organisiert, wird separat ausgewiesen, noch nicht im oben genannten Preis enthalten.</p><ul style="margin:0 0 14px;padding-left:20px;">' . $wish . '</ul>' : '' ) . '
 		<p style="margin:0 0 14px;color:#6C736E;font-size:13px;">Alle Preise zzgl. gesetzl. USt. Es gelten unsere <a href="' . esc_url( home_url( '/agb/' ) ) . '" style="color:#4279D1;">AGB</a> inkl. Storno- und Zahlungsbedingungen.</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Angebot ansehen & bestätigen' ) . '</p>
@@ -515,6 +526,36 @@ function fge_notify_offer_accepted( int $request_id ): void {
 	$snap = (array) get_post_meta( $request_id, '_fge_offer_snapshot', true );
 	$date = (string) ( $snap['date'] ?? '' );
 
+	// Abrechnungsübersicht der Zusatzleistungen (nur intern: Einkauf und Marge
+	// stehen bewusst NUR hier, nie in Kunden- oder Dienstleister-Mails).
+	$xs_block = '';
+	if ( function_exists( 'fge_xs_priced' ) ) {
+		$priced = fge_xs_priced( $request_id );
+		if ( ! empty( $priced ) ) {
+			$sel = array_map( 'intval', (array) get_post_meta( $request_id, '_fge_offer_extras_selected', true ) );
+			$th  = static function ( $t ) { return '<td style="padding:4px 10px 4px 0;color:#6C736E;font-size:12px;">' . $t . '</td>'; };
+			$td  = static function ( $t ) { return '<td style="padding:4px 10px 4px 0;">' . $t . '</td>'; };
+			$trs = '<tr>' . $th( 'Leistung' ) . $th( 'Status' ) . $th( 'Kunde zahlt (netto)' ) . $th( 'Einkauf (netto)' ) . $th( 'Dienstleister' ) . '</tr>';
+			foreach ( $priced as $src => $it ) {
+				$on    = in_array( (int) $src, $sel, true );
+				$per   = 'person' === $it['basis'] ? ' p.P.' : ' pauschal';
+				$prov  = trim( $it['provider_name'] . ' ' . $it['provider_email'] );
+				$trs  .= '<tr>'
+					. $td( esc_html( $it['label'] ) )
+					. $td( $on ? '<strong style="color:#2C7A3D;">gebucht</strong>' : '<span style="color:#B4332B;">abgewählt</span>' )
+					. $td( esc_html( number_format_i18n( fge_xs_sale_price( $it ), 2 ) . ' €' . $per ) )
+					. $td( esc_html( number_format_i18n( (float) $it['cost'], 2 ) . ' €' . $per . ' zzgl. ' . number_format_i18n( (float) $it['margin'], 0 ) . ' % Marge' ) )
+					. $td( '' !== $prov ? esc_html( $prov ) : '<span style="color:#6C736E;">ohne, freie Position</span>' )
+					. '</tr>';
+			}
+			$tot      = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap, $sel ) : [ 'net' => 0.0, 'ca' => false ];
+			$xs_block = '<p style="margin:0 0 6px;font-weight:600;">Abrechnungsübersicht Zusatzleistungen (intern)</p>'
+				. '<table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.5;margin:0 0 8px;">' . $trs . '</table>'
+				. ( (float) $tot['net'] > 0 ? '<p style="margin:0 0 6px;"><strong>Rechnungsbetrag an den Kunden (netto, inkl. Event und gebuchter Zusatzleistungen):</strong> ' . esc_html( ( $tot['ca'] ? 'ca. ' : '' ) . number_format_i18n( round( (float) $tot['net'] ), 0 ) . ' €' ) . '</p>' : '' )
+				. '<p style="margin:0 0 16px;color:#6C736E;font-size:13px;">Dienstleister mit hinterlegter Mail wurden automatisch beauftragt bzw. bei Abwahl abgesagt.</p>';
+		}
+	}
+
 	$to = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 	$ic = '
 		<p style="margin:0 0 16px;">Der Kunde hat das Angebot <strong>' . esc_html( $ref ) . '</strong> angenommen. Der Auftrag steht.</p>
@@ -522,6 +563,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		<strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: 'k. A.' ) . '<br>
 		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: 'k. A.' ) . '<br>
 		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: 'k. A.' ) . '</p>
+		' . $xs_block . '
 		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen.</p>
 		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
@@ -555,6 +597,103 @@ function fge_notify_offer_declined( int $request_id ): void {
 		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
 	wp_mail( $to, 'Angebot abgelehnt: ' . $ref, fge_email_wrap( 'Angebot abgelehnt: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+// ── Dienstleister-Mails für Zusatzleistungen (Shuttle, Fotograf …) ────────────
+// Positionen mit hinterlegter Dienstleister-Mail lösen bei Kundenannahme
+// automatisch Auftrag bzw. Absage aus. Der Dienstleister sieht NUR den mit ihm
+// vereinbarten Einkaufspreis, nie Verkaufspreis oder Marge.
+
+/** Eckdaten fürs Dienstleister-Mailing aus dem Angebots-Snapshot. */
+function fge_xs_mail_facts( int $req ): array {
+	$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
+	return [
+		'ref'      => fge_request_number( $req ),
+		'event'    => (string) ( $snap['event_title'] ?? '' ),
+		'date'     => (string) ( $snap['date'] ?? '' ),
+		'location' => (string) ( $snap['location'] ?? '' ),
+		'pax'      => (int) ( $snap['participants'] ?? 0 ),
+	];
+}
+
+/** Vereinbarter Einkaufspreis als Text für den Dienstleister. */
+function fge_xs_cost_text( array $item, int $pax ): string {
+	$s = number_format_i18n( (float) $item['cost'], 2 ) . ' € netto ' . ( 'person' === $item['basis'] ? 'p.P.' : 'pauschal' );
+	if ( 'person' === $item['basis'] && $pax > 0 ) {
+		$s .= ' bei ca. ' . $pax . ' Personen';
+	}
+	return $s;
+}
+
+/** Auftragsbestätigung an den Dienstleister (Kunde hat die Position mitgebucht). */
+function fge_xs_provider_confirmation( int $req, array $item ): bool {
+	$f     = fge_xs_mail_facts( $req );
+	$co    = function_exists( 'fge_company' ) ? fge_company() : [];
+	$greet = '' !== trim( $item['provider_name'] ) ? 'Hallo ' . esc_html( trim( $item['provider_name'] ) ) . ',' : 'Hallo,';
+	$row   = static function ( $k, $v ) { return '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $v . '</td></tr>'; };
+	$rows  = $row( 'Leistung', esc_html( $item['label'] ) )
+		. ( '' !== $f['date'] ? $row( 'Termin', esc_html( $f['date'] ) ) : '' )
+		. ( '' !== $f['location'] ? $row( 'Ort', esc_html( $f['location'] ) ) : '' )
+		. ( $f['pax'] > 0 ? $row( 'Teilnehmer', 'ca. ' . (int) $f['pax'] . ' Personen' ) : '' )
+		. $row( 'Vereinbarter Preis', esc_html( fge_xs_cost_text( $item, $f['pax'] ) ) )
+		. $row( 'Referenz', esc_html( $f['ref'] ) );
+
+	$subject = 'Auftragsbestätigung Firmengolf: ' . $item['label'] . ( '' !== $f['date'] ? ' am ' . $f['date'] : '' ) . ' (' . $f['ref'] . ')';
+	$content = '
+		<p style="margin:0 0 16px;">' . $greet . '</p>
+		<p style="margin:0 0 16px;">unser Kunde hat verbindlich gebucht. Hiermit beauftragen wir wie besprochen:</p>
+		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
+		<p style="margin:0 0 16px;">Auftraggeber und Rechnungsempfänger ist ' . esc_html( (string) ( $co['legal_name'] ?? 'Firmengolf' ) ) . ', ' . esc_html( (string) ( $co['hq_street'] ?? '' ) ) . ', ' . esc_html( trim( ( $co['hq_zip'] ?? '' ) . ' ' . ( $co['hq_city'] ?? '' ) ) ) . '. Die Rechnung bitte unter Angabe der Referenz ' . esc_html( $f['ref'] ) . ' an <a href="mailto:' . esc_attr( (string) ( $co['email_events'] ?? '' ) ) . '" style="color:#4279D1;">' . esc_html( (string) ( $co['email_events'] ?? '' ) ) . '</a>.</p>
+		<p style="margin:0;">Für die Detailabstimmung melden wir uns rechtzeitig. Bei Fragen einfach auf diese Mail antworten.</p>
+	';
+	return (bool) wp_mail( $item['provider_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+/** Absage an den Dienstleister (Position abgewählt oder Event nicht zustande gekommen). */
+function fge_xs_provider_cancellation( int $req, array $item, string $reason ): bool {
+	$f     = fge_xs_mail_facts( $req );
+	$greet = '' !== trim( $item['provider_name'] ) ? 'Hallo ' . esc_html( trim( $item['provider_name'] ) ) . ',' : 'Hallo,';
+	$subject = 'Absage Firmengolf: ' . $item['label'] . ( '' !== $f['date'] ? ' am ' . $f['date'] : '' ) . ' (' . $f['ref'] . ')';
+	$content = '
+		<p style="margin:0 0 16px;">' . $greet . '</p>
+		<p style="margin:0 0 16px;">danke für euer Angebot zu <strong>' . esc_html( $item['label'] ) . '</strong>' . ( '' !== $f['date'] ? ' am <strong>' . esc_html( $f['date'] ) . '</strong>' : '' ) . '. ' . esc_html( $reason ) . ' Es entsteht kein Auftrag.</p>
+		<p style="margin:0;">Wir kommen gern beim nächsten Event wieder auf euch zu.</p>
+	';
+	return (bool) wp_mail( $item['provider_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+/** Kunde hat angenommen: gewählte Positionen beauftragen, abgewählte absagen (einmalig). */
+add_action( 'fge_offer_accepted', 'fge_xs_notify_providers_on_accept', 20 );
+function fge_xs_notify_providers_on_accept( int $req ): void {
+	// add_post_meta mit unique=true als atomarer Einmal-Guard (wie _fge_offer_sent).
+	if ( ! function_exists( 'fge_xs_priced' ) || ! add_post_meta( $req, '_fge_xs_providers_notified', 1, true ) ) {
+		return;
+	}
+	$sel = array_map( 'intval', (array) get_post_meta( $req, '_fge_offer_extras_selected', true ) );
+	foreach ( fge_xs_priced( $req ) as $src => $item ) {
+		if ( ! is_email( $item['provider_email'] ) ) {
+			continue;
+		}
+		if ( in_array( (int) $src, $sel, true ) ) {
+			fge_xs_provider_confirmation( $req, $item );
+		} else {
+			fge_xs_provider_cancellation( $req, $item, 'Der Kunde hat diese Zusatzleistung abgewählt, das übrige Event findet statt.' );
+		}
+	}
+}
+
+/** Angebot abgelehnt oder Anfrage terminal geschlossen: alle Dienstleister absagen (einmalig). */
+add_action( 'fge_offer_declined', 'fge_xs_cancel_providers', 20 );
+function fge_xs_cancel_providers( int $req ): void {
+	if ( ! function_exists( 'fge_xs_priced' ) || ! add_post_meta( $req, '_fge_xs_providers_notified', 1, true ) ) {
+		return;
+	}
+	foreach ( fge_xs_priced( $req ) as $item ) {
+		if ( ! is_email( $item['provider_email'] ) ) {
+			continue;
+		}
+		fge_xs_provider_cancellation( $req, $item, 'Das Event kommt leider nicht zustande.' );
+	}
 }
 
 /** Erinnerung an den Kunden, wenn das Angebot noch offen ist. */

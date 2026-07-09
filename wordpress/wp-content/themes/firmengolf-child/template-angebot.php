@@ -99,6 +99,13 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 				<?php if ( 'accepted' === $offer_status ) : ?>
 					<h2>Gebucht, <?php echo esc_html( $first ?: 'super' ); ?>!</h2>
 					<p>Euer Event <strong><?php echo esc_html( (string) ( $snap['event_title'] ?? '' ) ); ?></strong> am <strong><?php echo esc_html( (string) ( $snap['date'] ?? '' ) ); ?></strong> ist verbindlich gebucht. Wir kümmern uns um die letzten Details und melden uns.</p>
+					<?php
+					// Mitgebuchte Zusatzleistungen bestätigen (nur die vom Kunden gewählten).
+					$tl_sel    = array_map( 'intval', (array) get_post_meta( $req, '_fge_offer_extras_selected', true ) );
+					$tl_booked = array_filter( (array) ( $snap['extras'] ?? [] ), static fn( $x ) => in_array( (int) ( $x['src'] ?? -1 ), $tl_sel, true ) );
+					if ( ! empty( $tl_booked ) ) : ?>
+					<p style="margin-top:10px;">Mitgebucht: <strong><?php echo esc_html( implode( ', ', array_map( static fn( $x ) => (string) $x['label'], $tl_booked ) ) ); ?></strong></p>
+					<?php endif; ?>
 				<?php else : ?>
 					<h2>Schade, <?php echo esc_html( $first ?: '' ); ?>.</h2>
 					<p>Ihr habt das Angebot abgelehnt. Wenn ihr mögt, finden wir gern eine Alternative, antwortet einfach auf die Angebots-Mail oder schreibt uns, wir passen es gern an.</p>
@@ -116,27 +123,35 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 			<div class="tl-deadline">Die Reservierungsfrist ist abgelaufen, der Termin ist nicht mehr garantiert. Ihr könnt trotzdem zusagen: wir prüfen dann sofort, ob er noch frei ist, und melden uns umgehend.</div>
 			<?php endif; ?>
 
+			<?php
+			$tl_extras  = array_values( (array) ( $snap['extras'] ?? [] ) );
+			$tl_vatp    = (int) ( $snap['vat_percent'] ?? 19 );
+			$tl_pax     = (int) ( $snap['participants'] ?? 0 );
+			$tl_is_pp   = 'pro Person' === (string) ( $snap['price_unit'] ?? '' );
+			// Netto-Basis des Events (ohne Extras) — gleiche Logik wie fge_offer_totals.
+			$tl_base    = $tl_is_pp ? ( $tl_pax > 0 ? (float) ( $snap['price_total'] ?? 0 ) : 0.0 ) : (float) ( $snap['price_gross'] ?? 0 );
+			// Startzustand: alle Extras gewählt; JS rechnet bei Abwahl live nach.
+			$tl_totals  = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap ) : [ 'net' => $tl_base, 'ca' => $tl_is_pp && $tl_base > 0 ];
+			$tl_net     = (float) $tl_totals['net'];
+			$tl_ca      = $tl_totals['ca'] ? 'ca. ' : ''; // p.P.-Summen hängen an der Teilnehmerzahl (Kern-Audit M6)
+			?>
 			<div class="tl-summary">
 				<div class="tl-sum-co"><?php echo esc_html( (string) ( $snap['event_title'] ?? '' ) ); ?></div>
 				<div class="tl-sum-grid">
 					<div class="tl-sum-item"><div class="k">Termin</div><div class="v"><?php echo esc_html( (string) ( $snap['date'] ?? '' ) ); ?></div></div>
 					<?php if ( '' !== (string) ( $snap['location'] ?? '' ) ) : ?><div class="tl-sum-item"><div class="k">Ort</div><div class="v"><?php echo esc_html( (string) $snap['location'] ); ?></div></div><?php endif; ?>
-					<?php if ( (int) ( $snap['participants'] ?? 0 ) > 0 ) : ?><div class="tl-sum-item"><div class="k">Teilnehmer</div><div class="v"><?php echo (int) $snap['participants']; ?> Personen</div></div><?php endif; ?>
-					<div class="tl-sum-item"><div class="k">Preis (netto)</div><div class="v"><?php
+					<?php if ( $tl_pax > 0 ) : ?><div class="tl-sum-item"><div class="k">Teilnehmer</div><div class="v"><?php echo (int) $tl_pax; ?> Personen</div></div><?php endif; ?>
+					<?php if ( (float) ( $snap['price_gross'] ?? 0 ) > 0 || empty( $tl_extras ) ) : ?>
+					<div class="tl-sum-item"><div class="k"><?php echo empty( $tl_extras ) ? 'Preis (netto)' : 'Eventpreis (netto)'; ?></div><div class="v"><?php
 						echo esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' );
 					?></div></div>
-					<?php
-					// MwSt. + Endpreis explizit ausweisen (Julius, 2026-07-06).
-					$tl_vatp     = (int) ( $snap['vat_percent'] ?? 19 );
-					$tl_is_pp    = 'pro Person' === (string) ( $snap['price_unit'] ?? '' );
-					// Bei p.P.-Preisen hängt die Summe an der Teilnehmerzahl → als „ca." kennzeichnen (Kern-Audit M6).
-					$tl_ca       = $tl_is_pp ? 'ca. ' : '';
-					$tl_net_base = $tl_is_pp
-						? ( (int) ( $snap['participants'] ?? 0 ) > 0 ? (float) ( $snap['price_total'] ?? 0 ) : 0.0 )
-						: (float) ( $snap['price_gross'] ?? 0 );
-					if ( $tl_net_base > 0 ) : ?>
-					<div class="tl-sum-item"><div class="k">zzgl. <?php echo (int) $tl_vatp; ?> % MwSt.</div><div class="v"><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net_base * $tl_vatp / 100 ), 0 ) ); ?> €</div></div>
-					<div class="tl-sum-item"><div class="k">Endpreis inkl. MwSt.</div><div class="v"><strong><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net_base * ( 1 + $tl_vatp / 100 ) ), 0 ) ); ?> €</strong></div></div>
+					<?php endif; ?>
+					<?php if ( $tl_net > 0 ) : ?>
+					<?php if ( ! empty( $tl_extras ) ) : ?>
+					<div class="tl-sum-item"><div class="k">Summe (netto)</div><div class="v"><span id="tl-x-net"><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net ), 0 ) ); ?> €</span></div></div>
+					<?php endif; ?>
+					<div class="tl-sum-item"><div class="k">zzgl. <?php echo (int) $tl_vatp; ?> % MwSt.</div><div class="v"><span id="tl-x-vat"><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net * $tl_vatp / 100 ), 0 ) ); ?> €</span></div></div>
+					<div class="tl-sum-item"><div class="k">Endpreis inkl. MwSt.</div><div class="v"><strong><span id="tl-x-total"><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net * ( 1 + $tl_vatp / 100 ) ), 0 ) ); ?> €</span></strong></div></div>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -146,26 +161,48 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 			<ul class="tl-list"><?php foreach ( (array) $snap['includes'] as $i ) : ?><li><?php echo esc_html( $i ); ?></li><?php endforeach; ?></ul>
 			<?php endif; ?>
 
-			<?php if ( ! empty( $snap['wishes_platz'] ) || ! empty( $snap['wishes_firmengolf'] ) ) : ?>
-			<div class="tl-section-label">Eure Zusatzwünsche</div>
-			<p class="tl-note" style="margin:0 0 8px;">Auf Wunsch organisiert, wird separat ausgewiesen und ist noch nicht im oben genannten Preis enthalten.</p>
-			<ul class="tl-list">
-				<?php foreach ( (array) ( $snap['wishes_platz'] ?? [] ) as $i ) : ?><li><?php echo esc_html( $i ); ?> <span class="tl-src">am Platz</span></li><?php endforeach; ?>
-				<?php foreach ( (array) ( $snap['wishes_firmengolf'] ?? [] ) as $i ) : ?><li><?php echo esc_html( $i ); ?> <span class="tl-src">durch Firmengolf</span></li><?php endforeach; ?>
-			</ul>
-			<?php endif; ?>
-
-			<?php if ( isset( $_GET['agb'] ) ) : ?>
-			<p class="tl-note" style="color:#B4332B;margin:0 0 10px;">Bitte bestätige die AGB, um verbindlich zu buchen.</p>
-			<?php endif; ?>
-			<?php if ( isset( $_GET['session'] ) ) : ?>
-			<p class="tl-note" style="color:#B4332B;margin:0 0 10px;">Die Sitzung war abgelaufen. Bitte bestätige deine Auswahl noch einmal.</p>
-			<?php endif; ?>
-			<p class="tl-note" style="margin:0 0 14px;">Alle Preise verstehen sich zzgl. der gesetzlichen Umsatzsteuer. Es gelten unsere <a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>
-
 			<form method="post" action="<?php echo esc_url( fge_offer_link( $req ) ); ?>" class="tl-offer-actions" id="tl-offer-form">
 				<input type="hidden" name="fge_offer_token" value="<?php echo esc_attr( $token ); ?>">
 				<input type="hidden" name="fge_offer_nonce" value="<?php echo esc_attr( $nonce ); ?>">
+
+				<?php if ( ! empty( $tl_extras ) ) : ?>
+				<div class="tl-section-label">Eure Zusatzleistungen</div>
+				<p class="tl-note" style="margin:0 0 8px;">In der Summe oben enthalten. Was ihr nicht braucht, wählt ihr einfach ab, der Preis passt sich sofort an.</p>
+				<ul class="tl-list" style="list-style:none;padding-left:0;">
+					<?php foreach ( $tl_extras as $x ) :
+						$x_pp  = 'person' === (string) ( $x['basis'] ?? '' );
+						$x_add = $x_pp ? ( $tl_pax > 0 ? (float) $x['price'] * $tl_pax : 0.0 ) : (float) $x['price'];
+						?>
+					<li style="margin-bottom:8px;">
+						<label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;">
+							<input type="checkbox" class="tl-x-pick" name="fge_offer_extras[]" value="<?php echo (int) ( $x['src'] ?? 0 ); ?>" checked
+							       data-add="<?php echo esc_attr( (string) $x_add ); ?>" data-pp="<?php echo $x_pp && $tl_pax > 0 ? '1' : '0'; ?>" style="margin-top:3px;flex:0 0 auto;">
+							<span><?php echo esc_html( (string) ( $x['label'] ?? '' ) ); ?>
+								<strong style="white-space:nowrap;"><?php echo esc_html( function_exists( 'fge_offer_extra_price_text' ) ? fge_offer_extra_price_text( $x ) : '' ); ?></strong>
+								<?php if ( $x_pp && $tl_pax > 0 ) : ?><span class="tl-src">ca. <?php echo esc_html( number_format_i18n( round( $x_add ), 0 ) ); ?> € bei <?php echo (int) $tl_pax; ?> Personen</span><?php endif; ?>
+							</span>
+						</label>
+					</li>
+					<?php endforeach; ?>
+				</ul>
+				<?php endif; ?>
+
+				<?php if ( ! empty( $snap['wishes_platz'] ) || ! empty( $snap['wishes_firmengolf'] ) ) : ?>
+				<div class="tl-section-label">Eure Zusatzwünsche</div>
+				<p class="tl-note" style="margin:0 0 8px;">Auf Wunsch organisiert, wird separat ausgewiesen und ist noch nicht im oben genannten Preis enthalten.</p>
+				<ul class="tl-list">
+					<?php foreach ( (array) ( $snap['wishes_platz'] ?? [] ) as $i ) : ?><li><?php echo esc_html( $i ); ?> <span class="tl-src">am Platz</span></li><?php endforeach; ?>
+					<?php foreach ( (array) ( $snap['wishes_firmengolf'] ?? [] ) as $i ) : ?><li><?php echo esc_html( $i ); ?> <span class="tl-src">durch Firmengolf</span></li><?php endforeach; ?>
+				</ul>
+				<?php endif; ?>
+
+				<?php if ( isset( $_GET['agb'] ) ) : ?>
+				<p class="tl-note" style="color:#B4332B;margin:0 0 10px;">Bitte bestätige die AGB, um verbindlich zu buchen.</p>
+				<?php endif; ?>
+				<?php if ( isset( $_GET['session'] ) ) : ?>
+				<p class="tl-note" style="color:#B4332B;margin:0 0 10px;">Die Sitzung war abgelaufen. Bitte bestätige deine Auswahl noch einmal.</p>
+				<?php endif; ?>
+				<p class="tl-note" style="margin:0 0 14px;">Alle Preise verstehen sich zzgl. der gesetzlichen Umsatzsteuer. Es gelten unsere <a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>
 				<label style="display:flex;gap:9px;align-items:flex-start;margin:0 0 14px;font-size:13px;line-height:1.45;">
 					<input type="checkbox" id="tl-agb" name="fge_offer_agb" value="1" style="margin-top:3px;flex:0 0 auto;">
 					<span>Ich akzeptiere die <a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a> und buche mit „Angebot annehmen" verbindlich.</span>
@@ -200,6 +237,27 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 				if (agb && acc) { agb.addEventListener('change', function(){ acc.disabled = !agb.checked; acc.style.opacity = agb.checked ? '1' : '.5'; }); }
 				var tq = document.getElementById('tl-toggle-q'), qw = document.getElementById('tl-q-wrap');
 				if (tq && qw) { tq.addEventListener('click', function(){ qw.style.display = (qw.style.display === 'none' ? 'block' : 'none'); }); }
+
+				// Zusatzleistungen abwählbar: Summe, MwSt. und Endpreis live nachrechnen.
+				var base = <?php echo wp_json_encode( round( $tl_base, 2 ) ); ?>,
+				    baseCa = <?php echo $tl_is_pp && $tl_base > 0 ? 'true' : 'false'; ?>,
+				    vat = <?php echo (int) $tl_vatp; ?>,
+				    picks = document.querySelectorAll('.tl-x-pick');
+				function fmt(n){ return Math.round(n).toLocaleString('de-DE') + ' €'; }
+				function recalc(){
+					var net = base, ca = baseCa;
+					picks.forEach(function(p){
+						if (!p.checked) return;
+						net += parseFloat(p.dataset.add || '0') || 0;
+						if (p.dataset.pp === '1') ca = true;
+					});
+					var pre = ca ? 'ca. ' : '';
+					var elN = document.getElementById('tl-x-net'), elV = document.getElementById('tl-x-vat'), elT = document.getElementById('tl-x-total');
+					if (elN) elN.textContent = pre + fmt(net);
+					if (elV) elV.textContent = pre + fmt(net * vat / 100);
+					if (elT) elT.textContent = pre + fmt(net * (1 + vat / 100));
+				}
+				picks.forEach(function(p){ p.addEventListener('change', recalc); });
 			})();
 			</script>
 
@@ -208,12 +266,18 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 			<div class="tl-eyebrow">Anfrage <?php echo esc_html( $ref ); ?></div>
 			<h1 class="tl-h">Hallo <?php echo esc_html( $first ?: '' ); ?>, hier ist <em>euer aktueller Stand</em>.</h1>
 			<div class="tl-status-card"><?php echo esc_html( $status_msg( $status ) ); ?></div>
-			<?php if ( 'accepted' === $offer_status && ! empty( $snap ) ) : ?>
+			<?php if ( 'accepted' === $offer_status && ! empty( $snap ) ) :
+				$tl_sel    = array_map( 'intval', (array) get_post_meta( $req, '_fge_offer_extras_selected', true ) );
+				$tl_booked = array_filter( (array) ( $snap['extras'] ?? [] ), static fn( $x ) => in_array( (int) ( $x['src'] ?? -1 ), $tl_sel, true ) );
+				?>
 			<div class="tl-summary" style="margin-top:18px;">
 				<div class="tl-sum-co"><?php echo esc_html( (string) ( $snap['event_title'] ?? '' ) ); ?></div>
 				<div class="tl-sum-grid">
 					<div class="tl-sum-item"><div class="k">Termin</div><div class="v"><?php echo esc_html( (string) ( $snap['date'] ?? '' ) ); ?></div></div>
 					<div class="tl-sum-item"><div class="k">Status</div><div class="v">Gebucht</div></div>
+					<?php if ( ! empty( $tl_booked ) ) : ?>
+					<div class="tl-sum-item"><div class="k">Zusatzleistungen</div><div class="v"><?php echo esc_html( implode( ', ', array_map( static fn( $x ) => (string) $x['label'], $tl_booked ) ) ); ?></div></div>
+					<?php endif; ?>
 				</div>
 			</div>
 			<?php endif; ?>

@@ -406,14 +406,19 @@ function fge_render_rmb_angebot( WP_Post $post ) {
 
 	// Termin fix, Angebot noch nicht raus → Feinplanungs-Gate.
 	if ( $hold && function_exists( 'fge_request_wish_groups' ) ) {
-		$g      = fge_request_wish_groups( $req );
-		$wishes = implode( ', ', array_merge( (array) $g['platz'], (array) $g['firmengolf'] ) );
-		if ( '' !== $wishes ) {
-			echo '<p><strong style="color:#9A6B12;">⚠ Zurückgehalten: Zusatzleistungen in Feinplanung</strong></p>';
-			echo '<p style="margin:4px 0;">' . esc_html( $wishes ) . '</p>';
+		$g    = function_exists( 'fge_xs_uncovered_wishes' ) ? fge_xs_uncovered_wishes( $req ) : fge_request_wish_groups( $req );
+		$open = implode( ', ', array_merge( (array) $g['platz'], (array) $g['firmengolf'] ) );
+		$xs   = function_exists( 'fge_xs_priced' ) ? count( fge_xs_priced( $req ) ) : 0;
+		if ( '' !== $open ) {
+			echo '<p><strong style="color:#9A6B12;">⚠ Zurückgehalten: Zusatzleistungen noch unbepreist</strong></p>';
+			echo '<p style="margin:4px 0;">Offen: ' . esc_html( $open ) . '</p>';
+			echo '<p style="margin:4px 0;color:#6C736E;">Preise in der Metabox „Angebots-Positionen" eintragen (Einkauf + Marge, Dienstleister-Mail für die automatische Auftragsbestätigung). Der Kunde kann jede Position im Angebot einzeln abwählen.</p>';
+		} elseif ( $xs > 0 ) {
+			echo '<p><strong style="color:#2C7A3D;">✓ Alle Zusatzleistungen bepreist (' . (int) $xs . ' ' . ( 1 === $xs ? 'Position' : 'Positionen' ) . ')</strong></p>';
+			echo '<p style="margin:4px 0;color:#6C736E;">Das Angebot kann raus.</p>';
 		} else {
 			echo '<p><strong style="color:#9A6B12;">⚠ Zurückgehalten: kein bepreistes Event zugeordnet</strong></p>';
-			echo '<p style="margin:4px 0;">Erst Event/Preis zuordnen oder den Preis mit dem Kunden klären, sonst wäre das Angebot „Auf Anfrage" und trotzdem verbindlich buchbar.</p>';
+			echo '<p style="margin:4px 0;">Event mit Preis zuordnen, den Eventpreis in „Angebots-Positionen" überschreiben oder dort Positionen anlegen, sonst wäre das Angebot „Auf Anfrage" und trotzdem verbindlich buchbar.</p>';
 		}
 		echo '<p style="margin:4px 0;color:#6C736E;">Der Kunde hat eine Termin-Bestätigung erhalten und wartet auf das Angebot.</p>';
 	}
@@ -700,6 +705,10 @@ function fge_save_request_fields( int $post_id ) {
 		if ( in_array( $new_status, [ 'verloren', 'angebot_abgelehnt', 'nicht_verfuegbar' ], true )
 			&& 'pending' === (string) get_post_meta( $post_id, '_fge_offer_status', true ) ) {
 			update_post_meta( $post_id, '_fge_offer_status', 'declined' );
+			// Eingebundene Dienstleister nicht im Ungewissen lassen: automatische Absage.
+			if ( function_exists( 'fge_xs_cancel_providers' ) ) {
+				fge_xs_cancel_providers( $post_id );
+			}
 		}
 	}
 

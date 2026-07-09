@@ -34,13 +34,15 @@ Keine Gedankenstriche, Preise im Format „XX € p.P./Gesamt netto".
 
 | # | Betreff | Auslöser | An wen | Inhalt |
 |---|---------|----------|--------|--------|
-| 11 | Euer Angebot für {Event} ({FG-Nr}) | Angebot versendet | Kunde | Positionen, Preis netto + zzgl. 19 % MwSt + Endpreis (mit „ca." bei p.P.), Frist, Annehmen-Button |
+| 11 | Euer Angebot für {Event} ({FG-Nr}) | Angebot versendet | Kunde | Positionen inkl. bepreister Zusatzleistungen (Verkaufspreis), Summe netto + zzgl. 19 % MwSt + Endpreis (mit „ca." bei p.P.), Hinweis auf Einzelabwahl, Frist, Annehmen-Button |
 | 12 | Erinnerung: euer Angebot ({FG-Nr}) | Kunde reagiert 3 Tage nicht (Cron, Filter `fge_offer_reminder_days`) | Kunde | Frist läuft, Termin noch reserviert |
 | 13 | Rückfrage zum Angebot: {FG-Nr} | Kunde stellt Rückfrage oder nimmt nach Fristablauf an (`fge_offer_query`, idempotent) | intern | Rückfrage-Text bzw. „Termin prüfen" |
-| 14 | Auftrag steht: {FG-Nr} | Kunde nimmt an (`fge_offer_accepted`) | intern | Buchung eingegangen |
-| 15 | Event gebucht: {FG-Nr} | Kunde nimmt an | Partner | Euer Platz ist gebucht |
+| 14 | Auftrag steht: {FG-Nr} | Kunde nimmt an (`fge_offer_accepted`) | intern | Buchung eingegangen + Abrechnungsübersicht der Zusatzleistungen (Kundenpreis, Einkauf, Marge, Dienstleister; nur intern) |
+| 15 | Event gebucht: {FG-Nr} | Kunde nimmt an | Partner | Euer Platz ist gebucht (ohne Zusatzleistungs-Details) |
 | 16 | Buchung bestätigt: {FG-Nr} | Kunde nimmt an | Kunde | Verbindliche Buchungsbestätigung |
 | 17 | Angebot abgelehnt: {FG-Nr} | Kunde lehnt ab (`fge_offer_declined`, mit Confirm-Dialog) | intern | Absage + Kontext |
+| 17a | Auftragsbestätigung Firmengolf: {Leistung} am {Datum} ({FG-Nr}) | Kunde nimmt an, Position gewählt (`fge_xs_provider_confirmation`) | Dienstleister der Zusatzleistung | Beauftragung mit vereinbartem Einkaufspreis, Termin, Ort, Teilnehmer, Rechnungsadresse; nie Verkaufspreis/Marge |
+| 17b | Absage Firmengolf: {Leistung} am {Datum} ({FG-Nr}) | Position vom Kunden abgewählt, Angebot abgelehnt oder Anfrage terminal geschlossen (`fge_xs_provider_cancellation`, einmaliger Guard) | Dienstleister der Zusatzleistung | Kein Auftrag, freundliche Absage |
 
 ## D · Onboarding und Einladung (Partner-Gewinnung)
 
