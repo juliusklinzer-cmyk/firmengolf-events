@@ -103,7 +103,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	?>
 	<?php if ( $fge_live_count > 0 ) : ?>
 	<a class="mk-hero-floating" href="<?php echo esc_url( $url_events ); ?>">
-		<div class="mk-floating-thumb" aria-hidden="true" style="background-image:url('<?php echo esc_url( $img( 'golf-coaching-einzel.jpg' ) ); ?>')"></div>
+		<div class="mk-floating-thumb" aria-hidden="true" style="background-image:url('<?php echo esc_url( $img( 'abschlag-driver-tee.jpg' ) ); ?>')"></div>
 		<div>
 			<div class="mk-floating-chip"><?php echo esc_html( (string) $fge_live_count ); ?> Events aktuell live</div>
 			<div class="mk-floating-meta">Hamburg · München · Berlin · Köln</div>
