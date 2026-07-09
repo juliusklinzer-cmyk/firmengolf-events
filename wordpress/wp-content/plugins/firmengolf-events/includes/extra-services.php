@@ -114,6 +114,8 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 	$sent  = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
 
 	// Unbepreiste Wünsche als vorgeschlagene Leerzeilen anhängen, damit nichts vergessen wird.
+	// Individual-Anfragen (Wizard) speichern Leistungen nur als wants_*-Häkchen, nicht als
+	// Wunschliste — die kommen deshalb zusätzlich als Vorschläge rein.
 	$open = fge_xs_uncovered_wishes( $req );
 	$have_wish = [];
 	foreach ( $items as $it ) {
@@ -121,15 +123,36 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 			$have_wish[ mb_strtolower( trim( (string) $k ) ) ] = true;
 		}
 	}
+	$wants_labels = [
+		'wants_golf_teacher' => 'Golflehrer', 'wants_meeting_room' => 'Meetingraum',
+		'wants_breakfast' => 'Frühstück', 'wants_lunch' => 'Lunch', 'wants_dinner' => 'Abendessen',
+		'wants_shuttle' => 'Shuttle', 'wants_branding' => 'Branding', 'wants_tournament_mode' => 'Turniermodus',
+		'wants_bad_weather_alternative' => 'Schlechtwetter Alternative',
+	];
+	$candidates = array_merge( $open['platz'], $open['firmengolf'] );
+	foreach ( $wants_labels as $key => $label ) {
+		if ( '1' === (string) get_post_meta( $req, '_fge_' . $key, true ) ) {
+			$candidates[] = $label;
+		}
+	}
 	$suggest = [];
-	foreach ( array_merge( $open['platz'], $open['firmengolf'] ) as $w ) {
-		if ( empty( $have_wish[ mb_strtolower( trim( $w ) ) ] ) ) {
-			$suggest[] = $w;
+	foreach ( $candidates as $w ) {
+		$k = mb_strtolower( trim( $w ) );
+		if ( empty( $have_wish[ $k ] ) ) {
+			$have_wish[ $k ] = true;
+			$suggest[]       = $w;
 		}
 	}
 
 	$override      = (string) get_post_meta( $req, '_fge_offer_base_override', true );
 	$override_unit = (string) get_post_meta( $req, '_fge_offer_base_override_unit', true );
+
+	// Eckdaten für die Live-Summe: Eventpreis + Teilnehmerzahl.
+	$pax      = (int) get_post_meta( $req, '_fge_expected_participants', true );
+	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+	$pricing  = ( $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id ) && function_exists( 'fge_event_pricing' ) )
+		? fge_event_pricing( $event_id )
+		: [ 'gross' => 0, 'unit' => '' ];
 
 	if ( $sent ) {
 		echo '<p style="margin:0 0 10px;color:#9A6B12;"><strong>Hinweis:</strong> Das Angebot ist bereits versendet. Änderungen hier wirken sich nicht mehr auf das laufende Angebot aus.</p>';
@@ -185,27 +208,57 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 	<p style="margin:0 0 4px;"><strong>Eventpreis überschreiben (optional)</strong></p>
 	<p class="description" style="margin:0 0 6px;">Nur wenn der Standardpreis des zugeordneten Events nicht gilt (Platzhalter-Event, telefonisch vereinbarter Preis). Leer lassen = Eventpreis wie hinterlegt.</p>
 	<p style="margin:0;">
-		<input type="text" name="fge_offer_base_override" value="<?php echo esc_attr( '' !== $override ? number_format( (float) $override, 2, ',', '.' ) : '' ); ?>" placeholder="z. B. 4.500,00" style="width:130px;"> € netto
-		<select name="fge_offer_base_override_unit" style="margin-left:8px;">
+		<input type="text" name="fge_offer_base_override" id="fge-xs-override" value="<?php echo esc_attr( '' !== $override ? number_format( (float) $override, 2, ',', '.' ) : '' ); ?>" placeholder="z. B. 4.500,00" style="width:130px;"> € netto
+		<select name="fge_offer_base_override_unit" id="fge-xs-override-unit" style="margin-left:8px;">
 			<option value="pauschal" <?php selected( $override_unit, 'pauschal' ); ?>>pauschal</option>
 			<option value="person" <?php selected( $override_unit, 'person' ); ?>>p.P.</option>
 		</select>
 	</p>
 
+	<div style="margin:14px 0 0;padding:10px 12px;background:#F0F4FA;border-radius:6px;font-size:13px;line-height:1.7;" id="fge-xs-sums">
+		<strong>Angebotssumme (Vorschau, netto)</strong><br>
+		Eventpreis: <span id="fge-xs-sum-base"></span> · Positionen: <span id="fge-xs-sum-pos"></span> · <strong>Gesamt: <span id="fge-xs-sum-total"></span></strong>
+		<span id="fge-xs-sum-hint" style="color:#6C736E;"></span>
+	</div>
+
 	<script>
 	(function(){
 		var t = document.getElementById('fge-xs-table');
 		if (!t) return;
+		var PAX = <?php echo (int) $pax; ?>,
+		    EVENT_GROSS = <?php echo wp_json_encode( round( (float) ( $pricing['gross'] ?? 0 ), 2 ) ); ?>,
+		    EVENT_PP = <?php echo 'pro Person' === (string) ( $pricing['unit'] ?? '' ) ? 'true' : 'false'; ?>;
 		function num(s){ s = (s||'').replace(/[\s€]/g,''); if (s.indexOf(',') !== -1) { s = s.replace(/\./g,'').replace(',', '.'); } var f = parseFloat(s); return isNaN(f) || f < 0 ? 0 : f; }
-		function recalc(tr){
+		function fmt(n){ return n.toLocaleString('de-DE', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' €'; }
+		function rowSale(tr){
 			var cost = num(tr.querySelector('.fge-xs-cost').value), m = num(tr.querySelector('.fge-xs-margin').value);
-			var sale = cost > 0 ? cost * (1 + m/100) : 0;
-			tr.querySelector('.fge-xs-sale').textContent = sale > 0 ? sale.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €' : '';
+			return cost > 0 ? cost * (1 + m/100) : 0;
 		}
-		t.addEventListener('input', function(e){
-			var tr = e.target.closest('.fge-xs-row');
-			if (tr && (e.target.classList.contains('fge-xs-cost') || e.target.classList.contains('fge-xs-margin'))) recalc(tr);
-		});
+		function recalc(){
+			var pos = 0, ppMissing = false;
+			t.querySelectorAll('.fge-xs-row').forEach(function(tr){
+				var sale = rowSale(tr);
+				tr.querySelector('.fge-xs-sale').textContent = sale > 0 ? sale.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €' : '';
+				if (sale <= 0) return;
+				var pp = tr.querySelector('select[name="fge_xs_basis[]"]').value === 'person';
+				if (pp && PAX <= 0) { ppMissing = true; return; }
+				pos += pp ? sale * PAX : sale;
+			});
+			var ovEl = document.getElementById('fge-xs-override'),
+			    ov = ovEl ? num(ovEl.value) : 0,
+			    ovPP = (document.getElementById('fge-xs-override-unit')||{}).value === 'person',
+			    base;
+			if (ov > 0) { base = ovPP ? (PAX > 0 ? ov * PAX : 0) : ov; if (ovPP && PAX <= 0) ppMissing = true; }
+			else { base = EVENT_PP ? (PAX > 0 ? EVENT_GROSS * PAX : 0) : EVENT_GROSS; if (EVENT_PP && EVENT_GROSS > 0 && PAX <= 0) ppMissing = true; }
+			document.getElementById('fge-xs-sum-base').textContent = fmt(base);
+			document.getElementById('fge-xs-sum-pos').textContent = fmt(pos);
+			document.getElementById('fge-xs-sum-total').textContent = fmt(base + pos);
+			document.getElementById('fge-xs-sum-hint').textContent =
+				(PAX > 0 ? ' (p.P.-Anteile mit ' + PAX + ' Teilnehmern gerechnet)' : '') +
+				(ppMissing ? ' Achtung: p.P.-Preise ohne Teilnehmerzahl fehlen in der Summe.' : '');
+		}
+		document.getElementById('fge_rmb_positionen').addEventListener('input', recalc);
+		document.getElementById('fge_rmb_positionen').addEventListener('change', recalc);
 		var add = document.getElementById('fge-xs-add');
 		if (add) add.addEventListener('click', function(){
 			var rows = t.querySelectorAll('.fge-xs-row'), tpl = rows[rows.length-1].cloneNode(true);
@@ -214,6 +267,7 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 			tpl.querySelector('.fge-xs-sale').textContent = '';
 			t.querySelector('tbody').appendChild(tpl);
 		});
+		recalc();
 	})();
 	</script>
 	<?php

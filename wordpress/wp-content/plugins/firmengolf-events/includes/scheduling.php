@@ -93,14 +93,14 @@ function fge_handle_admin_confirm_offer(): void {
 	}
 	check_admin_referer( 'fge_admin_confirm_offer_' . $req );
 
-	$idx      = absint( $_POST['date_index'] ?? 0 );
-	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
-	$label    = trim( (string) get_post_meta( $req, '_fge_preferred_date_' . $idx, true ) );
+	$idx   = absint( $_POST['date_index'] ?? 0 );
+	$label = trim( (string) get_post_meta( $req, '_fge_preferred_date_' . $idx, true ) );
 
+	// Kein Event mehr nötig: Individual-Anfragen werden über Angebots-Positionen
+	// bzw. den Eventpreis-Override bepreist. Ist noch nichts bepreist, greift das
+	// Feinplanungs-Gate (Hold + Termin-Bestätigung an den Kunden) statt Auto-Versand.
 	$err = '';
-	if ( $event_id <= 0 || 'firmengolf_event' !== get_post_type( $event_id ) ) {
-		$err = 'no_event';
-	} elseif ( $idx < 1 || '' === $label ) {
+	if ( $idx < 1 || '' === $label ) {
 		$err = 'no_date';
 	} elseif ( '1' === (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
 		$err = 'already_sent';
@@ -111,9 +111,12 @@ function fge_handle_admin_confirm_offer(): void {
 			fge_rr_set_final( $req, $idx );
 		}
 		do_action( 'fge_request_date_confirmed', $req, $idx );
+		// ok=1: Angebot ging raus · ok=2: Feinplanungs-Gate hat es zurückgehalten.
+		$ok  = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true ) ? 1 : 2;
+		$arg = [ 'fge_offer_ok' => $ok ];
+	} else {
+		$arg = [ 'fge_offer_err' => $err ];
 	}
-
-	$arg = ( '' === $err ) ? [ 'fge_offer_ok' => 1 ] : [ 'fge_offer_err' => $err ];
 	wp_safe_redirect( add_query_arg( $arg, get_edit_post_link( $req, 'raw' ) ) );
 	exit;
 }
@@ -154,7 +157,11 @@ function fge_handle_send_held_offer(): void {
 // Admin-Notice nach dem manuellen Angebots-Auslöser.
 add_action( 'admin_notices', static function () {
 	if ( isset( $_GET['fge_offer_ok'] ) ) {
-		echo '<div class="notice notice-success is-dismissible"><p>Termin bestätigt, das Angebot wurde erstellt und an den Kunden gesendet.</p></div>';
+		if ( '2' === (string) sanitize_key( wp_unslash( $_GET['fge_offer_ok'] ) ) ) {
+			echo '<div class="notice notice-warning is-dismissible"><p>Termin bestätigt, der Kunde hat eine Termin-Bestätigung per Mail erhalten. Das Angebot ist zurückgehalten: erst in „Angebots-Positionen" bepreisen (oder ein Event zuordnen), dann in der Metabox „Angebot" auf „Angebot jetzt senden" klicken.</p></div>';
+		} else {
+			echo '<div class="notice notice-success is-dismissible"><p>Termin bestätigt, das Angebot wurde erstellt und an den Kunden gesendet.</p></div>';
+		}
 	} elseif ( isset( $_GET['fge_offer_err'] ) ) {
 		$map = [
 			'no_event'     => 'Bitte zuerst ein Event zuordnen und die Anfrage speichern.',
@@ -300,14 +307,18 @@ function fge_render_manual_offer_panel( int $req, array $wish, int $event_id, bo
 		return;
 	}
 
-	// Guard: Event nötig (liefert Preis + „Im Preis enthalten" fürs Angebot).
-	if ( $event_id <= 0 || 'firmengolf_event' !== get_post_type( $event_id ) ) {
-		echo '<p style="' . esc_attr( $warn ) . '">Bitte zuerst unter „Anfrage Basis" ein <strong>Event zuordnen</strong> und die Anfrage speichern. Daraus zieht das Angebot Preis und Leistungen.</p>';
-		return;
+	// Was passiert nach dem Klick? Mit bepreistem Inhalt geht das Angebot direkt raus,
+	// sonst greift das Feinplanungs-Gate: Kunde bekommt eine Termin-Bestätigung, das
+	// Angebot wird zurückgehalten, bis die Positionen bepreist sind.
+	$needs_review = function_exists( 'fge_offer_needs_review' ) && fge_offer_needs_review( $req );
+	$has_event    = $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id );
+
+	if ( $needs_review ) {
+		echo '<p style="' . esc_attr( $warn ) . '">Noch nicht alles bepreist' . ( $has_event ? '' : ', kein Event zugeordnet' ) . '. Nach der Termin-Bestätigung bekommt der Kunde erst eine <strong>Termin-Bestätigung</strong>, das Angebot wird zurückgehalten. Danach in „Angebots-Positionen" Preise eintragen (oder ein Event zuordnen) und in der Metabox „Angebot" auf „Angebot jetzt senden" klicken.</p>';
 	}
 
 	?>
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:0;">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:10px 0 0;">
 		<?php wp_nonce_field( 'fge_admin_confirm_offer_' . $req ); ?>
 		<input type="hidden" name="action" value="fge_admin_confirm_offer">
 		<input type="hidden" name="request_id" value="<?php echo (int) $req; ?>">
@@ -319,8 +330,14 @@ function fge_render_manual_offer_panel( int $req, array $wish, int $event_id, bo
 			</label>
 		<?php $first = false; endforeach; ?>
 		<p style="margin:12px 0 0;">
-			<button type="submit" class="button button-primary">Termin bestätigen &amp; Angebot senden</button>
-			<span class="description" style="margin-left:8px;">Angebot an <?php echo esc_html( get_the_title( $event_id ) ); ?> · geht per Mail an den Kunden.</span>
+			<button type="submit" class="button button-primary"><?php echo $needs_review ? 'Termin bestätigen (Angebot folgt nach Feinplanung)' : 'Termin bestätigen &amp; Angebot senden'; ?></button>
+			<span class="description" style="margin-left:8px;"><?php
+			if ( $needs_review ) {
+				echo 'Der Kunde bekommt eine Termin-Bestätigung per Mail.';
+			} else {
+				echo 'Angebot' . ( $has_event ? ' zu ' . esc_html( get_the_title( $event_id ) ) : ' aus den Angebots-Positionen' ) . ' · geht sofort per Mail an den Kunden.';
+			}
+			?></span>
 		</p>
 	</form>
 	<?php
