@@ -24,7 +24,7 @@ $url_karriere   = $get_page_url( 'karriere' );
 <footer class="fg-footer" aria-label="Seitenfooter">
 	<div class="fg-footer-top">
 		<div class="fg-footer-brand">
-			<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" height="28">
+			<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="122" height="28">
 			<p class="fg-footer-line">
 				Wir machen Golf zugänglich. Als Veranstaltungstyp, als Ausgleich und als
 				Erlebnis, das Teams verbindet.

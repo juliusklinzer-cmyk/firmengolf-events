@@ -614,7 +614,7 @@ function fge_portal_render_gate(): void {
 	<div class="fp-gate">
 		<div class="fp-gate-card">
 			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="fp-gate-logo">
-				<img src="<?php echo esc_url( $logo_url ); ?>" alt="Firmengolf" height="28">
+				<img src="<?php echo esc_url( $logo_url ); ?>" alt="Firmengolf" width="122" height="28">
 			</a>
 			<h1 class="fp-gate-title">Partner-Portal</h1>
 			<p class="fp-gate-sub">Melde dich mit deinen Zugangsdaten an, um dein Golfplatz-Profil zu verwalten.</p>
