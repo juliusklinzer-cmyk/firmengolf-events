@@ -525,7 +525,7 @@ get_header();
 					<span class="fg-quote-mark">"</span>
 					<p><?php echo esc_html( $review_quote ); ?></p>
 					<?php if ( $review_author !== '' || $review_role !== '' ) : ?>
-						<div class="fg-quote-attr">k. A. <?php echo esc_html( trim( $review_author . ( $review_role !== '' ? ', ' . $review_role : '' ) ) ); ?></div>
+						<div class="fg-quote-attr"><?php echo esc_html( trim( $review_author . ( $review_role !== '' ? ', ' . $review_role : '' ) ) ); ?></div>
 					<?php endif; ?>
 				</section>
 				<?php endif; ?>
@@ -1314,7 +1314,7 @@ get_header();
 			if (!isOpen) {
 				item.classList.add('open');
 				btn.setAttribute('aria-expanded', 'true');
-				btn.querySelector('.faq-toggle').textContent = 'k. A.';
+				btn.querySelector('.faq-toggle').textContent = '−';
 			}
 		});
 	});

@@ -99,7 +99,7 @@ document.querySelectorAll('.fge-page .faq-q[aria-expanded]').forEach(function (b
 		var open = item.classList.toggle('open');
 		btn.setAttribute('aria-expanded', open ? 'true' : 'false');
 		var tog = btn.querySelector('.faq-toggle');
-		if (tog) tog.textContent = open ? 'k. A.' : '+';
+		if (tog) tog.textContent = open ? '−' : '+';
 	});
 });
 </script>

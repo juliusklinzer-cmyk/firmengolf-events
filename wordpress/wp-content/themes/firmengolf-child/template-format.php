@@ -225,7 +225,7 @@ document.querySelectorAll('.fge-page .faq-q[aria-expanded]').forEach(function (b
 		var item = btn.closest('.faq-item');
 		var open = item.classList.toggle('open');
 		btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-		var t = btn.querySelector('.faq-toggle'); if (t) t.textContent = open ? 'k. A.' : '+';
+		var t = btn.querySelector('.faq-toggle'); if (t) t.textContent = open ? '−' : '+';
 	});
 });
 </script>

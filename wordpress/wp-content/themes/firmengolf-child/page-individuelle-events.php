@@ -377,7 +377,7 @@ get_header();
 			if (!isOpen) {
 				item.classList.add('open');
 				btn.setAttribute('aria-expanded', 'true');
-				btn.querySelector('.faq-toggle').textContent = 'k. A.';
+				btn.querySelector('.faq-toggle').textContent = '−';
 			}
 		});
 	});
