@@ -89,7 +89,12 @@ $pf_email = (string) ( $pending['email'] ?? '' );
 		.inv-single .inv-cta { display: inline-block; width: auto; text-decoration: none; margin-top: 18px; }
 		@media (max-width: 880px) {
 			.inv-wrap { grid-template-columns: 1fr; padding: 0 16px 48px; }
-			.inv-left { border-radius: 20px 20px 0 0; min-height: 300px; }
+			.inv-left { border-radius: 20px 20px 0 0; min-height: 0; }
+			/* Mobil: Inhalt im Fluss statt absolut, sonst schneidet overflow:hidden
+			   alles ab, was höher als die feste min-height ist (Julius, 2026-07-12).
+			   position:relative behält den z-index über dem ::after-Verlauf,
+			   das große padding-top lässt oben Bildfläche sichtbar. */
+			.inv-left-inner { position: relative; inset: auto; padding: 150px 22px 26px; }
 			.inv-right { border-radius: 0 0 20px 20px; border-left: 1px solid var(--ink-200, #E4E2DA); border-top: 0; padding: 30px 24px; }
 		}
 	</style>
