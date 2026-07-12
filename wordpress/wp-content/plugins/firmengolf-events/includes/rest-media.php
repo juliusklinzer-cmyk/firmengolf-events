@@ -35,6 +35,7 @@ function fge_rest_photo_payload( int $att_id ): array {
 		'full'  => (string) wp_get_attachment_image_url( $att_id, 'full' ),
 		'name'  => (string) get_the_title( $att_id ),
 		'width' => (int) ( is_array( $meta ) ? ( $meta['width'] ?? 0 ) : 0 ),
+		'credit' => function_exists( 'fge_image_credit' ) ? fge_image_credit( $att_id ) : '',
 	];
 }
 
@@ -119,6 +120,16 @@ function fge_rest_media_routes(): void {
 		],
 	] );
 
+	register_rest_route( 'firmengolf/v1', '/partner/(?P<id>\d+)/gallery/(?P<att>\d+)/credit', [
+		'methods'             => 'POST',
+		'callback'            => 'fge_rest_gallery_credit',
+		'permission_callback' => $can,
+		'args'                => [
+			'id'  => [ 'validate_callback' => static fn( $v ) => is_numeric( $v ) ],
+			'att' => [ 'validate_callback' => static fn( $v ) => is_numeric( $v ) ],
+		],
+	] );
+
 	register_rest_route( 'firmengolf/v1', '/partner/(?P<id>\d+)/logo', [
 		'methods'             => 'POST',
 		'callback'            => 'fge_rest_logo_upload',
@@ -178,6 +189,23 @@ function fge_rest_gallery_delete( WP_REST_Request $req ) {
 		'gallery' => array_map( 'fge_rest_photo_payload', $ids ),
 		'cover'   => fge_partner_cover_id( $pid ),
 	];
+}
+
+/** POST — Bildnachweis (© Fotograf) einer Galerie-Foto setzen/leeren. */
+function fge_rest_gallery_credit( WP_REST_Request $req ) {
+	$pid = (int) $req['id'];
+	$att = (int) $req['att'];
+	// Nur Bilder der eigenen Galerie (oder Logo/Hero) sind beschreibbar.
+	$own = in_array( $att, fge_partner_gallery_ids( $pid ), true )
+		|| $att === (int) get_post_meta( $pid, '_fge_logo_attachment_id', true )
+		|| $att === (int) get_post_meta( $pid, '_fge_hero_image_attachment_id', true );
+	if ( ! $own ) {
+		return new WP_Error( 'fge_not_own', 'Dieses Bild gehört nicht zu eurem Profil.', [ 'status' => 403 ] );
+	}
+	if ( function_exists( 'fge_image_credit_set' ) ) {
+		fge_image_credit_set( $att, (string) $req->get_param( 'credit' ) );
+	}
+	return [ 'id' => $att, 'credit' => function_exists( 'fge_image_credit' ) ? fge_image_credit( $att ) : '' ];
 }
 
 /** POST — reorder the gallery to the given list of attachment IDs. */

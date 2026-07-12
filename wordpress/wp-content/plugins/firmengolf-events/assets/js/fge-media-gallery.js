@@ -47,6 +47,13 @@
 	function deletePhoto( id ) {
 		return api( '/partner/' + C.partnerId + '/gallery/' + id, { method: 'DELETE' } );
 	}
+	function saveCredit( id, credit ) {
+		return api( '/partner/' + C.partnerId + '/gallery/' + id + '/credit', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify( { credit: credit } ),
+		} );
+	}
 	function saveOrder( ids ) {
 		return api( '/partner/' + C.partnerId + '/gallery/order', {
 			method: 'POST',
@@ -256,11 +263,23 @@
 		star.type = 'button';
 		star.title = T.menuCover;
 		star.addEventListener( 'click', function ( e ) { e.stopPropagation(); setCover( photo.id ); } );
+		var cr = el( 'button', 'fge-tile-btn', '<span style="font-size:13px;font-weight:600;">©</span>' );
+		cr.type = 'button';
+		cr.title = T.menuCredit;
+		cr.addEventListener( 'click', function ( e ) {
+			e.stopPropagation();
+			var val = window.prompt( T.creditPrompt, photo.credit || '' );
+			if ( val === null ) { return; }
+			saveCredit( photo.id, val.trim() ).then( function ( res ) {
+				photo.credit = ( res && res.credit ) || '';
+			} ).catch( function ( err ) { window.alert( err.message ); } );
+		} );
 		var rm = el( 'button', 'fge-tile-btn is-danger', ICON_TRASH );
 		rm.type = 'button';
 		rm.title = T.menuRemove;
 		rm.addEventListener( 'click', function ( e ) { e.stopPropagation(); removePhoto( photo.id ); } );
 		act.appendChild( star );
+		act.appendChild( cr );
 		act.appendChild( rm );
 		tile.appendChild( act );
 

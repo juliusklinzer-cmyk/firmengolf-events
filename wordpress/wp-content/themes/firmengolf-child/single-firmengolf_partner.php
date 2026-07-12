@@ -145,6 +145,7 @@ get_header();
 			<section class="hero">
 				<div class="hero-photo" style="background-image:url('<?php echo esc_url( $cover ); ?>')">
 					<div class="hero-scrim"></div>
+					<?php echo function_exists( 'fge_image_credit_overlay' ) ? fge_image_credit_overlay( $cover_att ) : ''; // Bildnachweis (© Fotograf) ?>
 					<?php if ( $gallery ) : ?>
 						<button type="button" class="fg-btn fg-btn-glass gp-gallery-btn" data-gp-open>
 							<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
@@ -323,7 +324,7 @@ get_header();
 		foreach ( $gallery as $gid ) {
 			$u = wp_get_attachment_image_url( $gid, 'large' );
 			if ( $u ) {
-				$gallery_items[] = [ 'url' => $u, 'name' => get_the_title( $gid ) ];
+				$gallery_items[] = [ 'url' => $u, 'name' => get_the_title( $gid ), 'credit' => function_exists( 'fge_image_credit' ) ? fge_image_credit( $gid ) : '' ];
 			}
 		}
 		if ( $gallery_items ) : ?>
@@ -340,6 +341,7 @@ get_header();
 			</button>
 			<div class="gp-lb-caption">
 				<span class="gp-lb-count"><span data-gp-cur>1</span> / <?php echo (int) count( $gallery_items ); ?></span>
+				<span class="gp-lb-credit" data-gp-credit></span>
 			</div>
 		</div>
 	<?php endif; endif; ?>

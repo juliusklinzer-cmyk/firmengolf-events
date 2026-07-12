@@ -12,6 +12,7 @@
 	var img  = box.querySelector( '[data-gp-img]' );
 	var cur  = box.querySelector( '[data-gp-cur]' );
 	var name = box.querySelector( '[data-gp-name]' );
+	var credit = box.querySelector( '[data-gp-credit]' );
 	var i = 0;
 
 	function show( n ) {
@@ -22,6 +23,7 @@
 		img.alt = ( it && it.name ) ? it.name : '';
 		if ( name ) { name.textContent = ( it && it.name ) ? it.name : ''; }
 		if ( cur ) { cur.textContent = String( i + 1 ); }
+		if ( credit ) { credit.textContent = ( it && it.credit ) ? '\u00A9 ' + it.credit : ''; }
 	}
 	function open( start ) {
 		show( start || 0 );

@@ -51,6 +51,8 @@ function fge_media_widget_config( int $partner_id ): array {
 			'checkPhotos'    => 'Fotos',
 			'coverBadge'   => 'Titelfoto',
 			'menuCover'    => 'Als Titelfoto festlegen',
+			'menuCredit'   => 'Bildnachweis (Fotograf) hinterlegen',
+			'creditPrompt' => 'Fotograf für den Bildnachweis (wird als „© Name“ klein am Bild angezeigt, leer = kein Nachweis):',
 			'menuRemove'   => 'Entfernen',
 			'modalTitle'   => 'Lade Fotos hoch',
 			'selected'     => '%d ausgewählt',

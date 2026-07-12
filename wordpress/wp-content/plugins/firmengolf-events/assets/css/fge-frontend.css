@@ -5550,3 +5550,11 @@ body { background-color: var(--paper-300); }
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Bildnachweis-Overlay (© Fotograf, § 13 UrhG): weiß auf halbtransparent
+   dunklem Pill, unten rechts — auf hellen wie dunklen Fotos lesbar ── */
+.fge-img-credit{position:absolute;right:10px;bottom:8px;z-index:3;font-size:11px;line-height:1;font-weight:500;color:#fff;background:rgba(0,0,0,.42);padding:4px 9px;border-radius:999px;pointer-events:none;white-space:nowrap;max-width:72%;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
+.fgpp .hero-photo,.fg-gallery-main,.fg-gallery-tile{position:relative}
+.fge-credit-wrap{position:relative;display:block}
+.fge-credit-wrap img{display:block;width:100%}
+.gp-lb-credit{margin-left:12px;font-size:11px;color:rgba(255,255,255,.75)}

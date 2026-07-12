@@ -198,8 +198,11 @@ foreach ( $gallery_ids as $gid ) {
 	$gurl = wp_get_attachment_image_url( $gid, 'large' );
 	if ( $gurl ) {
 		$gallery_urls[] = $gurl;
+		$gallery_atts[] = (int) $gid; // parallel zu den URLs, für Bildnachweis-Overlays
 	}
 }
+$gallery_atts   = $gallery_atts ?? [];
+$credit_overlay = static fn( int $att ) => function_exists( 'fge_image_credit_overlay' ) ? fge_image_credit_overlay( $att ) : '';
 // Offsets 1/2: Kacheln zeigen garantiert ANDERE Pool-Bilder als das Cover (Offset 0).
 $gallery_img_1 = $gallery_urls[0] ?? fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg', $post_id, 1 );
 $gallery_img_2 = $gallery_urls[1] ?? fge_get_placeholder_image_url( 'clubhaus-aussenansicht.jpg', $post_id, 2 );
@@ -355,12 +358,14 @@ get_header();
 		<?php /* ── Gallery (Layout-Varianten nach $real_count, s. o.) ── */ ?>
 		<div class="fg-detail-gallery<?php echo esc_attr( $gal_class ); ?>">
 			<div class="fg-gallery-main" role="img" aria-label="<?php echo esc_attr( get_the_title() . ', Foto 1' ); ?>" style="background-image:url('<?php echo esc_url( $thumb_url ); ?>')">
+				<?php echo $cover_is_real ? $credit_overlay( (int) fge_event_cover_id( $post_id ) ) : ''; ?>
 			</div>
 			<?php if ( 1 !== $real_count ) : ?>
 			<div class="fg-gallery-side">
-				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ', Foto 2' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"></div>
+				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ', Foto 2' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_1 ); ?>')"><?php echo isset( $gallery_atts[0] ) ? $credit_overlay( $gallery_atts[0] ) : ''; ?></div>
 				<?php if ( 2 !== $real_count ) : ?>
 				<div class="fg-gallery-tile" role="img" aria-label="<?php echo esc_attr( get_the_title() . ', Foto 3' ); ?>" style="background-image:url('<?php echo esc_url( $gallery_img_2 ); ?>')">
+					<?php echo isset( $gallery_atts[1] ) ? $credit_overlay( $gallery_atts[1] ) : ''; ?>
 					<?php if ( $real_count > 3 ) : ?>
 					<button class="fg-gallery-more fg-btn-ghost-light" type="button" aria-expanded="false" aria-controls="fg-gallery-all">+ alle Fotos</button>
 					<?php endif; ?>
@@ -380,7 +385,7 @@ get_header();
 				</div>
 				<div class="fg-gallery-modal-grid">
 					<?php foreach ( $gallery_urls as $g_i => $g_url ) : ?>
-						<img src="<?php echo esc_url( $g_url ); ?>" alt="<?php echo esc_attr( get_the_title() . ', Foto ' . ( $g_i + 1 ) ); ?>" loading="lazy">
+						<span class="fge-credit-wrap"><img src="<?php echo esc_url( $g_url ); ?>" alt="<?php echo esc_attr( get_the_title() . ', Foto ' . ( $g_i + 1 ) ); ?>" loading="lazy"><?php echo isset( $gallery_atts[ $g_i ] ) ? $credit_overlay( $gallery_atts[ $g_i ] ) : ''; ?></span>
 					<?php endforeach; ?>
 				</div>
 			</div>
