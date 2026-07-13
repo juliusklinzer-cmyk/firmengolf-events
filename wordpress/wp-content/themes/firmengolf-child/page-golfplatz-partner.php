@@ -74,7 +74,7 @@ $faq_teaser = [
 </section>
 
 <?php /* ══════════════════ 2. FAKTEN ══════════════════ */ ?>
-<div class="home-facts" aria-label="Firmengolf für Plätze in Zahlen">
+<div class="home-facts gp-facts" aria-label="Firmengolf für Plätze in Zahlen">
 	<?php
 	$facts = [
 		[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
@@ -198,6 +198,11 @@ $faq_teaser = [
 </div><?php /* .fge-page */ ?>
 
 <style>
+/* .home-facts hat global keinen unteren Abstand (auf der Startseite unsichtbar,
+   weil die Folge-Section denselben Hintergrund hat) — hier folgt das graue
+   mk-band direkt, also braucht es Luft. */
+.gp-facts { margin-bottom: 80px; }
+@media (max-width: 900px) { .gp-facts { margin-bottom: 56px; } }
 /* Ansprechpartner-Block: einziges Layout dieser Seite ohne fertige mk-Klasse. */
 .gp-contact { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 40px; align-items: center; max-width: 960px; margin: 0 auto; }
 .gp-contact-portrait { width: 280px; aspect-ratio: 4 / 5; border-radius: 20px; background: var(--ink-200) center/cover no-repeat; box-shadow: var(--shadow-sm); }
