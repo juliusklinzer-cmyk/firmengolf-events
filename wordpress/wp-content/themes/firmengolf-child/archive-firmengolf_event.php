@@ -690,9 +690,9 @@ if ( ! $has_filters ) :
 			];
 			foreach ( $faqs as $i => $faq ) : ?>
 				<li class="faq-item<?php echo $i === 0 ? ' open' : ''; ?>" id="faq-<?php echo (int) $i; ?>">
-					<button class="faq-q" onclick="(function(b){var it=b.closest('.faq-item');var o=it.classList.toggle('open');b.setAttribute('aria-expanded',o);it.querySelector('.faq-toggle').textContent=o?'k. A.':'+';})(this)" aria-expanded="<?php echo $i === 0 ? 'true' : 'false'; ?>">
+					<button class="faq-q" onclick="(function(b){var it=b.closest('.faq-item');var o=it.classList.toggle('open');b.setAttribute('aria-expanded',o);it.querySelector('.faq-toggle').textContent=o?'−':'+';})(this)" aria-expanded="<?php echo $i === 0 ? 'true' : 'false'; ?>">
 						<span><?php echo esc_html( $faq['q'] ); ?></span>
-						<span class="faq-toggle" aria-hidden="true"><?php echo $i === 0 ? 'k. A.' : '+'; ?></span>
+						<span class="faq-toggle" aria-hidden="true"><?php echo $i === 0 ? '−' : '+'; ?></span>
 					</button>
 					<div class="faq-a"><?php echo esc_html( $faq['a'] ); ?></div>
 				</li>
