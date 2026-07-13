@@ -73,10 +73,11 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 
 		<h2>5. Hosting</h2>
 		<p>
-			Diese Website wird bei one.com gehostet. Beim Besuch der Website verarbeitet one.com insbesondere
-			technische Zugriffsdaten wie IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene Seiten,
-			Browserinformationen und Server-Logfiles. Die Verarbeitung erfolgt, um die Website sicher und
-			zuverlässig bereitzustellen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Mit one.com besteht ein
+			Diese Website wird bei der Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Deutschland,
+			gehostet. Die Server befinden sich in Deutschland. Beim Besuch der Website verarbeitet Hetzner
+			insbesondere technische Zugriffsdaten wie IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene
+			Seiten, Browserinformationen und Server-Logfiles. Die Verarbeitung erfolgt, um die Website sicher und
+			zuverlässig bereitzustellen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Mit Hetzner besteht ein
 			Vertrag zur Auftragsverarbeitung gemäß Art. 28 DSGVO.
 		</p>
 
