@@ -47,7 +47,8 @@ $faq_teaser = [
 
 <?php /* ══════════════════ 1. HERO ══════════════════ */ ?>
 <section class="mk-hero" aria-label="Für Golfplätze">
-	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'hero-fairway-wide.jpg' ) ); ?>')">
+	<?php // Bürodach-Golfgrün zwischen Bürotürmen (Julius, 2026-07-13): Motiv verbindet Firmenwelt + Golf. ?>
+	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'buerodach-golfplatz.jpg' ) ); ?>')">
 		<div class="mk-hero-scrim" aria-hidden="true"></div>
 		<div class="mk-hero-content">
 			<div class="mk-hero-eyebrow">Für Golfplätze · Partner werden</div>
