@@ -1,7 +1,6 @@
 <?php
 /**
  * Template: AGB (Kunden, B2B).
- * Basis-Fassung – vor Live-Gang von Anwalt/DSB prüfen lassen (kein Rechtsrat).
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

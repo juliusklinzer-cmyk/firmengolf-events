@@ -2,7 +2,6 @@
 /**
  * Template: Datenschutzerklärung.
  * Inhaltlich auf die tatsächliche Verarbeitung der Seite zugeschnitten.
- * Vor Live-Gang von Anwalt/DSB prüfen lassen (kein Rechtsrat).
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
