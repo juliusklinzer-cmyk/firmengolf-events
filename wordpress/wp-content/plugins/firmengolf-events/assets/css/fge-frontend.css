@@ -2191,6 +2191,9 @@ a.fp-inbox-row:hover + .fp-inbox-row { border-top-color: transparent; }
   transition: background 0.15s, color 0.15s;
 }
 .fp-gate-cta:hover { background: var(--fairway-700, #4279D1); color: #fff; }
+.fp-gate-info { margin: 14px 0 0; font-size: 13px; color: var(--ink-500, #7C857F); text-align: center; }
+.fp-gate-info a { color: var(--fairway-700, #4279D1); font-weight: 600; text-decoration: none; }
+.fp-gate-info a:hover { text-decoration: underline; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
    25 — PARTNER ONBOARDING WIZARD (.ob-*)

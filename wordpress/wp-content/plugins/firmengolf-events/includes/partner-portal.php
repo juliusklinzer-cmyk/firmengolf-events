@@ -642,6 +642,9 @@ function fge_portal_render_gate(): void {
 					<path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 				</svg>
 			</a>
+
+			<?php // Einstieg für Interessenten, die erst hier landen (Funnel-Audit Paket A): erst verstehen, dann registrieren. ?>
+			<p class="fp-gate-info">Neu bei Firmengolf? <a href="<?php echo esc_url( home_url( '/golfplatz-partner/' ) ); ?>">So funktioniert die Partnerschaft für Golfplätze →</a></p>
 		</div>
 	</div>
 	<?php

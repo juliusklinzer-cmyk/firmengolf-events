@@ -44,7 +44,27 @@ $faq_groups = [
 		[ 'Muss ich exklusiv mit Firmengolf arbeiten?', 'Nein, keine Exklusivität.' ],
 	],
 ];
+
+// FAQPage-Schema: 20 echte Q&A → Rich-Result-Chance (Funnel-Audit Paket A).
+$faq_schema = [
+	'@context'   => 'https://schema.org',
+	'@type'      => 'FAQPage',
+	'mainEntity' => [],
+];
+foreach ( $faq_groups as $items ) {
+	foreach ( $items as $faq ) {
+		$faq_schema['mainEntity'][] = [
+			'@type'          => 'Question',
+			'name'           => $faq[0],
+			'acceptedAnswer' => [
+				'@type' => 'Answer',
+				'text'  => $faq[1],
+			],
+		];
+	}
+}
 ?>
+<script type="application/ld+json"><?php echo wp_json_encode( $faq_schema ); // phpcs:ignore WordPress.Security.EscapeOutput ?></script>
 <div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
@@ -52,10 +72,12 @@ $faq_groups = [
 <section class="mk-section" aria-label="Partner-FAQ" style="padding-top:64px;">
 	<div class="mk-section-head">
 		<div class="mk-eyebrow">Für Golfplätze · Häufige Fragen</div>
-		<h1 class="mk-h2" style="font-size:var(--fs-display-md);max-width:780px;">Alles, was ihr über eine Partnerschaft <em class="mk-italic">wissen</em> müsst.</h1>
+		<?php /* clamp statt fixem var(--fs-display-md): 44px skalierte mobil nicht (Funnel-Audit P4). */ ?>
+		<h1 class="mk-h2" style="font-size:clamp(32px,4.6vw,44px);max-width:780px;">Alles, was ihr über eine Partnerschaft <em class="mk-italic">wissen</em> müsst.</h1>
 		<p class="mk-sub" style="max-width:680px;">
 			Von der Aufnahme über die Termin-Abstimmung bis zur Abrechnung, hier beantworten wir die Fragen,
-			die Golfplätze uns am häufigsten stellen.
+			die Golfplätze uns am häufigsten stellen. Neu hier? Der Überblick steht auf
+			<a href="<?php echo esc_url( home_url( '/golfplatz-partner/' ) ); ?>" style="color:var(--fairway-700);font-weight:600;">Für Golfplätze: So funktioniert die Partnerschaft</a>.
 		</p>
 	</div>
 

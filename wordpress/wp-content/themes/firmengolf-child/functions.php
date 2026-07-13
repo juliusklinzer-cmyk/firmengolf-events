@@ -35,6 +35,43 @@ add_action( 'wp_head', function () {
 	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
 }, 1 );
 
+// SEO der Partner-Strecke (Funnel-Audit Paket A): Landingpage + FAQ bekommen
+// partner-gerichtete Titles/Descriptions statt der Kunden-Boilerplate.
+add_filter( 'pre_get_document_title', function ( $title ) {
+	if ( is_page( 'golfplatz-partner' ) ) {
+		return 'Golfplatz-Partner werden: Firmenkunden ohne Fixkosten | Firmengolf';
+	}
+	if ( is_page( 'partner-faq' ) ) {
+		return 'Partner-FAQ für Golfplätze: Kosten, Ablauf, Konditionen | Firmengolf';
+	}
+	return $title;
+} );
+add_action( 'wp_head', function () {
+	if ( is_page( 'golfplatz-partner' ) ) {
+		fge_render_seo_meta( [
+			'title' => 'Golfplatz-Partner werden | Firmengolf',
+			'desc'  => 'Firmenkunden für euren Golfplatz: Teamevents, Turniere, Platzreife. Kein Setup-Preis, rein provisionsbasiert, keine Exklusivität. In wenigen Werktagen live.',
+			'url'   => get_permalink(),
+		] );
+	}
+	if ( is_page( 'partner-faq' ) ) {
+		fge_render_seo_meta( [
+			'title' => 'Partner-FAQ für Golfplätze | Firmengolf',
+			'desc'  => 'Alle Antworten für Golfplätze: kostenlos listen, provisionsbasiert, keine Bindung. Wie Anfragen, Terminabstimmung und Abrechnung bei Firmengolf laufen.',
+			'url'   => get_permalink(),
+		] );
+	}
+}, 5 );
+
+// /partner/ deterministisch auf die Verkaufsseite statt WordPress' Canonical-Raten
+// (das landete bisher zufällig auf der FAQ).
+add_action( 'template_redirect', function () {
+	if ( is_404() && trim( (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_PATH ), '/' ) === 'partner' ) {
+		wp_safe_redirect( home_url( '/golfplatz-partner/' ), 301 );
+		exit;
+	}
+}, 1 );
+
 // Marken-Entität: Organization auf allen Seiten, WebSite auf der Startseite (für Google Knowledge + KI).
 add_action( 'wp_head', function () {
 	$org = [
