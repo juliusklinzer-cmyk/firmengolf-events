@@ -150,7 +150,18 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			das EU-US Data Privacy Framework bzw. Standardvertragsklauseln (Art. 44 ff. DSGVO) abgesichert.
 		</p>
 
-		<h2>13. Bewerbungen</h2>
+		<h2>13. Transaktions-E-Mails (Brevo)</h2>
+		<p>
+			Für den Versand automatischer System- und Transaktions-E-Mails (z. B. Anfrage- und
+			Terminbestätigungen, Angebote, Partner-Einladungen) nutzen wir Brevo (Sendinblue GmbH,
+			Köpenicker Straße 126, 10179 Berlin). Dabei werden insbesondere Ihre E-Mail-Adresse sowie der
+			Inhalt der jeweiligen Nachricht verarbeitet, um die Zustellung sicherzustellen. Rechtsgrundlage ist
+			Art. 6 Abs. 1 lit. b DSGVO (Vertragsdurchführung) bzw. Art. 6 Abs. 1 lit. f DSGVO (berechtigtes
+			Interesse an zuverlässiger Kommunikation). Mit Brevo besteht ein Vertrag zur Auftragsverarbeitung
+			gemäß Art. 28 DSGVO; die Verarbeitung erfolgt auf EU-Servern.
+		</p>
+
+		<h2>14. Bewerbungen</h2>
 		<p>
 			Senden Sie uns eine Bewerbung (z. B. an <a href="mailto:<?php echo esc_attr( $mail_jobs ); ?>"><?php echo esc_html( $mail_jobs ); ?></a>),
 			verarbeiten wir Ihre übermittelten Daten ausschließlich zur Durchführung des Bewerbungsverfahrens
@@ -159,7 +170,7 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			Verfahrens, sofern Sie keiner längeren Speicherung zugestimmt haben.
 		</p>
 
-		<h2>14. Social-Media-Profile</h2>
+		<h2>15. Social-Media-Profile</h2>
 		<p>
 			Wir verlinken auf unsere Profile bei Instagram, Facebook und LinkedIn. Es handelt sich um einfache
 			Verlinkungen, beim bloßen Aufruf unserer Seite werden keine Daten an diese Netzwerke übertragen. Erst
@@ -167,18 +178,18 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			verantwortlich sind.
 		</p>
 
-		<h2>15. Schriftarten</h2>
+		<h2>16. Schriftarten</h2>
 		<p>
 			Schriftarten werden lokal von unserem eigenen Server eingebunden. Eine Verbindung zu Servern Dritter
 			(z. B. Google Fonts) findet nicht statt; es werden keine personenbezogenen Daten an Dritte übertragen.
 		</p>
 
-		<h2>16. Verschlüsselung</h2>
+		<h2>17. Verschlüsselung</h2>
 		<p>
 			Diese Website nutzt aus Sicherheitsgründen eine SSL-/TLS-Verschlüsselung (erkennbar an „https://").
 		</p>
 
-		<h2>17. Aktualität und Änderung</h2>
+		<h2>18. Aktualität und Änderung</h2>
 		<p>
 			Diese Datenschutzerklärung ist aktuell gültig. Durch die Weiterentwicklung der Website oder geänderte
 			gesetzliche Vorgaben kann eine Anpassung notwendig werden.
