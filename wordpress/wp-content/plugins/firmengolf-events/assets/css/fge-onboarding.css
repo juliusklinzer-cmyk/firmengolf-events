@@ -51,6 +51,7 @@
   transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 .ob-shell .ob-top-pill:hover { background: var(--paper-200); border-color: var(--ink-300); }
+.ob-save-short { display: none; } /* Kurz-Label nur mobil (siehe 960px-Block) */
 
 /* ====================================================
    STAGE
@@ -693,7 +694,8 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   background: var(--paper-50);
 }
 .ob-stepper-btn {
-  width: 32px; height: 32px;
+  /* 44px-Touch-Ziel (Funnel-Audit P5): 32px war auf der Kapazitäts-Slide fummelig. */
+  width: 44px; height: 44px;
   border-radius: 999px;
   background: transparent;
   color: var(--ink-700);
@@ -703,7 +705,7 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 }
 .ob-stepper-btn:hover { background: var(--paper-200); color: var(--ink-900); }
 .ob-stepper-input {
-  width: 56px; height: 32px;
+  width: 56px; height: 44px;
   border: 0; background: transparent;
   text-align: center;
   font-size: 15px; font-weight: 500;
@@ -1168,11 +1170,17 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 
 @media (max-width: 960px) {
   .ob-topbar  { padding: 16px 20px; }
-  .ob-top-save { display: none; } /* mobil: Speichern & beenden über das Logo-Dialog */
+  /* Save-Button bleibt mobil SICHTBAR (Funnel-Audit P2: das Sicherheitsnetz sah
+     vorher niemand) — nur das Label wird kurz („Speichern" statt „… & beenden"). */
+  .ob-save-full { display: none; }
+  .ob-save-short { display: inline; }
   .ob-foot-inner { padding: 0 20px; }
   .ob-prog-label { display: none; }
   .ob-prog-count { display: block; }
   .ob-stage   { padding: 36px 20px 80px; }
+  /* 16px verhindert den iOS-Fokus-Zoom — vorher erst ab 560px, große Handys
+     quer / kleine Tablets (561-960px) zoomten weiter (Funnel-Audit P6). */
+  .ob-input { font-size: 16px; }
 
   .ob-art-platz, .ob-art-club, .ob-art-media { max-width: 320px; }
 
@@ -1190,10 +1198,9 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
   .ob-cards { grid-template-columns: 1fr !important; }
   .ob-cap-row { flex-direction: column; align-items: flex-start; gap: 12px; }
   .ob-day-row { gap: 6px; }
-  .ob-day { width: 44px; height: 40px; font-size: 13px; }
-  /* 16px verhindert den automatischen Fokus-Zoom von iOS Safari. */
-  .ob-input { font-size: 16px; }
+  .ob-day { width: 44px; height: 44px; font-size: 13px; } /* 44px-Touch-Ziel (Funnel-Audit P5) */
   .ob-map { height: 240px; }
+  .ob-top-pill { padding: 7px 10px; }
 }
 
 /* =========================================================================

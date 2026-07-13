@@ -1453,7 +1453,8 @@ function fge_portal_render_hero( int $partner_id ): void {
 				<?php if ( $next ) : ?>
 				<a class="fp-hero-next" href="<?php echo esc_url( $base . '?tab=anfragen&req=' . (int) $next['req'] ); ?>">
 					<span class="fp-hero-next-lbl"><?php echo $next['booked'] ? 'Nächste Buchung' : 'Nächster fixierter Termin'; ?></span>
-					<span class="fp-hero-next-val"><?php echo esc_html( $next['label'] ); ?> k. A. <?php echo esc_html( $next['company'] ); ?></span>
+					<?php // "k. A." war Sweep-Altschaden (wie a7d2ef7), gemeint ist der ·-Trenner. ?>
+					<span class="fp-hero-next-val"><?php echo esc_html( $next['label'] ); ?> · <?php echo esc_html( $next['company'] ); ?></span>
 					<span class="fp-hero-next-cta">Zur Anfrage ›</span>
 				</a>
 				<?php endif; ?>

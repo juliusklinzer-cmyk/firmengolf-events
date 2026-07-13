@@ -758,6 +758,7 @@
 
 /* ── Willkommens-Panel (erstes Login nach Einladung) ───────────────────────── */
 .fgpp .fp-welcome, .fp-welcome { background: var(--fairway-100); border: 1px solid var(--fairway-200); border-radius: var(--radius-lg, 16px); padding: 22px 26px; margin-bottom: 20px; }
+@media (max-width: 560px) { .fgpp .fp-welcome, .fp-welcome { padding: 16px; } } /* Funnel-Audit: war mobil gedrängt */
 .fp-welcome-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .fp-welcome-head h3 { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.015em; color: var(--ink-900); margin: 0 0 4px; }
 .fp-welcome-close { color: var(--ink-500); text-decoration: none; font-size: 16px; padding: 2px 6px; border-radius: 6px; }

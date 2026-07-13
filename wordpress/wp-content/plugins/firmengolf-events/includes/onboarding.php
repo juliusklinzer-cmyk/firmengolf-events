@@ -1003,9 +1003,9 @@ function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void 
 		<button type="button" class="ob-top-pill" data-ob-help>Noch Fragen?</button>
 		<?php if ( 'form' === $kind ) : ?>
 		<?php // Saves the current slide (via the content form) and exits, handler redirects. ?>
-		<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-top-pill ob-top-save">Speichern &amp; beenden</button>
+		<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-top-pill ob-top-save"><span class="ob-save-full">Speichern &amp; beenden</span><span class="ob-save-short">Speichern</span></button>
 		<?php elseif ( 'review' === $kind ) : ?>
-		<a class="ob-top-pill ob-top-save" href="<?php echo esc_url( $save_exit_url ); ?>">Speichern &amp; beenden</a>
+		<a class="ob-top-pill ob-top-save" href="<?php echo esc_url( $save_exit_url ); ?>"><span class="ob-save-full">Speichern &amp; beenden</span><span class="ob-save-short">Speichern</span></a>
 		<?php endif; ?>
 	</div>
 </header>
