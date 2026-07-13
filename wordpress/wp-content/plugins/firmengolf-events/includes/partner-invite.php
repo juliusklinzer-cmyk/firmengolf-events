@@ -29,6 +29,31 @@ function fge_invite_url( int $partner_id ): string {
 	return home_url( '/einladung/' . get_post_field( 'post_name', $partner_id ) . '/' . fge_invite_token( $partner_id ) . '/' );
 }
 
+/**
+ * Passwort aus Schritt 1 verschlüsselt zwischenparken (Transient, 15 min), damit
+ * es im Code-Schritt NICHT erneut eingetippt werden muss (Funnel-Audit 2026-07-12:
+ * Doppel-Eingabe wirkte wie ein Bug und kostete Conversion an der heißesten Stelle).
+ * Verschlüsselung mit Schlüssel aus wp_salt(): ein DB-Leak allein reicht nicht.
+ */
+function fge_invite_seal( string $plain ): string {
+	if ( '' === $plain ) {
+		return '';
+	}
+	$key   = substr( hash( 'sha256', wp_salt( 'auth' ), true ), 0, SODIUM_CRYPTO_SECRETBOX_KEYBYTES );
+	$nonce = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+	return base64_encode( $nonce . sodium_crypto_secretbox( $plain, $nonce, $key ) );
+}
+
+function fge_invite_unseal( string $sealed ): string {
+	$raw = base64_decode( $sealed, true );
+	if ( false === $raw || strlen( $raw ) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ) {
+		return '';
+	}
+	$key   = substr( hash( 'sha256', wp_salt( 'auth' ), true ), 0, SODIUM_CRYPTO_SECRETBOX_KEYBYTES );
+	$plain = sodium_crypto_secretbox_open( substr( $raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ), substr( $raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ), $key );
+	return false === $plain ? '' : $plain;
+}
+
 function fge_invite_partner_by_token( string $token ): int {
 	if ( ! preg_match( '/^[a-f0-9]{40}$/', $token ) ) {
 		return 0;
@@ -101,10 +126,17 @@ function fge_invite_handle_accept(): void {
 	$pass  = (string) wp_unslash( $_POST['fge_pass'] ?? '' );
 	$ev_ctx = 'invite_' . $token;
 
+	// Geparktes Passwort aus Schritt 1 wiederverwenden — der Code-Schritt hat kein
+	// Passwortfeld mehr. Frische Eingabe (Schritt 1) hat immer Vorrang.
+	$pending_prev = (array) get_transient( 'fge_invite_pending_' . $token );
+	if ( '' === $pass ) {
+		$pass = fge_invite_unseal( (string) ( $pending_prev['pass'] ?? '' ) );
+	}
+
 	// „Code erneut senden": ohne Passwort-Zwang, nur E-Mail nötig (Julius, 2026-07-06).
 	if ( ! empty( $_POST['fge_resend'] ) ) {
 		if ( is_email( $email ) && ! fge_ev_is_verified( $email, $ev_ctx ) ) {
-			set_transient( 'fge_invite_pending_' . $token, [ 'first' => $first, 'last' => $last, 'email' => $email ], 15 * MINUTE_IN_SECONDS );
+			set_transient( 'fge_invite_pending_' . $token, [ 'first' => $first, 'last' => $last, 'email' => $email, 'pass' => fge_invite_seal( $pass ) ], 15 * MINUTE_IN_SECONDS );
 			$send = fge_ev_send_code( $email, $ev_ctx );
 			wp_safe_redirect( add_query_arg( is_wp_error( $send ) ? [ 'verify' => 1, 'evfehler' => $send->get_error_code() ] : [ 'verify' => 1 ], $back ) );
 			exit;
@@ -118,7 +150,10 @@ function fge_invite_handle_accept(): void {
 		exit;
 	}
 	if ( strlen( $pass ) < 8 ) {
-		wp_safe_redirect( add_query_arg( 'fehler', 'passwort', $back ) );
+		// Im Code-Schritt heißt ein fehlendes Passwort: das Transient (15 min) ist
+		// abgelaufen → zurück zu Schritt 1 mit eigener Meldung, nicht „zu kurz".
+		$code = isset( $_POST['fge_code'] ) ? 'abgelaufen' : 'passwort';
+		wp_safe_redirect( add_query_arg( 'fehler', $code, $back ) );
 		exit;
 	}
 	// SICHERHEIT (wie Onboarding): bestehende Konten werden NIE automatisch
@@ -132,7 +167,7 @@ function fge_invite_handle_accept(): void {
 	// muss per 6-stelligem Code bestätigt sein, BEVOR das Konto entsteht —
 	// ein Tippfehler würde den Partner sonst dauerhaft von allen Mails abschneiden.
 	if ( ! fge_ev_is_verified( $email, $ev_ctx ) ) {
-		set_transient( 'fge_invite_pending_' . $token, [ 'first' => $first, 'last' => $last, 'email' => $email ], 15 * MINUTE_IN_SECONDS );
+		set_transient( 'fge_invite_pending_' . $token, [ 'first' => $first, 'last' => $last, 'email' => $email, 'pass' => fge_invite_seal( $pass ) ], 15 * MINUTE_IN_SECONDS );
 		$code = sanitize_text_field( wp_unslash( $_POST['fge_code'] ?? '' ) );
 		if ( '' === $code ) {
 			$send = fge_ev_send_code( $email, $ev_ctx );
@@ -183,6 +218,11 @@ function fge_invite_handle_accept(): void {
 	if ( function_exists( 'fge_email_wrap' ) ) {
 		wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 	}
+	// Schriftliche Spur für den Club: „dein Zugang existiert, so kommst du wieder
+	// rein" — bisher bekam nur Firmengolf intern Bescheid (Funnel-Audit 2026-07-12).
+	if ( function_exists( 'fge_send_invite_access_email' ) ) {
+		fge_send_invite_access_email( $user_id, $partner_id );
+	}
 
 	wp_set_auth_cookie( $user_id, true );
 	wp_safe_redirect( function_exists( 'fge_portal_page_url' ) ? fge_portal_page_url() : home_url( '/partnerportal/' ) );
@@ -211,22 +251,47 @@ add_action( 'admin_post_fge_partner_invite', static function (): void {
 
 	$linked = (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true );
 	// Kein Token für bereits verknüpfte Partner erzeugen/persistieren (Kern-Audit N6).
-	$url    = $linked > 0 ? '' : fge_invite_url( $partner_id );
-	$back   = admin_url( 'edit.php?post_type=firmengolf_partner' );
-	?><!doctype html><html lang="de"><head><meta charset="utf-8"><title>Einladungslink</title>
+	$url     = $linked > 0 ? '' : fge_invite_url( $partner_id );
+	$back    = admin_url( 'edit.php?post_type=firmengolf_partner' );
+	$to      = (string) get_post_meta( $partner_id, '_fge_invite_sent_to', true )
+		?: (string) get_post_meta( $partner_id, '_fge_main_contact_email', true );
+	$sent_at = (int) get_post_meta( $partner_id, '_fge_invite_sent_at', true );
+	$remind  = '1' === (string) get_post_meta( $partner_id, '_fge_invite_reminded', true );
+	$days    = (int) apply_filters( 'fge_invite_reminder_days', 5 );
+	$notice  = sanitize_key( $_GET['fge_sent'] ?? '' );
+	?><!doctype html><html lang="de"><head><meta charset="utf-8"><title>Partner-Einladung</title>
 	<style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f0f0f1;margin:0;padding:60px 20px;}
 	.card{max-width:640px;margin:0 auto;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:28px 32px;}
-	h1{font-size:20px;margin:0 0 6px;}p{color:#50575e;font-size:14px;line-height:1.5;}
+	h1{font-size:20px;margin:0 0 6px;}h2{font-size:14px;margin:26px 0 4px;}p{color:#50575e;font-size:14px;line-height:1.5;}
 	input{width:100%;font:13px/1.4 monospace;padding:10px 12px;border:1px solid #c3c4c7;border-radius:4px;box-sizing:border-box;margin:12px 0;}
+	input.mail{font-family:inherit;font-size:14px;}
 	button,a.btn{display:inline-block;background:#2271b1;color:#fff;border:0;border-radius:4px;padding:9px 16px;font-size:13px;cursor:pointer;text-decoration:none;margin-right:8px;}
 	a.back{color:#2271b1;font-size:13px;}
-	.warn{background:#fcf9e8;border:1px solid #dba617;border-radius:4px;padding:10px 14px;font-size:13px;color:#646970;}</style></head><body>
+	.warn{background:#fcf9e8;border:1px solid #dba617;border-radius:4px;padding:10px 14px;font-size:13px;color:#646970;}
+	.ok{background:#edfaef;border:1px solid #00a32a;border-radius:4px;padding:10px 14px;font-size:13px;color:#1d2327;margin-bottom:14px;}
+	.err{background:#fcf0f1;border:1px solid #d63638;border-radius:4px;padding:10px 14px;font-size:13px;color:#1d2327;margin-bottom:14px;}
+	.status{background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;padding:10px 14px;font-size:13px;color:#50575e;margin:14px 0;}</style></head><body>
 	<div class="card">
-		<h1>Einladungslink: <?php echo esc_html( get_the_title( $partner_id ) ); ?></h1>
+		<h1>Partner-Einladung: <?php echo esc_html( get_the_title( $partner_id ) ); ?></h1>
+		<?php if ( '1' === $notice ) : ?><div class="ok">✓ Einladung versendet. Automatischer Nachfass nach <?php echo (int) $days; ?> Tagen, falls sie liegen bleibt.</div><?php endif; ?>
+		<?php if ( '0' === $notice ) : ?><div class="err">Versand fehlgeschlagen — E-Mail-Adresse prüfen.</div><?php endif; ?>
 		<?php if ( $linked > 0 ) : ?>
 			<div class="warn">⚠ Dieser Partner ist bereits mit einem Konto verknüpft (User #<?php echo (int) $linked; ?>). Der Link würde beim Einlösen fehlschlagen, nur nötig, wenn du die Verknüpfung vorher löst.</div>
 		<?php else : ?>
-			<p>Diesen persönlichen Link in deine Start-Mail an den Club kopieren. Der Club legt damit nur noch Zugangsdaten fest und landet direkt in seinem vorbereiteten Portal. Der Link ist einmalig gültig.</p>
+			<h2>Einladung per E-Mail senden (empfohlen)</h2>
+			<p>Versendet die versionierte Start-Mail: Nutzen, „kostenlos, provisionsbasiert", persönlicher Link, deine Telefonnummer. Liegt sie <?php echo (int) $days; ?> Tage, geht automatisch genau ein Nachfass raus.</p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="fge_partner_invite_send">
+				<input type="hidden" name="post_id" value="<?php echo (int) $partner_id; ?>">
+				<?php wp_nonce_field( 'fge_partner_invite_send_' . $partner_id ); ?>
+				<input class="mail" type="email" name="fge_invite_to" value="<?php echo esc_attr( $to ); ?>" placeholder="empfaenger@golfclub.de" required>
+				<button type="submit"><?php echo $sent_at > 0 ? 'Einladung erneut senden' : 'Einladung jetzt senden'; ?></button>
+			</form>
+			<?php if ( $sent_at > 0 ) : ?>
+			<div class="status">Versendet am <?php echo esc_html( wp_date( 'd.m.Y H:i', $sent_at ) ); ?> an <?php echo esc_html( (string) get_post_meta( $partner_id, '_fge_invite_sent_to', true ) ); ?> · noch nicht eingelöst · Nachfass: <?php echo $remind ? 'bereits verschickt' : 'geplant nach ' . (int) $days . ' Tagen'; ?></div>
+			<?php endif; ?>
+			<h2>Oder: Link kopieren</h2>
+			<p>Für den Versand aus deinem eigenen Postfach. Der Link ist einmalig gültig. Achtung: Der automatische Nachfass greift nur nach Versand über den Button oben.</p>
 		<?php endif; ?>
 		<?php if ( '' !== $url ) : ?>
 		<input type="text" value="<?php echo esc_attr( $url ); ?>" id="fge-inv" readonly onclick="this.select()">
@@ -236,3 +301,90 @@ add_action( 'admin_post_fge_partner_invite', static function (): void {
 	</div></body></html><?php
 	exit;
 } );
+
+// Versand der System-Einladung aus dem Modal.
+add_action( 'admin_post_fge_partner_invite_send', static function (): void {
+	$partner_id = absint( $_POST['post_id'] ?? 0 );
+	if ( $partner_id <= 0 || ! current_user_can( 'manage_options' ) || get_post_type( $partner_id ) !== 'firmengolf_partner' ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
+	}
+	check_admin_referer( 'fge_partner_invite_send_' . $partner_id );
+	if ( (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true ) > 0 ) {
+		wp_die( 'Dieser Partner ist bereits verknüpft, eine Einladung würde fehlschlagen.', '', [ 'response' => 409 ] );
+	}
+	$to   = sanitize_email( wp_unslash( $_POST['fge_invite_to'] ?? '' ) );
+	$sent = function_exists( 'fge_send_partner_invite_email' ) && fge_send_partner_invite_email( $partner_id, $to );
+	// Zurück ins Modal (braucht frische Nonce der Anzeige-Aktion).
+	$modal = wp_nonce_url( admin_url( 'admin-post.php?action=fge_partner_invite&post_id=' . $partner_id ), 'fge_partner_invite_' . $partner_id );
+	wp_safe_redirect( add_query_arg( 'fge_sent', $sent ? '1' : '0', $modal ) );
+	exit;
+} );
+
+// ── Nachfass + interne Übersicht (täglicher Followup-Cron, request-followups.php) ──
+
+/** Offene Einladungen: versendet, aber noch nicht eingelöst. */
+function fge_invite_open_invites(): array {
+	$ids = get_posts( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => 'any',
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_key'    => '_fge_invite_sent_at', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+	] );
+	return array_values( array_filter( array_map( 'intval', $ids ), static function ( int $pid ): bool {
+		return (int) get_post_meta( $pid, '_fge_assigned_wp_user_id', true ) <= 0
+			&& (int) get_post_meta( $pid, '_fge_invite_sent_at', true ) > 0;
+	} ) );
+}
+
+add_action( 'fge_request_followups_cron', 'fge_invite_run_followups' );
+function fge_invite_run_followups(): array {
+	$stats = [ 'invite_reminded' => 0, 'digest' => 0 ];
+	$days  = (int) apply_filters( 'fge_invite_reminder_days', 5 );
+	$open  = fge_invite_open_invites();
+
+	// Genau EIN automatischer Nachfass pro Einladung — mehr nervt, weniger versickert.
+	foreach ( $open as $pid ) {
+		if ( '1' === (string) get_post_meta( $pid, '_fge_invite_reminded', true ) ) {
+			continue;
+		}
+		if ( time() < (int) get_post_meta( $pid, '_fge_invite_sent_at', true ) + $days * DAY_IN_SECONDS ) {
+			continue;
+		}
+		if ( function_exists( 'fge_send_partner_invite_reminder_email' ) && fge_send_partner_invite_reminder_email( $pid ) ) {
+			update_post_meta( $pid, '_fge_invite_reminded', 1 );
+			$stats['invite_reminded']++;
+		}
+	}
+
+	// Interne Wochenübersicht: was liegt offen und wie lange schon? Nur senden,
+	// wenn es offene Einladungen gibt — sonst kein Rauschen im Postfach.
+	if ( $open && time() >= (int) get_option( 'fge_invite_digest_last', 0 ) + 7 * DAY_IN_SECONDS ) {
+		$rows = '';
+		foreach ( $open as $pid ) {
+			$sent_at = (int) get_post_meta( $pid, '_fge_invite_sent_at', true );
+			$age     = max( 0, (int) floor( ( time() - $sent_at ) / DAY_IN_SECONDS ) );
+			$rows   .= '<tr>'
+				. '<td style="padding:6px 10px;border-bottom:1px solid #eee;"><strong>' . esc_html( get_the_title( $pid ) ) . '</strong></td>'
+				. '<td style="padding:6px 10px;border-bottom:1px solid #eee;">' . esc_html( (string) get_post_meta( $pid, '_fge_invite_sent_to', true ) ) . '</td>'
+				. '<td style="padding:6px 10px;border-bottom:1px solid #eee;">vor ' . $age . ' Tag' . ( 1 === $age ? '' : 'en' ) . '</td>'
+				. '<td style="padding:6px 10px;border-bottom:1px solid #eee;">' . ( '1' === (string) get_post_meta( $pid, '_fge_invite_reminded', true ) ? 'Nachfass raus' : 'wartet' ) . '</td>'
+				. '</tr>';
+		}
+		$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+		$subject = 'Offene Partner-Einladungen: ' . count( $open );
+		$content = '<p style="margin:0 0 16px;">Diese versendeten Einladungen sind noch nicht eingelöst — Kandidaten für einen persönlichen Anruf:</p>'
+			. '<table style="border-collapse:collapse;width:100%;font-size:13px;"><tr>'
+			. '<th style="padding:6px 10px;text-align:left;border-bottom:2px solid #ddd;">Club</th>'
+			. '<th style="padding:6px 10px;text-align:left;border-bottom:2px solid #ddd;">Empfänger</th>'
+			. '<th style="padding:6px 10px;text-align:left;border-bottom:2px solid #ddd;">Versendet</th>'
+			. '<th style="padding:6px 10px;text-align:left;border-bottom:2px solid #ddd;">Status</th></tr>' . $rows . '</table>'
+			. '<p style="margin:16px 0 0;">' . ( function_exists( 'fge_email_button' ) ? fge_email_button( admin_url( 'edit.php?post_type=firmengolf_partner' ), 'Zur Partner-Liste' ) : '' ) . '</p>';
+		if ( function_exists( 'fge_email_wrap' ) && wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] ) ) {
+			update_option( 'fge_invite_digest_last', time(), false );
+			$stats['digest'] = 1;
+		}
+	}
+
+	return $stats;
+}

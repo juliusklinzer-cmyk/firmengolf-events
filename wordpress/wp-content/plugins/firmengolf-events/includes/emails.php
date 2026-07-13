@@ -852,6 +852,102 @@ function fge_send_partner_account_linked_email( int $user_id, int $partner_id ):
 	);
 }
 
+// ── Einladungspfad: Start-Mail, Nachfass, Zugangs-Bestätigung ─────────────────
+
+/**
+ * Versionierte Einladungs-Mail an den Club (warmer Akquisepfad).
+ * Ersetzt die bisher handgeschriebene Start-Mail: Nutzen, Vertrauen und CTA
+ * sind damit standardisiert; Versand über das Admin-Modal (partner-invite.php).
+ *
+ * @param string $to Abweichende Empfängeradresse (Default: Haupt-Kontakt des Partners).
+ */
+function fge_send_partner_invite_email( int $partner_id, string $to = '' ): bool {
+	[ $name, $contact_email, $greeting ] = fge_partner_mail_basics( $partner_id );
+	$to = '' !== $to ? $to : $contact_email;
+	if ( ! is_email( $to ) || ! function_exists( 'fge_invite_url' ) ) {
+		return false;
+	}
+	$city    = (string) get_post_meta( $partner_id, '_fge_city', true );
+	$c       = fge_company();
+	$subject = 'Firmenkunden für ' . $name . ': Euer Profil bei Firmengolf ist vorbereitet';
+	$content = '
+		<p>' . $greeting . '</p>
+		<p>mein Name ist ' . esc_html( $c['managing_director'] ) . ', ich bin der Gründer von <strong>Firmengolf</strong> — dem Marktplatz, über den Unternehmen Teamevents, Turniere und After-Work-Formate auf Golfplätzen buchen.</p>
+		<p>Für <strong>' . esc_html( $name ) . '</strong> haben wir bereits ein vollständiges Profil vorbereitet: Beschreibung, Fotos und Ausstattung sind eingerichtet (alles aus öffentlich verfügbaren Quellen — ihr könnt jedes Detail anpassen oder entfernen). Firmen' . ( '' !== $city ? ' aus der Region ' . esc_html( $city ) : ' aus eurer Region' ) . ' suchen bei uns nach Plätzen für ihre Events.</p>
+		<p><strong>Was das für euch heißt:</strong></p>
+		<ul style="margin:0 0 16px;padding-left:20px;">
+			<li style="margin-bottom:6px;">Kein Setup-Preis, keine Gebühren — wir arbeiten provisionsbasiert, ihr zahlt nur bei einer Buchung über uns.</li>
+			<li style="margin-bottom:6px;">Kein Aufwand: Profil prüfen, Feinheiten anpassen, erstes Event-Angebot freischalten — das dauert eine Minute.</li>
+			<li>Anfragen und Terminabstimmung laufen gebündelt über das Partner-Portal, ihr braucht keinen eigenen Vertrieb.</li>
+		</ul>
+		<p style="margin-top:28px;">
+			' . fge_email_button( fge_invite_url( $partner_id ), 'Euer Profil ansehen & Zugang anlegen' ) . '
+		</p>
+		<p style="font-size:13px;color:#888;">Der Link ist euer persönlicher Zugang und einmalig gültig — bitte nicht weiterleiten. Ihr geht damit keine Verpflichtung ein.</p>
+		<p>Fragen vorab? Ruf mich gern direkt an: <a href="tel:' . esc_attr( $c['phone_tel'] ) . '" style="color:#4279D1;">' . esc_html( $c['phone_display'] ) . '</a> — oder antworte einfach auf diese E-Mail.</p>
+		<p style="font-size:13px;color:#888;">Kein Interesse? Eine kurze Antwort genügt, dann nehmen wir euch von der Liste und das vorbereitete Profil geht nie online.</p>
+	';
+	$sent = (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	if ( $sent ) {
+		update_post_meta( $partner_id, '_fge_invite_sent_at', time() );
+		update_post_meta( $partner_id, '_fge_invite_sent_to', $to );
+		delete_post_meta( $partner_id, '_fge_invite_reminded' );
+	}
+	return $sent;
+}
+
+/** Einmaliger, freundlicher Nachfass, wenn die Einladung liegen bleibt (Cron, partner-invite.php). */
+function fge_send_partner_invite_reminder_email( int $partner_id ): bool {
+	[ $name, $contact_email, $greeting ] = fge_partner_mail_basics( $partner_id );
+	$to = (string) get_post_meta( $partner_id, '_fge_invite_sent_to', true ) ?: $contact_email;
+	if ( ! is_email( $to ) || ! function_exists( 'fge_invite_url' ) ) {
+		return false;
+	}
+	$c       = fge_company();
+	$subject = 'Kurze Erinnerung: Euer vorbereitetes Profil bei Firmengolf wartet';
+	$content = '
+		<p>' . $greeting . '</p>
+		<p>vor ein paar Tagen habe ich euch euren persönlichen Zugang zu Firmengolf geschickt — das vorbereitete Profil für <strong>' . esc_html( $name ) . '</strong> wartet noch auf euch. Ich weiß, wie voll der Alltag am Platz ist, deshalb nur diese eine Erinnerung.</p>
+		<p>Der Einstieg dauert wirklich eine Minute: Zugangsdaten festlegen, Profil ansehen, fertig. Kostenlos und unverbindlich — ihr zahlt nur, wenn über uns gebucht wird.</p>
+		<p style="margin-top:28px;">
+			' . fge_email_button( fge_invite_url( $partner_id ), 'Euer Profil ansehen & Zugang anlegen' ) . '
+		</p>
+		<p>Lieber erst sprechen? Ruf mich direkt an: <a href="tel:' . esc_attr( $c['phone_tel'] ) . '" style="color:#4279D1;">' . esc_html( $c['phone_display'] ) . '</a>.</p>
+		<p style="font-size:13px;color:#888;">Kein Interesse? Kurze Antwort genügt, dann melden wir uns nicht mehr und das Profil geht nie online.</p>
+	';
+	return (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
+/**
+ * Zugangs-Bestätigung an den Club nach Einlösung der Einladung.
+ * Der Partner hat sein Passwort selbst gesetzt — die Mail ist die schriftliche
+ * Spur „dein Zugang existiert, so kommst du wieder rein" (Funnel-Audit 2026-07-12).
+ */
+function fge_send_invite_access_email( int $user_id, int $partner_id ): bool {
+	$user = get_userdata( $user_id );
+	if ( ! $user ) {
+		return false;
+	}
+	$name       = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+	$portal_url = function_exists( 'fge_portal_page_url' ) ? fge_portal_page_url() : trailingslashit( home_url( '/partnerportal/' ) );
+	$first      = $user->first_name !== '' ? $user->first_name : $user->display_name;
+	$greeting   = $first !== '' ? 'Hallo ' . esc_html( $first ) . ',' : 'Hallo,';
+
+	$subject = 'Dein Zugang zum Firmengolf Partner-Portal ist aktiv';
+	$content = '
+		<p>' . $greeting . '</p>
+		<p>willkommen an Bord! Dein Zugang für <strong>' . esc_html( $name ) . '</strong> ist angelegt und das vorbereitete Profil gehört jetzt euch.</p>
+		<p><strong>Deine Anmelde-E-Mail:</strong> ' . esc_html( $user->user_email ) . '<br>
+		Das Passwort hast du gerade selbst festgelegt. Solltest du es vergessen, hilft „Passwort vergessen" auf der Anmeldeseite.</p>
+		<p style="margin-top:28px;">
+			' . fge_email_button( $portal_url, 'Zum Partner-Portal' ) . '
+		</p>
+		<p>Die nächsten Schritte zeigt dir das Portal direkt an: Profil prüfen, Fotos ansehen, erstes Event-Angebot freischalten — erst damit geht eure Seite öffentlich live.</p>
+		<p style="font-size:13px;color:#888;">Fragen? Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_partner'] ) . '</a>.</p>
+	';
+	return (bool) wp_mail( $user->user_email, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
 // ── Partner-Status-Mails (Freischaltung, Rückfragen, Ablehnung) ──────────────
 
 /** Versendet die passende Mail bei einem Statuswechsel. Kein Wechsel = keine Mail. */

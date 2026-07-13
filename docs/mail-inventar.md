@@ -55,6 +55,9 @@ Keine Gedankenstriche, Preise im Format „XX € p.P./Gesamt netto".
 | 22 | Dein Firmengolf-Konto wurde mit {Platz} verknüpft | bestehendes Konto verknüpft (Admin) | Partner | Info über die Verknüpfung |
 | 23 | Dein Firmengolf-Onboarding: Hier geht es weiter | „Speichern und später fortsetzen" im Onboarding | Partner | Fortsetzungs-Link (Resume-Token) |
 | 24 | Partner-Zugang aktiviert: {Platz} | Einladungslink eingelöst | intern | Wer hat eingelöst (Name + Mail) |
+| 24a | Firmenkunden für {Platz}: Euer Profil bei Firmengolf ist vorbereitet | Versand-Button im Einladungs-Modal (Partner-Liste, `fge_send_partner_invite_email`) | Club (kalt/warm) | Standardisierte Start-Mail: Vorstellung Julius, Profil vorbereitet, kostenlos/provisionsbasiert, Magic-Link-CTA, Telefon, Opt-out-Satz |
+| 24b | Kurze Erinnerung: Euer vorbereitetes Profil bei Firmengolf wartet | Einladung nach 5 Tagen nicht eingelöst (Cron, Filter `fge_invite_reminder_days`, genau 1×) | Club | Freundlicher Nachfass mit Link + Telefon |
+| 24c | Dein Zugang zum Firmengolf Partner-Portal ist aktiv | Einladungslink eingelöst (`fge_send_invite_access_email`) | Partner | Schriftliche Zugangs-Bestätigung: Login-Mail, Passwort-vergessen-Hinweis, Portal-Button, nächste Schritte |
 
 ## E · Partnerportal und Events
 
@@ -81,3 +84,4 @@ Keine Gedankenstriche, Preise im Format „XX € p.P./Gesamt netto".
 | Feinplanung offen: {FG-Nr} | gebuchtes Event ohne Feinplanung nach 2 Tagen (Filter `fge_offer_hold_reminder_days`) | intern |
 | Rückfrage unbeantwortet: {FG-Nr} | Kundenrückfrage 2 Tage offen | intern |
 | Angebot überfällig: {FG-Nr} | bestätigter Termin, aber kein Angebot versendet | intern |
+| Offene Partner-Einladungen: {n} | mind. 1 versendete Einladung uneingelöst, max. 1× pro Woche (`fge_invite_run_followups`, partner-invite.php) | intern |

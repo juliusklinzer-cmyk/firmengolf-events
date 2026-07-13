@@ -23,6 +23,7 @@ $fehler     = sanitize_key( wp_unslash( $_GET['fehler'] ?? '' ) );
 $fehler_txt = [
 	'felder'         => 'Bitte fülle Name und eine gültige E-Mail-Adresse aus.',
 	'passwort'       => 'Das Passwort braucht mindestens 8 Zeichen.',
+	'abgelaufen'     => 'Das hat etwas zu lange gedauert, deine Eingaben sind aus Sicherheitsgründen verfallen. Gib sie bitte einmal neu ein, dein Code bleibt gültig.',
 	'email_vergeben' => 'Für diese E-Mail existiert schon ein Konto. Melde dich damit im Portal an oder ruf uns kurz an, wir verknüpfen es für dich.',
 	'rate'           => 'Zu viele Versuche, bitte warte ein paar Minuten.',
 ][ $fehler ] ?? '';
@@ -132,7 +133,7 @@ $pf_email = (string) ( $pending['email'] ?? '' );
 			<div class="inv-right">
 				<h2 class="inv-title"><?php echo $verify ? 'Bestätige deine E-Mail' : 'Leg deine Zugangsdaten fest'; ?></h2>
 				<p class="inv-sub"><?php echo $verify
-					? 'Fast geschafft: Wir haben dir einen 6-stelligen Code geschickt. Gib ihn hier ein, dann legen wir deinen Zugang an.'
+					? 'Fast geschafft: Wir haben dir einen 6-stelligen Code geschickt. Gib ihn hier ein, dann legen wir deinen Zugang an. Dein Passwort haben wir uns gemerkt.'
 					: 'Eine Minute, dann bist du drin: Du siehst euer vorbereitetes Profil, kannst alles anpassen und euer erstes Event-Angebot anlegen.'; ?></p>
 
 				<?php if ( '' !== $fehler_txt ) : ?><div class="inv-error"><?php echo esc_html( $fehler_txt ); ?></div><?php endif; ?>
@@ -147,7 +148,9 @@ $pf_email = (string) ( $pending['email'] ?? '' );
 						<div class="inv-field"><label for="fge_last">Nachname</label><input type="text" id="fge_last" name="fge_last" value="<?php echo esc_attr( $pf_last ); ?>" autocomplete="family-name"></div>
 					</div>
 					<div class="inv-field"><label for="fge_email">E-Mail-Adresse (dein Login)</label><input type="email" id="fge_email" name="fge_email" value="<?php echo esc_attr( $pf_email ); ?>" required autocomplete="email"></div>
-					<div class="inv-field"><label for="fge_pass"><?php echo $verify ? 'Passwort (zur Bestätigung bitte erneut eingeben)' : 'Passwort (mindestens 8 Zeichen)'; ?></label><input type="password" id="fge_pass" name="fge_pass" required minlength="8" autocomplete="new-password"></div>
+					<?php if ( ! $verify ) : // Im Code-Schritt keine Doppel-Eingabe: das Passwort liegt verschlüsselt im Transient (partner-invite.php). ?>
+					<div class="inv-field"><label for="fge_pass">Passwort (mindestens 8 Zeichen)</label><input type="password" id="fge_pass" name="fge_pass" required minlength="8" autocomplete="new-password"></div>
+					<?php endif; ?>
 					<?php if ( $verify ) : ?>
 					<div class="inv-field"><label for="fge_code">Bestätigungscode</label><input type="text" id="fge_code" name="fge_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="6-stelliger Code" required></div>
 					<?php endif; ?>
