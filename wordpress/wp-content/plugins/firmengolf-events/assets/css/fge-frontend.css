@@ -612,6 +612,9 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   font-size: clamp(32px, 5vw, 56px);
   line-height: 1.02; letter-spacing: var(--tr-display-lg);
   font-weight: var(--fw-medium); margin-top: 10px; margin-bottom: -8px; max-width: 900px;
+  /* Partner-Titel können lange Komposita enthalten — ohne Trennung malt der Text
+     mobil über den Viewport hinaus (Julius, Android-Test 2026-07-18) */
+  overflow-wrap: break-word; hyphens: auto;
 }
 .fg-detail-meta {
   display: flex; gap: 20px; flex-wrap: wrap;
@@ -3054,8 +3057,7 @@ button.fg-search-btn { background: var(--fairway-700); color: var(--paper-100); 
   .faq-aside { position: static; }
 }
 @media (max-width: 720px) {
-  .ev-hero-title { font-size: 44px; }
-  .ev-hero-content { left: 24px; right: 24px; bottom: 24px; }
+  /* .ev-hero-title/-content: mobile Größen regelt jetzt der ≤900px-Block in Abschnitt „City-Seiten" */
   .fg-search-bar { border-radius: 24px; padding: 16px; flex-wrap: wrap; margin: -20px 16px 0; }
   .fg-search-cell { width: 100%; padding: 8px 4px; }
   .fg-cell-divider { display: none; }
@@ -4670,11 +4672,19 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   .cty-stat-l { font-size: 11.5px; line-height: 1.25; margin-top: 1px; }
   .cty-stat-s { display: none; }
 
-  /* Hero: Content statisch im Foto-Container → Bild wächst mit dem Text, nichts läuft mehr über */
-  .ev-hero--stats .ev-hero-photo { min-height: 0; display: flex; align-items: flex-end; }
-  .ev-hero--stats .ev-hero-content { position: static; padding: 96px 20px 52px; max-width: none; }
-  .ev-hero--stats .ev-hero-title { font-size: clamp(30px, 8.5vw, 40px); }
-  .ev-hero--stats .ev-hero-sub { font-size: 15px; }
+  /* Hero: Content statisch im Foto-Container → Bild wächst mit dem Text, nichts läuft mehr über.
+     Gilt für ALLE Foto-Heroes (City, Format×Stadt, Format) — vorher nur --stats, wodurch die
+     langen H1s der Format×Stadt-Seiten oben aus dem 380px-Container geclippt wurden (Julius, 2026-07-18). */
+  /* aspect-ratio: auto ist Pflicht — sonst überträgt sich min-height über die 16/6-Ratio
+     in eine min-WIDTH von ~1170px und das Bild läuft rechts aus dem Viewport */
+  .ev-hero .ev-hero-photo { aspect-ratio: auto; min-height: 440px; display: flex; align-items: flex-end; }
+  .ev-hero .ev-hero-content { position: static; padding: 96px 20px 32px; max-width: none; }
+  .ev-hero .ev-hero-title { font-size: clamp(30px, 8.5vw, 40px); }
+  .ev-hero .ev-hero-sub { font-size: 15px; }
+  /* Kräftigerer Scrim: Überschrift + Text bleiben auf hellen Fotos lesbar */
+  .ev-hero .ev-hero-scrim { background: linear-gradient(180deg, rgba(14,19,16,.25) 0%, rgba(14,19,16,.05) 30%, rgba(14,19,16,.78) 100%); }
+  /* City-Hero: unten mehr Luft, damit die überlappenden Stat-Karten nichts verdecken */
+  .ev-hero--stats .ev-hero-content { padding-bottom: 52px; }
 }
 
 /* City-Format-Karten: 3 Spalten, klickbar mit Nutzen-Satz */
@@ -5286,6 +5296,11 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
 .ev-msearch-bar.tabs-only.is-stuck { padding-top: 4px; padding-bottom: 4px; }
 
 @media (max-width: 768px) {
+  /* Android-Chrome: Scroll-Anchoring korrigiert die Einklapp-Höhenänderung der
+     Mobile-Bar zurück unter die Schwelle → Flacker-Schleife am is-stuck-Übergang.
+     Der Anker liegt im Inhalt UNTER der Leiste, daher muss die Abschaltung auf dem
+     Dokument-Scroller sitzen (kombiniert mit der JS-Hysterese in fge-nav.php). */
+  html { overflow-anchor: none; }
   .ev-msearch-bar {
     display: block; padding: 16px 16px 4px;
     position: sticky; top: 0; z-index: 40;

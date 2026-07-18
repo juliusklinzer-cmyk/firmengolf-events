@@ -106,7 +106,15 @@ $mtabs = [
 (function () {
 	var bar = document.getElementById('fge-mbar');
 	if (!bar) { return; }
-	var onScroll = function () { bar.classList.toggle('is-stuck', window.scrollY > 56); };
+	// Hysterese: Einklappen schrumpft die Leiste um ~40px; Android-Chrome korrigiert
+	// das per Scroll-Anchoring zurück unter die Schwelle → Flacker-Schleife. Deshalb
+	// zwei Schwellen mit Abstand > Höhendifferenz statt einer einzigen.
+	var stuck = false;
+	var onScroll = function () {
+		var y = window.scrollY;
+		if (!stuck && y > 110) { stuck = true; bar.classList.add('is-stuck'); }
+		else if (stuck && y < 10) { stuck = false; bar.classList.remove('is-stuck'); }
+	};
 	window.addEventListener('scroll', onScroll, { passive: true });
 	onScroll();
 })();
