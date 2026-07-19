@@ -95,3 +95,5 @@ Site ist seit 2026-06-21 indexiert (Blog + Landingpages) — ohne 301 ist das we
 - [ ] Datenschutztext: Domain-Nennungen prüfen (war eh offen, s. Cookie-Consent)
 - [ ] Visionpunch-Onepager (separates Projekt, erst nach SEO-Übergangszeit)
 - [ ] AVVs (One.com/Google/HubSpot/Kit) — laufen auf die UG, prüfen ob Domain relevant
+
+> **Update 19.07.2026:** Die Aussagen zu firmengolf.app („reserviert, nicht verwenden") und firmen.golf sind überholt — die Firmengolf-Website ist seit 17.07.2026 auf firmengolf.app live, firmen.golf leitet per 301 dorthin. Aktueller Stand: `~/projects/firmengolf-universum`.

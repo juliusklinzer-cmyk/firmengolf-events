@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Universum (zentrales Wissen)
+
+Projektübergreifende Wahrheit (Mitgliedschaften, Punktesystem, Partner-Status, Marke & Ton, Infrastruktur, Entscheidungen) liegt in **`~/projects/firmengolf-universum`** (eigenes Git-Repo — README dort erklärt die Regeln). Bei Sessionstart bzw. vor Arbeit an solchen Themen: `git -C ~/projects/firmengolf-universum log --oneline $(cat .universum-stand)..HEAD` zeigt Neues seit dem letzten Sync → relevante Dateien lesen → `.universum-stand` auf den neuen HEAD setzen (Datei fehlt noch → beim ersten Sync anlegen). Änderungen hier mit Wirkung auf Website oder App (z. B. Partner, Preise, Marke) dort dokumentieren + committen. Nachbarprojekte: `~/projects/Firmengolf Webseite` (live: firmengolf.app) und `~/projects/firmengolf-app` (im Aufbau) — separat halten, nicht vermischen.
+
 ## Project Overview
 
 WordPress-based event marketplace and partner portal for Firmengolf (corporate golf events). The stack is a Docker Compose local dev environment; the only tracked custom code is the plugin and child theme.
