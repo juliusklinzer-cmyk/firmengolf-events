@@ -2597,23 +2597,57 @@ a.mk-hero-floating:focus-visible { outline: 2px solid var(--paper-100); outline-
 .mk-partners { max-width: 1280px; margin: 56px auto 0; padding: 0 24px; text-align: center; }
 
 
-/* Experience section ("Warum Golf" — ported 1:1 from design site.css) */
-.home-exp { background: var(--paper-100); color: var(--ink-900); padding: 104px 24px; }
-.home-exp-inner { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 0.82fr 1.18fr; gap: 64px; align-items: start; }
-.home-exp-head { display: flex; flex-direction: column; gap: 18px; }
-.home-exp-head .mk-eyebrow { color: var(--fairway-700); }
-.home-exp-h { margin: 0; padding: 0; font-family: var(--font-display); font-weight: 500; font-size: 48px; line-height: 1.04; letter-spacing: -0.03em; color: var(--ink-900); text-wrap: balance; }
-.home-exp-lead { margin: 0; font-size: 18px; line-height: 1.55; color: var(--ink-700); max-width: 440px; text-wrap: pretty; }
-/* Kompakte Zeilen-Karten statt 2×2-Blöcke (Julius, 2026-07-06): Foto klein links, Text rechts */
-.home-exp-cards { display: grid; grid-template-columns: 1fr; gap: 14px; align-content: start; }
-.home-exp-card { background: var(--paper-50); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: row; align-items: stretch; transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
-.home-exp-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(14,19,16,.05), 0 14px 32px rgba(14,19,16,.10); }
-.home-exp-card-photo { display: block; width: 128px; flex: none; background-size: cover; background-position: center; }
-.home-exp-card-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 4px; justify-content: center; min-width: 0; }
-.home-exp-k { font-family: var(--font-display); font-size: 17px; font-weight: 500; letter-spacing: -0.01em; color: var(--fairway-800); }
-.home-exp-card-body p { font-size: 14px; line-height: 1.5; color: var(--ink-700); text-wrap: pretty; margin: 0; }
-@media (max-width: 980px) { .home-exp-inner { grid-template-columns: 1fr; gap: 36px; } }
-@media (max-width: 560px) { .home-exp { padding: 72px 24px; } .home-exp-h { font-size: 34px; } .home-exp-card-photo { width: 96px; } .home-exp-card-body { padding: 13px 16px; } }
+/* "Warum Golfplatz" — Location-Value + zwei Wege (Redesign 2026-07-19 v3, Politur v4) */
+.home-loc { background: linear-gradient(180deg, var(--paper-50) 0%, var(--paper-100) 44%); color: var(--ink-900); padding: 104px 24px; }
+.home-loc-inner { max-width: 1280px; margin: 0 auto; }
+.home-loc-head { max-width: 780px; }
+.home-loc-head .mk-eyebrow { color: var(--fairway-700); margin-bottom: 16px; }
+.home-loc-h { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(32px, 3.6vw, 50px); line-height: 1.05; letter-spacing: -0.03em; color: var(--ink-900); text-wrap: balance; }
+.home-loc-lead { margin: 20px 0 0; font-size: 18px; line-height: 1.55; color: var(--ink-700); max-width: 700px; text-wrap: pretty; }
+
+/* Vier Säulen als ein Panel mit Haarlinien (1px-gap-Technik wie home-numbers-grid) */
+.home-loc-pillars { list-style: none; margin: 52px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--ink-200); border: 1px solid var(--ink-200); border-radius: var(--radius-2xl); overflow: hidden; box-shadow: var(--shadow-sm); }
+.home-loc-pillar { background: var(--paper-50); padding: 32px 28px; display: flex; flex-direction: column; gap: 8px; transition: background var(--dur-base) var(--ease-out); }
+.home-loc-pillar:hover { background: var(--paper-100); }
+.home-loc-ic { width: 46px; height: 46px; border-radius: 13px; background: linear-gradient(150deg, var(--fairway-100), var(--paper-50)); color: var(--fairway-700); box-shadow: inset 0 0 0 1px var(--fairway-200); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+.home-loc-ic svg { width: 23px; height: 23px; }
+.home-loc-pk { font-family: var(--font-display); font-weight: 500; font-size: 18px; letter-spacing: -0.015em; line-height: 1.2; color: var(--ink-900); }
+.home-loc-pt { font-size: 14.5px; line-height: 1.5; color: var(--ink-600); text-wrap: pretty; }
+
+/* Übergang zu den zwei Wegen — Header-Zeile, Zähler als Pille rechts */
+.home-loc-paths-intro { margin: 76px 0 24px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; }
+.home-loc-paths-h { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.1; letter-spacing: -0.02em; color: var(--ink-900); text-wrap: balance; }
+.home-loc-count { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; color: var(--fairway-700); background: var(--fairway-100); padding: 7px 14px; border-radius: 999px; white-space: nowrap; }
+
+/* Zwei Wege-Karten: vorgeplant vs. individuell */
+.home-loc-paths { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.fge-page a.home-loc-path { display: flex; flex-direction: column; background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-xl); overflow: hidden; text-decoration: none; color: inherit; box-shadow: var(--shadow-xs); transition: box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
+.fge-page a.home-loc-path:hover { box-shadow: var(--shadow-lg); border-color: var(--fairway-200); transform: translateY(-4px); }
+.fge-page a.home-loc-path:focus-visible { outline: 2px solid var(--fairway-700); outline-offset: 2px; }
+.home-loc-path-photo { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
+.home-loc-path-img { position: absolute; inset: 0; background-size: cover; background-position: center; transition: transform 600ms var(--ease-out); }
+.home-loc-path:hover .home-loc-path-img { transform: scale(1.05); }
+.home-loc-path-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,19,16,.22) 0%, rgba(14,19,16,0) 34%); pointer-events: none; }
+.home-loc-path-tag { position: absolute; left: 14px; top: 14px; z-index: 1; font-size: 11px; font-weight: 500; padding: 6px 12px; border-radius: 999px; background: rgba(251,250,246,.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: var(--ink-900); box-shadow: var(--shadow-xs); }
+.home-loc-path-body { padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.home-loc-path-k { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 22px; letter-spacing: -0.015em; line-height: 1.15; color: var(--ink-900); }
+.home-loc-path-t { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-600); text-wrap: pretty; flex: 1; }
+.home-loc-path-cta { display: inline-flex; align-items: center; gap: 9px; margin-top: 14px; font-size: 14px; font-weight: 600; color: var(--fairway-700); }
+.home-loc-path-cta svg { transition: transform var(--dur-base) var(--ease-out); }
+.home-loc-path:hover .home-loc-path-cta svg { transform: translateX(4px); }
+
+@media (max-width: 900px) {
+	.home-loc { padding: 76px 24px; }
+	.home-loc-pillars { grid-template-columns: repeat(2, 1fr); }
+	.home-loc-paths { grid-template-columns: 1fr; }
+	.home-loc-paths-intro { margin-top: 60px; }
+}
+@media (max-width: 480px) {
+	.home-loc-pillars { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.home-loc-path-img { transition: none; }
+}
 .mk-partners-row { display: flex; gap: 32px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
 .mk-partner-logo { font-family: var(--font-display); font-size: 18px; font-weight: 500; color: var(--ink-400); letter-spacing: -.01em; }
 

@@ -212,33 +212,83 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	<?php endforeach; ?>
 </div>
 
-<?php /* ══════════════════ 2b. EXPERIENCE, Warum Golf ══════════════════ */ ?>
-<section class="home-exp" aria-label="Warum Golf">
-	<div class="home-exp-inner">
-		<div class="home-exp-head">
-			<div class="mk-eyebrow">Warum Golf</div>
-			<h2 class="home-exp-h">Es geht nicht ums Golf. Es geht um das, was <span class="mk-italic">dabei</span> passiert.</h2>
-			<p class="home-exp-lead">
-				Niemand muss spielen können. Ein paar Stunden draußen, etwas Bewegung zwischendurch,
-				und Gespräche laufen plötzlich viel leichter als im Konferenzraum.
+<?php /* ══════════════════ 2b. WARUM GOLFPLATZ, Location + zwei Wege ══════════════════ */ ?>
+<?php
+/* Redesign 2026-07-19 (v3, Julius): Der erste große Block beantwortet zwei
+   Kernfragen — (1) warum der Golfplatz die perfekte Event-Location ist
+   (vier Säulen: Bewegung/Draußen, niedrige Schwelle, Clubhaus+Meeting, Gastro)
+   und (2) wie man das passende Angebot findet (zwei Wege: vorgeplante
+   Partner-Events ODER individuelle Anfrage). */
+$loc_pillars = [
+	[ 'ic' => '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+	  'k' => 'Draußen in Bewegung', 't' => 'Ein ganzer Tag an der frischen Luft — Bewegung, ohne dass es nach Sport aussieht.' ],
+	[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+	  'k' => 'Für alle machbar', 't' => 'Flache Wege, Carts, ein Pro für die ersten Schläge. Kein Fitnesslevel, kein Handicap nötig.' ],
+	[ 'ic' => '<path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01M10 21v-4h4v4"/>',
+	  'k' => 'Clubhaus & Meetingräume', 't' => 'Moderne Räume für Empfang, Präsentation oder Workshop — direkt am Grün.' ],
+	[ 'ic' => '<path d="M3 2v7c0 1.1.9 2 2 2s2-.9 2-2V2"/><path d="M5 11v11"/><path d="M18 2c-1.7 0-3 2.7-3 6 0 2.6 1.1 4 3 4v10"/>',
+	  'k' => 'Küche & Terrasse', 't' => 'Vom Business-Lunch bis zum Grillabend — die Gastronomie vor Ort trägt jeden Anlass.' ],
+];
+$loc_paths = [
+	[
+		'img'   => 'firmenevent-afterwork-golf.jpg',
+		'alt'   => 'Team stößt nach dem Firmenevent auf dem Golfplatz an',
+		'tag'   => 'Sofort buchbar',
+		'k'     => 'Vorgeplante Partner-Events',
+		't'     => 'Fertige Formate auf unseren Partnerplätzen — mit Datum, Preis und Ablauf. Aussuchen, anfragen, fertig.',
+		'cta'   => 'Events entdecken',
+		'href'  => $url_events,
+	],
+	[
+		'img'   => 'clubhaus-modern.jpg',
+		'alt'   => 'Modernes Golf-Clubhaus als Event-Location',
+		'tag'   => 'Nach Maß',
+		'k'     => 'Individuell geplant',
+		't'     => 'Eigene Vorstellung? Schick uns Anlass, Gruppe und Wunschregion — wir kuratieren passende Plätze für dein Unternehmen.',
+		'cta'   => 'Individuell anfragen',
+		'href'  => $url_ind . '#anfrage',
+	],
+];
+?>
+<section class="home-loc" aria-label="Warum der Golfplatz die perfekte Event-Location ist">
+	<div class="home-loc-inner">
+		<div class="home-loc-head">
+			<div class="mk-eyebrow">Der Golfplatz als Event-Location</div>
+			<h2 class="home-loc-h">Warum sich der Golfplatz perfekt für dein <span class="mk-italic">Firmenevent</span> eignet.</h2>
+			<p class="home-loc-lead">
+				Bewegung an der frischen Luft, moderne Clubhäuser mit Meetingräumen und eine Gastronomie,
+				die jeden Anlass trägt — offen für alle, ganz ohne Golf-Vorkenntnisse. Und Plätze gibt es
+				mehr in deiner Nähe, als du denkst.
 			</p>
 		</div>
-		<div class="home-exp-cards">
-			<?php
-			$exp_points = [
-				[ 'k' => 'Bewegung',      't' => 'Vier, fünf Kilometer an der frischen Luft, ohne dass es sich nach Sport anfühlt.',        'img' => 'golfer-auf-gruen-herbst.jpg' ],
-				[ 'k' => 'Natur',         't' => 'Grün, Weite, Himmel. Die perfekte Ergänzung zu einem Tag voller Gespräche.',              'img' => 'golfplatz-huegel-abendlicht.jpg' ],
-				[ 'k' => 'Konzentration', 't' => 'Ein Spiel, das volle Aufmerksamkeit verlangt und genau dadurch den Kopf frei macht.',     'img' => 'golfer-putt-abendlicht.jpg' ],
-				[ 'k' => 'Zusammenhalt',  't' => 'Vier Stunden Seite an Seite, ohne Bildschirm. Teams wachsen hier unangestrengt zusammen.', 'img' => 'kolleginnen-teambuilding.jpg' ],
-			];
-			foreach ( $exp_points as $p ) : ?>
-				<article class="home-exp-card">
-					<div class="home-exp-card-photo" style="background-image:url('<?php echo esc_url( $img( $p['img'] ) ); ?>')"></div>
-					<div class="home-exp-card-body">
-						<div class="home-exp-k"><?php echo esc_html( $p['k'] ); ?></div>
-						<p><?php echo esc_html( $p['t'] ); ?></p>
+
+		<ul class="home-loc-pillars">
+			<?php foreach ( $loc_pillars as $p ) : ?>
+				<li class="home-loc-pillar">
+					<span class="home-loc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $p['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
+					<span class="home-loc-pk"><?php echo esc_html( $p['k'] ); ?></span>
+					<span class="home-loc-pt"><?php echo esc_html( $p['t'] ); ?></span>
+				</li>
+			<?php endforeach; ?>
+		</ul>
+
+		<div class="home-loc-paths-intro">
+			<h3 class="home-loc-paths-h">So findest du dein nächstes Teamevent</h3>
+			<span class="home-loc-count"><?php echo esc_html( (string) ( $fge_live_count ?? '30+' ) ); ?> Events live · über 720 Plätze bundesweit</span>
+		</div>
+		<div class="home-loc-paths">
+			<?php foreach ( $loc_paths as $path ) : ?>
+				<a class="home-loc-path" href="<?php echo esc_url( $path['href'] ); ?>">
+					<div class="home-loc-path-photo">
+						<span class="home-loc-path-img" style="background-image:url('<?php echo esc_url( $img( $path['img'] ) ); ?>')" role="img" aria-label="<?php echo esc_attr( $path['alt'] ); ?>"></span>
+						<span class="home-loc-path-tag"><?php echo esc_html( $path['tag'] ); ?></span>
 					</div>
-				</article>
+					<div class="home-loc-path-body">
+						<h4 class="home-loc-path-k"><?php echo esc_html( $path['k'] ); ?></h4>
+						<p class="home-loc-path-t"><?php echo esc_html( $path['t'] ); ?></p>
+						<span class="home-loc-path-cta"><?php echo esc_html( $path['cta'] ); ?> <?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+					</div>
+				</a>
 			<?php endforeach; ?>
 		</div>
 	</div>

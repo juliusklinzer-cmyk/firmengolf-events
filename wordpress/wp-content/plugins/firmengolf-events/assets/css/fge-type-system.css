@@ -8,7 +8,7 @@
 /* ── Headlines: Roboto Bold, engere Laufweite ──
    (Familie kommt über --font-display; hier nur Stärke + Tracking.
    Startseiten-Hero bewusst NICHT dabei: läuft typografisch wie .ind-hero-title, w500.) */
-.mk-h2, .home-exp-h, .mk-step-t, .mk-format-t, .home-occ-t,
+.mk-h2, .home-loc-h, .home-loc-paths-h, .mk-step-t, .mk-format-t, .home-occ-t,
 .home-numbers-h, .home-benefit-h, .home-blog-t, .mk-cta-h,
 .ev-hero-title, .ev-inline-h, .ev-sheet-title, .ev-catsec-h,
 .page-hero-title, .blog-featured-h, .blog-card-h, .blog-newsletter-h,
