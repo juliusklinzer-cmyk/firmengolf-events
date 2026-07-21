@@ -11,14 +11,18 @@ show_admin_bar( false );
 
 $token      = (string) get_query_var( 'fge_einladung' );
 $partner_id = function_exists( 'fge_invite_partner_by_token' ) ? fge_invite_partner_by_token( $token ) : 0;
-$linked     = $partner_id > 0 && (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true ) > 0;
+// „Bereits eingelöst" gilt pro Einladungslink (mehrere ASP möglich), nicht pro Platz.
+$fge_invitees = ( $partner_id > 0 && function_exists( 'fge_invitees' ) ) ? fge_invitees( $partner_id ) : [];
+$linked       = isset( $fge_invitees[ $token ] )
+	? (int) ( $fge_invitees[ $token ]['accepted_at'] ?? 0 ) > 0
+	: ( $partner_id > 0 && (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true ) > 0 );
 $club       = $partner_id > 0 ? ( (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id ) ) : '';
 $city       = $partner_id > 0 ? (string) get_post_meta( $partner_id, '_fge_city', true ) : '';
 $hero_id    = $partner_id > 0 ? (int) get_post_meta( $partner_id, '_fge_hero_image_attachment_id', true ) : 0;
 $hero_img   = $hero_id > 0 ? (string) wp_get_attachment_image_url( $hero_id, 'large' ) : ( function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', max( 1, $partner_id ) ) : '' );
 $logo_url   = function_exists( 'fge_get_logo_url' ) ? fge_get_logo_url() : '';
 $phone      = function_exists( 'fge_company' ) ? ( fge_company()['phone_display'] ?? '' ) : '';
-$post_url   = function_exists( 'fge_invite_url' ) && $partner_id > 0 ? fge_invite_url( $partner_id ) : home_url( '/einladung/' . rawurlencode( $token ) . '/' );
+$post_url   = function_exists( 'fge_invite_url_for' ) && $partner_id > 0 ? fge_invite_url_for( $partner_id, $token ) : home_url( '/einladung/' . rawurlencode( $token ) . '/' );
 $fehler     = sanitize_key( wp_unslash( $_GET['fehler'] ?? '' ) );
 $fehler_txt = [
 	'felder'         => 'Bitte fülle Name und eine gültige E-Mail-Adresse aus.',

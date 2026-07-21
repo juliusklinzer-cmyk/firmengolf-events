@@ -50,14 +50,14 @@ add_action( 'wp_head', function () {
 	if ( is_page( 'golfplatz-partner' ) ) {
 		fge_render_seo_meta( [
 			'title' => 'Golfplatz-Partner werden | Firmengolf',
-			'desc'  => 'Firmenkunden für euren Golfplatz: Teamevents, Turniere, Platzreife. Kein Setup-Preis, rein provisionsbasiert, keine Exklusivität. In wenigen Werktagen live.',
+			'desc'  => 'Firmenkunden für euren Golfplatz: Teamevents, Turniere, Platzreife. Kein Setup-Preis, für den Platz kostenlos, keine Exklusivität. In wenigen Werktagen live.',
 			'url'   => get_permalink(),
 		] );
 	}
 	if ( is_page( 'partner-faq' ) ) {
 		fge_render_seo_meta( [
 			'title' => 'Partner-FAQ für Golfplätze | Firmengolf',
-			'desc'  => 'Alle Antworten für Golfplätze: kostenlos listen, provisionsbasiert, keine Bindung. Wie Anfragen, Terminabstimmung und Abrechnung bei Firmengolf laufen.',
+			'desc'  => 'Alle Antworten für Golfplätze: kostenlos listen, keine Bindung, Provision zahlt der Kunde. Wie Anfragen, Terminabstimmung und Abrechnung bei Firmengolf laufen.',
 			'url'   => get_permalink(),
 		] );
 	}

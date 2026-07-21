@@ -35,7 +35,7 @@ $event_count   = function_exists( 'fge_event_is_public' )
 
 // Kernfragen aus der Partner-FAQ, „kostenlos" zuerst (Audit: stand zugeklappt auf Platz 2).
 $faq_teaser = [
-	[ 'Was kostet die Partnerschaft?', 'Nichts. Kein Setup-Preis, keine Gebühren — wir arbeiten provisionsbasiert, ihr zahlt nur, wenn über uns gebucht wird.' ],
+	[ 'Was kostet die Partnerschaft?', 'Für den Platz nichts. Ihr bekommt genau euren angegebenen Preis, die Vermittlungsprovision zahlt der Kunde obendrauf.' ],
 	[ 'Binde ich mich langfristig?', 'Nein, keine langfristige Bindung, faire, kurze Konditionen. Pausieren ist jederzeit möglich.' ],
 	[ 'Muss ich exklusiv mit Firmengolf arbeiten?', 'Nein, keine Exklusivität. Ihr vermarktet euren Platz weiter, wie ihr wollt.' ],
 	[ 'Wie schnell ist mein Platz live?', 'In der Regel wenige Werktage nach vollständigem Profil — das Onboarding selbst dauert etwa zehn Minuten.' ],
@@ -58,7 +58,7 @@ $faq_teaser = [
 			</h1>
 			<p class="mk-hero-sub">
 				Firmengolf bringt Unternehmen auf Golfplätze: Teamevents, Turniere, Platzreife-Kurse.
-				Kein Setup-Preis, provisionsbasiert — ihr zahlt nur, wenn über uns gebucht wird.
+				Kein Setup-Preis, keine Gebühren. Ihr bekommt euren vollen Preis, die Provision zahlt der Kunde.
 			</p>
 			<div class="mk-hero-ctas">
 				<a class="fg-btn-cta fg-btn-lg" href="<?php echo esc_url( $url_onboarding ); ?>">
@@ -82,7 +82,7 @@ $faq_teaser = [
 		[ 'ic' => '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/>',
 		  't' => (string) $event_count, 'b' => 'buchbare Event-Angebote' ],
 		[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>',
-		  't' => '0 € Fixkosten', 'b' => 'rein provisionsbasiert' ],
+		  't' => '0 € Fixkosten', 'b' => 'Provision zahlt der Kunde' ],
 		[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
 		  't' => '1 Werktag', 'b' => 'Antwort auf jede Frage' ],
 	];

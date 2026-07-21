@@ -13,7 +13,7 @@ $url_onboarding = home_url( '/partner-onboarding/' );
 $faq_groups = [
 	'Einstieg & Aufnahme' => [
 		[ 'Wie wird mein Golfplatz Partner bei Firmengolf?', 'Über unser Onboarding hinterlegst du Platz, Kapazitäten, Leistungen und Preise. Wir prüfen das Profil und schalten dich frei.' ],
-		[ 'Was kostet die Partnerschaft?', 'Kein Setup-Preis. Wir arbeiten provisionsbasiert, du zahlst nur, wenn über uns gebucht wird.' ],
+		[ 'Was kostet die Partnerschaft?', 'Für den Platz nichts. Du bekommst genau den Preis, den du angibst. Die Vermittlungsprovision zahlt der Kunde obendrauf.' ],
 		[ 'Welche Voraussetzungen muss mein Platz erfüllen?', 'Ein bespielbarer Platz oder eine Übungsanlage und ein Ansprechpartner für die Koordination genügen.' ],
 		[ 'Wie lange dauert die Freischaltung?', 'In der Regel wenige Werktage nach vollständigem Profil.' ],
 	],

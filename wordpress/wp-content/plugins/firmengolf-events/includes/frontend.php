@@ -443,8 +443,8 @@ function fge_block_non_public_partners(): void {
 	}
 	$id = (int) get_the_ID();
 	// Der verknüpfte Partner-Nutzer darf seine EIGENE Seite immer als Vorschau sehen,
-	// auch bevor sie öffentlich ist (Portal-Link „Vorschau").
-	if ( is_user_logged_in() && (int) get_post_meta( $id, '_fge_assigned_wp_user_id', true ) === get_current_user_id() ) {
+	// auch bevor sie öffentlich ist (Portal-Link „Vorschau"). Gilt für alle ASP des Platzes.
+	if ( is_user_logged_in() && function_exists( 'fge_user_can_manage_partner' ) && fge_user_can_manage_partner( $id ) ) {
 		return;
 	}
 	if ( fge_partner_is_public( $id ) ) {

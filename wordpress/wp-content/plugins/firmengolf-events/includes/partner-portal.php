@@ -581,14 +581,49 @@ function fge_portal_get_partner_id(): int {
 	if ( current_user_can( 'manage_options' ) ) {
 		return 0;
 	}
+	$pid = fge_partner_for_user( get_current_user_id() );
+	return $pid > 0 ? $pid : -1;
+}
+
+/**
+ * Welcher Platz gehört diesem User? Unterstützt mehrere Logins pro Platz
+ * (2026-07-21): jeder eingeladene ASP bekommt beim Annehmen den Reverse-Link
+ * _fge_managed_partner_id am eigenen User. Bestandspartner (ein primärer User
+ * am Platz via _fge_assigned_wp_user_id) bleiben über den Fallback kompatibel.
+ */
+function fge_partner_for_user( int $user_id = 0 ): int {
+	$user_id = $user_id > 0 ? $user_id : get_current_user_id();
+	if ( $user_id <= 0 ) {
+		return 0;
+	}
+	$pid = (int) get_user_meta( $user_id, '_fge_managed_partner_id', true );
+	if ( $pid > 0 && get_post_type( $pid ) === 'firmengolf_partner' ) {
+		return $pid;
+	}
 	$posts = get_posts( [
 		'post_type'   => 'firmengolf_partner',
-		'meta_key'    => '_fge_assigned_wp_user_id',
-		'meta_value'  => get_current_user_id(),
+		'meta_key'    => '_fge_assigned_wp_user_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		'meta_value'  => $user_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 		'numberposts' => 1,
+		'fields'      => 'ids',
 		'post_status' => 'any',
 	] );
-	return $posts ? (int) $posts[0]->ID : -1;
+	return $posts ? (int) $posts[0] : 0;
+}
+
+/** Darf dieser User diesen Platz verwalten? (Admin, primärer oder zusätzlicher ASP.) */
+function fge_user_can_manage_partner( int $partner_id, int $user_id = 0 ): bool {
+	$user_id = $user_id > 0 ? $user_id : get_current_user_id();
+	if ( $partner_id <= 0 || $user_id <= 0 ) {
+		return false;
+	}
+	if ( user_can( $user_id, 'manage_options' ) ) {
+		return true;
+	}
+	if ( (int) get_user_meta( $user_id, '_fge_managed_partner_id', true ) === $partner_id ) {
+		return true;
+	}
+	return (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true ) === $user_id;
 }
 
 function fge_portal_access_check(): void {

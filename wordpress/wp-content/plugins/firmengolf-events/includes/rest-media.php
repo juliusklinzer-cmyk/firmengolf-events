@@ -21,8 +21,8 @@ function fge_rest_media_can_edit( int $partner_id ): bool {
 	if ( current_user_can( 'manage_options' ) ) {
 		return true;
 	}
-	$owner = (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true );
-	return $owner > 0 && $owner === get_current_user_id();
+	// Mehrere Logins pro Platz möglich (2026-07-21): primärer oder zusätzlicher ASP.
+	return function_exists( 'fge_user_can_manage_partner' ) && fge_user_can_manage_partner( $partner_id );
 }
 
 /** Compact JSON shape for one attachment. */

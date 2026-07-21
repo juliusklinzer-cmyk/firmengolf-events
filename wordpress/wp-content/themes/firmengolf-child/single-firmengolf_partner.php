@@ -31,7 +31,7 @@ $mono      = function_exists( 'fge_portal_make_monogram' ) ? fge_portal_make_mon
 $events    = function_exists( 'fge_partner_public_event_ids' ) ? fge_partner_public_event_ids( $pid ) : [];
 // Vorschau für den verknüpften Betreiber: auch Events in Prüfung anzeigen (markiert),
 // damit die Seite nach dem Anlegen nicht leer wirkt.
-$is_owner_preview = is_user_logged_in() && (int) get_post_meta( $pid, '_fge_assigned_wp_user_id', true ) === get_current_user_id();
+$is_owner_preview = is_user_logged_in() && function_exists( 'fge_user_can_manage_partner' ) && fge_user_can_manage_partner( $pid );
 $preview_ids      = [];
 if ( $is_owner_preview ) {
 	$own = get_posts( [
