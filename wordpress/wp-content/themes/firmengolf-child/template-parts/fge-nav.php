@@ -106,14 +106,16 @@ $mtabs = [
 (function () {
 	var bar = document.getElementById('fge-mbar');
 	if (!bar) { return; }
-	// Hysterese: Einklappen schrumpft die Leiste um ~40px; Android-Chrome korrigiert
-	// das per Scroll-Anchoring zurück unter die Schwelle → Flacker-Schleife. Deshalb
-	// zwei Schwellen mit Abstand > Höhendifferenz statt einer einzigen.
+	// overflow-anchor:none (CSS, fge-frontend.css) schaltet das Android-Scroll-Anchoring
+	// an der Wurzel ab, das die Einklapp-Hoehenaenderung sonst zurueckkorrigiert. Deshalb
+	// reicht hier eine niedrige Schwelle: die Leiste minimiert sich direkt beim Scrollen
+	// (iPhone wie zuvor), Android flackert dank abgeschaltetem Anchoring trotzdem nicht.
+	// Winzige Hysterese nur gegen 1px-Jitter exakt an der Schwelle.
 	var stuck = false;
 	var onScroll = function () {
 		var y = window.scrollY;
-		if (!stuck && y > 110) { stuck = true; bar.classList.add('is-stuck'); }
-		else if (stuck && y < 10) { stuck = false; bar.classList.remove('is-stuck'); }
+		if (!stuck && y > 36) { stuck = true; bar.classList.add('is-stuck'); }
+		else if (stuck && y < 12) { stuck = false; bar.classList.remove('is-stuck'); }
 	};
 	window.addEventListener('scroll', onScroll, { passive: true });
 	onScroll();
