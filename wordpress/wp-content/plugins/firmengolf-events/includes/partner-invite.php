@@ -499,6 +499,9 @@ function fge_invite_run_followups(): array {
 
 	// ── Strecke B + C ──
 	foreach ( fge_partners_accepted() as $pid ) {
+		if ( function_exists( 'fge_is_demo_partner' ) && fge_is_demo_partner( $pid ) ) {
+			continue;
+		}
 		$accept_at = (int) get_post_meta( $pid, '_fge_first_accept_at', true );
 		$events    = function_exists( 'fge_partner_public_event_ids' ) ? fge_partner_public_event_ids( $pid ) : [];
 

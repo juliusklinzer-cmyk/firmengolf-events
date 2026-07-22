@@ -34,6 +34,10 @@ function fge_request_run_followups(): array {
 	$reminder_days = (int) apply_filters( 'fge_request_reminder_days', 2 );
 
 	foreach ( $requests as $req ) {
+		// Musterumgebung: Demo-Anfragen lösen nie Mails aus.
+		if ( function_exists( 'fge_is_demo_request' ) && fge_is_demo_request( $req ) ) {
+			continue;
+		}
 		// Erledigt / übernommen → nichts tun.
 		if ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 ) {
 			continue;
@@ -122,6 +126,9 @@ function fge_offer_hold_followups(): array {
 	] );
 	$days = (int) apply_filters( 'fge_offer_hold_reminder_days', 2 );
 	foreach ( $reqs as $req ) {
+		if ( function_exists( 'fge_is_demo_request' ) && fge_is_demo_request( $req ) ) {
+			continue;
+		}
 		if ( '1' === (string) get_post_meta( $req, '_fge_offer_sent', true )
 			|| '1' === (string) get_post_meta( $req, '_fge_offer_hold_reminded', true ) ) {
 			continue;
@@ -161,6 +168,9 @@ function fge_offer_run_followups(): array {
 	$reminder_days = (int) apply_filters( 'fge_offer_reminder_days', 3 );
 
 	foreach ( $reqs as $req ) {
+		if ( function_exists( 'fge_is_demo_request' ) && fge_is_demo_request( $req ) ) {
+			continue;
+		}
 		if ( 'pending' !== (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
 			continue;
 		}

@@ -355,9 +355,12 @@ function fge_portal_handle_new_event(): void {
 		exit;
 	}
 
+	// In der Musterumgebung entstehen Events als Entwürfe: im Demo-Portal sichtbar,
+	// aber nie öffentlich und nie in der echten Freigabe-Queue.
+	$is_demo = function_exists( 'fge_is_demo_partner' ) && fge_is_demo_partner( $partner_id );
 	$post_id = wp_insert_post( [
 		'post_type'    => 'firmengolf_event',
-		'post_status'  => 'publish',
+		'post_status'  => $is_demo ? 'draft' : 'publish',
 		'post_title'   => sanitize_text_field( wp_unslash( $_POST['fge_post_title'] ?? '' ) ),
 		'post_content' => wp_kses_post( wp_unslash( $_POST['fge_post_content'] ?? '' ) ),
 		'post_author'  => get_current_user_id(),
@@ -579,7 +582,10 @@ function fge_portal_page_url(): string {
 
 function fge_portal_get_partner_id(): int {
 	if ( current_user_can( 'manage_options' ) ) {
-		return 0;
+		// Musterumgebung: Admins agieren im Portal auf dem Muster-Platz — dadurch
+		// funktionieren auch alle Aktionen (Event anlegen, Profil speichern, Termin
+		// bestätigen) in der Demo. Ohne angelegte Demo bleibt es beim alten 0-Verhalten.
+		return function_exists( 'fge_demo_partner_id' ) ? fge_demo_partner_id() : 0;
 	}
 	$pid = fge_partner_for_user( get_current_user_id() );
 	return $pid > 0 ? $pid : -1;
@@ -1006,14 +1012,33 @@ function fge_portal_render(): void {
 	$switch_url = wp_logout_url( fge_portal_page_url() );
 
 	if ( current_user_can( 'manage_options' ) ) {
-		?>
-		<div class="fg-portal-standalone">
-			<p class="fg-portal-standalone-title">Du bist als Administrator angemeldet.</p>
-			<p>Das Partnerportal ist für Golfplatz-Partner-Nutzer konzipiert. Alle Daten verwaltest du über die <a href="<?php echo esc_url( admin_url() ); ?>">WordPress-Administrationsoberfläche</a>.</p>
-			<p><a href="<?php echo esc_url( $switch_url ); ?>">Abmelden und mit anderem Konto anmelden →</a></p>
-		</div>
-		<?php
-		return;
+		// Musterumgebung (2026-07-22): Admins sehen das Portal des Muster-Platzes
+		// mit befüllten Demo-Daten, zum Vorführen in Partner-Meetings.
+		$demo_id = function_exists( 'fge_demo_partner_id' ) ? fge_demo_partner_id() : 0;
+		if ( $demo_id > 0 ) {
+			$partner_id = $demo_id;
+			?>
+			<div style="background:#20294D;color:#FBFAF6;font-size:13px;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+				<span><strong>Musterumgebung.</strong> Alle Daten sind Beispiele, nichts davon ist öffentlich sichtbar.<?php if ( ! empty( $_GET['demo_reset'] ) ) : ?> <span style="color:#00C896;">Frisch zurückgesetzt ✓</span><?php endif; ?></span>
+				<span style="display:inline-flex;gap:14px;align-items:center;">
+					<a href="<?php echo esc_url( fge_demo_seed_url() ); ?>" style="color:#C2D4F2;">Demo zurücksetzen</a>
+					<a href="<?php echo esc_url( admin_url() ); ?>" style="color:#C2D4F2;">Zur WP-Verwaltung</a>
+				</span>
+			</div>
+			<?php
+		} else {
+			?>
+			<div class="fg-portal-standalone">
+				<p class="fg-portal-standalone-title">Du bist als Administrator angemeldet.</p>
+				<p>Das Partnerportal ist für Golfplatz-Partner-Nutzer konzipiert. Alle Daten verwaltest du über die <a href="<?php echo esc_url( admin_url() ); ?>">WordPress-Administrationsoberfläche</a>.</p>
+				<?php if ( function_exists( 'fge_demo_seed_url' ) ) : ?>
+					<p><a class="fg-btn-brand" href="<?php echo esc_url( fge_demo_seed_url() ); ?>" style="display:inline-block;margin-top:4px;">Musterumgebung anlegen (Demo-Portal)</a></p>
+				<?php endif; ?>
+				<p><a href="<?php echo esc_url( $switch_url ); ?>">Abmelden und mit anderem Konto anmelden →</a></p>
+			</div>
+			<?php
+			return;
+		}
 	}
 
 	if ( $partner_id === -1 ) {
