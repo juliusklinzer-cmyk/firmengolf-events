@@ -55,18 +55,32 @@ function fge_embed_render(): void {
 
 	$partner = get_page_by_path( $slug, OBJECT, 'firmengolf_partner' );
 	$pid     = $partner ? (int) $partner->ID : 0;
-	if ( $pid <= 0 || ! function_exists( 'fge_partner_is_public' ) || ! fge_partner_is_public( $pid ) ) {
+	// Musterumgebung: eingeloggte Admins dürfen die Demo-Vorschau sehen (fürs
+	// Vorführen im Meeting), anonym bleibt der Muster-Platz ein 404.
+	$is_demo_admin = $pid > 0
+		&& function_exists( 'fge_is_demo_partner' ) && fge_is_demo_partner( $pid )
+		&& current_user_can( 'manage_options' );
+	if ( $pid <= 0 || ( ! $is_demo_admin && ( ! function_exists( 'fge_partner_is_public' ) || ! fge_partner_is_public( $pid ) ) ) ) {
 		status_header( 404 );
 		exit;
 	}
 
-	$event_ids = function_exists( 'fge_partner_public_event_ids' ) ? fge_partner_public_event_ids( $pid ) : [];
-	$name      = (string) get_post_meta( $pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $pid );
+	// Demo: die Draft-Events des Muster-Platzes rendern (öffentlich gibt es sie nicht).
+	$event_ids = $is_demo_admin
+		? get_posts( [
+			'post_type'   => 'firmengolf_event',
+			'post_status' => 'draft',
+			'numberposts' => -1,
+			'fields'      => 'ids',
+			'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $pid, 'type' => 'NUMERIC' ] ],
+		] )
+		: ( function_exists( 'fge_partner_public_event_ids' ) ? fge_partner_public_event_ids( $pid ) : [] );
+	$name = (string) get_post_meta( $pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $pid );
 
-	// Framing ausdrücklich erlauben (nur für diese Route) + Cache.
+	// Framing ausdrücklich erlauben (nur für diese Route) + Cache (Demo: nie cachen).
 	header_remove( 'X-Frame-Options' );
 	header( 'Content-Security-Policy: frame-ancestors *' );
-	header( 'Cache-Control: public, max-age=600' );
+	header( $is_demo_admin ? 'Cache-Control: no-store' : 'Cache-Control: public, max-age=600' );
 	header( 'Content-Type: text/html; charset=utf-8' );
 
 	$cards = [];
