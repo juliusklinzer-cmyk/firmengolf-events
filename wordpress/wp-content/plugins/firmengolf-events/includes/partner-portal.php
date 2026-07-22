@@ -1378,7 +1378,7 @@ function fge_portal_section_sichtbarkeit( int $partner_id ): void {
 				<p style="font-size:14.5px;color:var(--ink-600);margin:0 0 14px;line-height:1.55;">Zeigt eure Firmengolf-Events direkt auf eurer Club-Website (immer aktuell, ohne Pflege) und verlinkt uns mit dem Partner-Logo, das stärkt euer Profil bei Google und bringt Firmen direkt zu euren Angeboten.</p>
 				<?php if ( $is_public ) : ?>
 					<div style="display:flex;gap:10px;flex-wrap:wrap;">
-						<a class="btn btn-brand btn-sm" href="<?php echo esc_url( $base . '?tab=platz#embed' ); ?>">Event-Widget einbauen →</a>
+						<a class="btn btn-brand btn-sm" href="<?php echo esc_url( $base . '?tab=angebote#embed' ); ?>">Event-Widget einbauen →</a>
 					</div>
 					<div style="margin-top:18px;">
 						<div style="font-size:13px;font-weight:600;color:var(--ink-800);margin-bottom:8px;">Partner-Logo mit Link (für Footer oder „Partner"-Seite eurer Website):</div>
@@ -2108,6 +2108,34 @@ function fge_portal_section_angebote( int $partner_id ): void {
 		</div></div>
 
 		<?php fge_portal_render_cat_grid( $partner_id, $base ); ?>
+
+		<?php
+		// Embed-Promo (2026-07-22, Julius): vom Platz-Tab hierher gezogen und auffälliger,
+		// bringt Traffic von den Club-Websites. In der Musterumgebung immer mit Snippet.
+		$embed_ready = ( function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) )
+			|| ( function_exists( 'fge_is_demo_partner' ) && fge_is_demo_partner( $partner_id ) );
+		?>
+		<div class="fgpp"><section id="embed" style="margin-top:34px;background:linear-gradient(135deg,var(--fairway-900,#20294D),var(--fairway-800,#283A6E));border-radius:20px;padding:30px 32px;color:#FBFAF6;">
+			<div style="display:flex;gap:14px;align-items:flex-start;">
+				<span aria-hidden="true" style="flex:none;width:44px;height:44px;border-radius:12px;background:rgba(0,200,150,.16);display:inline-flex;align-items:center;justify-content:center;color:#00C896;">
+					<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+				</span>
+				<div style="min-width:0;">
+					<div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#00C896;margin-bottom:6px;">Mehr Reichweite für eure Angebote</div>
+					<h2 style="margin:0 0 8px;color:#FBFAF6;">Zeigt eure Events auch auf eurer eigenen Website</h2>
+					<p style="margin:0;color:rgba(251,250,246,.78);max-width:640px;">Zwei Zeilen Code für euren Webmaster und eure Firmengolf-Angebote erscheinen automatisch auf eurer Club-Website. Immer aktuell, ohne Pflege. Das bringt Besucher eurer Seite direkt zu euren Events und euch zusätzliche Anfragen.</p>
+				</div>
+			</div>
+			<?php if ( $embed_ready && function_exists( 'fge_embed_snippet' ) ) : ?>
+				<textarea id="fge-embed-snippet" readonly rows="3" style="width:100%;margin-top:18px;font:12.5px/1.5 ui-monospace,Consolas,monospace;color:#EDF3FB;background:rgba(14,19,16,.35);border:1px solid rgba(251,250,246,.22);border-radius:10px;padding:12px 14px;resize:none;box-sizing:border-box;" onclick="this.select()"><?php echo esc_textarea( fge_embed_snippet( $partner_id ) ); ?></textarea>
+				<div style="display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap;">
+					<button type="button" style="background:#00C896;color:#0E1310;border:0;border-radius:999px;padding:10px 20px;font-size:13.5px;font-weight:600;cursor:pointer;" onclick="var t=document.getElementById('fge-embed-snippet');t.select();document.execCommand('copy');this.textContent='Kopiert ✓';">Snippet kopieren</button>
+					<a style="color:#C2D4F2;font-size:13.5px;" href="<?php echo esc_url( home_url( '/embed/platz/' . get_post_field( 'post_name', $partner_id ) . '/' ) ); ?>" target="_blank" rel="noopener">Vorschau ansehen ↗</a>
+				</div>
+			<?php else : ?>
+				<p style="margin:16px 0 0;padding:12px 16px;border:1px dashed rgba(251,250,246,.3);border-radius:10px;color:rgba(251,250,246,.78);font-size:14px;">Sobald dein Platz öffentlich ist (mindestens ein freigegebenes Event), erscheint hier der fertige Einbau-Code für eure Website.</p>
+			<?php endif; ?>
+		</section></div>
 	</div>
 	<?php
 }
@@ -2915,29 +2943,6 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 						<a class="btn btn-ghost btn-sm" style="margin-top:14px;" href="<?php echo $edit_sec( 'kontakt' ); ?>">Kontaktdaten bearbeiten</a>
 					</div>
 				</div>
-			</section>
-
-			<section class="section" id="embed">
-				<div class="section-head">
-					<div>
-						<div class="eyebrow">Für eure Website</div>
-						<h2>Eure Events auf <em>eurer Seite</em></h2>
-						<p>Zwei Zeilen für euren Webmaster, dann erscheinen eure Firmengolf-Angebote automatisch auch auf eurer Club-Website. Immer aktuell, ohne Pflege, ohne Cookie-Banner-Anpassung.</p>
-					</div>
-				</div>
-				<?php if ( function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) && function_exists( 'fge_embed_snippet' ) ) : ?>
-				<div class="panel">
-					<textarea id="fge-embed-snippet" readonly rows="3" style="width:100%;font:12.5px/1.5 ui-monospace,Consolas,monospace;color:var(--ink-800);background:var(--paper-200);border:1px solid var(--ink-200);border-radius:8px;padding:12px 14px;resize:none;box-sizing:border-box;" onclick="this.select()"><?php echo esc_textarea( fge_embed_snippet( $partner_id ) ); ?></textarea>
-					<div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap;">
-						<button type="button" class="btn btn-brand btn-sm" onclick="var t=document.getElementById('fge-embed-snippet');t.select();document.execCommand('copy');this.textContent='Kopiert ✓';">Snippet kopieren</button>
-						<a class="btn btn-ghost btn-sm" href="<?php echo esc_url( home_url( '/embed/platz/' . get_post_field( 'post_name', $partner_id ) . '/' ) ); ?>" target="_blank" rel="noopener">Vorschau ansehen ↗</a>
-					</div>
-				</div>
-				<?php else : ?>
-				<div class="panel pe-empty">
-					<p>Sobald dein Platz öffentlich ist (mindestens ein freigegebenes Event), bekommst du hier den fertigen Einbau-Code für eure Website.</p>
-				</div>
-				<?php endif; ?>
 			</section>
 
 		</div>

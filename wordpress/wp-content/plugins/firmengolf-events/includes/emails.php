@@ -990,7 +990,7 @@ function fge_send_partner_embed_promo_email( int $partner_id ): bool {
 	$content = '
 		<p>' . $greeting . '</p>
 		<p>schön, dass <strong>' . esc_html( $name ) . '</strong> jetzt live ist. Neu für dich: Du kannst deine Events von Firmengolf direkt auf deiner eigenen Webseite zeigen.</p>
-		<p>Ein kurzer Codeschnipsel genügt und deine buchbaren Formate erscheinen live auf eurer Seite, immer aktuell. Den Schnipsel findest du im Portal unter deinem Platz.</p>
+		<p>Ein kurzer Codeschnipsel genügt und deine buchbaren Formate erscheinen live auf eurer Seite, immer aktuell. Den Schnipsel findest du im Portal unten bei deinen Angeboten.</p>
 		<p style="margin-top:28px;">
 			' . fge_email_button( $portal, 'Snippet holen' ) . '
 		</p>
