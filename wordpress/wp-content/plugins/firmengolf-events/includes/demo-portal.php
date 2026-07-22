@@ -36,17 +36,61 @@ function fge_is_demo_request( int $request_id ): bool {
 
 // ── Seeder / Reset ────────────────────────────────────────────────────────────
 
-/** Bis zu $n Bild-IDs aus der Mediathek (ID-agnostisch, läuft lokal wie live). */
-function fge_demo_media_ids( int $n ): array {
-	return array_map( 'intval', get_posts( [
-		'post_type'      => 'attachment',
-		'post_mime_type' => 'image',
-		'post_status'    => 'inherit',
-		'numberposts'    => $n,
-		'fields'         => 'ids',
-		'orderby'        => 'date',
-		'order'          => 'DESC',
-	] ) );
+/**
+ * Kuratierte Golfplatz-Bilder für die Demo: feste Dateien aus dem Plugin-Imagery
+ * werden einmalig als Attachments importiert (markiert mit _fge_demo_media) und
+ * bei jedem Re-Seed wiederverwendet. NIE "neueste Mediathek-Bilder": dort können
+ * private Fotos liegen (Vorfall 2026-07-22, privates Foto als Demo-Titelbild).
+ */
+function fge_demo_media_ids(): array {
+	$existing = get_posts( [
+		'post_type'   => 'attachment',
+		'post_status' => 'inherit',
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_key'    => '_fge_demo_media', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		'orderby'     => 'ID',
+		'order'       => 'ASC',
+	] );
+	if ( count( $existing ) >= 6 ) {
+		return array_map( 'intval', $existing );
+	}
+	$files = [
+		'golfplatz-huegel-abendlicht.jpg',
+		'golfplatz-drohnenaufnahme.jpg',
+		'clubhaus-aussenansicht.jpg',
+		'golfplatz-fairway.jpg',
+		'golf-gruen-fahne.jpg',
+		'driving-range-uebung.jpg',
+		'golfplatz-panorama.jpg',
+	];
+	require_once ABSPATH . 'wp-admin/includes/image.php';
+	$ids = array_map( 'intval', $existing );
+	foreach ( $files as $f ) {
+		if ( count( $ids ) >= 7 ) {
+			break;
+		}
+		$src = FGE_DIR . 'assets/imagery/' . $f;
+		if ( ! file_exists( $src ) ) {
+			continue;
+		}
+		$bits = wp_upload_bits( 'demo-' . $f, null, (string) file_get_contents( $src ) );
+		if ( ! empty( $bits['error'] ) ) {
+			continue;
+		}
+		$att = wp_insert_attachment( [
+			'post_mime_type' => 'image/jpeg',
+			'post_title'     => 'Demo: ' . pathinfo( $f, PATHINFO_FILENAME ),
+			'post_status'    => 'inherit',
+		], $bits['file'] );
+		if ( is_wp_error( $att ) || $att <= 0 ) {
+			continue;
+		}
+		wp_update_attachment_metadata( $att, wp_generate_attachment_metadata( $att, $bits['file'] ) );
+		update_post_meta( $att, '_fge_demo_media', 1 );
+		$ids[] = (int) $att;
+	}
+	return $ids;
 }
 
 /**
@@ -78,7 +122,7 @@ function fge_demo_seed(): int {
 		update_option( 'fge_demo_partner_id', $pid, false );
 	}
 
-	$imgs     = fge_demo_media_ids( 7 );
+	$imgs     = fge_demo_media_ids();
 	$internal = function_exists( 'fge_company_internal_email' ) ? fge_company_internal_email() : get_option( 'admin_email' );
 
 	$partner_meta = [
@@ -96,6 +140,12 @@ function fge_demo_seed(): int {
 		'_fge_views_count'              => 418,
 		'_fge_infra'                    => [ 'range', 'short', 'indoor' ],
 		'_fge_partner_since'            => date_i18n( 'Y' ),
+		// Test-Bewertung, damit auch die Review-Elemente in der Demo leben.
+		'_fge_rating'                   => '4.8',
+		'_fge_reviews_count'            => 23,
+		'_fge_review_quote'             => 'Unser Teamtag auf der Sonnenhöhe war der beste Betriebsausflug seit Jahren. Vom ersten Schlag bis zum Grillabend hat einfach alles gepasst.',
+		'_fge_review_author'            => 'Katrin Berger',
+		'_fge_review_role'              => 'HR-Leiterin · Muster GmbH',
 	];
 	if ( ! empty( $imgs ) ) {
 		$partner_meta['_fge_hero_image_attachment_id'] = $imgs[0];
@@ -121,10 +171,11 @@ function fge_demo_seed(): int {
 
 	// ── Demo-Events (drafts: Portal zeigt sie, öffentlich unsichtbar) ──
 	$events = [
-		[ 'Golf-Teamevent Schnuppertag', 'teamevent', 'Halbtags (4 Std.)', 'Pro zeigt die ersten Schläge, danach Team-Wettbewerb auf der Range und Putt-Turnier. Kein Vorwissen nötig.', 'ab 89 € p.P.', 8, 40, 176 ],
-		[ 'Platzreife-Intensivkurs für Teams', 'platzreife', '2 Tage', 'In zwei Tagen zur Platzreife: kompaktes Training mit unseren Pros, Prüfung inklusive. Schweißt Teams zusammen.', 'ab 349 € p.P.', 6, 16, 98 ],
-		[ 'Firmenturnier mit Abendprogramm', 'turnier', 'Ganztags', 'Ihr eigenes Turnier: Kanonenstart, Halfway-Verpflegung, Siegerehrung auf der Terrasse und BBQ zum Ausklang.', 'ab 139 € p.P.', 20, 80, 87 ],
-		[ 'Afterwork-Golf mit Grillabend', 'afterwork', 'Abends (3 Std.)', 'Feierabend auf der Range: lockeres Training mit Pro, danach Grill und Getränke mit Blick aufs Grün.', 'ab 59 € p.P.', 8, 30, 57 ],
+		// [Titel, Typ, Dauer, Karte, Preis, min, max, Aufrufe, Rating, Bewertungen]
+		[ 'Golf-Teamevent Schnuppertag', 'teamevent', 'Halbtags (4 Std.)', 'Pro zeigt die ersten Schläge, danach Team-Wettbewerb auf der Range und Putt-Turnier. Kein Vorwissen nötig.', 'ab 89 € p.P.', 8, 40, 176, '4.9', 11 ],
+		[ 'Platzreife-Intensivkurs für Teams', 'platzreife', '2 Tage', 'In zwei Tagen zur Platzreife: kompaktes Training mit unseren Pros, Prüfung inklusive. Schweißt Teams zusammen.', 'ab 349 € p.P.', 6, 16, 98, '4.7', 6 ],
+		[ 'Firmenturnier mit Abendprogramm', 'turnier', 'Ganztags', 'Ihr eigenes Turnier: Kanonenstart, Halfway-Verpflegung, Siegerehrung auf der Terrasse und BBQ zum Ausklang.', 'ab 139 € p.P.', 20, 80, 87, '4.8', 4 ],
+		[ 'Afterwork-Golf mit Grillabend', 'afterwork', 'Abends (3 Std.)', 'Feierabend auf der Range: lockeres Training mit Pro, danach Grill und Getränke mit Blick aufs Grün.', 'ab 59 € p.P.', 8, 30, 57, '', 0 ],
 	];
 	foreach ( $events as $e ) {
 		$eid = (int) wp_insert_post( [
@@ -144,6 +195,10 @@ function fge_demo_seed(): int {
 		update_post_meta( $eid, '_fge_participants_min', $e[5] );
 		update_post_meta( $eid, '_fge_participants_max', $e[6] );
 		update_post_meta( $eid, '_fge_views_count', $e[7] );
+		if ( '' !== $e[8] ) {
+			update_post_meta( $eid, '_fge_rating', $e[8] );
+			update_post_meta( $eid, '_fge_reviews_count', $e[9] );
+		}
 	}
 
 	// ── Demo-Anfragen in allen Stadien (drafts) ──
