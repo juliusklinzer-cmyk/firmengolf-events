@@ -350,9 +350,9 @@ function fge_render_mb_angebot_neu( WP_Post $post ) {
 		<tr>
 			<th scope="row">Preis-Vorschau</th>
 			<td>
-				Netto <strong><?php echo esc_html( number_format_i18n( $p['net'], 2 ) ); ?> €</strong>
-				&nbsp;·&nbsp; Aufschlag <?php echo (int) FGE_MARKUP_PERCENT; ?> % <strong><?php echo esc_html( number_format_i18n( $p['markup'], 2 ) ); ?> €</strong>
-				&nbsp;·&nbsp; Brutto fürs Unternehmen <strong><?php echo esc_html( number_format_i18n( $p['gross'], 2 ) ); ?> € <?php echo esc_html( $p['unit'] ); ?></strong>
+				Golfplatz netto <strong><?php echo esc_html( number_format_i18n( $p['net'], 2 ) ); ?> €</strong>
+				&nbsp;·&nbsp; Vermittlung (<?php echo (int) FGE_MARKUP_PERCENT; ?> %, auf glatte Kundenpreise aufgerundet) <strong><?php echo esc_html( number_format_i18n( $p['markup'], 2 ) ); ?> €</strong>
+				&nbsp;·&nbsp; Kundenpreis <strong><?php echo esc_html( number_format_i18n( $p['gross'], 0 ) ); ?> € <?php echo esc_html( $p['unit'] ); ?></strong> netto, zzgl. <?php echo (int) FGE_VAT_PERCENT; ?> % USt
 				<p class="description">Aktualisiert sich nach dem Speichern.</p>
 			</td>
 		</tr>

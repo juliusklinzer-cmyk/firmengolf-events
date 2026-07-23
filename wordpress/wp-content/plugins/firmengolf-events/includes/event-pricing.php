@@ -14,6 +14,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 /** Fixer Firmengolf-Vermittlungsaufschlag in Prozent. */
 const FGE_MARKUP_PERCENT = 20;
 
+/**
+ * Glättet den Kundenpreis auf schöne Stufen (Julius, 2026-07-23: "61,20 ist kein
+ * schöner Preis"): pro Person auf volle 5 Euro, Gesamt/Pauschal auf volle 50 Euro,
+ * immer AUFgerundet. Der Partner erhält weiterhin exakt sein Netto, die
+ * Rundungsdifferenz ist zusätzliche Firmengolf-Marge (Aufschlag mindestens 20 %).
+ * JS-Zwilling in der Portal-Summenbox (partner-portal.php) identisch halten!
+ */
+function fge_price_smooth( float $gross, string $unit ): float {
+	if ( $gross <= 0 ) {
+		return 0.0;
+	}
+	$step = ( 'pro Person' === $unit ) ? 5 : 50;
+	return (float) ( ceil( $gross / $step ) * $step );
+}
+
 /** Gesetzliche Umsatzsteuer in Prozent. Preise (gross) werden NETTO ausgewiesen, USt kommt oben drauf. */
 const FGE_VAT_PERCENT = 19;
 
@@ -59,8 +74,10 @@ function fge_event_pricing_calc( string $mode, float $amount, string $basis, arr
 		$flat_net = 'pro Person' === $unit ? 0.0 : $net;
 	}
 
-	$markup = round( $net * ( FGE_MARKUP_PERCENT / 100 ), 2 );
-	$gross  = round( $net + $markup, 2 );
+	// Kundenpreis geglättet (5er- bzw. 50er-Stufen, aufgerundet); der ausgewiesene
+	// Aufschlag enthält die Rundungsdifferenz und ist damit "mindestens 20 %".
+	$gross  = fge_price_smooth( $net * ( 1 + FGE_MARKUP_PERCENT / 100 ), $unit );
+	$markup = round( $gross - $net, 2 );
 
 	return [
 		'net'      => round( $net, 2 ),
@@ -89,7 +106,7 @@ function fge_event_pricing( int $event_id ): array {
 	return fge_event_pricing_calc( $mode, $amount, $basis, $items, $pax );
 }
 
-/** Formatierter Brutto-Preis fürs Unternehmen, z. B. „ab €320 p.P." oder „€2.400 gesamt". */
+/** Formatierter Kundenpreis (netto, zzgl. USt) fürs Unternehmen, z. B. „320 € p.P." oder „2.400 € gesamt". */
 function fge_event_price_label( int $event_id ): string {
 	$p = fge_event_pricing( $event_id );
 	if ( $p['gross'] <= 0 ) {

@@ -3474,7 +3474,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						}
 						$markup  = defined( 'FGE_MARKUP_PERCENT' ) ? (int) FGE_MARKUP_PERCENT : 20;
 						?>
-						<p class="fp-help">Hinterlege deinen <strong>Netto</strong>-Preis. Die Vermittlung von Firmengolf (<?php echo (int) $markup; ?> %) kommt automatisch oben drauf.</p>
+						<p class="fp-help">Hinterlege deinen <strong>Netto</strong>-Preis. Die Vermittlung von Firmengolf (<?php echo (int) $markup; ?> %) kommt automatisch oben drauf, der Kundenpreis wird dabei auf glatte Beträge aufgerundet. Du bekommst immer exakt deinen Preis.</p>
 
 						<input type="hidden" name="fge_price_mode" id="fge_price_mode" value="<?php echo esc_attr( $pmode ); ?>">
 						<div class="fp-price-modes" role="tablist">
@@ -3519,7 +3519,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 
 						<div class="fp-price-summary" id="fp-price-summary" data-markup="<?php echo (int) $markup; ?>">
 							<div class="row"><span>Netto-Summe</span><span class="v" id="fp-sum-net">€0</span></div>
-							<div class="row"><span>+ Vermittlung Firmengolf (<?php echo (int) $markup; ?> %)</span><span class="v" id="fp-sum-fee">€0</span></div>
+							<div class="row"><span>+ Vermittlung Firmengolf (<?php echo (int) $markup; ?> %, aufgerundet)</span><span class="v" id="fp-sum-fee">€0</span></div>
 							<div class="row total"><span>Gesamtpreis für das Unternehmen</span><span class="v" id="fp-sum-total">€0</span></div>
 							<div class="row" style="font-size:12px;color:var(--ink-500);border:0;padding-top:6px;"><span>Alle Beträge netto, die gesetzliche MwSt. kommt auf der Rechnung oben drauf.</span><span></span></div>
 						</div>
@@ -4049,11 +4049,15 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						net = amount ? parseNum(amount.value) : 0;
 						netLabel = fmt(net) + (perPerson ? ' pro Person' : '');
 					}
+					// Kundenpreis geglättet wie in PHP (fge_price_smooth, event-pricing.php):
+					// p.P. auf volle 5 Euro, Gesamt auf volle 50 Euro, immer aufgerundet.
+					var step  = perPerson ? 5 : 50;
+					var total = net > 0 ? Math.ceil((net * (1 + markup / 100)) / step) * step : 0;
 					byId('fp-sum-net').textContent   = netLabel;
-					byId('fp-sum-fee').textContent   = fmt(net * markup / 100) + (perPerson ? ' pro Person' : '');
-					byId('fp-sum-total').textContent = (einzel && perPerson ? 'ab ' : '') + fmt(net * (1 + markup / 100)) + (perPerson ? ' pro Person' : '') + (einzel && perPerson && paxMax ? ' (bei ' + paxMax + ' Personen)' : '');
+					byId('fp-sum-fee').textContent   = fmt(total - net) + (perPerson ? ' pro Person' : '');
+					byId('fp-sum-total').textContent = (einzel && perPerson ? 'ab ' : '') + fmt(total) + (perPerson ? ' pro Person' : '') + (einzel && perPerson && paxMax ? ' (bei ' + paxMax + ' Personen)' : '');
 					var pv = byId('fp-pv-price');
-					if (pv) { pv.textContent = net > 0 ? 'ab ' + fmt(net * (1 + markup / 100)) + (perPerson ? ' /p.P.' : '') : 'Preis'; }
+					if (pv) { pv.textContent = net > 0 ? 'ab ' + fmt(total) + (perPerson ? ' /p.P.' : '') : 'Preis'; }
 				}
 				var paxMaxIn = byId('fge_participants_max');
 				if (paxMaxIn) { paxMaxIn.addEventListener('input', recalc); }
