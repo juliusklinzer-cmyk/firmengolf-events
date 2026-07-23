@@ -166,7 +166,12 @@ function fge_invite_handle_accept(): void {
 		wp_die( 'Ungültige Sicherheitsüberprüfung.', '', [ 'response' => 403 ] );
 	}
 	$partner_id = fge_invite_partner_by_token( $token );
-	$back       = $partner_id > 0 ? fge_invite_url( $partner_id ) : home_url( '/einladung/' . rawurlencode( $token ) . '/' );
+	// WICHTIG: zurück auf die URL DIESES Tokens. Die alte fge_invite_url() nahm die
+	// erste Token-Zeile des Platzes; bei mehreren ASP landete der Nutzer nach dem
+	// Code-Versand auf einem fremden Token, sein Passwort-Transient und Code-Kontext
+	// waren dort unauffindbar → Dauerschleife "Eingabe hat zu lange gedauert"
+	// (Live-Vorfall GC Schloss Igling, 2026-07-23).
+	$back       = $partner_id > 0 ? fge_invite_url_for( $partner_id, $token ) : home_url( '/einladung/' . rawurlencode( $token ) . '/' );
 	if ( $partner_id <= 0 ) {
 		wp_die( 'Dieser Einladungslink ist ungültig oder wurde bereits verwendet.', '', [ 'response' => 404 ] );
 	}
