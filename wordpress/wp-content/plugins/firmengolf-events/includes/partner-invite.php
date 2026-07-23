@@ -325,10 +325,14 @@ function fge_invite_handle_accept(): void {
 		update_post_meta( $partner_id, '_fge_main_contact_email', $email );
 	}
 
-	// Nur DIESEN Einladungslink entwerten, die Links der anderen ASP bleiben gültig.
-	delete_post_meta( $partner_id, '_fge_invite_token', $token );
+	// Entwerten: beim Invitee-Record bleibt die Token-Zeile stehen, damit ein
+	// erneuter Klick aus der Mail die freundliche "Schon erledigt"-Seite zeigt
+	// (der Record mit accepted_at blockt jede Wiederverwendung, s. oben).
+	// Nur Alt-Einladungen ohne Record entwerten weiter über das Token-Löschen.
 	if ( $has_rec ) {
 		fge_invite_update( $partner_id, $token, [ 'accepted_at' => time(), 'user_id' => $user_id, 'status' => 'accepted' ] );
+	} else {
+		delete_post_meta( $partner_id, '_fge_invite_token', $token );
 	}
 	update_user_meta( $user_id, 'fge_welcome_pending', 1 );
 	// Verifizierungs-Status + zwischengeparkte Formulardaten abräumen.
