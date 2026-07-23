@@ -103,6 +103,37 @@ function fge_invite_create( int $partner_id, string $email, string $name = '' ):
 	return $token;
 }
 
+/**
+ * Offene Einladung derselben Adresse an diesem Platz (Dedupe, Audit-Punkt 3):
+ * erneutes Senden nutzt den bestehenden Link wieder, statt eine zweite
+ * Nachfass-Serie an dieselbe Person zu starten. Gibt den Token oder '' zurück.
+ */
+function fge_invite_find_open( int $partner_id, string $email ): string {
+	foreach ( fge_invitees( $partner_id ) as $tok => $inv ) {
+		if ( 0 === (int) ( $inv['accepted_at'] ?? 0 )
+			&& strtolower( trim( (string) ( $inv['email'] ?? '' ) ) ) === strtolower( trim( $email ) ) ) {
+			return (string) $tok;
+		}
+	}
+	return '';
+}
+
+/**
+ * Hat der Platz irgendein Event, egal in welchem Status? (Audit-Punkt 2: der
+ * Aktivierungs-Nachfass darf nicht feuern, wenn ein Event bereits eingereicht
+ * ist und nur auf Freigabe wartet.)
+ */
+function fge_partner_has_any_event( int $partner_id ): bool {
+	$ids = get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => [ 'publish', 'draft', 'pending', 'future', 'private' ],
+		'numberposts' => 1,
+		'fields'      => 'ids',
+		'meta_query'  => [ [ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ] ],
+	] );
+	return ! empty( $ids );
+}
+
 /** Ein Feld im Invitee-Record setzen und speichern. */
 function fge_invite_update( int $partner_id, string $token, array $patch ): void {
 	$list = fge_invitees( $partner_id );
@@ -161,9 +192,13 @@ function fge_invite_handle_accept(): void {
 	if ( ( $_POST['fge_action'] ?? '' ) !== 'invite_accept' ) {
 		return;
 	}
-	$token = sanitize_text_field( wp_unslash( $_POST['fge_invite_token'] ?? '' ) );
+	$token     = sanitize_text_field( wp_unslash( $_POST['fge_invite_token'] ?? '' ) );
+	$token_url = preg_match( '/^[a-f0-9]{40}$/', $token ) ? home_url( '/einladung/' . $token . '/' ) : home_url( '/' );
+	// Abgelaufene Nonce (Seite lag lange offen im Tab): freundlich zurück statt
+	// weißer 403-Seite; einmal neu absenden genügt (Audit 2026-07-23, Punkt 9).
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['fge_invite_nonce'] ?? '' ) ), 'fge_invite_' . $token ) ) {
-		wp_die( 'Ungültige Sicherheitsüberprüfung.', '', [ 'response' => 403 ] );
+		wp_safe_redirect( add_query_arg( 'fehler', 'sitzung', $token_url ) );
+		exit;
 	}
 	$partner_id = fge_invite_partner_by_token( $token );
 	// WICHTIG: zurück auf die URL DIESES Tokens. Die alte fge_invite_url() nahm die
@@ -171,18 +206,23 @@ function fge_invite_handle_accept(): void {
 	// Code-Versand auf einem fremden Token, sein Passwort-Transient und Code-Kontext
 	// waren dort unauffindbar → Dauerschleife "Eingabe hat zu lange gedauert"
 	// (Live-Vorfall GC Schloss Igling, 2026-07-23).
-	$back       = $partner_id > 0 ? fge_invite_url_for( $partner_id, $token ) : home_url( '/einladung/' . rawurlencode( $token ) . '/' );
+	$back       = $partner_id > 0 ? fge_invite_url_for( $partner_id, $token ) : $token_url;
+	// Ungültiger/verbrauchter/verknüpfter Link: auf die Landing leiten, die zeigt
+	// den passenden freundlichen Zustand ("Schon erledigt" bzw. "nicht mehr gültig").
 	if ( $partner_id <= 0 ) {
-		wp_die( 'Dieser Einladungslink ist ungültig oder wurde bereits verwendet.', '', [ 'response' => 404 ] );
+		wp_safe_redirect( $token_url );
+		exit;
 	}
 	$invitees = fge_invitees( $partner_id );
 	$has_rec  = isset( $invitees[ $token ] );
 	if ( $has_rec && (int) ( $invitees[ $token ]['accepted_at'] ?? 0 ) > 0 ) {
-		wp_die( 'Dieser Einladungslink wurde bereits eingelöst. Melde dich einfach im Portal an.', '', [ 'response' => 409 ] );
+		wp_safe_redirect( $back );
+		exit;
 	}
 	// Alt-Einladung ohne Invitee-Record: wie bisher genau ein Konto pro Platz.
 	if ( ! $has_rec && (int) get_post_meta( $partner_id, '_fge_assigned_wp_user_id', true ) > 0 ) {
-		wp_die( 'Dieses Partnerprofil ist bereits mit einem Konto verknüpft. Melde dich einfach im Portal an oder ruf uns an, wenn etwas nicht stimmt.', '', [ 'response' => 409 ] );
+		wp_safe_redirect( $back );
+		exit;
 	}
 	// Limit 15 statt 5 (Kern-Audit H2): der Verifizierungs-Flow braucht mehrere POSTs
 	// (Code senden, ggf. erneut senden, Tippfehler) — die Code-Prüfung hat eigene
@@ -363,7 +403,9 @@ add_action( 'admin_post_fge_partner_invite', static function (): void {
 			<input type="hidden" name="post_id" value="<?php echo (int) $partner_id; ?>">
 			<?php wp_nonce_field( 'fge_partner_invite_send_' . $partner_id ); ?>
 			<input type="email" name="fge_invite_to" value="<?php echo esc_attr( 0 === count( $invitees ) ? $prefill : '' ); ?>" placeholder="ansprechpartner@golfclub.de" required>
+			<input type="text" name="fge_invite_name" value="" placeholder="Vorname für die Anrede (optional, z. B. Manuel)">
 			<button type="submit">Einladung senden</button>
+			<p style="font-size:12px;color:#787c82;margin:8px 0 0;">Nochmal an dieselbe Adresse senden ist ok: der bestehende Link wird wiederverwendet und die Nachfass-Serie startet neu.</p>
 		</form>
 
 		<?php if ( $invitees ) : ?>
@@ -383,7 +425,7 @@ add_action( 'admin_post_fge_partner_invite', static function (): void {
 					$link = fge_invite_url_for( $partner_id, (string) $tok );
 					?>
 					<tr>
-						<td><?php echo esc_html( (string) ( $inv['email'] ?? '' ) ); ?></td>
+						<td><?php echo esc_html( trim( (string) ( $inv['name'] ?? '' ) . ' ' ) ); ?><?php echo esc_html( (string) ( $inv['email'] ?? '' ) ); ?></td>
 						<td><?php echo esc_html( $st ); ?></td>
 						<td style="text-align:right;">
 							<?php if ( 0 === $acc ) : ?>
@@ -413,7 +455,8 @@ add_action( 'admin_post_fge_partner_invite_send', static function (): void {
 	check_admin_referer( 'fge_partner_invite_send_' . $partner_id );
 	// Mehrere ASP möglich: kein Block mehr, wenn der Platz schon einen Zugang hat.
 	$to   = sanitize_email( wp_unslash( $_POST['fge_invite_to'] ?? '' ) );
-	$sent = function_exists( 'fge_send_partner_invite_email' ) && fge_send_partner_invite_email( $partner_id, $to );
+	$who  = sanitize_text_field( wp_unslash( $_POST['fge_invite_name'] ?? '' ) );
+	$sent = function_exists( 'fge_send_partner_invite_email' ) && fge_send_partner_invite_email( $partner_id, $to, $who );
 	// Zurück ins Modal (braucht frische Nonce der Anzeige-Aktion).
 	$modal = wp_nonce_url( admin_url( 'admin-post.php?action=fge_partner_invite&post_id=' . $partner_id ), 'fge_partner_invite_' . $partner_id );
 	wp_safe_redirect( add_query_arg( 'fge_sent', $sent ? '1' : '0', $modal ) );
@@ -471,6 +514,40 @@ function fge_invite_run_followups(): array {
 	$stats       = [ 'reminded' => 0, 'no_response' => 0, 'activation' => 0, 'alert' => 0, 'embed' => 0, 'digest' => 0 ];
 	$stages_days = [ 5, 10, 15 ];
 
+	// Einmalige Übernahme von Alt-Einladungen (vor dem Multi-ASP-Umbau versendet):
+	// sie hatten nur _fge_invite_sent_at/_to + eine Token-Zeile und wären sonst aus
+	// allen Nachfässen und dem Digest gefallen (Audit 2026-07-23, Punkt 6).
+	if ( ! get_option( 'fge_invites_migrated_v2' ) ) {
+		$legacy = get_posts( [
+			'post_type'   => 'firmengolf_partner',
+			'post_status' => 'any',
+			'numberposts' => -1,
+			'fields'      => 'ids',
+			'meta_key'    => '_fge_invite_sent_at', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		] );
+		foreach ( $legacy as $pid ) {
+			$pid = (int) $pid;
+			if ( fge_invitees( $pid ) || fge_partner_is_claimed( $pid ) ) {
+				continue;
+			}
+			$tok  = (string) get_post_meta( $pid, '_fge_invite_token', true );
+			$mail = (string) get_post_meta( $pid, '_fge_invite_sent_to', true );
+			if ( '' === $tok || ! is_email( $mail ) ) {
+				continue;
+			}
+			fge_invitees_save( $pid, [ $tok => [
+				'email'       => $mail,
+				'name'        => '',
+				'sent_at'     => (int) get_post_meta( $pid, '_fge_invite_sent_at', true ),
+				'reminders'   => '1' === (string) get_post_meta( $pid, '_fge_invite_reminded', true ) ? 1 : 0,
+				'accepted_at' => 0,
+				'user_id'     => 0,
+				'status'      => 'sent',
+			] ] );
+		}
+		update_option( 'fge_invites_migrated_v2', 1, false );
+	}
+
 	// ── Strecke A ──
 	foreach ( fge_partners_with_invitees() as $pid ) {
 		if ( fge_partner_is_claimed( $pid ) ) {
@@ -491,7 +568,9 @@ function fge_invite_run_followups(): array {
 					$changed = true;
 					$stats['reminded']++;
 				}
-			} elseif ( time() >= $sent_at + 15 * DAY_IN_SECONDS ) {
+			} elseif ( time() >= $sent_at + 20 * DAY_IN_SECONDS ) {
+				// Erst Tag 20 (nicht direkt nach Nachfass 3 an Tag 15): die dritte
+				// Mail soll noch wirken können, bevor der Fall als kalt markiert wird.
 				$list[ $token ]['status'] = 'no_response';
 				$changed = true;
 				$stats['no_response']++;
@@ -510,7 +589,10 @@ function fge_invite_run_followups(): array {
 		$accept_at = (int) get_post_meta( $pid, '_fge_first_accept_at', true );
 		$events    = function_exists( 'fge_partner_public_event_ids' ) ? fge_partner_public_event_ids( $pid ) : [];
 
-		if ( empty( $events ) ) {
+		// "Kein Event" heißt: wirklich KEINS, auch kein eingereichtes in Prüfung.
+		// Wer eingereicht hat und auf Freigabe wartet, darf keinen "leg dein erstes
+		// Event an"-Nachfass bekommen (Audit 2026-07-23, Punkt 2).
+		if ( empty( $events ) && ! fge_partner_has_any_event( $pid ) ) {
 			// B: angemeldet, aber noch kein Event.
 			if ( '1' !== (string) get_post_meta( $pid, '_fge_activation_nudged', true )
 				&& $accept_at > 0 && time() >= $accept_at + 3 * DAY_IN_SECONDS
@@ -548,12 +630,15 @@ function fge_invite_run_followups(): array {
 			continue;
 		}
 		foreach ( fge_invitees( $pid ) as $inv ) {
-			if ( (int) ( $inv['accepted_at'] ?? 0 ) > 0 ) {
+			// Angenommene raus; "keine Rückmeldung" ebenfalls, sonst steht derselbe
+			// kalte Fall für immer jede Woche im Digest (Audit-Punkt 10). Die Liste
+			// dieser Fälle bleibt in der Admin-Einladungsbox sichtbar.
+			if ( (int) ( $inv['accepted_at'] ?? 0 ) > 0 || 'no_response' === ( $inv['status'] ?? '' ) ) {
 				continue;
 			}
 			$sent_at = (int) ( $inv['sent_at'] ?? 0 );
 			$age     = $sent_at > 0 ? max( 0, (int) floor( ( time() - $sent_at ) / DAY_IN_SECONDS ) ) : 0;
-			$status  = 'no_response' === ( $inv['status'] ?? '' ) ? 'keine Rückmeldung' : ( (int) ( $inv['reminders'] ?? 0 ) . ' Nachfass gesendet' );
+			$status  = (int) ( $inv['reminders'] ?? 0 ) . ' Nachfass gesendet';
 			$open_rows .= '<tr>'
 				. '<td style="padding:6px 10px;border-bottom:1px solid #eee;"><strong>' . esc_html( get_the_title( $pid ) ) . '</strong></td>'
 				. '<td style="padding:6px 10px;border-bottom:1px solid #eee;">' . esc_html( (string) ( $inv['email'] ?? '' ) ) . '</td>'

@@ -30,6 +30,7 @@ $fehler_txt = [
 	'abgelaufen'     => 'Das hat etwas zu lange gedauert, deine Eingaben sind aus Sicherheitsgründen verfallen. Gib sie bitte einmal neu ein, dein Code bleibt gültig.',
 	'email_vergeben' => 'Für diese E-Mail existiert schon ein Konto. Melde dich damit im Portal an oder ruf uns kurz an, wir verknüpfen es für dich.',
 	'rate'           => 'Zu viele Versuche, bitte warte ein paar Minuten.',
+	'sitzung'        => 'Die Seite war zu lange geöffnet. Deine Eingaben bitte einmal neu absenden, dann klappt es.',
 ][ $fehler ] ?? '';
 
 // E-Mail-Verifizierung: Zwischenschritt mit Code-Eingabe (Julius, 2026-07-06).
@@ -151,7 +152,8 @@ $pf_email = (string) ( $pending['email'] ?? '' );
 						<div class="inv-field"><label for="fge_first">Vorname</label><input type="text" id="fge_first" name="fge_first" value="<?php echo esc_attr( $pf_first ); ?>" required autocomplete="given-name"></div>
 						<div class="inv-field"><label for="fge_last">Nachname</label><input type="text" id="fge_last" name="fge_last" value="<?php echo esc_attr( $pf_last ); ?>" autocomplete="family-name"></div>
 					</div>
-					<div class="inv-field"><label for="fge_email">E-Mail-Adresse (dein Login)</label><input type="email" id="fge_email" name="fge_email" value="<?php echo esc_attr( $pf_email ); ?>" required autocomplete="email"></div>
+					<?php /* Im Code-Schritt gesperrt: eine geänderte Adresse würde den Code-Kontext wechseln und wie "abgelaufen" wirken (Audit 2026-07-23, Punkt 8). */ ?>
+				<div class="inv-field"><label for="fge_email">E-Mail-Adresse (dein Login)</label><input type="email" id="fge_email" name="fge_email" value="<?php echo esc_attr( $pf_email ); ?>" required autocomplete="email"<?php echo $verify && '' !== $pf_email ? ' readonly style="opacity:.65;cursor:not-allowed;"' : ''; ?>></div>
 					<?php if ( ! $verify ) : // Im Code-Schritt keine Doppel-Eingabe: das Passwort liegt verschlüsselt im Transient (partner-invite.php). ?>
 					<div class="inv-field"><label for="fge_pass">Passwort (mindestens 8 Zeichen)</label><input type="password" id="fge_pass" name="fge_pass" required minlength="8" autocomplete="new-password"></div>
 					<?php endif; ?>

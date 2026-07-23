@@ -861,15 +861,26 @@ function fge_send_partner_account_linked_email( int $user_id, int $partner_id ):
  *
  * @param string $to Abweichende Empfängeradresse (Default: Haupt-Kontakt des Partners).
  */
-function fge_send_partner_invite_email( int $partner_id, string $to = '' ): bool {
+function fge_send_partner_invite_email( int $partner_id, string $to = '', string $asp_name = '' ): bool {
 	[ $name, $contact_email, $greeting ] = fge_partner_mail_basics( $partner_id );
 	$to = '' !== $to ? $to : $contact_email;
 	if ( ! is_email( $to ) || ! function_exists( 'fge_invite_create' ) ) {
 		return false;
 	}
-	// Jeder Versand = eigene Einladung mit eigenem Token/Link (mehrere ASP pro Platz).
-	$token   = fge_invite_create( $partner_id, $to );
-	$signup  = fge_invite_url_for( $partner_id, $token );
+	// Anrede: eingegebener ASP-Name > Hauptkontakt (nur wenn die Mail wirklich an ihn
+	// geht) > neutral. Vorher bekam jeder weitere ASP die Anrede des Hauptkontakts
+	// (Audit 2026-07-23, Punkt 4).
+	$asp_name = trim( $asp_name );
+	if ( '' !== $asp_name ) {
+		$greeting = 'Hallo ' . esc_html( $asp_name ) . ',';
+	} elseif ( strtolower( trim( $to ) ) !== strtolower( trim( $contact_email ) ) ) {
+		$greeting = 'Hallo,';
+	}
+	// Dedupe (Audit-Punkt 3): offene Einladung derselben Adresse wiederverwenden,
+	// sonst je Versand eine eigene Einladung mit eigenem Token (mehrere ASP).
+	$reused = function_exists( 'fge_invite_find_open' ) ? fge_invite_find_open( $partner_id, $to ) : '';
+	$token  = '' !== $reused ? $reused : fge_invite_create( $partner_id, $to, $asp_name );
+	$signup = fge_invite_url_for( $partner_id, $token );
 	$c       = fge_company();
 	$days    = fge_days_live();
 	// Link auf die öffentliche Platzseite nur, wenn sie wirklich schon sichtbar ist
@@ -891,9 +902,22 @@ function fge_send_partner_invite_email( int $partner_id, string $to = '' ): bool
 	';
 	$sent = (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 	if ( $sent ) {
-		fge_invite_update( $partner_id, $token, [ 'sent_at' => time() ] );
+		// Erneutes Senden setzt die Nachfass-Uhr bewusst zurück (frische Serie).
+		// Name nur überschreiben, wenn diesmal einer angegeben wurde.
+		$patch = [ 'sent_at' => time(), 'reminders' => 0, 'status' => 'sent' ];
+		if ( '' !== $asp_name ) {
+			$patch['name'] = $asp_name;
+		}
+		fge_invite_update( $partner_id, $token, $patch );
 		update_post_meta( $partner_id, '_fge_invite_sent_at', time() );
 		update_post_meta( $partner_id, '_fge_invite_sent_to', $to );
+	} elseif ( '' === $reused ) {
+		// Fehlversand: frisch angelegten Invitee samt Token-Zeile zurückrollen,
+		// sonst bleibt ein "versendet"-Geist in der Tabelle (Audit-Punkt 5).
+		$list = fge_invitees( $partner_id );
+		unset( $list[ $token ] );
+		fge_invitees_save( $partner_id, $list );
+		delete_post_meta( $partner_id, '_fge_invite_token', $token );
 	}
 	return $sent;
 }
@@ -927,6 +951,14 @@ function fge_send_partner_invite_reminder_email( int $partner_id, string $token 
 	if ( '' !== $token && isset( $invitees[ $token ] ) ) {
 		$to  = (string) $invitees[ $token ]['email'];
 		$url = fge_invite_url_for( $partner_id, $token );
+		// Anrede wie in der Einladung: ASP-Name > Hauptkontakt (nur bei dessen
+		// Adresse) > neutral (Audit-Punkt 4).
+		$inv_name = trim( (string) ( $invitees[ $token ]['name'] ?? '' ) );
+		if ( '' !== $inv_name ) {
+			$greeting = 'Hallo ' . esc_html( $inv_name ) . ',';
+		} elseif ( strtolower( trim( $to ) ) !== strtolower( trim( $contact_email ) ) ) {
+			$greeting = 'Hallo,';
+		}
 	} else {
 		$to  = (string) get_post_meta( $partner_id, '_fge_invite_sent_to', true ) ?: $contact_email;
 		$url = function_exists( 'fge_invite_url' ) ? fge_invite_url( $partner_id ) : home_url( '/' );
