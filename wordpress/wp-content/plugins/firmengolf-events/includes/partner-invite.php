@@ -461,9 +461,18 @@ add_action( 'admin_post_fge_partner_invite_send', static function (): void {
 	$to   = sanitize_email( wp_unslash( $_POST['fge_invite_to'] ?? '' ) );
 	$who  = sanitize_text_field( wp_unslash( $_POST['fge_invite_name'] ?? '' ) );
 	$sent = function_exists( 'fge_send_partner_invite_email' ) && fge_send_partner_invite_email( $partner_id, $to, $who );
-	// Zurück ins Modal (braucht frische Nonce der Anzeige-Aktion).
-	$modal = wp_nonce_url( admin_url( 'admin-post.php?action=fge_partner_invite&post_id=' . $partner_id ), 'fge_partner_invite_' . $partner_id );
-	wp_safe_redirect( add_query_arg( 'fge_sent', $sent ? '1' : '0', $modal ) );
+	// Zurück ins Modal (braucht frische Nonce der Anzeige-Aktion). WICHTIG: URL roh
+	// bauen, NICHT über wp_nonce_url — die liefert eine HTML-escapte URL (&amp;),
+	// im Location-Header gingen dadurch alle Parameter verloren → der Anzeige-Guard
+	// sah post_id=0 und antwortete "Keine Berechtigung", obwohl die Mail raus war
+	// (Julius-Meldung 2026-07-23; Altbug seit dem ersten Send-Button).
+	$modal = add_query_arg( [
+		'action'   => 'fge_partner_invite',
+		'post_id'  => $partner_id,
+		'_wpnonce' => wp_create_nonce( 'fge_partner_invite_' . $partner_id ),
+		'fge_sent' => $sent ? '1' : '0',
+	], admin_url( 'admin-post.php' ) );
+	wp_safe_redirect( $modal );
 	exit;
 } );
 
