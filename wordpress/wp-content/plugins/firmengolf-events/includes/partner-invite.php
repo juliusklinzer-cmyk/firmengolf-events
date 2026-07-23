@@ -552,6 +552,39 @@ function fge_invite_run_followups(): array {
 		update_option( 'fge_invites_migrated_v2', 1, false );
 	}
 
+	// Einmalige Übernahme v3 (Julius, 2026-07-23): Altfälle "Zugang angelegt, aber
+	// nie ein Event" aus der Zeit VOR dem Umbau (z. B. GC Chieming) in die
+	// Aktivierungs-Strecke holen. Zeitstempel = jetzt, damit die Kette normal
+	// startet (Nudge Tag 3, interne Alarm-Mail Tag 8, Stopp beim ersten Event).
+	// WICHTIG: Wer schon einen Zeitstempel hat (alle seit 21.07. Angenommenen,
+	// "die Neuen"), wird NIE überschrieben; Partner mit Events bleiben unberührt.
+	if ( ! get_option( 'fge_invites_migrated_v3' ) ) {
+		$linked = get_posts( [
+			'post_type'   => 'firmengolf_partner',
+			'post_status' => 'any',
+			'numberposts' => -1,
+			'fields'      => 'ids',
+			'meta_key'    => '_fge_assigned_wp_user_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		] );
+		foreach ( $linked as $pid ) {
+			$pid = (int) $pid;
+			if ( function_exists( 'fge_is_demo_partner' ) && fge_is_demo_partner( $pid ) ) {
+				continue;
+			}
+			if ( (int) get_post_meta( $pid, '_fge_assigned_wp_user_id', true ) <= 0 ) {
+				continue;
+			}
+			if ( (int) get_post_meta( $pid, '_fge_first_accept_at', true ) > 0 ) {
+				continue; // Neue seit dem Umbau: Zeitstempel bleibt unangetastet.
+			}
+			if ( fge_partner_has_any_event( $pid ) ) {
+				continue; // Wer schon Events hat, braucht keinen Aktivierungs-Nachfass.
+			}
+			update_post_meta( $pid, '_fge_first_accept_at', time() );
+		}
+		update_option( 'fge_invites_migrated_v3', 1, false );
+	}
+
 	// ── Strecke A ──
 	foreach ( fge_partners_with_invitees() as $pid ) {
 		if ( fge_partner_is_claimed( $pid ) ) {
