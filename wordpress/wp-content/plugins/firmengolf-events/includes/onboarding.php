@@ -118,7 +118,10 @@ function fge_onboarding_media_limits(): array {
 		'logo'            => 1 * 1024 * 1024, // 1 MB
 		'cover'           => 5 * 1024 * 1024, // 5 MB
 		'gallery'         => 5 * 1024 * 1024, // 5 MB pro Foto
-		'gallery_max'     => 6,
+		// 6 → 24 (Julius, 2026-07-27, Feedback Gut Kaden): Die 6 stammten aus der
+		// Onboarding-Startphase; aktive Partner mit mehreren Angeboten brauchen
+		// Titelbilder + Detailfotos je Angebot. Reines Upload-Limit, kürzt nie Bestand.
+		'gallery_max'     => 24,
 		'cover_min_width' => 1600,
 	];
 }
