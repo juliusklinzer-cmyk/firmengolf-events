@@ -491,3 +491,12 @@ add_action( 'wp_head', function () {
 		. 'window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config",' . wp_json_encode( $ga ) . ');'
 		. '</script>' . "\n";
 }, 20 );
+
+// Kommentare sitewide deaktiviert (Julius, 2026-07-27): Der Blog braucht keine
+// Community-Funktion, und Bots posteten Spam direkt an wp-comments-post.php
+// (das Theme rendert gar kein Formular). comments_open=false lehnt auch diese
+// Direkt-POSTs ab; comments_array blendet Altbestand aus, falls je einer
+// freigegeben war. Reaktivierung: Block entfernen.
+add_filter( 'comments_open', '__return_false', 20 );
+add_filter( 'pings_open', '__return_false', 20 );
+add_filter( 'comments_array', '__return_empty_array', 20 );
