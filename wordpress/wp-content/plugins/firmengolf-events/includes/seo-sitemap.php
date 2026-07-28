@@ -47,6 +47,13 @@ add_filter( 'wp_sitemaps_posts_query_args', function ( array $args, string $post
 				'compare' => 'IN',
 			],
 		];
+		// Musterumgebung gehört nie in die Sitemap (auch nicht freigegeben+publish).
+		if ( function_exists( 'fge_demo_exclude_meta_clause' ) ) {
+			$demo_clause = fge_demo_exclude_meta_clause();
+			if ( $demo_clause ) {
+				$args['meta_query'][] = $demo_clause;
+			}
+		}
 	}
 
 	if ( 'page' === $post_type ) {

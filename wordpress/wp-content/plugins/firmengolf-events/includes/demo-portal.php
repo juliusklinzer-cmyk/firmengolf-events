@@ -7,10 +7,17 @@
  * (Profil, Events, Anfragen in allen Stadien, KPIs). Zum Vorführen in
  * Partner-Meetings, ohne sich als echter Platz anmelden zu müssen.
  *
- * Sicherheits-Prinzip: ALLE Demo-Events und -Anfragen sind Entwürfe (draft).
- * Das Portal zeigt drafts an, sämtliche öffentlichen Abfragen (Eventliste,
- * Startseite, Stadtseiten, Sitemap) holen nur publish. Die Muster-Platzseite
- * wird nie öffentlich, weil dafür mindestens ein öffentliches Event nötig ist.
+ * Sicherheits-Prinzip (zwei unabhängige Riegel, seit 28.07.2026):
+ *  1. Alle Demo-Inhalte werden als Entwurf (draft) angelegt, öffentliche
+ *     Abfragen holen nur publish.
+ *  2. Unabhängig davon liefern `fge_event_is_public()` und
+ *     `fge_partner_is_public()` für die Musterumgebung IMMER false. Damit
+ *     bleiben Detailseiten (410), Eventliste, Stadt-/Format-Seiten und beide
+ *     Sitemaps auch dann sauber, wenn ein Demo-Post versehentlich
+ *     veröffentlicht oder freigegeben wird.
+ * Riegel 1 allein hat am 28.07.2026 nicht gereicht: vier Demo-Events wurden im
+ * Admin freigegeben und veröffentlicht, damit war auch die Muster-Platzseite
+ * öffentlich und stand in der Sitemap.
  * Nachfass-Crons überspringen den Muster-Partner (kein Mailversand auf Demo-Daten).
  */
 if ( ! defined( 'ABSPATH' ) ) {
@@ -32,6 +39,26 @@ function fge_is_demo_partner( int $partner_id ): bool {
 /** Gehört diese Anfrage zur Musterumgebung? (Crons müssen sie überspringen.) */
 function fge_is_demo_request( int $request_id ): bool {
 	return fge_is_demo_partner( (int) get_post_meta( $request_id, '_fge_assigned_partner_id', true ) );
+}
+
+/**
+ * meta_query-Klausel, die Demo-Events aus einer Abfrage heraushält.
+ * Für Abfragen ohne Nachfilter über `fge_event_is_public()` (Sitemap, Archiv).
+ * Leeres Array, wenn es keinen Muster-Partner gibt → dann nichts anhängen.
+ *
+ * Events ohne `_fge_assigned_partner_id` (von Firmengolf selbst organisiert)
+ * müssen drin bleiben, deshalb die ODER-Klausel mit NOT EXISTS.
+ */
+function fge_demo_exclude_meta_clause(): array {
+	$demo_id = fge_demo_partner_id();
+	if ( $demo_id <= 0 ) {
+		return [];
+	}
+	return [
+		'relation' => 'OR',
+		[ 'key' => '_fge_assigned_partner_id', 'value' => $demo_id, 'compare' => '!=', 'type' => 'NUMERIC' ],
+		[ 'key' => '_fge_assigned_partner_id', 'compare' => 'NOT EXISTS' ],
+	];
 }
 
 // ── Seeder / Reset ────────────────────────────────────────────────────────────

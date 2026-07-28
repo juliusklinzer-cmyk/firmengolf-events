@@ -89,6 +89,14 @@ $public_statuses = function_exists( 'fge_public_event_statuses' ) ? fge_public_e
 $meta_query = [
 	[ 'key' => '_fge_event_status', 'value' => $public_statuses, 'compare' => 'IN' ],
 ];
+// Musterumgebung schon in der Abfrage raus, nicht erst im Nachfilter — sonst
+// zählt sie in $total mit und verschiebt die Paginierung.
+if ( function_exists( 'fge_demo_exclude_meta_clause' ) ) {
+	$demo_clause = fge_demo_exclude_meta_clause();
+	if ( $demo_clause ) {
+		$meta_query[] = $demo_clause;
+	}
+}
 if ( $active_format !== 'all' ) {
 	$meta_query[] = [ 'key' => '_fge_event_type', 'value' => $active_format, 'compare' => '=' ];
 }

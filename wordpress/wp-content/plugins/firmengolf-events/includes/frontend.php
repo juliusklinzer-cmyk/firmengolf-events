@@ -28,9 +28,18 @@ function fge_filter_archive_query( WP_Query $q ) {
 	if ( ! $q->is_post_type_archive( 'firmengolf_event' ) ) {
 		return;
 	}
-	$q->set( 'meta_query', [
+	$meta_query = [
 		[ 'key' => '_fge_event_status', 'value' => fge_public_event_statuses(), 'compare' => 'IN' ],
-	] );
+	];
+	// Musterumgebung raus, damit auch die Trefferzahl/Paginierung stimmt (der
+	// Nachfilter im Theme über fge_event_is_public() käme dafür zu spät).
+	if ( function_exists( 'fge_demo_exclude_meta_clause' ) ) {
+		$demo_clause = fge_demo_exclude_meta_clause();
+		if ( $demo_clause ) {
+			$meta_query[] = $demo_clause;
+		}
+	}
+	$q->set( 'meta_query', $meta_query );
 	$q->set( 'posts_per_page', 24 );
 }
 add_action( 'pre_get_posts', 'fge_filter_archive_query' );
@@ -385,10 +394,14 @@ function fge_request_wish_groups( int $request_id ): array {
  * (Pausieren-Kaskade, Handoff §1: Platz pausiert ⇒ alle seine Events offline).
  */
 function fge_event_is_public( int $event_id ): bool {
+	$partner_id = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
+	// Musterumgebung ist NIE öffentlich, unabhängig von Post- und Event-Status.
+	if ( function_exists( 'fge_is_demo_partner' ) && fge_is_demo_partner( $partner_id ) ) {
+		return false;
+	}
 	if ( ! in_array( (string) get_post_meta( $event_id, '_fge_event_status', true ), fge_public_event_statuses(), true ) ) {
 		return false;
 	}
-	$partner_id = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
 	if ( $partner_id > 0 && get_post_meta( $partner_id, '_fge_partner_status', true ) === 'pausiert' ) {
 		return false;
 	}
@@ -419,6 +432,10 @@ function fge_partner_public_event_ids( int $partner_id ): array {
  */
 function fge_partner_is_public( int $partner_id ): bool {
 	if ( $partner_id <= 0 || get_post_type( $partner_id ) !== 'firmengolf_partner' ) {
+		return false;
+	}
+	// Muster-Golfplatz ist NIE öffentlich, auch nicht mit Status `aktiv`.
+	if ( function_exists( 'fge_is_demo_partner' ) && fge_is_demo_partner( $partner_id ) ) {
 		return false;
 	}
 	if ( get_post_status( $partner_id ) !== 'publish' ) {

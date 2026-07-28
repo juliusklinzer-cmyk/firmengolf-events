@@ -220,14 +220,22 @@ if ( 1 === $real_count ) {
 }
 
 // Related events
+$related_meta = [
+	[ 'key' => '_fge_event_status', 'value' => 'freigegeben', 'compare' => '=' ],
+];
+// Musterumgebung nie als „Das könnte auch passen" ausspielen.
+if ( function_exists( 'fge_demo_exclude_meta_clause' ) ) {
+	$related_demo_clause = fge_demo_exclude_meta_clause();
+	if ( $related_demo_clause ) {
+		$related_meta[] = $related_demo_clause;
+	}
+}
 $related_query = new WP_Query( [
 	'post_type'      => 'firmengolf_event',
 	'post_status'    => 'publish',
 	'post__not_in'   => [ $post_id ],
 	'posts_per_page' => 3,
-	'meta_query'     => [
-		[ 'key' => '_fge_event_status', 'value' => 'freigegeben', 'compare' => '=' ],
-	],
+	'meta_query'     => $related_meta,
 	'orderby' => 'rand',
 ] );
 
