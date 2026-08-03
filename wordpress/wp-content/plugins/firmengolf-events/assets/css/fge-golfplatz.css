@@ -81,6 +81,30 @@
 /* ── Öffentliche Platzseite: Breite wie Header/Sections (1328 gesamt = 1280 Inhalt) ── */
 .single-firmengolf_partner .fgpp { --width-page-wide: 1344px; }
 
+/* ── Responsiver Hero: die festen 380px aus dem Portal-Design sprengen auf schmalen
+      Screens (langer Clubname + Logo + Meta wachsen über die Box, Eyebrow läuft unter
+      den Galerie-Button). Unter 900px fließt der Inhalt: hero-body wird statisch,
+      das Foto wächst mit dem Inhalt. ── */
+@media (max-width: 900px) {
+  .single-firmengolf_partner .fgpp .hero-photo {
+    height: auto; min-height: 340px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .single-firmengolf_partner .fgpp .hero-body { position: static; padding: 140px 20px 20px; }
+  .single-firmengolf_partner .fgpp .hero-name { font-size: 34px; line-height: 1.05; }
+  .single-firmengolf_partner .fgpp .hero-id { gap: 14px; }
+  .single-firmengolf_partner .fgpp .hero-monogram { width: 64px; height: 64px; font-size: 24px; border-radius: var(--radius-md, 14px); }
+  .single-firmengolf_partner .fgpp .hero-text { padding-bottom: 2px; }
+  .single-firmengolf_partner .fgpp .hero-meta { margin-top: 10px; gap: 10px; font-size: 13.5px; }
+  .single-firmengolf_partner .fgpp .hero-cta-card { min-width: 0; padding: 12px 16px; }
+  .single-firmengolf_partner .fgpp .gp-gallery-btn { top: 14px; right: 14px; padding: 10px 14px; font-size: 13px; border-radius: var(--radius-md, 14px); }
+}
+@media (max-width: 560px) {
+  .single-firmengolf_partner .fgpp .hero-body { padding: 120px 16px 18px; }
+  .single-firmengolf_partner .fgpp .hero-name { font-size: 27px; }
+  .single-firmengolf_partner .fgpp .hero-monogram { width: 52px; height: 52px; font-size: 20px; }
+}
+
 /* Vorschau-Markierung für Events in Prüfung (nur für den Betreiber sichtbar) */
 .gp-preview-card { position: relative; opacity: 0.85; }
 .gp-preview-tag { position: absolute; top: 12px; right: 12px; z-index: 3; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; background: #FBEFD6; color: #9A6B12; border: 1px solid #E2C36B; padding: 4px 10px; border-radius: 999px; pointer-events: none; }

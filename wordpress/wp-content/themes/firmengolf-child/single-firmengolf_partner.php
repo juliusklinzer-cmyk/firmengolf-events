@@ -13,7 +13,15 @@ $m   = static fn( string $k ): string => (string) get_post_meta( $pid, '_fge_' .
 
 $name      = $m( 'public_golfclub_name' ) ?: get_the_title();
 $city      = $m( 'city' );
-$state     = $m( 'federal_state' );
+$states    = [
+	'baden_wuerttemberg' => 'Baden-Württemberg', 'bayern' => 'Bayern', 'berlin' => 'Berlin',
+	'brandenburg' => 'Brandenburg', 'bremen' => 'Bremen', 'hamburg' => 'Hamburg', 'hessen' => 'Hessen',
+	'mecklenburg_vorpommern' => 'Mecklenburg-Vorpommern', 'niedersachsen' => 'Niedersachsen',
+	'nordrhein_westfalen' => 'Nordrhein-Westfalen', 'rheinland_pfalz' => 'Rheinland-Pfalz',
+	'saarland' => 'Saarland', 'sachsen' => 'Sachsen', 'sachsen_anhalt' => 'Sachsen-Anhalt',
+	'schleswig_holstein' => 'Schleswig-Holstein', 'thueringen' => 'Thüringen',
+];
+$state     = $states[ $m( 'federal_state' ) ] ?? $m( 'federal_state' );
 $loc       = trim( $city . ( $state ? ', ' . $state : '' ) );
 $golf      = $m( 'golf_type' );
 $golf_lbl  = $golf && function_exists( 'fge_catalog_golf_types' ) ? ( fge_catalog_golf_types()[ $golf ] ?? $golf ) : '';
@@ -77,7 +85,7 @@ $p_seo_desc  = $desc ?: ( 'Firmenevents, Teamevents und Golfturniere bei ' . $na
 $p_seo_tail  = ' Jetzt bei Firmengolf anfragen.';
 $p_seo_desc  = rtrim( mb_substr( wp_strip_all_tags( (string) $p_seo_desc ), 0, 150 - mb_strlen( $p_seo_tail ) ) ) . $p_seo_tail;
 add_filter( 'pre_get_document_title', function () use ( $p_seo_title ) { return $p_seo_title; } );
-add_action( 'wp_head', function () use ( $p_seo_title, $p_seo_desc, $pid, $cover, $name, $city ) {
+add_action( 'wp_head', function () use ( $p_seo_title, $p_seo_desc, $pid, $cover, $name, $city, $states ) {
 	$GLOBALS['fge_seo_meta_done'] = true;
 	echo '<meta name="description" content="' . esc_attr( $p_seo_desc ) . '">' . "\n";
 	echo '<meta property="og:type" content="website">' . "\n";
@@ -88,14 +96,6 @@ add_action( 'wp_head', function () use ( $p_seo_title, $p_seo_desc, $pid, $cover
 	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
 
 	// JSON-LD: GolfCourse mit Adresse + Geo (lokales SEO, Maps, KI). Keine erfundenen Bewertungen.
-	$states = [
-		'baden_wuerttemberg' => 'Baden-Württemberg', 'bayern' => 'Bayern', 'berlin' => 'Berlin',
-		'brandenburg' => 'Brandenburg', 'bremen' => 'Bremen', 'hamburg' => 'Hamburg', 'hessen' => 'Hessen',
-		'mecklenburg_vorpommern' => 'Mecklenburg-Vorpommern', 'niedersachsen' => 'Niedersachsen',
-		'nordrhein_westfalen' => 'Nordrhein-Westfalen', 'rheinland_pfalz' => 'Rheinland-Pfalz',
-		'saarland' => 'Saarland', 'sachsen' => 'Sachsen', 'sachsen_anhalt' => 'Sachsen-Anhalt',
-		'schleswig_holstein' => 'Schleswig-Holstein', 'thueringen' => 'Thüringen',
-	];
 	$street  = trim( (string) get_post_meta( $pid, '_fge_street', true ) . ' ' . (string) get_post_meta( $pid, '_fge_house_number', true ) );
 	$addr    = [ '@type' => 'PostalAddress', 'addressCountry' => 'DE' ];
 	if ( '' !== $street ) { $addr['streetAddress'] = $street; }
