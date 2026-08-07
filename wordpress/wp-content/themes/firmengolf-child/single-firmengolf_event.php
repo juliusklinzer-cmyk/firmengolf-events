@@ -1237,9 +1237,12 @@ get_header();
 			btn.disabled = true;
 			btn.textContent = 'Wird gesendet …';
 
+			var fgeFt = '<?php echo esc_js( function_exists( 'fge_form_trap_token' ) ? fge_form_trap_token() : '' ); ?>';
 			var body = new URLSearchParams({
 				action:     'fge_modal_anfrage',
 				nonce:      '<?php echo esc_js( $modal_nonce ); ?>',
+				fge_ft:     fgeFt,
+				fge_js:     fgeFt.split('').reverse().join(''),
 				fge_hp:     val('fg-hp'),
 				event_id:   '<?php echo esc_js( (string) $post_id ); ?>',
 				date1:      val('fg-date-1'),

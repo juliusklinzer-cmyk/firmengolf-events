@@ -329,6 +329,7 @@ add_action( 'wp_enqueue_scripts', function() {
 		wp_localize_script( 'fge-individual', 'FGE_IND', [
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'fge_general_request' ),
+			'ft'      => function_exists( 'fge_form_trap_token' ) ? fge_form_trap_token() : '',
 			// Budget-Rechner-Config nur auf der Individuelle-Events-Seite; sonst null (Wizard läuft trotzdem).
 			'bc'      => ( is_page( 'individuelle-events' ) && function_exists( 'fge_bc_config' ) ) ? fge_bc_config() : null,
 			// Golfplatz-Namen für den optionalen „Konkreter Platz"-Dropdown.

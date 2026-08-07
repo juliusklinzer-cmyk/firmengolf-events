@@ -125,6 +125,7 @@ $faqs = [
 				<input type="hidden" name="fge_action" value="kontakt_submit">
 				<?php wp_nonce_field( 'fge_kontakt', 'fge_kontakt_nonce' ); ?>
 				<input type="text" name="fge_hp_url" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+				<?php echo function_exists( 'fge_form_trap_fields' ) ? fge_form_trap_fields() : ''; // Zeitfalle + JS-Pflichtfeld (Spam-Welle 2026-08-07) ?>
 				<input type="hidden" name="fge_kontakt_topic" id="fge-topic-input" value="<?php echo esc_attr( $sel_topic ); ?>">
 				<input type="hidden" name="fge_kontakt_pref" id="fge-pref-input" value="<?php echo esc_attr( $sel_pref ); ?>">
 
@@ -225,6 +226,7 @@ $faqs = [
 						<input type="hidden" name="fge_action" value="rueckruf_submit">
 						<?php wp_nonce_field( 'fge_rueckruf', 'fge_rueckruf_nonce' ); ?>
 						<input type="text" name="fge_hp_url" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+						<?php echo function_exists( 'fge_form_trap_fields' ) ? fge_form_trap_fields() : ''; // Zeitfalle + JS-Pflichtfeld ?>
 						<p class="ct-fold-p">Nummer rein, wir melden uns, kein Tippen, keine Warteschleife.</p>
 						<?php if ( $cb_err ) : ?>
 							<p class="ct-fold-p" style="color:var(--danger);">Bitte gib eine Telefonnummer an.</p>

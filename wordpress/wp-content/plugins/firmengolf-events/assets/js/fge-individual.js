@@ -512,6 +512,8 @@
 			var body = new URLSearchParams();
 			body.set('action', 'fge_general_request');
 			body.set('nonce', CFG.nonce || '');
+			body.set('fge_ft', CFG.ft || '');
+			body.set('fge_js', (CFG.ft || '').split('').reverse().join(''));
 			body.set('occasion', f.occasion); body.set('goal', f.goal); body.set('size', f.size);
 			body.set('region', f.region); body.set('place', f.place || ''); body.set('budget', f.budget); body.set('when', f.when);
 			body.set('flex', f.flex); body.set('duration', f.duration); body.set('experience', f.experience);

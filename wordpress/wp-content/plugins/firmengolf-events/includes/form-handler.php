@@ -56,9 +56,54 @@ function fge_form_rate_limited( int $max = 8, int $window = 600, string $bucket 
 	return false;
 }
 
+/**
+ * Signierter Zeitstempel für die Bot-Fallen (Spam-Welle contact_page 2026-08-07:
+ * der Bot lädt die Seite, übernimmt den Nonce, lässt den Honeypot leer und
+ * postet sofort — Nonce+Honeypot+IP-Limit reichen dagegen nicht).
+ */
+function fge_form_trap_token(): string {
+	$ts = (string) time();
+	return $ts . '.' . substr( hash_hmac( 'sha256', $ts, wp_salt( 'nonce' ) ), 0, 20 );
+}
+
+/**
+ * Versteckte Fallen-Felder für klassische POST-Formulare: signierte Zeitfalle
+ * (fge_ft) + JS-Pflichtfeld (fge_js, wird per Inline-Script aus fge_ft gefüllt).
+ * Mehrfach pro Seite einbindbar, das Script füllt je Formular das eigene Feld.
+ */
+function fge_form_trap_fields(): string {
+	return '<input type="hidden" name="fge_ft" value="' . esc_attr( fge_form_trap_token() ) . '">'
+		. '<input type="hidden" name="fge_js" value="">'
+		. '<script>(function(){var l=document.getElementsByName("fge_js");for(var i=0;i<l.length;i++){var f=l[i].form&&l[i].form.querySelector("input[name=fge_ft]");if(f){l[i].value=f.value.split("").reverse().join("");}}})();</script>';
+}
+
+/**
+ * true = Bot. Greift, wenn (a) das JS-Pflichtfeld nicht clientseitig gefüllt
+ * wurde (Bots ohne JS-Ausführung), (b) die Signatur des Zeitstempels nicht
+ * stimmt oder (c) das Formular unter $min_seconds abgeschickt wurde. Obergrenze
+ * 24 h entspricht der Nonce-Lebensdauer, gecachte Seiten bleiben also gültig.
+ */
+function fge_form_bot_detected( int $min_seconds = 4 ): bool {
+	$ft = sanitize_text_field( wp_unslash( $_POST['fge_ft'] ?? '' ) );
+	$js = sanitize_text_field( wp_unslash( $_POST['fge_js'] ?? '' ) );
+	if ( '' === $ft || $js !== strrev( $ft ) ) {
+		return true;
+	}
+	$parts = explode( '.', $ft, 2 );
+	if ( 2 !== count( $parts ) ) {
+		return true;
+	}
+	$expected = substr( hash_hmac( 'sha256', $parts[0], wp_salt( 'nonce' ) ), 0, 20 );
+	if ( ! hash_equals( $expected, $parts[1] ) ) {
+		return true;
+	}
+	$age = time() - (int) $parts[0];
+	return $age < $min_seconds || $age > DAY_IN_SECONDS;
+}
+
 /** Gemeinsamer Spam-Gate für AJAX-Anfragen: bricht mit JSON-Antwort ab, wenn verdächtig. */
 function fge_form_spam_gate(): void {
-	if ( fge_form_honeypot_tripped() ) {
+	if ( fge_form_honeypot_tripped() || fge_form_bot_detected() ) {
 		wp_send_json_error( [ 'message' => 'Ungültige Anfrage.' ], 400 );
 	}
 	if ( fge_form_rate_limited() ) {
