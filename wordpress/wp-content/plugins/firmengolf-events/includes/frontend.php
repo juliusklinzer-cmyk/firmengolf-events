@@ -562,13 +562,13 @@ function fge_placeholder_pool(): array {
 		'event' => [], 'course' => [], 'range' => [], 'clubhouse' => [], 'founder' => [], 'misc' => [], 'all' => [],
 		// Format-Gruppen (2026-07): Dateiname-Präfix bestimmt die Gruppe, z. B. pool/platzreife-*.jpg.
 		// Die Alt-Bestände tragen das teamevent-Präfix (Julius' Entscheidung: bisherige Bilder = Teamevent-Topf).
-		'teamevent' => [], 'platzreife' => [], 'turnier' => [], 'kundenevent' => [], 'afterwork' => [], 'incentive' => [], 'nachtevent' => [],
+		'teamevent' => [], 'platzreife' => [], 'turnier' => [], 'kundenevent' => [], 'afterwork' => [], 'incentive' => [], 'nachtevent' => [], 'workshop' => [],
 	];
 	$dir     = FGE_DIR . 'assets/imagery/pool';
 	foreach ( glob( $dir . '/*.jpg' ) ?: [] as $path ) {
 		$file = basename( $path );
 		$buckets['all'][] = $file;
-		if ( preg_match( '/^(teamevent|platzreife|turnier|kundenevent|afterwork|incentive|nachtevent)-/', $file, $m ) ) {
+		if ( preg_match( '/^(teamevent|platzreife|turnier|kundenevent|afterwork|incentive|nachtevent|workshop)-/', $file, $m ) ) {
 			$cat = $m[1];
 		} elseif ( strpos( $file, 'gruender' ) !== false ) {
 			$cat = 'founder';
@@ -605,7 +605,7 @@ function fge_event_pool_category( int $event_id ): string {
 		'kundenevent'        => 'kundenevent',
 		'after_work_golf'    => 'afterwork',
 		'incentive'          => 'incentive',
-		'offsite'            => 'incentive',
+		'workshop'           => 'workshop',
 		'nacht_event'        => 'nachtevent',
 	];
 	$cat = $map[ $type ] ?? '';

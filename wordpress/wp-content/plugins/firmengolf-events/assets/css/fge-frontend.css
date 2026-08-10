@@ -5610,3 +5610,19 @@ body { background-color: var(--paper-300); }
 .fge-credit-wrap{position:relative;display:block}
 .fge-credit-wrap img{display:block;width:100%}
 .gp-lb-credit{margin-left:12px;font-size:11px;color:rgba(255,255,255,.75)}
+
+/* ── Format-Landingpages (Ads-Ausbau 2026-08): Hero-CTAs, Quick-Facts, Städte-Chips ── */
+.ev-hero-ctas { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
+.fmt-facts { background: var(--paper-100); border-bottom: 1px solid rgba(14,19,16,.08); }
+.fmt-facts-inner { max-width: var(--width-page); margin: 0 auto; padding: 22px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.fmt-fact-k { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--fairway-700); }
+.fmt-fact-v { font-size: 17px; font-weight: 500; color: var(--ink-900); margin-top: 4px; }
+.fmt-city-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 760px) {
+  .fmt-facts-inner { grid-template-columns: repeat(2, 1fr); padding: 18px 20px; gap: 14px; }
+  .fmt-fact-v { font-size: 15px; }
+  .ev-hero-ctas { gap: 10px; }
+}
+.fmt-flow .mk-steps-grid { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1000px) { .fmt-flow .mk-steps-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .fmt-flow .mk-steps-grid { grid-template-columns: 1fr; } }

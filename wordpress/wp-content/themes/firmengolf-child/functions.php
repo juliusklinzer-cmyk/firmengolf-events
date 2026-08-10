@@ -13,7 +13,7 @@ add_action( 'after_setup_theme', function () {
 // SEO der Startseite: keyword-orientierter Title + Meta + OpenGraph.
 add_filter( 'pre_get_document_title', function ( $title ) {
 	if ( is_front_page() ) {
-		return 'Firmenevents auf dem Golfplatz | Teamevents, Turniere & Incentives | Firmengolf';
+		return 'Firmenevents auf dem Golfplatz | Teamevents, Turniere & Workshops | Firmengolf';
 	}
 	return $title;
 } );
@@ -22,7 +22,7 @@ add_action( 'wp_head', function () {
 		return;
 	}
 	$GLOBALS['fge_seo_meta_done'] = true;
-	$desc = 'Firmenevents auf Deutschlands schönsten Golfplätzen: Teamevents, Firmenturniere, Platzreife und Incentives. Passenden Platz finden und schnell anfragen.';
+	$desc = 'Firmenevents auf Deutschlands schönsten Golfplätzen: Teamevents, Firmenturniere, Platzreife und Workshops. Passenden Platz finden und schnell anfragen.';
 	echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
 	echo '<meta property="og:type" content="website">' . "\n";
 	echo '<meta property="og:title" content="Firmenevents auf dem Golfplatz | Firmengolf">' . "\n";
@@ -79,7 +79,7 @@ add_action( 'wp_head', function () {
 		'@type'       => 'Organization',
 		'name'        => 'Firmengolf',
 		'url'         => home_url( '/' ),
-		'description' => 'Firmenevents auf Golfplätzen in ganz Deutschland: Teamevents, Firmenturniere, Platzreife und Incentives. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
+		'description' => 'Firmenevents auf Golfplätzen in ganz Deutschland: Teamevents, Firmenturniere, Platzreife und Workshops. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
 		'sameAs'      => [
 			'https://www.instagram.com/firmengolf/',
 			'https://www.facebook.com/Firmengolf',
@@ -164,7 +164,7 @@ add_action( 'wp_head', function () {
 		$desc = fge_generate_description();
 		fge_render_seo_meta( [
 			'title'   => get_the_title() . ' | Firmengolf',
-			'desc'    => $desc !== '' ? $desc : 'Firmenevents auf Golfplätzen in ganz Deutschland: Teamevents, Turniere und Incentives. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
+			'desc'    => $desc !== '' ? $desc : 'Firmenevents auf Golfplätzen in ganz Deutschland: Teamevents, Turniere und Workshops. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
 			'url'     => get_permalink(),
 			'og_type' => 'website',
 		] );
@@ -175,7 +175,7 @@ add_action( 'wp_head', function () {
 		}
 		fge_render_seo_meta( [
 			'title'   => 'Blog | Firmengolf',
-			'desc'    => 'Tipps, Ideen und Praxis rund um Firmenevents auf dem Golfplatz: Teamevents, Turniere, Incentives und Corporate Benefits.',
+			'desc'    => 'Tipps, Ideen und Praxis rund um Firmenevents auf dem Golfplatz: Teamevents, Turniere, Workshops und Corporate Benefits.',
 			'url'     => $blog_url,
 			'og_type' => 'website',
 		] );

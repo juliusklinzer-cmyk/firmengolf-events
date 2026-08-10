@@ -86,6 +86,7 @@ if ( ! function_exists( 'fge_city_ico' ) ) {
 			'castle'   => '<path d="M4 21V8l2 1V5l2 1V4l2 1V4l2-1v2l2-1v2l2-1v4l2-1v13z"/><path d="M10 21v-4h4v4"/>',
 			'gift'     => '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 3 8 4.5 9.5 8 12 8zM12 8s1.5-5 4-3.5S14.5 8 12 8z"/>',
 			'leaf'     => '<path d="M11 20A7 7 0 0 1 4 13C4 8 9 4 20 4c0 9-4 16-9 16z"/><path d="M4 20c4-4 7-6 11-7"/>',
+			'board'    => '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 20h8"/><path d="M7 8h10M7 11h6"/>',
 		];
 		$d = $p[ $name ] ?? $p['flag'];
 		return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $d . '</svg>';
@@ -246,6 +247,7 @@ get_header();
 			'kundenevent'     => 'gift',
 			'incentive'       => 'mountain',
 			'after-work-golf' => 'clock',
+			'workshop'        => 'board',
 		];
 		foreach ( fge_citformat_format_meta() as $fslug => $fm ) :
 			$fmt_title = trim( (string) strtok( sprintf( $fm['eyeb'], $city_name ), '·' ) );

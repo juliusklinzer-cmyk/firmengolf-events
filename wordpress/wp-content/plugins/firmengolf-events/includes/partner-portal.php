@@ -1800,7 +1800,7 @@ function fge_portal_render_todo_row( int $partner_id ): void {
  * über die „Andere"-Kachel — als Inspiration statt Pflichtprogramm.
  */
 function fge_portal_hidden_empty_types(): array {
-	return [ 'offsite', 'gesundheitstag', 'networking', 'nacht_event' ];
+	return [ 'gesundheitstag', 'networking', 'nacht_event' ];
 }
 
 function fge_portal_render_cat_grid( int $partner_id, string $base, bool $compact = false ): void {

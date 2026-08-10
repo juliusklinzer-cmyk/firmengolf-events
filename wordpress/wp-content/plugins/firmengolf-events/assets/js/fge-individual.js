@@ -335,7 +335,7 @@
 				+ '<h2 class="rw-h">Das Wichtigste, wir klären den Rest persönlich.</h2>'
 				+ '<p class="rw-lead">Du willst nicht durch alle Schritte? Völlig okay. Gib uns die Basics, wir melden uns mit Rückfragen.</p>'
 				+ '<div class="rw-form">'
-				+ '<div class="rw-field">' + label('Anlass', true) + chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Offsite', 'Nacht-Event', 'Etwas anderes']) + '</div>'
+				+ '<div class="rw-field">' + label('Anlass', true) + chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Workshop', 'Offsite', 'Nacht-Event', 'Etwas anderes']) + '</div>'
 				+ '<div class="rw-field">' + label('Teilnehmerzahl')
 				+ '<div class="ind-input-row">' + input('size', 'type="number" min="1" max="999" inputmode="numeric"', '40') + '<span class="ind-input-suffix">Personen</span></div></div>'
 				+ '<div class="rw-row"><div class="rw-field">' + label('Vor- & Nachname', true) + input('firstName', 'required', 'Vor- und Nachname') + '</div>'
@@ -355,7 +355,7 @@
 					+ '<h2 class="rw-h">Worum geht\'s bei eurem Event?</h2>'
 					+ '<p class="rw-lead">Wähl den nächstpassenden Anlass, wir verfeinern alles im Gespräch.</p>'
 					+ '<div class="rw-form"><div class="rw-field">'
-					+ chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Offsite', 'Incentive-Reise', 'Charity-Event', 'Gesundheitstag', 'Nacht-Event', 'Etwas anderes'])
+					+ chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Workshop', 'Offsite', 'Incentive-Reise', 'Charity-Event', 'Gesundheitstag', 'Nacht-Event', 'Etwas anderes'])
 					+ '</div>'
 					/* „Was wollt ihr erreichen?" nur bei „Etwas anderes" (Julius, 2026-07-06) */
 					+ (S.form.occasion === 'Etwas anderes'

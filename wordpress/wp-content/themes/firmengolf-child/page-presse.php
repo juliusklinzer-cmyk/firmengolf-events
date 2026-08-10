@@ -46,7 +46,7 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 		<h2 class="mk-h2">Boilerplate</h2>
 	</div>
 	<p class="mk-sub" style="max-width:var(--width-prose);">
-		Firmengolf macht Golf für Unternehmen zugänglich, als Firmenevent, als Offsite-Location und als
+		Firmengolf macht Golf für Unternehmen zugänglich, als Firmenevent, als Workshop-Location und als
 		wiederkehrenden Mitarbeiter-Benefit. Über eine kuratierte Plattform buchen Firmen Teamevents, Turniere,
 		Platzreifekurse und individuelle Veranstaltungen deutschlandweit auf Golfplätzen in ganz Deutschland:
 		eine Anfrage, ein Ansprechpartner, eine Rechnung. Gegründet 2024 in München, verfolgt Firmengolf ein klares

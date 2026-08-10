@@ -38,9 +38,9 @@ function fge_get_cities(): array {
 		],
 		'hamburg' => [
 			'name' => 'Hamburg', 'region' => 'Nord', 'match' => [ 'Hamburg' ],
-			'intro' => 'Hamburg lebt vom Wasser und vom Wind, und genau das macht Golf hier besonders. Die Plätze im Hamburger Umland liegen zwischen Knicks, Wiesen und alten Alleen, viele nur eine kurze Fahrt vom Zentrum. Ob After-Work-Teamevent, Platzreife für die ganze Abteilung oder mehrtägiges Offsite: Wir organisieren euer Event im Norden von A bis Z.',
-			'reasons' => [ $reason( 'clock', 'Stadtnah & erreichbar', 'Die Plätze im Norden Hamburgs sind schnell erreichbar, ideal für ein Event nach Feierabend.' ), $team, $reason( 'castle', 'Offsite mit Übernachtung', 'Einige Anlagen verbinden Tagung, Golf und Hotel an einem Ort, perfekt für Strategie-Tage.' ), $local ],
-			'faqs' => [ $faq( 'Welche Golfplätze in Hamburg kann ich für ein Firmenevent buchen?', 'Im Hamburger Raum arbeiten wir mit ausgewählten Partnerplätzen. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $faq( 'Geht auch ein mehrtägiges Offsite mit Übernachtung?', 'Ja. Mehrere Anlagen verbinden Tagungsräume, Golf und Hotel an einem Ort, ideal für ein Strategie-Offsite. Wir planen Ablauf, Verpflegung und Golfprogramm gemeinsam mit euch.' ), $f_fast( 'Hamburg' ) ],
+			'intro' => 'Hamburg lebt vom Wasser und vom Wind, und genau das macht Golf hier besonders. Die Plätze im Hamburger Umland liegen zwischen Knicks, Wiesen und alten Alleen, viele nur eine kurze Fahrt vom Zentrum. Ob After-Work-Teamevent, Platzreife für die ganze Abteilung oder Workshop mit Golf-Ausklang: Wir organisieren euer Event im Norden von A bis Z.',
+			'reasons' => [ $reason( 'clock', 'Stadtnah & erreichbar', 'Die Plätze im Norden Hamburgs sind schnell erreichbar, ideal für ein Event nach Feierabend.' ), $team, $reason( 'castle', 'Workshop & Tagung', 'Einige Anlagen verbinden Konferenzraum, Clubterrasse und Golf an einem Ort, perfekt für Workshops und Strategie-Tage.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze in Hamburg kann ich für ein Firmenevent buchen?', 'Im Hamburger Raum arbeiten wir mit ausgewählten Partnerplätzen. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $faq( 'Geht auch ein Workshop oder eine mehrtägige Tagung mit Übernachtung?', 'Ja. Mehrere Anlagen verbinden Tagungsräume, Golf und Hotel an einem Ort. Wir planen Ablauf, Verpflegung und Golfprogramm gemeinsam mit euch, mehrtägig als individuelles Event.' ), $f_fast( 'Hamburg' ) ],
 		],
 		'koeln' => [
 			'name' => 'Köln', 'region' => 'West & Rheinland', 'match' => [ 'Köln' ],
@@ -74,9 +74,9 @@ function fge_get_cities(): array {
 		],
 		'tegernsee' => [
 			'name' => 'Tegernsee', 'region' => 'Oberbayern', 'match' => [ 'Tegernsee' ],
-			'intro' => 'Der Tegernsee ist eine der schönsten Kulissen für ein Firmenevent in Deutschland. Golf zwischen Bergen und See, dazu erstklassige Hotellerie, das macht die Region ideal für Incentives, Strategie-Offsites und besondere Kundenevents. Wir organisieren euer Event auf den Plätzen rund um den Tegernsee.',
+			'intro' => 'Der Tegernsee ist eine der schönsten Kulissen für ein Firmenevent in Deutschland. Golf zwischen Bergen und See, dazu erstklassige Hotellerie, das macht die Region ideal für Incentives, Strategie-Tage und besondere Kundenevents. Wir organisieren euer Event auf den Plätzen rund um den Tegernsee.',
 			'reasons' => [ $reason( 'mountain', 'Berg- und Seekulisse', 'Golf vor Alpenpanorama, ein Rahmen, der bei Kunden und Teams lange nachwirkt.' ), $team, $reason( 'castle', 'Incentive & Offsite', 'Beste Hotellerie vor Ort, perfekt für mehrtägige Incentives mit Übernachtung.' ), $local ],
-			'faqs' => [ $faq( 'Welche Golfplätze am Tegernsee kann ich für ein Firmenevent buchen?', 'In der Region Tegernsee arbeiten wir mit Partnerplätzen mit besonderer Kulisse. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $faq( 'Geht auch ein mehrtägiges Incentive mit Übernachtung?', 'Ja, gerade dafür ist die Region ideal. Wir verbinden Golf, Hotel, Rahmenprogramm und Verpflegung zu einem runden Offsite.' ), $f_anf, $f_fast( 'die Region Tegernsee' ) ],
+			'faqs' => [ $faq( 'Welche Golfplätze am Tegernsee kann ich für ein Firmenevent buchen?', 'In der Region Tegernsee arbeiten wir mit Partnerplätzen mit besonderer Kulisse. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $faq( 'Geht auch ein mehrtägiges Incentive mit Übernachtung?', 'Ja, gerade dafür ist die Region ideal. Wir verbinden Golf, Hotel, Rahmenprogramm und Verpflegung zu einem runden Erlebnis.' ), $f_anf, $f_fast( 'die Region Tegernsee' ) ],
 		],
 	];
 }

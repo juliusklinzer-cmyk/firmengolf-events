@@ -1371,7 +1371,9 @@ function fge_onboarding_icon_map(): array {
 		'dinner' => 'restaurant', 'bbq' => 'grill', 'drinks-flat' => 'drinks', 'coffee-break' => 'coffee',
 		// Event formats (canonical ids from event-formats.php)
 		'teamevent' => 'team-challenge', 'after_work_golf' => 'afterwork', 'schnupperkurs' => 'intro-golf', 'platzreife' => 'intro-golf',
-		'kundenevent' => 'kunden', 'gesundheitstag' => 'health', 'offsite' => 'offsite',
+		// Event-Typ 'workshop' (ersetzt 'offsite', 2026-08) erbt das 'meeting'-Glyph
+		// über den gleichnamigen Infrastruktur-Eintrag oben.
+		'kundenevent' => 'kunden', 'gesundheitstag' => 'health',
 		'networking' => 'networking', 'firmen_golfturnier' => 'turnier-18', 'nacht_event' => 'nacht-event',
 		'andere' => 'custom', 'sommerfest' => 'sommerfest', 'tagung' => 'meeting',
 		'firmenjubilaeum' => 'sommerfest', 'kickoff' => 'offsite', 'incentive' => 'offsite',

@@ -170,7 +170,9 @@ function fge_catalog_partner_formats(): array {
 		'networking'     => 'Networking',
 		'afterwork'      => 'After-Work Golf',
 		'sommerfest'     => 'Sommerfest',
-		'offsite'        => 'Offsite & Incentive',
+		// Key bleibt 'offsite' (gespeicherte Partner-Auswahlen!), Label folgt der
+		// Workshop-Umstellung 2026-08.
+		'offsite'        => 'Workshop & Incentive',
 		'gesundheitstag' => 'Gesundheitstag',
 		'charity'        => 'Charity-Event',
 		'nacht-event'    => 'Nacht-Event',

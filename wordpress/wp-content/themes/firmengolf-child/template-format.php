@@ -101,27 +101,55 @@ get_header();
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] ); ?>
 
-<?php /* Hero */ ?>
+<?php /* Hero mit direkten CTAs: Ads-Traffic soll ohne Umweg zu den Events bzw. zur Anfrage */ ?>
 <section class="ev-hero" aria-label="<?php echo esc_attr( $format['h1'] ); ?>">
-	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( 'golfplatz-panorama.jpg' ) ); ?>')">
+	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( $format['hero_img'] ?? 'golfplatz-panorama.jpg' ) ); ?>')">
 		<div class="ev-hero-scrim" aria-hidden="true"></div>
 		<div class="ev-hero-content">
 			<div class="ev-hero-eyebrow"><?php echo esc_html( $format['eyebrow'] ); ?></div>
 			<h1 class="ev-hero-title"><?php echo esc_html( $format['h1'] ); ?></h1>
 			<p class="ev-hero-sub"><?php echo esc_html( $format['lead'] ); ?></p>
+			<div class="ev-hero-ctas">
+				<a class="fg-btn-brand" href="#angebote">Passende Events ansehen</a>
+				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $ind_url ); ?>">Unverbindlich anfragen</a>
+			</div>
 		</div>
 	</div>
 </section>
 
-<?php /* Stats */ ?>
-<div class="trust-strip" aria-label="Auf einen Blick">
-	<div class="trust-inner">
-		<div class="trust-cell"><div class="trust-t">Deutschlandweit</div><div class="trust-b">Partnerplätze in eurer Region</div></div>
-		<div class="trust-cell"><div class="trust-t">1 Werktag</div><div class="trust-b">Antwort auf jede Anfrage</div></div>
-		<div class="trust-cell"><div class="trust-t">Ein Kontakt</div><div class="trust-b">Vom Erstkontakt bis nach dem Event</div></div>
-		<div class="trust-cell"><div class="trust-t">Eine Rechnung</div><div class="trust-b">Sauber abgerechnet</div></div>
+<?php /* Quick-Facts: die vier Antworten, die Ads-Besucher zuerst suchen */ ?>
+<?php if ( ! empty( $format['facts'] ) ) : ?>
+<div class="fmt-facts" aria-label="<?php echo esc_attr( $f_name ); ?> auf einen Blick">
+	<div class="fmt-facts-inner">
+		<?php foreach ( $format['facts'] as $fact ) : ?>
+		<div class="fmt-fact"><div class="fmt-fact-k"><?php echo esc_html( $fact['k'] ); ?></div><div class="fmt-fact-v"><?php echo esc_html( $fact['v'] ); ?></div></div>
+		<?php endforeach; ?>
 	</div>
 </div>
+<?php endif; ?>
+
+<?php /* Passende Events zuerst: das schnellste Ergebnis für die Suchanfrage */ ?>
+<?php if ( ! empty( $format_events ) ) : ?>
+<section class="fg-grid-section" id="angebote" aria-label="<?php echo esc_attr( $f_name ); ?>-Angebote">
+	<div class="fg-grid-head">
+		<h2 class="fg-grid-title">Beliebte <?php echo esc_html( $f_name ); ?>-Angebote</h2>
+		<div class="fmt-city-chips">
+			<?php if ( function_exists( 'fge_citformat_is_valid' ) && function_exists( 'fge_get_cities' ) ) :
+				$fmt_cities = function_exists( 'fge_citformat_enabled_cities' ) ? fge_citformat_enabled_cities() : [];
+				$all_cities = fge_get_cities();
+				foreach ( $fmt_cities as $cslug ) : if ( ! fge_citformat_is_valid( $cslug, $slug ) ) continue; ?>
+				<a class="fg-chip" href="<?php echo esc_url( home_url( '/golf-events/' . $cslug . '/' . $slug . '/' ) ); ?>"><?php echo esc_html( $all_cities[ $cslug ]['name'] ?? ucfirst( $cslug ) ); ?></a>
+			<?php endforeach; endif; ?>
+			<a class="fg-chip" href="<?php echo esc_url( $events_url ); ?>">Alle ansehen</a>
+		</div>
+	</div>
+	<div class="fg-grid">
+		<?php foreach ( $format_events as $ev ) : ?>
+			<?php get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $ev->ID ] ); ?>
+			<?php endforeach; ?>
+	</div>
+</section>
+<?php endif; ?>
 
 <?php /* Intro */ ?>
 <section class="mk-section" aria-label="Über <?php echo esc_attr( $f_name ); ?>">
@@ -131,6 +159,25 @@ get_header();
 		<p class="mk-sub" style="max-width:var(--width-prose);"><?php echo esc_html( $format['intro'] ); ?></p>
 	</div>
 </section>
+
+<?php /* So läuft euer Tag (config-getrieben, aktuell Teamevent) */ ?>
+<?php if ( ! empty( $format['flow'] ) ) : ?>
+<section class="mk-section mk-steps mk-band fmt-flow" aria-label="So läuft euer <?php echo esc_attr( $f_name ); ?>">
+	<div class="mk-section-head">
+		<div class="mk-eyebrow">So läuft euer Tag</div>
+		<h2 class="mk-h2">Vom Welcome bis zur Siegerehrung.</h2>
+	</div>
+	<div class="mk-steps-grid">
+		<?php foreach ( $format['flow'] as $i => $step ) : ?>
+		<div class="mk-step">
+			<div class="mk-step-n"><?php echo esc_html( str_pad( (string) ( $i + 1 ), 2, '0', STR_PAD_LEFT ) ); ?></div>
+			<h3 class="mk-step-t"><?php echo esc_html( $step['t'] ); ?></h3>
+			<p class="mk-step-b"><?php echo esc_html( $step['b'] ); ?></p>
+		</div>
+		<?php endforeach; ?>
+	</div>
+</section>
+<?php endif; ?>
 
 <?php /* Gründe */ ?>
 <?php if ( ! empty( $format['reasons'] ) ) : ?>
@@ -147,20 +194,15 @@ get_header();
 </section>
 <?php endif; ?>
 
-<?php /* Passende Events */ ?>
-<?php if ( ! empty( $format_events ) ) : ?>
-<section class="fg-grid-section" aria-label="<?php echo esc_attr( $f_name ); ?>-Angebote">
-	<div class="fg-grid-head">
-		<h2 class="fg-grid-title">Beliebte <?php echo esc_html( $f_name ); ?>-Angebote</h2>
-		<a class="fg-chip" href="<?php echo esc_url( $events_url ); ?>">Alle ansehen</a>
+<?php /* Trust */ ?>
+<div class="trust-strip" aria-label="Auf einen Blick">
+	<div class="trust-inner">
+		<div class="trust-cell"><div class="trust-t">Deutschlandweit</div><div class="trust-b">Partnerplätze in eurer Region</div></div>
+		<div class="trust-cell"><div class="trust-t">1 Werktag</div><div class="trust-b">Antwort auf jede Anfrage</div></div>
+		<div class="trust-cell"><div class="trust-t">Ein Kontakt</div><div class="trust-b">Vom Erstkontakt bis nach dem Event</div></div>
+		<div class="trust-cell"><div class="trust-t">Eine Rechnung</div><div class="trust-b">Sauber abgerechnet</div></div>
 	</div>
-	<div class="fg-grid">
-		<?php foreach ( $format_events as $ev ) : ?>
-			<?php get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $ev->ID ] ); ?>
-			<?php endforeach; ?>
-	</div>
-</section>
-<?php endif; ?>
+</div>
 
 <?php /* Optionale Cross-Promo (z. B. Platzreife → Firmengolf-Benefit) */ ?>
 <?php if ( ! empty( $format['promo'] ) ) : $fmt_promo = $format['promo']; ?>

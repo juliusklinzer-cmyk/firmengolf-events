@@ -12,7 +12,7 @@ function fge_get_event_formats(): array {
 			'platzreife'         => 'Platzreife',
 			'kundenevent'        => 'Kundenevent',
 			'gesundheitstag'     => 'Gesundheitstag',
-			'offsite'            => 'Offsite',
+			'workshop'           => 'Workshop',
 			'networking'         => 'Networking',
 			'firmen_golfturnier' => 'Firmen-Golfturnier',
 			'nacht_event'        => 'Nacht-Event',
@@ -130,7 +130,10 @@ function fge_get_event_format_legacy_map(): array {
 		'kurzspiel_challenge' => 'after_work_golf',
 		'9hole_turnier'       => 'firmen_golfturnier',
 		'18hole_turnier'      => 'firmen_golfturnier',
-		'offsite_mit_meeting' => 'offsite',
+		// Offsite als Standard-Typ abgeschafft (2026-08): Workshop übernimmt den Platz.
+		// Offsites/Incentives laufen weiter über individuelle Events.
+		'offsite'             => 'workshop',
+		'offsite_mit_meeting' => 'workshop',
 		'azubi_event'         => 'andere',
 		'individuelles_event' => 'andere',
 	];

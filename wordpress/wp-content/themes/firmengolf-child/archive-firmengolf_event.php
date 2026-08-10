@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // SEO: Title + Meta + OpenGraph für die Event-Übersicht (vor get_header, damit es greift).
 $arch_title = 'Firmenevents auf dem Golfplatz: alle Formate | Firmengolf';
-$arch_desc  = 'Alle Firmenevent-Formate auf einen Blick: Teamevents, Firmenturniere, Platzreife und Incentives auf Golfplätzen in ganz Deutschland. Nach Region und Gruppengröße filtern und anfragen.';
+$arch_desc  = 'Alle Firmenevent-Formate auf einen Blick: Teamevents, Firmenturniere, Platzreife und Workshops auf Golfplätzen in ganz Deutschland. Nach Region und Gruppengröße filtern und anfragen.';
 add_filter( 'pre_get_document_title', function () use ( $arch_title ) { return $arch_title; } );
 add_action( 'wp_head', function () use ( $arch_title, $arch_desc ) {
 	$GLOBALS['fge_seo_meta_done'] = true;

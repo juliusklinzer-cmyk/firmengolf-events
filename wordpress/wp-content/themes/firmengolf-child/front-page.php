@@ -424,12 +424,11 @@ $loc_paths = [
 				'img'     => 'golfer-trio-spaziergang.png',
 			],
 			[
-				'eyebrow' => 'Führungskräfte',
-				'title'   => 'Führungskräfte-Treffen mit Weitblick.',
-				'body'    => 'Strategie besprechen, wo der Kopf frei ist. Exklusiver Rahmen für kleine Runden.',
-				'url'     => $url_ind,
-				'cta'     => 'Individuell planen',
-				'img'     => 'buero-dachterrasse-panorama.jpg',
+				'eyebrow' => 'Workshop',
+				'title'   => 'Arbeiten, wo der Kopf frei ist.',
+				'body'    => 'Vormittags Workshop im Clubhaus, mittags Clubterrasse, zum Ausklang ein Golf-Grundlagenkurs.',
+				'url'     => add_query_arg( 'format', 'workshop', $url_events ),
+				'img'     => 'clubhaus-modern.jpg',
 			],
 			[
 				'eyebrow' => 'Firmenturnier',
