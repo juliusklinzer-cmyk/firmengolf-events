@@ -141,7 +141,7 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 
 get_header();
 ?>
-<div class="fge-page" id="fge-main" role="main" tabindex="-1">
+<div class="fge-page fmt-lp" id="fge-main" role="main" tabindex="-1">
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
 
@@ -163,6 +163,10 @@ get_header();
 				Teamevents, Firmenturniere, Platzreife und individuelle Events auf Partnerplätzen rund um
 				<?php echo esc_html( $city_name ); ?>. Eine Anfrage, ein Ansprechpartner, eine Rechnung.
 			</p>
+			<div class="ev-hero-ctas">
+				<a class="fg-btn-brand" href="#angebote">Passende Events ansehen</a>
+				<a class="fg-btn-ghost-light" href="<?php echo esc_url( add_query_arg( 'anfrage', 'quick', $ind_url ) ); ?>">Unverbindlich anfragen</a>
+			</div>
 		</div>
 	</div>
 </section>
@@ -214,7 +218,7 @@ get_header();
 
 <?php /* Events in der Region: dieselben Karten wie auf der Events-Seite */ ?>
 <?php if ( ! empty( $city_events ) ) : ?>
-<section class="mk-section" aria-label="Events rund um <?php echo esc_attr( $city_name ); ?>">
+<section class="mk-section" id="angebote" aria-label="Events rund um <?php echo esc_attr( $city_name ); ?>">
 	<div class="mk-section-head between">
 		<div>
 			<div class="mk-eyebrow">Events · <?php echo esc_html( $city_name ); ?></div>
@@ -318,6 +322,8 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 <?php endif; ?>
 
 <?php /* FAQ */ ?>
+<?php get_template_part( 'template-parts/fge-wz-promo' ); ?>
+
 <section class="mk-section faq-section" aria-label="FAQ">
 	<div class="faq-shell">
 		<div class="faq-aside">
@@ -344,7 +350,7 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für <?php echo esc_html( $city_name ); ?>?</div>
 		<h2 class="mk-cta-h">Lasst uns euer Event in <?php echo esc_html( $city_name ); ?> <em class="mk-italic">planen</em>.</h2>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $ind_url ) ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
+			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( add_query_arg( 'anfrage', 'quick', $ind_url ) ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
 			<?php foreach ( $cities as $cslug => $c ) : if ( $cslug === $slug ) continue; ?>
 				<a class="mk-cta-mail" href="<?php echo esc_url( home_url( '/golf-events/' . $cslug . '/' ) ); ?>"><?php echo esc_html( $c['name'] ); ?> →</a>
 			<?php endforeach; ?>

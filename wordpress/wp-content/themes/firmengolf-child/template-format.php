@@ -22,18 +22,10 @@ $events_url = (string) get_post_type_archive_link( 'firmengolf_event' );
 $ind_url    = ( $p = get_page_by_path( 'individuelle-events' ) ) ? (string) get_permalink( $p->ID ) : home_url( '/individuelle-events/' );
 // CTAs springen direkt in den Anfrage-Wizard (Deep-Link, s. fge-individual.js):
 // quick = 30-Sekunden-Schnellanfrage, mit dem Format der Seite als vorgewähltem Anlass.
-$fmt_occasions = [
-	'teamevent'       => 'Teamevent',
-	'golfturnier'     => 'Firmenturnier',
-	'platzreife'      => 'Platzreife',
-	'workshop'        => 'Workshop',
-	'kundenevent'     => 'Kundenevent',
-	'incentive'       => 'Incentive-Reise',
-	'after-work-golf' => 'After-Work Golf',
-];
+$fmt_occ       = function_exists( 'fge_format_occasion' ) ? fge_format_occasion( $slug ) : '';
 $anfrage_args  = [ 'anfrage' => 'quick' ];
-if ( isset( $fmt_occasions[ $slug ] ) ) {
-	$anfrage_args['anlass'] = $fmt_occasions[ $slug ];
+if ( '' !== $fmt_occ ) {
+	$anfrage_args['anlass'] = $fmt_occ;
 }
 $anfrage_quick = add_query_arg( $anfrage_args, $ind_url );
 $faqs       = $format['faqs'] ?? [];
@@ -185,8 +177,8 @@ get_header();
 <?php if ( ! empty( $format['flow'] ) ) : ?>
 <section class="mk-section mk-band fmt-flow5" aria-label="So läuft euer <?php echo esc_attr( $f_name ); ?>">
 	<div class="mk-section-head">
-		<div class="mk-eyebrow">So könnte dein Tag ablaufen</div>
-		<h2 class="mk-h2">Vom Welcome bis zum Ausklang.</h2>
+		<div class="mk-eyebrow">So könnte euer Event ablaufen</div>
+		<h2 class="mk-h2"><?php echo esc_html( $format['flow_h'] ?? 'Vom Welcome bis zum Ausklang.' ); ?></h2>
 	</div>
 	<div class="fmt-flow5-row">
 		<?php foreach ( $format['flow'] as $i => $step ) : ?>
@@ -276,6 +268,9 @@ get_header();
 	</div>
 </section>
 <?php endif; ?>
+
+<?php /* Wertschätzungs-Teaser (auf allen Formatseiten, Julius 2026-08-11) */ ?>
+<?php get_template_part( 'template-parts/fge-wz-promo' ); ?>
 
 <?php /* FAQ */ ?>
 <?php if ( ! empty( $faqs ) ) : ?>

@@ -146,7 +146,7 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 
 get_header();
 ?>
-<div class="fge-page" id="fge-main" role="main" tabindex="-1">
+<div class="fge-page fmt-lp" id="fge-main" role="main" tabindex="-1">
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
 
@@ -214,6 +214,8 @@ get_header();
 <?php endif; ?>
 
 <?php /* FAQ */ ?>
+<?php get_template_part( 'template-parts/fge-wz-promo' ); ?>
+
 <section class="mk-section faq-section" aria-label="FAQ">
 	<div class="faq-shell">
 		<div class="faq-aside">
@@ -262,7 +264,7 @@ get_header();
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für <?php echo esc_html( $city_name ); ?>?</div>
 		<h2 class="mk-cta-h"><?php echo esc_html( $eyebrow ); ?> <em class="mk-italic">planen</em>.</h2>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $ind_url ) ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
+			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( add_query_arg( array_filter( [ 'anfrage' => 'quick', 'anlass' => function_exists( 'fge_format_occasion' ) ? fge_format_occasion( (string) get_query_var( 'fge_format' ) ) : '' ] ), $ind_url ) ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
 			<a class="mk-cta-mail" href="<?php echo esc_url( $city_url ); ?>">Alle Formate in <?php echo esc_html( $city_name ); ?> →</a>
 		</div>
 	</div>
