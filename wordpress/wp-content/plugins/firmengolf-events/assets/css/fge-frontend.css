@@ -2598,7 +2598,7 @@ a.mk-hero-floating:focus-visible { outline: 2px solid var(--paper-100); outline-
 
 
 /* "Warum Golfplatz" — Location-Value + zwei Wege (Redesign 2026-07-19 v3, Politur v4) */
-.home-loc { background: linear-gradient(180deg, var(--paper-50) 0%, var(--paper-100) 44%); color: var(--ink-900); padding: 104px 24px; }
+.home-loc { background: var(--paper-100); color: var(--ink-900); padding: 104px 24px; } /* einheitlich mit Hero+Fakten bis zum Steps-Band (Julius, 2026-08-10) */
 .home-loc-inner { max-width: 1280px; margin: 0 auto; }
 .home-loc-head { max-width: 780px; }
 .home-loc-head .mk-eyebrow { color: var(--fairway-700); margin-bottom: 16px; }
@@ -5788,3 +5788,38 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 .blog-nl-pick-t { font-size: 14.5px; font-weight: 500; color: var(--ink-900); line-height: 1.35; }
 .blog-wz-promo { margin-top: 0; }
 @media (max-width: 900px) { .blog-nl-panel { grid-template-columns: 1fr; padding: 32px 24px; } }
+
+/* ── Wizard-Politur (Feedback 2026-08-10): Logo-Topbar ohne Streifen, Stepper,
+   Anlass-Kacheln, Erfolgsscreen mit Julius-Karte + Konfetti ── */
+.rw-top, .rw-foot { background: var(--paper-100); }
+.rw-top { border-bottom: 1px solid var(--ink-100); }
+.rw-top-brand img { height: 24px; width: auto; display: block; }
+.rw-stepper { display: inline-flex; align-items: center; gap: 18px; border: 1px solid var(--ink-200); border-radius: 999px; padding: 8px 10px; background: var(--paper-50); }
+.rw-overlay .rw-step-btn { width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--ink-200); background: var(--paper-100); color: var(--ink-900); font-size: 22px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+.rw-overlay .rw-step-btn:hover { background: var(--paper-200); border-color: var(--ink-300); }
+.rw-stepper-mid { display: flex; flex-direction: column; align-items: center; min-width: 96px; }
+.rw-overlay .rw-stepper-val { width: 96px; border: 0; background: transparent; text-align: center; font-size: 24px; font-weight: 600; color: var(--ink-900); font-family: inherit; -moz-appearance: textfield; appearance: textfield; }
+.rw-overlay .rw-stepper-val::-webkit-outer-spin-button, .rw-overlay .rw-stepper-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.rw-overlay .rw-stepper-val:focus { outline: none; }
+.rw-stepper-unit { font-size: 12px; font-weight: 500; color: var(--ink-500); letter-spacing: .04em; }
+.rw-occ-cards { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 760px) { .rw-occ-cards { grid-template-columns: repeat(2, 1fr); } }
+.rw-care { display: flex; gap: 16px; align-items: flex-start; background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: 20px; padding: 20px 22px; margin-top: 24px; text-align: left; }
+.rw-care-img { width: 64px; height: 64px; border-radius: 999px; object-fit: cover; flex: none; }
+.rw-care-k { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-400); }
+.rw-care-n { font-size: 17px; font-weight: 600; color: var(--ink-900); margin-top: 3px; }
+.rw-care-r { font-size: 13.5px; color: var(--ink-500); }
+.rw-care-mail { display: inline-block; font-size: 14px; font-weight: 500; color: var(--fairway-700); margin-top: 6px; text-decoration: underline; text-underline-offset: 3px; }
+.rw-care-note { font-size: 13.5px; color: var(--ink-600); margin-top: 6px; }
+.rw-receipt-h { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-400); margin-top: 28px; margin-bottom: 10px; text-align: left; }
+.rw-success { position: relative; }
+.rw-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.ind-consent a { color: var(--fairway-700); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── Blog: Hero-Bild statt Top-Story-Karte + Mosaik-Grid (Feedback 2026-08-10) ── */
+.blog-hero-photo { height: 320px; border-radius: 24px; background-size: cover; background-position: center; box-shadow: var(--shadow-sm); }
+.blog-card-lg { grid-column: span 2; }
+.blog-card-lg .blog-card-photo { height: 260px; }
+.blog-card-lg .blog-card-h { font-size: 24px; line-height: 1.15; }
+.blog-card-photo { position: relative; }
+@media (max-width: 760px) { .blog-card-lg { grid-column: span 1; } .blog-card-lg .blog-card-photo { height: 200px; } .blog-hero-photo { height: 220px; } }

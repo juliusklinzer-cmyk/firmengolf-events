@@ -277,7 +277,36 @@
 			return f;
 		}
 
-		var MIN_DATE = (function () { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
+		// Frühester Wunschtermin: eine Woche ab heute (Julius, 2026-08-10). Kurzfristigere
+		// Anfragen sind unrealistisch und erzeugen nur Absagen.
+		var MIN_DATE = (function () { var d = new Date(); d.setDate(d.getDate() + 7); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
+
+		// Anlass-Auswahl: Reihenfolge + Icon-Kacheln (einheitlich mit den Leistungs-Kacheln).
+		var OCCASIONS = ['Teamevent', 'After-Work Golf', 'Workshop', 'Firmenturnier', 'Offsite', 'Kundenevent', 'Nacht-Event', 'Etwas anderes'];
+		var OCC_ICONS = {
+			'Teamevent': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+			'After-Work Golf': '<path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 4v3M5.2 7.2l1.6 1.6M18.8 7.2l-1.6 1.6M3 12h2M19 12h2"/>',
+			'Workshop': '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 20h8"/><path d="M7 8h10M7 11h6"/>',
+			'Firmenturnier': '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
+			'Offsite': '<path d="M3 20l6.5-11 4 6 2-3L21 20z"/>',
+			'Kundenevent': '<circle cx="12" cy="8" r="3"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/><path d="M16 4h4v4"/>',
+			'Nacht-Event': '<path d="M20 13.5A8 8 0 1 1 10.5 4a6.2 6.2 0 0 0 9.5 9.5z"/>',
+			'Etwas anderes': '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'
+		};
+		function occCards() {
+			return '<div class="ind-cards rw-occ-cards">' + OCCASIONS.map(function (o) {
+				var on = S.form.occasion === o;
+				return '<button type="button" class="ind-card' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
+					+ '" data-chip="occasion" data-val="' + esc(o) + '"><span class="ind-card-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + OCC_ICONS[o] + '</svg></span><span class="ind-card-l">' + esc(o) + '</span></button>';
+			}).join('') + '</div>';
+		}
+
+		// Teilnehmerzahl als Stepper: Minus links, Zahl mittig, Plus rechts.
+		function sizeStepper() {
+			return '<div class="rw-stepper"><button type="button" class="rw-step-btn" data-act="size-dec" aria-label="Weniger Personen">−</button>'
+				+ '<div class="rw-stepper-mid"><input class="rw-stepper-val" data-field="size" type="number" min="1" max="999" inputmode="numeric" value="' + esc(S.form.size) + '" aria-label="Teilnehmerzahl"><span class="rw-stepper-unit">Personen</span></div>'
+				+ '<button type="button" class="rw-step-btn" data-act="size-inc" aria-label="Mehr Personen">+</button></div>';
+		}
 		function chips(field, options) {
 			return '<div class="ind-chip-group">' + options.map(function (o) {
 				var on = S.form[field] === o;
@@ -310,7 +339,8 @@
 			var shortcut = (S.phase === 'form' && S.mode !== 'success') ?
 				'<button class="rw-shortcut" data-act="toggle-mode">'
 				+ (S.mode === 'quick' ? 'Ausführliche Anfrage' : 'Schnell-Anfrage in 30 Sek.') + '</button>' : '';
-			return '<header class="rw-top"><div class="rw-top-brand"><span class="rw-top-title">Event anfragen</span></div>'
+			var logo = CFG.logo ? '<img src="' + esc(CFG.logo) + '" alt="Firmengolf" height="24">' : '';
+			return '<header class="rw-top"><div class="rw-top-brand">' + logo + '<span class="rw-top-title">Event anfragen</span></div>'
 				+ '<div class="rw-top-actions">' + shortcut
 				+ '<button class="rw-close" data-act="close" aria-label="Schließen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></header>';
 		}
@@ -344,14 +374,13 @@
 				+ '<h2 class="rw-h">Das Wichtigste, wir klären den Rest persönlich.</h2>'
 				+ '<p class="rw-lead">Du willst nicht durch alle Schritte? Völlig okay. Gib uns die Basics, wir melden uns mit Rückfragen.</p>'
 				+ '<div class="rw-form">'
-				+ '<div class="rw-field">' + label('Anlass', true) + chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Workshop', 'Offsite', 'Nacht-Event', 'Etwas anderes']) + '</div>'
-				+ '<div class="rw-field">' + label('Teilnehmerzahl')
-				+ '<div class="ind-input-row">' + input('size', 'type="number" min="1" max="999" inputmode="numeric"', '40') + '<span class="ind-input-suffix">Personen</span></div></div>'
+				+ '<div class="rw-field">' + label('Anlass', true) + occCards() + '</div>'
+				+ '<div class="rw-field">' + label('Teilnehmerzahl') + sizeStepper() + '</div>'
 				+ '<div class="rw-row"><div class="rw-field">' + label('Vor- & Nachname', true) + input('firstName', 'required', 'Vor- und Nachname') + '</div>'
 				+ '<div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div></div>'
 				+ '<div class="rw-field">' + label('Firma') + input('company', '', 'Musterfirma GmbH') + '</div>'
 				+ '<div class="rw-field">' + label('Was habt ihr vor?') + '<textarea class="fg-input" data-field="notes" rows="3" placeholder="Ein, zwei Sätze zu Ziel, Stimmung, Wünschen.">' + esc(S.form.notes) + '</textarea></div>'
-				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '><span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß Datenschutzerklärung zu.</span></label>'
+				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '><span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label>'
 				+ '</div></div>' + photoPanel() + '</div></div>'
 				+ '<div class="rw-foot"><div class="rw-nav"><button class="rw-btn-text" data-act="to-full">Lieber ausführlich anfragen</button>'
 				+ '<button class="rw-btn-primary" data-act="submit">Anfrage senden ' + ICO_SEND + '</button></div></div>';
@@ -364,7 +393,7 @@
 					+ '<h2 class="rw-h">Worum geht\'s bei eurem Event?</h2>'
 					+ '<p class="rw-lead">Wähl den nächstpassenden Anlass, wir verfeinern alles im Gespräch.</p>'
 					+ '<div class="rw-form"><div class="rw-field">'
-					+ chips('occasion', ['Sommerfest', 'Firmenturnier', 'Teamevent', 'Kundenevent', 'Workshop', 'Offsite', 'Incentive-Reise', 'Charity-Event', 'Gesundheitstag', 'Nacht-Event', 'Etwas anderes'])
+					+ occCards()
 					+ '</div>'
 					/* „Was wollt ihr erreichen?" nur bei „Etwas anderes" (Julius, 2026-07-06) */
 					+ (S.form.occasion === 'Etwas anderes'
@@ -377,8 +406,7 @@
 				return '<div class="rw-eyebrow">Schritt 2 · ' + FULL_STEPS[1] + '</div>'
 					+ '<h2 class="rw-h">Wann, wo und mit wie vielen?</h2>'
 					+ '<p class="rw-lead">Genau müssen die Angaben jetzt nicht sein.</p>'
-					+ '<div class="rw-form"><div class="rw-field">' + label('Teilnehmerzahl', true)
-					+ '<div class="ind-input-row">' + input('size', 'type="number" min="1" max="999" inputmode="numeric"', '40') + '<span class="ind-input-suffix">Personen</span></div></div>'
+					+ '<div class="rw-form"><div class="rw-field">' + label('Teilnehmerzahl', true) + sizeStepper() + '</div>'
 					+ '<div class="rw-field">' + label('Bis zu drei Wunschtermine', false, 'Optional')
 					+ '<div class="rw-row rw-row-3">' + input('date1', 'type="date" min="' + MIN_DATE + '"', '1. Termin') + input('date2', 'type="date" min="' + MIN_DATE + '"', '2. Termin') + input('date3', 'type="date" min="' + MIN_DATE + '"', '3. Termin') + '</div></div>'
 					+ '<div class="rw-field">' + label('Wie flexibel beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
@@ -429,7 +457,7 @@
 				+ '<div class="rw-field">' + label('Telefon') + input('phone', 'type="tel"', '+49 …') + '</div></div>'
 				+ '<div class="rw-field">' + label('Bevorzugte Kontaktart') + chips('contactPref', ['E-Mail', 'Telefon', 'Egal']) + '</div>'
 				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '>'
-				+ '<span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß Datenschutzerklärung zu.</span></label></div>';
+				+ '<span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label></div>';
 		}
 
 		function screenFull() {
@@ -453,16 +481,43 @@
 			return '<div class="rw-stage"><div class="rw-success">'
 				+ '<div class="fg-success-mark"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'
 				+ '<div class="mk-eyebrow">Anfrage eingegangen</div>'
-				+ '<h2 class="rw-success-h">Danke, deine Anfrage ist angekommen.</h2>'
-				+ '<p class="rw-success-p">Deine Anfrage liegt jetzt bei uns. Bei einem individuellen Event übernehmen wir die Planung persönlich und stimmen den passenden Golfplatz für dich ab. Eine Bestätigung ist gerade per Mail an <strong>' + esc(resp.email || S.form.email || 'k. A.') + '</strong> unterwegs.</p>'
+				+ '<h2 class="rw-success-h">Danke, deine Anfrage ist eingegangen.</h2>'
+				+ '<p class="rw-success-p">Eine Bestätigung ist gerade per Mail an <strong>' + esc(resp.email || S.form.email || 'k. A.') + '</strong> unterwegs.</p>'
+				+ '<div class="rw-care"><img class="rw-care-img" src="' + esc(CFG.juliusImg || '') + '" alt="' + esc(CONTACT.name) + '" width="64" height="64">'
+				+ '<div class="rw-care-txt"><div class="rw-care-k">Um deine Anfrage kümmert sich</div>'
+				+ '<div class="rw-care-n">' + esc(CONTACT.name) + '</div>'
+				+ '<div class="rw-care-r">' + esc(CONTACT.role) + ' · Firmengolf</div>'
+				+ (CFG.juliusEmail ? '<a class="rw-care-mail" href="mailto:' + esc(CFG.juliusEmail) + '">' + esc(CFG.juliusEmail) + '</a>' : '')
+				+ '<div class="rw-care-note">Wir melden uns innerhalb von 24 Stunden persönlich bei dir.</div></div></div>'
+				+ '<div class="rw-receipt-h">Zusammenfassung deiner Anfrage</div>'
 				+ '<div class="rw-receipt">'
-				+ '<div><span>Anlass</span><span>' + esc(resp.occasion || S.form.occasion) + '</span></div>'
+				+ '<div><span>Anlass</span><span>' + esc(resp.occasion || S.form.occasion || 'k. A.') + '</span></div>'
 				+ '<div><span>Gruppe</span><span>' + esc((resp.size || S.form.size) + ' Personen') + '</span></div>'
+				+ (S.form.date1 ? '<div><span>Wunschtermin</span><span>' + esc(S.form.date1 + (S.form.date2 ? ' +' : '')) + '</span></div>' : '')
+				+ (S.form.region ? '<div><span>Region</span><span>' + esc(S.form.region) + '</span></div>' : '')
+				+ (S.mode === 'full' && S.form.budget ? '<div><span>Budget-Rahmen</span><span>' + esc(S.form.budget) + '</span></div>' : '')
 				+ '<div><span>Unternehmen</span><span>' + esc(resp.company || S.form.company || 'k. A.') + '</span></div>'
 				+ '<div><span>Status</span><span><span class="ob-pill-status">In Bearbeitung</span></span></div>'
 				+ '<div><span>Vorgangs-Nr.</span><span class="mono">' + esc(resp.ref || '') + '</span></div></div>'
 				+ '<div class="rw-success-ctas"><button class="rw-btn-primary" data-act="close">Schließen</button></div>'
+				+ '<div class="rw-confetti" aria-hidden="true"></div>'
 				+ '</div></div>';
+		}
+
+		// Kurze Erfolgs-Animation: Konfetti von oben (nutzt die wz-conf-Keyframes).
+		function dropConfetti() {
+			var host = overlay && overlay.querySelector('.rw-confetti');
+			if (!host || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+			var colors = ['#4279D1', '#C9B488', '#009E78', '#D2693E', '#6E9BDD', '#D8B26A'];
+			for (var i = 0; i < 60; i++) {
+				var c = document.createElement('span');
+				c.className = 'wz-conf';
+				c.style.left = (Math.random() * 100) + '%';
+				c.style.background = colors[i % colors.length];
+				c.style.animationDelay = (Math.random() * 0.9) + 's';
+				c.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+				host.appendChild(c);
+			}
 		}
 
 		var lastScreenKey = '';
@@ -481,6 +536,7 @@
 				lastScreenKey = key;
 				var h = overlay.querySelector('.rw-h, .rw-success-h');
 				if (h) { h.setAttribute('tabindex', '-1'); h.focus(); }
+				if (S.phase === 'success') { dropConfetti(); }
 			}
 		}
 
@@ -582,6 +638,13 @@
 			if (act === 'toggle-mode') { collect(); S.mode = (S.mode === 'quick' ? 'full' : 'quick'); S.step = 0; render(); return; }
 			if (act === 'to-full') { collect(); S.mode = 'full'; S.step = 0; render(); return; }
 			if (act === 'intro-start') { S.phase = 'form'; render(); return; }
+			if (act === 'size-dec' || act === 'size-inc') {
+				collect();
+				var cur = parseInt(S.form.size, 10) || 20;
+				S.form.size = String(Math.max(1, Math.min(999, cur + (act === 'size-inc' ? 5 : -5))));
+				render();
+				return;
+			}
 			if (act === 'back') { collect(); if (S.step === 0) { close(); } else { S.step--; render(); } return; }
 			if (act === 'next') {
 				collect();

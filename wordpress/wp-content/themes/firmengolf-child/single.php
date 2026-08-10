@@ -166,7 +166,7 @@ get_header();
 				$r_read = max( 1, (int) ceil( $r_wc / 200 ) );
 				$r_date = get_the_date( 'd. M Y', $rid );
 				$r_by   = function_exists( 'fge_blog_author' ) ? fge_blog_author( $rid ) : null;
-				$r_auth = $r_by ? $r_by['name'] : get_the_author_meta( 'display_name', (int) $rp->post_author );
+				$r_auth = $r_by ? strtok( $r_by['name'], ' ' ) : get_the_author_meta( 'display_name', (int) $rp->post_author );
 			?>
 			<article class="blog-card">
 				<a href="<?php echo esc_url( $r_url ); ?>" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1;">
