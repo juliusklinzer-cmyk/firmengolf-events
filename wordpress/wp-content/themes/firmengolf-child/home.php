@@ -268,23 +268,7 @@ get_header();
 					<button type="submit" class="fg-btn-brand">Abonnieren</button>
 				</form>
 			</div>
-			<div class="blog-nl-picks">
-				<div class="blog-nl-picks-h">Meistgelesen zuletzt</div>
-				<?php
-				$nl_posts = get_posts( [ 'post_type' => 'post', 'posts_per_page' => 2, 'post_status' => 'publish', 'orderby' => 'date', 'order' => 'DESC' ] );
-				foreach ( $nl_posts as $nlp ) :
-					$nl_cats = get_the_category( $nlp->ID );
-					$nl_cat  = $nl_cats[0] ?? null;
-				?>
-				<a class="blog-nl-pick" href="<?php echo esc_url( get_permalink( $nlp->ID ) ); ?>">
-					<span class="blog-nl-pick-img" style="background-image:url('<?php echo esc_url( has_post_thumbnail( $nlp->ID ) ? get_the_post_thumbnail_url( $nlp->ID, 'thumbnail' ) : fge_get_placeholder_image_url( 'golfplatz-rasen-qualitaet.jpg' ) ); ?>')"></span>
-					<span class="blog-nl-pick-txt">
-						<?php if ( $nl_cat ) : ?><span class="blog-tag"><?php echo esc_html( $nl_cat->name ); ?></span><?php endif; ?>
-						<span class="blog-nl-pick-t"><?php echo esc_html( get_the_title( $nlp->ID ) ); ?></span>
-					</span>
-				</a>
-				<?php endforeach; ?>
-			</div>
+			<div class="blog-nl-img" role="img" aria-label="Golfplatz im Abendlicht" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( 'golfplatz-huegel-abendlicht.jpg' ) ); ?>')"></div>
 		</div>
 
 		<div class="fmt-promo blog-wz-promo">

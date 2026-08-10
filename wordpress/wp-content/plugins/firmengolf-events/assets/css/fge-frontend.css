@@ -5641,8 +5641,7 @@ body { background-color: var(--paper-300); }
 .fmt-fstep-b { font-size: 14px; line-height: 1.5; color: var(--ink-600); }
 @media (max-width: 1100px) { .fmt-flow5-row { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .fmt-flow5-row { grid-template-columns: 1fr; } }
-/* CTA sitzt bündig auf dem Footer: kein weißer Zwischenraum am Seitenende. */
-.fge-page .mk-cta:last-of-type { margin-bottom: 0; }
+
 .mk-cta + .fg-footer, .mk-cta + footer .fg-footer { margin-top: 0; }
 
 /* ── Wertschätzungspaket (/wertschaetzung/): Paket-Karten + Bestellformular ── */
@@ -5695,7 +5694,7 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 .fmt-lp .fmt-keyfacts { padding: 44px 24px 0; }
 .fmt-lp .fmt-keyfacts .city-reasons { max-width: none; padding: 0; }
 .fmt-lp .city-reason-t { font-size: 17px; font-weight: 600; }
-.fmt-lp .mk-cta { max-width: calc(var(--width-page) - 48px); margin: 0 auto 56px; border-radius: 32px; padding: 88px 32px; }
+.fmt-lp .mk-cta { max-width: calc(var(--width-page) - 48px); margin: 0 auto 104px; border-radius: 32px; padding: 88px 32px; }
 .fmt-lp .mk-cta-ctas .mk-cta-mail { background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22); border-radius: 999px; padding: 11px 20px; text-decoration: none; color: rgba(251,250,246,.88); display: inline-flex; align-items: center; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
 .fmt-lp .mk-cta-ctas .mk-cta-mail:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.4); color: var(--paper-100); }
 @media (max-width: 760px) { .fmt-lp .mk-cta { margin: 0 16px 40px; padding: 64px 22px; } }
@@ -5828,3 +5827,6 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 @media (max-width: 760px) { .blog-card-lg { grid-column: span 1; } .blog-card-lg .blog-card-photo { height: 200px; } .blog-hero-photo { height: 220px; } }
 /* Stepper kompakt statt volle Feldbreite (Flex-Column streckte ihn). */
 .rw-field .rw-stepper { align-self: flex-start; }
+/* Newsletter-Panel: Bild statt Beitrags-Liste (Julius, 2026-08-10). */
+.blog-nl-img { border-radius: 20px; background-size: cover; background-position: center; min-height: 240px; height: 100%; }
+@media (max-width: 900px) { .blog-nl-img { min-height: 180px; } }
