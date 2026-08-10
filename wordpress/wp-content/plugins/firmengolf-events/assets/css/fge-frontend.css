@@ -5830,3 +5830,6 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 /* Newsletter-Panel: Bild statt Beitrags-Liste (Julius, 2026-08-10). */
 .blog-nl-img { border-radius: 20px; background-size: cover; background-position: center; min-height: 240px; height: 100%; }
 @media (max-width: 900px) { .blog-nl-img { min-height: 180px; } }
+/* Programmatischer Fokus auf der Schritt-Überschrift (A11y) soll keinen
+   sichtbaren Rahmen malen (Julius sah einen schwarzen Rahmen um die H2). */
+.rw-overlay .rw-h:focus, .rw-overlay .rw-success-h:focus { outline: none; }
