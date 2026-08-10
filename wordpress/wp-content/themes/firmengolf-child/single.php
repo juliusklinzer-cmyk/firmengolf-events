@@ -9,10 +9,10 @@ $title      = get_the_title();
 $content    = get_the_content();
 $excerpt    = get_the_excerpt();
 $date       = get_the_date( 'd. F Y' );
-$author_id  = (int) get_the_author_meta( 'ID' );
-$author     = get_the_author_meta( 'display_name', $author_id );
-$author_bio = get_the_author_meta( 'description', $author_id );
-$author_img = get_avatar_url( $author_id, [ 'size' => 88 ] );
+$byline     = function_exists( 'fge_blog_author' ) ? fge_blog_author( $post_id ) : null;
+$author     = $byline ? $byline['name'] : get_the_author_meta( 'display_name' );
+$author_bio = $byline ? $byline['role'] : '';
+$author_img = $byline ? $byline['img'] : get_avatar_url( (int) get_the_author_meta( 'ID' ), [ 'size' => 88 ] );
 $cats       = get_the_category( $post_id );
 $cat        = $cats[0] ?? null;
 $thumb      = has_post_thumbnail( $post_id )
@@ -165,7 +165,8 @@ get_header();
 				$r_wc   = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $rid ) ) );
 				$r_read = max( 1, (int) ceil( $r_wc / 200 ) );
 				$r_date = get_the_date( 'd. M Y', $rid );
-				$r_auth = get_the_author_meta( 'display_name', (int) $rp->post_author );
+				$r_by   = function_exists( 'fge_blog_author' ) ? fge_blog_author( $rid ) : null;
+				$r_auth = $r_by ? $r_by['name'] : get_the_author_meta( 'display_name', (int) $rp->post_author );
 			?>
 			<article class="blog-card">
 				<a href="<?php echo esc_url( $r_url ); ?>" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1;">

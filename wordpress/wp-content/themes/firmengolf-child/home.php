@@ -109,70 +109,56 @@ get_header();
 	})();
 	</script>
 
-	<?php /* ── Page Hero ── */ ?>
-	<div class="page-hero">
-		<div class="page-hero-inner">
-			<div class="mk-eyebrow">Magazin</div>
-			<h1 class="page-hero-title blog-hero">
-				Aus dem <em class="mk-italic">Fairway</em>, unser Magazin.
-			</h1>
-			<p class="page-hero-sub">
-				Praxisleitfäden, Inspiration für eure nächste Veranstaltung und Gespräche mit
-				Menschen, die täglich auf den Plätzen unterwegs sind.
-			</p>
+	<?php /* ── Page Hero: Text links, kompakte Top-Story rechts (Julius, 2026-08-10) ── */ ?>
+	<div class="page-hero blog-hero-sec">
+		<div class="page-hero-inner blog-hero-grid">
+			<div class="blog-hero-copy">
+				<div class="mk-eyebrow">Magazin</div>
+				<h1 class="page-hero-title blog-hero">
+					Aus dem <em class="mk-italic">Fairway</em>, unser Magazin.
+				</h1>
+				<p class="page-hero-sub">
+					Praxisleitfäden, Inspiration für eure nächste Veranstaltung und Gespräche mit
+					Menschen, die täglich auf den Plätzen unterwegs sind.
+				</p>
+			</div>
+			<?php if ( $featured_post ) :
+				$featured_id    = $featured_post->ID;
+				$featured_thumb = has_post_thumbnail( $featured_id )
+					? get_the_post_thumbnail_url( $featured_id, 'large' )
+					: fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' );
+				$featured_cats  = get_the_category( $featured_id );
+				$featured_cat   = $featured_cats[0] ?? null;
+				$featured_wc    = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $featured_id ) ) );
+				$featured_read  = max( 1, (int) ceil( $featured_wc / 200 ) );
+				$featured_by    = function_exists( 'fge_blog_author' ) ? fge_blog_author( $featured_id ) : null;
+			?>
+			<a href="<?php echo esc_url( get_permalink( $featured_id ) ); ?>" class="blog-topcard">
+				<div class="blog-topcard-photo" style="background-image:url('<?php echo esc_url( $featured_thumb ); ?>')">
+					<span class="blog-top-tag">Top-Story</span>
+				</div>
+				<div class="blog-topcard-body">
+					<div class="blog-meta-row">
+						<?php if ( $featured_cat ) : ?>
+							<span class="blog-tag"><?php echo esc_html( $featured_cat->name ); ?></span>
+							<span>·</span>
+						<?php endif; ?>
+						<span><?php echo esc_html( get_the_date( 'd. M Y', $featured_id ) ); ?></span>
+						<span>·</span>
+						<span><?php echo esc_html( (string) $featured_read ); ?> Min.</span>
+					</div>
+					<h2 class="blog-topcard-h"><?php echo esc_html( get_the_title( $featured_id ) ); ?></h2>
+					<?php if ( $featured_by ) : ?>
+					<span class="blog-card-author">
+						<img class="blog-card-avatar" src="<?php echo esc_url( $featured_by['img'] ); ?>" alt="<?php echo esc_attr( $featured_by['name'] ); ?>" width="24" height="24" loading="lazy">
+						<span class="blog-author-n"><?php echo esc_html( $featured_by['name'] ); ?></span>
+					</span>
+					<?php endif; ?>
+				</div>
+			</a>
+			<?php endif; ?>
 		</div>
 	</div>
-
-	<?php /* ── Featured Article ── */ ?>
-	<?php if ( $featured_post ) :
-		$featured_id    = $featured_post->ID;
-		$featured_url   = get_permalink( $featured_id );
-		$featured_thumb = has_post_thumbnail( $featured_id )
-			? get_the_post_thumbnail_url( $featured_id, 'large' )
-			: fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' );
-		$featured_cats  = get_the_category( $featured_id );
-		$featured_cat   = $featured_cats[0] ?? null;
-		$featured_date  = get_the_date( 'd. F Y', $featured_id );
-		$featured_exc   = wp_trim_words( get_the_excerpt( $featured_id ), 30 );
-		$featured_wc    = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $featured_id ) ) );
-		$featured_read  = max( 1, (int) ceil( $featured_wc / 200 ) );
-		$featured_auth_id = (int) $featured_post->post_author;
-		$featured_author  = get_the_author_meta( 'display_name', $featured_auth_id );
-		$featured_bio     = get_the_author_meta( 'description', $featured_auth_id );
-	?>
-	<div class="blog-featured-sec">
-		<a href="<?php echo esc_url( $featured_url ); ?>" class="blog-featured">
-			<div class="blog-featured-photo" style="background-image:url('<?php echo esc_url( $featured_thumb ); ?>')">
-				<span class="blog-top-tag">Top-Story</span>
-			</div>
-			<div class="blog-featured-body">
-				<div class="blog-meta-row">
-					<?php if ( $featured_cat ) : ?>
-						<span class="blog-tag"><?php echo esc_html( $featured_cat->name ); ?></span>
-						<span>·</span>
-					<?php endif; ?>
-					<span><?php echo esc_html( $featured_date ); ?></span>
-					<span>·</span>
-					<span><?php echo esc_html( (string) $featured_read ); ?> Min. Lesezeit</span>
-				</div>
-				<h2 class="blog-featured-h"><?php echo esc_html( get_the_title( $featured_id ) ); ?></h2>
-				<p class="blog-featured-x"><?php echo esc_html( $featured_exc ); ?></p>
-				<?php if ( $featured_author ) : ?>
-					<div class="blog-author">
-						<img class="blog-author-img" src="<?php echo esc_url( get_avatar_url( $featured_auth_id, [ 'size' => 72 ] ) ); ?>" alt="<?php echo esc_attr( $featured_author ); ?>" width="36" height="36" loading="lazy">
-						<div class="blog-author-txt">
-							<span class="blog-author-n"><?php echo esc_html( $featured_author ); ?></span>
-							<span class="blog-author-r"><?php echo esc_html( $featured_bio ?: 'Autor' ); ?></span>
-						</div>
-					</div>
-				<?php endif; ?>
-				<div class="blog-featured-cta">
-					<span class="fg-btn-ghost">Artikel lesen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				</div>
-			</div>
-		</a>
-	</div>
-	<?php endif; ?>
 
 	<?php /* ── Category Filter Chips ── */ ?>
 	<?php if ( $categories ) : ?>
@@ -193,7 +179,7 @@ get_header();
 	<?php /* ── Blog Grid ── */ ?>
 	<section class="mk-section" style="padding-top:48px;padding-bottom:80px;">
 		<?php if ( $remaining_posts ) : ?>
-			<div class="blog-grid">
+			<div class="blog-grid blog-grid-4">
 				<?php foreach ( $remaining_posts as $p ) :
 					$pid   = $p->ID;
 					$p_url = get_permalink( $pid );
@@ -206,7 +192,7 @@ get_header();
 					$p_wc   = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $pid ) ) );
 					$p_read = max( 1, (int) ceil( $p_wc / 200 ) );
 					$p_exc  = wp_trim_words( get_the_excerpt( $pid ), 20 );
-					$p_auth = get_the_author_meta( 'display_name', (int) $p->post_author );
+					$p_by   = function_exists( 'fge_blog_author' ) ? fge_blog_author( $pid ) : null;
 				?>
 				<article class="blog-card">
 					<a href="<?php echo esc_url( $p_url ); ?>" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1;">
@@ -222,10 +208,12 @@ get_header();
 							<h3 class="blog-card-h"><?php echo esc_html( get_the_title( $pid ) ); ?></h3>
 							<p class="blog-card-x"><?php echo esc_html( $p_exc ); ?></p>
 							<div class="blog-card-foot">
+								<?php if ( $p_by ) : ?>
 								<span class="blog-card-author">
-									<img class="blog-card-avatar" src="<?php echo esc_url( get_avatar_url( (int) $p->post_author, [ 'size' => 48 ] ) ); ?>" alt="<?php echo esc_attr( $p_auth ); ?>" width="24" height="24" loading="lazy">
-									<span class="blog-author-n"><?php echo esc_html( $p_auth ); ?></span>
+									<img class="blog-card-avatar" src="<?php echo esc_url( $p_by['img'] ); ?>" alt="<?php echo esc_attr( $p_by['name'] ); ?>" width="24" height="24" loading="lazy">
+									<span class="blog-author-n"><?php echo esc_html( $p_by['name'] ); ?></span>
 								</span>
+								<?php endif; ?>
 								<span class="blog-author-r"><?php echo esc_html( $p_date ); ?></span>
 							</div>
 						</div>
@@ -265,10 +253,10 @@ get_header();
 		<?php endif; ?>
 	</section>
 
-	<?php /* ── Newsletter ── */ ?>
-	<div class="blog-newsletter">
-		<div class="blog-newsletter-inner">
-			<div>
+	<?php /* ── Seitenabschluss: Newsletter-Panel + Wertschätzungs-CTA (Julius, 2026-08-10) ── */ ?>
+	<section class="mk-section blog-endcaps" aria-label="Newsletter und Wertschätzungspaket">
+		<div class="blog-nl-panel">
+			<div class="blog-nl-copy">
 				<div class="mk-eyebrow">Newsletter</div>
 				<h2 class="blog-newsletter-h">Einmal im Monat, kurze Mail, gute Stories.</h2>
 				<p class="muted">Lesetipps, neue Formate und Termine. Kein Spam, kein Vertrieb.</p>
@@ -278,26 +266,34 @@ get_header();
 					<button type="submit" class="fg-btn-brand">Abonnieren</button>
 				</form>
 			</div>
-			<div class="blog-newsletter-right" style="display:flex;flex-direction:column;gap:20px;">
+			<div class="blog-nl-picks">
+				<div class="blog-nl-picks-h">Meistgelesen zuletzt</div>
 				<?php
 				$nl_posts = get_posts( [ 'post_type' => 'post', 'posts_per_page' => 2, 'post_status' => 'publish', 'orderby' => 'date', 'order' => 'DESC' ] );
 				foreach ( $nl_posts as $nlp ) :
 					$nl_cats = get_the_category( $nlp->ID );
 					$nl_cat  = $nl_cats[0] ?? null;
 				?>
-				<a href="<?php echo esc_url( get_permalink( $nlp->ID ) ); ?>" style="display:flex;gap:14px;text-decoration:none;align-items:flex-start;">
-					<div style="width:56px;height:56px;border-radius:8px;background-size:cover;background-position:center;flex:none;background-image:url('<?php echo esc_url( has_post_thumbnail( $nlp->ID ) ? get_the_post_thumbnail_url( $nlp->ID, 'thumbnail' ) : fge_get_placeholder_image_url( 'golfplatz-rasen-qualitaet.jpg' ) ); ?>')"></div>
-					<div>
-						<?php if ( $nl_cat ) : ?>
-							<span class="blog-tag" style="margin-bottom:4px;display:inline-block;"><?php echo esc_html( $nl_cat->name ); ?></span>
-						<?php endif; ?>
-						<div style="font-size:14px;font-weight:500;color:var(--ink-900);line-height:1.3;"><?php echo esc_html( get_the_title( $nlp->ID ) ); ?></div>
-					</div>
+				<a class="blog-nl-pick" href="<?php echo esc_url( get_permalink( $nlp->ID ) ); ?>">
+					<span class="blog-nl-pick-img" style="background-image:url('<?php echo esc_url( has_post_thumbnail( $nlp->ID ) ? get_the_post_thumbnail_url( $nlp->ID, 'thumbnail' ) : fge_get_placeholder_image_url( 'golfplatz-rasen-qualitaet.jpg' ) ); ?>')"></span>
+					<span class="blog-nl-pick-txt">
+						<?php if ( $nl_cat ) : ?><span class="blog-tag"><?php echo esc_html( $nl_cat->name ); ?></span><?php endif; ?>
+						<span class="blog-nl-pick-t"><?php echo esc_html( get_the_title( $nlp->ID ) ); ?></span>
+					</span>
 				</a>
 				<?php endforeach; ?>
 			</div>
 		</div>
-	</div>
+
+		<div class="fmt-promo blog-wz-promo">
+			<div>
+				<div class="mk-eyebrow">Mitarbeiter auszeichnen</div>
+				<h2 class="mk-h2" style="font-size:30px;">Wertschätzung, die bleibt.</h2>
+				<p class="mk-sub">Belohne besondere Leistungen mit einem persönlichen Golf-Erlebnis: vom Grundlagenkurs mit persönlichem Empfang bis zur Platzreife als exklusiver Networking-Kurs.</p>
+			</div>
+			<a class="fg-btn-brand" href="<?php echo esc_url( home_url( '/wertschaetzung/' ) ); ?>">Wertschätzungspaket entdecken →</a>
+		</div>
+	</section>
 
 	<?php get_template_part( 'template-parts/fge-footer' ); ?>
 

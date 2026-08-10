@@ -34,10 +34,12 @@ function fge_wz_packages(): array {
 		'excellence' => [
 			'name'  => 'Platzreife Excellence',
 			'price' => '450 € netto pro Person',
-			'sub'   => 'Die Platzreife als exklusives Netzwerk-Event mit den Besten der Besten.',
+			'flag'  => 'Networking-Kurs',
+			'sub'   => 'Die Platzreife als exklusiver Networking-Kurs mit den Besten der Besten aus Unternehmen deiner Region.',
 			'items' => [
 				'Persönliche, namentliche Einladung im Auftrag eures Unternehmens',
-				'Mehrtägiger Platzreifekurs, exklusiv mit anderen ausgezeichneten Talenten',
+				'Mehrtägiger Platzreifekurs, exklusiv mit ausgezeichneten Talenten aus Unternehmen der Region',
+				'Spannende neue Kontakte inklusive: gemeinsam lernen, spielen und austauschen',
 				'Platzreife-Turnier und Theorieprüfung, die Platzreife bleibt für immer',
 				'Danach: vergünstigte Jahresmitgliedschaft im austragenden Club',
 				'Golfplatz-Auswahl passend zum Wohnort, Termin frei wählbar',

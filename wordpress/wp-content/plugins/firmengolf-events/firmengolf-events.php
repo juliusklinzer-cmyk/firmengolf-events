@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.112' );
+define( 'FGE_VERSION', '1.9.113' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -29,6 +29,7 @@ require_once FGE_DIR . 'includes/event-pricing.php';
 require_once FGE_DIR . 'includes/event-formats.php';
 require_once FGE_DIR . 'includes/workshop-migration.php';
 require_once FGE_DIR . 'includes/wertschaetzung.php';
+require_once FGE_DIR . 'includes/blog-bylines.php';
 require_once FGE_DIR . 'includes/event-fields.php';
 require_once FGE_DIR . 'includes/partner-fields.php';
 require_once FGE_DIR . 'includes/request-fields.php';
