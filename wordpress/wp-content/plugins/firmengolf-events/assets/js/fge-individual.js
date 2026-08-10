@@ -294,10 +294,14 @@
 			'Etwas anderes': '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'
 		};
 		function occCards() {
-			return '<div class="ind-cards rw-occ-cards">' + OCCASIONS.map(function (o) {
+			// Preset-Anlässe außerhalb der Standardliste (z. B. Sommerfest von den
+			// Themen-Kacheln) als zusätzliche, gewählte Kachel zeigen.
+			var list = OCCASIONS.slice();
+			if (S.form.occasion && list.indexOf(S.form.occasion) < 0) list.push(S.form.occasion);
+			return '<div class="ind-cards rw-occ-cards">' + list.map(function (o) {
 				var on = S.form.occasion === o;
 				return '<button type="button" class="ind-card' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
-					+ '" data-chip="occasion" data-val="' + esc(o) + '"><span class="ind-card-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + OCC_ICONS[o] + '</svg></span><span class="ind-card-l">' + esc(o) + '</span></button>';
+					+ '" data-chip="occasion" data-val="' + esc(o) + '"><span class="ind-card-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (OCC_ICONS[o] || OCC_ICONS['Etwas anderes']) + '</svg></span><span class="ind-card-l">' + esc(o) + '</span></button>';
 			}).join('') + '</div>';
 		}
 

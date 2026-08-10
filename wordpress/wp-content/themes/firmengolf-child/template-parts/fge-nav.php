@@ -74,7 +74,8 @@ $mtabs = [
 		</div>
 		<div class="fg-nav-end">
 			<a class="fg-nav-link" href="<?php echo esc_url( $url_portal ); ?>">Partnerportal</a>
-			<a class="fg-nav-cta" href="<?php echo esc_url( $url_anfrage ); ?>">
+			<?php /* Direkt in die 30-Sekunden-Schnellanfrage, nicht auf die Landingpage (Julius, 2026-08-10). */ ?>
+			<a class="fg-nav-cta" href="<?php echo esc_url( add_query_arg( 'anfrage', 'quick', $url_anfrage ) ); ?>">
 				Jetzt anfragen
 				<span class="fg-arrow">
 					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>

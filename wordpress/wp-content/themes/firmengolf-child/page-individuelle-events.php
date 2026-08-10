@@ -112,7 +112,7 @@ $faqs = [
 ];
 
 $nacht_preset = wp_json_encode( [
-	'occasion' => 'Sommerfest',
+	'occasion' => 'Nacht-Event',
 	'notes'    => 'Interesse am Nacht-Event (Flutlicht).',
 	'services' => [ 'Flutlicht / Nacht-Event', 'DJ', 'Bar & Drinks' ],
 ] );
@@ -303,7 +303,8 @@ get_header();
 				<div class="ind-night-point"><span class="ind-night-n">02</span>Live-DJ, Licht &amp; Sound</div>
 				<div class="ind-night-point"><span class="ind-night-n">03</span>Food, Drinks &amp; Bar bis tief in die Nacht</div>
 			</div>
-			<button type="button" class="fg-btn-ink lg ind-night-cta" data-rw-open="full" data-rw-preset="<?php echo esc_attr( $nacht_preset ); ?>">
+			<?php /* data-rw-intro: erst die Begrüßung „Toll, ihr plant ein Nacht-Event", dann der Anlass-Schritt. */ ?>
+			<button type="button" class="fg-btn-ink lg ind-night-cta" data-rw-open="full" data-rw-intro data-rw-preset="<?php echo esc_attr( $nacht_preset ); ?>">
 				Nacht-Event anfragen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 			</button>
 		</div>
