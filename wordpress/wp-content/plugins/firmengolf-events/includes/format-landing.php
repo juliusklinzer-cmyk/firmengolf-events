@@ -243,13 +243,23 @@ add_filter( 'query_vars', static function ( array $vars ): array {
  * Gilt für /firmenevent/schnupperkurs/ UND /golf-events/<stadt>/schnupperkurs/.
  */
 add_action( 'template_redirect', static function () {
-	if ( get_query_var( 'fge_format' ) !== 'schnupperkurs' ) {
+	// Alias-Slugs → kanonische Format-Seite (naheliegende URL-Varianten, Julius 2026-08-11).
+	$aliases = [
+		'schnupperkurs' => 'teamevent',
+		'after-work'    => 'after-work-golf',
+		'afterwork'     => 'after-work-golf',
+		'turnier'       => 'golfturnier',
+		'offsite'       => 'workshop',
+	];
+	$slug = (string) get_query_var( 'fge_format' );
+	if ( ! isset( $aliases[ $slug ] ) ) {
 		return;
 	}
-	$city = (string) get_query_var( 'fge_city' );
-	$url  = $city !== ''
-		? home_url( '/golf-events/' . rawurlencode( $city ) . '/teamevent/' )
-		: home_url( '/firmenevent/teamevent/' );
+	$target = $aliases[ $slug ];
+	$city   = (string) get_query_var( 'fge_city' );
+	$url    = $city !== ''
+		? home_url( '/golf-events/' . rawurlencode( $city ) . '/' . $target . '/' )
+		: home_url( '/firmenevent/' . $target . '/' );
 	wp_safe_redirect( $url, 301 );
 	exit;
 }, 1 );
