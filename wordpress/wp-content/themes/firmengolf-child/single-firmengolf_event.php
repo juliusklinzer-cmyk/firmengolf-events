@@ -1271,6 +1271,11 @@ get_header();
 			.then(function (r) { return r.json(); })
 			.then(function (data) {
 				if (data.success) {
+					window.dataLayer = window.dataLayer || [];
+					window.dataLayer.push({ event: 'event_anfrage' });
+					<?php if ( function_exists( 'fge_gads_send_to' ) && fge_gads_send_to() ) : ?>
+					if (window.gtag) { gtag('event', 'conversion', { send_to: '<?php echo esc_js( fge_gads_send_to() ); ?>' }); }
+					<?php endif; ?>
 					setText('fg-receipt-date',  fmtDate(val('fg-date-1')) || 'k. A.');
 					setText('fg-receipt-group', val('fg-group-size') || 'k. A.');
 					setText('fg-receipt-ref',   (data.data && data.data.ref) || 'k. A.');

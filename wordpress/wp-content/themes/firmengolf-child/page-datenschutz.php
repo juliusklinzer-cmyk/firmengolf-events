@@ -128,12 +128,22 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG.
 		</p>
 
-		<h2>11. Google Analytics</h2>
+		<h2>11. Google Analytics &amp; Google Ads</h2>
 		<p>
 			Wir nutzen Google Analytics 4 zur pseudonymen, statistischen Auswertung der Websitenutzung (Google
-			Ireland Ltd. / Google LLC, USA), ausschließlich nach Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO,
-			§ 25 Abs. 1 TDDDG). Dabei werden Cookies gesetzt und Nutzungsdaten ggf. in die USA übertragen
-			(Safeguards wie oben). Es besteht ein Auftragsverarbeitungsvertrag.
+			Ireland Ltd. / Google LLC, USA). Dabei kommt der Google Consent Mode v2 zum Einsatz: Ohne Ihre
+			Einwilligung werden keine Cookies gesetzt und keine nutzerbezogenen Messdaten verarbeitet; es können
+			lediglich cookielose, aggregierte Signale an Google übermittelt werden. Erst nach Ihrer Einwilligung
+			(Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG) werden Cookies gesetzt und Nutzungsdaten ggf. in die
+			USA übertragen (Safeguards wie oben). Es besteht ein Auftragsverarbeitungsvertrag.
+		</p>
+		<p>
+			Zusätzlich setzen wir Google Ads Conversion-Tracking ein, um den Erfolg unserer Werbeanzeigen zu
+			messen (Google Ireland Ltd. / Google LLC, USA). Auch hierfür gilt der Consent Mode v2: Ohne Ihre
+			Einwilligung in die Kategorie „Marketing" werden keine Cookies gesetzt und keine nutzerbezogenen
+			Daten verarbeitet. Nach Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG) wird beim
+			Absenden einer Anfrage eine Conversion an Google gemeldet; dabei können Cookies gesetzt und Daten in
+			die USA übertragen werden (Safeguards wie oben).
 		</p>
 
 		<h2>12. Newsletter &amp; E-Mail-Marketing (Kit)</h2>

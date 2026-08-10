@@ -530,7 +530,12 @@
 				.then(function (r) { return r.json(); })
 				.then(function (j) {
 					S.sending = false;
-					if (j && j.success) { S.phase = 'success'; render(j.data); }
+					if (j && j.success) {
+						window.dataLayer = window.dataLayer || [];
+						window.dataLayer.push({ event: 'event_anfrage' });
+						if (window.gtag && CFG.adsConv) { gtag('event', 'conversion', { send_to: CFG.adsConv }); }
+						S.phase = 'success'; render(j.data);
+					}
 					else { alert((j && j.data && j.data.message) || 'Anfrage konnte nicht gesendet werden.'); if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
 				})
 				.catch(function () {

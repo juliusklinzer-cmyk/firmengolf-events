@@ -330,6 +330,8 @@ add_action( 'wp_enqueue_scripts', function() {
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'fge_general_request' ),
 			'ft'      => function_exists( 'fge_form_trap_token' ) ? fge_form_trap_token() : '',
+			// Google-Ads-Conversion (send_to) für den Anfrage-Success; leer = kein Call.
+			'adsConv' => function_exists( 'fge_gads_send_to' ) ? fge_gads_send_to() : '',
 			// Budget-Rechner-Config nur auf der Individuelle-Events-Seite; sonst null (Wizard läuft trotzdem).
 			'bc'      => ( is_page( 'individuelle-events' ) && function_exists( 'fge_bc_config' ) ) ? fge_bc_config() : null,
 			// Golfplatz-Namen für den optionalen „Konkreter Platz"-Dropdown.
@@ -343,6 +345,17 @@ add_action( 'wp_enqueue_scripts', function() {
 // Banner mit gleichwertigem „Ablehnen" (DSGVO/TTDSG). Konfig als JSON ins Frontend.
 function fge_klaro_config(): array {
 	$icon = '<svg viewBox="0 0 24 24" fill="none" stroke="#4279D1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 1 0 9.8 12 3.4 3.4 0 0 1-4.3-4.3A3.4 3.4 0 0 1 12.3 5.4 2 2 0 0 1 12 2z"/><circle cx="9.5" cy="10" r="1" fill="#4279D1" stroke="none"/><circle cx="14.5" cy="14" r="1" fill="#4279D1" stroke="none"/><circle cx="9.5" cy="15" r="1" fill="#4279D1" stroke="none"/></svg>';
+	$services = [
+		[ 'name' => 'wordpress',       'title' => 'WordPress (technisch notwendig)', 'purposes' => [ 'functional' ],     'required' => true,  'default' => true ],
+		[ 'name' => 'googleanalytics', 'title' => 'Google Analytics',                 'purposes' => [ 'statistics' ],     'default'  => false, 'cookies' => [ '/^_ga.*/', '/^_gid$/' ] ],
+		[ 'name' => 'googlemaps',      'title' => 'Google Maps',                      'purposes' => [ 'external-media' ], 'default'  => false ],
+		[ 'name' => 'hubspotmeetings', 'title' => 'HubSpot Terminkalender',           'purposes' => [ 'external-media' ], 'default'  => false ],
+		[ 'name' => 'hubspotcta',      'title' => 'HubSpot CTA / Tracking',           'purposes' => [ 'marketing' ],      'default'  => false ],
+		[ 'name' => 'kitnewsletter',   'title' => 'Newsletter (Kit)',                 'purposes' => [ 'marketing' ],      'default'  => false ],
+	];
+	if ( fge_gads_id() ) {
+		$services[] = [ 'name' => 'googleads', 'title' => 'Google Ads', 'purposes' => [ 'marketing' ], 'default' => false, 'cookies' => [ '/^_gcl.*/' ] ];
+	}
 	$notice = '<span class="fge-cc-head">' . $icon . 'Diese Webseite verwendet Cookies</span>'
 		. '<span class="fge-cc-body">Wir verwenden Cookies und ähnliche Technologien, um die Nutzung unserer Website zu analysieren, Funktionen anzubieten und Inhalte wie Karten, Videos, unseren Terminkalender oder Newsletter-Formulare einzubinden. Manche Dienste übertragen dabei Daten an Anbieter wie Google oder HubSpot. Du entscheidest selbst, was geladen wird, und kannst deine Wahl jederzeit über „Cookie-Einstellungen" im Footer ändern.</span>';
 
@@ -397,17 +410,33 @@ function fge_klaro_config(): array {
 				'hubspotmeetings'  => [ 'title' => 'HubSpot Terminkalender', 'description' => 'Eingebetteter Terminbuchungs-Kalender von HubSpot. Setzt Cookies und überträgt Daten an HubSpot.' ],
 				'hubspotcta'       => [ 'title' => 'HubSpot CTA / Tracking', 'description' => 'Marketing- und CTA-Elemente von HubSpot inkl. Nutzungs-Tracking.' ],
 				'kitnewsletter'    => [ 'title' => 'Newsletter (Kit)', 'description' => 'Anmeldeformular unseres Newsletter-Anbieters Kit (ehem. ConvertKit). Setzt Cookies und überträgt Daten an Kit.' ],
+				'googleads'        => [ 'title' => 'Google Ads', 'description' => 'Conversion-Messung für unsere Google-Werbekampagnen. Setzt Cookies und überträgt Daten an Google.' ],
 			],
 		],
-		'services'               => [
-			[ 'name' => 'wordpress',       'title' => 'WordPress (technisch notwendig)', 'purposes' => [ 'functional' ],     'required' => true,  'default' => true ],
-			[ 'name' => 'googleanalytics', 'title' => 'Google Analytics',                 'purposes' => [ 'statistics' ],     'default'  => false, 'cookies' => [ '/^_ga.*/', '/^_gid$/' ] ],
-			[ 'name' => 'googlemaps',      'title' => 'Google Maps',                      'purposes' => [ 'external-media' ], 'default'  => false ],
-			[ 'name' => 'hubspotmeetings', 'title' => 'HubSpot Terminkalender',           'purposes' => [ 'external-media' ], 'default'  => false ],
-			[ 'name' => 'hubspotcta',      'title' => 'HubSpot CTA / Tracking',           'purposes' => [ 'marketing' ],      'default'  => false ],
-			[ 'name' => 'kitnewsletter',   'title' => 'Newsletter (Kit)',                 'purposes' => [ 'marketing' ],      'default'  => false ],
-		],
+		'services'               => $services,
 	];
+}
+
+// Google Ads (Kampagnenstart 2026-08, Konto 496-529-6905). Die IDs stehen ohnehin
+// öffentlich im HTML, daher hier im Code statt in wp-config; wp-config-Konstanten
+// hätten Vorrang (if !defined).
+if ( ! defined( 'FGE_GADS_ID' ) ) {
+	define( 'FGE_GADS_ID', 'AW-18381979281' );
+}
+if ( ! defined( 'FGE_GADS_CONVERSION_LABEL' ) ) {
+	define( 'FGE_GADS_CONVERSION_LABEL', 'NOwpCMrfnt8cEJH9mr1E' );
+}
+
+// Google-Ads-Conversion-ID (AW-…): Konstante FGE_GADS_ID oder Option fge_gads_id.
+// Solange leer, existiert weder der Klaro-Dienst „Google Ads" noch ein Ads-Tag.
+function fge_gads_id(): string {
+	return defined( 'FGE_GADS_ID' ) ? (string) FGE_GADS_ID : (string) get_option( 'fge_gads_id', '' );
+}
+
+// „send_to"-Wert fürs Conversion-Event (AW-ID/Label), leer wenn unvollständig.
+function fge_gads_send_to(): string {
+	$label = defined( 'FGE_GADS_CONVERSION_LABEL' ) ? (string) FGE_GADS_CONVERSION_LABEL : '';
+	return ( fge_gads_id() && $label ) ? fge_gads_id() . '/' . $label : '';
 }
 
 add_action( 'wp_enqueue_scripts', function () {
@@ -422,6 +451,11 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_add_inline_style( 'fge-klaro-custom', '.klaro{--green1:#4279D1;--green2:#3768C0;}' );
 	wp_enqueue_script( 'fge-klaro', $base . 'klaro.js', [], $cver, true );
 	wp_add_inline_script( 'fge-klaro', 'window.klaroConfig = ' . wp_json_encode( fge_klaro_config() ) . ';', 'before' );
+	// Consent Mode v2: Klaro-Entscheidungen (Save/Accept/Decline/Widerruf) sofort als
+	// gtag consent-update nachziehen. Fällt ein Signal von granted auf denied zurück,
+	// werden die zugehörigen Google-Cookies (_ga*, _gcl*) gelöscht. Pollt auf window.klaro,
+	// weil Inline-'after'-Skripte vor dem defer-Klaro laufen.
+	wp_add_inline_script( 'fge-klaro', "(function(){function clear(stats,ads){var host=location.hostname.replace(/^www\\./,'');document.cookie.split(';').forEach(function(c){var n=c.split('=')[0].trim();if(!((stats&&/^_ga/.test(n))||(ads&&/^_gcl/.test(n))))return;['','; domain=.'+host,'; domain='+location.hostname].forEach(function(d){document.cookie=n+'=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'+d;});});}var prev=null;function apply(consents){if(!window.gtag||!window.fgeConsentSignals)return;var sig=window.fgeConsentSignals(consents||{});gtag('consent','update',sig);if(prev){clear(prev.analytics_storage==='granted'&&sig.analytics_storage==='denied',prev.ad_storage==='granted'&&sig.ad_storage==='denied');}prev=sig;}function boot(){if(!window.klaro||!window.klaro.getManager){setTimeout(boot,200);return;}var m=window.klaro.getManager();m.watch({update:function(mgr,evt){if('saveConsents'===evt||'applyConsents'===evt){apply(mgr.consents);}}});if(m.confirmed){apply(m.consents);}}boot();})();", 'after' );
 	// A11y/Agentic: Klaro-Cookie-Dialog bekommt einen barrierefreien Namen (role=dialog war ohne Name).
 	wp_add_inline_script( 'fge-klaro', "(function(){function n(){var d=document.getElementById('klaro-cookie-notice')||document.querySelector('.cookie-modal-notice[role=dialog],.cookie-notice[role=dialog]');if(!d)return false;if(!d.getAttribute('aria-label')){d.removeAttribute('aria-labelledby');d.setAttribute('aria-label','Cookie-Hinweis');}return true;}if(n())return;var m=new MutationObserver(function(){if(n())m.disconnect();});var s=function(){m.observe(document.body,{childList:true,subtree:true});};if(document.body){s();}else{document.addEventListener('DOMContentLoaded',s);}})();", 'after' );
 } );
@@ -480,17 +514,43 @@ add_action( 'init', function () {
 	add_filter( 'emoji_svg_url', '__return_false' );
 } );
 
-// Google Analytics 4 – nur wenn Mess-ID gesetzt (Konstante FGE_GA4_ID oder Option fge_ga4_id).
-// Klaro-verwaltet: lädt erst nach Einwilligung in „Statistik". Bis dahin inaktiv.
+// ── Google Consent Mode v2 (1.9.107) ─────────────────────────────────────────
+// Default-Denied ganz früh im <head>, vor allen Google-Skripten. Eine gespeicherte
+// Klaro-Entscheidung (fge_consent-Cookie) wird sofort wieder als consent-update
+// angewendet, noch vor DOMContentLoaded. Laufende Änderungen (Banner-Save,
+// Widerruf) meldet der Klaro-Watcher (siehe Enqueue oben) nach.
+// Signal-Mapping: Statistik→analytics_storage, Marketing→ad_*, Notwendig→functionality_storage.
 add_action( 'wp_head', function () {
-	$ga = defined( 'FGE_GA4_ID' ) ? FGE_GA4_ID : (string) get_option( 'fge_ga4_id', '' );
-	if ( ! $ga ) {
+	$marketing = [];
+	foreach ( fge_klaro_config()['services'] as $s ) {
+		if ( in_array( 'marketing', $s['purposes'], true ) ) {
+			$marketing[] = $s['name'];
+		}
+	}
+	echo '<script>'
+		. 'window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}'
+		. 'gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",functionality_storage:"denied",security_storage:"granted",wait_for_update:500});'
+		. 'window.fgeConsentSignals=function(c){var g=function(b){return b?"granted":"denied"};var mkt=' . wp_json_encode( $marketing ) . '.some(function(n){return !!c[n]});'
+		. 'return {ad_storage:g(mkt),ad_user_data:g(mkt),ad_personalization:g(mkt),analytics_storage:g(!!c.googleanalytics),functionality_storage:g(!!c.wordpress)};};'
+		. '(function(){var m=document.cookie.match(/(?:^|;\s*)fge_consent=([^;]*)/);if(!m)return;try{gtag("consent","update",window.fgeConsentSignals(JSON.parse(decodeURIComponent(m[1]))));}catch(e){}})();'
+		. '</script>' . "\n";
+}, 0 );
+
+// Google Tag (gtag.js): GA4 und, sobald AW-ID gesetzt, Google Ads. Lädt seit
+// Consent Mode v2 IMMER ungated; was gemessen bzw. gespeichert wird, steuern
+// ausschließlich die Consent-Signale (Default denied, siehe Prio-0-Block).
+add_action( 'wp_head', function () {
+	$ga  = defined( 'FGE_GA4_ID' ) ? FGE_GA4_ID : (string) get_option( 'fge_ga4_id', '' );
+	$ids = array_values( array_filter( [ $ga, fge_gads_id() ] ) );
+	if ( ! $ids ) {
 		return;
 	}
-	echo '<script type="text/plain" data-type="application/javascript" data-name="googleanalytics" data-src="https://www.googletagmanager.com/gtag/js?id=' . esc_attr( $ga ) . '"></script>' . "\n";
-	echo '<script type="text/plain" data-type="application/javascript" data-name="googleanalytics">'
-		. 'window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config",' . wp_json_encode( $ga ) . ');'
-		. '</script>' . "\n";
+	echo '<script async src="https://www.googletagmanager.com/gtag/js?id=' . esc_attr( $ids[0] ) . '"></script>' . "\n";
+	$conf = 'gtag("js",new Date());';
+	foreach ( $ids as $id ) {
+		$conf .= 'gtag("config",' . wp_json_encode( $id ) . ');';
+	}
+	echo '<script>' . $conf . '</script>' . "\n";
 }, 20 );
 
 // Kommentare sitewide deaktiviert (Julius, 2026-07-27): Der Blog braucht keine
