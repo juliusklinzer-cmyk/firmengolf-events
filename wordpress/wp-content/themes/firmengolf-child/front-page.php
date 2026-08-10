@@ -81,7 +81,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 					Events entdecken
 					<span class="fg-arrow"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				</a>
-				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $url_ind ); ?>">
+				<a class="fg-btn-ghost-light" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $url_ind ) ); ?>">
 					Individuelles Event planen →
 				</a>
 			</div>
@@ -313,7 +313,7 @@ $loc_paths = [
 		];
 		foreach ( $steps as $step ) : ?>
 			<?php /* Ganze Karte klickbar zur 30-Sekunden-Anfrage (Julius, 2026-07-06) */ ?>
-			<a class="mk-step" href="<?php echo esc_url( $url_ind . '#anfrage' ); ?>">
+			<a class="mk-step" href="<?php echo esc_url( add_query_arg( 'anfrage', 'quick', $url_ind ) ); ?>">
 				<div class="mk-step-n"><?php echo esc_html( $step[0] ); ?></div>
 				<h3 class="mk-step-t"><?php echo esc_html( $step[1] ); ?></h3>
 				<p class="mk-step-b"><?php echo esc_html( $step[2] ); ?></p>
@@ -495,7 +495,7 @@ $loc_paths = [
 				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Ein Ansprechpartner, eine Rechnung</span></div>
 			</div>
 			<div class="home-ind-ctas">
-				<a class="fg-btn-cta" href="<?php echo esc_url( $url_ind ); ?>">
+				<a class="fg-btn-cta" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $url_ind ) ); ?>">
 					Event anfragen
 					<span class="fg-arrow"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				</a>
@@ -639,7 +639,7 @@ $loc_paths = [
 			Du beschreibst kurz, was du vorhast. Wir kümmern uns um den Rest.
 		</p>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $url_ind ); ?>"
+			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $url_ind ) ); ?>"
 			   style="background:var(--paper-100);color:var(--fairway-900)">
 				Event anfragen
 				<span class="fg-arrow" style="background:var(--fairway-200)"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>

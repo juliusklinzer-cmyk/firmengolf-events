@@ -33,22 +33,32 @@ function fge_get_event_format_pages(): array {
 			'lead'    => 'Ein gemeinsamer Tag auf dem Platz, der euer Team wirklich zusammenbringt, auch ohne Golferfahrung.',
 			'intro'   => 'Ein Golf-Teamevent holt euer Team raus aus dem Büro und rein ins Grüne. Anders als beim klassischen Teambuilding entsteht hier ganz nebenbei Nähe: gemeinsam üben, lachen, anfeuern. Ein Schnupper- und Grundlagenkurs ist immer dabei: Ein Golflehrer führt auch komplette Einsteigende sicher an, Schläger und Material werden gestellt. Wir stellen Platz, Ablauf und Verpflegung passend zu eurer Gruppe zusammen, deutschlandweit.',
 			'reasons' => [ $r_team, $reason( 'leaf', 'Wirkt nach', 'Bewegung, frische Luft und gemeinsame Erlebnisse statt Stuhlkreis, bleibt länger in Erinnerung als das nächste Meeting.' ), $reason( 'clock', 'Halber oder ganzer Tag', 'Vom kompakten Nachmittag bis zum vollen Eventtag, passend zu Kalender und Budget.' ), $r_one ],
-			'faqs'    => [ $f_anf, $faq( 'Wie groß darf das Team sein?', 'Von der kleinen Abteilung bis zu rund 80 Teilnehmenden ist alles möglich. Sag uns eure Gruppengröße, dann wählen wir Platz und Format passend aus.' ), $faq( 'Was kostet ein Golf-Teamevent?', 'Unsere Teamevents starten bei 56 € pro Person, inklusive Golflehrer, Leihschlägern, Platznutzung und Verpflegung im Clubhaus. Der genaue Preis hängt von Gruppe, Dauer und Extras ab, ihr bekommt vorab ein transparentes Angebot.' ), $f_fast, $f_bill ],
+			'faqs'    => [ $f_anf, $faq( 'Wie groß darf das Team sein?', 'Von der kleinen Abteilung bis zu rund 80 Teilnehmenden ist alles möglich. Sag uns eure Gruppengröße, dann wählen wir Platz und Format passend aus.' ), $faq( 'Was kostet ein Golf-Teamevent?', 'Ein einfacher Grundlagenkurs mit eigener Anreise und ohne Sonderleistungen startet schon bei 20 € pro Person. Unser Rundum-Teamevent mit Golflehrer, Leihschlägern, Team-Putt-Turnier und Verpflegung liegt bei 56 € pro Person. Wenn dir ein Event gefällt, du aber nur den reinen Kurs möchtest, frag es einfach an und schreib das dazu.' ), $f_fast, $f_bill ],
 			'types'   => [ 'teamevent', 'team-building', 'team_challenge', 'azubi_event', 'schnupperkurs', 'schnuppergolf' ],
 			// Landingpage-Ausbau (Google-Ads-Kampagne 2026-08): Quick-Facts, Tagesablauf,
-			// eigenes Hero-Bild. Formate ohne diese Keys rendern wie bisher.
+			// Level-Sektion, eigenes Hero-Bild. Formate ohne diese Keys rendern wie bisher.
 			'hero_img' => 'firmenevent-afterwork-golf.jpg',
+			'levels'  => true,
 			'facts'   => [
 				[ 'k' => 'Dauer', 'v' => 'Halber oder ganzer Tag' ],
 				[ 'k' => 'Gruppengröße', 'v' => '6 bis 80 Personen' ],
 				[ 'k' => 'Vorkenntnisse', 'v' => 'Keine nötig' ],
-				[ 'k' => 'Preis', 'v' => 'ab 56 € pro Person' ],
+				[ 'k' => 'Preis', 'v' => 'ab 20 € pro Person' ],
 			],
 			'flow'    => [
-				[ 't' => 'Ankunft & Welcome', 'b' => 'Empfang am Clubhaus, ein Begrüßungsgetränk und eine kurze Einführung ins Programm.' ],
-				[ 't' => 'Schnupperkurs mit Golflehrer', 'b' => 'In kleinen Gruppen lernt ihr Putten, Chippen und den vollen Schwung, locker und ohne Druck.' ],
-				[ 't' => 'Team-Putt-Turnier', 'b' => 'Spielerischer Wettbewerb auf dem Putting-Grün, bei dem das Team zusammenwächst.' ],
-				[ 't' => 'Gemeinsamer Ausklang', 'b' => 'Verpflegung im Clubhaus, Siegerehrung und ein entspannter Abschluss.' ],
+				[ 't' => 'Ankunft & Welcome', 'b' => 'Der Golfclub empfängt dich und du bekommst dein Leih-Equipment.' ],
+				[ 't' => 'Golf-Grundlagenkurs im Team', 'b' => 'In kleinen Gruppen lernt ihr die Grundlagen des Golfsports, locker und ohne Druck.' ],
+				[ 't' => 'Mittagessen auf der Clubterrasse', 'b' => 'Von Barbecue bis Pasta-Party ist alles möglich.' ],
+				[ 't' => 'Longest Drive & Putt-Turnier', 'b' => 'Der Abschluss mit Wettbewerb: Wer schlägt am weitesten, wer puttet am sichersten?' ],
+				[ 't' => 'Gemeinsamer Ausklang', 'b' => 'Entspannter Abschluss auf der Clubterrasse, danach individuelle Abreise.' ],
+			],
+			// Teaser zum Wertschätzungspaket (eigene Landingpage /wertschaetzung/).
+			'promo'   => [
+				'eyebrow' => 'Mitarbeiter auszeichnen',
+				'title'   => 'Wertschätzung, die bleibt.',
+				'text'    => 'Belohne besondere Leistungen mit einem persönlichen Golf-Erlebnis: vom Grundlagenkurs mit persönlichem Empfang bis zur Platzreife als exklusives Netzwerk-Event.',
+				'cta'     => 'Wertschätzungspaket entdecken →',
+				'url'     => home_url( '/wertschaetzung/' ),
 			],
 		],
 		'golfturnier' => [
@@ -77,6 +87,7 @@ function fge_get_event_format_pages(): array {
 				'text'    => 'Nach der Platzreife geht es erst richtig los: Mit Firmengolf als Corporate Benefit spielen eure Mitarbeitenden regelmäßig weiter, mit Zugang zu Partnerplätzen und Coaching-Stunden zum Mitarbeiterpreis.',
 				'cta'     => 'Firmengolf als Benefit entdecken ↗',
 				'url'     => 'https://firmengolf.app',
+				'external' => true,
 			],
 		],
 		'workshop' => [

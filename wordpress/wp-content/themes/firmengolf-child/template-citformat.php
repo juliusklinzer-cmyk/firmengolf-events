@@ -262,7 +262,7 @@ get_header();
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für <?php echo esc_html( $city_name ); ?>?</div>
 		<h2 class="mk-cta-h"><?php echo esc_html( $eyebrow ); ?> <em class="mk-italic">planen</em>.</h2>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $ind_url ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
+			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $ind_url ) ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
 			<a class="mk-cta-mail" href="<?php echo esc_url( $city_url ); ?>">Alle Formate in <?php echo esc_html( $city_name ); ?> →</a>
 		</div>
 	</div>

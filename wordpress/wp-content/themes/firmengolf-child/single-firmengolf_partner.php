@@ -299,7 +299,7 @@ get_header();
 					<div class="panel">
 						<div class="panel-head"><h3 style="font-size:18px;">Anfrage an diesen Platz</h3></div>
 						<p style="font-size:14px;color:var(--ink-600,var(--ink-500));margin:0 0 16px;">Plant euer Firmenevent bei <?php echo esc_html( $name ); ?>, wir holen Verfügbarkeit &amp; Angebot direkt beim Platz ein.</p>
-						<a class="btn btn-brand" href="<?php echo esc_url( $ind_url ); ?>">Anfrage an diesen Platz</a>
+						<a class="btn btn-brand" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $ind_url ) ); ?>">Anfrage an diesen Platz</a>
 					</div>
 				</div>
 			</section>
@@ -311,7 +311,7 @@ get_header();
 						<h2>Etwas Eigenes<?php echo $city ? ' in ' . esc_html( $city ) : ''; ?>?</h2>
 						<p>Sag uns, was ihr vorhabt, Sommerfest, Incentive, Kundentag oder Turnier. Wir stellen euch ein Event genau nach euren Wünschen zusammen.</p>
 					</div>
-					<a class="btn btn-brand" href="<?php echo esc_url( $ind_url ); ?>">Individuelles Event anfragen</a>
+					<a class="btn btn-brand" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $ind_url ) ); ?>">Individuelles Event anfragen</a>
 				</div>
 			</section>
 

@@ -674,6 +674,12 @@
 	}
 	ready(function () {
 		initCalc();
+		// Deep-Link: CTAs anderer Seiten springen direkt in den Wizard
+		// (?anfrage=quick -> 30-Sekunden-Schnellanfrage, ?anfrage=full -> ausfuehrliches Formular).
+		var deepMode = new URLSearchParams(window.location.search).get('anfrage');
+		if (deepMode === 'quick' || deepMode === 'full') {
+			Wizard.open(deepMode, null, false, 'deeplink');
+		}
 		document.querySelectorAll('[data-rw-open]').forEach(function (btn) {
 			btn.addEventListener('click', function (e) {
 				e.preventDefault();

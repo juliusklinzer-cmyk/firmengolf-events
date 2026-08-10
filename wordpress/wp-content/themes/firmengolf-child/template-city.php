@@ -344,7 +344,7 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für <?php echo esc_html( $city_name ); ?>?</div>
 		<h2 class="mk-cta-h">Lasst uns euer Event in <?php echo esc_html( $city_name ); ?> <em class="mk-italic">planen</em>.</h2>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $ind_url ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
+			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $ind_url ) ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
 			<?php foreach ( $cities as $cslug => $c ) : if ( $cslug === $slug ) continue; ?>
 				<a class="mk-cta-mail" href="<?php echo esc_url( home_url( '/golf-events/' . $cslug . '/' ) ); ?>"><?php echo esc_html( $c['name'] ); ?> →</a>
 			<?php endforeach; ?>

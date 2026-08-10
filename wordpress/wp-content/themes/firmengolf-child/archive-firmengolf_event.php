@@ -613,7 +613,7 @@ if ( ! $has_filters ) :
 		<div class="fg-empty">
 			Noch nichts Passendes dabei. Plane dein Format individuell, wir kümmern uns drum.
 			<div style="margin-top:16px">
-				<a class="fg-btn-cta" href="<?php echo esc_url( $ind_url ); ?>">
+				<a class="fg-btn-cta" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $ind_url ) ); ?>">
 					Individuelles Event anfragen
 					<span class="fg-arrow"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
 				</a>
@@ -628,7 +628,7 @@ if ( ! $has_filters ) :
 			<div class="mk-eyebrow">Kein passendes Format dabei?</div>
 			<h3 class="ev-inline-h">Wir planen dein Event nach deinen Ansprüchen.</h3>
 		</div>
-		<a class="fg-btn-cta" href="<?php echo esc_url( $ind_url ); ?>">
+		<a class="fg-btn-cta" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $ind_url ) ); ?>">
 			Individuelles Event anfragen
 			<span class="fg-arrow"><?php echo $arrow; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 		</a>

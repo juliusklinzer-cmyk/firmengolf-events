@@ -146,6 +146,19 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			die USA übertragen werden (Safeguards wie oben).
 		</p>
 
+		<h2>11a. Bestellung von Wertschätzungspaketen</h2>
+		<p>
+			Bei der Bestellung eines Wertschätzungspakets verarbeiten wir die Angaben des bestellenden
+			Unternehmens (Firma, Ansprechpartner, Kontaktdaten, Rechnungsadresse, ggf. USt-ID) sowie Name und
+			Versandadresse der beschenkten Person und eine optionale persönliche Nachricht. Die Verarbeitung
+			erfolgt zur Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO): Bestellabwicklung, Rechnungsstellung,
+			Zustellung der persönlichen Einladung und Einlösung des Pakets. Die Daten der beschenkten Person
+			erhalten wir vom bestellenden Unternehmen; dieses sichert zu, zur Weitergabe berechtigt zu sein.
+			Wir verwenden diese Daten ausschließlich für Zustellung und Einlösung, geben sie nur an den für die
+			Durchführung gewählten Partner-Golfplatz sowie an Versanddienstleister weiter und löschen sie nach
+			Abwicklung, soweit keine gesetzlichen Aufbewahrungspflichten (z. B. für Rechnungsdaten) bestehen.
+		</p>
+
 		<h2>12. Newsletter &amp; E-Mail-Marketing (Kit)</h2>
 		<p>
 			Wir nutzen Kit für den Versand von Newslettern, Informationen zu Firmengolf, Partnerupdates und zur

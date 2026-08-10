@@ -20,12 +20,16 @@ $seo_title = $format['h1'] . ' | Firmengolf';
 $seo_desc  = $format['lead'];
 $events_url = (string) get_post_type_archive_link( 'firmengolf_event' );
 $ind_url    = ( $p = get_page_by_path( 'individuelle-events' ) ) ? (string) get_permalink( $p->ID ) : home_url( '/individuelle-events/' );
+// CTAs springen direkt in den Anfrage-Wizard (Deep-Link, s. fge-individual.js):
+// full = ausführliches Formular, quick = 30-Sekunden-Schnellanfrage.
+$anfrage_full  = add_query_arg( 'anfrage', 'full', $ind_url );
+$anfrage_quick = add_query_arg( 'anfrage', 'quick', $ind_url );
 $faqs       = $format['faqs'] ?? [];
 
-// Passende Events, Fallback verhindert leere Seite.
-$format_events = function_exists( 'fge_format_events' ) ? fge_format_events( $format, 6 ) : [];
+// Passende Events: 2 volle 4er-Reihen (Grid wie auf der Eventliste), Fallback verhindert leere Seite.
+$format_events = function_exists( 'fge_format_events' ) ? fge_format_events( $format, 8 ) : [];
 if ( empty( $format_events ) && function_exists( 'fge_get_featured_events' ) ) {
-	$format_events = fge_get_featured_events( 6 );
+	$format_events = fge_get_featured_events( 8 );
 }
 
 // Icon-Set für die „Gründe"-Kacheln.
@@ -111,7 +115,7 @@ get_header();
 			<p class="ev-hero-sub"><?php echo esc_html( $format['lead'] ); ?></p>
 			<div class="ev-hero-ctas">
 				<a class="fg-btn-brand" href="#angebote">Passende Events ansehen</a>
-				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $ind_url ); ?>">Unverbindlich anfragen</a>
+				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $anfrage_quick ); ?>">Unverbindlich anfragen</a>
 			</div>
 		</div>
 	</div>
@@ -143,7 +147,7 @@ get_header();
 			<a class="fg-chip" href="<?php echo esc_url( $events_url ); ?>">Alle ansehen</a>
 		</div>
 	</div>
-	<div class="fg-grid">
+	<div class="fg-grid ev-grid4">
 		<?php foreach ( $format_events as $ev ) : ?>
 			<?php get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $ev->ID ] ); ?>
 			<?php endforeach; ?>
@@ -160,20 +164,66 @@ get_header();
 	</div>
 </section>
 
-<?php /* So läuft euer Tag (config-getrieben, aktuell Teamevent) */ ?>
+<?php /* So könnte dein Tag ablaufen: eine Reihe, Punkte blenden gestaffelt von oben ein */ ?>
 <?php if ( ! empty( $format['flow'] ) ) : ?>
-<section class="mk-section mk-steps mk-band fmt-flow" aria-label="So läuft euer <?php echo esc_attr( $f_name ); ?>">
+<section class="mk-section mk-band fmt-flow5" aria-label="So läuft euer <?php echo esc_attr( $f_name ); ?>">
 	<div class="mk-section-head">
-		<div class="mk-eyebrow">So läuft euer Tag</div>
-		<h2 class="mk-h2">Vom Welcome bis zur Siegerehrung.</h2>
+		<div class="mk-eyebrow">So könnte dein Tag ablaufen</div>
+		<h2 class="mk-h2">Vom Welcome bis zum Ausklang.</h2>
 	</div>
-	<div class="mk-steps-grid">
+	<div class="fmt-flow5-row">
 		<?php foreach ( $format['flow'] as $i => $step ) : ?>
-		<div class="mk-step">
-			<div class="mk-step-n"><?php echo esc_html( str_pad( (string) ( $i + 1 ), 2, '0', STR_PAD_LEFT ) ); ?></div>
-			<h3 class="mk-step-t"><?php echo esc_html( $step['t'] ); ?></h3>
-			<p class="mk-step-b"><?php echo esc_html( $step['b'] ); ?></p>
+		<div class="fmt-fstep" style="--fstep-delay:<?php echo esc_attr( (string) ( $i * 0.18 ) ); ?>s">
+			<div class="fmt-fstep-n"><?php echo esc_html( (string) ( $i + 1 ) ); ?></div>
+			<h3 class="fmt-fstep-t"><?php echo esc_html( $step['t'] ); ?></h3>
+			<p class="fmt-fstep-b"><?php echo esc_html( $step['b'] ); ?></p>
 		</div>
+		<?php endforeach; ?>
+	</div>
+</section>
+<?php endif; ?>
+
+<?php /* Golf-Erfahrung: für jedes Level das Passende (identisch zu Individuelle Events) */ ?>
+<?php if ( ! empty( $format['levels'] ) ) :
+	$fmt_levels = [
+		[ 'level' => 1, 'badge' => 'Einsteiger', 't' => 'Erste Erfahrungen', 'img' => 'erfahrung-korb.jpg',
+			'b' => 'Noch nie einen Schläger gehalten? Genau richtig. Golflehrer, Leih-Ausrüstung und die ersten Schwünge auf der Range, locker, ohne Druck.',
+			'meta' => [ 'Golflehrer', 'Schläger gestellt', 'Range & Putting' ] ],
+		[ 'level' => 2, 'badge' => 'Auffrischer', 't' => 'Schon mal gespielt', 'img' => 'erfahrung-sand.jpg',
+			'b' => 'Ein paar Runden Erfahrung? Wir frischen den Schwung auf, gehen ins Kurzspiel und spielen danach gemeinsam entspannte 9 Loch.',
+			'meta' => [ 'Kurzspiel-Training', '9 Loch', 'Gemischte Flights' ] ],
+		[ 'level' => 3, 'badge' => 'Fortgeschritten', 't' => 'Fortgeschrittene Golfer', 'img' => 'erfahrung-inselgruen.jpg',
+			'b' => 'Platzreife in der Tasche? Volle 18 Loch im Turnierformat mit Flights, Live-Scoring und Siegerehrung bei Sonnenuntergang.',
+			'meta' => [ '18 Loch', 'Live-Scoring', 'Siegerehrung' ] ],
+	];
+?>
+<section class="iv-section">
+	<div class="iv-head">
+		<div class="mk-eyebrow">Golf-Erfahrung</div>
+		<h2 class="mk-h2">Für jedes Level das <span class="mk-italic">Passende</span></h2>
+		<p class="mk-sub">In jedem Team spielt jemand zum ersten Mal, und jemand seit Jahren. Wir stellen jedes Event so zusammen, dass alle Spaß haben, egal auf welchem Level.</p>
+	</div>
+	<div class="iv-exp-grid">
+		<?php foreach ( $fmt_levels as $x ) : ?>
+			<article class="iv-exp">
+				<div class="iv-exp-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( $x['img'] ) ); ?>')">
+					<span class="iv-exp-badge"><?php echo esc_html( $x['badge'] ); ?></span>
+				</div>
+				<div class="iv-exp-body">
+					<div class="iv-exp-dots" aria-hidden="true">
+						<?php for ( $n = 1; $n <= 3; $n++ ) : ?>
+							<span class="iv-exp-dot<?php echo $n <= $x['level'] ? ' on' : ''; ?>"></span>
+						<?php endfor; ?>
+					</div>
+					<h3 class="iv-exp-t"><?php echo esc_html( $x['t'] ); ?></h3>
+					<p class="iv-exp-b"><?php echo esc_html( $x['b'] ); ?></p>
+					<div class="iv-exp-meta">
+						<?php foreach ( $x['meta'] as $m ) : ?>
+							<span class="iv-exp-tag"><?php echo esc_html( $m ); ?></span>
+						<?php endforeach; ?>
+					</div>
+				</div>
+			</article>
 		<?php endforeach; ?>
 	</div>
 </section>
@@ -194,16 +244,6 @@ get_header();
 </section>
 <?php endif; ?>
 
-<?php /* Trust */ ?>
-<div class="trust-strip" aria-label="Auf einen Blick">
-	<div class="trust-inner">
-		<div class="trust-cell"><div class="trust-t">Deutschlandweit</div><div class="trust-b">Partnerplätze in eurer Region</div></div>
-		<div class="trust-cell"><div class="trust-t">1 Werktag</div><div class="trust-b">Antwort auf jede Anfrage</div></div>
-		<div class="trust-cell"><div class="trust-t">Ein Kontakt</div><div class="trust-b">Vom Erstkontakt bis nach dem Event</div></div>
-		<div class="trust-cell"><div class="trust-t">Eine Rechnung</div><div class="trust-b">Sauber abgerechnet</div></div>
-	</div>
-</div>
-
 <?php /* Optionale Cross-Promo (z. B. Platzreife → Firmengolf-Benefit) */ ?>
 <?php if ( ! empty( $format['promo'] ) ) : $fmt_promo = $format['promo']; ?>
 <section class="mk-section" aria-label="<?php echo esc_attr( $fmt_promo['title'] ); ?>">
@@ -213,7 +253,7 @@ get_header();
 			<h2 class="mk-h2" style="font-size:30px;"><?php echo esc_html( $fmt_promo['title'] ); ?></h2>
 			<p class="mk-sub"><?php echo esc_html( $fmt_promo['text'] ); ?></p>
 		</div>
-		<a class="fg-btn-brand" href="<?php echo esc_url( $fmt_promo['url'] ); ?>" target="_blank" rel="noopener noreferrer">
+		<a class="fg-btn-brand" href="<?php echo esc_url( $fmt_promo['url'] ); ?>"<?php echo ! empty( $fmt_promo['external'] ) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>>
 			<?php echo esc_html( $fmt_promo['cta'] ); ?>
 		</a>
 	</div>
@@ -249,7 +289,7 @@ get_header();
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für euer <?php echo esc_html( $f_name ); ?>?</div>
 		<h2 class="mk-cta-h">Lasst uns euer Event <em class="mk-italic">planen</em>.</h2>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $ind_url ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
+			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $anfrage_full ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
 			<?php foreach ( $formats as $fslug => $f ) : if ( $fslug === $slug ) continue; ?>
 				<a class="mk-cta-mail" href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>"><?php echo esc_html( $f['name'] ); ?> →</a>
 			<?php endforeach; ?>
@@ -262,6 +302,21 @@ get_header();
 </div><?php /* .fge-page */ ?>
 
 <script>
+// Ablauf-Punkte blenden gestaffelt ein, sobald die Sektion sichtbar wird.
+(function () {
+	var row = document.querySelector('.fmt-flow5-row');
+	if (!row) return;
+	if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+		row.classList.add('is-in');
+		return;
+	}
+	var io = new IntersectionObserver(function (entries) {
+		entries.forEach(function (e) {
+			if (e.isIntersecting) { row.classList.add('is-in'); io.disconnect(); }
+		});
+	}, { threshold: 0.25 });
+	io.observe(row);
+})();
 document.querySelectorAll('.fge-page .faq-q[aria-expanded]').forEach(function (btn) {
 	btn.addEventListener('click', function () {
 		var item = btn.closest('.faq-item');
