@@ -246,7 +246,10 @@ $loc_paths = [
 		'k'     => 'Individuell geplant',
 		't'     => 'Eigene Vorstellung? Schick uns Anlass, Gruppe und Wunschregion — wir kuratieren passende Plätze für dein Unternehmen.',
 		'cta'   => 'Individuell anfragen',
-		'href'  => $url_ind . '#anfrage',
+		// Bewusst OHNE #anfrage-Anker: Die Karte soll oben auf der Seite starten,
+		// damit man erst den Kontext sieht (Julius, 2026-08-10). Die „Drei Schritte"-
+		// Karten weiter unten springen weiterhin direkt zur Anfrage.
+		'href'  => $url_ind,
 	],
 ];
 ?>
