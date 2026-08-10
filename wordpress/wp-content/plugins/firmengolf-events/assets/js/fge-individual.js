@@ -30,6 +30,9 @@
 	}
 
 	var ARROW = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
+	// Button-Icons im Onboarding-Stil (schlicht, im Button, kein Kreis-Hintergrund).
+	var ICO_NEXT = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
+	var ICO_SEND = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>';
 
 	// Distinkte, markennahe Farbpalette — jede gewählte Leistung bekommt nach ihrer
 	// Position in der Typ-Liste eine eigene Farbe (innerhalb eines Events alle verschieden).
@@ -312,9 +315,15 @@
 				+ '<button class="rw-close" data-act="close" aria-label="Schließen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></header>';
 		}
 
+		// Foto-Panel (Driver am Abschlag, wie im Partner-Onboarding) neben dem Einstieg.
+		function photoPanel() {
+			var src = CFG.introImg || '';
+			return src ? '<div class="rw-photo" role="img" aria-label="Golfer am Abschlag" style="background-image:url(\'' + esc(src) + '\')"></div>' : '';
+		}
+
 		function screenIntro() {
 			var occ = S.form.occasion || 'Firmenevent';
-			return '<div class="rw-stage"><div class="rw-screen rw-intro">'
+			return '<div class="rw-stage"><div class="rw-screen rw-has-photo rw-intro"><div class="rw-main">'
 				+ '<div class="rw-eyebrow">Schön, dass du da bist</div>'
 				+ '<h2 class="rw-h">Toll, ihr plant ein <span class="mk-italic">' + esc(occ) + '</span> für euer Team.</h2>'
 				+ '<p class="rw-lead">Lass uns kurz ein paar Infos sammeln. Danach meldet sich ' + esc(CONTACT.name)
@@ -324,13 +333,13 @@
 				+ '<div class="rw-intro-c-note">„Ich kümmere mich persönlich um deine Anfrage."</div></div></div>'
 				+ '<ul class="rw-intro-steps"><li>Ein paar Eckdaten, keine zwei Minuten</li>'
 				+ '<li>Persönliche Rückmeldung statt Funnel</li><li>Unverbindlich und kostenlos</li></ul>'
-				+ '</div></div>'
-				+ '<div class="rw-foot rw-foot-quick"><button class="rw-back" data-act="close">Abbrechen</button>'
-				+ '<button class="fg-btn-brand lg" data-act="intro-start">Los geht\'s <span class="fg-arrow">' + ARROW + '</span></button></div>';
+				+ '</div>' + photoPanel() + '</div></div>'
+				+ '<div class="rw-foot"><div class="rw-nav"><button class="rw-btn-text" data-act="close">Abbrechen</button>'
+				+ '<button class="rw-btn-primary" data-act="intro-start">Los geht\'s ' + ICO_NEXT + '</button></div></div>';
 		}
 
 		function screenQuick() {
-			var h = '<div class="rw-stage"><div class="rw-screen">'
+			var h = '<div class="rw-stage"><div class="rw-screen rw-has-photo"><div class="rw-main">'
 				+ '<div class="rw-eyebrow">Schnell-Anfrage · 30 Sekunden</div>'
 				+ '<h2 class="rw-h">Das Wichtigste, wir klären den Rest persönlich.</h2>'
 				+ '<p class="rw-lead">Du willst nicht durch alle Schritte? Völlig okay. Gib uns die Basics, wir melden uns mit Rückfragen.</p>'
@@ -343,9 +352,9 @@
 				+ '<div class="rw-field">' + label('Firma') + input('company', '', 'Musterfirma GmbH') + '</div>'
 				+ '<div class="rw-field">' + label('Was habt ihr vor?') + '<textarea class="fg-input" data-field="notes" rows="3" placeholder="Ein, zwei Sätze zu Ziel, Stimmung, Wünschen.">' + esc(S.form.notes) + '</textarea></div>'
 				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '><span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß Datenschutzerklärung zu.</span></label>'
-				+ '</div></div></div>'
-				+ '<div class="rw-foot rw-foot-quick"><button class="rw-switch" data-act="to-full">Lieber ausführlich anfragen</button>'
-				+ '<button class="fg-btn-brand lg" data-act="submit">Anfrage senden <span class="fg-arrow">' + ARROW + '</span></button></div>';
+				+ '</div></div>' + photoPanel() + '</div></div>'
+				+ '<div class="rw-foot"><div class="rw-nav"><button class="rw-btn-text" data-act="to-full">Lieber ausführlich anfragen</button>'
+				+ '<button class="rw-btn-primary" data-act="submit">Anfrage senden ' + ICO_SEND + '</button></div></div>';
 			return h;
 		}
 
@@ -425,16 +434,19 @@
 
 		function screenFull() {
 			var segs = FULL_STEPS.map(function (lbl, i) {
-				var active = i <= S.step;
-				return '<div class="rw-seg' + (active ? ' is-active' : '') + '">'
-					+ '<div class="rw-seg-bar"><div class="rw-seg-fill" style="width:' + (active ? 100 : 0) + '%"></div></div>'
+				var state = i < S.step ? ' done' : (i === S.step ? ' on' : '');
+				return '<div class="rw-seg' + state + '">'
+					+ '<div class="rw-seg-bar"><div class="rw-seg-fill" style="width:' + (i <= S.step ? 100 : 0) + '%"></div></div>'
 					+ '<span class="rw-seg-label">' + esc(lbl) + '</span></div>';
 			}).join('');
 			var isLast = S.step === FULL_STEPS.length - 1;
-			return '<div class="rw-stage"><div class="rw-screen">' + fullStepBody(S.step) + '</div></div>'
+			var body   = S.step === 0
+				? '<div class="rw-screen rw-has-photo"><div class="rw-main">' + fullStepBody(0) + '</div>' + photoPanel() + '</div>'
+				: '<div class="rw-screen">' + fullStepBody(S.step) + '</div>';
+			return '<div class="rw-stage">' + body + '</div>'
 				+ '<div class="rw-foot"><div class="rw-progress">' + segs + '</div>'
-				+ '<div class="rw-nav"><button class="rw-back" data-act="back">' + (S.step === 0 ? 'Abbrechen' : '← Zurück') + '</button>'
-				+ '<button class="fg-btn-brand lg" data-act="next">' + (isLast ? 'Anfrage senden' : 'Weiter') + ' <span class="fg-arrow">' + ARROW + '</span></button></div></div>';
+				+ '<div class="rw-nav"><button class="rw-btn-text" data-act="back">' + (S.step === 0 ? 'Abbrechen' : 'Zurück') + '</button>'
+				+ '<button class="rw-btn-primary" data-act="next">' + (isLast ? 'Anfrage senden ' + ICO_SEND : 'Weiter ' + ICO_NEXT) + '</button></div></div>';
 		}
 
 		function screenSuccess(resp) {
@@ -449,7 +461,7 @@
 				+ '<div><span>Unternehmen</span><span>' + esc(resp.company || S.form.company || 'k. A.') + '</span></div>'
 				+ '<div><span>Status</span><span><span class="ob-pill-status">In Bearbeitung</span></span></div>'
 				+ '<div><span>Vorgangs-Nr.</span><span class="mono">' + esc(resp.ref || '') + '</span></div></div>'
-				+ '<div class="rw-success-ctas"><button class="fg-btn-brand" data-act="close">Schließen</button></div>'
+				+ '<div class="rw-success-ctas"><button class="rw-btn-primary" data-act="close">Schließen</button></div>'
 				+ '</div></div>';
 		}
 

@@ -101,7 +101,7 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 
 get_header();
 ?>
-<div class="fge-page" id="fge-main" role="main" tabindex="-1">
+<div class="fge-page fmt-lp" id="fge-main" role="main" tabindex="-1">
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] ); ?>
 
@@ -121,15 +121,20 @@ get_header();
 	</div>
 </section>
 
-<?php /* Quick-Facts: die vier Antworten, die Ads-Besucher zuerst suchen */ ?>
+<?php /* Icon-Facts direkt unter dem Hero: die Antworten, die Ads-Besucher zuerst suchen
+	(Kachel-Design, volle Container-Breite, vereint Facts + frühere Gründe-Sektion) */ ?>
 <?php if ( ! empty( $format['facts'] ) ) : ?>
-<div class="fmt-facts" aria-label="<?php echo esc_attr( $f_name ); ?> auf einen Blick">
-	<div class="fmt-facts-inner">
+<section class="mk-section fmt-keyfacts" aria-label="<?php echo esc_attr( $f_name ); ?> auf einen Blick">
+	<div class="city-reasons">
 		<?php foreach ( $format['facts'] as $fact ) : ?>
-		<div class="fmt-fact"><div class="fmt-fact-k"><?php echo esc_html( $fact['k'] ); ?></div><div class="fmt-fact-v"><?php echo esc_html( $fact['v'] ); ?></div></div>
+		<div class="city-reason">
+			<span class="city-reason-ic" aria-hidden="true"><?php echo fge_format_ico( $fact['ic'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
+			<h2 class="city-reason-t"><?php echo esc_html( $fact['t'] ); ?></h2>
+			<p class="city-reason-b"><?php echo esc_html( $fact['b'] ); ?></p>
+		</div>
 		<?php endforeach; ?>
 	</div>
-</div>
+</section>
 <?php endif; ?>
 
 <?php /* Passende Events zuerst: das schnellste Ergebnis für die Suchanfrage */ ?>

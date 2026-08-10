@@ -32,18 +32,21 @@ function fge_get_event_format_pages(): array {
 			'h1'      => 'Golf-Teamevents für Firmen',
 			'lead'    => 'Ein gemeinsamer Tag auf dem Platz, der euer Team wirklich zusammenbringt, auch ohne Golferfahrung.',
 			'intro'   => 'Ein Golf-Teamevent holt euer Team raus aus dem Büro und rein ins Grüne. Anders als beim klassischen Teambuilding entsteht hier ganz nebenbei Nähe: gemeinsam üben, lachen, anfeuern. Ein Schnupper- und Grundlagenkurs ist immer dabei: Ein Golflehrer führt auch komplette Einsteigende sicher an, Schläger und Material werden gestellt. Wir stellen Platz, Ablauf und Verpflegung passend zu eurer Gruppe zusammen, deutschlandweit.',
-			'reasons' => [ $r_team, $reason( 'leaf', 'Wirkt nach', 'Bewegung, frische Luft und gemeinsame Erlebnisse statt Stuhlkreis, bleibt länger in Erinnerung als das nächste Meeting.' ), $reason( 'clock', 'Halber oder ganzer Tag', 'Vom kompakten Nachmittag bis zum vollen Eventtag, passend zu Kalender und Budget.' ), $r_one ],
+			// Keine 'reasons' mehr: Inhalte stecken in den Icon-Facts direkt unter dem Hero
+			// (Feedback Julius 2026-08-10, eine Kachel-Reihe statt zwei Fakten-Blöcke).
 			'faqs'    => [ $f_anf, $faq( 'Wie groß darf das Team sein?', 'Von der kleinen Abteilung bis zu rund 80 Teilnehmenden ist alles möglich. Sag uns eure Gruppengröße, dann wählen wir Platz und Format passend aus.' ), $faq( 'Was kostet ein Golf-Teamevent?', 'Ein einfacher Grundlagenkurs mit eigener Anreise und ohne Sonderleistungen startet schon bei 20 € pro Person. Unser Rundum-Teamevent mit Golflehrer, Leihschlägern, Team-Putt-Turnier und Verpflegung liegt bei 56 € pro Person. Wenn dir ein Event gefällt, du aber nur den reinen Kurs möchtest, frag es einfach an und schreib das dazu.' ), $f_fast, $f_bill ],
 			'types'   => [ 'teamevent', 'team-building', 'team_challenge', 'azubi_event', 'schnupperkurs', 'schnuppergolf' ],
 			// Landingpage-Ausbau (Google-Ads-Kampagne 2026-08): Quick-Facts, Tagesablauf,
 			// Level-Sektion, eigenes Hero-Bild. Formate ohne diese Keys rendern wie bisher.
 			'hero_img' => 'firmenevent-afterwork-golf.jpg',
 			'levels'  => true,
+			// Icon-Kacheln direkt unter dem Hero (volle Container-Breite, ersetzt die
+			// frühere Facts-Leiste UND die Gründe-Sektion weiter unten).
 			'facts'   => [
-				[ 'k' => 'Dauer', 'v' => 'Halber oder ganzer Tag' ],
-				[ 'k' => 'Gruppengröße', 'v' => '6 bis 80 Personen' ],
-				[ 'k' => 'Vorkenntnisse', 'v' => 'Keine nötig' ],
-				[ 'k' => 'Preis', 'v' => 'ab 20 € pro Person' ],
+				[ 'ic' => 'users', 't' => 'Für jedes Level', 'b' => 'Ohne Vorkenntnisse, von 6 bis 80 Personen. Schläger werden gestellt, ein Golflehrer führt an.' ],
+				[ 'ic' => 'clock', 't' => 'Halber oder ganzer Tag', 'b' => 'Vom kompakten Nachmittag bis zum vollen Eventtag, passend zu Kalender und Budget.' ],
+				[ 'ic' => 'gift', 't' => 'Ab 20 € pro Person', 'b' => 'Vom reinen Grundlagenkurs mit eigener Anreise bis zum Rundum-Teamevent mit Verpflegung.' ],
+				[ 'ic' => 'flag', 't' => 'Eine Anfrage, ein Kontakt', 'b' => 'Platzwahl, Format, Catering und Abrechnung über einen einzigen Ansprechpartner.' ],
 			],
 			'flow'    => [
 				[ 't' => 'Ankunft & Welcome', 'b' => 'Der Golfclub empfängt dich und du bekommst dein Leih-Equipment.' ],
