@@ -6,9 +6,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 // ── Category filter ──────────────────────────────────────────────────────────
 $active_cat_slug = sanitize_key( $_GET['category_name'] ?? '' );  // phpcs:ignore WordPress.Security.NonceVerification
 
+// Top-Story + maximal 9 Beiträge im Grid (3 pro Zeile, Julius 2026-08-10).
 $query_args = [
 	'post_type'      => 'post',
-	'posts_per_page' => -1,
+	'posts_per_page' => 10,
 	'post_status'    => 'publish',
 	'orderby'        => 'date',
 	'order'          => 'DESC',
@@ -122,7 +123,41 @@ get_header();
 					Menschen, die täglich auf den Plätzen unterwegs sind.
 				</p>
 			</div>
-			<div class="blog-hero-photo" role="img" aria-label="Golferinnen in der Münchner U-Bahn" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( 'golferinnen-ubahn-muenchen.jpg' ) ); ?>')"></div>
+			<?php if ( $featured_post ) :
+				$featured_id    = $featured_post->ID;
+				$featured_thumb = has_post_thumbnail( $featured_id )
+					? get_the_post_thumbnail_url( $featured_id, 'large' )
+					: fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' );
+				$featured_cats  = get_the_category( $featured_id );
+				$featured_cat   = $featured_cats[0] ?? null;
+				$featured_wc    = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $featured_id ) ) );
+				$featured_read  = max( 1, (int) ceil( $featured_wc / 200 ) );
+				$featured_by    = function_exists( 'fge_blog_author' ) ? fge_blog_author( $featured_id ) : null;
+			?>
+			<a href="<?php echo esc_url( get_permalink( $featured_id ) ); ?>" class="blog-topcard">
+				<div class="blog-topcard-photo" style="background-image:url('<?php echo esc_url( $featured_thumb ); ?>')">
+					<span class="blog-top-tag">Top-Story</span>
+				</div>
+				<div class="blog-topcard-body">
+					<div class="blog-meta-row">
+						<?php if ( $featured_cat ) : ?>
+							<span class="blog-tag"><?php echo esc_html( $featured_cat->name ); ?></span>
+							<span>·</span>
+						<?php endif; ?>
+						<span><?php echo esc_html( get_the_date( 'd. M Y', $featured_id ) ); ?></span>
+						<span>·</span>
+						<span><?php echo esc_html( (string) $featured_read ); ?> Min.</span>
+					</div>
+					<h2 class="blog-topcard-h"><?php echo esc_html( get_the_title( $featured_id ) ); ?></h2>
+					<?php if ( $featured_by ) : ?>
+					<span class="blog-card-author">
+						<img class="blog-card-avatar" src="<?php echo esc_url( $featured_by['img'] ); ?>" alt="<?php echo esc_attr( $featured_by['name'] ); ?>" width="24" height="24" loading="lazy">
+						<span class="blog-author-n"><?php echo esc_html( strtok( $featured_by['name'], ' ' ) ); ?></span>
+					</span>
+					<?php endif; ?>
+				</div>
+			</a>
+			<?php endif; ?>
 		</div>
 	</div>
 
@@ -145,13 +180,10 @@ get_header();
 	<?php /* ── Blog Grid ── */ ?>
 	<section class="mk-section" style="padding-top:48px;padding-bottom:80px;">
 		<?php if ( $remaining_posts ) : ?>
-			<div class="blog-grid blog-grid-4">
-				<?php
-				// Mosaik: Top-Story als große Kachel (2 Spalten) vorneweg, Rest normal.
-				$grid_posts = $featured_post ? array_merge( [ $featured_post ], $remaining_posts ) : $remaining_posts;
-				foreach ( $grid_posts as $gi => $p ) :
+			<div class="blog-grid">
+				<?php foreach ( $remaining_posts as $p ) :
 					$pid   = $p->ID;
-					$is_lg = 0 === $gi && $featured_post;
+					$is_lg = false;
 					$p_url = get_permalink( $pid );
 					$p_img = has_post_thumbnail( $pid )
 						? get_the_post_thumbnail_url( $pid, 'medium_large' )
