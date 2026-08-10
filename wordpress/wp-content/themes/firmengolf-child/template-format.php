@@ -21,9 +21,21 @@ $seo_desc  = $format['lead'];
 $events_url = (string) get_post_type_archive_link( 'firmengolf_event' );
 $ind_url    = ( $p = get_page_by_path( 'individuelle-events' ) ) ? (string) get_permalink( $p->ID ) : home_url( '/individuelle-events/' );
 // CTAs springen direkt in den Anfrage-Wizard (Deep-Link, s. fge-individual.js):
-// full = ausführliches Formular, quick = 30-Sekunden-Schnellanfrage.
-$anfrage_full  = add_query_arg( 'anfrage', 'full', $ind_url );
-$anfrage_quick = add_query_arg( 'anfrage', 'quick', $ind_url );
+// quick = 30-Sekunden-Schnellanfrage, mit dem Format der Seite als vorgewähltem Anlass.
+$fmt_occasions = [
+	'teamevent'       => 'Teamevent',
+	'golfturnier'     => 'Firmenturnier',
+	'platzreife'      => 'Platzreife',
+	'workshop'        => 'Workshop',
+	'kundenevent'     => 'Kundenevent',
+	'incentive'       => 'Incentive-Reise',
+	'after-work-golf' => 'After-Work Golf',
+];
+$anfrage_args  = [ 'anfrage' => 'quick' ];
+if ( isset( $fmt_occasions[ $slug ] ) ) {
+	$anfrage_args['anlass'] = $fmt_occasions[ $slug ];
+}
+$anfrage_quick = add_query_arg( $anfrage_args, $ind_url );
 $faqs       = $format['faqs'] ?? [];
 
 // Passende Events: 2 volle 4er-Reihen (Grid wie auf der Eventliste), Fallback verhindert leere Seite.
@@ -294,7 +306,7 @@ get_header();
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für euer <?php echo esc_html( $f_name ); ?>?</div>
 		<h2 class="mk-cta-h">Lasst uns euer Event <em class="mk-italic">planen</em>.</h2>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $anfrage_full ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
+			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $anfrage_quick ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
 			<?php foreach ( $formats as $fslug => $f ) : if ( $fslug === $slug ) continue; ?>
 				<a class="mk-cta-mail" href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>"><?php echo esc_html( $f['name'] ); ?> →</a>
 			<?php endforeach; ?>

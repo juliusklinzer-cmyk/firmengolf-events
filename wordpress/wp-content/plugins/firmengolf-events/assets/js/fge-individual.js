@@ -755,9 +755,12 @@
 		initCalc();
 		// Deep-Link: CTAs anderer Seiten springen direkt in den Wizard
 		// (?anfrage=quick -> 30-Sekunden-Schnellanfrage, ?anfrage=full -> ausfuehrliches Formular).
-		var deepMode = new URLSearchParams(window.location.search).get('anfrage');
+		var deepParams = new URLSearchParams(window.location.search);
+		var deepMode = deepParams.get('anfrage');
 		if (deepMode === 'quick' || deepMode === 'full') {
-			Wizard.open(deepMode, null, false, 'deeplink');
+			// ?anlass=Teamevent o. ä. wählt den Anlass vor (z. B. CTA der Format-Landingpages).
+			var deepOcc = deepParams.get('anlass');
+			Wizard.open(deepMode, deepOcc ? { occasion: deepOcc } : null, false, 'deeplink');
 		}
 		document.querySelectorAll('[data-rw-open]').forEach(function (btn) {
 			btn.addEventListener('click', function (e) {
