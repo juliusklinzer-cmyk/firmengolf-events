@@ -831,15 +831,6 @@ get_header();
 		<?php /* Steps 0 + 1 share a header */ ?>
 		<div class="fg-modal-head" id="fg-modal-head">
 			<div class="fg-detail-eyebrow"><?php echo esc_html( $format_label . ( $venue ? ' · ' . $venue : '' ) ); ?></div>
-			<div class="fg-modal-context">
-				<span class="fg-modal-context-label">Dein Event</span>
-				<div class="fg-modal-context-row">
-					<span class="fg-modal-context-chip"><?php echo esc_html( get_the_title() ); ?></span>
-					<?php if ( $venue ) : ?><span class="fg-modal-context-chip"><?php echo esc_html( $venue ); ?></span><?php endif; ?>
-					<span class="fg-modal-context-chip"><?php echo esc_html( trim( $price_main . $price_suffix ) ); ?></span>
-					<?php if ( $guests_str ) : ?><span class="fg-modal-context-chip"><?php echo esc_html( $guests_str ); ?></span><?php endif; ?>
-				</div>
-			</div>
 			<h2 class="fg-modal-title" id="fg-modal-title">Eure Anfrage zu diesem Event</h2>
 			<p class="fg-modal-sub" id="fg-modal-sub">Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb eines Werktags zurück.</p>
 			<div class="fg-step-rail">
@@ -896,6 +887,17 @@ get_header();
 						<span class="fg-stepper-unit">Gäste</span>
 					</div>
 					<?php if ( $fg_group_help ) : ?><span class="fg-field-help"><?php echo esc_html( $fg_group_help ); ?></span><?php endif; ?>
+				</div>
+				<div class="fg-field fg-field-full">
+					<label class="fg-field-label" for="fg-starttime">Gewünschter Startzeitpunkt</label>
+					<select class="fg-input" id="fg-starttime">
+						<option value="">Bitte wählen …</option>
+						<option>Morgens</option>
+						<option>Vormittags</option>
+						<option>Mittags</option>
+						<option>After-Work</option>
+						<option>Noch offen</option>
+					</select>
 				</div>
 				<div class="fg-field fg-field-full">
 					<label class="fg-field-label" for="fg-experience">Golf-Erfahrung im Team (optional)</label>
@@ -972,21 +974,22 @@ get_header();
 				<?php
 				// Flache Ein-Klick-Auswahl der häufigsten Extras (kein Aufklappen). Nach Priorität,
 				// gerendert wird nur, was Platz/Firmengolf tatsächlich anbietet. data-source bleibt fürs Routing.
-				$wish_priority = [ 'food', 'entertainment', 'branding', 'stay', 'shuttle', 'tech', 'rooms', 'program', 'tournament', 'golf' ];
-				$wish_by_key   = [];
-				foreach ( $wish_cats as $c ) { $wish_by_key[ $c['key'] ] = $c; }
-				$wish_flat = [];
-				foreach ( $wish_priority as $k ) {
-					if ( isset( $wish_by_key[ $k ] ) ) { $wish_flat[] = $wish_by_key[ $k ]; }
-					if ( count( $wish_flat ) >= 6 ) { break; }
-				}
-				foreach ( $wish_flat as $c ) { $c['subs'] = []; $render_cat( $c ); }
+				// Feste, konkrete Auswahl (Julius, 2026-08-11): die für Teamevents
+				// wichtigsten Extras, früh bis spät. Alles andere gehört ins Freifeld.
+				$wish_flat = [
+					[ 'key' => 'fruehstueck', 'label' => 'Frühstück',         'source' => 'platz',      'subs' => [] ],
+					[ 'key' => 'mittagessen', 'label' => 'Mittagessen',       'source' => 'platz',      'subs' => [] ],
+					[ 'key' => 'abendessen',  'label' => 'Abendessen',        'source' => 'platz',      'subs' => [] ],
+					[ 'key' => 'getraenke',   'label' => 'Getränkepauschale', 'source' => 'platz',      'subs' => [] ],
+					[ 'key' => 'shuttle',     'label' => 'Shuttle',           'source' => 'firmengolf', 'subs' => [] ],
+				];
+				foreach ( $wish_flat as $c ) { $render_cat( $c ); }
 				?>
 			</div>
 
 			<div class="fg-field" style="margin-top:18px;">
 				<label class="fg-field-label" for="fg-wish-notes">Sonstige Wünsche <span class="fg-opt">optional</span></label>
-				<textarea class="fg-input" id="fg-wish-notes" rows="3" placeholder="Von Fotograf über Shuttle bis Übernachtung, vieles ist möglich. Schreib einfach, was euch vorschwebt, und wir melden uns mit einem passenden Vorschlag."></textarea>
+				<textarea class="fg-input" id="fg-wish-notes" rows="3" placeholder="Von Fotograf bis Übernachtung, vieles ist möglich. Schreib einfach, was euch vorschwebt, und wir melden uns mit einem passenden Vorschlag."></textarea>
 			</div>
 
 			<div class="fg-modal-foot">
@@ -1051,10 +1054,22 @@ get_header();
 
 		<?php /* Step 3, success */ ?>
 		<div id="fg-modal-step-3" class="fg-modal-success" style="display:none;">
+			<div class="rw-confetti" id="fg-confetti" aria-hidden="true"></div>
 			<div class="fg-success-mark"><?php echo fge_icon_check(); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<div class="fg-receipt-tag" id="fg-receipt-ref">k. A.</div>
 			<h2 class="fg-modal-title" style="max-width:400px;margin:14px auto 0;">Eure Anfrage ist eingegangen.</h2>
 			<p class="fg-modal-sub" style="margin-top:8px;">Das ist noch keine Buchungsbestätigung, wir melden uns, sobald der Platz die Termine einräumen kann, in der Regel innerhalb eines Werktags.</p>
+			<div class="rw-care" style="margin:22px auto 0;max-width:480px;">
+				<img class="rw-care-img" src="<?php echo esc_url( fge_get_placeholder_image_url( 'gruender-julius-klinzer.jpg' ) ); ?>" alt="Julius Klinzer" width="64" height="64">
+				<div class="rw-care-txt">
+					<div class="rw-care-k">Um deine Anfrage kümmert sich</div>
+					<div class="rw-care-n">Julius Klinzer</div>
+					<div class="rw-care-r">Gründer · Firmengolf</div>
+					<div class="rw-care-note">Dein Sachbearbeiter meldet sich bald bei dir. Wenn du vorher noch Ideen oder Rückfragen hast:</div>
+					<a class="rw-care-mail" href="mailto:julius@firmengolf-events.de">julius@firmengolf-events.de</a><br>
+					<a class="rw-care-mail" href="tel:+4915234348249">0152 3434 8249</a>
+				</div>
+			</div>
 			<div class="fg-success-receipt" id="fg-success-receipt">
 				<div><span>Format</span><span><?php echo esc_html( $format_label ); ?></span></div>
 				<div><span>Platz</span><span><?php echo esc_html( $venue ?: get_the_title() ); ?></span></div>
@@ -1258,6 +1273,7 @@ get_header();
 				phone:      val('fg-phone'),
 				city:       val('fg-city'),
 				experience: val('fg-experience'),
+				starttime:  val('fg-starttime'),
 				diet:       val('fg-diet'),
 				contact_pref: val('fg-contact-pref'),
 				consent:    consentEl && consentEl.checked ? '1' : ''
@@ -1271,6 +1287,21 @@ get_header();
 			.then(function (r) { return r.json(); })
 			.then(function (data) {
 				if (data.success) {
+					(function () {
+						var host = document.getElementById('fg-confetti');
+						if (!host || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+						host.innerHTML = '';
+						var colors = ['#4279D1', '#C9B488', '#009E78', '#D2693E', '#6E9BDD', '#D8B26A'];
+						for (var ci = 0; ci < 60; ci++) {
+							var c = document.createElement('span');
+							c.className = 'wz-conf';
+							c.style.left = (Math.random() * 100) + '%';
+							c.style.background = colors[ci % colors.length];
+							c.style.animationDelay = (Math.random() * 0.9) + 's';
+							c.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+							host.appendChild(c);
+						}
+					})();
 					window.dataLayer = window.dataLayer || [];
 					window.dataLayer.push({ event: 'event_anfrage' });
 					<?php if ( function_exists( 'fge_gads_send_to' ) && fge_gads_send_to() ) : ?>

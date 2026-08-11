@@ -265,7 +265,7 @@
 
 		function blank(preset) {
 			var f = {
-				occasion: '', goal: '', size: '40', region: '', place: '', experience: '',
+				occasion: '', goal: '', size: '40', region: '', place: '', experience: '', startzeit: '',
 				budget: '10.000 bis 20.000 €', when: '', flex: 'flexibel', duration: '',
 				/* services OHNE Default: der Quick-Modus zeigt keinen Leistungs-Schritt und
 				   hat sonst nie gewählte Wünsche mitgesendet (Kern-Audit H1, 2026-07-08). */
@@ -414,6 +414,7 @@
 					+ '<div class="rw-field">' + label('Bis zu drei Wunschtermine', false, 'Optional')
 					+ '<div class="rw-row rw-row-3">' + input('date1', 'type="date" min="' + MIN_DATE + '"', '1. Termin') + input('date2', 'type="date" min="' + MIN_DATE + '"', '2. Termin') + input('date3', 'type="date" min="' + MIN_DATE + '"', '3. Termin') + '</div></div>'
 					+ '<div class="rw-field">' + label('Wie flexibel beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
+					+ '<div class="rw-field">' + label('Gewünschter Startzeitpunkt', false, 'Optional') + chips('startzeit', ['Morgens', 'Vormittags', 'Mittags', 'After-Work', 'Noch offen']) + '</div>'
 					+ '<div class="rw-field">' + label('Golf-Erfahrung im Team', false, 'Optional') + chips('experience', ['Überwiegend Anfänger', 'Gemischt', 'Erfahrene Golfer', 'Weiß noch nicht']) + '</div>'
 					+ '<div class="rw-field">' + label('Wo soll euer Event stattfinden?')
 					+ chips('region', ['In der Nähe', 'Mitte Deutschlands', 'In den Alpen', 'Am Meer / Sylt', 'In Europa', 'An einem besonderen Ort', 'Noch offen'])
@@ -588,7 +589,7 @@
 			body.set('fge_js', (CFG.ft || '').split('').reverse().join(''));
 			body.set('occasion', f.occasion); body.set('goal', f.goal); body.set('size', f.size);
 			body.set('region', f.region); body.set('place', f.place || ''); body.set('budget', f.budget); body.set('when', f.when);
-			body.set('flex', f.flex); body.set('duration', f.duration); body.set('experience', f.experience);
+			body.set('flex', f.flex); body.set('startzeit', f.startzeit); body.set('duration', f.duration); body.set('experience', f.experience);
 			body.set('date1', f.date1); body.set('date2', f.date2); body.set('date3', f.date3);
 			body.set('company', f.company); body.set('city', f.city);
 			body.set('first_name', f.firstName); body.set('last_name', f.lastName);

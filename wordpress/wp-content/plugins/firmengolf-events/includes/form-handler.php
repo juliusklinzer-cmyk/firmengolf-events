@@ -133,6 +133,7 @@ function fge_ajax_modal_anfrage(): void {
 	$phone      = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
 	$city       = sanitize_text_field( wp_unslash( $_POST['city'] ?? '' ) );
 	$experience = sanitize_text_field( wp_unslash( $_POST['experience'] ?? '' ) );
+	$starttime  = sanitize_text_field( wp_unslash( $_POST['starttime'] ?? '' ) );
 	$diet       = sanitize_text_field( wp_unslash( $_POST['diet'] ?? '' ) );
 	$pref       = sanitize_text_field( wp_unslash( $_POST['contact_pref'] ?? '' ) );
 
@@ -182,6 +183,7 @@ function fge_ajax_modal_anfrage(): void {
 	// Event framework
 	update_post_meta( $request_id, '_fge_expected_participants', preg_match( '/\d+/', $group, $group_m ) ? (int) $group_m[0] : 0 );
 	update_post_meta( $request_id, '_fge_group_experience', $experience );
+	update_post_meta( $request_id, '_fge_start_time',       $starttime );
 	update_post_meta( $request_id, '_fge_catering_notes',   $diet );
 	// Wunschtermine (1–3): Kalender liefert ISO, wird zu lesbarem Label („Do, 18.06.2026")
 	// formatiert; speist die Termin-Abstimmung (fge_request_responses / scheduling).
@@ -193,6 +195,7 @@ function fge_ajax_modal_anfrage(): void {
 	update_post_meta( $request_id, '_fge_preferred_date_2', $fmt( $_POST['date2'] ?? '' ) );
 	update_post_meta( $request_id, '_fge_preferred_date_3', $fmt( $_POST['date3'] ?? '' ) );
 	$msg_parts = [];
+	if ( '' !== $starttime )     { $msg_parts[] = 'Gewünschter Startzeitpunkt: ' . $starttime; }
 	if ( '' !== $experience )    { $msg_parts[] = 'Golf-Erfahrung: ' . $experience; }
 	if ( '' !== $diet )          { $msg_parts[] = 'Verpflegung/Diät: ' . $diet; }
 	if ( '' !== trim( $notes ) ) { $msg_parts[] = trim( $notes ); }
@@ -273,6 +276,7 @@ function fge_ajax_general_request(): void {
 	$flex      = $t( 'flex' );
 	$duration  = $t( 'duration' );
 	$experience = $t( 'experience' );
+	$startzeit  = $t( 'startzeit' );
 	$diet       = $t( 'diet' );
 	$phone     = $t( 'phone' );
 	$city      = $t( 'city' );
@@ -317,6 +321,7 @@ function fge_ajax_general_request(): void {
 	// Event framework
 	update_post_meta( $request_id, '_fge_expected_participants', $size );
 	update_post_meta( $request_id, '_fge_group_experience',      $experience );
+	update_post_meta( $request_id, '_fge_start_time',            $startzeit );
 	update_post_meta( $request_id, '_fge_catering_notes',        $diet );
 	update_post_meta( $request_id, '_fge_desired_region',        $region );
 	update_post_meta( $request_id, '_fge_place_wish',            $place );
@@ -371,6 +376,7 @@ function fge_ajax_general_request(): void {
 	$message = 'Anlass: ' . $occasion
 		. ( $goal !== ''     ? "\nZiel: " . $goal : '' )
 		. ( $duration !== '' ? "\nDauer: " . $duration : '' )
+		. ( $startzeit !== '' ? "\nGewünschter Startzeitpunkt: " . $startzeit : '' )
 		. ( $experience !== '' ? "\nGolf-Erfahrung: " . $experience : '' )
 		. ( $region !== ''   ? "\nWunsch-Ort: " . $region : '' )
 		. ( $place !== ''    ? "\nKonkreter Platz: " . $place : '' )

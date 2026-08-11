@@ -5759,7 +5759,8 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 .wz-conf { position: absolute; top: -14px; width: 9px; height: 14px; border-radius: 2px; opacity: 0; animation-name: wz-conf-fall; animation-timing-function: ease-in; animation-fill-mode: forwards; }
 @keyframes wz-conf-fall {
   0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
-  100% { opacity: .9; transform: translateY(420px) rotate(340deg); }
+  75%  { opacity: .9; }
+  100% { opacity: 0; transform: translateY(420px) rotate(340deg); }
 }
 @media (prefers-reduced-motion: reduce) { .wz-conf { animation: none; opacity: 0; } }
 @media (max-width: 640px) {
@@ -5833,3 +5834,6 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 /* Programmatischer Fokus auf der Schritt-Überschrift (A11y) soll keinen
    sichtbaren Rahmen malen (Julius sah einen schwarzen Rahmen um die H2). */
 .rw-overlay .rw-h:focus, .rw-overlay .rw-success-h:focus { outline: none; }
+
+/* Event-Modal-Erfolg: Konfetti-Host braucht einen Positionskontext. */
+.fg-modal-success { position: relative; overflow: hidden; }
