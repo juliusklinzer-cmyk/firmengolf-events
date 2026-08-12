@@ -163,7 +163,7 @@ function fge_get_event_format_pages(): array {
 			'intro'   => 'Ein Workshop auf dem Golfplatz verbindet konzentriertes Arbeiten mit einem Ausklang, der wirklich verbindet. Moderne Clubhäuser bieten Konferenzräume mit Tageslicht und eine Gastronomie, die vom Begrüßungskaffee bis zum Mittagsbuffet auf der Clubterrasse alles abdeckt. Nach dem offiziellen Teil geht es raus: Ein Golf-Grundlagenkurs mit einem unserer Golflehrer bringt das Team in Bewegung, ganz ohne Vorkenntnisse. Ein Tag, ein Ort, ein Ansprechpartner.',
 			'facts' => [ $reason( 'leaf', 'Frischer Kopf', 'Vormittags Workshop, mittags Clubterrasse, nachmittags Bewegung an der frischen Luft. So hält die Konzentration den ganzen Tag.' ), $reason( 'sun', 'Ausklang am Grün', 'Zum Abschluss ein Golf-Grundlagenkurs mit Golflehrer, ein gemeinsames Erlebnis statt letzter Folien.' ), $r_team, $r_one ],
 			'faqs'    => [ fge_format_price_faq( 'Was kostet ein Workshop auf dem Golfplatz?', 'Workshoptage', $t_workshop, 'Im Workshoptag stecken Eventlocation, Begrüßung mit Kaffee und Kuchen, Mittagsbuffet inklusive Getränken auf der Clubterrasse und der Golf-Grundlagenkurs mit Golflehrer. Je nach Platz, Raum und Extras passen wir das Paket an.' ), $f_anf, $faq( 'Welche Technik steht im Konferenzraum bereit?', 'Beamer oder Screen, WLAN und Moderationsmaterial gehören auf den meisten Anlagen zur Ausstattung. Sag uns, was ihr braucht, wir klären das mit dem Platz vor der Buchung.' ), $f_fast, $f_bill ],
-			'hero_img' => 'pool/workshop-clubhaus-modern.jpg',
+			'hero_img' => 'pool/workshop-clubhaus-aussen.jpg',
 			'flow_h'   => 'Vom Kaffee bis zum ersten Abschlag.',
 			'flow'     => [
 				[ 't' => 'Ankunft & Begrüßung', 'b' => 'Der Golfclub empfängt euch, Kaffee und Kuchen am Buffet zum Ankommen.' ],

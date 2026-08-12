@@ -575,11 +575,50 @@ function fge_get_logo_url( bool $light = false ): string {
  *
  * @return array<string,string[]> category => list of pool filenames
  */
+/**
+ * Motive, die nie automatisch vergeben werden (Audit 2026-08-12). Entweder
+ * widersprechen sie dem Versprechen „Golfplätze in Deutschland" oder sie sind
+ * ohne Bildunterschrift nicht als Golf lesbar. Die Dateien bleiben liegen und
+ * können weiter gezielt gesetzt werden.
+ */
+function fge_placeholder_blocklist(): array {
+	return [
+		// Mid-Century-Clubhaus mit Palmen und Wüstenbergen (Kalifornien-Look).
+		'kundenevent-clubhaus-modern.jpg',
+		'workshop-clubhaus-modern.jpg',
+		// Café-Innenraum mit sitzenden Gästen, kein Golfbezug.
+		'teamevent-buero.jpg',
+		// Leeres Großraumbüro („alle sind golfen"), ohne Kontext nicht lesbar.
+		'teamevent-buero-alle-sind-golfen.jpg',
+	];
+}
+
+/**
+ * Inhalts-Schlüssel eines Pool-Bilds, damit identische Dateien unter
+ * verschiedenen Namen als ein Motiv zählen. Ergebnis wird tagesweise gecacht,
+ * damit nicht bei jedem Request über den ganzen Ordner gehasht wird.
+ */
+function fge_placeholder_content_key( string $file ): string {
+	static $map = null;
+	if ( null === $map ) {
+		$map = get_transient( 'fge_placeholder_content_keys' );
+		if ( ! is_array( $map ) ) {
+			$map = [];
+			foreach ( glob( FGE_DIR . 'assets/imagery/pool/*.jpg' ) ?: [] as $path ) {
+				$map[ basename( $path ) ] = (string) md5_file( $path );
+			}
+			set_transient( 'fge_placeholder_content_keys', $map, DAY_IN_SECONDS );
+		}
+	}
+	return $map[ $file ] ?? $file;
+}
+
 function fge_placeholder_pool(): array {
 	static $buckets = null;
 	if ( $buckets !== null ) {
 		return $buckets;
 	}
+	$blocked = array_flip( fge_placeholder_blocklist() );
 	$buckets = [
 		'event' => [], 'course' => [], 'range' => [], 'clubhouse' => [], 'founder' => [], 'misc' => [], 'all' => [],
 		// Format-Gruppen (2026-07): Dateiname-Präfix bestimmt die Gruppe, z. B. pool/platzreife-*.jpg.
@@ -589,6 +628,9 @@ function fge_placeholder_pool(): array {
 	$dir     = FGE_DIR . 'assets/imagery/pool';
 	foreach ( glob( $dir . '/*.jpg' ) ?: [] as $path ) {
 		$file = basename( $path );
+		if ( isset( $blocked[ $file ] ) ) {
+			continue;
+		}
 		$buckets['all'][] = $file;
 		if ( preg_match( '/^(teamevent|platzreife|turnier|kundenevent|afterwork|incentive|nachtevent|workshop)-/', $file, $m ) ) {
 			$cat = $m[1];
@@ -706,15 +748,38 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 			for ( $i = $span; $i < $count; $i++ ) {
 				$order[] = $i;
 			}
+			// Dedup über den Bildinhalt, nicht über den Dateinamen: mehrere Motive
+			// liegen unter verschiedenen Namen doppelt im Pool (z. B. clubhaus.jpg,
+			// workshop-clubhaus.jpg und workshop-clubhaus-aussen.jpg sind dieselbe
+			// Datei). Namensbasiert erschien dasselbe Foto so mehrfach auf einer
+			// Seite (Audit 2026-08-12).
+			$pick = null;
 			foreach ( $order as $try ) {
-				if ( empty( $used[ $list[ $try ] ] ) ) {
-					$idx = $try;
+				if ( empty( $used[ fge_placeholder_content_key( $list[ $try ] ) ] ) ) {
+					$pick = $list[ $try ];
 					break;
 				}
 			}
-			$used[ $list[ $idx ] ] = true;
-			$memo[ $key ]          = $list[ $idx ];
-			return plugins_url( 'assets/imagery/pool/' . $list[ $idx ], FGE_DIR . 'firmengolf-events.php' );
+			// Format-Gruppe erschöpft (die Workshop-Gruppe hat nach Abzug der
+			// Dateidubletten nur eine Handvoll Motive): lieber ein passendes Bild
+			// aus dem Gesamtpool als dasselbe Foto zweimal auf einer Seite.
+			if ( null === $pick ) {
+				$fallback = array_values( array_diff( (array) ( $pool['all'] ?? [] ), $list ) );
+				$fcount   = count( $fallback );
+				for ( $i = 0; $i < $fcount; $i++ ) {
+					$cand = $fallback[ ( abs( crc32( $cat . '|' . $seed ) ) + $offset + $i ) % $fcount ];
+					if ( empty( $used[ fge_placeholder_content_key( $cand ) ] ) ) {
+						$pick = $cand;
+						break;
+					}
+				}
+			}
+			if ( null === $pick ) {
+				$pick = $list[ $idx ]; // alles vergeben, Wiederholung unvermeidbar
+			}
+			$used[ fge_placeholder_content_key( $pick ) ] = true;
+			$memo[ $key ]                                 = $pick;
+			return plugins_url( 'assets/imagery/pool/' . $pick, FGE_DIR . 'firmengolf-events.php' );
 		}
 	}
 	return plugins_url( 'assets/imagery/' . $name, FGE_DIR . 'firmengolf-events.php' );

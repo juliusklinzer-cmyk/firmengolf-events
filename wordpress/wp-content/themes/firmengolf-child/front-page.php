@@ -240,7 +240,7 @@ $loc_paths = [
 		'href'  => $url_events,
 	],
 	[
-		'img'   => 'clubhaus-modern.jpg',
+		'img'   => 'clubhaus-aussenansicht.jpg',
 		'alt'   => 'Modernes Golf-Clubhaus als Event-Location',
 		'tag'   => 'Nach Maß',
 		'k'     => 'Individuell geplant',
@@ -375,9 +375,9 @@ $loc_paths = [
 			// Bewusst OHNE erfundene Orte/Preise (UWG!), nur echte Format-Beschreibungen.
 			$static_formats = [
 				[ 'label' => 'Platzreife',     'title' => 'Platzreife als Firmenprogramm',    'desc' => 'Kompakter Kurs mit PGA-Golflehrer, Regeln und offizieller Prüfung.',                    'price' => 'Auf Anfrage', 'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
-				[ 'label' => 'Teamevent',      'title' => 'Golf-Teamevent für euer Team',      'desc' => 'Stationen, Team-Challenge, gemeinsames Essen. Ganz ohne Vorkenntnisse.',                 'price' => 'Auf Anfrage', 'img' => 'firmenevent-afterwork-golf.jpg',  'dark' => true  ],
-				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',           'desc' => 'Shotgun-Start, Fotograf, Siegerehrung. Wir kümmern uns um alles.',                       'price' => 'Auf Anfrage', 'img' => 'clubhaus-aussenansicht.jpg',      'dark' => false ],
-				[ 'label' => 'Incentive',      'title' => 'Incentive mit Golf & Genuss',       'desc' => 'Besondere Plätze, private Dinings, bleibende Erinnerungen für eure Top-Leute.',          'price' => 'Auf Anfrage', 'img' => 'golfplatz-meerblick.jpg',         'dark' => true  ],
+				[ 'label' => 'Teamevent',      'title' => 'Golf-Teamevent für euer Team',      'desc' => 'Stationen, Team-Challenge, gemeinsames Essen. Ganz ohne Vorkenntnisse.',                 'price' => 'Auf Anfrage', 'img' => 'golf-coaching-gruppe.jpg',        'dark' => true  ],
+				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',           'desc' => 'Shotgun-Start, Fotograf, Siegerehrung. Wir kümmern uns um alles.',                       'price' => 'Auf Anfrage', 'img' => 'pool/turnier-fahne-abendlicht.jpg',      'dark' => false ],
+				[ 'label' => 'Incentive',      'title' => 'Incentive mit Golf & Genuss',       'desc' => 'Besondere Plätze, private Dinings, bleibende Erinnerungen für eure Top-Leute.',          'price' => 'Auf Anfrage', 'img' => 'hero-mountains.jpg',                 'dark' => true  ],
 			];
 			foreach ( $static_formats as $f ) : ?>
 				<article class="mk-format<?php echo $f['dark'] ? ' is-dark' : ''; ?>">
@@ -428,14 +428,14 @@ $loc_paths = [
 				'title'   => 'Arbeiten, wo der Kopf frei ist.',
 				'body'    => 'Vormittags Workshop im Clubhaus, mittags Clubterrasse, zum Ausklang ein Golf-Grundlagenkurs.',
 				'url'     => add_query_arg( 'format', 'workshop', $url_events ),
-				'img'     => 'clubhaus-modern.jpg',
+				'img'     => 'hero-forest.jpg',
 			],
 			[
 				'eyebrow' => 'Firmenturnier',
 				'title'   => 'Wettbewerb, der verbindet.',
 				'body'    => 'Shotgun-Start, faire Formate für alle Level, Siegerehrung. Komplett organisiert.',
 				'url'     => add_query_arg( 'format', 'firmen_golfturnier', $url_events ),
-				'img'     => 'firmenevent-afterwork-golf.jpg',
+				'img'     => 'hero-golfloch-abendlicht.jpg',   
 			],
 			[
 				'eyebrow' => 'Platzreife',
@@ -457,7 +457,7 @@ $loc_paths = [
 				'body'    => 'Golf-Stationen, BBQ und laue Abendstimmung für die ganze Firma.',
 				'url'     => $url_ind,
 				'cta'     => 'Individuell planen',
-				'img'     => 'golfplatz-meerblick.jpg',
+				'img'     => 'golfplatz-huegel-abendlicht.jpg',
 			],
 		];
 		foreach ( $occasions as $occ ) : ?>
