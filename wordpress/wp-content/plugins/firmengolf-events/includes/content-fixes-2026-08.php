@@ -17,10 +17,7 @@
  *  5. Blog-Kostenartikel: Preisspanne und 110-Euro-Beispiel an die eigenen
  *     Angebote und an die Brutto-Betrachtung angeglichen.
  *  6. Betreuungsschlüssel im Blog vereinheitlicht (8 vs. 10 pro Coach).
- *
- * NICHT hier drin, weil es eine inhaltliche Entscheidung von Julius braucht:
- * das Weihnachtsfeier-Event (Saison des Platzes März bis Oktober, Preis
- * „150 € gesamt" für bis zu 50 Gäste inklusive Dinner).
+ *  7. Weihnachtsfeier: ganzjährig buchbar, Preis pro Person (Julius, 2026-08-12).
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -184,6 +181,28 @@ function fge_cf26_unwrap_dash_list( int $post_id ): void {
 	}
 }
 
+/**
+ * Weihnachtsfeier: laut Julius (2026-08-12) ganzjährig buchbar, auch außerhalb
+ * der Platzsaison, und der hinterlegte Preis ist pro Person, nicht pauschal.
+ * Die Karte zeigte deshalb „150 € Gesamt netto" für bis zu 50 Gäste inklusive
+ * Dinner und daneben „Saison März bis Oktober" bei einem Glühwein-Event.
+ */
+function fge_cf26_fix_weihnachtsfeier(): void {
+	$post = get_page_by_path( 'weihnachtsfeier-fuer-dein-team', OBJECT, 'firmengolf_event' );
+	if ( ! $post ) {
+		return;
+	}
+	update_post_meta( $post->ID, '_fge_season_exempt', '1' );
+	if ( 'person' !== (string) get_post_meta( $post->ID, '_fge_price_basis', true ) ) {
+		update_post_meta( $post->ID, '_fge_price_basis', 'person' );
+		if ( function_exists( 'fge_event_pricing' ) && function_exists( 'fge_event_price_label' ) ) {
+			$pr = fge_event_pricing( (int) $post->ID );
+			update_post_meta( $post->ID, '_fge_sale_price_net', $pr['gross'] );
+			update_post_meta( $post->ID, '_fge_public_price_label', fge_event_price_label( (int) $post->ID ) );
+		}
+	}
+}
+
 /** Schritte 5 bis 7: Blogtexte. */
 function fge_cf26_fix_blog(): void {
 	$posts = get_posts( [ 'post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids' ] );
@@ -261,6 +280,7 @@ add_action( 'init', static function () {
 
 	fge_cf26_create_starter_events();
 	fge_cf26_fix_event_copy();
+	fge_cf26_fix_weihnachtsfeier();
 	fge_cf26_fix_blog();
 
 	if ( function_exists( 'fge_flush_person_price_index' ) ) {

@@ -129,13 +129,19 @@ if ( $ev_days ) {
 		$good_tags[] = 'Anfragbar ' . implode( ', ', $day_labels );
 	}
 }
+// Events, die ausdrücklich auch außerhalb der Platzsaison stattfinden (z. B. die
+// Weihnachtsfeier auf einem Platz mit Saison März bis Oktober), zeigen die Saison
+// des Partners nicht an, sie wäre ein Widerspruch (Audit 2026-08-12).
+$season_exempt = '1' === (string) get_post_meta( $post_id, '_fge_season_exempt', true );
 if ( $partner_id ) {
 	$lead_days = (int) get_post_meta( $partner_id, '_fge_min_lead_time_days', true );
 	if ( $lead_days > 0 ) {
 		$good_tags[] = 'Mind. ' . $lead_days . ' Tage Vorlauf';
 	}
-	$season_lbl = function_exists( 'fge_season_label' ) ? fge_season_label( (string) get_post_meta( $partner_id, '_fge_season', true ) ) : '';
-	if ( 'Ganzjährig' === $season_lbl ) {
+	$season_lbl = ( ! $season_exempt && function_exists( 'fge_season_label' ) ) ? fge_season_label( (string) get_post_meta( $partner_id, '_fge_season', true ) ) : '';
+	if ( $season_exempt ) {
+		$good_tags[] = 'Ganzjährig buchbar';
+	} elseif ( 'Ganzjährig' === $season_lbl ) {
 		$good_tags[] = 'Ganzjährig buchbar';
 	} elseif ( $season_lbl !== '' ) {
 		$good_tags[] = 'Saison ' . $season_lbl;
@@ -569,7 +575,7 @@ get_header();
 				</p>
 				<?php endif; ?>
 				<?php
-				$os_note = ( $partner_id && function_exists( 'fge_partner_offseason_note' ) ) ? fge_partner_offseason_note( $partner_id ) : '';
+				$os_note = ( $partner_id && ! $season_exempt && function_exists( 'fge_partner_offseason_note' ) ) ? fge_partner_offseason_note( $partner_id ) : '';
 				if ( $os_note !== '' ) : ?>
 				<p class="evd-offseason"><strong>Aktuell Offseason.</strong> <?php echo esc_html( $os_note ); ?>. Anfragen für Termine in der Saison sind jederzeit möglich.</p>
 				<?php endif; ?>
