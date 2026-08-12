@@ -73,7 +73,7 @@ foreach ( $faq_groups as $items ) {
 	<div class="mk-section-head">
 		<div class="mk-eyebrow">Für Golfplätze · Häufige Fragen</div>
 		<?php /* clamp statt fixem var(--fs-display-md): 44px skalierte mobil nicht (Funnel-Audit P4). */ ?>
-		<h1 class="mk-h2" style="font-size:clamp(32px,4.6vw,44px);max-width:780px;">Alles, was ihr über eine Partnerschaft <em class="mk-italic">wissen</em> müsst.</h1>
+		<h1 class="mk-h2 mk-pagehead">Alles, was ihr über eine Partnerschaft <em class="mk-italic">wissen</em> müsst.</h1>
 		<p class="mk-sub" style="max-width:680px;">
 			Von der Aufnahme über die Termin-Abstimmung bis zur Abrechnung, hier beantworten wir die Fragen,
 			die Golfplätze uns am häufigsten stellen. Neu hier? Der Überblick steht auf

@@ -238,7 +238,7 @@ get_header();
 					<div class="bc-total-h">Gesamtbudget · Richtwert <span style="font-weight:400;">(netto, zzgl. 19&nbsp;% MwSt.)</span></div>
 					<div class="bc-total-num" id="bc-total">€0</div>
 					<div class="bc-total-meta" id="bc-total-meta"></div>
-					<button type="button" class="fg-btn-ink lg bc-total-cta" id="bc-request">
+					<button type="button" class="fg-btn-brand fg-btn-lg bc-total-cta" id="bc-request">
 						Unverbindliches Angebot anfragen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 					</button>
 					<p class="bc-total-note">Unverbindlicher Schätzwert. Das finale Angebot stellen wir nach kurzer Rücksprache zusammen, transparent, mit allen Posten.</p>

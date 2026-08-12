@@ -230,11 +230,26 @@ add_action( 'wp_head', function () {
 	if ( ! function_exists( 'fge_get_placeholder_image_url' ) ) {
 		return;
 	}
-	$img = '';
+	// Genau das Bild vorladen, das der Hero auch wirklich zeigt. Vorher lief hier
+	// pauschal golfplatz-panorama.jpg (183 KB), das seit dem LP-Ausbau auf keiner
+	// Format- oder Stadtseite mehr im Hero steht: Der Preload lud eine Datei, die
+	// nie verwendet wurde, und das echte LCP-Bild bekam keine Priorität
+	// (Audit 2026-08-12, betraf alle Ads-Zielseiten).
+	$img       = '';
+	$city_slug = (string) get_query_var( 'fge_city' );
+	$fmt_slug  = (string) get_query_var( 'fge_format' );
 	if ( is_front_page() ) {
 		$img = 'hero-golfer-alpen.jpg';
-	} elseif ( get_query_var( 'fge_city' ) || get_query_var( 'fge_format' ) ) {
-		$img = 'golfplatz-panorama.jpg';
+	} elseif ( '' !== $city_slug ) {
+		// Stadt- und Format×Stadt-Seiten zeigen beide das Stadtbild.
+		$img = 'stadt-' . $city_slug . '.jpg';
+	} elseif ( '' !== $fmt_slug ) {
+		$formats = function_exists( 'fge_get_event_format_pages' ) ? fge_get_event_format_pages() : [];
+		$img     = (string) ( $formats[ $fmt_slug ]['hero_img'] ?? '' );
+	}
+	// Nur vorladen, was es auch gibt, sonst lieber gar kein Preload.
+	if ( '' !== $img && defined( 'FGE_DIR' ) && ! file_exists( FGE_DIR . 'assets/imagery/' . $img ) ) {
+		$img = '';
 	}
 	if ( $img !== '' ) {
 		printf(

@@ -42,6 +42,11 @@ $seo_title   = sprintf( $fmeta['title'], $city_name );
 $seo_desc    = sprintf( $fmeta['desc'], $city_name );
 $events_url  = (string) get_post_type_archive_link( 'firmengolf_event' );
 $ind_url     = ( $p = get_page_by_path( 'individuelle-events' ) ) ? (string) get_permalink( $p->ID ) : home_url( '/individuelle-events/' );
+// Deep-Link in die 30-Sekunden-Anfrage mit dem Format der Seite als Anlass.
+$cf_anfrage_quick = add_query_arg( array_filter( [
+	'anfrage' => 'quick',
+	'anlass'  => function_exists( 'fge_format_occasion' ) ? fge_format_occasion( $format_slug ) : '',
+] ), $ind_url );
 
 // Gründe: 2 Format-Gründe + 2 Stadt-Gründe, dedupliziert nach Titel.
 $reasons = [];
@@ -171,6 +176,13 @@ get_header();
 			<div class="ev-hero-eyebrow"><?php echo esc_html( $eyebrow ); ?></div>
 			<h1 class="ev-hero-title"><?php echo esc_html( $h1 ); ?></h1>
 			<p class="ev-hero-sub"><?php echo esc_html( $intro ); ?></p>
+			<?php /* Hero-CTAs wie auf allen Schwester-Landingpages. Format×Stadt war der
+				einzige Seitentyp ohne Conversion above the fold, ausgerechnet auf den
+				Ads-Zielseiten (Audit 2026-08-12). */ ?>
+			<div class="ev-hero-ctas">
+				<a class="fg-btn-brand" href="#angebote">Passende Events ansehen</a>
+				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $cf_anfrage_quick ); ?>">Unverbindlich anfragen</a>
+			</div>
 		</div>
 	</div>
 </section>
@@ -206,7 +218,7 @@ get_header();
 
 <?php /* Events am Schnittpunkt Stadt × Format */ ?>
 <?php if ( ! empty( $cf_events ) ) : ?>
-<section class="fg-grid-section" aria-label="Events in <?php echo esc_attr( $city_name ); ?>">
+<section class="fg-grid-section" id="angebote" aria-label="Events in <?php echo esc_attr( $city_name ); ?>">
 	<div class="fg-grid-head">
 		<h2 class="fg-grid-title"><?php echo esc_html( $eyebrow ); ?>, passende Events</h2>
 		<a class="fg-chip" href="<?php echo esc_url( $events_url ); ?>">Alle ansehen</a>
@@ -275,7 +287,7 @@ get_header();
 		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für <?php echo esc_html( $city_name ); ?>?</div>
 		<h2 class="mk-cta-h"><?php echo esc_html( $eyebrow ); ?> <em class="mk-italic">planen</em>.</h2>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( add_query_arg( array_filter( [ 'anfrage' => 'quick', 'anlass' => function_exists( 'fge_format_occasion' ) ? fge_format_occasion( (string) get_query_var( 'fge_format' ) ) : '' ] ), $ind_url ) ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
+			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $cf_anfrage_quick ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
 			<a class="mk-cta-mail" href="<?php echo esc_url( $city_url ); ?>">Alle Formate in <?php echo esc_html( $city_name ); ?> →</a>
 		</div>
 	</div>

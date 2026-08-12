@@ -206,11 +206,14 @@ get_header();
 			'meta' => [ '18 Loch', 'Live-Scoring', 'Siegerehrung' ] ],
 	];
 ?>
-<section class="iv-section">
-	<div class="iv-head">
+<?php /* mk-section statt iv-section: sonst rendert genau diese eine Überschrift 44px
+	statt 48px und die Sektion bricht mobil aus dem vertikalen Rhythmus
+	(Audit 2026-08-12, einziger Ausreißer auf allen Formatseiten). */ ?>
+<section class="mk-section">
+	<div class="mk-section-head">
 		<div class="mk-eyebrow">Golf-Erfahrung</div>
 		<h2 class="mk-h2">Für jedes Level das <span class="mk-italic">Passende</span></h2>
-		<p class="mk-sub">In jedem Team spielt jemand zum ersten Mal, und jemand seit Jahren. Wir stellen jedes Event so zusammen, dass alle Spaß haben, egal auf welchem Level.</p>
+		<p class="mk-sub" style="max-width:var(--width-prose);">In jedem Team spielt jemand zum ersten Mal, und jemand seit Jahren. Wir stellen jedes Event so zusammen, dass alle Spaß haben, egal auf welchem Level.</p>
 	</div>
 	<div class="iv-exp-grid">
 		<?php foreach ( $fmt_levels as $x ) : ?>

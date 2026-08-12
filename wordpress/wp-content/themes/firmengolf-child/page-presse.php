@@ -17,7 +17,7 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 <section class="mk-section" aria-label="Presse" style="padding-top:64px;">
 	<div class="mk-section-head">
 		<div class="mk-eyebrow">Newsroom · Presse</div>
-		<h1 class="mk-h2" style="font-size:var(--fs-display-md);">Golf, neu <em class="mk-italic">erzählt</em>.</h1>
+		<h1 class="mk-h2 mk-pagehead">Golf, neu <em class="mk-italic">erzählt</em>.</h1>
 		<p class="mk-sub" style="max-width:680px;">
 			Material, Zahlen und O-Töne für eure Berichterstattung über Firmengolf, Logos, Fakten,
 			Pressemitteilungen und ein direkter Draht zu uns.

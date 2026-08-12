@@ -299,8 +299,12 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   background: var(--ink-200); color: var(--ink-500);
   cursor: not-allowed; pointer-events: none;
 }
-.fg-btn-sm { font-size: 13px; padding: 8px 16px; min-height: 36px; }
-.fg-btn-lg { font-size: 16px; padding: 15px 30px; }
+/* Größen-Modifier mit Element-Qualifizierung: die Basisregeln stehen als
+   a.fg-btn-cta/button.fg-btn-cta (0,1,1) im Blatt und schlugen die unqualifizierten
+   Modifier (0,1,0) sonst immer, die „großen" Buttons rendern dann normalgroß
+   (Audit 2026-08-12). */
+.fg-btn-sm, a.fg-btn-sm, button.fg-btn-sm { font-size: 13px; padding: 8px 16px; min-height: 36px; }
+.fg-btn-lg, a.fg-btn-lg, button.fg-btn-lg { font-size: 16px; padding: 15px 30px; min-height: 52px; }
 .fg-btn-block { width: 100%; justify-content: center; }
 
 /* Liquid glass — for buttons that sit directly on a photo / dark section. Self-contained. */
@@ -996,7 +1000,7 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   .fg-footer-base          { flex-direction: column; gap: 12px; text-align: center; }
 
   /* buttons */
-  .fg-btn-lg               { font-size: 15px; padding: 13px 22px; }
+  .fg-btn-lg, a.fg-btn-lg, button.fg-btn-lg { font-size: 15px; padding: 13px 22px; min-height: 48px; }
 }
 
 /* ── Small mobile: 375px fine-tuning ── */
@@ -2531,8 +2535,8 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
   .fg-btn-ghost-light, button.fg-btn-ghost-light {
     font-size: 14px; padding: 9px 18px; min-height: 38px;
   }
-  .fg-btn-lg { font-size: 14.5px; padding: 11px 22px; min-height: 42px; }
-  .fg-btn-sm { font-size: 13px; padding: 7px 14px; min-height: 32px; }
+  .fg-btn-lg, a.fg-btn-lg, button.fg-btn-lg { font-size: 14.5px; padding: 11px 22px; min-height: 42px; }
+  .fg-btn-sm, a.fg-btn-sm, button.fg-btn-sm { font-size: 13px; padding: 7px 14px; min-height: 32px; }
 }
 
 /* Search rail cells */
@@ -3933,7 +3937,7 @@ button.bc-step-btn {
   font-family: var(--font-display); letter-spacing: 0.02em;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-.bc-seg-btn.on { background: #C9B488; color: var(--paper-100); }
+.bc-seg-btn.on { background: var(--fairway-700); color: var(--paper-100); }
 
 /* services chips (full-width row under the bar) */
 .bc-services {
@@ -3958,7 +3962,7 @@ button.bc-chip {
   transition: all var(--dur-fast) var(--ease-out);
 }
 .bc-chip:hover { border-color: var(--ink-300); }
-.bc-chip.on { background: var(--sand-500); color: var(--paper-100); border-color: var(--sand-500); }
+.bc-chip.on { background: var(--fairway-700); color: var(--paper-100); border-color: var(--fairway-700); }
 .bc-chip.is-locked { cursor: default; }
 .bc-chip-ic { width: 18px; height: 18px; display: grid; place-items: center; opacity: 0.9; }
 
@@ -5842,3 +5846,8 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 
 /* Event-Modal-Erfolg: Konfetti-Host braucht einen Positionskontext. */
 .fg-modal-success { position: relative; overflow: hidden; }
+
+/* Einheitlicher Seitenkopf für die hero-losen Infoseiten (Presse, Partner-FAQ).
+   Vorher bauten beide ihren H1 per Inline-Style zusammen, Presse mit fixen 44px,
+   die dank Inline-Style auch mobil stehen blieben (Audit 2026-08-12). */
+.mk-h2.mk-pagehead { font-size: clamp(32px, 4.6vw, 44px); max-width: 780px; }

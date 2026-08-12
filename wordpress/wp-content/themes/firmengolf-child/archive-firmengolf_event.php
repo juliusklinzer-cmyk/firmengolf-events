@@ -526,13 +526,9 @@ if ( ! $has_filters ) :
 				</div>
 			</section>
 		<?php endforeach; ?>
-		<div class="ev-inline-cta">
-			<div>
-				<div class="mk-eyebrow">Kein passender Veranstaltungstyp dabei?</div>
-				<h3 class="ev-inline-h">Wir planen dein Event nach deinen Ansprüchen.</h3>
-			</div>
-			<a class="fg-btn fg-btn-brand" href="<?php echo esc_url( $ind_link ); ?>">Individuelles Event anfragen</a>
-		</div>
+		<?php /* Der Inline-CTA steht einmal weiter unten nach dem Event-Grid. Hier stand
+			derselbe Block ein zweites Mal, mit anderer Button-Klasse und ohne
+			?anfrage=full, sodass er den Wizard nicht öffnete (Audit 2026-08-12). */ ?>
 	</div>
 <?php endif; ?>
 <section class="fg-grid-section<?php echo ! $has_filters ? ' fge-hide-mobile' : ''; ?>" aria-label="Eventangebote">
@@ -626,7 +622,7 @@ if ( ! $has_filters ) :
 	<div class="ev-inline-cta">
 		<div>
 			<div class="mk-eyebrow">Kein passendes Format dabei?</div>
-			<h3 class="ev-inline-h">Wir planen dein Event nach deinen Ansprüchen.</h3>
+			<h3 class="ev-inline-h">Wir planen euer Event nach euren Ansprüchen.</h3>
 		</div>
 		<a class="fg-btn-cta" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $ind_url ) ); ?>">
 			Individuelles Event anfragen
