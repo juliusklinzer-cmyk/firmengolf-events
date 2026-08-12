@@ -21,9 +21,18 @@ $p_date  = get_the_date( 'd. M Y', $pid );
 $p_wc    = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $pid ) ) );
 $p_read  = max( 1, (int) ceil( $p_wc / 200 ) );
 $p_exc   = wp_trim_words( get_the_excerpt( $pid ), 20 );
+// Redaktions-Byline statt WP-Loginname: get_the_author_meta() lieferte hier
+// „julius" kleingeschrieben mit Platzhalter-Avatar, auch bei Beiträgen von
+// Marie oder Sophie (Audit 2026-08-12).
 $auth_id = (int) get_post_field( 'post_author', $pid );
-$p_auth  = get_the_author_meta( 'display_name', $auth_id );
-$avatar  = get_avatar_url( $auth_id, [ 'size' => 48 ] );
+if ( function_exists( 'fge_blog_author' ) ) {
+	$byline = fge_blog_author( $pid );
+	$p_auth = strtok( $byline['name'], ' ' ); // Vorname, wie in den übrigen Blog-Karten
+	$avatar = $byline['img'];
+} else {
+	$p_auth = get_the_author_meta( 'display_name', $auth_id );
+	$avatar = get_avatar_url( $auth_id, [ 'size' => 48 ] );
+}
 ?>
 <article class="blog-card">
 	<a href="<?php echo esc_url( $p_url ); ?>" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1;">

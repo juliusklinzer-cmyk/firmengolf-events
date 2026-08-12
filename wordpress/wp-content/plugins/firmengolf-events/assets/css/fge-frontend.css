@@ -3125,7 +3125,13 @@ button.fg-search-btn { background: var(--fairway-700); color: var(--paper-100); 
 .blog-featured { display: grid; grid-template-columns: 1.05fr 1fr; gap: 0; background: var(--paper-50); border-radius: var(--radius-2xl); overflow: hidden; box-shadow: var(--shadow-md); text-decoration: none; color: inherit; transition: box-shadow var(--dur-base) var(--ease-out); }
 .blog-featured:hover { box-shadow: var(--shadow-lg); }
 .blog-featured-photo { position: relative; aspect-ratio: 5/4; background-size: cover; background-position: center; min-height: 460px; }
-.blog-featured-photo .blog-top-tag { position: absolute; left: 20px; top: 20px; font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--fairway-700); color: var(--paper-50); white-space: nowrap; letter-spacing: .04em; text-transform: uppercase; }
+/* Badge auf allen Foto-Containern, die sie rendern. Vorher war die Regel nur auf
+   .blog-featured-photo gescoped, in home.php sitzt sie aber in .blog-topcard-photo
+   bzw. .blog-card-photo und lag dort ungestylt und angeschnitten auf dem Bild
+   (Audit 2026-08-12). */
+.blog-featured-photo .blog-top-tag,
+.blog-topcard-photo .blog-top-tag,
+.blog-card-photo .blog-top-tag { position: absolute; left: 20px; top: 20px; font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--fairway-700); color: var(--paper-50); white-space: nowrap; letter-spacing: .04em; text-transform: uppercase; }
 .blog-featured-body { padding: 52px 48px; display: flex; flex-direction: column; gap: 14px; justify-content: center; }
 .blog-featured-h { font-family: var(--font-display); font-size: 40px; line-height: 1.05; letter-spacing: -.025em; font-weight: 500; text-wrap: balance; }
 .blog-featured-x { font-size: 16px; line-height: 1.65; color: var(--ink-700); }

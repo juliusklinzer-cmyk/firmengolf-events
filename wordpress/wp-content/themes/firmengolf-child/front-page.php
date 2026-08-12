@@ -591,7 +591,8 @@ $loc_paths = [
 							<h3 class="home-blog-t"><?php echo esc_html( $post->post_title ); ?></h3>
 							<p class="home-blog-x"><?php echo esc_html( wp_trim_words( $post->post_excerpt ?: wp_strip_all_tags( $post->post_content ), 20 ) ); ?></p>
 							<div class="home-blog-author">
-								<span class="home-blog-author-name"><?php echo esc_html( get_the_author_meta( 'display_name', (int) $post->post_author ) ); ?></span>
+								<?php /* Redaktions-Byline statt WP-Loginname (Audit 2026-08-12: 3x „julius") */ ?>
+								<span class="home-blog-author-name"><?php echo esc_html( function_exists( 'fge_blog_author' ) ? fge_blog_author( (int) $post->ID )['name'] : get_the_author_meta( 'display_name', (int) $post->post_author ) ); ?></span>
 								<span class="home-blog-author-date"><?php echo esc_html( get_the_date( 'j. F Y', $post ) ); ?></span>
 							</div>
 						</div>

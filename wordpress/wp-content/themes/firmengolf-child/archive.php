@@ -58,8 +58,10 @@ get_header();
 		$featured_wc    = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $featured_id ) ) );
 		$featured_read  = max( 1, (int) ceil( $featured_wc / 200 ) );
 		$featured_auth_id = (int) $featured_post->post_author;
-		$featured_author  = get_the_author_meta( 'display_name', $featured_auth_id );
-		$featured_bio     = get_the_author_meta( 'description', $featured_auth_id );
+		// Redaktions-Byline statt WP-Loginname (Audit 2026-08-12).
+		$featured_by      = function_exists( 'fge_blog_author' ) ? fge_blog_author( (int) $featured_id ) : null;
+		$featured_author  = $featured_by ? strtok( $featured_by['name'], ' ' ) : get_the_author_meta( 'display_name', $featured_auth_id );
+		$featured_bio     = $featured_by ? $featured_by['role'] : get_the_author_meta( 'description', $featured_auth_id );
 	?>
 	<div class="blog-featured-sec">
 		<a href="<?php echo esc_url( $featured_url ); ?>" class="blog-featured">
@@ -124,7 +126,7 @@ get_header();
 					$p_wc   = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $pid ) ) );
 					$p_read = max( 1, (int) ceil( $p_wc / 200 ) );
 					$p_exc  = wp_trim_words( get_the_excerpt( $pid ), 20 );
-					$p_auth = get_the_author_meta( 'display_name', (int) $p->post_author );
+					$p_auth = function_exists( 'fge_blog_author' ) ? strtok( fge_blog_author( (int) $p->ID )['name'], ' ' ) : get_the_author_meta( 'display_name', (int) $p->post_author );
 				?>
 				<article class="blog-card">
 					<a href="<?php echo esc_url( $p_url ); ?>" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1;">
