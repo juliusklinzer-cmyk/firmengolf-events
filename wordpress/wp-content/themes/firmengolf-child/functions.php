@@ -352,19 +352,19 @@ add_action( 'wp_enqueue_scripts', function() {
 // Banner mit gleichwertigem „Ablehnen" (DSGVO/TTDSG). Konfig als JSON ins Frontend.
 function fge_klaro_config(): array {
 	$icon = '<svg viewBox="0 0 24 24" fill="none" stroke="#4279D1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 1 0 9.8 12 3.4 3.4 0 0 1-4.3-4.3A3.4 3.4 0 0 1 12.3 5.4 2 2 0 0 1 12 2z"/><circle cx="9.5" cy="10" r="1" fill="#4279D1" stroke="none"/><circle cx="14.5" cy="14" r="1" fill="#4279D1" stroke="none"/><circle cx="9.5" cy="15" r="1" fill="#4279D1" stroke="none"/></svg>';
+	// Nur Dienste listen, die es wirklich gibt (Audit 2026-08-12): HubSpot-Kalender
+	// ist ein reiner Link ohne Embed, HubSpot-CTA und Kit existieren gar nicht im
+	// Code. Einwilligungen in Geister-Dienste sind wertlos und angreifbar.
 	$services = [
 		[ 'name' => 'wordpress',       'title' => 'WordPress (technisch notwendig)', 'purposes' => [ 'functional' ],     'required' => true,  'default' => true ],
 		[ 'name' => 'googleanalytics', 'title' => 'Google Analytics',                 'purposes' => [ 'statistics' ],     'default'  => false, 'cookies' => [ '/^_ga.*/', '/^_gid$/' ] ],
 		[ 'name' => 'googlemaps',      'title' => 'Google Maps',                      'purposes' => [ 'external-media' ], 'default'  => false ],
-		[ 'name' => 'hubspotmeetings', 'title' => 'HubSpot Terminkalender',           'purposes' => [ 'external-media' ], 'default'  => false ],
-		[ 'name' => 'hubspotcta',      'title' => 'HubSpot CTA / Tracking',           'purposes' => [ 'marketing' ],      'default'  => false ],
-		[ 'name' => 'kitnewsletter',   'title' => 'Newsletter (Kit)',                 'purposes' => [ 'marketing' ],      'default'  => false ],
 	];
 	if ( fge_gads_id() ) {
 		$services[] = [ 'name' => 'googleads', 'title' => 'Google Ads', 'purposes' => [ 'marketing' ], 'default' => false, 'cookies' => [ '/^_gcl.*/' ] ];
 	}
 	$notice = '<span class="fge-cc-head">' . $icon . 'Diese Webseite verwendet Cookies</span>'
-		. '<span class="fge-cc-body">Wir verwenden Cookies und ähnliche Technologien, um die Nutzung unserer Website zu analysieren, Funktionen anzubieten und Inhalte wie Karten, Videos, unseren Terminkalender oder Newsletter-Formulare einzubinden. Manche Dienste übertragen dabei Daten an Anbieter wie Google oder HubSpot. Du entscheidest selbst, was geladen wird, und kannst deine Wahl jederzeit über „Cookie-Einstellungen" im Footer ändern.</span>';
+		. '<span class="fge-cc-body">Wir verwenden Cookies und ähnliche Technologien, um die Nutzung unserer Website zu analysieren und Inhalte wie Karten einzubinden. Manche Dienste übertragen dabei Daten an Google. Du entscheidest selbst, was geladen wird, und kannst deine Wahl jederzeit über „Cookie-Einstellungen" im Footer ändern oder widerrufen.</span>';
 
 	return [
 		'version'                => 2,
@@ -414,9 +414,6 @@ function fge_klaro_config(): array {
 				'wordpress'        => [ 'title' => 'WordPress (technisch notwendig)', 'description' => 'Session- und Sicherheits-Cookies sowie das Speichern deiner Cookie-Auswahl. Ohne diese funktioniert die Seite nicht.' ],
 				'googleanalytics'  => [ 'title' => 'Google Analytics', 'description' => 'Statistik zur anonymisierten Auswertung der Websitenutzung. Setzt Cookies und überträgt Daten an Google.' ],
 				'googlemaps'       => [ 'title' => 'Google Maps', 'description' => 'Interaktive Karten. Beim Laden wird deine IP-Adresse an Google übertragen.' ],
-				'hubspotmeetings'  => [ 'title' => 'HubSpot Terminkalender', 'description' => 'Eingebetteter Terminbuchungs-Kalender von HubSpot. Setzt Cookies und überträgt Daten an HubSpot.' ],
-				'hubspotcta'       => [ 'title' => 'HubSpot CTA / Tracking', 'description' => 'Marketing- und CTA-Elemente von HubSpot inkl. Nutzungs-Tracking.' ],
-				'kitnewsletter'    => [ 'title' => 'Newsletter (Kit)', 'description' => 'Anmeldeformular unseres Newsletter-Anbieters Kit (ehem. ConvertKit). Setzt Cookies und überträgt Daten an Kit.' ],
 				'googleads'        => [ 'title' => 'Google Ads', 'description' => 'Conversion-Messung für unsere Google-Werbekampagnen. Setzt Cookies und überträgt Daten an Google.' ],
 			],
 		],
@@ -463,6 +460,11 @@ add_action( 'wp_enqueue_scripts', function () {
 	// werden die zugehörigen Google-Cookies (_ga*, _gcl*) gelöscht. Pollt auf window.klaro,
 	// weil Inline-'after'-Skripte vor dem defer-Klaro laufen.
 	wp_add_inline_script( 'fge-klaro', "(function(){function clear(stats,ads){var host=location.hostname.replace(/^www\\./,'');document.cookie.split(';').forEach(function(c){var n=c.split('=')[0].trim();if(!((stats&&/^_ga/.test(n))||(ads&&/^_gcl/.test(n))))return;['','; domain=.'+host,'; domain='+location.hostname].forEach(function(d){document.cookie=n+'=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'+d;});});}var prev=null;function apply(consents){if(!window.gtag||!window.fgeConsentSignals)return;var sig=window.fgeConsentSignals(consents||{});gtag('consent','update',sig);if(prev){clear(prev.analytics_storage==='granted'&&sig.analytics_storage==='denied',prev.ad_storage==='granted'&&sig.ad_storage==='denied');}prev=sig;}function boot(){if(!window.klaro||!window.klaro.getManager){setTimeout(boot,200);return;}var m=window.klaro.getManager();m.watch({update:function(mgr,evt){if('saveConsents'===evt||'applyConsents'===evt){apply(mgr.consents);}}});if(m.confirmed){apply(m.consents);}}boot();})();", 'after' );
+	// Widerruf so einfach wie die Einwilligung (Art. 7 Abs. 3 DSGVO): Klaro blendet
+	// im Einstellungs-Modal nach erteilter Einwilligung nur noch „Auswahl speichern"
+	// ein, ein Ablehnen-Button fehlt dort komplett (Audit 2026-08-12). Wir hängen
+	// ihn selbst in die Button-Zeile und nutzen dafür die Klaro-API.
+	wp_add_inline_script( 'fge-klaro', "(function(){function inject(){var row=document.querySelector('.klaro .cookie-modal .cm-footer-buttons');if(!row||row.querySelector('.fge-cm-decline'))return;if(!window.klaro||!window.klaro.getManager)return;var b=document.createElement('button');b.type='button';b.className='cm-btn cm-btn-danger fge-cm-decline';b.textContent='Alle ablehnen';b.addEventListener('click',function(){var m=window.klaro.getManager();m.changeAll(false);m.saveAndApplyConsents();if(window.klaro.close){window.klaro.close();}});row.insertBefore(b,row.firstChild);}var mo=new MutationObserver(inject);function start(){mo.observe(document.body,{childList:true,subtree:true});inject();}if(document.body){start();}else{document.addEventListener('DOMContentLoaded',start);}})();", 'after' );
 	// A11y/Agentic: Klaro-Cookie-Dialog bekommt einen barrierefreien Namen (role=dialog war ohne Name).
 	wp_add_inline_script( 'fge-klaro', "(function(){function n(){var d=document.getElementById('klaro-cookie-notice')||document.querySelector('.cookie-modal-notice[role=dialog],.cookie-notice[role=dialog]');if(!d)return false;if(!d.getAttribute('aria-label')){d.removeAttribute('aria-labelledby');d.setAttribute('aria-label','Cookie-Hinweis');}return true;}if(n())return;var m=new MutationObserver(function(){if(n())m.disconnect();});var s=function(){m.observe(document.body,{childList:true,subtree:true});};if(document.body){s();}else{document.addEventListener('DOMContentLoaded',s);}})();", 'after' );
 } );

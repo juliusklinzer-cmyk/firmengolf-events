@@ -157,18 +157,18 @@ get_header();
 		<?php endif; ?>
 	</section>
 
-	<?php /* ── Newsletter ── */ ?>
+	<?php /* ── Kontakt-Endcap (früher Newsletter). Das Formular hatte keinen Handler,
+		Mails wurden still verworfen (Audit 2026-08-12), deshalb hier der echte Weg. ── */ ?>
 	<div class="blog-newsletter">
 		<div class="blog-newsletter-inner">
 			<div>
-				<div class="mk-eyebrow">Newsletter</div>
-				<h2 class="blog-newsletter-h">Einmal im Monat, kurze Mail, gute Stories.</h2>
-				<p class="muted">Lesetipps, neue Formate und Termine. Kein Spam, kein Vertrieb.</p>
-				<form class="blog-newsletter-form" method="post" action="<?php echo esc_url( home_url( '/' ) ); ?>">
-					<?php wp_nonce_field( 'fge_newsletter', 'fge_newsletter_nonce' ); ?>
-					<input type="email" name="fge_nl_email" class="fg-input" placeholder="deine@firma.de" required>
-					<button type="submit" class="fg-btn-brand">Abonnieren</button>
-				</form>
+				<div class="mk-eyebrow">Noch Fragen?</div>
+				<h2 class="blog-newsletter-h">Lieber kurz sprechen statt lange lesen.</h2>
+				<p class="muted">Erzähl uns von eurem Anlass, wir melden uns innerhalb eines Werktags mit konkreten Vorschlägen.</p>
+				<div class="blog-nl-cta">
+					<a class="fg-btn-brand" href="<?php echo esc_url( home_url( '/individuelle-events/?anfrage=quick' ) ); ?>">In 30 Sekunden anfragen</a>
+					<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/kontakt/' ) ); ?>">Zum Kontakt</a>
+				</div>
 			</div>
 			<div class="blog-newsletter-right" style="display:flex;flex-direction:column;gap:20px;">
 				<?php

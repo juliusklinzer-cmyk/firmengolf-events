@@ -143,7 +143,9 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			Einwilligung in die Kategorie „Marketing" werden keine Cookies gesetzt und keine nutzerbezogenen
 			Daten verarbeitet. Nach Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG) wird beim
 			Absenden einer Anfrage eine Conversion an Google gemeldet; dabei können Cookies gesetzt und Daten in
-			die USA übertragen werden (Safeguards wie oben).
+			die USA übertragen werden (Safeguards wie oben). Auch wenn Sie ablehnen, übermittelt der Consent
+			Mode v2 cookielose, aggregierte Signale an Google (sogenannte Consent-Pings), aus denen Google
+			Conversions statistisch modelliert. Nutzerbezogene Daten werden dabei nicht verarbeitet.
 		</p>
 
 		<h2>11a. Bestellung von Wertschätzungspaketen</h2>
@@ -159,17 +161,29 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			Abwicklung, soweit keine gesetzlichen Aufbewahrungspflichten (z. B. für Rechnungsdaten) bestehen.
 		</p>
 
-		<h2>12. Newsletter &amp; E-Mail-Marketing (Kit)</h2>
+		<h2>12. Partnerportal und Golfplatz-Onboarding</h2>
 		<p>
-			Wir nutzen Kit für den Versand von Newslettern, Informationen zu Firmengolf, Partnerupdates und zur
-			Verwaltung von E-Mail-Kontakten. Anbieter ist Kit, Inc. (USA). Dabei können insbesondere Name,
-			E-Mail-Adresse, Unternehmen, Interessen, Anmeldezeitpunkt, IP-Adresse, Opt-in-Status sowie Interaktionen
-			mit unseren E-Mails verarbeitet werden. Die Verarbeitung erfolgt je nach Nutzung auf Grundlage Ihrer
-			Einwilligung gemäß Art. 6 Abs. 1 lit. a DSGVO oder auf Grundlage unseres berechtigten Interesses an einer
-			strukturierten Kommunikation gemäß Art. 6 Abs. 1 lit. f DSGVO. Die Newsletter-Anmeldung erfolgt im
-			Double-Opt-in-Verfahren; eine Abmeldung ist jederzeit über den Link in jeder E-Mail möglich. Mit Kit
-			besteht ein Vertrag zur Auftragsverarbeitung gemäß Art. 28 DSGVO. Eine Übermittlung in die USA wird durch
-			das EU-US Data Privacy Framework bzw. Standardvertragsklauseln (Art. 44 ff. DSGVO) abgesichert.
+			Golfanlagen, die mit uns zusammenarbeiten, legen über das Onboarding ein Partnerprofil an und
+			erhalten ein Konto für unser Partnerportal. Dabei verarbeiten wir Angaben zur Anlage (Name,
+			Adresse, Ausstattung, Fotos, Preise) sowie Kontaktdaten der handelnden Personen (Vor- und
+			Nachname, Rolle, E-Mail-Adresse, Telefonnummer). Zur Einrichtung und Absicherung des Zugangs
+			verwenden wir Einladungs-Token und einmalige Bestätigungscodes, die per E-Mail versendet werden
+			und zeitlich befristet gültig sind. Rechtsgrundlage ist die Anbahnung und Durchführung des
+			Partnervertrags (Art. 6 Abs. 1 lit. b DSGVO) sowie unser berechtigtes Interesse an einem
+			gesicherten Zugang (lit. f). Im Portal sehen Partner ausschließlich die für die Durchführung
+			nötigen Angaben zu Anfragen (Unternehmen, Teilnehmerzahl, Termine, Wünsche), keine darüber
+			hinausgehenden Kundendaten. Die Daten werden gelöscht, wenn das Partnerverhältnis endet und
+			keine gesetzlichen Aufbewahrungspflichten entgegenstehen.
+		</p>
+
+		<h2>12a. Speicherdauer und Löschung von Anfragen</h2>
+		<p>
+			Anfragen, die nicht zu einer Buchung führen, löschen wir automatisiert 24 Monate nach dem
+			letzten Kontakt; ein täglicher Systemlauf entfernt die betroffenen Datensätze samt Kontaktdaten
+			vollständig. Anfragen, aus denen ein Auftrag entstanden ist, unterliegen den gesetzlichen
+			Aufbewahrungsfristen (i. d. R. 6 Jahre nach § 257 HGB bzw. 10 Jahre nach § 147 AO) und werden
+			danach gelöscht. Unabhängig davon können Sie jederzeit die Löschung Ihrer Daten verlangen
+			(Art. 17 DSGVO), siehe Abschnitt 4.
 		</p>
 
 		<h2>13. Transaktions-E-Mails (Brevo)</h2>

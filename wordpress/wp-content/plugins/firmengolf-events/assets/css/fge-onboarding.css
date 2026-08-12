@@ -1341,3 +1341,11 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 .ob-verify-resend { font-size: 13px; color: var(--ink-600, #5C6660); margin: 8px 0 0; }
 .ob-shell button.ob-linkbtn, button.ob-linkbtn { font: inherit; font-size: 13px; font-weight: 600; color: var(--fairway-700, #4279D1); background: none; border: 0; padding: 0; margin: 0; width: auto; min-height: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .ob-shell button.ob-linkbtn:hover { color: var(--fairway-600, #3568BC); background: none; }
+
+/* Pflichtangaben im Onboarding-Footer + Datenschutzhinweis an der Kontakterhebung
+   (Audit 2026-08-12: Standalone-Seite ganz ohne Impressum/Datenschutz/AGB). */
+.ob-foot-legal { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; padding: 10px 0 14px; font-size: 12px; }
+.ob-foot-legal a { color: var(--ink-600, #5C6660); text-decoration: none; }
+.ob-foot-legal a:hover, .ob-foot-legal a:focus-visible { color: var(--fairway-700, #4279D1); text-decoration: underline; text-underline-offset: 2px; }
+.ob-privacy-note { margin: 14px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-600, #5C6660); }
+.ob-privacy-note a { color: var(--fairway-700, #4279D1); }

@@ -1123,6 +1123,13 @@ function fge_onboarding_render_footer( int $step, string $token ): void {
 				<?php endif; ?>
 			</div>
 		</div>
+		<?php /* Pflichtangaben: das Onboarding ist eine eigenständige Seite ohne Site-Footer
+			(Audit 2026-08-12: Impressumspflicht gilt für jede Seite). */ ?>
+		<div class="ob-foot-legal">
+			<a href="<?php echo esc_url( home_url( '/impressum/' ) ); ?>" target="_blank" rel="noopener">Impressum</a>
+			<a href="<?php echo esc_url( home_url( '/datenschutz/' ) ); ?>" target="_blank" rel="noopener">Datenschutz</a>
+			<a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a>
+		</div>
 	</div>
 </footer>
 <?php }
@@ -1663,6 +1670,8 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 		<div class="ob-info-l">Login wird so erstellt</div>
 		<div class="ob-info-v">Du bekommst eine E-Mail an <strong id="fge_login_email_preview"><?php echo esc_html( ( $v['main_contact_email'] ?? '' ) !== '' ? $v['main_contact_email'] : 'deine Mail' ); ?></strong> mit einem Link, um dein Passwort zu setzen. Mit diesem Login verwaltest du euer Partnerprofil und Anfragen. Falls die E-Mail bereits registriert ist, verbinden wir das bestehende Konto.</div>
 	</div>
+	<?php /* Datenschutzhinweis direkt an der Erhebung (Audit 2026-08-12: fehlte im gesamten Onboarding) */ ?>
+	<p class="ob-privacy-note">Wir verarbeiten diese Kontaktdaten, um euren Partnerzugang einzurichten und mit euch zu den Anfragen zu kommunizieren. Details stehen in unserer <a href="<?php echo esc_url( home_url( '/datenschutz/' ) ); ?>" target="_blank" rel="noopener">Datenschutzerklärung</a>.</p>
 	<?php
 	// E-Mail-Verifizierung: sobald ein Code an die eingegebene Adresse ging, hier
 	// das Eingabefeld + „erneut senden" zeigen (Julius, 2026-07-06).

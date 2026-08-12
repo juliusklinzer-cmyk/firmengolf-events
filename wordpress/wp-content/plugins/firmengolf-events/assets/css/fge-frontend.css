@@ -3153,6 +3153,8 @@ button.fg-search-btn { background: var(--fairway-700); color: var(--paper-100); 
 .blog-newsletter-inner { max-width: 1280px; margin: 0 auto; padding: 72px 24px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 64px; align-items: center; }
 .blog-newsletter-h { font-family: var(--font-display); font-size: 36px; line-height: 1.05; letter-spacing: -.025em; font-weight: 500; margin-top: 6px; text-wrap: balance; }
 .blog-newsletter-form { display: flex; gap: 8px; margin-top: 20px; }
+/* Kontakt-CTA statt Newsletter-Formular in den Blog-Endcaps (Audit 2026-08-12) */
+.blog-nl-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 .fg-input { font-family: var(--font-body); font-size: 15px; color: var(--ink-900); padding: 12px 14px; border-radius: 12px; border: 1px solid var(--ink-200); background: var(--paper-50); outline: none; }
 .fg-input::placeholder { color: var(--ink-400); }
 .fg-input:focus { border-color: var(--fairway-700); box-shadow: 0 0 0 3px rgba(44,80,54,.18); }

@@ -229,7 +229,9 @@ $faqs = [
 						<?php echo function_exists( 'fge_form_trap_fields' ) ? fge_form_trap_fields() : ''; // Zeitfalle + JS-Pflichtfeld ?>
 						<p class="ct-fold-p">Nummer rein, wir melden uns, kein Tippen, keine Warteschleife.</p>
 						<?php if ( $cb_err ) : ?>
-							<p class="ct-fold-p" style="color:var(--danger);">Bitte gib eine Telefonnummer an.</p>
+							<p class="ct-fold-p" style="color:var(--danger);"><?php echo 'consent' === ( $_GET['rueckruf_err'] ?? '' ) // phpcs:ignore WordPress.Security.NonceVerification
+								? 'Bitte stimme der Datenschutzerklärung zu.'
+								: 'Bitte gib eine Telefonnummer an.'; ?></p>
 						<?php endif; ?>
 						<div class="fg-field">
 							<label class="fg-field-label" for="cb-phone">Deine Nummer</label>
@@ -244,6 +246,12 @@ $faqs = [
 								<option>Früher Abend</option>
 							</select>
 						</div>
+						<?php /* Consent wie bei allen anderen Formularen (Audit 2026-08-12: fehlte hier
+							als einzigem, der Server schrieb trotzdem einen Consent-Timestamp). */ ?>
+						<label class="contact-consent" for="cb-consent" style="margin-top:12px;">
+							<input id="cb-consent" name="fge_rueckruf_consent" type="checkbox" required value="1">
+							<span>Ich stimme der Verarbeitung meiner Telefonnummer für den Rückruf gemäß <a href="<?php echo esc_url( $url_dsgvo ); ?>">Datenschutzerklärung</a> zu.</span>
+						</label>
 						<button class="fg-btn-brand" type="submit" style="margin-top:14px;width:100%;">Rückruf anfordern</button>
 					</form>
 				<?php endif; ?>

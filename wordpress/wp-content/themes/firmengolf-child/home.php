@@ -255,18 +255,20 @@ get_header();
 		<?php endif; ?>
 	</section>
 
-	<?php /* ── Seitenabschluss: Newsletter-Panel + Wertschätzungs-CTA (Julius, 2026-08-10) ── */ ?>
-	<section class="mk-section blog-endcaps" aria-label="Newsletter und Wertschätzungspaket">
+	<?php /* ── Seitenabschluss: Kontakt-Panel + Wertschätzungs-CTA (Julius, 2026-08-10)
+		Das frühere Newsletter-Formular ist raus: es hatte keinen Handler, Mails
+		wurden still verworfen (Audit 2026-08-12). Statt eines toten Funnels hier
+		der direkte Weg zum Ansprechpartner. ── */ ?>
+	<section class="mk-section blog-endcaps" aria-label="Kontakt und Wertschätzungspaket">
 		<div class="blog-nl-panel">
 			<div class="blog-nl-copy">
-				<div class="mk-eyebrow">Newsletter</div>
-				<h2 class="blog-newsletter-h">Einmal im Monat, kurze Mail, gute Stories.</h2>
-				<p class="muted">Lesetipps, neue Formate und Termine. Kein Spam, kein Vertrieb.</p>
-				<form class="blog-newsletter-form" method="post" action="<?php echo esc_url( home_url( '/' ) ); ?>">
-					<?php wp_nonce_field( 'fge_newsletter', 'fge_newsletter_nonce' ); ?>
-					<input type="email" name="fge_nl_email" class="fg-input" placeholder="deine@firma.de" required>
-					<button type="submit" class="fg-btn-brand">Abonnieren</button>
-				</form>
+				<div class="mk-eyebrow">Noch Fragen?</div>
+				<h2 class="blog-newsletter-h">Lieber kurz sprechen statt lange lesen.</h2>
+				<p class="muted">Erzähl uns von eurem Anlass, wir melden uns innerhalb eines Werktags mit konkreten Vorschlägen.</p>
+				<div class="blog-nl-cta">
+					<a class="fg-btn-brand" href="<?php echo esc_url( home_url( '/individuelle-events/?anfrage=quick' ) ); ?>">In 30 Sekunden anfragen</a>
+					<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/kontakt/' ) ); ?>">Zum Kontakt</a>
+				</div>
 			</div>
 			<div class="blog-nl-img" role="img" aria-label="Golfplatz im Abendlicht" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( 'golfplatz-huegel-abendlicht.jpg' ) ); ?>')"></div>
 		</div>

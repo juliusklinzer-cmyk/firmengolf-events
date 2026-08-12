@@ -66,12 +66,11 @@ $co = fge_company();
 			<?php echo esc_html( $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'] ); ?>
 		</p>
 
-		<h2>EU-Streitschlichtung</h2>
+		<h2>Verbraucherstreitbeilegung</h2>
 		<p>
-			Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:
-			<a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer">https://ec.europa.eu/consumers/odr/</a>.
 			Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer
-			Verbraucherschlichtungsstelle teilzunehmen.
+			Verbraucherschlichtungsstelle teilzunehmen. Die frühere OS-Plattform der Europäischen
+			Kommission wurde zum 20. Juli 2025 eingestellt.
 		</p>
 
 		<h2>Haftung für Inhalte und Links</h2>

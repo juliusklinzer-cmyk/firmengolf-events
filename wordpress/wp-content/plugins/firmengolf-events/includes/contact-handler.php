@@ -205,6 +205,14 @@ function fge_handle_rueckruf_submit() {
 		exit;
 	}
 
+	// Einwilligung serverseitig erzwingen. Vorher wurde unten ein
+	// _fge_consent_timestamp geschrieben, ohne dass je eine Zustimmung abgefragt
+	// wurde (Audit 2026-08-12) — das dokumentierte eine Einwilligung, die es nicht gab.
+	if ( empty( $_POST['fge_rueckruf_consent'] ) ) {
+		wp_redirect( esc_url_raw( $base . '?rueckruf_err=consent#callback' ), 303 );
+		exit;
+	}
+
 	$request_id = wp_insert_post( [
 		'post_type'   => 'firmengolf_request',
 		'post_status' => 'publish',

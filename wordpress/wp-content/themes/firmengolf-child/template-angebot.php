@@ -284,6 +284,18 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 		<?php endif; ?>
 	<?php endif; ?>
 	</div>
+	<?php /* Pflichtangaben: Standalone-Template ohne Site-Footer, hier wird verbindlich
+		gebucht (Audit 2026-08-12: nur AGB verlinkt, kein Impressum, keine Datenschutzerklärung). */ ?>
+	<footer class="tl-legal">
+		<a href="<?php echo esc_url( home_url( '/impressum/' ) ); ?>" target="_blank" rel="noopener">Impressum</a>
+		<a href="<?php echo esc_url( home_url( '/datenschutz/' ) ); ?>" target="_blank" rel="noopener">Datenschutz</a>
+		<a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a>
+	</footer>
+	<style>
+	.tl-legal { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; margin: 32px auto 40px; font-size: 12.5px; }
+	.tl-legal a { color: #5C6660; text-decoration: none; }
+	.tl-legal a:hover, .tl-legal a:focus-visible { color: #4279D1; text-decoration: underline; text-underline-offset: 2px; }
+	</style>
 	<?php wp_footer(); ?>
 </body>
 </html>
