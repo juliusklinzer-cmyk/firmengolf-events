@@ -588,11 +588,18 @@ if ( ! $has_filters ) :
 		<?php
 		// Pagination nur im Nicht-Geo-Pfad (Umkreissuche listet alle Treffer ungeteilt).
 		if ( isset( $events_query ) && (int) $events_query->max_num_pages > 1 ) :
-			$pg_base = remove_query_arg( 'paged', add_query_arg( null, null ) );
+			// Kanonische /page/N/-Form statt ?paged=N: WordPress leitete jede Seitenzahl
+			// sonst per 301 um, jeder Klick und jeder Crawler-Hop kostete einen Umweg
+			// (Audit 2026-08-12). Aktive Filter bleiben als Query-Args erhalten.
+			$pg_args  = array_filter(
+				array_map( 'sanitize_text_field', wp_unslash( array_diff_key( $_GET, [ 'paged' => 1 ] ) ) ), // phpcs:ignore WordPress.Security.NonceVerification
+				static fn( $v ) => is_scalar( $v ) && '' !== $v
+			);
 			$pg_links = paginate_links( [
-				'base'      => add_query_arg( 'paged', '%#%', $pg_base ),
+				'base'      => trailingslashit( (string) get_post_type_archive_link( 'firmengolf_event' ) ) . 'page/%#%/',
 				'format'    => '',
-				'current'   => max( 1, (int) ( $_GET['paged'] ?? 1 ) ),  // phpcs:ignore WordPress.Security.NonceVerification
+				'add_args'  => $pg_args,
+				'current'   => max( 1, (int) ( get_query_var( 'paged' ) ?: ( $_GET['paged'] ?? 1 ) ) ),  // phpcs:ignore WordPress.Security.NonceVerification
 				'total'     => (int) $events_query->max_num_pages,
 				'mid_size'  => 1,
 				'prev_text' => '‹ Zurück',

@@ -1,5 +1,25 @@
 # Live .htaccess (public_html) — Stand 2026-07-10
 # Achtung: liegt NICHT in git. Nach einem Fresh-Deploy (Duplicator) diesen Stand wiederherstellen.
+
+## Offen: www-Variante braucht 2 Redirect-Hops (Audit 2026-08-12)
+
+`http://www.firmengolf-events.de` läuft heute über zwei 301er
+(`https://www.…` → `https://firmengolf-events.de`). Alle anderen Varianten lösen
+in einem Hop auf. Der folgende Block direkt unter `RewriteEngine On` im
+visionpunch-Abschnitt macht daraus einen Hop:
+
+```apache
+# www -> Apex in einem Hop (statt Umweg über https://www.…)
+RewriteCond %{HTTP_HOST} ^www\.firmengolf-events\.de$ [NC]
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/ [NC]
+RewriteRule ^ https://firmengolf-events.de%{REQUEST_URI} [R=301,L]
+```
+
+Bewusst NICHT automatisch ausgerollt: die Datei liegt nur auf dem Live-Server
+und ein Syntaxfehler darin nimmt die komplette Seite mit einem 500er offline.
+Nach dem Einspielen prüfen mit
+`curl -sIL http://www.firmengolf-events.de/ -o /dev/null -w '%{num_redirects}\n'`
+(Ziel: 1).
 ```apache
 # This file was updated by Duplicator on 2026-07-06 08:04:40.
 # See the original_files_ folder for the original source_site_htaccess file.
