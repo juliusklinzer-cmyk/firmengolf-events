@@ -161,6 +161,26 @@ function fge_cf26_fix_event_copy(): void {
 	] );
 	foreach ( $events as $id ) {
 		fge_cf26_replace_in_event( (int) $id, $pairs );
+		fge_cf26_unwrap_dash_list( (int) $id );
+	}
+}
+
+/**
+ * Aufzählungen, die als ein Fließtext mit eingeklebten Bindestrichen gespeichert
+ * wurden („-Leihschläger -Schnupperkurs -Mittagessen"), in echte Zeilen brechen.
+ * Greift nur ab drei Punkten, damit normale Bindestriche unangetastet bleiben.
+ */
+function fge_cf26_unwrap_dash_list( int $post_id ): void {
+	$keys = [ '_fge_event_dayflow', '_fge_event_includes', '_fge_event_addons' ];
+	foreach ( $keys as $key ) {
+		$val = (string) get_post_meta( $post_id, $key, true );
+		if ( '' === $val || preg_match_all( '/\s-(?=[A-ZÄÖÜ0-9])/u', $val ) < 3 ) {
+			continue;
+		}
+		$new = trim( preg_replace( '/\s-(?=[A-ZÄÖÜ0-9])/u', "\n", $val ) );
+		if ( $new !== $val ) {
+			update_post_meta( $post_id, $key, $new );
+		}
 	}
 }
 

@@ -16,7 +16,7 @@ $url_ind     = $get_page_url( 'individuelle-events', home_url( '/individuelle-ev
 $url_kontakt = $get_page_url( 'kontakt', home_url( '/kontakt/' ) );
 $url_blog    = home_url( '/blog/' );
 
-// ── Format list (canonical — single source: event-formats.php) ───────────────
+// ── Format list (canonical, single source: event-formats.php) ───────────────
 $formats = array_merge( [ 'all' => 'Alle Typen' ], fge_get_event_formats_flat( false ) );
 
 // ── Regions from DB ──────────────────────────────────────────────────────────
@@ -215,19 +215,19 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 <?php /* ══════════════════ 2b. WARUM GOLFPLATZ, Location + zwei Wege ══════════════════ */ ?>
 <?php
 /* Redesign 2026-07-19 (v3, Julius): Der erste große Block beantwortet zwei
-   Kernfragen — (1) warum der Golfplatz die perfekte Event-Location ist
+   Kernfragen: (1) warum der Golfplatz die perfekte Event-Location ist
    (vier Säulen: Bewegung/Draußen, niedrige Schwelle, Clubhaus+Meeting, Gastro)
    und (2) wie man das passende Angebot findet (zwei Wege: vorgeplante
    Partner-Events ODER individuelle Anfrage). */
 $loc_pillars = [
 	[ 'ic' => '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-	  'k' => 'Draußen in Bewegung', 't' => 'Ein ganzer Tag an der frischen Luft — Bewegung, ohne dass es nach Sport aussieht.' ],
+	  'k' => 'Draußen in Bewegung', 't' => 'Ein ganzer Tag an der frischen Luft: Bewegung, ohne dass es nach Sport aussieht.' ],
 	[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
 	  'k' => 'Für alle machbar', 't' => 'Flache Wege, Carts, ein Pro für die ersten Schläge. Kein Fitnesslevel, kein Handicap nötig.' ],
 	[ 'ic' => '<path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01M10 21v-4h4v4"/>',
-	  'k' => 'Clubhaus & Meetingräume', 't' => 'Moderne Räume für Empfang, Präsentation oder Workshop — direkt am Grün.' ],
+	  'k' => 'Clubhaus & Meetingräume', 't' => 'Moderne Räume für Empfang, Präsentation oder Workshop, direkt am Grün.' ],
 	[ 'ic' => '<path d="M3 2v7c0 1.1.9 2 2 2s2-.9 2-2V2"/><path d="M5 11v11"/><path d="M18 2c-1.7 0-3 2.7-3 6 0 2.6 1.1 4 3 4v10"/>',
-	  'k' => 'Küche & Terrasse', 't' => 'Vom Business-Lunch bis zum Grillabend — die Gastronomie vor Ort trägt jeden Anlass.' ],
+	  'k' => 'Küche & Terrasse', 't' => 'Vom Business-Lunch bis zum Grillabend, die Gastronomie vor Ort trägt jeden Anlass.' ],
 ];
 $loc_paths = [
 	[
@@ -235,7 +235,7 @@ $loc_paths = [
 		'alt'   => 'Team stößt nach dem Firmenevent auf dem Golfplatz an',
 		'tag'   => 'Sofort buchbar',
 		'k'     => 'Vorgeplante Partner-Events',
-		't'     => 'Fertige Formate auf unseren Partnerplätzen — mit Datum, Preis und Ablauf. Aussuchen, anfragen, fertig.',
+		't'     => 'Fertige Formate auf unseren Partnerplätzen, mit Datum, Preis und Ablauf. Aussuchen, anfragen, fertig.',
 		'cta'   => 'Events entdecken',
 		'href'  => $url_events,
 	],
@@ -244,7 +244,7 @@ $loc_paths = [
 		'alt'   => 'Modernes Golf-Clubhaus als Event-Location',
 		'tag'   => 'Nach Maß',
 		'k'     => 'Individuell geplant',
-		't'     => 'Eigene Vorstellung? Schick uns Anlass, Gruppe und Wunschregion — wir kuratieren passende Plätze für dein Unternehmen.',
+		't'     => 'Eigene Vorstellung? Schick uns Anlass, Gruppe und Wunschregion, wir kuratieren passende Plätze für dein Unternehmen.',
 		'cta'   => 'Individuell anfragen',
 		// Bewusst OHNE #anfrage-Anker: Die Karte soll oben auf der Seite starten,
 		// damit man erst den Kontext sieht (Julius, 2026-08-10). Die „Drei Schritte"-
@@ -260,7 +260,7 @@ $loc_paths = [
 			<h2 class="home-loc-h">Warum sich der Golfplatz perfekt für dein <span class="mk-italic">Firmenevent</span> eignet.</h2>
 			<p class="home-loc-lead">
 				Bewegung an der frischen Luft, moderne Clubhäuser mit Meetingräumen und eine Gastronomie,
-				die jeden Anlass trägt — offen für alle, ganz ohne Golf-Vorkenntnisse. Und Plätze gibt es
+				die jeden Anlass trägt, offen für alle, ganz ohne Golf-Vorkenntnisse. Und Plätze gibt es
 				mehr in deiner Nähe, als du denkst.
 			</p>
 		</div>
@@ -372,7 +372,7 @@ $loc_paths = [
 		<?php else : ?>
 			<?php
 			// Fallback: neutrale Format-Karten, wenn (noch) keine Events publiziert sind.
-			// Bewusst OHNE erfundene Orte/Preise (UWG!) — nur echte Format-Beschreibungen.
+			// Bewusst OHNE erfundene Orte/Preise (UWG!), nur echte Format-Beschreibungen.
 			$static_formats = [
 				[ 'label' => 'Platzreife',     'title' => 'Platzreife als Firmenprogramm',    'desc' => 'Kompakter Kurs mit PGA-Golflehrer, Regeln und offizieller Prüfung.',                    'price' => 'Auf Anfrage', 'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
 				[ 'label' => 'Teamevent',      'title' => 'Golf-Teamevent für euer Team',      'desc' => 'Stationen, Team-Challenge, gemeinsames Essen. Ganz ohne Vorkenntnisse.',                 'price' => 'Auf Anfrage', 'img' => 'firmenevent-afterwork-golf.jpg',  'dark' => true  ],
@@ -672,7 +672,7 @@ $loc_paths = [
       panel.classList.contains('is-open') ? close() : open();
     });
     cell.addEventListener('keydown', function (e) {
-      /* Nur auf der Zelle selbst — sonst blockiert preventDefault die Options-Auswahl per Enter */
+      /* Nur auf der Zelle selbst, sonst blockiert preventDefault die Options-Auswahl per Enter */
       if ((e.key === 'Enter' || e.key === ' ') && e.target === cell) {
         e.preventDefault();
         panel.classList.contains('is-open') ? close() : open();

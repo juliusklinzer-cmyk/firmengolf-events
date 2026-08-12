@@ -4,7 +4,7 @@
  *
  * Verkaufsseite für den Akquise-Funnel (Funnel-Audit 2026-07-12, Paket A):
  * Erst-Landing für kalt angesprochene Club-Manager (Mail/LinkedIn). Bewusst
- * NICHT in der Haupt-Nav (die bleibt kundenseitig, Julius) — Einstiege sind
+ * NICHT in der Haupt-Nav (die bleibt kundenseitig, Julius), Einstiege sind
  * Footer, Partnerportal-Login und die Partner-FAQ. Baut komplett auf dem
  * mk-*-Designsystem der Startseite auf, Zahlen sind echte Live-Werte.
  */
@@ -38,7 +38,7 @@ $faq_teaser = [
 	[ 'Was kostet die Partnerschaft?', 'Für den Platz nichts. Ihr bekommt genau euren angegebenen Preis, die Vermittlungsprovision zahlt der Kunde obendrauf.' ],
 	[ 'Binde ich mich langfristig?', 'Nein, keine langfristige Bindung, faire, kurze Konditionen. Pausieren ist jederzeit möglich.' ],
 	[ 'Muss ich exklusiv mit Firmengolf arbeiten?', 'Nein, keine Exklusivität. Ihr vermarktet euren Platz weiter, wie ihr wollt.' ],
-	[ 'Wie schnell ist mein Platz live?', 'In der Regel wenige Werktage nach vollständigem Profil — das Onboarding selbst dauert etwa zehn Minuten.' ],
+	[ 'Wie schnell ist mein Platz live?', 'In der Regel wenige Werktage nach vollständigem Profil, das Onboarding selbst dauert etwa zehn Minuten.' ],
 ];
 ?>
 <div class="fge-page" id="fge-main" role="main" tabindex="-1">
@@ -102,14 +102,14 @@ $faq_teaser = [
 	<div class="mk-section-head">
 		<div class="mk-eyebrow">So funktioniert's</div>
 		<h2 class="mk-h2">Drei Schritte bis zur ersten Anfrage.</h2>
-		<p class="mk-sub">Ihr braucht keine Software und keinen eigenen Vertrieb — nur einen Platz und einen Ansprechpartner.</p>
+		<p class="mk-sub">Ihr braucht keine Software und keinen eigenen Vertrieb, nur einen Platz und einen Ansprechpartner.</p>
 	</div>
 	<div class="mk-steps-grid">
 		<?php
 		$steps = [
 			[ '01', 'Profil anlegen.',            'Etwa zehn Minuten im Onboarding: Platz, Leistungen, Fotos. Unverbindlich, jederzeit speicher- und fortsetzbar.' ],
-			[ '02', 'Wir prüfen, ihr geht live.',  'Freischaltung in wenigen Werktagen. Öffentlich sichtbar werdet ihr mit eurem ersten Event-Angebot — das ist in einer Minute angelegt.' ],
-			[ '03', 'Anfragen entscheiden.',       'Passende Firmenanfragen landen im Portal und per E-Mail. Ihr entscheidet pro Anfrage — die Kundenkommunikation übernehmen wir.' ],
+			[ '02', 'Wir prüfen, ihr geht live.',  'Freischaltung in wenigen Werktagen. Öffentlich sichtbar werdet ihr mit eurem ersten Event-Angebot, das ist in einer Minute angelegt.' ],
+			[ '03', 'Anfragen entscheiden.',       'Passende Firmenanfragen landen im Portal und per E-Mail. Ihr entscheidet pro Anfrage, die Kundenkommunikation übernehmen wir.' ],
 		];
 		foreach ( $steps as $step ) : ?>
 			<div class="mk-step">
@@ -130,7 +130,7 @@ $faq_teaser = [
 	<div class="mk-steps-grid">
 		<?php
 		$benefits = [
-			[ 'Planbare Gruppen unter der Woche', 'Firmenevents finden meist dienstags bis donnerstags statt — genau dann, wenn Startzeiten frei sind. Gruppen von 10 bis 100 Personen, lange im Voraus geplant.' ],
+			[ 'Planbare Gruppen unter der Woche', 'Firmenevents finden meist dienstags bis donnerstags statt, genau dann, wenn Startzeiten frei sind. Gruppen von 10 bis 100 Personen, lange im Voraus geplant.' ],
 			[ 'Ihr behaltet die Kontrolle', 'Eure Preise, eure Verfügbarkeit, eure Entscheidung pro Anfrage. Keine Exklusivität, keine Laufzeit, pausieren jederzeit möglich.' ],
 			[ 'Wir übernehmen den Rest', 'Anfragen bündeln, Termine mit Platz, Pro und Gastro abstimmen, Kunden betreuen, eine saubere Abrechnung pro Event. Ihr konzentriert euch auf den Platz.' ],
 		];
@@ -149,8 +149,8 @@ $faq_teaser = [
 		<div class="gp-contact-portrait" role="img" aria-label="Julius Klinzer, Gründer von Firmengolf" style="background-image:url('<?php echo esc_url( $img( 'gruender-julius-klinzer.jpg' ) ); ?>')"></div>
 		<div class="gp-contact-body">
 			<div class="mk-eyebrow">Dein Ansprechpartner</div>
-			<h2 class="mk-h2" style="font-size:clamp(26px,3.2vw,34px);">„Ruf mich einfach an — ich zeige dir in zehn Minuten, wie es für euren Platz aussieht."</h2>
-			<p class="mk-sub" style="margin-top:10px;">Julius Klinzer, Gründer von Firmengolf. Kein Callcenter, kein Vertriebsteam — du sprichst direkt mit dem, der die Plattform gebaut hat.</p>
+			<h2 class="mk-h2" style="font-size:clamp(26px,3.2vw,34px);">„Ruf mich einfach an, ich zeige dir in zehn Minuten, wie es für euren Platz aussieht."</h2>
+			<p class="mk-sub" style="margin-top:10px;">Julius Klinzer, Gründer von Firmengolf. Kein Callcenter, kein Vertriebsteam, du sprichst direkt mit dem, der die Plattform gebaut hat.</p>
 			<div class="gp-contact-ctas">
 				<a class="fg-btn-cta" href="tel:<?php echo esc_attr( $c['phone_tel'] ); ?>"><?php echo esc_html( $c['phone_display'] ); ?></a>
 				<a class="fg-btn-ghost" href="mailto:<?php echo esc_attr( $c['email_partner'] ); ?>"><?php echo esc_html( $c['email_partner'] ); ?></a>
@@ -199,7 +199,7 @@ $faq_teaser = [
 
 <style>
 /* .home-facts hat global keinen unteren Abstand (auf der Startseite unsichtbar,
-   weil die Folge-Section denselben Hintergrund hat) — hier folgt das graue
+   weil die Folge-Section denselben Hintergrund hat). Hier folgt das graue
    mk-band direkt, also braucht es Luft. */
 .gp-facts { margin-bottom: 80px; }
 @media (max-width: 900px) { .gp-facts { margin-bottom: 56px; } }

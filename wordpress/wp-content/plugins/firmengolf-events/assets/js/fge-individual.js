@@ -493,7 +493,7 @@
 				+ '<div class="rw-care-n">' + esc(CONTACT.name) + '</div>'
 				+ '<div class="rw-care-r">' + esc(CONTACT.role) + ' · Firmengolf</div>'
 				+ (CFG.juliusEmail ? '<a class="rw-care-mail" href="mailto:' + esc(CFG.juliusEmail) + '">' + esc(CFG.juliusEmail) + '</a>' : '')
-				+ '<div class="rw-care-note">Wir melden uns innerhalb von 24 Stunden persönlich bei dir.</div></div></div>'
+				+ '<div class="rw-care-note">Wir melden uns innerhalb eines Werktags persönlich bei dir.</div></div></div>'
 				+ '<div class="rw-receipt-h">Zusammenfassung deiner Anfrage</div>'
 				+ '<div class="rw-receipt">'
 				+ '<div><span>Anlass</span><span>' + esc(resp.occasion || S.form.occasion || 'k. A.') + '</span></div>'

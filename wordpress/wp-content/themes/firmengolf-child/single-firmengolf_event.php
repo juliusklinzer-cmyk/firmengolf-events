@@ -259,13 +259,25 @@ if ( ! $seo_desc ) {
 	$seo_max  = 150 - mb_strlen( $seo_tail );
 	if ( mb_strlen( $seo_body ) > $seo_max ) {
 		$seo_body = mb_substr( $seo_body, 0, $seo_max );
-		$seo_sp   = mb_strrpos( $seo_body, ' ' );
-		if ( false !== $seo_sp && $seo_sp > 40 ) {
-			$seo_body = mb_substr( $seo_body, 0, $seo_sp );
+		// Möglichst am Satzende kappen, sonst am Wortende plus Ellipse. Vorher klebte
+		// der CTA direkt an einem angeschnittenen Halbsatz und ergab im Google-Snippet
+		// einen sinnfreien Satz (Audit 2026-08-12).
+		$seo_end = max(
+			(int) mb_strrpos( $seo_body, '. ' ),
+			(int) mb_strrpos( $seo_body, '! ' ),
+			(int) mb_strrpos( $seo_body, '? ' )
+		);
+		if ( $seo_end > 40 ) {
+			$seo_body = mb_substr( $seo_body, 0, $seo_end + 1 );
+		} else {
+			$seo_sp = mb_strrpos( $seo_body, ' ' );
+			if ( false !== $seo_sp && $seo_sp > 40 ) {
+				$seo_body = mb_substr( $seo_body, 0, $seo_sp );
+			}
+			$seo_body = rtrim( $seo_body, " ,.;:–-" ) . ' …';
 		}
-		$seo_body = rtrim( $seo_body, " ,.;:–-" );
 	}
-	$seo_desc = $seo_body . $seo_tail;
+	$seo_desc = rtrim( $seo_body ) . $seo_tail;
 }
 $seo_price = ( $pricing_new && ( $pricing_new['gross'] ?? 0 ) > 0 ) ? (int) round( $pricing_new['gross'] ) : 0;
 add_filter( 'pre_get_document_title', function () use ( $seo_title ) { return $seo_title; } );
@@ -1058,14 +1070,14 @@ get_header();
 			<div class="fg-success-mark"><?php echo fge_icon_check(); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<div class="fg-receipt-tag" id="fg-receipt-ref">k. A.</div>
 			<h2 class="fg-modal-title" style="max-width:400px;margin:14px auto 0;">Eure Anfrage ist eingegangen.</h2>
-			<p class="fg-modal-sub" style="margin-top:8px;">Das ist noch keine Buchungsbestätigung, wir melden uns, sobald der Platz die Termine einräumen kann, in der Regel innerhalb eines Werktags.</p>
+			<p class="fg-modal-sub" style="margin-top:8px;">Das ist noch keine Buchungsbestätigung, wir melden uns, sobald der Platz den Termin bestätigt hat, in der Regel innerhalb eines Werktags.</p>
 			<div class="rw-care" style="margin:22px auto 0;max-width:480px;">
 				<img class="rw-care-img" src="<?php echo esc_url( fge_get_placeholder_image_url( 'gruender-julius-klinzer.jpg' ) ); ?>" alt="Julius Klinzer" width="64" height="64">
 				<div class="rw-care-txt">
 					<div class="rw-care-k">Um deine Anfrage kümmert sich</div>
 					<div class="rw-care-n">Julius Klinzer</div>
 					<div class="rw-care-r">Gründer · Firmengolf</div>
-					<div class="rw-care-note">Dein Sachbearbeiter meldet sich bald bei dir. Wenn du vorher noch Ideen oder Rückfragen hast:</div>
+					<div class="rw-care-note">Julius meldet sich bald persönlich bei dir. Wenn du vorher noch Ideen oder Rückfragen hast:</div>
 					<a class="rw-care-mail" href="mailto:julius@firmengolf-events.de">julius@firmengolf-events.de</a><br>
 					<a class="rw-care-mail" href="tel:+4915234348249">0152 3434 8249</a>
 				</div>

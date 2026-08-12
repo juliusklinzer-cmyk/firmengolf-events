@@ -22,7 +22,9 @@ $region_m = fge_get_event_meta( $pid, 'region' );
 $g_min    = (int) fge_get_event_meta( $pid, 'participants_min' );
 $g_max    = (int) fge_get_event_meta( $pid, 'participants_max' );
 $duration = fge_get_event_meta( $pid, 'duration' );
-$card_desc = trim( (string) fge_get_event_meta( $pid, 'card_description' ) );
+$card_desc = function_exists( 'fge_tidy_teaser' )
+	? fge_tidy_teaser( (string) fge_get_event_meta( $pid, 'card_description' ) )
+	: trim( (string) fge_get_event_meta( $pid, 'card_description' ) );
 // Preis strukturiert: große Zahl „89 €" + klein/grau „p.P. netto" bzw. „Gesamt netto" (Julius, 2026-07-07).
 $pricing = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $pid ) : [];
 if ( ( $pricing['gross'] ?? 0 ) > 0 ) {
@@ -42,10 +44,18 @@ $thumb    = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $pid
 $permalink = get_permalink( $pid );
 $title     = get_the_title( $pid );
 
-// Gruppengröße als „min–max" bzw. „bis max".
+// Gruppengröße als „min bis max" bzw. „bis max". Sind min und max gleich, ist
+// „4 bis 4" Unsinn, dann nur die Zahl (Audit 2026-08-12).
 $group_txt = '';
-if ( $g_min > 0 && $g_max > 0 ) { $group_txt = $g_min . ' bis ' . $g_max; }
+if ( $g_min > 0 && $g_max > 0 ) { $group_txt = $g_min === $g_max ? (string) $g_max : $g_min . ' bis ' . $g_max; }
 elseif ( $g_max > 0 )           { $group_txt = 'bis ' . $g_max; }
+elseif ( $g_min > 0 )           { $group_txt = 'ab ' . $g_min; }
+
+// Dauer: nackte Zahlen aus Altdaten („6") bekommen eine Einheit, damit die Karte
+// nicht „10 bis 50 · 6" zeigt.
+if ( '' !== $duration && preg_match( '/^\d+([.,]\d+)?$/', trim( (string) $duration ) ) ) {
+	$duration = str_replace( '.', ',', trim( (string) $duration ) ) . ' Std.';
+}
 
 $ic_pin   = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 $ic_users = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>';

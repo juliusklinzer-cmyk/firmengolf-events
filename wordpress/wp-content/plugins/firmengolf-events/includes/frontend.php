@@ -111,6 +111,28 @@ function fge_get_event_meta( int $post_id, string $key, $default = '' ) {
 	return ( $val !== '' && $val !== false ) ? $val : $default;
 }
 
+/**
+ * Räumt einen Teasertext auf, der von einem maxlength-Feld mitten im Wort
+ * abgeschnitten wurde (Audit 2026-08-12: „… eine kleine Challenge zum Abs").
+ * Endet der Text nicht auf ein Satzzeichen, fällt das angebrochene Wort weg und
+ * es kommt eine Ellipse dahinter.
+ */
+function fge_tidy_teaser( string $text ): string {
+	$text = trim( wp_strip_all_tags( $text ) );
+	if ( '' === $text ) {
+		return '';
+	}
+	$last = mb_substr( $text, -1 );
+	if ( in_array( $last, [ '.', '!', '?', '…', '"', '”', '»', ')' ], true ) ) {
+		return $text;
+	}
+	$sp = mb_strrpos( $text, ' ' );
+	if ( false !== $sp && $sp > 20 ) {
+		$text = mb_substr( $text, 0, $sp );
+	}
+	return rtrim( $text, " ,;:-–" ) . ' …';
+}
+
 function fge_format_weekdays( array $days ): string {
 	$map = [
 		'monday'    => 'Mo',

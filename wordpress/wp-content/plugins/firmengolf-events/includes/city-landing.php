@@ -83,7 +83,7 @@ function fge_get_cities(): array {
 		'tegernsee' => [
 			'name' => 'Tegernsee', 'region' => 'Oberbayern', 'match' => [ 'Tegernsee' ],
 			'intro' => 'Der Tegernsee ist eine der schönsten Kulissen für ein Firmenevent in Deutschland. Golf zwischen Bergen und See, dazu erstklassige Hotellerie, das macht die Region ideal für Incentives, Strategie-Tage und besondere Kundenevents. Wir organisieren euer Event auf den Plätzen rund um den Tegernsee.',
-			'reasons' => [ $reason( 'mountain', 'Berg- und Seekulisse', 'Golf vor Alpenpanorama, ein Rahmen, der bei Kunden und Teams lange nachwirkt.' ), $team, $reason( 'castle', 'Incentive & Offsite', 'Beste Hotellerie vor Ort, perfekt für mehrtägige Incentives mit Übernachtung.' ), $local ],
+			'reasons' => [ $reason( 'mountain', 'Berg- und Seekulisse', 'Golf vor Alpenpanorama, ein Rahmen, der bei Kunden und Teams lange nachwirkt.' ), $team, $reason( 'castle', 'Hotellerie vor Ort', 'Erstklassige Häuser direkt am See, ideal, wenn euer Event über einen Tag hinausgeht.' ), $local ],
 			'faqs' => [ $faq( 'Welche Golfplätze am Tegernsee kann ich für ein Firmenevent buchen?', 'In der Region Tegernsee arbeiten wir mit Partnerplätzen mit besonderer Kulisse. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $faq( 'Geht auch ein mehrtägiges Incentive mit Übernachtung?', 'Ja, gerade dafür ist die Region ideal. Wir verbinden Golf, Hotel, Rahmenprogramm und Verpflegung zu einem runden Erlebnis.' ), $f_anf, $f_fast( 'die Region Tegernsee' ) ],
 		],
 	];
