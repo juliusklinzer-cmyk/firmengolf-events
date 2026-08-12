@@ -752,6 +752,13 @@
 		if (document.readyState !== 'loading') fn();
 		else document.addEventListener('DOMContentLoaded', fn);
 	}
+	// Anlässe, die per ?anlass= vorgewählt werden dürfen: die Standardliste des
+	// Wizards plus die Formate der Landingpages (fge_format_occasion() in PHP).
+	var ALLOWED_OCCASIONS = [
+		'Teamevent', 'After-Work Golf', 'Workshop', 'Firmenturnier', 'Offsite',
+		'Kundenevent', 'Nacht-Event', 'Etwas anderes', 'Platzreife', 'Incentive-Reise'
+	];
+
 	ready(function () {
 		initCalc();
 		// Deep-Link: CTAs anderer Seiten springen direkt in den Wizard
@@ -760,7 +767,11 @@
 		var deepMode = deepParams.get('anfrage');
 		if (deepMode === 'quick' || deepMode === 'full') {
 			// ?anlass=Teamevent o. ä. wählt den Anlass vor (z. B. CTA der Format-Landingpages).
-			var deepOcc = deepParams.get('anlass');
+			// Nur bekannte Anlässe übernehmen: ein präparierter Link konnte sonst
+			// beliebigen Fremdtext als aktive Kachel und bis in die gespeicherte
+			// Anfrage tragen (Audit 2026-08-12).
+			var deepOccRaw = deepParams.get('anlass');
+			var deepOcc = (deepOccRaw && ALLOWED_OCCASIONS.indexOf(deepOccRaw) >= 0) ? deepOccRaw : null;
 			Wizard.open(deepMode, deepOcc ? { occasion: deepOcc } : null, false, 'deeplink');
 		}
 		document.querySelectorAll('[data-rw-open]').forEach(function (btn) {

@@ -313,6 +313,10 @@ get_header();
 	}
 
 	function openModal(paket) {
+		// Formular leeren, sonst steht beim zweiten Öffnen noch die vorherige
+		// Bestellung drin (Name und Adresse der beschenkten Person, Anzahl) und
+		// man verschickt versehentlich eine Dublette (Audit 2026-08-12).
+		form.reset();
 		if (paket) {
 			var r = form.querySelector('input[name="paket"][value="' + paket + '"]');
 			if (r) r.checked = true;

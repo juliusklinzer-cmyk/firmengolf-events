@@ -101,10 +101,84 @@ function fge_form_bot_detected( int $min_seconds = 4 ): bool {
 	return $age < $min_seconds || $age > DAY_IN_SECONDS;
 }
 
+// ── Plausibilitätsprüfung der Eckdaten ───────────────────────────────────────
+//
+// Stepper-Grenzen und das date-min-Attribut sind rein clientseitig und per JS
+// trivial zu umgehen. Vorher landeten so „-999 Gäste" und Termine aus 1990 in
+// der Datenbank und standen anschließend im Beleg für den Kunden
+// (Audit 2026-08-12). Beide AJAX-Handler prüfen das jetzt serverseitig.
+
+/** Kleinste und größte Gruppengröße, die wir als Anfrage akzeptieren. */
+const FGE_GROUP_MIN = 1;
+const FGE_GROUP_MAX = 500;
+
+/**
+ * Teilnehmerzahl aus einer Freitexteingabe. Gibt 0 zurück, wenn keine Zahl
+ * enthalten ist, und null, wenn die Zahl außerhalb des zulässigen Bereichs liegt.
+ */
+function fge_parse_group_size( $raw ): ?int {
+	$str = (string) wp_unslash( $raw ?? '' );
+	if ( ! preg_match( '/-?\d+/', $str, $m ) ) {
+		return 0; // keine Angabe, bleibt optional
+	}
+	$n = (int) $m[0];
+	if ( $n < FGE_GROUP_MIN || $n > FGE_GROUP_MAX ) {
+		return null;
+	}
+	return $n;
+}
+
+/**
+ * Wunschtermin: akzeptiert nur ein echtes ISO-Datum, das nicht in der
+ * Vergangenheit und nicht weiter als drei Jahre in der Zukunft liegt.
+ * Gibt '' für „keine Angabe" und null für einen unzulässigen Wert zurück.
+ */
+function fge_validate_wish_date( $raw ): ?string {
+	$str = trim( sanitize_text_field( wp_unslash( $raw ?? '' ) ) );
+	if ( '' === $str ) {
+		return '';
+	}
+	$d = DateTimeImmutable::createFromFormat( '!Y-m-d', $str, wp_timezone() );
+	if ( ! $d || $d->format( 'Y-m-d' ) !== $str ) {
+		return null;
+	}
+	$today = current_datetime()->setTime( 0, 0 );
+	if ( $d < $today || $d > $today->modify( '+3 years' ) ) {
+		return null;
+	}
+	return $str;
+}
+
+/**
+ * Prüft Gruppengröße und bis zu drei Wunschtermine gemeinsam und bricht mit
+ * einer verständlichen Meldung ab, wenn etwas nicht passt.
+ *
+ * @return array{size:int,dates:array<int,string>}
+ */
+function fge_validate_event_basics( $size_raw, array $date_raws ): array {
+	$size = fge_parse_group_size( $size_raw );
+	if ( null === $size ) {
+		wp_send_json_error( [
+			'message' => sprintf( 'Bitte gib eine Gruppengröße zwischen %d und %d Personen an.', FGE_GROUP_MIN, FGE_GROUP_MAX ),
+		], 422 );
+	}
+	$dates = [];
+	foreach ( $date_raws as $raw ) {
+		$d = fge_validate_wish_date( $raw );
+		if ( null === $d ) {
+			wp_send_json_error( [ 'message' => 'Bitte wähle Wunschtermine, die in der Zukunft liegen.' ], 422 );
+		}
+		$dates[] = $d;
+	}
+	return [ 'size' => $size, 'dates' => $dates ];
+}
+
 /** Gemeinsamer Spam-Gate für AJAX-Anfragen: bricht mit JSON-Antwort ab, wenn verdächtig. */
 function fge_form_spam_gate(): void {
 	if ( fge_form_honeypot_tripped() || fge_form_bot_detected() ) {
-		wp_send_json_error( [ 'message' => 'Ungültige Anfrage.' ], 400 );
+		// Verständlich statt kryptisch: die Zeitfalle trifft gelegentlich auch
+		// sehr schnelle echte Nutzer, die dann nur „Ungültige Anfrage." sahen.
+		wp_send_json_error( [ 'message' => 'Das ging uns zu schnell. Bitte warte einen Moment und schick die Anfrage noch einmal ab.' ], 400 );
 	}
 	if ( fge_form_rate_limited() ) {
 		wp_send_json_error( [ 'message' => 'Zu viele Anfragen in kurzer Zeit. Bitte versuche es in ein paar Minuten erneut oder schreib uns direkt.' ], 429 );
@@ -146,6 +220,8 @@ function fge_ajax_modal_anfrage(): void {
 	if ( 'firmengolf_event' !== get_post_type( $event_id ) ) {
 		wp_send_json_error( [ 'message' => 'Ungültiges Event.' ], 422 );
 	}
+	// Eckdaten prüfen, bevor ein Datensatz entsteht.
+	$basics = fge_validate_event_basics( $group, [ $_POST['date1'] ?? '', $_POST['date2'] ?? '', $_POST['date3'] ?? '' ] );
 
 	$partner_id  = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
 	$event_title = $event_id > 0 ? get_the_title( $event_id ) : 'k. A.';
@@ -181,19 +257,18 @@ function fge_ajax_modal_anfrage(): void {
 	update_post_meta( $request_id, '_fge_preferred_contact_method', $pref_method );
 
 	// Event framework
-	update_post_meta( $request_id, '_fge_expected_participants', preg_match( '/\d+/', $group, $group_m ) ? (int) $group_m[0] : 0 );
+	update_post_meta( $request_id, '_fge_expected_participants', $basics['size'] );
 	update_post_meta( $request_id, '_fge_group_experience', $experience );
 	update_post_meta( $request_id, '_fge_start_time',       $starttime );
 	update_post_meta( $request_id, '_fge_catering_notes',   $diet );
 	// Wunschtermine (1–3): Kalender liefert ISO, wird zu lesbarem Label („Do, 18.06.2026")
 	// formatiert; speist die Termin-Abstimmung (fge_request_responses / scheduling).
 	$fmt = static function ( $raw ) {
-		$raw = sanitize_text_field( wp_unslash( $raw ?? '' ) );
-		return function_exists( 'fge_format_wish_date' ) ? fge_format_wish_date( $raw ) : $raw;
+		return ( '' !== $raw && function_exists( 'fge_format_wish_date' ) ) ? fge_format_wish_date( $raw ) : $raw;
 	};
-	update_post_meta( $request_id, '_fge_preferred_date_1', $fmt( $_POST['date1'] ?? '' ) );
-	update_post_meta( $request_id, '_fge_preferred_date_2', $fmt( $_POST['date2'] ?? '' ) );
-	update_post_meta( $request_id, '_fge_preferred_date_3', $fmt( $_POST['date3'] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_1', $fmt( $basics['dates'][0] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_2', $fmt( $basics['dates'][1] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_3', $fmt( $basics['dates'][2] ?? '' ) );
 	$msg_parts = [];
 	if ( '' !== $starttime )     { $msg_parts[] = 'Gewünschter Startzeitpunkt: ' . $starttime; }
 	if ( '' !== $experience )    { $msg_parts[] = 'Golf-Erfahrung: ' . $experience; }
@@ -267,8 +342,10 @@ function fge_ajax_general_request(): void {
 		wp_send_json_error( [ 'message' => 'Bitte stimme der Datenverarbeitung zu, um die Anfrage zu senden.' ], 422 );
 	}
 
+	// Eckdaten prüfen, bevor ein Datensatz entsteht.
+	$basics    = fge_validate_event_basics( $_POST['size'] ?? '', [ $_POST['date1'] ?? '', $_POST['date2'] ?? '', $_POST['date3'] ?? '' ] );
 	$goal      = $t( 'goal' );
-	$size      = preg_match( '/\d+/', (string) ( $_POST['size'] ?? '' ), $size_m ) ? (int) $size_m[0] : 0;
+	$size      = $basics['size'];
 	$region    = $t( 'region' );
 	$place     = $t( 'place' );
 	$budget    = $t( 'budget' );
@@ -330,12 +407,11 @@ function fge_ajax_general_request(): void {
 	update_post_meta( $request_id, '_fge_alternative_period', $period );
 	// Wunschtermine zu lesbaren Labels formatieren (konsistent zum Modal-Handler).
 	$fmt_wish = static function ( $raw ) {
-		$raw = sanitize_text_field( wp_unslash( $raw ?? '' ) );
 		return ( '' !== $raw && function_exists( 'fge_format_wish_date' ) ) ? fge_format_wish_date( $raw ) : $raw;
 	};
-	update_post_meta( $request_id, '_fge_preferred_date_1', $fmt_wish( $_POST['date1'] ?? '' ) );
-	update_post_meta( $request_id, '_fge_preferred_date_2', $fmt_wish( $_POST['date2'] ?? '' ) );
-	update_post_meta( $request_id, '_fge_preferred_date_3', $fmt_wish( $_POST['date3'] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_1', $fmt_wish( $basics['dates'][0] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_2', $fmt_wish( $basics['dates'][1] ?? '' ) );
+	update_post_meta( $request_id, '_fge_preferred_date_3', $fmt_wish( $basics['dates'][2] ?? '' ) );
 
 	// Services → kanonische wants_* Flags; unbekannte fließen in individual_customization.
 	$svc_map = [
