@@ -27,6 +27,12 @@ $fmeta       = $fmeta_all[ $format_slug ] ?? [ 'h1' => '%s', 'eyeb' => '%s', 'ti
 $intros      = fge_citformat_intros();
 $intro       = $intros[ $city_slug ][ $format_slug ] ?? ( $format['intro'] ?? '' );
 
+// Preis aus den real buchbaren Angeboten statt hartkodiert im Text (Audit 2026-08-12).
+$cf_from = function_exists( 'fge_format_price_from_label' ) ? fge_format_price_from_label( (array) ( $format['types'] ?? [] ) ) : '';
+if ( '' !== $cf_from ) {
+	$intro .= ' ' . $cf_from . '.';
+}
+
 $h1          = sprintf( $fmeta['h1'], $city_name );
 $eyebrow     = sprintf( $fmeta['eyeb'], $city_name );
 $canonical   = home_url( '/golf-events/' . $city_slug . '/' . $format_slug . '/' );
@@ -229,7 +235,12 @@ get_header();
 						<span><?php echo esc_html( $faq['q'] ); ?></span>
 						<span class="faq-toggle" aria-hidden="true">+</span>
 					</button>
-					<div class="faq-a"><?php echo esc_html( $faq['a'] ); ?></div>
+					<div class="faq-a">
+						<?php echo esc_html( $faq['a'] ); ?>
+						<?php if ( ! empty( $faq['link']['url'] ) ) : ?>
+							<a class="faq-a-link" href="<?php echo esc_url( $faq['link']['url'] ); ?>"><?php echo esc_html( $faq['link']['label'] ); ?> &rarr;</a>
+						<?php endif; ?>
+					</div>
 				</li>
 			<?php endforeach; ?>
 		</ul>

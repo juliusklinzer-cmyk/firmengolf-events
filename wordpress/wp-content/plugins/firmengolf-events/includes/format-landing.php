@@ -11,6 +11,49 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Preis-FAQ aus den real buchbaren Angeboten (Audit 2026-08-12: die früher
+ * hartkodierten 190 €/56 € widersprachen den eigenen Events). Gibt es gerade
+ * kein Pro-Person-Angebot, nennt die Antwort bewusst gar keine Zahl.
+ *
+ * @param string   $question Fragetext.
+ * @param string   $plural   Formatname im Plural, z. B. „Golf-Teamevents".
+ * @param string[] $types    Event-Typ-Keys des Formats.
+ * @param string   $tail     Optionaler Zusatzsatz am Ende.
+ * @return array{q:string,a:string,link?:array{url:string,label:string}}
+ */
+function fge_format_price_faq( string $question, string $plural, array $types, string $tail = '' ): array {
+	$range = function_exists( 'fge_format_price_range' ) ? fge_format_price_range( $types ) : null;
+
+	if ( ! $range ) {
+		$answer = 'Das hängt von Platz, Gruppengröße und Leistungen ab. Sag uns euren Rahmen, dann bekommt ihr innerhalb eines Werktags ein konkretes Angebot mit allen Posten.';
+		return [ 'q' => $question, 'a' => trim( $answer . ' ' . $tail ) ];
+	}
+
+	$min = fge_price_eur( $range['min'] );
+	if ( $range['max'] > $range['min'] ) {
+		$answer = sprintf(
+			'Das hängt von Platz, Leistungen und Verpflegung ab. Aktuell liegen unsere buchbaren %s zwischen %s und %s pro Person, netto. Am günstigsten ist gerade der %s.',
+			$plural,
+			$min,
+			fge_price_eur( $range['max'] ),
+			$range['min_title']
+		);
+	} else {
+		$answer = sprintf(
+			'Das hängt von Platz, Leistungen und Verpflegung ab. Aktuell buchbar ist der %s für %s pro Person, netto.',
+			$range['min_title'],
+			$min
+		);
+	}
+
+	return [
+		'q'    => $question,
+		'a'    => trim( $answer . ' ' . $tail ),
+		'link' => [ 'url' => $range['min_url'], 'label' => 'Günstigstes Angebot ansehen' ],
+	];
+}
+
+/**
  * Format-Konfiguration, keyed by URL-Slug. `types` listet die event_type-Meta-Werte
  * (inkl. Legacy-Keys), die diesem Hub zugeordnet werden. Jeder Hub bringt eigenen
  * Inhalt (Intro, Gründe, FAQ) für nicht-dünnen programmatischen SEO-Content.
@@ -18,6 +61,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 function fge_get_event_format_pages(): array {
 	$reason = static function ( $ic, $t, $b ) { return [ 'ic' => $ic, 't' => $t, 'b' => $b ]; };
 	$faq    = static function ( $q, $a ) { return [ 'q' => $q, 'a' => $a ]; };
+
+	// Event-Typen je Hub vorab, damit Preisrechnung und `types` dieselbe Quelle nutzen.
+	$t_team     = [ 'teamevent', 'team-building', 'team_challenge', 'azubi_event', 'schnupperkurs', 'schnuppergolf' ];
+	$t_workshop = [ 'workshop', 'offsite', 'offsite_mit_meeting' ];
+	$t_turnier  = [ 'firmen_golfturnier', 'firmenturnier', '9hole_turnier', '18hole_turnier' ];
+	$t_kunden   = [ 'kundenevent' ];
+	$t_afterw   = [ 'after_work_golf', 'coaching', 'putting_challenge', 'kurzspiel_challenge' ];
+
+	$from_team     = function_exists( 'fge_format_price_from_label' ) ? fge_format_price_from_label( $t_team ) : '';
+	$from_workshop = function_exists( 'fge_format_price_from_label' ) ? fge_format_price_from_label( $t_workshop ) : '';
 
 	$r_team = $reason( 'users', 'Für jedes Level', 'Von kompletten Einsteigenden bis zu Stammspielern. Schläger werden gestellt, ein Golflehrer führt an.' );
 	$r_one  = $reason( 'flag', 'Eine Anfrage, ein Kontakt', 'Platzwahl, Format, Catering und Abrechnung über einen einzigen Ansprechpartner.' );
@@ -34,8 +87,8 @@ function fge_get_event_format_pages(): array {
 			'intro'   => 'Ein Golf-Teamevent holt euer Team raus aus dem Büro und rein ins Grüne. Anders als beim klassischen Teambuilding entsteht hier ganz nebenbei Nähe: gemeinsam üben, lachen, anfeuern. Ein Schnupper- und Grundlagenkurs ist immer dabei: Ein Golflehrer führt auch komplette Einsteigende sicher an, Schläger und Material werden gestellt. Wir stellen Platz, Ablauf und Verpflegung passend zu eurer Gruppe zusammen, deutschlandweit.',
 			// Keine 'reasons' mehr: Inhalte stecken in den Icon-Facts direkt unter dem Hero
 			// (Feedback Julius 2026-08-10, eine Kachel-Reihe statt zwei Fakten-Blöcke).
-			'faqs'    => [ $f_anf, $faq( 'Wie groß darf das Team sein?', 'Von der kleinen Abteilung bis zu rund 80 Teilnehmenden ist alles möglich. Sag uns eure Gruppengröße, dann wählen wir Platz und Format passend aus.' ), $faq( 'Was kostet ein Golf-Teamevent?', 'Ein einfacher Grundlagenkurs mit eigener Anreise und ohne Sonderleistungen startet schon bei 20 € pro Person. Unser Rundum-Teamevent mit Golflehrer, Leihschlägern, Team-Putt-Turnier und Verpflegung liegt bei 56 € pro Person. Wenn dir ein Event gefällt, du aber nur den reinen Kurs möchtest, frag es einfach an und schreib das dazu.' ), $f_fast, $f_bill ],
-			'types'   => [ 'teamevent', 'team-building', 'team_challenge', 'azubi_event', 'schnupperkurs', 'schnuppergolf' ],
+			'faqs'    => [ $f_anf, $faq( 'Wie groß darf das Team sein?', 'Von der kleinen Abteilung bis zu rund 80 Teilnehmenden ist alles möglich. Sag uns eure Gruppengröße, dann wählen wir Platz und Format passend aus.' ), fge_format_price_faq( 'Was kostet ein Golf-Teamevent?', 'Golf-Teamevents', $t_team, 'Der reine Grundlagenkurs mit eigener Anreise ist immer die günstigste Variante, Verpflegung, Turnier und Rahmenprogramm kommen nach Wunsch dazu. Wenn dir ein Event gefällt, du aber nur den reinen Kurs möchtest, frag es einfach an und schreib das dazu.' ), $f_fast, $f_bill ],
+			'types'   => $t_team,
 			// Landingpage-Ausbau (Google-Ads-Kampagne 2026-08): Quick-Facts, Tagesablauf,
 			// Level-Sektion, eigenes Hero-Bild. Formate ohne diese Keys rendern wie bisher.
 			'hero_img' => 'firmenevent-afterwork-golf.jpg',
@@ -45,7 +98,7 @@ function fge_get_event_format_pages(): array {
 			'facts'   => [
 				[ 'ic' => 'users', 't' => 'Für jedes Level', 'b' => 'Ohne Vorkenntnisse, von 6 bis 80 Personen. Schläger werden gestellt, ein Golflehrer führt an.' ],
 				[ 'ic' => 'clock', 't' => 'Halber oder ganzer Tag', 'b' => 'Vom kompakten Nachmittag bis zum vollen Eventtag, passend zu Kalender und Budget.' ],
-				[ 'ic' => 'gift', 't' => 'Ab 20 € pro Person', 'b' => 'Vom reinen Grundlagenkurs mit eigener Anreise bis zum Rundum-Teamevent mit Verpflegung.' ],
+				[ 'ic' => 'gift', 't' => $from_team ?: 'Passend zum Budget', 'b' => 'Vom reinen Grundlagenkurs mit eigener Anreise bis zum Rundum-Teamevent mit Verpflegung.' ],
 				[ 'ic' => 'flag', 't' => 'Eine Anfrage, ein Kontakt', 'b' => 'Platzwahl, Format, Catering und Abrechnung über einen einzigen Ansprechpartner.' ],
 			],
 			'flow'    => [
@@ -72,7 +125,7 @@ function fge_get_event_format_pages(): array {
 				[ 't' => 'Verpflegung auf der Runde', 'b' => 'Halfway-Snacks und Getränke direkt am Platz, die Stimmung bleibt oben.' ],
 				[ 't' => 'Siegerehrung & Ausklang', 'b' => 'Pokale, Preise und ein gemeinsames Essen mit den besten Geschichten des Tages.' ],
 			],
-			'types'   => [ 'firmen_golfturnier', 'firmenturnier', '9hole_turnier', '18hole_turnier' ],
+			'types'   => $t_turnier,
 		],
 		'platzreife' => [
 			'name'    => 'Platzreife',
@@ -106,10 +159,10 @@ function fge_get_event_format_pages(): array {
 			'name'    => 'Workshop & Golf',
 			'eyebrow' => 'Format · Workshop',
 			'h1'      => 'Workshops auf dem Golfplatz',
-			'lead'    => 'Vormittags konzentriert arbeiten, mittags auf der Clubterrasse essen, zum Ausklang gemeinsam Golf lernen. Ab 190 € pro Person.',
+			'lead'    => 'Vormittags konzentriert arbeiten, mittags auf der Clubterrasse essen, zum Ausklang gemeinsam Golf lernen.' . ( $from_workshop ? ' ' . $from_workshop . '.' : '' ),
 			'intro'   => 'Ein Workshop auf dem Golfplatz verbindet konzentriertes Arbeiten mit einem Ausklang, der wirklich verbindet. Moderne Clubhäuser bieten Konferenzräume mit Tageslicht und eine Gastronomie, die vom Begrüßungskaffee bis zum Mittagsbuffet auf der Clubterrasse alles abdeckt. Nach dem offiziellen Teil geht es raus: Ein Golf-Grundlagenkurs mit einem unserer Golflehrer bringt das Team in Bewegung, ganz ohne Vorkenntnisse. Ein Tag, ein Ort, ein Ansprechpartner.',
 			'facts' => [ $reason( 'leaf', 'Frischer Kopf', 'Vormittags Workshop, mittags Clubterrasse, nachmittags Bewegung an der frischen Luft. So hält die Konzentration den ganzen Tag.' ), $reason( 'sun', 'Ausklang am Grün', 'Zum Abschluss ein Golf-Grundlagenkurs mit Golflehrer, ein gemeinsames Erlebnis statt letzter Folien.' ), $r_team, $r_one ],
-			'faqs'    => [ $faq( 'Was kostet ein Workshop auf dem Golfplatz?', 'Unser Standard-Workshoptag liegt bei 190 € pro Person: Eventlocation, Begrüßung mit Kaffee und Kuchen, Mittagsbuffet inklusive Getränken auf der Clubterrasse und der Golf-Grundlagenkurs mit Golflehrer sind enthalten. Je nach Platz, Raum und Extras passen wir das Paket an.' ), $f_anf, $faq( 'Welche Technik steht im Konferenzraum bereit?', 'Beamer oder Screen, WLAN und Moderationsmaterial gehören auf den meisten Anlagen zur Ausstattung. Sag uns, was ihr braucht, wir klären das mit dem Platz vor der Buchung.' ), $f_fast, $f_bill ],
+			'faqs'    => [ fge_format_price_faq( 'Was kostet ein Workshop auf dem Golfplatz?', 'Workshoptage', $t_workshop, 'Im Workshoptag stecken Eventlocation, Begrüßung mit Kaffee und Kuchen, Mittagsbuffet inklusive Getränken auf der Clubterrasse und der Golf-Grundlagenkurs mit Golflehrer. Je nach Platz, Raum und Extras passen wir das Paket an.' ), $f_anf, $faq( 'Welche Technik steht im Konferenzraum bereit?', 'Beamer oder Screen, WLAN und Moderationsmaterial gehören auf den meisten Anlagen zur Ausstattung. Sag uns, was ihr braucht, wir klären das mit dem Platz vor der Buchung.' ), $f_fast, $f_bill ],
 			'hero_img' => 'pool/workshop-clubhaus-modern.jpg',
 			'flow_h'   => 'Vom Kaffee bis zum ersten Abschlag.',
 			'flow'     => [
@@ -119,7 +172,7 @@ function fge_get_event_format_pages(): array {
 				[ 't' => 'Workshop Teil 2', 'b' => 'Weiter geht es im Konferenzraum, mit frischem Kopf.' ],
 				[ 't' => 'Ausklang: Golf-Grundlagenkurs', 'b' => 'Zum Abschluss bringt ein Golflehrer alle in Bewegung, ganz ohne Vorkenntnisse.' ],
 			],
-			'types'   => [ 'workshop', 'offsite', 'offsite_mit_meeting' ],
+			'types'   => $t_workshop,
 		],
 		'kundenevent' => [
 			'name'    => 'Kundenevent Golf',
@@ -137,7 +190,7 @@ function fge_get_event_format_pages(): array {
 				[ 't' => 'Gemeinsame Runde & Gespräche', 'b' => 'Mehrere Stunden draußen, in denen echte Gespräche entstehen.' ],
 				[ 't' => 'Dinner & Ausklang', 'b' => 'Gemeinsames Essen mit Siegerehrung, eure Gäste fahren mit einer Geschichte heim.' ],
 			],
-			'types'   => [ 'kundenevent' ],
+			'types'   => $t_kunden,
 		],
 		'incentive' => [
 			'name'    => 'Golf-Incentive',
@@ -173,7 +226,7 @@ function fge_get_event_format_pages(): array {
 				[ 't' => 'Putt- & Kurzspiel-Challenge', 'b' => 'Kleiner Wettbewerb auf dem Putting-Grün, hier wird gelacht.' ],
 				[ 't' => 'Ausklang bei Drinks', 'b' => 'Gemeinsam sitzen bleiben, auf der Terrasse oder im Clubhaus.' ],
 			],
-			'types'   => [ 'after_work_golf', 'coaching', 'putting_challenge', 'kurzspiel_challenge' ],
+			'types'   => $t_afterw,
 		],
 	];
 }

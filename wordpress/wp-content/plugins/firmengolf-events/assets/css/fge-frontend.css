@@ -3086,6 +3086,9 @@ button.fg-search-btn { background: var(--fairway-700); color: var(--paper-100); 
 .faq-item.open .faq-toggle { color: var(--fairway-700); }
 .faq-a { padding: 0 0 28px; font-size: 16px; line-height: 1.65; color: var(--ink-700); max-width: 640px; display: none; }
 .faq-item.open .faq-a { display: block; }
+/* Direktlink zum günstigsten Angebot in der Preis-FAQ (Preise sind dynamisch, s. event-pricing.php) */
+.faq-a-link { display: inline-block; margin-top: 10px; font-weight: 600; color: var(--fairway-700); text-decoration: none; border-bottom: 1px solid currentColor; }
+.faq-a-link:hover, .faq-a-link:focus-visible { color: var(--fairway-900); }
 
 /* ── Responsive (27) ── */
 @media (max-width: 1100px) {

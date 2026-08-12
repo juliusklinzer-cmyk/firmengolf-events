@@ -22,7 +22,7 @@ function fge_wz_packages(): array {
 	return [
 		'anerkennung' => [
 			'name'  => 'Anerkennung',
-			'price' => '59 € pro Person',
+			'price' => '59 € netto pro Person',
 			'sub'   => 'Der Golf-Grundlagenkurs als persönliches Dankeschön.',
 			'items' => [
 				'Golf-Grundlagenkurs (Schnupperkurs) in kleiner Gruppe',

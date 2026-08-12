@@ -28,6 +28,7 @@ require_once FGE_DIR . 'includes/request-responses.php';
 require_once FGE_DIR . 'includes/event-pricing.php';
 require_once FGE_DIR . 'includes/event-formats.php';
 require_once FGE_DIR . 'includes/workshop-migration.php';
+require_once FGE_DIR . 'includes/content-fixes-2026-08.php';
 require_once FGE_DIR . 'includes/wertschaetzung.php';
 require_once FGE_DIR . 'includes/blog-bylines.php';
 require_once FGE_DIR . 'includes/event-fields.php';

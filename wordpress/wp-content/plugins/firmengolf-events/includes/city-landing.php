@@ -22,6 +22,14 @@ function fge_get_cities(): array {
 	$f_size = $faq( 'Wie groß darf die Gruppe sein?', 'Vom Coaching für zwei Personen bis zum Firmenturnier mit rund 80 Teilnehmenden ist alles möglich. Sag uns einfach eure Gruppengröße in der Anfrage, dann wählen wir Platz und Format passend aus.' );
 	$f_fast = static function ( $city ) use ( $faq ) { return $faq( 'Wie schnell bekomme ich eine Rückmeldung?', 'Nach eurer Anfrage meldet sich innerhalb eines Werktags ein persönlicher Ansprechpartner mit konkreten Vorschlägen für Platz, Format und Termin in ' . $city . '.' ); };
 
+	// Preise kommen aus den real buchbaren Angeboten, nicht aus dem Text (Audit 2026-08-12).
+	$price_summary = function_exists( 'fge_price_from_summary' ) ? fge_price_from_summary( [
+		'Teamevents'      => [ 'teamevent', 'team-building', 'team_challenge', 'azubi_event', 'schnupperkurs', 'schnuppergolf' ],
+		'After-Work Golf' => [ 'after_work_golf', 'coaching', 'putting_challenge', 'kurzspiel_challenge' ],
+		'Workshoptage'    => [ 'workshop', 'offsite', 'offsite_mit_meeting' ],
+		'die Platzreife'  => [ 'platzreife' ],
+	] ) : '';
+
 	return [
 		'muenchen' => [
 			'name' => 'München', 'region' => 'Süd & Oberbayern', 'match' => [ 'München', 'Oberbayern' ],
@@ -29,7 +37,7 @@ function fge_get_cities(): array {
 			'reasons' => [ $reason( 'clock', '30 Min. ins Grüne', 'Die besten Plätze liegen stadtnah, Eichenried und Co. sind schnell erreichbar, auch mit der S-Bahn.' ), $team, $reason( 'mountain', 'Bergpanorama inklusive', 'An klaren Tagen spielt ihr mit Blick auf die Alpen, ein Erlebnis, das in Erinnerung bleibt.' ), $local ],
 			'faqs' => [
 				$faq( 'Welche Golfplätze rund um München eignen sich für Firmenevents?', 'In Bayern gibt es über 160 Golfanlagen, viele davon in rund 30 Minuten vom Münchner Stadtkern erreichbar, etwa Richtung Eichenried, Erding oder ins Oberland. Wir schlagen euch je nach Gruppengröße, Anlass und Termin die passenden Plätze vor.' ),
-				$faq( 'Was kostet ein Firmenevent auf dem Golfplatz in München?', 'Als Orientierung: After-Work-Formate starten bei rund 69 Euro pro Person, Teamevents liegen um 129 Euro, mehrtägige Formate wie die Platzreife bei etwa 299 Euro. Der genaue Preis hängt von Platz, Gruppengröße und Verpflegung ab. Ihr bekommt vorab ein transparentes Angebot mit allen Posten.' ),
+				$faq( 'Was kostet ein Firmenevent auf dem Golfplatz in München?', trim( 'Der Preis hängt von Platz, Gruppengröße und Verpflegung ab. ' . ( $price_summary ? 'Aktuell buchbar: ' . $price_summary . ' pro Person, netto. ' : '' ) . 'Ihr bekommt vorab ein transparentes Angebot mit allen Posten.' ) ),
 				$f_anf,
 				$faq( 'Erreichen wir die Plätze auch ohne Auto?', 'Ja. Einige Anlagen im Münchner Umland sind mit S-Bahn oder U-Bahn plus kurzem Fußweg erreichbar. Für Gruppen organisieren wir auf Wunsch einen Shuttle direkt ab eurem Büro.' ),
 				$faq( 'Wie weit im Voraus sollten wir buchen?', 'Beliebte Termine zwischen Mai und September sind meist 4 bis 6 Wochen im Voraus vergeben. Im Frühjahr und Herbst geht es oft auch kurzfristiger. Schickt uns einfach euren Wunschzeitraum, wir prüfen sofort, was möglich ist.' ),

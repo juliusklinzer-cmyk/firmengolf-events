@@ -337,7 +337,12 @@ $gp_nearby = ( $gp_coords && function_exists( 'fge_verzeichnis_nearby' ) )
 						<span><?php echo esc_html( $faq['q'] ); ?></span>
 						<span class="faq-toggle" aria-hidden="true">+</span>
 					</button>
-					<div class="faq-a"><?php echo esc_html( $faq['a'] ); ?></div>
+					<div class="faq-a">
+						<?php echo esc_html( $faq['a'] ); ?>
+						<?php if ( ! empty( $faq['link']['url'] ) ) : ?>
+							<a class="faq-a-link" href="<?php echo esc_url( $faq['link']['url'] ); ?>"><?php echo esc_html( $faq['link']['label'] ); ?> &rarr;</a>
+						<?php endif; ?>
+					</div>
 				</li>
 			<?php endforeach; ?>
 		</ul>

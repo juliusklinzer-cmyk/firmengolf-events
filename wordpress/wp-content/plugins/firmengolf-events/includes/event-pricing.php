@@ -115,3 +115,153 @@ function fge_event_price_label( int $event_id ): string {
 	$amount = number_format_i18n( $p['gross'], 0 ) . ' €'; // Suffix-Format (Kern-Audit H6)
 	return $p['unit'] === 'pro Person' ? $amount . ' p.P.' : $amount . ' gesamt';
 }
+
+// ── Preisspannen für die Landingpages ────────────────────────────────────────
+//
+// Die Landingpages nannten Preise früher hartkodiert („Ab 190 € pro Person"),
+// während die buchbaren Events längst andere Zahlen hatten (Audit 2026-08-12,
+// fünf Widersprüche). Julius' Vorgabe: variabel rechnen und immer den
+// günstigsten realen Preis zeigen, verlinkt auf das Angebot dahinter. Damit
+// stimmt die Aussage automatisch, sobald ein Platz ein neues Angebot einstellt.
+
+/** Preis als „20 €" (ohne Nachkommastellen, deutsche Tausendertrennung). */
+function fge_price_eur( float $amount ): string {
+	return number_format_i18n( $amount, 0 ) . ' €';
+}
+
+/**
+ * Alle öffentlich buchbaren Pro-Person-Preise, gruppiert nach `_fge_event_type`.
+ * Pauschal-/Gesamtpreise bleiben außen vor: aus ihnen lässt sich kein
+ * belastbares „ab X € pro Person" ableiten.
+ *
+ * @return array<string,array{min:float,max:float,min_id:int}>
+ */
+function fge_person_price_index(): array {
+	$cached = get_transient( 'fge_person_price_index' );
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
+
+	$index = [];
+	$ids   = get_posts( [
+		'post_type'        => 'firmengolf_event',
+		'post_status'      => 'publish',
+		'posts_per_page'   => -1,
+		'fields'           => 'ids',
+		'suppress_filters' => true,
+		'no_found_rows'    => true,
+		'meta_query'       => [
+			[ 'key' => '_fge_event_status', 'value' => fge_public_event_statuses(), 'compare' => 'IN' ],
+		],
+	] );
+
+	foreach ( $ids as $id ) {
+		$id = (int) $id;
+		if ( ! fge_event_is_public( $id ) ) {
+			continue;
+		}
+		$p = fge_event_pricing( $id );
+		if ( 'pro Person' !== $p['unit'] || $p['gross'] <= 0 ) {
+			continue;
+		}
+		$type = (string) get_post_meta( $id, '_fge_event_type', true );
+		if ( '' === $type ) {
+			continue;
+		}
+		if ( ! isset( $index[ $type ] ) ) {
+			$index[ $type ] = [ 'min' => $p['gross'], 'max' => $p['gross'], 'min_id' => $id ];
+			continue;
+		}
+		if ( $p['gross'] < $index[ $type ]['min'] ) {
+			$index[ $type ]['min']    = $p['gross'];
+			$index[ $type ]['min_id'] = $id;
+		}
+		$index[ $type ]['max'] = max( $index[ $type ]['max'], $p['gross'] );
+	}
+
+	set_transient( 'fge_person_price_index', $index, DAY_IN_SECONDS );
+	return $index;
+}
+
+/** Cache verwerfen, sobald sich an Events, Preisen oder Freigaben etwas ändert. */
+function fge_flush_person_price_index(): void {
+	delete_transient( 'fge_person_price_index' );
+}
+
+add_action( 'save_post_firmengolf_event', 'fge_flush_person_price_index' );
+add_action( 'deleted_post', 'fge_flush_person_price_index' );
+add_action( 'trashed_post', 'fge_flush_person_price_index' );
+add_action( 'untrashed_post', 'fge_flush_person_price_index' );
+// Portal und Freigabe-Workflow schreiben Preis- und Statusmetas teils ohne save_post.
+add_action( 'updated_post_meta', static function ( $mid, $post_id, $key ): void {
+	if ( in_array( (string) $key, [ '_fge_sale_price_net', '_fge_event_status', '_fge_price_amount', '_fge_line_items', '_fge_event_type' ], true ) ) {
+		fge_flush_person_price_index();
+	}
+}, 10, 3 );
+add_action( 'added_post_meta', static function ( $mid, $post_id, $key ): void {
+	if ( in_array( (string) $key, [ '_fge_sale_price_net', '_fge_event_status', '_fge_price_amount', '_fge_line_items', '_fge_event_type' ], true ) ) {
+		fge_flush_person_price_index();
+	}
+}, 10, 3 );
+
+/**
+ * Preisspanne pro Person über mehrere Event-Typen (= ein Format-Hub).
+ *
+ * @param string[] $types Event-Typ-Keys des Formats.
+ * @return array{min:float,max:float,min_id:int,min_url:string,min_title:string}|null
+ */
+function fge_format_price_range( array $types ): ?array {
+	$index = fge_person_price_index();
+	$out   = null;
+	foreach ( $types as $type ) {
+		if ( ! isset( $index[ $type ] ) ) {
+			continue;
+		}
+		$row = $index[ $type ];
+		if ( null === $out ) {
+			$out = $row;
+			continue;
+		}
+		if ( $row['min'] < $out['min'] ) {
+			$out['min']    = $row['min'];
+			$out['min_id'] = $row['min_id'];
+		}
+		$out['max'] = max( $out['max'], $row['max'] );
+	}
+	if ( null === $out ) {
+		return null;
+	}
+	$out['min_url']   = (string) get_permalink( $out['min_id'] );
+	$out['min_title'] = (string) get_the_title( $out['min_id'] );
+	return $out;
+}
+
+/** „Ab 20 € pro Person" für Hero und Kacheln, leer wenn es gerade kein Angebot gibt. */
+function fge_format_price_from_label( array $types ): string {
+	$range = fge_format_price_range( $types );
+	return $range ? 'Ab ' . fge_price_eur( $range['min'] ) . ' pro Person' : '';
+}
+
+/**
+ * Aufzählung „Teamevents ab 20 €, Workshops ab 230 €" für Preis-FAQs.
+ * Formate ohne aktuelles Angebot fallen still raus, statt eine Zahl zu erfinden.
+ *
+ * @param array<string,string[]> $formats Label => Event-Typ-Keys.
+ */
+function fge_price_from_summary( array $formats ): string {
+	$parts = [];
+	foreach ( $formats as $label => $types ) {
+		$range = fge_format_price_range( $types );
+		if ( $range ) {
+			$parts[] = $label . ' ab ' . fge_price_eur( $range['min'] );
+		}
+	}
+	if ( ! $parts ) {
+		return '';
+	}
+	if ( count( $parts ) === 1 ) {
+		return $parts[0];
+	}
+	$last = array_pop( $parts );
+	return implode( ', ', $parts ) . ' und ' . $last;
+}
