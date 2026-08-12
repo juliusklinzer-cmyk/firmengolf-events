@@ -290,3 +290,29 @@ add_action( 'init', static function () {
 		fge_flush_formats_in_use();
 	}
 }, 21 );
+
+/**
+ * Nachlauf. Beim ersten Durchgang standen im selben strtr()-Aufruf zwei Regeln,
+ * die sich überlappten: der Halbgeviertstrich-Ersatz („Erfolgserlebnisse – stärken"
+ * → „Erfolgserlebnisse, stärken") hat das Wort „stärken" konsumiert, bevor die
+ * Du-Regel „stärken Sie Ihr Team" greifen konnte. strtr() scannt nur einmal von
+ * links, ersetzter Text wird nicht erneut geprüft. Diese Stelle deshalb separat,
+ * mit einem Suchbegriff, der sich mit nichts anderem überschneidet.
+ */
+add_action( 'init', static function () {
+	if ( get_option( 'fge_content_fixes_2026_08b' ) ) {
+		return;
+	}
+	update_option( 'fge_content_fixes_2026_08b', '1', true );
+
+	$pairs  = [ 'stärken Sie Ihr Team' => 'stärkt euer Team' ];
+	$events = get_posts( [
+		'post_type'      => 'firmengolf_event',
+		'post_status'    => [ 'publish', 'draft', 'pending' ],
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+	] );
+	foreach ( $events as $id ) {
+		fge_cf26_replace_in_event( (int) $id, $pairs );
+	}
+}, 22 );
