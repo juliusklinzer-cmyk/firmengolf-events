@@ -26,7 +26,6 @@ get_header();
 $archive_url = (string) get_post_type_archive_link( 'firmengolf_event' );
 $ind_page    = get_page_by_path( 'individuelle-events' );
 $ind_url     = $ind_page ? (string) get_permalink( $ind_page->ID ) : home_url( '/individuelle-events/' );
-$kontakt_url = ( $kp = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( $kp->ID ) : home_url( '/kontakt/' );
 
 // ── Sanitize GET params ──────────────────────────────────────────────────────
 $active_format = sanitize_key( $_GET['format'] ?? 'all' );        // phpcs:ignore WordPress.Security.NonceVerification
@@ -634,40 +633,41 @@ if ( ! $has_filters ) :
 	</div>
 </section>
 
-<?php /* ══════════════ TRUST STRIP ══════════════ */ ?>
-<div class="trust-strip" aria-label="Vertrauen">
-	<div class="trust-inner">
-		<?php
-		$trust = [
-			[ '721 Golfplätze deutschlandweit', 'Events auf Golfplätzen in ganz Deutschland, passt einer nicht, nehmen wir den nächsten.' ],
-			[ 'Ein Ansprechpartner', 'Vom Erstkontakt bis nach dem Event.' ],
-			[ 'Eine Rechnung',       'Sauber abgerechnet, BGM-konform wenn nötig.' ],
-			[ 'Antwort < 24 h',      'Werktags innerhalb eines Arbeitstags.' ],
-		];
-		foreach ( $trust as $t ) : ?>
-			<div class="trust-cell">
-				<div class="trust-t"><?php echo esc_html( $t[0] ); ?></div>
-				<div class="trust-b"><?php echo esc_html( $t[1] ); ?></div>
-			</div>
+<?php /* ══════════════ VERSPRECHEN (4 Spalten im Stil der Startseite) ══════════════ */
+$trust = [
+	[ 'ic' => '<path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+	  'k' => 'Über 500 Eventlocations', 't' => 'Golfplätze, Driving Ranges und Indoor-Simulatoren in ganz Deutschland, passt einer nicht, nehmen wir den nächsten.' ],
+	[ 'ic' => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+	  'k' => 'Ein Ansprechpartner', 't' => 'Vom ersten Kontakt bis nach dem Event sprecht ihr immer mit derselben Person.' ],
+	[ 'ic' => '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+	  'k' => 'Eine Rechnung', 't' => 'Alle Posten sauber ausgewiesen, von Greenfee bis Catering, auf Wunsch BGM-konform.' ],
+	[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+	  'k' => 'Antwort in 24 Stunden', 't' => 'Werktags habt ihr innerhalb eines Arbeitstags eine persönliche Rückmeldung mit konkreten Vorschlägen.' ],
+];
+?>
+<section class="mk-section cty-reveal" aria-label="Worauf ihr euch verlassen könnt">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Worauf ihr euch bei jedem Event verlassen könnt.</h2>
+	</div>
+	<div class="fgw-cols">
+		<?php foreach ( $trust as $t ) : ?>
+		<div class="fgw-col">
+			<span class="fgw-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $t['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
+			<h3 class="fgw-col-t"><?php echo esc_html( $t['k'] ); ?></h3>
+			<p class="fgw-col-b"><?php echo esc_html( $t['t'] ); ?></p>
+		</div>
 		<?php endforeach; ?>
 	</div>
-</div>
+</section>
 
-<?php /* ══════════════ FAQ ══════════════ */ ?>
-<section class="mk-section faq-section" aria-label="FAQ">
-	<div class="faq-shell">
-		<div class="faq-aside">
-			<div class="mk-eyebrow">Häufige Fragen</div>
-			<h2 class="mk-h2" style="margin-top:8px">Was Firmen vor der Buchung wissen wollen.</h2>
-			<p class="mk-sub" style="margin-top:16px">Die häufigsten Fragen unserer Kunden, vor allem von HR und Office Management. Was hier nicht steht: einfach kurz schreiben.</p>
-			<div class="faq-cta">
-				<a class="fg-btn-ghost" href="<?php echo esc_url( $kontakt_url ); ?>">
-					Etwas anderes fragen
-					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
-				</a>
-			</div>
-		</div>
-		<ul class="faq-list">
+<?php /* ══════════════ FAQ (Karten-Akkordeons im Stil der Landingpages) ══════════════ */ ?>
+<section class="mk-section faq-section cty-faq cty-reveal" aria-label="FAQ">
+	<div class="cty-faq-head">
+		<h2 class="mk-h2">Was Firmen vor der Buchung wissen wollen.</h2>
+		<p class="faq-aside-note">Eure Frage ist nicht dabei? Schreibt uns direkt:
+			<a href="mailto:julius@firmengolf-events.de">julius@firmengolf-events.de</a></p>
+	</div>
+	<ul class="faq-list faq-anim cty-faq-cards">
 			<?php
 			$faqs = [
 				[
@@ -695,18 +695,39 @@ if ( ! $has_filters ) :
 					'a' => 'Ja, unsere Gesundheitstage und Coaching-Formate sind BGM-konform (§ 3 Nr. 34 EStG) abrechenbar. Wir stellen die nötigen Belege aus.',
 				],
 			];
-			foreach ( $faqs as $i => $faq ) : ?>
-				<li class="faq-item<?php echo $i === 0 ? ' open' : ''; ?>" id="faq-<?php echo (int) $i; ?>">
-					<button class="faq-q" onclick="(function(b){var it=b.closest('.faq-item');var o=it.classList.toggle('open');b.setAttribute('aria-expanded',o);it.querySelector('.faq-toggle').textContent=o?'−':'+';})(this)" aria-expanded="<?php echo $i === 0 ? 'true' : 'false'; ?>">
+			foreach ( $faqs as $faq ) : ?>
+				<li class="faq-item">
+					<button class="faq-q" type="button" aria-expanded="false">
 						<span><?php echo esc_html( $faq['q'] ); ?></span>
-						<span class="faq-toggle" aria-hidden="true"><?php echo $i === 0 ? '−' : '+'; ?></span>
+						<span class="faq-toggle cty-faq-chev" aria-hidden="true">
+							<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+						</span>
 					</button>
-					<div class="faq-a"><?php echo esc_html( $faq['a'] ); ?></div>
+					<div class="faq-a">
+						<div class="faq-a-in"><?php echo esc_html( $faq['a'] ); ?></div>
+					</div>
 				</li>
 			<?php endforeach; ?>
-		</ul>
-	</div>
+	</ul>
 </section>
+
+<?php /* CTA mit Putt-Moment (gemeinsamer Baustein der Landingpages) */
+$ev_cta_links = '';
+if ( function_exists( 'fge_get_cities' ) ) {
+	$ev_cta_cities = fge_get_cities();
+	$ev_cta_links  = '<span>Golf-Events in:</span>';
+	foreach ( [ 'muenchen', 'hamburg', 'berlin', 'koeln', 'frankfurt', 'stuttgart', 'duesseldorf' ] as $ev_cslug ) {
+		if ( ! isset( $ev_cta_cities[ $ev_cslug ] ) ) { continue; }
+		$ev_cta_links .= '<a href="' . esc_url( home_url( '/golf-events/' . $ev_cslug . '/' ) ) . '">' . esc_html( $ev_cta_cities[ $ev_cslug ]['name'] ) . '</a>';
+	}
+}
+get_template_part( 'template-parts/fge-putt-cta', null, [
+	'headline_html' => 'Lasst uns euer Event <em class="mk-italic">planen</em>.',
+	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
+	'anfrage_url'   => add_query_arg( 'anfrage', 'quick', $ind_url ),
+	'links_html'    => $ev_cta_links,
+] );
+?>
 
 <?php get_template_part( 'template-parts/fge-footer' ); ?>
 
@@ -914,6 +935,26 @@ if ( ! $has_filters ) :
         })
         .catch(function () { form.submit(); });
     });
+  }
+
+  /* ── FAQ-Karten (Muster der Landingpages) ── */
+  document.querySelectorAll('.fge-page .faq-q[aria-expanded]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var item = btn.closest('.faq-item');
+      var open = item.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  });
+
+  /* ── Sanftes Einblenden beim Scrollen (CSS greift nur unter html.cty-io) ── */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+    document.documentElement.classList.add('cty-io');
+    var revealIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); revealIo.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('.cty-reveal').forEach(function (el) { revealIo.observe(el); });
   }
 }());
 </script>

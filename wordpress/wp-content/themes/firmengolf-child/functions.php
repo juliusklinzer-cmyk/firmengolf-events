@@ -338,7 +338,7 @@ add_action( 'wp_enqueue_scripts', function() {
 	// Anfrage-Seite zu springen. Nach dem Schließen steht man wieder dort, wo man
 	// war (Julius, 2026-08-20). Ohne JS fällt der Link auf die Anfrage-Seite zurück.
 	$fge_is_city_lp = '' !== (string) get_query_var( 'fge_city' ); // Stadt- UND Format×Stadt-Seiten
-	if ( is_page( [ 'individuelle-events', 'event-anfrage' ] ) || $fge_is_city_lp || is_front_page() ) {
+	if ( is_page( [ 'individuelle-events', 'event-anfrage' ] ) || $fge_is_city_lp || is_front_page() || is_post_type_archive( 'firmengolf_event' ) ) {
 		wp_enqueue_script(
 			'fge-individual',
 			plugins_url( 'assets/js/fge-individual.js', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
