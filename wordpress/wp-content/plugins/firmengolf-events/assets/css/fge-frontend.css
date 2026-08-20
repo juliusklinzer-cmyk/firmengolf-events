@@ -5091,6 +5091,40 @@ html.cty-io .cty-reveal.is-in { opacity: 1; transform: none; }
 }
 @keyframes cty-rise { from { opacity: 0; transform: translateY(12px); } }
 
+/* ── Startseite: „Warum der Golfplatz" als interaktiver Bild-Showcase ──────── */
+.fgw-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: stretch; }
+.fgw-list { display: flex; flex-direction: column; gap: 6px; }
+.fgw-item { display: flex; gap: 14px; align-items: flex-start; text-align: left; background: none; border: 0; border-radius: 16px; padding: 16px 18px; cursor: pointer; font: inherit; transition: background var(--dur-base) var(--ease-out); }
+.fgw-item:hover { background: var(--paper-200); }
+.fgw-item.is-active { background: var(--fairway-50); }
+.fgw-item:focus-visible { outline: 2px solid var(--fairway-600); outline-offset: 2px; }
+.fgw-ic { flex: none; width: 42px; height: 42px; border-radius: 12px; background: var(--paper-200); color: var(--ink-600); display: inline-flex; align-items: center; justify-content: center; transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
+.fgw-ic svg { width: 22px; height: 22px; }
+.fgw-item.is-active .fgw-ic { background: var(--fairway-600); color: #fff; }
+.fgw-body b { display: block; font-size: 16px; font-weight: 600; color: var(--ink-900); }
+.fgw-body > span > span, .fgw-body span span { display: block; font-size: 14px; line-height: 1.55; color: var(--ink-600); margin-top: 3px; }
+.fgw-media { position: relative; border-radius: var(--radius-xl); overflow: hidden; min-height: 460px; background: var(--paper-200); }
+.fgw-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 550ms var(--ease-out); }
+.fgw-media img.is-active { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+	.fgw-media img { transform: scale(1); }
+	.fgw-media img.is-active { animation: fgw-slowzoom 9s var(--ease-out) both; }
+}
+@keyframes fgw-slowzoom { from { transform: scale(1); } to { transform: scale(1.06); } }
+@media (max-width: 900px) {
+	.fgw-grid { grid-template-columns: 1fr; gap: 16px; }
+	.fgw-media { order: -1; min-height: 0; aspect-ratio: 16/10; }
+	.fgw-item { padding: 12px 12px; }
+}
+
+/* Startseite: Magazin-Karten mit leichter Hierarchie + Bild-Zoom. */
+.home-blog-grid { grid-template-columns: 1.35fr 1fr 1fr; }
+.home-blog-card { overflow: clip; }
+.home-blog-photo { transition: transform 600ms var(--ease-out); }
+.home-blog-card:hover .home-blog-photo { transform: scale(1.04); }
+@media (prefers-reduced-motion: reduce) { .home-blog-card:hover .home-blog-photo { transform: none; } }
+@media (max-width: 900px) { .home-blog-grid { grid-template-columns: 1fr; } }
+
 /* Markendetail: Textauswahl in Markenfarbe statt Browser-Default. */
 .cty-page ::selection { background: var(--fairway-200); }
 

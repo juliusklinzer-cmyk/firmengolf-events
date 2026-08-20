@@ -221,87 +221,88 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	<?php endforeach; ?>
 </div>
 
-<?php /* ══════════════════ 2b. WARUM GOLFPLATZ, Location + zwei Wege ══════════════════ */ ?>
-<?php
-/* Redesign 2026-07-19 (v3, Julius): Der erste große Block beantwortet zwei
-   Kernfragen: (1) warum der Golfplatz die perfekte Event-Location ist
-   (vier Säulen: Bewegung/Draußen, niedrige Schwelle, Clubhaus+Meeting, Gastro)
-   und (2) wie man das passende Angebot findet (zwei Wege: vorgeplante
-   Partner-Events ODER individuelle Anfrage). */
-$loc_pillars = [
+<?php /* ══════════════════ 2b. WARUM GOLFPLATZ (interaktiver Showcase) ══════════════════ */
+/* Rote Linie 2026-08-20: Die These der Marke, bildgefuehrt. Vier Argumente als
+   Liste, das grosse Bild wechselt beim Antippen mit Crossfade und ruhigem Zoom. */
+$why_items = [
 	[ 'ic' => '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-	  'k' => 'Draußen in Bewegung', 't' => 'Ein ganzer Tag an der frischen Luft: Bewegung, ohne dass es nach Sport aussieht.' ],
+	  'k' => 'Draußen in Bewegung', 't' => 'Ein ganzer Tag an der frischen Luft: Bewegung, ohne dass es nach Sport aussieht.',
+	  'img' => 'golfer-trio-spaziergang.png', 'alt' => 'Team unterwegs auf dem Fairway' ],
 	[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
-	  'k' => 'Für alle machbar', 't' => 'Flache Wege, Carts, ein Pro für die ersten Schläge. Kein Fitnesslevel, kein Handicap nötig.' ],
+	  'k' => 'Für alle machbar', 't' => 'Flache Wege, Carts, ein Pro für die ersten Schläge. Kein Fitnesslevel, kein Handicap nötig.',
+	  'img' => 'golf-coaching-gruppe.jpg', 'alt' => 'Golflehrer führt eine Gruppe Einsteiger an' ],
 	[ 'ic' => '<path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01M10 21v-4h4v4"/>',
-	  'k' => 'Clubhaus & Meetingräume', 't' => 'Moderne Räume für Empfang, Präsentation oder Workshop, direkt am Grün.' ],
+	  'k' => 'Clubhaus & Meetingräume', 't' => 'Moderne Räume für Empfang, Präsentation oder Workshop, direkt am Grün.',
+	  'img' => 'clubhaus-modern.jpg', 'alt' => 'Modernes Clubhaus mit Tagungsräumen' ],
 	[ 'ic' => '<path d="M3 2v7c0 1.1.9 2 2 2s2-.9 2-2V2"/><path d="M5 11v11"/><path d="M18 2c-1.7 0-3 2.7-3 6 0 2.6 1.1 4 3 4v10"/>',
-	  'k' => 'Küche & Terrasse', 't' => 'Vom Business-Lunch bis zum Grillabend, die Gastronomie vor Ort trägt jeden Anlass.' ],
-];
-$loc_paths = [
-	[
-		'img'   => 'firmenevent-afterwork-golf.jpg',
-		'alt'   => 'Team stößt nach dem Firmenevent auf dem Golfplatz an',
-		'tag'   => 'Sofort buchbar',
-		'k'     => 'Vorgeplante Partner-Events',
-		't'     => 'Fertige Formate auf unseren Partnerplätzen, mit Datum, Preis und Ablauf. Aussuchen, anfragen, fertig.',
-		'cta'   => 'Events entdecken',
-		'href'  => $url_events,
-	],
-	[
-		'img'   => 'clubhaus-aussenansicht.jpg',
-		'alt'   => 'Modernes Golf-Clubhaus als Event-Location',
-		'tag'   => 'Nach Maß',
-		'k'     => 'Individuell geplant',
-		't'     => 'Eigene Vorstellung? Schick uns Anlass, Gruppe und Wunschregion, wir kuratieren passende Plätze für euer Unternehmen.',
-		'cta'   => 'Individuell anfragen',
-		// Bewusst OHNE #anfrage-Anker: Die Karte soll oben auf der Seite starten,
-		// damit man erst den Kontext sieht (Julius, 2026-08-10). Die „Drei Schritte"-
-		// Karten weiter unten springen weiterhin direkt zur Anfrage.
-		'href'  => $url_ind,
-	],
+	  'k' => 'Küche & Terrasse', 't' => 'Vom Business-Lunch bis zum Grillabend, die Gastronomie vor Ort trägt jeden Anlass.',
+	  'img' => 'pool/afterwork-anstossen.jpg', 'alt' => 'Team stößt auf der Clubterrasse an' ],
 ];
 ?>
-<section class="home-loc cty-reveal" aria-label="Warum der Golfplatz die perfekte Event-Location ist">
-	<div class="home-loc-inner">
-		<div class="home-loc-head">
-			<h2 class="home-loc-h">Warum sich der Golfplatz perfekt für euer <span class="mk-italic">Firmenevent</span> eignet.</h2>
-			<p class="home-loc-lead">
-				Bewegung an der frischen Luft, moderne Clubhäuser mit Meetingräumen und eine Gastronomie,
-				die jeden Anlass trägt, offen für alle, ganz ohne Golf-Vorkenntnisse. Und Plätze gibt es
-				mehr in eurer Nähe, als ihr denkt.
-			</p>
-		</div>
-
-		<ul class="home-loc-pillars">
-			<?php foreach ( $loc_pillars as $p ) : ?>
-				<li class="home-loc-pillar">
-					<span class="home-loc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $p['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
-					<span class="home-loc-pk"><?php echo esc_html( $p['k'] ); ?></span>
-					<span class="home-loc-pt"><?php echo esc_html( $p['t'] ); ?></span>
-				</li>
-			<?php endforeach; ?>
-		</ul>
-
-		<div class="home-loc-paths-intro">
-			<h3 class="home-loc-paths-h">So findet ihr euer nächstes Event</h3>
-			<span class="home-loc-count"><?php echo esc_html( (string) ( $fge_live_count ?? '30+' ) ); ?> Events live · deutschlandweit organisierbar</span>
-		</div>
-		<div class="home-loc-paths">
-			<?php foreach ( $loc_paths as $path ) : ?>
-				<a class="home-loc-path" href="<?php echo esc_url( $path['href'] ); ?>">
-					<div class="home-loc-path-photo">
-						<span class="home-loc-path-img" style="background-image:url('<?php echo esc_url( $img( $path['img'] ) ); ?>')" role="img" aria-label="<?php echo esc_attr( $path['alt'] ); ?>"></span>
-						<span class="home-loc-path-tag"><?php echo esc_html( $path['tag'] ); ?></span>
-					</div>
-					<div class="home-loc-path-body">
-						<h4 class="home-loc-path-k"><?php echo esc_html( $path['k'] ); ?></h4>
-						<p class="home-loc-path-t"><?php echo esc_html( $path['t'] ); ?></p>
-						<span class="home-loc-path-cta"><?php echo esc_html( $path['cta'] ); ?> <?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-					</div>
-				</a>
+<section class="mk-section fgw cty-reveal" aria-label="Warum der Golfplatz die perfekte Event-Location ist">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Warum sich der Golfplatz perfekt für euer <span class="mk-italic">Firmenevent</span> eignet.</h2>
+		<p class="mk-sub">Bewegung an der frischen Luft, moderne Clubhäuser mit Meetingräumen und eine Gastronomie, die jeden Anlass trägt, offen für alle, ganz ohne Golf-Vorkenntnisse.</p>
+	</div>
+	<div class="fgw-grid">
+		<div class="fgw-list">
+			<?php foreach ( $why_items as $wi => $w ) : ?>
+			<button type="button" class="fgw-item<?php echo 0 === $wi ? ' is-active' : ''; ?>" data-fgw="<?php echo (int) $wi; ?>" aria-pressed="<?php echo 0 === $wi ? 'true' : 'false'; ?>">
+				<span class="fgw-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $w['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
+				<span class="fgw-body"><b><?php echo esc_html( $w['k'] ); ?></b><span><?php echo esc_html( $w['t'] ); ?></span></span>
+			</button>
 			<?php endforeach; ?>
 		</div>
+		<div class="fgw-media" aria-hidden="true">
+			<?php foreach ( $why_items as $wi => $w ) : ?>
+			<img src="<?php echo esc_url( $img( $w['img'] ) ); ?>" alt="<?php echo esc_attr( $w['alt'] ); ?>"
+			     class="<?php echo 0 === $wi ? 'is-active' : ''; ?>" data-fgw-img="<?php echo (int) $wi; ?>" loading="lazy">
+			<?php endforeach; ?>
+		</div>
+	</div>
+</section>
+
+<?php /* ══════════════════ 2c. ZWEI WEGE ══════════════════ */ ?>
+<section class="mk-section cty-reveal" aria-label="Zwei Wege zu eurem Event">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Zwei Wege zu eurem Event.</h2>
+		<p class="mk-sub"><?php echo esc_html( (string) $fge_live_count ); ?> Events sind sofort anfragbar, alles andere bauen wir nach Maß.</p>
+	</div>
+	<div class="home-loc-paths">
+		<?php
+		$loc_paths = [
+			[
+				'img'   => 'firmenevent-afterwork-golf.jpg',
+				'alt'   => 'Team stößt nach dem Firmenevent auf dem Golfplatz an',
+				'tag'   => 'Sofort buchbar',
+				'k'     => 'Vorgeplante Partner-Events',
+				't'     => 'Fertige Formate auf unseren Partnerplätzen, mit Datum, Preis und Ablauf. Aussuchen, anfragen, fertig.',
+				'cta'   => 'Events entdecken',
+				'href'  => $url_events,
+			],
+			[
+				'img'   => 'clubhaus-aussenansicht.jpg',
+				'alt'   => 'Modernes Golf-Clubhaus als Event-Location',
+				'tag'   => 'Nach Maß',
+				'k'     => 'Individuell geplant',
+				't'     => 'Eigene Vorstellung? Schickt uns Anlass, Gruppe und Wunschregion, wir kuratieren passende Plätze für euer Unternehmen.',
+				'cta'   => 'Individuell anfragen',
+				'href'  => $url_ind,
+			],
+		];
+		foreach ( $loc_paths as $path ) : ?>
+			<a class="home-loc-path" href="<?php echo esc_url( $path['href'] ); ?>">
+				<div class="home-loc-path-photo">
+					<span class="home-loc-path-img" style="background-image:url('<?php echo esc_url( $img( $path['img'] ) ); ?>')" role="img" aria-label="<?php echo esc_attr( $path['alt'] ); ?>"></span>
+					<span class="home-loc-path-tag"><?php echo esc_html( $path['tag'] ); ?></span>
+				</div>
+				<div class="home-loc-path-body">
+					<h4 class="home-loc-path-k"><?php echo esc_html( $path['k'] ); ?></h4>
+					<p class="home-loc-path-t"><?php echo esc_html( $path['t'] ); ?></p>
+					<span class="home-loc-path-cta"><?php echo esc_html( $path['cta'] ); ?> <?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				</div>
+			</a>
+		<?php endforeach; ?>
 	</div>
 </section>
 
@@ -329,155 +330,48 @@ $loc_paths = [
 	</div>
 </section>
 
-<?php /* ══════════════════ 4. FEATURED FORMATS ══════════════════ */ ?>
-<section class="mk-section cty-reveal" aria-label="Beliebte Formate">
+<?php /* ══════════════════ 4. FORMATE-BENTO (ersetzt Formate + Anlass-Kacheln) ══════════════════ */
+/* Ein Produkt-Explorer statt zwei redundanter Karten-Sektionen (rote Linie 2026-08-20):
+   Foto-Kacheln wie auf den Landingpages, Titel = Format, Text = Anlass-Nutzen,
+   Links auf die deutschlandweiten Format-Seiten. */
+$fmt_pages = function_exists( 'fge_get_event_format_pages' ) ? fge_get_event_format_pages() : [];
+$home_fmts = [
+	'teamevent'       => 'Einen gemeinsamen Tag draußen verbringen, ganz ohne Vorkenntnisse.',
+	'golfturnier'     => 'Wettbewerb, der verbindet: Flights, faire Formate, Siegerehrung.',
+	'platzreife'      => 'Über mehrere Tage gemeinsam lernen und bestehen.',
+	'workshop'        => 'Arbeiten, wo der Kopf frei ist, mit Golf zum Ausklang.',
+	'kundenevent'     => 'Gespräche, die im Konferenzraum nie entstehen, mit Hospitality und Dinner.',
+	'incentive'       => 'Besondere Kulissen und bleibende Erinnerungen für eure Top-Leute.',
+	'after-work-golf' => 'Nach Feierabend auf Range und Kurzplatz, locker angeleitet.',
+];
+?>
+<section class="mk-section cty-reveal" aria-label="Das passende Format">
 	<div class="mk-section-head between">
 		<div>
-			<h2 class="mk-h2">Von der Platzreife bis zum Firmenturnier.</h2>
+			<h2 class="mk-h2">Das passende Format für euer Team.</h2>
+			<p class="mk-sub">Sieben erprobte Formate, jedes mit eigener Seite: was drinsteckt, für wen es passt und was es kostet.</p>
 		</div>
 		<a class="fg-btn-ghost" href="<?php echo esc_url( $url_events ); ?>">
 			Alle <?php echo $fge_live_count > 4 ? esc_html( (string) $fge_live_count ) . ' ' : ''; ?>Events ansehen <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		</a>
 	</div>
-	<div class="home-formats-grid<?php echo ! empty( $featured_events ) ? ' home-formats-grid--desk' : ''; ?>">
-		<?php if ( ! empty( $featured_events ) ) : ?>
-			<?php foreach ( array_slice( $featured_events, 0, 4 ) as $i => $event ) :
-				$eid         = $event->ID;
-				$event_type  = fge_get_event_meta( $eid, 'event_type' );
-				$format_label = fge_format_event_type( $event_type );
-				$duration    = fge_get_event_meta( $eid, 'duration' );
-				$p_max       = (int) fge_get_event_meta( $eid, 'participants_max' );
-				$price       = fge_get_event_price_display( $eid );
-				$excerpt     = fge_get_event_meta( $eid, 'card_description', $event->post_excerpt );
-				$thumb       = function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $eid, 'large' ) : ( has_post_thumbnail( $eid ) ? get_the_post_thumbnail_url( $eid, 'large' ) : $img( 'golf-coaching-gruppe.jpg' ) );
-				$is_dark     = ( $i % 2 === 1 );
-			?>
-			<article class="mk-format<?php echo $is_dark ? ' is-dark' : ''; ?>">
-				<a href="<?php echo esc_url( get_permalink( $eid ) ); ?>" style="display:contents">
-					<div class="mk-format-photo" style="background-image:url('<?php echo esc_url( $thumb ); ?>')">
-						<?php if ( $format_label ) : ?>
-							<span class="mk-format-tag"><?php echo esc_html( $format_label ); ?></span>
-						<?php endif; ?>
-						<span class="mk-format-eyebrow">
-							<?php echo esc_html( $duration ); ?><?php if ( $p_max ) { echo ' · bis ' . esc_html( (string) $p_max ) . ' Gäste'; } ?>
-						</span>
-					</div>
-					<div class="mk-format-body">
-						<h3 class="mk-format-t"><?php echo esc_html( $event->post_title ); ?></h3>
-						<?php if ( $excerpt ) : ?>
-							<p class="mk-format-desc"><?php echo esc_html( $excerpt ); ?></p>
-						<?php endif; ?>
-						<div class="mk-format-foot">
-							<span class="mk-format-price"><?php echo $price ? esc_html( $price ) : 'Auf Anfrage'; ?><?php if ( $price && false === stripos( $price, 'netto' ) && false === stripos( $price, 'Anfrage' ) ) : ?> <span class="fg-price-netto">netto</span><?php endif; ?></span>
-							<span class="mk-format-arrow" aria-hidden="true"><?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-						</div>
-					</div>
-				</a>
-			</article>
-			<?php endforeach; ?>
-		<?php else : ?>
-			<?php
-			// Fallback: neutrale Format-Karten, wenn (noch) keine Events publiziert sind.
-			// Bewusst OHNE erfundene Orte/Preise (UWG!), nur echte Format-Beschreibungen.
-			$static_formats = [
-				[ 'label' => 'Platzreife',     'title' => 'Platzreife als Firmenprogramm',    'desc' => 'Kompakter Kurs mit PGA-Golflehrer, Regeln und offizieller Prüfung.',                    'price' => 'Auf Anfrage', 'img' => 'golf-coaching-einzel.jpg',        'dark' => false ],
-				[ 'label' => 'Teamevent',      'title' => 'Golf-Teamevent für euer Team',      'desc' => 'Stationen, Team-Challenge, gemeinsames Essen. Ganz ohne Vorkenntnisse.',                 'price' => 'Auf Anfrage', 'img' => 'golf-coaching-gruppe.jpg',        'dark' => true  ],
-				[ 'label' => 'Firmenturnier',  'title' => 'Das große Firmenturnier',           'desc' => 'Shotgun-Start, Fotograf, Siegerehrung. Wir kümmern uns um alles.',                       'price' => 'Auf Anfrage', 'img' => 'pool/turnier-fahne-abendlicht.jpg',      'dark' => false ],
-				[ 'label' => 'Incentive',      'title' => 'Incentive mit Golf & Genuss',       'desc' => 'Besondere Plätze, private Dinings, bleibende Erinnerungen für eure Top-Leute.',          'price' => 'Auf Anfrage', 'img' => 'hero-mountains.jpg',                 'dark' => true  ],
-			];
-			foreach ( $static_formats as $f ) : ?>
-				<article class="mk-format<?php echo $f['dark'] ? ' is-dark' : ''; ?>">
-					<div class="mk-format-photo" style="background-image:url('<?php echo esc_url( $img( $f['img'] ) ); ?>')">
-						<span class="mk-format-tag"><?php echo esc_html( $f['label'] ); ?></span>
-					</div>
-					<div class="mk-format-body">
-						<h3 class="mk-format-t"><?php echo esc_html( $f['title'] ); ?></h3>
-						<p class="mk-format-desc"><?php echo esc_html( $f['desc'] ); ?></p>
-						<div class="mk-format-foot">
-							<span class="mk-format-price"><?php echo esc_html( $f['price'] ); ?></span>
-							<span class="mk-format-arrow" aria-hidden="true"><?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-						</div>
-					</div>
-				</article>
-			<?php endforeach; ?>
-		<?php endif; ?>
-	</div>
-	<?php if ( ! empty( $featured_events ) ) : ?>
-		<div class="home-formats-rail">
-			<?php foreach ( $featured_events as $event ) {
-				get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $event->ID, 'dist' => null ] );
-			} ?>
-		</div>
-	<?php endif; ?>
-</section>
-
-<?php /* ══════════════════ 5. OCCASIONS GRID ══════════════════ */ ?>
-<section class="mk-section home-occasions-section cty-reveal" aria-label="Für welchen Anlass?">
-	<div class="mk-section-head">
-		<h2 class="mk-h2">Sagt uns, was ihr vorhabt. Wir kennen das passende Format.</h2>
-		<p class="mk-sub">Sucht nach dem, was ihr erreichen wollt, nicht nach dem Format-Namen.</p>
-	</div>
-	<div class="home-occasions">
-		<?php
-		// Kacheln leiten zur Eventliste (mit Format-Filter) ODER zu Individuellen Events (Julius, 2026-07-03).
-		$occasions = [
-			[
-				'eyebrow' => 'Teamevent',
-				'title'   => 'Einen gemeinsamen Tag draußen verbringen.',
-				'body'    => 'Stationen, Team-Challenge, gemeinsames Essen. Ganz ohne Vorkenntnisse.',
-				'url'     => add_query_arg( 'format', 'teamevent', $url_events ),
-				'img'     => 'golfer-trio-spaziergang.png',
-			],
-			[
-				'eyebrow' => 'Workshop',
-				'title'   => 'Arbeiten, wo der Kopf frei ist.',
-				'body'    => 'Vormittags Workshop im Clubhaus, mittags Clubterrasse, zum Ausklang ein Golf-Grundlagenkurs.',
-				'url'     => add_query_arg( 'format', 'workshop', $url_events ),
-				'img'     => 'hero-forest.jpg',
-			],
-			[
-				'eyebrow' => 'Firmenturnier',
-				'title'   => 'Wettbewerb, der verbindet.',
-				'body'    => 'Shotgun-Start, faire Formate für alle Level, Siegerehrung. Komplett organisiert.',
-				'url'     => add_query_arg( 'format', 'firmen_golfturnier', $url_events ),
-				'img'     => 'hero-golfloch-abendlicht.jpg',   
-			],
-			[
-				'eyebrow' => 'Platzreife',
-				'title'   => 'Über mehrere Tage zur Platzreife.',
-				'body'    => 'Gemeinsam lernen, gemeinsam bestehen. Das schweißt ein Team zusammen.',
-				'url'     => add_query_arg( 'format', 'platzreife', $url_events ),
-				'img'     => 'platzreife-kursszene.jpg',
-			],
-			[
-				'eyebrow' => 'After-Work',
-				'title'   => 'After-Work-Golf nach Feierabend.',
-				'body'    => 'Zwei, drei Stunden auf der Range, locker angeleitet, mit entspanntem Ausklang.',
-				'url'     => add_query_arg( 'format', 'after_work_golf', $url_events ),
-				'img'     => 'golfer-gruppe-fairway.png',
-			],
-			[
-				'eyebrow' => 'Sommerfest',
-				'title'   => 'Das Sommerfest, über das alle reden.',
-				'body'    => 'Golf-Stationen, BBQ und laue Abendstimmung für die ganze Firma.',
-				'url'     => $url_ind,
-				'cta'     => 'Individuell planen',
-				'img'     => 'golfplatz-huegel-abendlicht.jpg',
-			],
-		];
-		foreach ( $occasions as $occ ) : ?>
-			<a class="home-occ" href="<?php echo esc_url( $occ['url'] ); ?>">
-				<div class="home-occ-photo" style="background-image:url('<?php echo esc_url( $img( $occ['img'] ) ); ?>')"></div>
-				<div class="home-occ-body">
-					<div class="mk-eyebrow" style="color:var(--fairway-700)"><?php echo esc_html( $occ['eyebrow'] ); ?></div>
-					<h3 class="home-occ-t"><?php echo esc_html( $occ['title'] ); ?></h3>
-					<p class="home-occ-b"><?php echo esc_html( $occ['body'] ); ?></p>
-					<div class="home-occ-foot">
-						<?php echo esc_html( $occ['cta'] ?? 'Passende Events ansehen' ); ?> <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
-					</div>
-				</div>
+	<div class="cty-fmt-bento">
+		<?php $hf_i = 0; foreach ( $home_fmts as $fslug => $benefit ) :
+			$fm = $fmt_pages[ $fslug ] ?? null;
+			if ( ! $fm ) { continue; }
+		?>
+			<a class="cty-fmt-tile<?php echo 0 === $hf_i ? ' is-wide' : ''; ?>" href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>">
+				<img src="<?php echo esc_url( $img( $fm['hero_img'] ?? 'golfplatz-panorama.jpg' ) ); ?>" alt="" loading="lazy">
+				<span class="cty-fmt-tile-scrim" aria-hidden="true"></span>
+				<span class="cty-fmt-tile-txt">
+					<span class="cty-fmt-tile-h"><?php echo esc_html( $fm['name'] ?? $fslug ); ?></span>
+					<span class="cty-fmt-tile-p"><?php echo esc_html( $benefit ); ?></span>
+					<span class="cty-fmt-tile-go"><?php echo esc_html( $fm['name'] ?? '' ); ?> ansehen
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+					</span>
+				</span>
 			</a>
-		<?php endforeach; ?>
+		<?php $hf_i++; endforeach; ?>
 	</div>
 </section>
 
@@ -837,6 +731,29 @@ get_template_part( 'template-parts/fge-putt-cta', null, [
       }, 380);
     }, 3200);
   }
+
+  /* „Warum der Golfplatz": Antippen (oder Zeigen mit der Maus) wechselt das
+     grosse Bild per Crossfade; das aktive Bild zoomt ganz langsam weiter. */
+  (function () {
+    var items = document.querySelectorAll('.fgw-item');
+    var imgs = document.querySelectorAll('[data-fgw-img]');
+    if (!items.length || !imgs.length) return;
+    var hoverable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    function activate(i) {
+      items.forEach(function (it) {
+        var on = it.getAttribute('data-fgw') === String(i);
+        it.classList.toggle('is-active', on);
+        it.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      imgs.forEach(function (im) {
+        im.classList.toggle('is-active', im.getAttribute('data-fgw-img') === String(i));
+      });
+    }
+    items.forEach(function (it) {
+      it.addEventListener('click', function () { activate(it.getAttribute('data-fgw')); });
+      if (hoverable) { it.addEventListener('pointerenter', function () { activate(it.getAttribute('data-fgw')); }); }
+    });
+  })();
 
   /* Sanftes Einblenden der Sektionen beim Scrollen (wie die Landingpages):
      greift nur unter html.cty-io, ohne JS oder mit reduzierter Bewegung
