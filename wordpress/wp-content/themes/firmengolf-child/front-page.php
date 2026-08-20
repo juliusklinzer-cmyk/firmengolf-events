@@ -240,7 +240,7 @@ $why_items = [
 			</span>
 		</a>
 		<a class="fgp-card" href="<?php echo esc_url( $url_ind ); ?>">
-			<img src="<?php echo esc_url( $img( 'golfplatz-luftaufnahme-2.jpg' ) ); ?>" alt="" loading="lazy">
+			<img src="<?php echo esc_url( $img( 'erfahrung-inselgruen.jpg' ) ); ?>" alt="" loading="lazy">
 			<span class="fgp-scrim" aria-hidden="true"></span>
 			<span class="fgp-body">
 				<span class="fgp-tag">Nach Maß</span>
@@ -277,50 +277,48 @@ $why_items = [
 	</div>
 </section>
 
-<?php /* ══════════════════ 4. FORMATE (Split, die vier Kern-Formate) ══════════════════ */
-/* Design analog zur Individuell-Sektion (Julius, 2026-08-20): Bild + Inhalt im
-   Split, die vier wichtigsten Formate als klickbare Zeilen, der Rest ist ueber
-   die kleinen Links darunter und die Eventliste erreichbar. */
-$fmt_pages = function_exists( 'fge_get_event_format_pages' ) ? fge_get_event_format_pages() : [];
-$home_fmts = [
-	'teamevent'       => 'Einen gemeinsamen Tag draußen verbringen, ganz ohne Vorkenntnisse.',
-	'after-work-golf' => 'Nach Feierabend auf Range und Kurzplatz, locker angeleitet.',
-	'workshop'        => 'Arbeiten, wo der Kopf frei ist, mit Golf zum Ausklang.',
-	'golfturnier'     => 'Wettbewerb, der verbindet: Flights, faire Formate, Siegerehrung.',
+<?php /* ══════════════════ 4. FORMATE (Bildkarten wie auf Individuelle Events) ══════════════════ */
+/* Kachel-Design der Individuelle-Events-Seite (Julius, 2026-08-20): Bildkarte,
+   Ueberbegriff, kleiner Satz, Pfeil. Nur die vier Kern-Formate; der Rest ist
+   ueber die Textlinks darunter erreichbar. */
+$home_fmt_tiles = [
+	[ 't' => 'Teamevent',        'sub' => 'Spielerisch zusammenwachsen',     'img' => 'firmenevent-afterwork-golf.jpg',     'slug' => 'teamevent' ],
+	[ 't' => 'After-Work Golf',  'sub' => 'Der Feierabend im Grünen',        'img' => 'pool/afterwork-range-abendlicht.jpg', 'slug' => 'after-work-golf' ],
+	[ 't' => 'Workshop & Golf',  'sub' => 'Arbeiten, wo der Kopf frei ist',  'img' => 'pool/workshop-clubhaus-aussen.jpg',   'slug' => 'workshop' ],
+	[ 't' => 'Firmenturnier',    'sub' => 'Flights, Pokale & Siegerehrung',  'img' => 'golf-gruen-fahne.jpg',                'slug' => 'golfturnier' ],
 ];
-$home_fmts_more = [ 'platzreife' => 'Platzreife', 'kundenevent' => 'Kundenevent', 'incentive' => 'Incentive' ];
 ?>
 <section class="mk-section cty-reveal" aria-label="Das passende Format">
-	<div class="fmt4-grid">
-		<div class="fmt4-text">
-			<h2 class="mk-h2">Das passende Format für euer <em class="mk-italic">Team</em>.</h2>
-			<p class="mk-sub">Vier erprobte Wege auf den Platz, jedes Format mit eigener Seite: was drinsteckt, für wen es passt und was es kostet.</p>
-			<div class="fmt4-list">
-				<?php foreach ( $home_fmts as $fslug => $benefit ) : $fm = $fmt_pages[ $fslug ] ?? null; if ( ! $fm ) { continue; } ?>
-				<a class="fmt4-row" href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>">
-					<span class="fmt4-row-txt">
-						<span class="fmt4-row-t"><?php echo esc_html( $fm['name'] ?? $fslug ); ?></span>
-						<span class="fmt4-row-b"><?php echo esc_html( $benefit ); ?></span>
-					</span>
-					<span class="fmt4-row-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>
-				</a>
-				<?php endforeach; ?>
-			</div>
-			<p class="fmt4-more">Außerdem:
-				<?php $fmt4_i = 0; foreach ( $home_fmts_more as $fslug => $label ) : ?>
-					<?php echo $fmt4_i++ > 0 ? ' · ' : ''; ?><a href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>"><?php echo esc_html( $label ); ?></a>
-				<?php endforeach; ?>
-			</p>
-		</div>
-		<div class="fmt4-photo" role="img" aria-label="Golfplatz im Abendlicht"
-		     style="background-image:url('<?php echo esc_url( $img( 'golfplatz-huegel-abendlicht.jpg' ) ); ?>')"></div>
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Das passende Format für euer <em class="mk-italic">Team</em>.</h2>
+		<p class="mk-sub">Vier erprobte Formate, jedes mit eigener Seite: was drinsteckt, für wen es passt und was es kostet.</p>
 	</div>
+	<div class="iv-tiles">
+		<?php foreach ( $home_fmt_tiles as $tile ) : ?>
+			<a class="iv-tile" href="<?php echo esc_url( home_url( '/firmenevent/' . $tile['slug'] . '/' ) ); ?>">
+				<span class="iv-tile-img" style="background-image:url('<?php echo esc_url( $img( $tile['img'] ) ); ?>')"></span>
+				<span class="iv-tile-scrim"></span>
+				<span class="iv-tile-label">
+					<span>
+						<span class="iv-tile-t"><?php echo esc_html( $tile['t'] ); ?></span>
+						<span class="iv-tile-sub" style="display:block;"><?php echo esc_html( $tile['sub'] ); ?></span>
+					</span>
+					<span class="iv-tile-arrow"><?php echo function_exists( 'fge_icon_arrow_right' ) ? fge_icon_arrow_right() : '→'; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				</span>
+			</a>
+		<?php endforeach; ?>
+	</div>
+	<p class="fmt4-more">Außerdem:
+		<a href="<?php echo esc_url( home_url( '/firmenevent/platzreife/' ) ); ?>">Platzreife</a>
+		· <a href="<?php echo esc_url( home_url( '/firmenevent/kundenevent/' ) ); ?>">Kundenevent</a>
+		· <a href="<?php echo esc_url( home_url( '/firmenevent/incentive/' ) ); ?>">Incentive</a>
+	</p>
 </section>
 
 <?php /* ══════════════════ 6. INDIVIDUAL TEASER ══════════════════ */ ?>
 <section class="mk-section home-individual cty-reveal" aria-label="Individuelle Events">
 	<div class="home-individual-grid">
-		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-drohnenaufnahme.jpg' ) ); ?>')"></div>
+		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-luftaufnahme-2.jpg' ) ); ?>')"></div>
 		<div class="home-ind-text">
 			<h2 class="mk-h2">
 				Nichts dabei? <em class="mk-italic">Wir planen</em> euer Event nach euren Ansprüchen.
