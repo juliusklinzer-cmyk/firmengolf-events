@@ -191,12 +191,14 @@ function fgeGpxSelect( id, opts ) {
 		}, 170 );
 	}
 
-	// Liste (Desktop) synchron markieren.
+	// Liste (Desktop) synchron markieren. Beim Initial-Boot NICHT scrollen:
+	// scrollIntoView zog sonst die ganze Seite beim Laden zur Karten-Sektion
+	// (Julius, 2026-08-20), gescrollt wird nur nach echter Nutzer-Aktion.
 	document.querySelectorAll( '[data-gpx-id]' ).forEach( function ( n ) {
 		var active = n.getAttribute( 'data-gpx-id' ) === String( id );
 		n.classList.toggle( 'is-active', active );
 		n.setAttribute( 'aria-pressed', active ? 'true' : 'false' );
-		if ( active && n.scrollIntoView ) {
+		if ( active && ! opts.noScroll && n.scrollIntoView ) {
 			n.scrollIntoView( { behavior: 'smooth', block: 'nearest', inline: 'nearest' } );
 		}
 	} );
@@ -207,7 +209,7 @@ function fgeGpxSelect( id, opts ) {
 		s.classList.toggle( 'is-active', s.getAttribute( 'data-gpx-slide' ) === String( id ) );
 	} );
 	if ( window.fgeGpxCarouselTo ) {
-		window.fgeGpxCarouselTo( id, !! opts.fromCarousel );
+		window.fgeGpxCarouselTo( id, !! opts.fromCarousel || !! opts.noScroll );
 	}
 }
 
@@ -315,6 +317,6 @@ document.addEventListener( 'keydown', function ( ev ) {
 document.addEventListener( 'DOMContentLoaded', function () {
 	var panel = document.getElementById( 'fge-gpx-panel' );
 	if ( panel && panel.getAttribute( 'data-initial-id' ) ) {
-		fgeGpxSelect( panel.getAttribute( 'data-initial-id' ), { pan: false } );
+		fgeGpxSelect( panel.getAttribute( 'data-initial-id' ), { pan: false, noScroll: true } );
 	}
 } );

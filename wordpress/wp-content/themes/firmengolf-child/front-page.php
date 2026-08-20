@@ -84,6 +84,14 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 					Events entdecken →
 				</a>
 			</div>
+			<?php /* Gebuendelte Fakten direkt im Hero (Julius, 2026-08-20): 500+ Locations
+			         (Golfplaetze, Simulatoren, kuenftig mehr) statt Golfplatz-Zaehlung,
+			         dazu die wichtigste Einwand-Entkraeftung. Das separate Fakten-Band
+			         darunter ist dafuer entfallen. */ ?>
+			<div class="cty-hero-facts">
+				<span class="cty-hero-fact"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><strong>500+</strong>&nbsp;Locations deutschlandweit</span>
+				<span class="cty-hero-fact"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Auch ohne Golferfahrung</span>
+			</div>
 		</div>
 	</div>
 
@@ -186,40 +194,6 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		</button>
 	</form>
 </section>
-
-<?php /* ══════════════════ 2. FAKTEN-BOXEN ══════════════════ */ ?>
-<div class="home-facts" aria-label="Firmengolf in Zahlen">
-	<?php
-	// Zahlen aus dem System statt statischer Marktzahlen (2026-08-20):
-	// Verzeichnis-Groesse + aktive Partnerplaetze, beides dynamisch.
-	$fact_courses  = function_exists( 'fge_verzeichnis_count' ) ? fge_verzeichnis_count() : 0;
-	$fact_partners = count( get_posts( [
-		'post_type'   => 'firmengolf_partner',
-		'post_status' => 'publish',
-		'numberposts' => -1,
-		'fields'      => 'ids',
-		'meta_query'  => [ [ 'key' => '_fge_partner_status', 'value' => 'aktiv' ] ],
-	] ) );
-	$facts = [
-		[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
-		  't' => number_format_i18n( $fact_courses ?: 720 ), 'b' => 'Golfplätze in Deutschland' ],
-		[ 'ic' => '<path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
-		  't' => (string) max( $fact_partners, 1 ), 'b' => 'Partnerplätze im Firmengolf-Netz' ],
-		[ 'ic' => '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
-		  't' => 'Aus einer Hand', 'b' => 'Platz, Pro, Catering, Rechnung' ],
-		[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-		  't' => '1 Werktag', 'b' => 'Antwort auf jede Anfrage' ],
-	];
-	foreach ( $facts as $f ) : ?>
-		<div class="home-fact">
-			<span class="home-fact-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $f['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
-			<div class="home-fact-txt">
-				<div class="home-fact-t"><?php echo $f['t']; // phpcs:ignore WordPress.Security.EscapeOutput -- nur statische, kontrollierte Strings (inkl. &lt;) ?></div>
-				<div class="home-fact-b"><?php echo esc_html( $f['b'] ); ?></div>
-			</div>
-		</div>
-	<?php endforeach; ?>
-</div>
 
 <?php /* ══════════════════ 2b. WARUM GOLFPLATZ (interaktiver Showcase) ══════════════════ */
 /* Rote Linie 2026-08-20: Die These der Marke, bildgefuehrt. Vier Argumente als
@@ -452,7 +426,7 @@ $home_fmts = [
 					[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
 					  't' => 'Auch ohne Golferfahrung', 'b' => 'Golflehrer führen Einsteiger an, Schläger werden gestellt. Niemand muss spielen können.' ],
 					[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
-					  't' => 'Deutschlandweit organisierbar', 'b' => 'Über 700 Golfplätze kommen als Eventlocation in Frage, passt einer nicht, nehmen wir den nächsten.' ],
+					  't' => 'Deutschlandweit organisierbar', 'b' => 'Über 500 Locations kommen für euer Event in Frage, vom Golfplatz bis zum Simulator. Passt eine nicht, nehmen wir die nächste.' ],
 				];
 				foreach ( $promises as $p ) : ?>
 				<li class="cty-story-point">
