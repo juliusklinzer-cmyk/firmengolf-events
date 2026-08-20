@@ -867,6 +867,15 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   font-size: 13px; color: rgba(251,250,246,0.4);
 }
 
+/* Staedte-Zeile im Footer: Label + Fliesstext-Links, kompakt statt Endlos-Spalte. */
+.fg-footer-cities { max-width: 1280px; margin: 0 auto; padding: 22px 24px; border-top: 1px solid rgba(14,19,16,.09); display: flex; gap: 10px 28px; align-items: baseline; }
+.fg-footer-cities-label { flex: none; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-500); }
+.fg-footer-cities-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.fg-footer-cities-links a { font-size: 13px; color: var(--ink-600); text-decoration: none; }
+.fg-footer-cities-links a:hover { color: var(--ink-900); text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 720px) { .fg-footer-cities { flex-direction: column; gap: 10px; } }
+
+
 /* ---------- 20. RESPONSIVE ---------- */
 
 /* ── Tablet: 1024px ── */

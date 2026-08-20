@@ -53,12 +53,6 @@ $url_karriere   = $get_page_url( 'karriere' );
 				<a href="<?php echo esc_url( add_query_arg( 'format', 'after_work_golf', $url_events ) ); ?>">After-Work Golf</a>
 				<a href="<?php echo esc_url( add_query_arg( 'format', 'workshop', $url_events ) ); ?>">Workshop</a>
 				<a href="<?php echo esc_url( $url_ind ); ?>">Individuelles Event</a>
-				<?php if ( function_exists( 'fge_get_cities' ) ) : ?>
-					<div class="fg-footer-head" style="margin-top:18px;">Golf-Events nach Stadt</div>
-					<?php foreach ( fge_get_cities() as $fc_slug => $fc_city ) : ?>
-						<a href="<?php echo esc_url( home_url( '/golf-events/' . $fc_slug . '/' ) ); ?>">Firmenevents <?php echo esc_html( $fc_city['name'] ); ?></a>
-					<?php endforeach; ?>
-				<?php endif; ?>
 			</div>
 			<div>
 				<div class="fg-footer-head">Firmengolf</div>
@@ -83,6 +77,19 @@ $url_karriere   = $get_page_url( 'karriere' );
 			</div>
 		</div>
 	</div>
+	<?php /* Staedte als kompakte Fliesstext-Zeile statt 30-Zeilen-Spalte (Julius,
+	         2026-08-20): alle Links bleiben fuer die interne Verlinkung erhalten,
+	         das Label traegt den Kontext. */ ?>
+	<?php if ( function_exists( 'fge_get_cities' ) ) : ?>
+	<div class="fg-footer-cities" aria-label="Golf-Events nach Stadt">
+		<span class="fg-footer-cities-label">Golf-Events nach Stadt</span>
+		<div class="fg-footer-cities-links">
+			<?php foreach ( fge_get_cities() as $fc_slug => $fc_city ) : ?>
+				<a href="<?php echo esc_url( home_url( '/golf-events/' . $fc_slug . '/' ) ); ?>"><?php echo esc_html( $fc_city['name'] ); ?></a>
+			<?php endforeach; ?>
+		</div>
+	</div>
+	<?php endif; ?>
 	<div class="fg-footer-base">
 		<span>© <?php echo esc_html( (string) gmdate( 'Y' ) ); ?> Visionpunch UG (haftungsbeschränkt), München · Alle Preise zzgl. gesetzl. MwSt.</span>
 		<div class="fg-footer-links">
