@@ -55,7 +55,7 @@ $arrow_svg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke
 $arrow_right = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
 $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>';
 ?>
-<div class="fge-page" id="fge-main" role="main" tabindex="-1">
+<div class="fge-page cty-page" id="fge-main" role="main" tabindex="-1">
 
 <?php
 $mbar_action = '<a class="ev-msearch" href="' . esc_url( get_post_type_archive_link( 'firmengolf_event' ) ) . '"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="ev-msearch-t muted">Events suchen</span></a>';
@@ -67,7 +67,6 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'hero-golfer-alpen.jpg' ) ); ?>')">
 		<div class="mk-hero-scrim" aria-hidden="true"></div>
 		<div class="mk-hero-content">
-			<div class="mk-hero-eyebrow">Firmenevents · Golf für Unternehmen</div>
 			<h1 class="mk-hero-title">
 				<span class="mk-hero-lead">Wir machen den Golfplatz</span>
 				<span class="rot-wrap"><span class="rot-word in" id="fg-rot-word"><span class="rot-art">zur </span><span class="rot-key">Eventlocation</span></span><span class="rot-dot">.</span></span>
@@ -77,12 +76,12 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 				in ganz Deutschland. Eine Anfrage, eine Rechnung, ein Ansprechpartner.
 			</p>
 			<div class="mk-hero-ctas">
-				<a class="fg-btn-cta fg-btn-lg" href="<?php echo esc_url( $url_events ); ?>">
-					Events entdecken
+				<a class="fg-btn-cta fg-btn-lg" href="<?php echo esc_url( add_query_arg( 'anfrage', 'quick', $url_ind ) ); ?>">
+					Event anfragen
 					<span class="fg-arrow"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				</a>
-				<a class="fg-btn-ghost-light" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $url_ind ) ); ?>">
-					Individuelles Event planen →
+				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $url_events ); ?>">
+					Events entdecken →
 				</a>
 			</div>
 		</div>
@@ -191,11 +190,21 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 <?php /* ══════════════════ 2. FAKTEN-BOXEN ══════════════════ */ ?>
 <div class="home-facts" aria-label="Firmengolf in Zahlen">
 	<?php
+	// Zahlen aus dem System statt statischer Marktzahlen (2026-08-20):
+	// Verzeichnis-Groesse + aktive Partnerplaetze, beides dynamisch.
+	$fact_courses  = function_exists( 'fge_verzeichnis_count' ) ? fge_verzeichnis_count() : 0;
+	$fact_partners = count( get_posts( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => 'publish',
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_query'  => [ [ 'key' => '_fge_partner_status', 'value' => 'aktiv' ] ],
+	] ) );
 	$facts = [
 		[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
-		  't' => '721', 'b' => 'Golfplätze in Deutschland' ],
-		[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
-		  't' => '1.500', 'b' => 'Golflehrer deutschlandweit' ],
+		  't' => number_format_i18n( $fact_courses ?: 720 ), 'b' => 'Golfplätze in Deutschland' ],
+		[ 'ic' => '<path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+		  't' => (string) max( $fact_partners, 1 ), 'b' => 'Partnerplätze im Firmengolf-Netz' ],
 		[ 'ic' => '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
 		  't' => 'Aus einer Hand', 'b' => 'Platz, Pro, Catering, Rechnung' ],
 		[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -244,7 +253,7 @@ $loc_paths = [
 		'alt'   => 'Modernes Golf-Clubhaus als Event-Location',
 		'tag'   => 'Nach Maß',
 		'k'     => 'Individuell geplant',
-		't'     => 'Eigene Vorstellung? Schick uns Anlass, Gruppe und Wunschregion, wir kuratieren passende Plätze für dein Unternehmen.',
+		't'     => 'Eigene Vorstellung? Schick uns Anlass, Gruppe und Wunschregion, wir kuratieren passende Plätze für euer Unternehmen.',
 		'cta'   => 'Individuell anfragen',
 		// Bewusst OHNE #anfrage-Anker: Die Karte soll oben auf der Seite starten,
 		// damit man erst den Kontext sieht (Julius, 2026-08-10). Die „Drei Schritte"-
@@ -253,15 +262,14 @@ $loc_paths = [
 	],
 ];
 ?>
-<section class="home-loc" aria-label="Warum der Golfplatz die perfekte Event-Location ist">
+<section class="home-loc cty-reveal" aria-label="Warum der Golfplatz die perfekte Event-Location ist">
 	<div class="home-loc-inner">
 		<div class="home-loc-head">
-			<div class="mk-eyebrow">Der Golfplatz als Event-Location</div>
-			<h2 class="home-loc-h">Warum sich der Golfplatz perfekt für dein <span class="mk-italic">Firmenevent</span> eignet.</h2>
+			<h2 class="home-loc-h">Warum sich der Golfplatz perfekt für euer <span class="mk-italic">Firmenevent</span> eignet.</h2>
 			<p class="home-loc-lead">
 				Bewegung an der frischen Luft, moderne Clubhäuser mit Meetingräumen und eine Gastronomie,
 				die jeden Anlass trägt, offen für alle, ganz ohne Golf-Vorkenntnisse. Und Plätze gibt es
-				mehr in deiner Nähe, als du denkst.
+				mehr in eurer Nähe, als ihr denkt.
 			</p>
 		</div>
 
@@ -276,8 +284,8 @@ $loc_paths = [
 		</ul>
 
 		<div class="home-loc-paths-intro">
-			<h3 class="home-loc-paths-h">So findest du dein nächstes Teamevent</h3>
-			<span class="home-loc-count"><?php echo esc_html( (string) ( $fge_live_count ?? '30+' ) ); ?> Events live · über 720 Plätze bundesweit</span>
+			<h3 class="home-loc-paths-h">So findet ihr euer nächstes Event</h3>
+			<span class="home-loc-count"><?php echo esc_html( (string) ( $fge_live_count ?? '30+' ) ); ?> Events live · deutschlandweit organisierbar</span>
 		</div>
 		<div class="home-loc-paths">
 			<?php foreach ( $loc_paths as $path ) : ?>
@@ -298,18 +306,17 @@ $loc_paths = [
 </section>
 
 <?php /* ══════════════════ 3. HOW IT WORKS ══════════════════ */ ?>
-<section class="mk-section mk-steps mk-band" aria-label="So funktioniert es">
+<section class="mk-section mk-steps mk-band cty-reveal" aria-label="So funktioniert es">
 	<div class="mk-section-head">
-		<div class="mk-eyebrow">So funktioniert's</div>
 		<h2 class="mk-h2">Drei Schritte. Ein Ansprechpartner.</h2>
-		<p class="mk-sub">Wir kümmern uns um Platzwahl, Koordination und Abrechnung. Du kümmerst dich ums Team.</p>
+		<p class="mk-sub">Wir kümmern uns um Platzwahl, Koordination und Abrechnung. Ihr kümmert euch ums Team.</p>
 	</div>
 	<div class="mk-steps-grid">
 		<?php
 		$steps = [
-			[ '01', 'Du sagst uns, was du planst.',     'Anlass, Gruppe, Zeitraum. Eine Anfrage, mehr brauchen wir nicht.' ],
-			[ '02', 'Wir kuratieren passende Plätze.',  'Innerhalb eines Werktags bekommst du zwei bis drei Optionen mit Format, Preis und Verfügbarkeit.' ],
-			[ '03', 'Du wählst, wir koordinieren.',     'Ein Ansprechpartner, eine Rechnung. Der Platz organisiert vor Ort, du bist nur Gastgeberin.' ],
+			[ '01', 'Ihr sagt uns, was ihr plant.',      'Anlass, Gruppe, Zeitraum. Eine Anfrage, mehr brauchen wir nicht.' ],
+			[ '02', 'Wir kuratieren passende Plätze.',  'Innerhalb eines Werktags bekommt ihr zwei bis drei Optionen mit Format, Preis und Verfügbarkeit.' ],
+			[ '03', 'Ihr wählt, wir koordinieren.',     'Ein Ansprechpartner, eine Rechnung. Der Platz organisiert vor Ort, ihr seid nur Gastgeber.' ],
 		];
 		foreach ( $steps as $step ) : ?>
 			<?php /* Ganze Karte klickbar zur 30-Sekunden-Anfrage (Julius, 2026-07-06) */ ?>
@@ -323,14 +330,13 @@ $loc_paths = [
 </section>
 
 <?php /* ══════════════════ 4. FEATURED FORMATS ══════════════════ */ ?>
-<section class="mk-section" aria-label="Beliebte Formate">
+<section class="mk-section cty-reveal" aria-label="Beliebte Formate">
 	<div class="mk-section-head between">
 		<div>
-			<div class="mk-eyebrow">Beliebte Formate</div>
 			<h2 class="mk-h2">Von der Platzreife bis zum Firmenturnier.</h2>
 		</div>
 		<a class="fg-btn-ghost" href="<?php echo esc_url( $url_events ); ?>">
-			Alle Events ansehen <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+			Alle <?php echo $fge_live_count > 4 ? esc_html( (string) $fge_live_count ) . ' ' : ''; ?>Events ansehen <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		</a>
 	</div>
 	<div class="home-formats-grid<?php echo ! empty( $featured_events ) ? ' home-formats-grid--desk' : ''; ?>">
@@ -399,18 +405,17 @@ $loc_paths = [
 	<?php if ( ! empty( $featured_events ) ) : ?>
 		<div class="home-formats-rail">
 			<?php foreach ( $featured_events as $event ) {
-				get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $event->ID, 'dist' => null ] );
+				get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $event->ID, 'dist' => null ] );
 			} ?>
 		</div>
 	<?php endif; ?>
 </section>
 
 <?php /* ══════════════════ 5. OCCASIONS GRID ══════════════════ */ ?>
-<section class="mk-section home-occasions-section" aria-label="Für welchen Anlass?">
+<section class="mk-section home-occasions-section cty-reveal" aria-label="Für welchen Anlass?">
 	<div class="mk-section-head">
-		<div class="mk-eyebrow">Für welchen Anlass?</div>
-		<h2 class="mk-h2">Sag uns, was ihr vorhabt. Wir kennen das passende Format.</h2>
-		<p class="mk-sub">Suche nach dem, was ihr erreichen wollt, nicht nach dem Format-Namen.</p>
+		<h2 class="mk-h2">Sagt uns, was ihr vorhabt. Wir kennen das passende Format.</h2>
+		<p class="mk-sub">Sucht nach dem, was ihr erreichen wollt, nicht nach dem Format-Namen.</p>
 	</div>
 	<div class="home-occasions">
 		<?php
@@ -477,17 +482,16 @@ $loc_paths = [
 </section>
 
 <?php /* ══════════════════ 6. INDIVIDUAL TEASER ══════════════════ */ ?>
-<section class="mk-section home-individual" aria-label="Individuelle Events">
+<section class="mk-section home-individual cty-reveal" aria-label="Individuelle Events">
 	<div class="home-individual-grid">
 		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-luftaufnahme-2.jpg' ) ); ?>')"></div>
 		<div class="home-ind-text">
-			<div class="mk-eyebrow">Individuelle Events</div>
 			<h2 class="mk-h2">
-				Nichts dabei? <em class="mk-italic">Wir planen</em> dein Event nach deinen Ansprüchen.
+				Nichts dabei? <em class="mk-italic">Wir planen</em> euer Event nach euren Ansprüchen.
 			</h2>
 			<p class="mk-sub">
-				Sonderwünsche, eigene Location, mehrtägiges Programm, internationale Gruppe? Beschreib uns kurz,
-				was du vorhast. Wir bauen das Format für euch und schlagen die passenden Plätze vor.
+				Sonderwünsche, eigene Location, mehrtägiges Programm, internationale Gruppe? Beschreibt uns kurz,
+				was ihr vorhabt. Wir bauen das Format für euch und schlagen die passenden Plätze vor.
 			</p>
 			<div class="home-ind-points">
 				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Persönliche Beratung in einem Werktag</span></div>
@@ -508,11 +512,11 @@ $loc_paths = [
 </section>
 
 <?php /* ══════════════════ 7. BENEFIT TEASER ══════════════════ */ ?>
-<section class="home-benefit" aria-label="Corporate Benefit">
+<section class="home-benefit cty-reveal" aria-label="Corporate Benefit">
 	<div class="home-benefit-inner">
 		<div class="home-benefit-eyebrow">Corporate Benefit · firmen.golf</div>
 		<h2 class="home-benefit-h">
-			Golf als Benefit, den deine Mitarbeitenden <em class="mk-italic">spüren</em>.
+			Golf als Benefit, den eure Mitarbeitenden <em class="mk-italic">spüren</em>.
 		</h2>
 		<p class="home-benefit-sub">
 			50 € steuerfreier Sachbezug pro Monat, Zugang zu Partnerplätzen, Coaching-Stunden zum Mitarbeiterpreis.
@@ -529,39 +533,55 @@ $loc_paths = [
 	</div>
 </section>
 
-<?php /* ══════════════════ 8. WAS EUCH ERWARTET ══════════════════ */ ?>
-<section class="mk-section" aria-label="Was euch erwartet">
-	<div class="mk-section-head">
-		<div class="mk-eyebrow">Was euch erwartet</div>
-		<h2 class="mk-h2">Worauf ihr euch <span class="mk-italic">verlassen</span> könnt.</h2>
-	</div>
-	<div class="city-reasons">
-		<?php
-		$promises = [
-			[ 'ic' => '<path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
-			  't' => 'Ein echter Mensch am Telefon', 'b' => 'Kein Ticketsystem. Du sprichst direkt mit dem, der dein Event plant.' ],
-			[ 'ic' => '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
-			  't' => 'Eine Anfrage, eine Rechnung', 'b' => 'Platz, Pro, Catering, Shuttle, alles über einen Ansprechpartner, sauber für HR und Buchhaltung.' ],
-			[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
-			  't' => 'Auch ohne Golferfahrung', 'b' => 'Golflehrer führen Einsteiger an, Schläger werden gestellt. Niemand muss spielen können.' ],
-			[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
-			  't' => 'Deutschlandweit organisierbar', 'b' => 'Rund 721 Golfplätze in Deutschland kommen als Eventlocation in Frage, passt einer nicht, nehmen wir den nächsten.' ],
-		];
-		foreach ( $promises as $p ) : ?>
-			<div class="city-reason">
-				<span class="city-reason-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $p['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
-				<h3 class="city-reason-t"><?php echo esc_html( $p['t'] ); ?></h3>
-				<p class="city-reason-b"><?php echo esc_html( $p['b'] ); ?></p>
+<?php /* ══════════════════ 8. FOUNDER + VERSPRECHEN ══════════════════ */ ?>
+<?php /* Echtes Gesicht statt anonymer Kaertchen-Reihe (2026-08-20): dieselben vier
+	     Versprechen, aber als Liste neben dem Ansprechpartner, der sie einloest. */ ?>
+<section class="cty-founder" aria-label="Euer Ansprechpartner">
+	<div class="cty-founder-inner cty-reveal">
+		<div class="cty-founder-photo">
+			<img src="<?php echo esc_url( $img( 'gruender-julius-klinzer.jpg' ) ); ?>"
+			     alt="Julius Klinzer, Gründer von Firmengolf" loading="lazy">
+		</div>
+		<div class="cty-founder-body">
+			<h2 class="mk-h2">Worauf ihr euch <span class="mk-italic">verlassen</span> könnt.</h2>
+			<p class="cty-founder-p">
+				Ich bin Julius, Gründer von Firmengolf. Ich kenne unsere Partnerplätze persönlich
+				und plane euer Event mit euch, vom ersten Vorschlag bis zur Rechnung.
+			</p>
+			<ul class="cty-story-points">
+				<?php
+				$promises = [
+					[ 'ic' => '<path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+					  't' => 'Ein echter Mensch am Telefon', 'b' => 'Kein Ticketsystem. Ihr sprecht direkt mit dem, der euer Event plant.' ],
+					[ 'ic' => '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+					  't' => 'Eine Anfrage, eine Rechnung', 'b' => 'Platz, Pro, Catering, Shuttle, alles über einen Ansprechpartner, sauber für HR und Buchhaltung.' ],
+					[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+					  't' => 'Auch ohne Golferfahrung', 'b' => 'Golflehrer führen Einsteiger an, Schläger werden gestellt. Niemand muss spielen können.' ],
+					[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
+					  't' => 'Deutschlandweit organisierbar', 'b' => 'Über 700 Golfplätze kommen als Eventlocation in Frage, passt einer nicht, nehmen wir den nächsten.' ],
+				];
+				foreach ( $promises as $p ) : ?>
+				<li class="cty-story-point">
+					<span class="cty-story-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $p['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
+					<div>
+						<h3><?php echo esc_html( $p['t'] ); ?></h3>
+						<p><?php echo esc_html( $p['b'] ); ?></p>
+					</div>
+				</li>
+				<?php endforeach; ?>
+			</ul>
+			<div class="cty-founder-ctas">
+				<a class="fg-btn-brand" href="<?php echo esc_url( add_query_arg( 'anfrage', 'quick', $url_ind ) ); ?>">Event anfragen</a>
+				<a class="cty-founder-mail" href="mailto:julius@firmengolf-events.de">julius@firmengolf-events.de</a>
 			</div>
-		<?php endforeach; ?>
+		</div>
 	</div>
 </section>
 
 <?php /* ══════════════════ 10. BLOG TEASER ══════════════════ */ ?>
-<section class="mk-section" aria-label="Aus dem Magazin">
+<section class="mk-section cty-reveal" aria-label="Aus dem Magazin">
 	<div class="mk-section-head between">
 		<div>
-			<div class="mk-eyebrow">Aus dem Magazin</div>
 			<h2 class="mk-h2">Was wir grad denken &amp; schreiben.</h2>
 		</div>
 		<a class="fg-btn-ghost" href="<?php echo esc_url( $url_blog ); ?>">
@@ -628,27 +648,20 @@ $loc_paths = [
 	</div>
 </section>
 
-<?php /* ══════════════════ 11. CLOSING CTA ══════════════════ */ ?>
-<section class="mk-cta" aria-label="Event anfragen">
-	<div class="mk-cta-inner">
-		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit?</div>
-		<h2 class="mk-cta-h">
-			Lasst uns euer nächstes Event <em class="mk-italic">zusammen</em> planen.
-		</h2>
-		<p class="mk-cta-sub">
-			Antwort innerhalb eines Werktags. Kein Vertriebsdruck, kein Telefon-Marathon.
-			Du beschreibst kurz, was du vorhast. Wir kümmern uns um den Rest.
-		</p>
-		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( add_query_arg( 'anfrage', 'full', $url_ind ) ); ?>"
-			   style="background:var(--paper-100);color:var(--fairway-900)">
-				Event anfragen
-				<span class="fg-arrow" style="background:var(--fairway-200)"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-			</a>
-			<a class="mk-cta-mail" href="mailto:<?php echo esc_attr( fge_company()['email_events'] ); ?>"><?php echo esc_html( fge_company()['email_events'] ); ?></a>
-		</div>
-	</div>
-</section>
+<?php /* ══════════════════ 11. CLOSING CTA (Putt-Moment, gemeinsames Part) ══════════════════ */
+$home_cta_links = '<a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '">' . esc_html( fge_company()['email_events'] ) . '</a>';
+if ( function_exists( 'fge_get_cities' ) ) {
+	foreach ( fge_get_cities() as $cslug => $c ) {
+		$home_cta_links .= '<a href="' . esc_url( home_url( '/golf-events/' . $cslug . '/' ) ) . '">' . esc_html( $c['name'] ) . '</a>';
+	}
+}
+get_template_part( 'template-parts/fge-putt-cta', null, [
+	'headline_html' => 'Lasst uns euer nächstes Event <em class="mk-italic">zusammen</em> planen.',
+	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
+	'anfrage_url'   => add_query_arg( 'anfrage', 'quick', $url_ind ),
+	'links_html'    => $home_cta_links,
+] );
+?>
 
 <?php get_template_part( 'template-parts/fge-footer' ); ?>
 
@@ -823,6 +836,19 @@ $loc_paths = [
         rotEl.classList.add('in');
       }, 380);
     }, 3200);
+  }
+
+  /* Sanftes Einblenden der Sektionen beim Scrollen (wie die Landingpages):
+     greift nur unter html.cty-io, ohne JS oder mit reduzierter Bewegung
+     bleibt alles sofort sichtbar. */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+    document.documentElement.classList.add('cty-io');
+    var fgIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); fgIo.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('.cty-reveal').forEach(function (el) { fgIo.observe(el); });
   }
 }());
 </script>
