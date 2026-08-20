@@ -161,30 +161,60 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			Abwicklung, soweit keine gesetzlichen Aufbewahrungspflichten (z. B. für Rechnungsdaten) bestehen.
 		</p>
 
-		<h2>11b. Meta Pixel (Facebook und Instagram)</h2>
+		<h2>11b. Meta-Pixel (Facebook und Instagram)</h2>
 		<p>
-			Zur Messung des Erfolgs unserer Werbeanzeigen auf Facebook und Instagram setzen wir das Meta Pixel
-			ein (Meta Platforms Ireland Ltd., Merrion Road, Dublin 4, Irland; Datenübermittlung ggf. an Meta
-			Platforms, Inc., USA, gestützt auf das EU-US Data Privacy Framework). Das Pixel wird ausschließlich
-			nach Ihrer Einwilligung in den Dienst „Meta Pixel" (Kategorie „Marketing") geladen. Ohne Ihre
-			Einwilligung wird keine Verbindung zu Meta-Servern aufgebaut und es werden keine Cookies gesetzt.
+			Auf unserer Website setzen wir das Meta-Pixel der Meta Platforms Ireland Limited, Merrion Road,
+			Dublin 4, D04 X2K5, Irland ein. Mit dem Meta-Pixel können wir messen, was Besucherinnen und
+			Besucher tun, die über eine unserer Anzeigen auf Facebook oder Instagram zu uns gekommen sind,
+			und wir können Anzeigen gezielter ausspielen. Das Pixel wird erst geladen, nachdem Sie im
+			Cookie-Banner in den Dienst „Meta Pixel" (Kategorie „Marketing") eingewilligt haben. Ohne Ihre
+			Zustimmung wird keine Verbindung zu Meta-Servern aufgebaut, es werden keine Cookies gesetzt und
+			es findet keine Verarbeitung statt.
 		</p>
 		<p>
-			Nach Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG) erfasst das Pixel den Aufruf
-			unserer Seiten (Ereignis „PageView") sowie das Absenden einer Event-Anfrage (Ereignis „Lead") und
-			setzt hierfür Cookies (insbesondere „_fbp", Speicherdauer bis zu drei Monate). Dabei werden u. a.
-			Ihre IP-Adresse, Browserinformationen und die aufgerufene Seite an Meta übertragen. Den automatischen
-			erweiterten Datenabgleich haben wir deaktiviert; Inhalte Ihrer Anfrage (etwa Name, E-Mail-Adresse
-			oder Nachricht) werden nicht an Meta übermittelt, sondern nur eine zufällig erzeugte Ereignis-Kennung
-			und die Bezeichnung des Formulars. Für die Erhebung und Übermittlung dieser Daten sind wir mit Meta
-			gemeinsam Verantwortliche im Sinne von Art. 26 DSGVO; die wesentlichen Inhalte der Vereinbarung
-			stellt Meta unter
-			<a href="https://www.facebook.com/legal/controller_addendum" target="_blank" rel="noopener">facebook.com/legal/controller_addendum</a>
-			bereit. Die anschließende Verarbeitung durch Meta erfolgt in deren eigener Verantwortung; Informationen
-			dazu finden Sie in der Datenschutzrichtlinie von Meta unter
+			Nach Ihrer Einwilligung erfasst das Pixel insbesondere Ihre IP-Adresse, Angaben zu Ihrem Browser
+			und Gerät, die von Ihnen aufgerufenen Seiten (Ereignis „PageView") sowie Ereignisse wie das
+			Absenden einer Event-Anfrage (Ereignis „Lead"). Das Pixel speichert dafür die Cookies „_fbp" und
+			„_fbc" mit einer Laufzeit von jeweils bis zu 90 Tagen. Den automatischen erweiterten
+			Datenabgleich haben wir deaktiviert; Inhalte Ihrer Anfrage (etwa Name, E-Mail-Adresse oder
+			Nachricht) werden nicht an Meta übermittelt, sondern nur eine zufällig erzeugte Ereignis-Kennung
+			und die Bezeichnung des Formulars. Rechtsgrundlage für das Speichern und Auslesen von
+			Informationen auf Ihrem Endgerät ist Ihre Einwilligung nach § 25 Abs. 1 TDDDG, für die
+			anschließende Verarbeitung Ihrer Daten Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO. Sie
+			können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen, indem Sie Ihre Auswahl
+			über „Cookie-Einstellungen" im Footer ändern. Die genannten Cookies werden dabei gelöscht.
+		</p>
+		<p>
+			Für die Erhebung und Übermittlung der Daten sind wir und Meta gemeinsam verantwortlich im Sinne
+			von Art. 26 DSGVO. Das Wesentliche der zwischen uns getroffenen Vereinbarung finden Sie unter
+			<a href="https://www.facebook.com/legal/controller_addendum" target="_blank" rel="noopener">facebook.com/legal/controller_addendum</a>.
+			Für die weitere Verarbeitung der Daten ist Meta allein verantwortlich. Informationen dazu finden
+			Sie in Metas Datenschutzrichtlinie unter
 			<a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener">facebook.com/privacy/policy</a>.
-			Ihre Einwilligung können Sie jederzeit über „Cookie-Einstellungen" im Footer widerrufen; die vom
-			Pixel gesetzten Cookies werden dabei gelöscht.
+			Eine Übermittlung Ihrer Daten in die USA kann nicht ausgeschlossen werden. Meta stützt diese
+			Übermittlung auf seine Zertifizierung unter dem EU-US Data Privacy Framework sowie ergänzend auf
+			die Standardvertragsklauseln der EU-Kommission. Trotz dieser Garantien besteht das Risiko, dass
+			US-Behörden auf die Daten zugreifen und dass Ihnen dagegen keine wirksamen Rechtsbehelfe zur
+			Verfügung stehen.
+		</p>
+
+		<h2>11c. Anfragen über Facebook und Instagram (Sofort-Formulare)</h2>
+		<p>
+			Wir schalten auf Facebook und Instagram Anzeigen mit einem Sofort-Formular. Wenn Sie ein solches
+			Formular ausfüllen, übermittelt Meta uns die von Ihnen angegebenen Daten, in der Regel Vorname,
+			Nachname, E-Mail-Adresse, Telefonnummer, Firmenname sowie Ihre Antworten zu Gruppengröße,
+			Wunschzeitraum und Region. Wir verarbeiten diese Daten ausschließlich, um Ihre Anfrage zu
+			bearbeiten und Ihnen ein Angebot zu machen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, da
+			die Verarbeitung zur Durchführung vorvertraglicher Maßnahmen auf Ihre Anfrage hin erforderlich
+			ist.
+		</p>
+		<p>
+			Die Daten werden in unser Kundenverwaltungssystem übernommen und dort gespeichert, solange es für
+			die Bearbeitung Ihrer Anfrage und zur Erfüllung gesetzlicher Aufbewahrungspflichten erforderlich
+			ist. Eine Nutzung für Newsletter oder Werbung findet nur statt, wenn Sie dem gesondert zustimmen.
+			Welche Daten Meta selbst im Zusammenhang mit dem Formular verarbeitet, entnehmen Sie Metas
+			Datenschutzrichtlinie unter
+			<a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener">facebook.com/privacy/policy</a>.
 		</p>
 
 		<h2>12. Partnerportal und Golfplatz-Onboarding</h2>
