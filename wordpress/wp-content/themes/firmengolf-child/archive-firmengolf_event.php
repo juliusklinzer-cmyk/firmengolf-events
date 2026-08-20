@@ -388,35 +388,11 @@ $group_bands = [
 	<?php /* ── Search bar ── */ ?>
 	<form method="get" action="<?php echo esc_url( $archive_url ); ?>" class="fg-search-bar" role="search">
 
-		<?php /* Cell 1: Format dropdown */ ?>
-		<div class="fg-search-cell fg-format-cell" id="fg-format-cell"
-		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Format wählen">
-			<div class="fg-cell-label">Veranstaltungstyp</div>
-			<div class="fg-cell-value" id="fg-format-display">
-				<span id="fg-format-text"><?php echo esc_html( $formats[ $active_format ] ?? 'Alle Formate' ); ?></span>
-			</div>
-			<input type="hidden" name="format" id="fg-format-val" value="<?php echo esc_attr( $active_format ); ?>">
-			<div class="fg-search-panel" id="fg-format-panel" role="listbox">
-				<?php foreach ( $formats as $slug => $label ) : ?>
-					<button type="button"
-					        class="fg-search-panel-opt<?php echo $active_format === $slug ? ' is-selected' : ''; ?>"
-					        data-value="<?php echo esc_attr( $slug ); ?>"
-					        data-label="<?php echo esc_attr( $label ); ?>"
-					        role="option"
-					        aria-selected="<?php echo $active_format === $slug ? 'true' : 'false'; ?>">
-						<?php echo esc_html( $label ); ?>
-					</button>
-				<?php endforeach; ?>
-			</div>
-		</div>
-
-		<div class="fg-cell-divider" aria-hidden="true"></div>
-
 		<?php /* Cell 2: Wo?, Ort/PLZ-Autocomplete + Standort + Umkreis */ ?>
 		<div class="fg-search-cell fg-loc-cell" id="fg-loc-cell"
 		     tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort oder PLZ wählen">
 			<div class="fg-cell-label">Wo?</div>
-			<div class="fg-cell-value<?php echo $active_loc === '' ? ' fg-muted' : ''; ?>" id="fg-loc-display">
+			<div class="fg-cell-value<?php echo $active_loc === '' ? ' fg-muted' : ''; ?>" id="fg-loc-display"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
 				<span id="fg-loc-text"><?php echo $active_loc !== '' ? esc_html( $active_loc ) : 'Ort oder PLZ'; ?></span>
 			</div>
 			<input type="hidden" name="lat"    id="fg-lat"     value="<?php echo esc_attr( $active_lat ?: '' ); ?>">
@@ -441,6 +417,30 @@ $group_bands = [
 						<?php endforeach; ?>
 					</div>
 				</div>
+			</div>
+		</div>
+
+		<div class="fg-cell-divider" aria-hidden="true"></div>
+
+		<?php /* Cell 1: Format dropdown */ ?>
+		<div class="fg-search-cell fg-format-cell" id="fg-format-cell"
+		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Format wählen">
+			<div class="fg-cell-label">Veranstaltungstyp</div>
+			<div class="fg-cell-value" id="fg-format-display">
+				<span id="fg-format-text"><?php echo esc_html( $formats[ $active_format ] ?? 'Alle Formate' ); ?></span>
+			</div>
+			<input type="hidden" name="format" id="fg-format-val" value="<?php echo esc_attr( $active_format ); ?>">
+			<div class="fg-search-panel" id="fg-format-panel" role="listbox">
+				<?php foreach ( $formats as $slug => $label ) : ?>
+					<button type="button"
+					        class="fg-search-panel-opt<?php echo $active_format === $slug ? ' is-selected' : ''; ?>"
+					        data-value="<?php echo esc_attr( $slug ); ?>"
+					        data-label="<?php echo esc_attr( $label ); ?>"
+					        role="option"
+					        aria-selected="<?php echo $active_format === $slug ? 'true' : 'false'; ?>">
+						<?php echo esc_html( $label ); ?>
+					</button>
+				<?php endforeach; ?>
 			</div>
 		</div>
 

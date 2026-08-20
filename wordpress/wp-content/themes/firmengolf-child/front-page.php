@@ -120,34 +120,11 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 
 	<form method="get" action="<?php echo esc_url( $url_events ); ?>" class="home-quicksearch fg-search-bar" role="search" aria-label="Events filtern">
 
-		<?php /* Format dropdown */ ?>
-		<div class="fg-search-cell fg-format-cell" id="qs-format-cell"
-		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Format wählen">
-			<div class="fg-cell-label">Veranstaltungstyp</div>
-			<div class="fg-cell-value" id="qs-format-display">
-				<span id="qs-format-text">Alle Typen</span>
-			</div>
-			<input type="hidden" name="format" id="qs-format-val" value="all">
-			<div class="fg-search-panel" id="qs-format-panel" role="listbox">
-				<?php foreach ( $formats as $slug => $label ) : ?>
-					<button type="button"
-					        class="fg-search-panel-opt<?php echo $slug === 'all' ? ' is-selected' : ''; ?>"
-					        data-value="<?php echo esc_attr( $slug ); ?>"
-					        data-label="<?php echo esc_attr( $label ); ?>"
-					        role="option">
-						<?php echo esc_html( $label ); ?>
-					</button>
-				<?php endforeach; ?>
-			</div>
-		</div>
-
-		<div class="fg-cell-divider" aria-hidden="true"></div>
-
 		<?php /* Wo?, Ort/PLZ-Autocomplete + Standort + Umkreis (identisch zur Events-Seite) */ ?>
 		<div class="fg-search-cell fg-loc-cell" id="qs-loc-cell"
 		     tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort oder PLZ wählen">
 			<div class="fg-cell-label">Wo?</div>
-			<div class="fg-cell-value fg-muted" id="qs-loc-display">
+			<div class="fg-cell-value fg-muted" id="qs-loc-display"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
 				<span id="qs-loc-text">Ort oder PLZ</span>
 			</div>
 			<input type="hidden" name="lat"    id="qs-lat"     value="">
@@ -172,6 +149,29 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 						<?php endforeach; ?>
 					</div>
 				</div>
+			</div>
+		</div>
+
+		<div class="fg-cell-divider" aria-hidden="true"></div>
+
+		<?php /* Format dropdown */ ?>
+		<div class="fg-search-cell fg-format-cell" id="qs-format-cell"
+		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Format wählen">
+			<div class="fg-cell-label">Veranstaltungstyp</div>
+			<div class="fg-cell-value" id="qs-format-display">
+				<span id="qs-format-text">Alle Typen</span>
+			</div>
+			<input type="hidden" name="format" id="qs-format-val" value="all">
+			<div class="fg-search-panel" id="qs-format-panel" role="listbox">
+				<?php foreach ( $formats as $slug => $label ) : ?>
+					<button type="button"
+					        class="fg-search-panel-opt<?php echo $slug === 'all' ? ' is-selected' : ''; ?>"
+					        data-value="<?php echo esc_attr( $slug ); ?>"
+					        data-label="<?php echo esc_attr( $label ); ?>"
+					        role="option">
+						<?php echo esc_html( $label ); ?>
+					</button>
+				<?php endforeach; ?>
 			</div>
 		</div>
 

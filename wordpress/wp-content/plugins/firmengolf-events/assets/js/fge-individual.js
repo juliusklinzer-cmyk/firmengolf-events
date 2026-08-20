@@ -352,14 +352,9 @@
 		// Foto-Panel (Driver am Abschlag, wie im Partner-Onboarding) neben dem Einstieg.
 		function photoPanel() {
 			var src = CFG.introImg || '';
-			if (!src) return '';
-			// Trust-Karte auf dem Foto: echter Ansprechpartner + Werktag-Versprechen
-			// statt anonymer Bildflaeche (Testvariante 2026-08-20).
-			var trust = CFG.juliusImg
-				? '<div class="rw-photo-trust"><img src="' + esc(CFG.juliusImg) + '" alt="" loading="lazy">'
-					+ '<div><b>Julius Klinzer</b><span>Gründer und euer Ansprechpartner. Ihr hört innerhalb eines Werktags von mir.</span></div></div>'
-				: '';
-			return '<div class="rw-photo" role="img" aria-label="Golfer am Abschlag" style="background-image:url(\'' + esc(src) + '\')">' + trust + '</div>';
+			// Bewusst ohne Overlay-Karte (Julius, 2026-08-20): das Bild bleibt ruhig,
+			// der Ansprechpartner kommt gross auf dem Erfolgs-Screen.
+			return src ? '<div class="rw-photo" role="img" aria-label="Golfer am Abschlag" style="background-image:url(\'' + esc(src) + '\')"></div>' : '';
 		}
 
 		function screenIntro() {
@@ -397,14 +392,10 @@
 					+ '<div class="rw-field">' + label('Anlass', true) + occCards() + '</div>'
 					+ '<div class="rw-field">' + label('Teilnehmerzahl') + sizeStepper() + '</div>'
 					+ '</div></div>' + photoPanel() + '</div></div>'
-					+ '<div class="rw-foot"><div class="rw-nav rw-nav--quick">' + quickDots()
+					+ '<div class="rw-foot"><div class="rw-nav rw-nav--quick"><span class="rw-nav-spacer" aria-hidden="true"></span>' + quickDots()
 					+ '<button class="rw-btn-primary" data-act="next">Weiter ' + ICO_NEXT + '</button></div></div>';
 			}
-			var recap = esc(S.form.occasion || 'Event') + ' · ' + esc(S.form.size || '20') + ' Personen';
 			return '<div class="rw-stage"><div class="rw-screen rw-has-photo"><div class="rw-main">'
-				+ '<button type="button" class="rw-recap" data-act="back" aria-label="Zurück zu Anlass und Teilnehmerzahl">'
-				+ '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>'
-				+ recap + '</button>'
 				+ '<h2 class="rw-h rw-h--quick">Noch kurz zu euch.</h2>'
 				+ '<p class="rw-lead">Innerhalb eines Werktags habt ihr konkrete Vorschläge im Postfach.</p>'
 				+ '<div class="rw-form">'

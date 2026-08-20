@@ -2543,8 +2543,10 @@ button.fg-btn-ghost-light:hover { background: rgba(255,255,255,.12); border-colo
 .fg-cell-label { font-size: 11px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-500); }
 .fg-cell-value { font-size: 14px; font-weight: 500; color: var(--ink-900); margin-top: 4px; }
 .fg-cell-value.fg-muted { color: var(--ink-400); font-weight: 400; }
-.fg-cell-divider { width: 1px; height: 32px; background: var(--ink-200); flex: none; }
-.fg-search-btn, a.fg-search-btn { height: 56px; padding: 0 26px; border-radius: 999px; background: var(--fairway-700); color: var(--paper-100); display: inline-flex; align-items: center; justify-content: center; gap: 9px; flex: none; font-family: var(--font-body); font-size: 15px; font-weight: 500; cursor: pointer; border: 0; transition: background 160ms var(--ease-out); }
+.fg-cell-divider { width: 1px; height: 26px; background: var(--ink-100); flex: none; }
+.fg-search-btn, a.fg-search-btn { height: 56px; padding: 0 26px; border-radius: 999px; background: var(--fairway-700); color: var(--paper-100); display: inline-flex; align-items: center; justify-content: center; gap: 9px; flex: none; font-family: var(--font-body); font-size: 15px; font-weight: 500; cursor: pointer; border: 0; transition: background 160ms var(--ease-out), transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+.fg-search-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(66,121,209,.35); }
+.fg-search-btn:active { transform: translateY(0) scale(.97); }
 .fg-search-btn span { white-space: nowrap; }
 .fg-search-btn:hover, a.fg-search-btn:hover { background: var(--fairway-600); color: var(--paper-100); }
 
@@ -2878,9 +2880,13 @@ a.mk-step:focus-visible { outline: 2px solid var(--fairway-700); outline-offset:
 }
 
 /* ── Search bar (overlapping hero bottom) ── */
-.fg-search-bar { background: var(--paper-50); margin: -34px auto 0; position: relative; z-index: 25; max-width: 1100px; border-radius: 999px; padding: 8px 8px 8px 12px; box-shadow: var(--shadow-lg); display: flex; align-items: center; }
-.fg-search-cell { padding: 10px 20px; flex: 1; min-width: 0; cursor: pointer; }
+.fg-search-bar { background: var(--paper-50); margin: -34px auto 0; position: relative; z-index: 25; max-width: 1100px; border-radius: 999px; padding: 8px; box-shadow: 0 1px 2px rgba(14,19,16,.05), 0 18px 44px rgba(14,19,16,.16); border: 1px solid var(--ink-100); display: flex; align-items: center; gap: 2px; }
+/* Zellen als weiche Pills: Hover und geoeffneter Zustand heben sich ab (2026-08-20). */
+.fg-search-cell { padding: 10px 20px; flex: 1; min-width: 0; cursor: pointer; border-radius: 999px; transition: background var(--dur-fast) var(--ease-out); }
+.fg-search-cell:hover, .fg-search-cell[aria-expanded="true"] { background: var(--paper-200); }
 .fg-search-cell:hover .fg-cell-value { color: var(--fairway-700); }
+.fg-search-cell[aria-expanded="true"] .fg-cell-label { color: var(--fairway-700); }
+.fg-cell-value svg { color: var(--fairway-700); flex: none; vertical-align: -2px; margin-right: 6px; }
 
 /* ── Filter rail ── */
 .fg-filter-rail {
@@ -6087,7 +6093,12 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 .rw-h--quick { font-size: 34px; }
 @media (max-width: 760px) { .rw-h--quick { font-size: 27px; } }
 /* Zwei-Schritte-Quick: Fortschritts-Punkte im Fuss, Rekap-Chip in Schritt 2. */
-.rw-nav--quick { align-items: center; }
+/* Fuss der Schnell-Anfrage: 3-Spalten-Grid, die Fortschritts-Punkte stehen auf
+   BEIDEN Schritten exakt mittig (vorher sprangen sie von links in die Mitte). */
+.rw-nav--quick { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.rw-nav--quick .rw-dots { justify-self: center; }
+.rw-nav--quick .rw-btn-primary { justify-self: end; }
+.rw-nav--quick .rw-btn-text { justify-self: start; }
 .rw-dots { display: inline-flex; gap: 6px; align-items: center; }
 .rw-dots i { width: 7px; height: 7px; border-radius: 999px; background: var(--ink-200); transition: background var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
 .rw-dots i.on { background: var(--fairway-600); transform: scale(1.3); }
