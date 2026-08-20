@@ -161,6 +161,32 @@ $mail_jobs = $co['email_jobs'] ?? 'jobs@firmengolf-events.de';
 			Abwicklung, soweit keine gesetzlichen Aufbewahrungspflichten (z. B. für Rechnungsdaten) bestehen.
 		</p>
 
+		<h2>11b. Meta Pixel (Facebook und Instagram)</h2>
+		<p>
+			Zur Messung des Erfolgs unserer Werbeanzeigen auf Facebook und Instagram setzen wir das Meta Pixel
+			ein (Meta Platforms Ireland Ltd., Merrion Road, Dublin 4, Irland; Datenübermittlung ggf. an Meta
+			Platforms, Inc., USA, gestützt auf das EU-US Data Privacy Framework). Das Pixel wird ausschließlich
+			nach Ihrer Einwilligung in den Dienst „Meta Pixel" (Kategorie „Marketing") geladen. Ohne Ihre
+			Einwilligung wird keine Verbindung zu Meta-Servern aufgebaut und es werden keine Cookies gesetzt.
+		</p>
+		<p>
+			Nach Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG) erfasst das Pixel den Aufruf
+			unserer Seiten (Ereignis „PageView") sowie das Absenden einer Event-Anfrage (Ereignis „Lead") und
+			setzt hierfür Cookies (insbesondere „_fbp", Speicherdauer bis zu drei Monate). Dabei werden u. a.
+			Ihre IP-Adresse, Browserinformationen und die aufgerufene Seite an Meta übertragen. Den automatischen
+			erweiterten Datenabgleich haben wir deaktiviert; Inhalte Ihrer Anfrage (etwa Name, E-Mail-Adresse
+			oder Nachricht) werden nicht an Meta übermittelt, sondern nur eine zufällig erzeugte Ereignis-Kennung
+			und die Bezeichnung des Formulars. Für die Erhebung und Übermittlung dieser Daten sind wir mit Meta
+			gemeinsam Verantwortliche im Sinne von Art. 26 DSGVO; die wesentlichen Inhalte der Vereinbarung
+			stellt Meta unter
+			<a href="https://www.facebook.com/legal/controller_addendum" target="_blank" rel="noopener">facebook.com/legal/controller_addendum</a>
+			bereit. Die anschließende Verarbeitung durch Meta erfolgt in deren eigener Verantwortung; Informationen
+			dazu finden Sie in der Datenschutzrichtlinie von Meta unter
+			<a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener">facebook.com/privacy/policy</a>.
+			Ihre Einwilligung können Sie jederzeit über „Cookie-Einstellungen" im Footer widerrufen; die vom
+			Pixel gesetzten Cookies werden dabei gelöscht.
+		</p>
+
 		<h2>12. Partnerportal und Golfplatz-Onboarding</h2>
 		<p>
 			Golfanlagen, die mit uns zusammenarbeiten, legen über das Onboarding ein Partnerprofil an und
