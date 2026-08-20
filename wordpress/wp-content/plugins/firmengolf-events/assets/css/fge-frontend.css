@@ -5121,6 +5121,32 @@ html.cty-io .cty-reveal.is-in { opacity: 1; transform: none; }
 	.fgp-h { font-size: 22px; }
 }
 
+/* Warum-Topics: vier Spalten ohne Bild (Julius, 2026-08-20). */
+.fgw-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 36px 28px; }
+.fgw-col-t { font-size: 16.5px; font-weight: 600; color: var(--ink-900); margin: 14px 0 6px; }
+.fgw-col-b { font-size: 14.5px; line-height: 1.6; color: var(--ink-600); margin: 0; }
+@media (max-width: 980px) { .fgw-cols { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .fgw-cols { grid-template-columns: 1fr; gap: 24px; } }
+
+/* Formate-Split: Bild + vier klickbare Format-Zeilen (Stil der Individuell-Sektion). */
+.fmt4-grid { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 56px; align-items: stretch; }
+.fmt4-list { margin-top: 26px; }
+.fmt4-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 17px 2px; border-top: 1px solid var(--ink-200); text-decoration: none; }
+.fmt4-row:last-of-type { border-bottom: 1px solid var(--ink-200); }
+.fmt4-row-t { display: block; font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -.01em; color: var(--ink-900); transition: color var(--dur-fast) var(--ease-out); }
+.fmt4-row-b { display: block; font-size: 14px; line-height: 1.5; color: var(--ink-600); margin-top: 3px; }
+.fmt4-row-go { flex: none; width: 38px; height: 38px; border-radius: 999px; background: var(--fairway-50); color: var(--fairway-700); display: grid; place-items: center; transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.fmt4-row:hover .fmt4-row-t { color: var(--fairway-700); }
+.fmt4-row:hover .fmt4-row-go { background: var(--fairway-100); transform: translateX(3px); }
+.fmt4-more { margin-top: 16px; font-size: 14px; color: var(--ink-600); }
+.fmt4-more a { color: var(--fairway-700); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.fmt4-photo { border-radius: var(--radius-xl); background-size: cover; background-position: center; min-height: 460px; }
+@media (max-width: 900px) {
+	.fmt4-grid { grid-template-columns: 1fr; gap: 20px; }
+	.fmt4-photo { order: -1; min-height: 0; aspect-ratio: 16/10; }
+	.fmt4-row-t { font-size: 18px; }
+}
+
 .fgw-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: stretch; }
 .fgw-list { display: flex; flex-direction: column; gap: 6px; }
 .fgw-item { display: flex; gap: 14px; align-items: flex-start; text-align: left; background: none; border: 0; border-radius: 16px; padding: 16px 18px; cursor: pointer; font: inherit; transition: background var(--dur-base) var(--ease-out); }
@@ -5147,7 +5173,7 @@ html.cty-io .cty-reveal.is-in { opacity: 1; transform: none; }
 }
 
 /* Startseite: Magazin-Karten mit leichter Hierarchie + Bild-Zoom. */
-.home-blog-grid { grid-template-columns: 1.35fr 1fr 1fr; }
+.home-blog-grid { grid-template-columns: repeat(4, 1fr); }
 .home-blog-card { overflow: clip; }
 .home-blog-photo { transition: transform 600ms var(--ease-out); }
 .home-blog-card:hover .home-blog-photo { transform: scale(1.04); }

@@ -40,7 +40,7 @@ $featured_events = fge_get_featured_events( 6 );
 $blog_posts = get_posts( [
 	'post_type'      => 'post',
 	'post_status'    => 'publish',
-	'numberposts'    => 3,
+	'numberposts'    => 4,
 	'orderby'        => 'date',
 	'order'          => 'DESC',
 ] );
@@ -196,17 +196,13 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
    Liste, das grosse Bild wechselt beim Antippen mit Crossfade und ruhigem Zoom. */
 $why_items = [
 	[ 'ic' => '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-	  'k' => 'Draußen in Bewegung', 't' => 'Ein ganzer Tag an der frischen Luft: Bewegung, ohne dass es nach Sport aussieht.',
-	  'img' => 'pool/afterwork-happy-im-cart.jpg', 'alt' => 'Team unterwegs im Golfcart' ],
+	  'k' => 'Draußen in Bewegung', 't' => 'Ein ganzer Tag an der frischen Luft: Bewegung, ohne dass es nach Sport aussieht.' ],
 	[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
-	  'k' => 'Für alle machbar', 't' => 'Flache Wege, Carts, ein Pro für die ersten Schläge. Kein Fitnesslevel, kein Handicap nötig.',
-	  'img' => 'golf-coaching-gruppe.jpg', 'alt' => 'Golflehrer führt eine Gruppe Einsteiger an' ],
+	  'k' => 'Für alle machbar', 't' => 'Flache Wege, Carts, ein Pro für die ersten Schläge. Kein Fitnesslevel, kein Handicap nötig.' ],
 	[ 'ic' => '<path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01M10 21v-4h4v4"/>',
-	  'k' => 'Clubhaus & Meetingräume', 't' => 'Moderne Räume für Empfang, Präsentation oder Workshop, direkt am Grün.',
-	  'img' => 'pool/workshop-clubhaus-aussen.jpg', 'alt' => 'Clubhaus mit Tagungsräumen am Grün' ],
+	  'k' => 'Clubhaus & Meetingräume', 't' => 'Moderne Räume für Empfang, Präsentation oder Workshop, direkt am Grün.' ],
 	[ 'ic' => '<path d="M3 2v7c0 1.1.9 2 2 2s2-.9 2-2V2"/><path d="M5 11v11"/><path d="M18 2c-1.7 0-3 2.7-3 6 0 2.6 1.1 4 3 4v10"/>',
-	  'k' => 'Küche & Terrasse', 't' => 'Vom Business-Lunch bis zum Grillabend, die Gastronomie vor Ort trägt jeden Anlass.',
-	  'img' => 'pool/afterwork-anstossen.jpg', 'alt' => 'Team stößt auf der Clubterrasse an' ],
+	  'k' => 'Küche & Terrasse', 't' => 'Vom Business-Lunch bis zum Grillabend, die Gastronomie vor Ort trägt jeden Anlass.' ],
 ];
 ?>
 <section class="mk-section fgw cty-reveal" aria-label="Warum der Golfplatz die perfekte Event-Location ist">
@@ -214,21 +210,14 @@ $why_items = [
 		<h2 class="mk-h2">Warum sich der Golfplatz perfekt für euer <span class="mk-italic">Firmenevent</span> eignet.</h2>
 		<p class="mk-sub">Bewegung an der frischen Luft, moderne Clubhäuser mit Meetingräumen und eine Gastronomie, die jeden Anlass trägt, offen für alle, ganz ohne Golf-Vorkenntnisse.</p>
 	</div>
-	<div class="fgw-grid">
-		<div class="fgw-list">
-			<?php foreach ( $why_items as $wi => $w ) : ?>
-			<button type="button" class="fgw-item<?php echo 0 === $wi ? ' is-active' : ''; ?>" data-fgw="<?php echo (int) $wi; ?>" aria-pressed="<?php echo 0 === $wi ? 'true' : 'false'; ?>">
-				<span class="fgw-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $w['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
-				<span class="fgw-body"><b><?php echo esc_html( $w['k'] ); ?></b><span><?php echo esc_html( $w['t'] ); ?></span></span>
-			</button>
-			<?php endforeach; ?>
+	<div class="fgw-cols">
+		<?php foreach ( $why_items as $w ) : ?>
+		<div class="fgw-col">
+			<span class="fgw-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $w['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
+			<h3 class="fgw-col-t"><?php echo esc_html( $w['k'] ); ?></h3>
+			<p class="fgw-col-b"><?php echo esc_html( $w['t'] ); ?></p>
 		</div>
-		<div class="fgw-media" aria-hidden="true">
-			<?php foreach ( $why_items as $wi => $w ) : ?>
-			<img src="<?php echo esc_url( $img( $w['img'] ) ); ?>" alt="<?php echo esc_attr( $w['alt'] ); ?>"
-			     class="<?php echo 0 === $wi ? 'is-active' : ''; ?>" data-fgw-img="<?php echo (int) $wi; ?>" loading="lazy">
-			<?php endforeach; ?>
-		</div>
+		<?php endforeach; ?>
 	</div>
 </section>
 
@@ -240,7 +229,7 @@ $why_items = [
 	</div>
 	<div class="fgp-grid">
 		<a class="fgp-card" href="<?php echo esc_url( $url_events ); ?>">
-			<img src="<?php echo esc_url( $img( 'pool/turnier-abschlag-eventszene.jpg' ) ); ?>" alt="" loading="lazy">
+			<img src="<?php echo esc_url( $img( 'kolleginnen-teambuilding.jpg' ) ); ?>" alt="" loading="lazy">
 			<span class="fgp-scrim" aria-hidden="true"></span>
 			<span class="fgp-body">
 				<span class="fgp-tag">Sofort buchbar</span>
@@ -251,7 +240,7 @@ $why_items = [
 			</span>
 		</a>
 		<a class="fgp-card" href="<?php echo esc_url( $url_ind ); ?>">
-			<img src="<?php echo esc_url( $img( 'hero-golfer-alpen.jpg' ) ); ?>" alt="" loading="lazy">
+			<img src="<?php echo esc_url( $img( 'golfplatz-luftaufnahme-2.jpg' ) ); ?>" alt="" loading="lazy">
 			<span class="fgp-scrim" aria-hidden="true"></span>
 			<span class="fgp-body">
 				<span class="fgp-tag">Nach Maß</span>
@@ -288,58 +277,50 @@ $why_items = [
 	</div>
 </section>
 
-<?php /* ══════════════════ 4. FORMATE-BENTO (ersetzt Formate + Anlass-Kacheln) ══════════════════ */
-/* Ein Produkt-Explorer statt zwei redundanter Karten-Sektionen (rote Linie 2026-08-20):
-   Foto-Kacheln wie auf den Landingpages, Titel = Format, Text = Anlass-Nutzen,
-   Links auf die deutschlandweiten Format-Seiten. */
+<?php /* ══════════════════ 4. FORMATE (Split, die vier Kern-Formate) ══════════════════ */
+/* Design analog zur Individuell-Sektion (Julius, 2026-08-20): Bild + Inhalt im
+   Split, die vier wichtigsten Formate als klickbare Zeilen, der Rest ist ueber
+   die kleinen Links darunter und die Eventliste erreichbar. */
 $fmt_pages = function_exists( 'fge_get_event_format_pages' ) ? fge_get_event_format_pages() : [];
 $home_fmts = [
 	'teamevent'       => 'Einen gemeinsamen Tag draußen verbringen, ganz ohne Vorkenntnisse.',
-	'golfturnier'     => 'Wettbewerb, der verbindet: Flights, faire Formate, Siegerehrung.',
-	'platzreife'      => 'Über mehrere Tage gemeinsam lernen und bestehen.',
-	'workshop'        => 'Arbeiten, wo der Kopf frei ist, mit Golf zum Ausklang.',
-	'kundenevent'     => 'Gespräche, die im Konferenzraum nie entstehen, mit Hospitality und Dinner.',
-	'incentive'       => 'Besondere Kulissen und bleibende Erinnerungen für eure Top-Leute.',
 	'after-work-golf' => 'Nach Feierabend auf Range und Kurzplatz, locker angeleitet.',
+	'workshop'        => 'Arbeiten, wo der Kopf frei ist, mit Golf zum Ausklang.',
+	'golfturnier'     => 'Wettbewerb, der verbindet: Flights, faire Formate, Siegerehrung.',
 ];
+$home_fmts_more = [ 'platzreife' => 'Platzreife', 'kundenevent' => 'Kundenevent', 'incentive' => 'Incentive' ];
 ?>
 <section class="mk-section cty-reveal" aria-label="Das passende Format">
-	<div class="mk-section-head between">
-		<div>
-			<h2 class="mk-h2">Das passende Format für euer Team.</h2>
-			<p class="mk-sub">Sieben erprobte Formate, jedes mit eigener Seite: was drinsteckt, für wen es passt und was es kostet.</p>
-		</div>
-		<a class="fg-btn-ghost" href="<?php echo esc_url( $url_events ); ?>">
-			Alle <?php echo $fge_live_count > 4 ? esc_html( (string) $fge_live_count ) . ' ' : ''; ?>Events ansehen <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
-		</a>
-	</div>
-	<div class="cty-fmt-bento">
-		<?php
-		// Turnier-Motiv weicht ab: die Eventszene traegt bereits die Angebots-Karte oben.
-		$home_fmt_img_override = [ 'golfturnier' => 'golf-gruen-fahne.jpg' ];
-		$hf_i = 0; foreach ( $home_fmts as $fslug => $benefit ) :
-			$fm = $fmt_pages[ $fslug ] ?? null;
-			if ( ! $fm ) { continue; }
-		?>
-			<a class="cty-fmt-tile<?php echo 0 === $hf_i ? ' is-wide' : ''; ?>" href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>">
-				<img src="<?php echo esc_url( $img( $home_fmt_img_override[ $fslug ] ?? $fm['hero_img'] ?? 'golfplatz-panorama.jpg' ) ); ?>" alt="" loading="lazy">
-				<span class="cty-fmt-tile-scrim" aria-hidden="true"></span>
-				<span class="cty-fmt-tile-txt">
-					<span class="cty-fmt-tile-h"><?php echo esc_html( $fm['name'] ?? $fslug ); ?></span>
-					<span class="cty-fmt-tile-p"><?php echo esc_html( $benefit ); ?></span>
-					<span class="cty-fmt-tile-go"><?php echo esc_html( $fm['name'] ?? '' ); ?> ansehen
-						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+	<div class="fmt4-grid">
+		<div class="fmt4-text">
+			<h2 class="mk-h2">Das passende Format für euer <em class="mk-italic">Team</em>.</h2>
+			<p class="mk-sub">Vier erprobte Wege auf den Platz, jedes Format mit eigener Seite: was drinsteckt, für wen es passt und was es kostet.</p>
+			<div class="fmt4-list">
+				<?php foreach ( $home_fmts as $fslug => $benefit ) : $fm = $fmt_pages[ $fslug ] ?? null; if ( ! $fm ) { continue; } ?>
+				<a class="fmt4-row" href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>">
+					<span class="fmt4-row-txt">
+						<span class="fmt4-row-t"><?php echo esc_html( $fm['name'] ?? $fslug ); ?></span>
+						<span class="fmt4-row-b"><?php echo esc_html( $benefit ); ?></span>
 					</span>
-				</span>
-			</a>
-		<?php $hf_i++; endforeach; ?>
+					<span class="fmt4-row-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>
+				</a>
+				<?php endforeach; ?>
+			</div>
+			<p class="fmt4-more">Außerdem:
+				<?php $fmt4_i = 0; foreach ( $home_fmts_more as $fslug => $label ) : ?>
+					<?php echo $fmt4_i++ > 0 ? ' · ' : ''; ?><a href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>"><?php echo esc_html( $label ); ?></a>
+				<?php endforeach; ?>
+			</p>
+		</div>
+		<div class="fmt4-photo" role="img" aria-label="Golfplatz im Abendlicht"
+		     style="background-image:url('<?php echo esc_url( $img( 'golfplatz-huegel-abendlicht.jpg' ) ); ?>')"></div>
 	</div>
 </section>
 
 <?php /* ══════════════════ 6. INDIVIDUAL TEASER ══════════════════ */ ?>
 <section class="mk-section home-individual cty-reveal" aria-label="Individuelle Events">
 	<div class="home-individual-grid">
-		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-luftaufnahme-2.jpg' ) ); ?>')"></div>
+		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-drohnenaufnahme.jpg' ) ); ?>')"></div>
 		<div class="home-ind-text">
 			<h2 class="mk-h2">
 				Nichts dabei? <em class="mk-italic">Wir planen</em> euer Event nach euren Ansprüchen.
@@ -405,19 +386,15 @@ $home_fmts = [
 			</p>
 			<ul class="cty-story-points">
 				<?php
+				// Bewusst ohne Icons (Julius, 2026-08-20): die Versprechen tragen selbst.
 				$promises = [
-					[ 'ic' => '<path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
-					  't' => 'Ein echter Mensch am Telefon', 'b' => 'Kein Ticketsystem. Ihr sprecht direkt mit dem, der euer Event plant.' ],
-					[ 'ic' => '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
-					  't' => 'Eine Anfrage, eine Rechnung', 'b' => 'Platz, Pro, Catering, Shuttle, alles über einen Ansprechpartner, sauber für HR und Buchhaltung.' ],
-					[ 'ic' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
-					  't' => 'Auch ohne Golferfahrung', 'b' => 'Golflehrer führen Einsteiger an, Schläger werden gestellt. Niemand muss spielen können.' ],
-					[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
-					  't' => 'Deutschlandweit organisierbar', 'b' => 'Über 500 Locations kommen für euer Event in Frage, vom Golfplatz bis zum Simulator. Passt eine nicht, nehmen wir die nächste.' ],
+					[ 't' => 'Wir beraten euch persönlich', 'b' => 'Kein Ticketsystem. Ihr sprecht direkt mit dem, der euer Event plant.' ],
+					[ 't' => 'Eine Anfrage, eine Rechnung', 'b' => 'Platz, Pro, Catering, Shuttle, alles über einen Ansprechpartner, sauber für HR und Buchhaltung.' ],
+					[ 't' => 'Auch ohne Golferfahrung', 'b' => 'Golflehrer führen Einsteiger an, Schläger werden gestellt. Niemand muss spielen können.' ],
+					[ 't' => 'Deutschlandweit organisierbar', 'b' => 'Über 500 Locations kommen für euer Event in Frage, vom Golfplatz bis zum Simulator. Passt eine nicht, nehmen wir die nächste.' ],
 				];
 				foreach ( $promises as $p ) : ?>
 				<li class="cty-story-point">
-					<span class="cty-story-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $p['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
 					<div>
 						<h3><?php echo esc_html( $p['t'] ); ?></h3>
 						<p><?php echo esc_html( $p['b'] ); ?></p>
@@ -432,6 +409,21 @@ $home_fmts = [
 		</div>
 	</div>
 </section>
+
+<?php /* ══════════════════ 11. CLOSING CTA (Putt-Moment, gemeinsames Part) ══════════════════ */
+$home_cta_links = '<a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '">' . esc_html( fge_company()['email_events'] ) . '</a>';
+if ( function_exists( 'fge_get_cities' ) ) {
+	foreach ( fge_get_cities() as $cslug => $c ) {
+		$home_cta_links .= '<a href="' . esc_url( home_url( '/golf-events/' . $cslug . '/' ) ) . '">' . esc_html( $c['name'] ) . '</a>';
+	}
+}
+get_template_part( 'template-parts/fge-putt-cta', null, [
+	'headline_html' => 'Lasst uns euer nächstes Event <em class="mk-italic">zusammen</em> planen.',
+	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
+	'anfrage_url'   => add_query_arg( 'anfrage', 'quick', $url_ind ),
+	'links_html'    => $home_cta_links,
+] );
+?>
 
 <?php /* ══════════════════ 10. BLOG TEASER ══════════════════ */ ?>
 <section class="mk-section cty-reveal" aria-label="Aus dem Magazin">
@@ -502,21 +494,6 @@ $home_fmts = [
 		<?php endif; ?>
 	</div>
 </section>
-
-<?php /* ══════════════════ 11. CLOSING CTA (Putt-Moment, gemeinsames Part) ══════════════════ */
-$home_cta_links = '<a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '">' . esc_html( fge_company()['email_events'] ) . '</a>';
-if ( function_exists( 'fge_get_cities' ) ) {
-	foreach ( fge_get_cities() as $cslug => $c ) {
-		$home_cta_links .= '<a href="' . esc_url( home_url( '/golf-events/' . $cslug . '/' ) ) . '">' . esc_html( $c['name'] ) . '</a>';
-	}
-}
-get_template_part( 'template-parts/fge-putt-cta', null, [
-	'headline_html' => 'Lasst uns euer nächstes Event <em class="mk-italic">zusammen</em> planen.',
-	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
-	'anfrage_url'   => add_query_arg( 'anfrage', 'quick', $url_ind ),
-	'links_html'    => $home_cta_links,
-] );
-?>
 
 <?php get_template_part( 'template-parts/fge-footer' ); ?>
 
@@ -693,29 +670,6 @@ get_template_part( 'template-parts/fge-putt-cta', null, [
       }, 380);
     }, 3200);
   }
-
-  /* „Warum der Golfplatz": Antippen (oder Zeigen mit der Maus) wechselt das
-     grosse Bild per Crossfade; das aktive Bild zoomt ganz langsam weiter. */
-  (function () {
-    var items = document.querySelectorAll('.fgw-item');
-    var imgs = document.querySelectorAll('[data-fgw-img]');
-    if (!items.length || !imgs.length) return;
-    var hoverable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    function activate(i) {
-      items.forEach(function (it) {
-        var on = it.getAttribute('data-fgw') === String(i);
-        it.classList.toggle('is-active', on);
-        it.setAttribute('aria-pressed', on ? 'true' : 'false');
-      });
-      imgs.forEach(function (im) {
-        im.classList.toggle('is-active', im.getAttribute('data-fgw-img') === String(i));
-      });
-    }
-    items.forEach(function (it) {
-      it.addEventListener('click', function () { activate(it.getAttribute('data-fgw')); });
-      if (hoverable) { it.addEventListener('pointerenter', function () { activate(it.getAttribute('data-fgw')); }); }
-    });
-  })();
 
   /* Sanftes Einblenden der Sektionen beim Scrollen (wie die Landingpages):
      greift nur unter html.cty-io, ohne JS oder mit reduzierter Bewegung
