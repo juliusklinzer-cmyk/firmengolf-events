@@ -378,6 +378,20 @@ function fge_klaro_config(): array {
 	if ( fge_gads_id() ) {
 		$services[] = [ 'name' => 'googleads', 'title' => 'Google Ads', 'purposes' => [ 'marketing' ], 'default' => false, 'cookies' => [ '/^_gcl.*/' ] ];
 	}
+	if ( fge_meta_pixel_id() ) {
+		// _fbp/_fbc setzt Meta mit domain=.<Basisdomain>; Klaro löscht beim Widerruf
+		// je Eintrag [Pattern, Pfad, Domain], daher explizit beide Domain-Varianten.
+		// Achtung Klaro 0.7.22: String-Muster gelten nur als Regex, wenn sie mit ^
+		// beginnen (die /…/-Schreibweise würde als Literal escaped und nie treffen).
+		$host = preg_replace( '/^www\./', '', (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		$services[] = [
+			'name'     => 'meta-pixel',
+			'title'    => 'Meta Pixel',
+			'purposes' => [ 'marketing' ],
+			'default'  => false,
+			'cookies'  => [ '^_fb[pc]$', [ '^_fb[pc]$', '/', '.' . $host ], [ '^_fb[pc]$', '/', $host ] ],
+		];
+	}
 	$notice = '<span class="fge-cc-head">' . $icon . 'Diese Webseite verwendet Cookies</span>'
 		. '<span class="fge-cc-body">Wir verwenden Cookies und ähnliche Technologien, um die Nutzung unserer Website zu analysieren und Inhalte wie Karten einzubinden. Manche Dienste übertragen dabei Daten an Google. Du entscheidest selbst, was geladen wird, und kannst deine Wahl jederzeit über „Cookie-Einstellungen" im Footer ändern oder widerrufen.</span>';
 
@@ -430,6 +444,7 @@ function fge_klaro_config(): array {
 				'googleanalytics'  => [ 'title' => 'Google Analytics', 'description' => 'Statistik zur anonymisierten Auswertung der Websitenutzung. Setzt Cookies und überträgt Daten an Google.' ],
 				'googlemaps'       => [ 'title' => 'Google Maps', 'description' => 'Interaktive Karten. Beim Laden wird deine IP-Adresse an Google übertragen.' ],
 				'googleads'        => [ 'title' => 'Google Ads', 'description' => 'Conversion-Messung für unsere Google-Werbekampagnen. Setzt Cookies und überträgt Daten an Google.' ],
+				'meta-pixel'       => [ 'title' => 'Meta Pixel', 'description' => 'Conversion-Messung für unsere Werbekampagnen auf Facebook und Instagram. Setzt Cookies und überträgt Daten an Meta.' ],
 			],
 		],
 		'services'               => $services,
@@ -456,6 +471,18 @@ function fge_gads_id(): string {
 function fge_gads_send_to(): string {
 	$label = defined( 'FGE_GADS_CONVERSION_LABEL' ) ? (string) FGE_GADS_CONVERSION_LABEL : '';
 	return ( fge_gads_id() && $label ) ? fge_gads_id() . '/' . $label : '';
+}
+
+// Meta Pixel (Datenquelle „FGE Web", Meta-Kampagnen 2026-08). ID steht ohnehin
+// öffentlich im HTML, daher im Code; wp-config-Konstante hätte Vorrang.
+if ( ! defined( 'FGE_META_PIXEL_ID' ) ) {
+	define( 'FGE_META_PIXEL_ID', '1378606913654515' );
+}
+
+// Meta-Pixel-ID: Konstante FGE_META_PIXEL_ID oder Option fge_meta_pixel_id.
+// Solange leer, existiert weder der Klaro-Dienst „Meta Pixel" noch das Pixel-Tag.
+function fge_meta_pixel_id(): string {
+	return defined( 'FGE_META_PIXEL_ID' ) ? (string) FGE_META_PIXEL_ID : (string) get_option( 'fge_meta_pixel_id', '' );
 }
 
 add_action( 'wp_enqueue_scripts', function () {
@@ -576,6 +603,33 @@ add_action( 'wp_head', function () {
 	}
 	echo '<script>' . $conf . '</script>' . "\n";
 }, 20 );
+
+// ── Meta Pixel (1.9.126) ─────────────────────────────────────────────────────
+// Lädt AUSSCHLIESSLICH nach Klaro-Einwilligung „Meta Pixel" (type="text/plain",
+// Klaro aktiviert das Skript erst bei Zustimmung). Vorher gibt es keinen Aufruf
+// an connect.facebook.net und kein _fbp-Cookie. PageView feuert damit direkt
+// nach erteilter Einwilligung bzw. auf Folgeseiten beim Laden. Bewusst OHNE das
+// <noscript>-Bild aus dem Meta-Snippet (das lüde bedingungslos, an der
+// Einwilligung vorbei) und mit abgeschaltetem automatischem erweitertem
+// Abgleich (autoConfig false, keine automatische Ereigniserkennung).
+// Lead feuert in den beiden Anfrage-Success-Handlern (Event-Modal + Wizard,
+// derselbe Auslöser wie die Google-Ads-Conversion) mit serverseitiger event_id
+// aus fge_meta_event_id() für die spätere Conversions-API-Deduplizierung.
+add_action( 'wp_head', function () {
+	$px = fge_meta_pixel_id();
+	if ( ! $px ) {
+		return;
+	}
+	$id = wp_json_encode( $px );
+	echo '<script type="text/plain" data-type="application/javascript" data-name="meta-pixel">'
+		. 'if(!window.fgeFbqBooted){window.fgeFbqBooted=true;'
+		. "!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');"
+		. 'fbq("set","autoConfig",false,' . $id . ');'
+		. 'fbq("init",' . $id . ',{},{autoConfig:false});'
+		. 'fbq("track","PageView");'
+		. '}'
+		. '</script>' . "\n";
+}, 21 );
 
 // Kommentare sitewide deaktiviert (Julius, 2026-07-27): Der Blog braucht keine
 // Community-Funktion, und Bots posteten Spam direkt an wp-comments-post.php

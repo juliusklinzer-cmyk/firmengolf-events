@@ -173,6 +173,23 @@ function fge_validate_event_basics( $size_raw, array $date_raws ): array {
 	return [ 'size' => $size, 'dates' => $dates ];
 }
 
+/**
+ * Meta-Pixel event_id: serverseitig erzeugt, eindeutig je Anfrage, am Request
+ * gespeichert. Der Browser-Lead schickt sie als eventID mit; die Conversions API
+ * sendet später dieselbe ID an dieselbe Datenquelle, Meta dedupliziert darüber
+ * (ohne gemeinsame ID zählt jede Anfrage doppelt). Hängt am fge_request_created-
+ * Hook, damit jede Anfrage unabhängig vom Eingangskanal eine ID bekommt.
+ */
+function fge_meta_event_id( int $request_id ): string {
+	$id = (string) get_post_meta( $request_id, '_fge_meta_event_id', true );
+	if ( '' === $id ) {
+		$id = wp_generate_uuid4();
+		update_post_meta( $request_id, '_fge_meta_event_id', $id );
+	}
+	return $id;
+}
+add_action( 'fge_request_created', 'fge_meta_event_id', 1 );
+
 /** Gemeinsamer Spam-Gate für AJAX-Anfragen: bricht mit JSON-Antwort ab, wenn verdächtig. */
 function fge_form_spam_gate(): void {
 	if ( fge_form_honeypot_tripped() || fge_form_bot_detected() ) {
@@ -307,6 +324,7 @@ function fge_ajax_modal_anfrage(): void {
 		'event_title' => $event_title,
 		'date_1'      => (string) get_post_meta( $request_id, '_fge_preferred_date_1', true ),
 		'group_size'  => $group,
+		'fb_event_id' => fge_meta_event_id( $request_id ),
 	] );
 }
 
@@ -466,10 +484,11 @@ function fge_ajax_general_request(): void {
 	do_action( 'fge_request_created', $request_id );
 
 	wp_send_json_success( [
-		'ref'      => $ref,
-		'occasion' => $occasion,
-		'size'     => $size,
-		'company'  => $company,
-		'email'    => $email,
+		'ref'         => $ref,
+		'occasion'    => $occasion,
+		'size'        => $size,
+		'company'     => $company,
+		'email'       => $email,
+		'fb_event_id' => fge_meta_event_id( $request_id ),
 	] );
 }

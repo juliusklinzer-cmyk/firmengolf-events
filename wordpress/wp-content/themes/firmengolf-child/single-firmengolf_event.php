@@ -1325,6 +1325,11 @@ get_header();
 					<?php if ( function_exists( 'fge_gads_send_to' ) && fge_gads_send_to() ) : ?>
 					if (window.gtag) { gtag('event', 'conversion', { send_to: '<?php echo esc_js( fge_gads_send_to() ); ?>' }); }
 					<?php endif; ?>
+					<?php if ( function_exists( 'fge_meta_pixel_id' ) && fge_meta_pixel_id() ) : ?>
+					// Meta-Lead nur mit Einwilligung (fbq existiert erst nach Klaro-Zustimmung);
+					// eventID kommt serverseitig aus der Anfrage (Conversions-API-Dedup).
+					if (window.fbq && data.data && data.data.fb_event_id) { fbq('track', 'Lead', { content_name: 'Event-Anfrage Modal' }, { eventID: data.data.fb_event_id }); }
+					<?php endif; ?>
 					setText('fg-receipt-date',  fmtDate(val('fg-date-1')) || 'k. A.');
 					setText('fg-receipt-group', val('fg-group-size') || 'k. A.');
 					setText('fg-receipt-ref',   (data.data && data.data.ref) || 'k. A.');

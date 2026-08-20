@@ -607,6 +607,9 @@
 						window.dataLayer = window.dataLayer || [];
 						window.dataLayer.push({ event: 'event_anfrage' });
 						if (window.gtag && CFG.adsConv) { gtag('event', 'conversion', { send_to: CFG.adsConv }); }
+						// Meta-Lead nur mit Einwilligung (fbq existiert erst nach Klaro-Zustimmung);
+						// eventID kommt serverseitig aus der Anfrage (Conversions-API-Dedup).
+						if (window.fbq && j.data && j.data.fb_event_id) { fbq('track', 'Lead', { content_name: 'Event-Anfrage Wizard' }, { eventID: j.data.fb_event_id }); }
 						S.phase = 'success'; render(j.data);
 					}
 					else { alert((j && j.data && j.data.message) || 'Anfrage konnte nicht gesendet werden.'); if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
