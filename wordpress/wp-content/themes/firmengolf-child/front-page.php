@@ -17,7 +17,7 @@ $url_kontakt = $get_page_url( 'kontakt', home_url( '/kontakt/' ) );
 $url_blog    = home_url( '/blog/' );
 
 // ── Format list (canonical, single source: event-formats.php) ───────────────
-$formats = array_merge( [ 'all' => 'Alle Typen' ], fge_get_event_formats_flat( false ) );
+$formats = array_merge( [ 'all' => 'Alle' ], fge_get_event_formats_flat( false ) );
 
 // ── Regions from DB ──────────────────────────────────────────────────────────
 global $wpdb;
@@ -124,18 +124,14 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		<div class="fg-search-cell fg-loc-cell" id="qs-loc-cell"
 		     tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort oder PLZ wählen">
 			<div class="fg-cell-label">Wo?</div>
-			<div class="fg-cell-value fg-muted" id="qs-loc-display"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-				<span id="qs-loc-text">Ort oder PLZ</span>
+			<div class="fg-cell-value" id="qs-loc-display"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+				<input type="text" class="fg-cell-input" id="qs-loc-input" placeholder="Ort oder PLZ" autocomplete="off" value="">
 			</div>
 			<input type="hidden" name="lat"    id="qs-lat"     value="">
 			<input type="hidden" name="lng"    id="qs-lng"     value="">
 			<input type="hidden" name="radius" id="qs-radius"  value="50">
 			<input type="hidden" name="loc"    id="qs-loc-val" value="">
 			<div class="fg-search-panel fg-loc-panel" id="qs-loc-panel" role="dialog" aria-label="Ort und Umkreis">
-				<div class="fg-loc-search">
-					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-					<input type="text" id="qs-loc-input" placeholder="Ort oder PLZ" autocomplete="off" value="">
-				</div>
 				<button type="button" class="fg-loc-gps" id="qs-loc-gps">
 					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
 					Meinen Standort
@@ -159,7 +155,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 		     tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Format wählen">
 			<div class="fg-cell-label">Veranstaltungstyp</div>
 			<div class="fg-cell-value" id="qs-format-display">
-				<span id="qs-format-text">Alle Typen</span>
+				<span id="qs-format-text">Alle</span>
 			</div>
 			<input type="hidden" name="format" id="qs-format-val" value="all">
 			<div class="fg-search-panel" id="qs-format-panel" role="listbox">
@@ -236,47 +232,35 @@ $why_items = [
 	</div>
 </section>
 
-<?php /* ══════════════════ 2c. ZWEI WEGE ══════════════════ */ ?>
-<section class="mk-section cty-reveal" aria-label="Zwei Wege zu eurem Event">
+<?php /* ══════════════════ 2c. ANGEBOT: BUCHEN ODER PLANEN ══════════════════ */ ?>
+<section class="mk-section cty-reveal" aria-label="Unser Angebot">
 	<div class="mk-section-head">
-		<h2 class="mk-h2">Zwei Wege zu eurem Event.</h2>
-		<p class="mk-sub"><?php echo esc_html( (string) $fge_live_count ); ?> Events sind sofort anfragbar, alles andere bauen wir nach Maß.</p>
+		<h2 class="mk-h2">Fertige Events buchen oder frei planen lassen.</h2>
+		<p class="mk-sub"><?php echo esc_html( (string) $fge_live_count ); ?> Events mit Preis und Ablauf sind sofort anfragbar. Und wenn ihr eigene Vorstellungen habt, bauen wir euer Event nach Maß.</p>
 	</div>
-	<div class="home-loc-paths">
-		<?php
-		$loc_paths = [
-			[
-				'img'   => 'firmenevent-afterwork-golf.jpg',
-				'alt'   => 'Team stößt nach dem Firmenevent auf dem Golfplatz an',
-				'tag'   => 'Sofort buchbar',
-				'k'     => 'Vorgeplante Partner-Events',
-				't'     => 'Fertige Formate auf unseren Partnerplätzen, mit Datum, Preis und Ablauf. Aussuchen, anfragen, fertig.',
-				'cta'   => 'Events entdecken',
-				'href'  => $url_events,
-			],
-			[
-				'img'   => 'clubhaus-aussenansicht.jpg',
-				'alt'   => 'Modernes Golf-Clubhaus als Event-Location',
-				'tag'   => 'Nach Maß',
-				'k'     => 'Individuell geplant',
-				't'     => 'Eigene Vorstellung? Schickt uns Anlass, Gruppe und Wunschregion, wir kuratieren passende Plätze für euer Unternehmen.',
-				'cta'   => 'Individuell anfragen',
-				'href'  => $url_ind,
-			],
-		];
-		foreach ( $loc_paths as $path ) : ?>
-			<a class="home-loc-path" href="<?php echo esc_url( $path['href'] ); ?>">
-				<div class="home-loc-path-photo">
-					<span class="home-loc-path-img" style="background-image:url('<?php echo esc_url( $img( $path['img'] ) ); ?>')" role="img" aria-label="<?php echo esc_attr( $path['alt'] ); ?>"></span>
-					<span class="home-loc-path-tag"><?php echo esc_html( $path['tag'] ); ?></span>
-				</div>
-				<div class="home-loc-path-body">
-					<h4 class="home-loc-path-k"><?php echo esc_html( $path['k'] ); ?></h4>
-					<p class="home-loc-path-t"><?php echo esc_html( $path['t'] ); ?></p>
-					<span class="home-loc-path-cta"><?php echo esc_html( $path['cta'] ); ?> <?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				</div>
-			</a>
-		<?php endforeach; ?>
+	<div class="fgp-grid">
+		<a class="fgp-card" href="<?php echo esc_url( $url_events ); ?>">
+			<img src="<?php echo esc_url( $img( 'pool/turnier-abschlag-eventszene.jpg' ) ); ?>" alt="" loading="lazy">
+			<span class="fgp-scrim" aria-hidden="true"></span>
+			<span class="fgp-body">
+				<span class="fgp-tag">Sofort buchbar</span>
+				<span class="fgp-h">Vorgeplante Partner-Events</span>
+				<span class="fgp-p">Fertige Formate auf unseren Partnerplätzen, mit Preis, Ablauf und Ansprechpartner. Aussuchen, anfragen, fertig.</span>
+				<span class="fgp-cta"><?php echo esc_html( (string) $fge_live_count ); ?> Events entdecken
+					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>
+			</span>
+		</a>
+		<a class="fgp-card" href="<?php echo esc_url( $url_ind ); ?>">
+			<img src="<?php echo esc_url( $img( 'hero-golfer-alpen.jpg' ) ); ?>" alt="" loading="lazy">
+			<span class="fgp-scrim" aria-hidden="true"></span>
+			<span class="fgp-body">
+				<span class="fgp-tag">Nach Maß</span>
+				<span class="fgp-h">Individuell geplant</span>
+				<span class="fgp-p">Eigene Vorstellung? Schickt uns Anlass, Gruppe und Wunschregion, wir kuratieren passende Plätze für euer Unternehmen.</span>
+				<span class="fgp-cta">Individuell anfragen
+					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>
+			</span>
+		</a>
 	</div>
 </section>
 
@@ -330,12 +314,15 @@ $home_fmts = [
 		</a>
 	</div>
 	<div class="cty-fmt-bento">
-		<?php $hf_i = 0; foreach ( $home_fmts as $fslug => $benefit ) :
+		<?php
+		// Turnier-Motiv weicht ab: die Eventszene traegt bereits die Angebots-Karte oben.
+		$home_fmt_img_override = [ 'golfturnier' => 'golf-gruen-fahne.jpg' ];
+		$hf_i = 0; foreach ( $home_fmts as $fslug => $benefit ) :
 			$fm = $fmt_pages[ $fslug ] ?? null;
 			if ( ! $fm ) { continue; }
 		?>
 			<a class="cty-fmt-tile<?php echo 0 === $hf_i ? ' is-wide' : ''; ?>" href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>">
-				<img src="<?php echo esc_url( $img( $fm['hero_img'] ?? 'golfplatz-panorama.jpg' ) ); ?>" alt="" loading="lazy">
+				<img src="<?php echo esc_url( $img( $home_fmt_img_override[ $fslug ] ?? $fm['hero_img'] ?? 'golfplatz-panorama.jpg' ) ); ?>" alt="" loading="lazy">
 				<span class="cty-fmt-tile-scrim" aria-hidden="true"></span>
 				<span class="cty-fmt-tile-txt">
 					<span class="cty-fmt-tile-h"><?php echo esc_html( $fm['name'] ?? $fslug ); ?></span>
@@ -591,16 +578,18 @@ get_template_part( 'template-parts/fge-putt-cta', null, [
     var lngEl = document.getElementById('qs-lng');
     var radEl = document.getElementById('qs-radius');
     var locEl = document.getElementById('qs-loc-val');
-    var textEl = document.getElementById('qs-loc-text');
-    var display = document.getElementById('qs-loc-display');
     var form = cell.closest('form');
     var ajax = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
 
     function open() { panel.classList.add('is-open'); cell.setAttribute('aria-expanded', 'true'); setTimeout(function () { input && input.focus(); }, 30); }
     function close() { panel.classList.remove('is-open'); cell.setAttribute('aria-expanded', 'false'); }
 
+    /* Direkteingabe: das Eingabefeld sitzt IN der Zelle. Klick/Fokus oeffnet das
+       Panel (Standort, Vorschlaege, Umkreis); Klicks ins Feld schliessen nichts. */
+    if (input) { input.addEventListener('focus', open); }
     cell.addEventListener('click', function (e) {
       if (panel.contains(e.target)) return;
+      if (input && (e.target === input)) { open(); return; }
       panel.classList.contains('is-open') ? close() : open();
     });
     document.addEventListener('click', function (e) { if (!cell.contains(e.target)) close(); });
@@ -614,8 +603,7 @@ get_template_part( 'template-parts/fge-putt-cta', null, [
 
     function setLocation(lat, lng, label) {
       latEl.value = lat; lngEl.value = lng; locEl.value = label;
-      if (textEl) textEl.textContent = label;
-      if (display) display.classList.remove('fg-muted');
+      if (input) input.value = label;
       close(); // Startseite: KEIN Auto-Submit, Weiterleitung erst bei Klick auf "Suchen".
     }
 

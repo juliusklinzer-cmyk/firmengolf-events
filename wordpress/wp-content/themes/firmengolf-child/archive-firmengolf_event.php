@@ -47,7 +47,7 @@ $active_loc    = sanitize_text_field( wp_unslash( $_GET['loc'] ?? '' ) );       
 $geo_active    = ( $active_lat && $active_lng && $active_radius > 0 && function_exists( 'fge_geo_distance' ) );
 
 // ── Format list (canonical — single source: event-formats.php) ───────────────
-$formats = array_merge( [ 'all' => 'Alle Typen' ], fge_event_formats_in_use() );
+$formats = array_merge( [ 'all' => 'Alle' ], fge_event_formats_in_use() );
 
 // ── Regions: only those with at least one published event ────────────────────
 global $wpdb;
@@ -392,18 +392,14 @@ $group_bands = [
 		<div class="fg-search-cell fg-loc-cell" id="fg-loc-cell"
 		     tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ort oder PLZ wählen">
 			<div class="fg-cell-label">Wo?</div>
-			<div class="fg-cell-value<?php echo $active_loc === '' ? ' fg-muted' : ''; ?>" id="fg-loc-display"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-				<span id="fg-loc-text"><?php echo $active_loc !== '' ? esc_html( $active_loc ) : 'Ort oder PLZ'; ?></span>
+			<div class="fg-cell-value" id="fg-loc-display"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+				<input type="text" class="fg-cell-input" id="fg-loc-input" placeholder="Ort oder PLZ" autocomplete="off" value="<?php echo esc_attr( $active_loc ); ?>">
 			</div>
 			<input type="hidden" name="lat"    id="fg-lat"     value="<?php echo esc_attr( $active_lat ?: '' ); ?>">
 			<input type="hidden" name="lng"    id="fg-lng"     value="<?php echo esc_attr( $active_lng ?: '' ); ?>">
 			<input type="hidden" name="radius" id="fg-radius"  value="<?php echo esc_attr( (string) ( $active_radius ?: 50 ) ); ?>">
 			<input type="hidden" name="loc"    id="fg-loc-val" value="<?php echo esc_attr( $active_loc ); ?>">
 			<div class="fg-search-panel fg-loc-panel" id="fg-loc-panel" role="dialog" aria-label="Ort und Umkreis">
-				<div class="fg-loc-search">
-					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-					<input type="text" id="fg-loc-input" placeholder="Ort oder PLZ" autocomplete="off" value="<?php echo esc_attr( $active_loc ); ?>">
-				</div>
 				<button type="button" class="fg-loc-gps" id="fg-loc-gps">
 					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
 					Meinen Standort
@@ -825,16 +821,18 @@ if ( ! $has_filters ) :
     var lngEl = document.getElementById('fg-lng');
     var radEl = document.getElementById('fg-radius');
     var locEl = document.getElementById('fg-loc-val');
-    var textEl = document.getElementById('fg-loc-text');
-    var display = document.getElementById('fg-loc-display');
     var form = cell.closest('form');
     var ajax = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
 
     function open() { panel.classList.add('is-open'); cell.setAttribute('aria-expanded', 'true'); setTimeout(function () { input && input.focus(); }, 30); }
     function close() { panel.classList.remove('is-open'); cell.setAttribute('aria-expanded', 'false'); }
 
+    /* Direkteingabe: das Eingabefeld sitzt IN der Zelle. Klick/Fokus oeffnet das
+       Panel (Standort, Vorschlaege, Umkreis); Klicks ins Feld schliessen nichts. */
+    if (input) { input.addEventListener('focus', open); }
     cell.addEventListener('click', function (e) {
       if (panel.contains(e.target)) return;
+      if (input && (e.target === input)) { open(); return; }
       panel.classList.contains('is-open') ? close() : open();
     });
     document.addEventListener('click', function (e) { if (!cell.contains(e.target)) close(); });
@@ -849,8 +847,7 @@ if ( ! $has_filters ) :
     function submitNow() { if (latEl.value && lngEl.value && radEl.value && form) form.submit(); }
     function setLocation(lat, lng, label) {
       latEl.value = lat; lngEl.value = lng; locEl.value = label;
-      if (textEl) textEl.textContent = label;
-      if (display) display.classList.remove('fg-muted');
+      if (input) input.value = label;
       submitNow();
     }
 
