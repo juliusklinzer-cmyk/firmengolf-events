@@ -33,6 +33,14 @@ function fge_get_cities(): array {
 	return [
 		'muenchen' => [
 			'name' => 'München', 'region' => 'Süd & Oberbayern', 'match' => [ 'München', 'Oberbayern' ],
+			// Großraum fürs Zahlenband (Julius, 2026-08-20): breiter als die Karten-Liste,
+			// zählt auch Tegernsee & Co. mit, alles in Event-Reichweite ab München.
+			'stat_match' => [ 'München', 'Oberbayern', 'Tegernsee', 'Starnberg', 'Erding', 'Eichenried', 'Garmisch' ],
+			// Bild der Story-Sektion („Raus aus dem Büro"): St. Eurach mit Alpenkette
+			// (Bild von Julius, 2026-08-20; U-Bahn- und Garmisch-Motiv verworfen).
+			'story_img'     => 'golfclub-st-eurach.jpg',
+			'story_img_alt' => 'Fairway des Golfclubs St. Eurach mit Blick auf die verschneiten Alpen',
+			'story_img_tag' => 'Golfclub St. Eurach',
 			'intro' => 'München ist Firmenstandort und Naherholung in einem, und kaum eine Stadt hat so viele Top-Plätze direkt vor der Tür. In rund 30 Minuten seid ihr von der Innenstadt im Grünen, zwischen Isar-Auen und Alpenpanorama. Ob Teamevent, Firmenturnier, Kundenevent oder Sommerfest: Wir kennen die passenden Plätze im Münchner Umland.',
 			'reasons' => [ $reason( 'clock', '30 Min. ins Grüne', 'Die besten Plätze liegen stadtnah, Eichenried und Co. sind schnell erreichbar, auch mit der S-Bahn.' ), $team, $reason( 'mountain', 'Bergpanorama inklusive', 'An klaren Tagen spielt ihr mit Blick auf die Alpen, ein Erlebnis, das in Erinnerung bleibt.' ), $local ],
 			'faqs' => [
@@ -85,6 +93,138 @@ function fge_get_cities(): array {
 			'intro' => 'Der Tegernsee ist eine der schönsten Kulissen für ein Firmenevent in Deutschland. Golf zwischen Bergen und See, dazu erstklassige Hotellerie, das macht die Region ideal für Incentives, Strategie-Tage und besondere Kundenevents. Wir organisieren euer Event auf den Plätzen rund um den Tegernsee.',
 			'reasons' => [ $reason( 'mountain', 'Berg- und Seekulisse', 'Golf vor Alpenpanorama, ein Rahmen, der bei Kunden und Teams lange nachwirkt.' ), $team, $reason( 'castle', 'Hotellerie vor Ort', 'Erstklassige Häuser direkt am See, ideal, wenn euer Event über einen Tag hinausgeht.' ), $local ],
 			'faqs' => [ $faq( 'Welche Golfplätze am Tegernsee kann ich für ein Firmenevent buchen?', 'In der Region Tegernsee arbeiten wir mit Partnerplätzen mit besonderer Kulisse. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $faq( 'Geht auch ein mehrtägiges Incentive mit Übernachtung?', 'Ja, gerade dafür ist die Region ideal. Wir verbinden Golf, Hotel, Rahmenprogramm und Verpflegung zu einem runden Erlebnis.' ), $f_anf, $f_fast( 'die Region Tegernsee' ) ],
+		],
+		'augsburg' => [
+			'name' => 'Augsburg', 'region' => 'Bayerisch-Schwaben', 'match' => [ 'Augsburg' ],
+			'intro' => 'Augsburg liegt zwischen Lech und Wertach, und die Golfplätze in Bayerisch-Schwaben sind aus der Stadt in kurzer Zeit erreichbar. Die Anlagen im Umland liegen in ruhiger Park- und Flusslandschaft, ideal für einen Tag raus aus dem Büro. Ob Teamevent, Firmenturnier oder Kundenevent: Wir organisieren euer Event auf den passenden Plätzen rund um Augsburg.',
+			'reasons' => [ $reason( 'clock', 'Schnell im Grünen', 'Die Plätze rund um Augsburg liegen nah an Stadt und A8, auch aus München gut erreichbar.' ), $team, $reason( 'leaf', 'Fluss- und Parklandschaft', 'Golf zwischen Lechauen und Stauden, ein ruhiger Rahmen für Teams und Kunden.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Augsburg eignen sich für ein Firmenevent?', 'Rund um Augsburg liegen mehrere Golfanlagen in Bayerisch-Schwaben, von der Übungsanlage bis zum 18-Loch-Platz. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Augsburg' ) ],
+		],
+		'bonn' => [
+			'name' => 'Bonn', 'region' => 'Rheinland', 'match' => [ 'Bonn' ],
+			'intro' => 'Bonn verbindet Rheintal, Siebengebirge und Kottenforst, und genau in dieser Landschaft liegen die Golfplätze der Region. Für Unternehmen, Verbände und Organisationen in der Stadt ist Golf ein entspannter Rahmen, um Teams und Gäste zusammenzubringen. Vom Teamtag bis zum Kundenevent mit Blick auf den Rhein organisieren wir euer Event rund um Bonn.',
+			'reasons' => [ $reason( 'clock', 'Nah an Stadt und Rhein', 'Die Anlagen rund um Bonn sind aus dem Zentrum und aus Köln schnell erreichbar.' ), $team, $reason( 'leaf', 'Rheintal & Siebengebirge', 'Golf mit Blick ins Rheintal, ein Rahmen, der bei Gästen in Erinnerung bleibt.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze in Bonn kann ich für ein Firmenevent buchen?', 'Im Raum Bonn liegen mehrere Anlagen zwischen Rheintal, Vorgebirge und Bergischem Land. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $faq( 'Eignet sich Golf für ein Kundenevent?', 'Sehr gut. Ein paar Stunden auf dem Platz schaffen Gespräche, die im Besprechungsraum nie entstehen. Wir kombinieren das gern mit Catering, Dinner oder einem kleinen Wettbewerb.' ), $f_anf, $f_fast( 'Bonn' ) ],
+		],
+		'bremen' => [
+			'name' => 'Bremen', 'region' => 'Nordwest', 'match' => [ 'Bremen' ],
+			'intro' => 'Bremen ist Hansestadt mit kurzen Wegen, und das gilt auch für Golf. Die Plätze im Umland liegen flach in der norddeutschen Wiesen- und Marschlandschaft, gut erreichbar aus der Stadt und aus dem Speckgürtel. Ob After-Work-Runde, Teamevent oder Firmenturnier: Wir organisieren euer Event im Nordwesten von A bis Z.',
+			'reasons' => [ $reason( 'clock', 'Kurze Wege', 'Die Anlagen rund um Bremen sind aus der Innenstadt und aus dem Umland schnell erreichbar.' ), $team, $reason( 'leaf', 'Weites Land', 'Flache, weitläufige Plätze zwischen Wiesen und Wasserzügen, typisch Norddeutschland.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Bremen kann ich für ein Firmenevent buchen?', 'Im Bremer Umland liegen mehrere Anlagen zwischen Weser und Wümme. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Bremen' ) ],
+		],
+		'dortmund' => [
+			'name' => 'Dortmund', 'region' => 'Ruhrgebiet & Westfalen', 'match' => [ 'Dortmund' ],
+			'intro' => 'Dortmund ist längst grüner, als viele denken, und im Süden der Stadt beginnt mit dem Ardeygebirge und dem Sauerland eine echte Golflandschaft. Für Unternehmen im östlichen Ruhrgebiet heißt das kurze Wege zu abwechslungsreichen Plätzen. Vom Teamevent bis zum Firmenturnier organisieren wir euer Event rund um Dortmund.',
+			'reasons' => [ $reason( 'clock', 'Ab ins Grüne', 'Die Plätze im Dortmunder Süden und Richtung Sauerland sind in kurzer Fahrzeit erreichbar.' ), $team, $reason( 'flag', 'Dichte Platzauswahl', 'Nordrhein-Westfalen hat eine der dichtesten Golflandschaften Deutschlands, entsprechend groß ist die Auswahl.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze in Dortmund kann ich für ein Firmenevent buchen?', 'Rund um Dortmund liegen mehrere Anlagen, vor allem im grünen Süden der Stadt und Richtung Sauerland. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Dortmund' ) ],
+		],
+		'dresden' => [
+			'name' => 'Dresden', 'region' => 'Sachsen', 'match' => [ 'Dresden' ],
+			'intro' => 'Dresden bietet mit Elbtal, Weinhängen und der Nähe zur Sächsischen Schweiz eine Kulisse, die auch ein Firmenevent besonders macht. Die Golfplätze der Region liegen ruhig im Umland und sind aus der Stadt gut erreichbar. Ob Teamtag, Kundenevent oder Turnier: Wir organisieren euer Event rund um Dresden.',
+			'reasons' => [ $reason( 'clock', 'Raus aus der Stadt', 'Die Anlagen im Dresdner Umland sind in kurzer Fahrzeit erreichbar, auch für Gäste von außerhalb.' ), $team, $reason( 'castle', 'Elbtal-Kulisse', 'Barockstadt, Weinhänge und Elbtal, ein Rahmen, der bei Kunden nachwirkt.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Dresden kann ich für ein Firmenevent buchen?', 'Im Dresdner Umland liegen mehrere Anlagen zwischen Elbtal und sächsischem Hügelland. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Dresden' ) ],
+		],
+		'erlangen' => [
+			'name' => 'Erlangen', 'region' => 'Franken', 'match' => [ 'Erlangen' ],
+			'intro' => 'Erlangen gehört mit Nürnberg und Fürth zu einer der stärksten Wirtschaftsregionen Bayerns, und die fränkischen Golfplätze liegen direkt vor der Tür. Zwischen Regnitzgrund und Fränkischer Schweiz findet ihr Anlagen für jeden Anlass. Vom Teamevent für die Abteilung bis zum Kundenturnier organisieren wir euer Event rund um Erlangen.',
+			'reasons' => [ $reason( 'clock', 'Mitten in der Metropolregion', 'Die Plätze in Franken sind aus Erlangen, Nürnberg und Fürth schnell erreichbar.' ), $team, $reason( 'leaf', 'Fränkische Landschaft', 'Golf zwischen Regnitzgrund, Wäldern und der Fränkischen Schweiz, ruhig und abwechslungsreich.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Erlangen kann ich für ein Firmenevent buchen?', 'In der Metropolregion Nürnberg liegen mehrere Anlagen in kurzer Fahrzeit. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Erlangen' ) ],
+		],
+		'essen' => [
+			'name' => 'Essen', 'region' => 'Ruhrgebiet', 'match' => [ 'Essen' ],
+			'intro' => 'Essen liegt mitten im Ruhrgebiet und ist zugleich eine der grünsten Großstädte Deutschlands. Rund um Baldeneysee und Ruhrtal liegen Golfanlagen, die man so mitten im Revier nicht erwartet. Für Teams und Kunden aus der Region organisieren wir euer Firmenevent auf den passenden Plätzen rund um Essen.',
+			'reasons' => [ $reason( 'clock', 'Mitten im Revier', 'Die Anlagen an Ruhr und Baldeneysee sind aus Essen und den Nachbarstädten schnell erreichbar.' ), $team, $reason( 'leaf', 'Grünes Ruhrgebiet', 'Golf im Ruhrtal zeigt das Revier von seiner grünen Seite, ein Kontrast, der überrascht.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze in Essen kann ich für ein Firmenevent buchen?', 'Rund um Essen liegen mehrere Anlagen im Ruhrtal und in den Nachbarstädten. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Essen' ) ],
+		],
+		'garmisch-partenkirchen' => [
+			'name' => 'Garmisch-Partenkirchen', 'region' => 'Oberbayern', 'match' => [ 'Garmisch-Partenkirchen', 'Garmisch' ],
+			'intro' => 'Garmisch-Partenkirchen liegt am Fuß der Zugspitze, und Golf im Werdenfelser Land gehört zu den eindrucksvollsten Erlebnissen, die ihr einem Team oder Kunden bieten könnt. Die Region ist ideal für Incentives, Strategie-Tage und mehrtägige Events mit Hotel. Wir organisieren euer Firmenevent zwischen Bergen und Wiesen rund um Garmisch.',
+			'reasons' => [ $reason( 'mountain', 'Zugspitz-Kulisse', 'Golf direkt vor Deutschlands höchstem Berg, ein Rahmen, den niemand vergisst.' ), $team, $reason( 'castle', 'Ideal für Incentives', 'Hotels, Hütten und Rahmenprogramm vor Ort, perfekt für ein- oder mehrtägige Events.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze in Garmisch-Partenkirchen kann ich für ein Firmenevent buchen?', 'Im Werdenfelser Land und im Oberland liegen Anlagen mit besonderer Bergkulisse. Je nach Anlass, Gruppe und Termin schlagen wir euch die passende vor.' ), $faq( 'Geht auch ein mehrtägiges Incentive mit Übernachtung?', 'Ja, gerade dafür ist die Region ideal. Wir verbinden Golf, Hotel, Rahmenprogramm und Verpflegung zu einem runden Erlebnis.' ), $f_anf, $f_fast( 'Garmisch-Partenkirchen' ) ],
+		],
+		'ingolstadt' => [
+			'name' => 'Ingolstadt', 'region' => 'Bayern', 'match' => [ 'Ingolstadt' ],
+			'intro' => 'Ingolstadt liegt an der Donau auf halbem Weg zwischen München und Nürnberg, und die Golfplätze der Region sind aus der Stadt in kurzer Zeit erreichbar. Zwischen Donauauen und Hügelland findet ihr ruhige Anlagen für Teams und Kunden. Vom Teamevent bis zum Firmenturnier organisieren wir euer Event rund um Ingolstadt.',
+			'reasons' => [ $reason( 'clock', 'Zentral in Bayern', 'Die Plätze rund um Ingolstadt liegen nah an A9 und Donau, gut erreichbar auch für Gäste.' ), $team, $reason( 'leaf', 'Donauauen & Hügelland', 'Golf in ruhiger Flusslandschaft, ein entspannter Kontrast zum Werksalltag.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Ingolstadt kann ich für ein Firmenevent buchen?', 'Rund um Ingolstadt liegen mehrere Anlagen zwischen Donau, Altmühltal und Hügelland. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Ingolstadt' ) ],
+		],
+		'itzehoe' => [
+			'name' => 'Itzehoe', 'region' => 'Schleswig-Holstein', 'match' => [ 'Itzehoe' ],
+			'intro' => 'Itzehoe liegt an der Stör mitten in Schleswig-Holstein, zwischen Knicks, Marsch und Geest. Golf gehört hier fest zur Region, und die Anlagen im Umland sind auch aus Hamburg schnell erreichbar. Ob Teamevent, After-Work-Runde oder Firmenturnier: Wir organisieren euer Event im echten Norden.',
+			'reasons' => [ $reason( 'clock', 'Nah an Hamburg', 'Die Region ist über die A23 schnell erreichbar, auch für Teams aus dem Hamburger Raum.' ), $team, $reason( 'leaf', 'Knicks & Marsch', 'Golf in der typischen Landschaft Schleswig-Holsteins, ruhig, grün und weit.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Itzehoe kann ich für ein Firmenevent buchen?', 'Rund um Itzehoe liegen mehrere Anlagen zwischen Marsch und Geest. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Itzehoe' ) ],
+		],
+		'karlsruhe' => [
+			'name' => 'Karlsruhe', 'region' => 'Baden', 'match' => [ 'Karlsruhe' ],
+			'intro' => 'Karlsruhe liegt in einer der wärmsten Regionen Deutschlands, und das verlängert die Golfsaison spürbar. Zwischen Rheinebene, Kraichgau und Schwarzwaldrand findet ihr Anlagen für jeden Anlass, gut erreichbar aus der Technologieregion. Vom Teamtag bis zum Kundenturnier organisieren wir euer Firmenevent rund um Karlsruhe.',
+			'reasons' => [ $reason( 'clock', 'Lange Saison', 'Das milde badische Klima macht Events vom Frühjahr bis weit in den Herbst planbar.' ), $team, $reason( 'leaf', 'Rheinebene & Schwarzwaldrand', 'Golf zwischen Reben, Wald und Ebene, viel Abwechslung auf kurzer Distanz.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Karlsruhe kann ich für ein Firmenevent buchen?', 'In der Region zwischen Rheinebene, Kraichgau und Nordschwarzwald liegen mehrere Anlagen. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Karlsruhe' ) ],
+		],
+		'kiel' => [
+			'name' => 'Kiel', 'region' => 'Schleswig-Holstein', 'match' => [ 'Kiel' ],
+			'intro' => 'Kiel liegt an der Förde, und Golf hat hier immer eine Brise Ostsee dabei. Die Anlagen rund um die Landeshauptstadt liegen zwischen Küste, Knicks und Hügelland, viele nur eine kurze Fahrt vom Wasser entfernt. Ob Teamevent, Platzreife oder Firmenturnier: Wir organisieren euer Event im Norden von A bis Z.',
+			'reasons' => [ $reason( 'flag', 'Golf an der Küste', 'Seeluft und weite Plätze machen jedes Event besonders, typisch für den Kieler Raum.' ), $team, $reason( 'clock', 'Kurze Wege', 'Die Anlagen rund um Kiel sind aus der Stadt und von der Förde schnell erreichbar.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Kiel kann ich für ein Firmenevent buchen?', 'Rund um Kiel und entlang der Ostseeküste liegen mehrere Anlagen. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Kiel' ) ],
+		],
+		'landshut' => [
+			'name' => 'Landshut', 'region' => 'Niederbayern', 'match' => [ 'Landshut' ],
+			'intro' => 'Landshut verbindet niederbayerisches Hügelland mit der Nähe zu München und zum Flughafen. Die Golfplätze der Region liegen ruhig zwischen Isartal und Hopfenland und sind aus der Stadt schnell erreichbar. Vom Teamevent bis zum Kundenevent organisieren wir euer Firmenevent rund um Landshut.',
+			'reasons' => [ $reason( 'clock', 'Nah an München & Flughafen', 'Die Region ist auch für Gäste von außerhalb schnell erreichbar, ideal für gemischte Runden.' ), $team, $reason( 'leaf', 'Isartal & Hügelland', 'Golf in ruhiger niederbayerischer Landschaft, weit weg vom Alltagslärm.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Landshut kann ich für ein Firmenevent buchen?', 'Rund um Landshut liegen mehrere Anlagen im niederbayerischen Hügelland. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Landshut' ) ],
+		],
+		'leipzig' => [
+			'name' => 'Leipzig', 'region' => 'Sachsen', 'match' => [ 'Leipzig' ],
+			'intro' => 'Leipzig wächst wie kaum eine andere Stadt im Osten, und mit dem Neuseenland ist direkt vor der Tür eine ganze Freizeitlandschaft entstanden. Auch Golf gehört dazu: Die Anlagen der Region liegen zwischen Seen, Auenwald und offenem Land. Vom Teamevent bis zum Firmenturnier organisieren wir euer Event rund um Leipzig.',
+			'reasons' => [ $reason( 'clock', 'Schnell am See', 'Die Plätze im Leipziger Umland und im Neuseenland sind in kurzer Fahrzeit erreichbar.' ), $team, $reason( 'leaf', 'Neuseenland & Auenwald', 'Golf in junger, weiter Landschaft, perfekt kombinierbar mit einem Ausklang am Wasser.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Leipzig kann ich für ein Firmenevent buchen?', 'Im Leipziger Umland liegen mehrere Anlagen zwischen Neuseenland und sächsischem Flachland. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Leipzig' ) ],
+		],
+		'luebeck' => [
+			'name' => 'Lübeck', 'region' => 'Schleswig-Holstein', 'match' => [ 'Lübeck' ],
+			'intro' => 'Lübeck verbindet Hansestadt-Flair mit der Nähe zur Ostsee, und die Golfplätze der Region liegen zwischen Küste, Trave und Holsteinischer Schweiz. Für Teams und Kunden ist das eine Kulisse, die aus einem Golftag ein Erlebnis macht. Ob Teamevent, Kundenevent oder Turnier: Wir organisieren euer Event rund um Lübeck.',
+			'reasons' => [ $reason( 'flag', 'Ostsee vor der Tür', 'Golf mit Seeluft, danach ein Ausklang Richtung Küste, das bleibt in Erinnerung.' ), $team, $reason( 'castle', 'Hansestadt-Kulisse', 'Die Lübecker Altstadt und die Küste geben eurem Event einen besonderen Rahmen.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Lübeck kann ich für ein Firmenevent buchen?', 'Rund um Lübeck und Richtung Ostsee liegen mehrere Anlagen. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Lübeck' ) ],
+		],
+		'lueneburg' => [
+			'name' => 'Lüneburg', 'region' => 'Niedersachsen', 'match' => [ 'Lüneburg' ],
+			'intro' => 'Lüneburg liegt am Rand der Heide und ist von Hamburg aus schnell erreichbar. Die Golfplätze der Region liegen ruhig zwischen Ilmenau, Wäldern und Heideflächen, ideal für einen Tag mit Abstand zum Alltag. Vom Teamevent bis zum Firmenturnier organisieren wir euer Event rund um Lüneburg.',
+			'reasons' => [ $reason( 'leaf', 'Heide & Wälder', 'Golf in der ruhigen Landschaft der Lüneburger Heide, entschleunigend und grün.' ), $team, $reason( 'clock', 'Nah an Hamburg', 'Die Region ist aus Hamburg und dem südlichen Umland schnell erreichbar.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Lüneburg kann ich für ein Firmenevent buchen?', 'Rund um Lüneburg und in der Heide liegen mehrere Anlagen. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Lüneburg' ) ],
+		],
+		'mannheim' => [
+			'name' => 'Mannheim', 'region' => 'Rhein-Neckar', 'match' => [ 'Mannheim' ],
+			'intro' => 'Mannheim ist das Zentrum der Metropolregion Rhein-Neckar, und die Golfplätze liegen hier gleich in mehreren Richtungen: in der Rheinebene, an der Bergstraße und Richtung Pfalz. Für Kunden- und Teamevents heißt das viel Auswahl bei kurzen Wegen. Wir richten euer Firmenevent auf den passenden Plätzen rund um Mannheim aus.',
+			'reasons' => [ $reason( 'clock', 'Kurze Wege', 'In der Metropolregion Rhein-Neckar ist der passende Platz nie weit, auch für Gäste per Bahn.' ), $team, $reason( 'gift', 'Stark für Kundenevents', 'Golf passt perfekt zu Hospitality und Kundenbindung, gern mit Dinner und Rahmenprogramm.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Mannheim kann ich für ein Firmenevent buchen?', 'In der Rhein-Neckar-Region liegen mehrere Anlagen zwischen Rheinebene, Bergstraße und Pfalz. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Mannheim' ) ],
+		],
+		'penzberg' => [
+			'name' => 'Penzberg', 'region' => 'Oberbayern', 'match' => [ 'Penzberg' ],
+			'intro' => 'Penzberg liegt im Oberland zwischen Starnberger See, Osterseen und den Bergen, und viele Unternehmen der Region suchen genau hier den Ausgleich zum dichten Arbeitsalltag. Die Golfanlagen des Oberlands liegen nur wenige Minuten entfernt, mit Blick auf die Alpen. Vom Teamevent bis zum Incentive organisieren wir euer Event rund um Penzberg.',
+			'reasons' => [ $reason( 'mountain', 'Alpenblick inklusive', 'Die Plätze im Oberland spielen sich vor Bergpanorama, ein Rahmen, der motiviert.' ), $team, $reason( 'clock', 'Direkt vor der Tür', 'Für Teams aus dem Oberland und dem Münchner Süden sind die Anlagen schnell erreichbar.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Penzberg kann ich für ein Firmenevent buchen?', 'Im Oberland zwischen Starnberger See und Alpenrand liegen mehrere Anlagen. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Penzberg' ) ],
+		],
+		'regensburg' => [
+			'name' => 'Regensburg', 'region' => 'Ostbayern', 'match' => [ 'Regensburg' ],
+			'intro' => 'Regensburg verbindet Welterbe-Altstadt mit einer der dynamischsten Wirtschaftsregionen Bayerns. Die Golfplätze Ostbayerns liegen zwischen Donautal, Jura und Vorwald, ruhig und gut erreichbar. Ob Teamevent, Kundenevent an der Donau oder Firmenturnier: Wir organisieren euer Event rund um Regensburg.',
+			'reasons' => [ $reason( 'clock', 'Schnell im Grünen', 'Die Anlagen rund um Regensburg sind aus der Stadt und über die A3 gut erreichbar.' ), $team, $reason( 'castle', 'Welterbe-Kulisse', 'Altstadt und Donau geben einem Kundenevent einen Rahmen, der hängen bleibt.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Regensburg kann ich für ein Firmenevent buchen?', 'In Ostbayern liegen mehrere Anlagen zwischen Donautal, Jura und Bayerischem Wald. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Regensburg' ) ],
+		],
+		'rosenheim' => [
+			'name' => 'Rosenheim', 'region' => 'Oberbayern', 'match' => [ 'Rosenheim' ],
+			'intro' => 'Rosenheim liegt im Inntal zwischen München, Chiemsee und den Bergen, und die Golfplätze der Region spielen sich vor echter Alpenkulisse. Für Teams und Kunden aus dem südostbayerischen Raum sind die Anlagen schnell erreichbar. Vom Teamevent bis zum Incentive mit Bergblick organisieren wir euer Event rund um Rosenheim.',
+			'reasons' => [ $reason( 'mountain', 'Berge & Chiemsee', 'Golf zwischen Inntal und Chiemgau, an klaren Tagen mit Alpenpanorama.' ), $team, $reason( 'clock', 'Gut angebunden', 'Über A8 und A93 sind die Plätze auch aus München und Salzburg schnell erreichbar.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Rosenheim kann ich für ein Firmenevent buchen?', 'Zwischen Inntal, Chiemgau und Mangfalltal liegen mehrere Anlagen. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Rosenheim' ) ],
+		],
+		'ulm' => [
+			'name' => 'Ulm', 'region' => 'Schwaben', 'match' => [ 'Ulm' ],
+			'intro' => 'Ulm liegt an der Donau zwischen Schwäbischer Alb und Oberschwaben, und beide Richtungen bieten Golfplätze in ruhiger Lage. Für Unternehmen aus der Doppelstadt Ulm und Neu-Ulm heißt das kurze Wege zu abwechslungsreichen Anlagen. Vom Teamtag bis zum Firmenturnier organisieren wir euer Event rund um Ulm.',
+			'reasons' => [ $reason( 'clock', 'Zwischen Alb und Donau', 'Die Plätze rund um Ulm sind aus der Stadt und über die A8 schnell erreichbar.' ), $team, $reason( 'leaf', 'Alb & Oberschwaben', 'Golf auf der Höhe der Alb oder im sanften Oberschwaben, beides nur eine kurze Fahrt entfernt.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Ulm kann ich für ein Firmenevent buchen?', 'Rund um Ulm liegen mehrere Anlagen auf der Schwäbischen Alb und in Oberschwaben. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Ulm' ) ],
+		],
+		'wuerzburg' => [
+			'name' => 'Würzburg', 'region' => 'Franken', 'match' => [ 'Würzburg' ],
+			'intro' => 'Würzburg liegt am Main zwischen Weinbergen, und diese Landschaft macht auch ein Firmenevent besonders. Die Golfplätze Mainfrankens liegen ruhig im Umland und sind aus der Stadt schnell erreichbar. Ob Teamevent, Kundenevent mit Weinprobe zum Ausklang oder Firmenturnier: Wir organisieren euer Event rund um Würzburg.',
+			'reasons' => [ $reason( 'leaf', 'Main & Weinberge', 'Golf in Mainfranken, danach ein Ausklang mit Blick auf die Reben, das bleibt in Erinnerung.' ), $team, $reason( 'clock', 'Zentral gelegen', 'Würzburg liegt am Kreuz von A3 und A7, gut erreichbar auch für Gäste aus mehreren Regionen.' ), $local ],
+			'faqs' => [ $faq( 'Welche Golfplätze bei Würzburg kann ich für ein Firmenevent buchen?', 'In Mainfranken liegen mehrere Anlagen zwischen Maintal und fränkischem Hügelland. Je nach Anlass, Gruppe und Termin schlagen wir euch den passenden vor.' ), $f_anf, $f_size, $f_fast( 'Würzburg' ) ],
 		],
 	];
 }
@@ -163,6 +303,20 @@ function fge_city_events( array $city, int $limit = 6 ): array {
 		}
 	}
 	return $out;
+}
+
+/**
+ * Zahl fürs Stadt-Zahlenband: öffentliche Events im GROSSRAUM der Stadt.
+ * Nutzt die erweiterten Begriffe aus `stat_match` (z. B. München inkl. Tegernsee
+ * und Erding), sonst `match`. Bewusst breiter als die Karten-Liste, die Zahl
+ * beantwortet „wie viel Auswahl habe ich hier", nicht „was zeigt das Grid".
+ */
+function fge_city_stat_events_count( array $city ): int {
+	$stat_city = $city;
+	if ( ! empty( $city['stat_match'] ) ) {
+		$stat_city['match'] = $city['stat_match'];
+	}
+	return count( fge_city_events( $stat_city, 999 ) );
 }
 
 add_action( 'init', static function () {

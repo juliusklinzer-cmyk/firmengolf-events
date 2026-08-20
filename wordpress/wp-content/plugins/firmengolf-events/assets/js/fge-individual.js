@@ -265,7 +265,7 @@
 
 		function blank(preset) {
 			var f = {
-				occasion: '', goal: '', size: '40', region: '', place: '', experience: '', startzeit: '',
+				occasion: '', goal: '', size: '20', region: '', place: '', experience: '', startzeit: '',
 				budget: '10.000 bis 20.000 €', when: '', flex: 'flexibel', duration: '',
 				/* services OHNE Default: der Quick-Modus zeigt keinen Leistungs-Schritt und
 				   hat sonst nie gewählte Wünsche mitgesendet (Kern-Audit H1, 2026-07-08). */
@@ -352,7 +352,14 @@
 		// Foto-Panel (Driver am Abschlag, wie im Partner-Onboarding) neben dem Einstieg.
 		function photoPanel() {
 			var src = CFG.introImg || '';
-			return src ? '<div class="rw-photo" role="img" aria-label="Golfer am Abschlag" style="background-image:url(\'' + esc(src) + '\')"></div>' : '';
+			if (!src) return '';
+			// Trust-Karte auf dem Foto: echter Ansprechpartner + Werktag-Versprechen
+			// statt anonymer Bildflaeche (Testvariante 2026-08-20).
+			var trust = CFG.juliusImg
+				? '<div class="rw-photo-trust"><img src="' + esc(CFG.juliusImg) + '" alt="" loading="lazy">'
+					+ '<div><b>Julius Klinzer</b><span>Gründer und euer Ansprechpartner. Ihr hört innerhalb eines Werktags von mir.</span></div></div>'
+				: '';
+			return '<div class="rw-photo" role="img" aria-label="Golfer am Abschlag" style="background-image:url(\'' + esc(src) + '\')">' + trust + '</div>';
 		}
 
 		function screenIntro() {
@@ -372,23 +379,43 @@
 				+ '<button class="rw-btn-primary" data-act="intro-start">Los geht\'s ' + ICO_NEXT + '</button></div></div>';
 		}
 
+		/* Fortschritts-Punkte der Schnell-Anfrage (2 Schritte). */
+		function quickDots() {
+			return '<span class="rw-dots" aria-hidden="true"><i class="' + (S.step === 0 ? 'on' : '') + '"></i><i class="' + (S.step === 1 ? 'on' : '') + '"></i></span>';
+		}
+
+		/* Schnell-Anfrage in ZWEI leichten Schritten (Julius, 2026-08-20):
+		   1) Anlass + Teilnehmerzahl  2) Kontakt + Nachricht + Consent.
+		   Der Weg zur ausfuehrlichen Anfrage lebt oben rechts in der Kopfzeile,
+		   der Fuss traegt nur noch Fortschritt und Aktion. */
 		function screenQuick() {
-			var h = '<div class="rw-stage"><div class="rw-screen rw-has-photo"><div class="rw-main">'
-				+ '<div class="rw-eyebrow">Schnell-Anfrage · 30 Sekunden</div>'
-				+ '<h2 class="rw-h">Das Wichtigste, wir klären den Rest persönlich.</h2>'
-				+ '<p class="rw-lead">Du willst nicht durch alle Schritte? Völlig okay. Gib uns die Basics, wir melden uns mit Rückfragen.</p>'
+			if (S.step === 0) {
+				return '<div class="rw-stage"><div class="rw-screen rw-has-photo"><div class="rw-main">'
+					+ '<h2 class="rw-h rw-h--quick">In 30 Sekunden angefragt.</h2>'
+					+ '<p class="rw-lead">Wählt den Anlass, den Rest klären wir persönlich. Kostenlos und unverbindlich.</p>'
+					+ '<div class="rw-form">'
+					+ '<div class="rw-field">' + label('Anlass', true) + occCards() + '</div>'
+					+ '<div class="rw-field">' + label('Teilnehmerzahl') + sizeStepper() + '</div>'
+					+ '</div></div>' + photoPanel() + '</div></div>'
+					+ '<div class="rw-foot"><div class="rw-nav rw-nav--quick">' + quickDots()
+					+ '<button class="rw-btn-primary" data-act="next">Weiter ' + ICO_NEXT + '</button></div></div>';
+			}
+			var recap = esc(S.form.occasion || 'Event') + ' · ' + esc(S.form.size || '20') + ' Personen';
+			return '<div class="rw-stage"><div class="rw-screen rw-has-photo"><div class="rw-main">'
+				+ '<button type="button" class="rw-recap" data-act="back" aria-label="Zurück zu Anlass und Teilnehmerzahl">'
+				+ '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>'
+				+ recap + '</button>'
+				+ '<h2 class="rw-h rw-h--quick">Noch kurz zu euch.</h2>'
+				+ '<p class="rw-lead">Innerhalb eines Werktags habt ihr konkrete Vorschläge im Postfach.</p>'
 				+ '<div class="rw-form">'
-				+ '<div class="rw-field">' + label('Anlass', true) + occCards() + '</div>'
-				+ '<div class="rw-field">' + label('Teilnehmerzahl') + sizeStepper() + '</div>'
 				+ '<div class="rw-row"><div class="rw-field">' + label('Vor- & Nachname', true) + input('firstName', 'required', 'Vor- und Nachname') + '</div>'
 				+ '<div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div></div>'
 				+ '<div class="rw-field">' + label('Firma') + input('company', '', 'Musterfirma GmbH') + '</div>'
 				+ '<div class="rw-field">' + label('Was habt ihr vor?') + '<textarea class="fg-input" data-field="notes" rows="3" placeholder="Ein, zwei Sätze zu Ziel, Stimmung, Wünschen.">' + esc(S.form.notes) + '</textarea></div>'
 				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '><span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label>'
 				+ '</div></div>' + photoPanel() + '</div></div>'
-				+ '<div class="rw-foot"><div class="rw-nav"><button class="rw-btn-text" data-act="to-full">Lieber ausführlich anfragen</button>'
+				+ '<div class="rw-foot"><div class="rw-nav rw-nav--quick"><button class="rw-btn-text" data-act="back">Zurück</button>' + quickDots()
 				+ '<button class="rw-btn-primary" data-act="submit">Anfrage senden ' + ICO_SEND + '</button></div></div>';
-			return h;
 		}
 
 		function fullStepBody(step) {
@@ -542,6 +569,10 @@
 				var h = overlay.querySelector('.rw-h, .rw-success-h');
 				if (h) { h.setAttribute('tabindex', '-1'); h.focus(); }
 				if (S.phase === 'success') { dropConfetti(); }
+				// Weicher Schritt-Uebergang, nur bei echtem Screen-Wechsel (Chip-Klick
+				// re-rendert mit gleichem key und bleibt ruhig).
+				var mainEl = overlay.querySelector('.rw-main');
+				if (mainEl) { mainEl.classList.add('rw-anim-in'); }
 			}
 		}
 
@@ -569,7 +600,10 @@
 		}
 
 		function valid() {
-			if (S.mode === 'quick') return S.form.firstName && S.form.email && S.form.occasion && S.form.consent;
+			if (S.mode === 'quick') {
+				if (S.step === 0) return !!S.form.occasion;
+				return S.form.firstName && S.form.email && S.form.occasion && S.form.consent;
+			}
 			if (S.step === 0) return !!S.form.occasion;
 			if (S.step === 1) return parseInt(S.form.size, 10) > 0; // Pflichtfeld jetzt auch geprüft (Kern-Audit N1)
 			if (S.step === 4) return S.form.company && S.form.firstName && S.form.lastName && S.form.email && S.form.consent;
@@ -627,8 +661,22 @@
 
 			if (t.hasAttribute('data-chip')) {
 				collect();
-				S.form[t.getAttribute('data-chip')] = t.getAttribute('data-val');
-				render();
+				var chipKey  = t.getAttribute('data-chip');
+				var chipVal  = t.getAttribute('data-val');
+				var chipPrev = S.form[chipKey];
+				S.form[chipKey] = chipVal;
+				// Anti-Flacker (Julius, 2026-08-20): Auswahl direkt im DOM umschalten statt
+				// das komplette Formular neu zu bauen. Voll-Rerender NUR, wenn der Wert die
+				// Screen-Struktur aendert (Ziel-Feld bei „Etwas anderes" im Full-Schritt 1).
+				var structural = S.mode === 'full' && S.step === 0 && chipKey === 'occasion'
+					&& ( chipVal === 'Etwas anderes' || chipPrev === 'Etwas anderes' );
+				if (structural) { render(); return; }
+				overlay.querySelectorAll('[data-chip="' + chipKey + '"]').forEach(function (b) {
+					var on = b.getAttribute('data-val') === chipVal;
+					b.classList.toggle('on', on);
+					b.setAttribute('aria-pressed', on ? 'true' : 'false');
+				});
+				t.classList.remove('just-toggled'); void t.offsetWidth; t.classList.add('just-toggled');
 				return;
 			}
 			if (t.hasAttribute('data-svc')) {
@@ -649,14 +697,18 @@
 			if (act === 'size-dec' || act === 'size-inc') {
 				collect();
 				var cur = parseInt(S.form.size, 10) || 20;
-				S.form.size = String(Math.max(1, Math.min(999, cur + (act === 'size-inc' ? 5 : -5))));
-				render();
+				// Einzelschritte (Julius, 2026-08-20) und NUR das Zahlenfeld aktualisieren:
+				// der fruehere Voll-Rerender liess bei jedem Klick das Formular flackern.
+				S.form.size = String(Math.max(1, Math.min(999, cur + (act === 'size-inc' ? 1 : -1))));
+				var sizeInp = overlay.querySelector('.rw-stepper-val');
+				if (sizeInp) { sizeInp.value = S.form.size; } else { render(); }
 				return;
 			}
 			if (act === 'back') { collect(); if (S.step === 0) { close(); } else { S.step--; render(); } return; }
 			if (act === 'next') {
 				collect();
 				if (!valid()) { flashInvalid(); return; }
+				if (S.mode === 'quick') { S.step = 1; render(); return; }
 				if (S.step === FULL_STEPS.length - 1) { submit(t); } else { S.step++; render(); }
 				return;
 			}
@@ -669,10 +721,13 @@
 			var m = [];
 			var add = function (cond, label) { if (!cond) m.push(label); };
 			if (S.mode === 'quick') {
-				add(S.form.occasion, 'Anlass auswählen');
-				add(S.form.firstName, 'Vorname');
-				add(S.form.email, 'E-Mail');
-				add(S.form.consent, 'Zustimmung zur Datenverarbeitung');
+				if (S.step === 0) {
+					add(S.form.occasion, 'Anlass auswählen');
+				} else {
+					add(S.form.firstName, 'Vorname');
+					add(S.form.email, 'E-Mail');
+					add(S.form.consent, 'Zustimmung zur Datenverarbeitung');
+				}
 			} else if (S.step === 0) {
 				add(S.form.occasion, 'Anlass auswählen');
 			} else {
@@ -788,6 +843,25 @@
 				var source = btn.getAttribute('data-rw-source') || '';
 				Wizard.open(mode, preset, intro, source);
 			});
+		});
+		// Anfrage-Deeplinks (?anfrage=quick|full) abfangen, wo dieses Skript laedt
+		// (z. B. Stadt-Landingpages): Wizard als Overlay AUF der Seite oeffnen statt
+		// zur Anfrage-Seite zu springen. Nach dem Schliessen bleibt man, wo man war.
+		// Modifier-Klicks (neuer Tab etc.) und Downloads bleiben unangetastet.
+		document.addEventListener('click', function (e) {
+			if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+			var a = e.target.closest ? e.target.closest('a[href*="anfrage="]') : null;
+			if (!a) return;
+			var mode, occ;
+			try {
+				var u = new URL(a.href, window.location.href);
+				mode = u.searchParams.get('anfrage');
+				occ = u.searchParams.get('anlass');
+			} catch (err) { return; }
+			if (mode !== 'quick' && mode !== 'full') return;
+			e.preventDefault();
+			var preset = (occ && ALLOWED_OCCASIONS.indexOf(occ) >= 0) ? { occasion: occ } : null;
+			Wizard.open(mode, preset, false, 'general_landingpage');
 		});
 	});
 

@@ -4157,7 +4157,11 @@ button.ind-card {
 }
 button.ind-card:hover { border-color: var(--ink-300); transform: translateY(-1px); }
 button.ind-card:focus-visible { outline: 2px solid var(--fairway-600); outline-offset: 2px; }
+button.ind-card { position: relative; }
+button.ind-card:active { transform: scale(.97); }
 button.ind-card.on { border-color: var(--fairway-600); background: var(--fairway-50); color: var(--fairway-900); }
+/* Gewaehlte Kachel traegt einen Haken: die Auswahl ist auf einen Blick erkennbar. */
+button.ind-card.on::after { content: ''; position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 999px; background: var(--fairway-600) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") center/10px no-repeat; }
 .ind-card-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--paper-200); color: var(--ink-600); flex: none; }
 button.ind-card.on .ind-card-ico { background: var(--fairway-100); color: var(--fairway-700); }
 .ind-card-l { line-height: 1.3; }
@@ -4787,6 +4791,321 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
 .gpd-meta { font-size: 13px; color: var(--ink-500); }
 .gpd-note { margin-top: 32px; display: flex; align-items: center; flex-wrap: wrap; gap: 14px; font-size: 14px; color: var(--ink-600); }
 @media (max-width: 720px) { .gpd-list { grid-template-columns: 1fr; } }
+
+/* ── City-Conversion-Umbau (2026-08-20, Testseite fuer Ads-Traffic) ─────────── */
+/* Platzliste eingeklappt: Inhalt bleibt fuer SEO im DOM, die Seite bleibt fokussiert. */
+.gpd-list.is-collapsed .gpd-row:nth-child(n+9) { display: none; }
+.gpd-more { margin-top: 16px; }
+
+/* Hero-Fakten: leichte Zeile IM Hero statt Karten-Band darunter. */
+.cty-hero-facts { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 22px; }
+.cty-hero-fact { display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; color: rgba(251,250,246,.92); }
+.cty-hero-fact svg { width: 17px; height: 17px; opacity: .9; flex: none; }
+.cty-hero-fact strong { font-weight: 700; }
+
+/* Story-Sektion: Intro + Vorteile als ruhige Liste, daneben ein Bild mit Haltung. */
+.cty-story-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 72px; align-items: stretch; }
+.cty-story-intro { margin-top: 16px; font-size: 17px; line-height: 1.7; color: var(--ink-700); max-width: 58ch; }
+.cty-story-points { list-style: none; margin: 36px 0 0; padding: 0; }
+.cty-story-point { display: flex; gap: 16px; padding: 18px 0; border-top: 1px solid var(--ink-200); }
+.cty-story-point:last-child { padding-bottom: 0; }
+.cty-story-ic { flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--fairway-50); color: var(--fairway-700); display: inline-flex; align-items: center; justify-content: center; }
+.cty-story-ic svg { width: 21px; height: 21px; }
+.cty-story-point h3 { font-size: 16px; font-weight: 600; color: var(--ink-900); margin: 0 0 4px; }
+.cty-story-point p { font-size: 14.5px; line-height: 1.6; color: var(--ink-600); margin: 0; }
+.cty-story-media { margin: 0; border-radius: var(--radius-xl); overflow: hidden; min-height: 420px; position: relative; }
+.cty-story-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Orts-Tag unten im Story-Bild (echte Ortsangabe, z. B. Golfclub St. Eurach). */
+.cty-story-tag { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 7px; background: rgba(251,250,246,.94); color: var(--ink-800); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 999px; box-shadow: var(--shadow-md); }
+.cty-story-tag svg { width: 15px; height: 15px; color: var(--fairway-700); flex: none; }
+@media (max-width: 980px) {
+	.cty-story-grid { grid-template-columns: 1fr; gap: 28px; }
+	.cty-story-media { min-height: 0; aspect-ratio: 16/10; order: -1; }
+}
+
+/* Format-Kacheln als Foto-Bento: erste Kachel breit, mobil ein Wisch-Karussell. */
+.cty-fmt-bento { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.cty-fmt-tile { position: relative; display: block; border-radius: var(--radius-lg); overflow: hidden; height: 250px; text-decoration: none; isolation: isolate; }
+.cty-fmt-tile.is-wide { grid-column: span 2; }
+.cty-fmt-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 600ms var(--ease-out); }
+.cty-fmt-tile:hover img, .cty-fmt-tile:focus-visible img { transform: scale(1.05); }
+.cty-fmt-tile-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,19,16,.02) 30%, rgba(14,19,16,.74) 100%); }
+.cty-fmt-tile-txt { position: absolute; inset: auto 0 0 0; padding: 18px; color: var(--paper-100); display: flex; flex-direction: column; gap: 4px; }
+.cty-fmt-tile-h { font-family: var(--font-display); font-size: 21px; font-weight: 600; letter-spacing: -.01em; }
+.cty-fmt-tile-p { font-size: 13.5px; line-height: 1.5; color: rgba(251,250,246,.88); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cty-fmt-tile-go { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--paper-100); display: inline-flex; align-items: center; gap: 6px; }
+.cty-fmt-tile-go svg { flex: none; transition: transform var(--dur-base) var(--ease-out); }
+.cty-fmt-tile:hover .cty-fmt-tile-go svg { transform: translateX(3px); }
+.cty-fmt-tile:focus-visible { outline: 2px solid var(--fairway-600); outline-offset: 2px; }
+@media (max-width: 1100px) and (min-width: 721px) {
+	.cty-fmt-bento { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+	.cty-fmt-bento { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 4px 14px; margin: 0 -4px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--ink-300) transparent; }
+	.cty-fmt-tile, .cty-fmt-tile.is-wide { flex: 0 0 82%; scroll-snap-align: start; height: 300px; grid-column: auto; }
+	.cty-fmt-bento::-webkit-scrollbar { height: 6px; }
+	.cty-fmt-bento::-webkit-scrollbar-thumb { background: var(--ink-200); border-radius: 999px; }
+}
+
+/* Founder-Band: echtes Gesicht als Vertrauensanker vor der Anfrage. */
+.cty-founder { background: var(--paper-200); padding: 96px 24px; }
+.cty-founder-inner { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: 5fr 7fr; gap: 64px; align-items: center; }
+.cty-founder-photo { border-radius: var(--radius-xl); overflow: hidden; aspect-ratio: 4/5; max-width: 420px; }
+/* Portrait-Foto: Ausschnitt am oberen Drittel ausrichten, damit der Kopf im
+   querformatigen Mobil-Crop (3/2) sicher im Bild bleibt (Julius, 2026-08-20). */
+.cty-founder-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; display: block; }
+.cty-founder-body .mk-h2 { font-size: 40px; }
+.cty-founder-p { font-size: 17px; line-height: 1.65; color: var(--ink-700); margin-top: 18px; max-width: 54ch; }
+.cty-founder-ctas { display: flex; align-items: center; gap: 22px; margin-top: 28px; flex-wrap: wrap; }
+.cty-founder-mail { font-size: 15px; font-weight: 500; color: var(--fairway-700); text-decoration: underline; text-underline-offset: 3px; }
+.cty-founder-mail:hover { color: var(--fairway-900); }
+@media (max-width: 900px) {
+	.cty-founder { padding: 64px 20px; }
+	.cty-founder-inner { grid-template-columns: 1fr; gap: 28px; }
+	.cty-founder-photo { aspect-ratio: 3/2; max-width: none; }
+	.cty-founder-body .mk-h2 { font-size: 30px; }
+}
+
+/* FAQ als zentrierte Karten-Akkordeons statt Hairline-Liste. */
+.cty-faq { max-width: 900px; }
+.cty-faq-head { text-align: center; max-width: 660px; margin: 0 auto 40px; }
+.faq-aside-note { margin-top: 18px; font-size: 15px; line-height: 1.6; color: var(--ink-600); }
+.faq-aside-note a { color: var(--fairway-700); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.faq-aside-note a:hover { color: var(--fairway-900); }
+.cty-faq-cards { border-top: 0; }
+.cty-faq-cards .faq-item { border: 1px solid var(--ink-200); border-bottom: 1px solid var(--ink-200); border-radius: var(--radius-lg); background: var(--paper-50); margin-bottom: 10px; overflow: clip; transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+.cty-faq-cards .faq-item.open { border-color: var(--fairway-300); box-shadow: var(--shadow-sm); }
+.fge-page .cty-faq-cards .faq-q { padding: 20px 22px; font-size: 18px; }
+.cty-faq-cards .faq-a-in { padding: 0 22px; }
+.cty-faq-chev { display: inline-flex; color: var(--ink-500); transition: transform var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
+.faq-item.open .cty-faq-chev { transform: rotate(180deg); color: var(--fairway-700); }
+
+/* FAQ weich auf/zu (nur wo .faq-anim gesetzt ist; andere Templates behalten display-Toggle).
+   Grid-Rows-Trick: interruptierbare Transition ohne feste max-height. */
+.faq-anim .faq-a { display: grid; grid-template-rows: 0fr; opacity: 0; padding-bottom: 0; overflow: clip;
+	transition: grid-template-rows var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out), padding-bottom var(--dur-base) var(--ease-out); }
+.faq-anim .faq-item.open .faq-a { grid-template-rows: 1fr; opacity: 1; padding-bottom: 22px; }
+.faq-anim .faq-a-in { min-height: 0; }
+
+/* Schluss-CTA: Staedte-Crosslinks klein unter der Aktion, nicht neben ihr. */
+.cty-cta-cities { margin-top: 30px; font-size: 14px; color: rgba(251,250,246,.55); display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; }
+.cty-cta-cities a { color: rgba(251,250,246,.78); text-decoration: underline; text-underline-offset: 3px; }
+.cty-cta-cities a:hover { color: var(--paper-100); }
+
+/* ── Putt-Moment im Schluss-CTA ──────────────────────────────────────────────
+   Sequenz (einmalig, JS-getriggert): Puttlinie legt sich frei (clip-path) →
+   Ball rollt sie entlang (SMIL animateMotion, Spin auf der INNEREN Gruppe, damit
+   nichts mit der Motion-Transformation kollidiert) → Ball versinkt (Fade) →
+   Fahne schwingt → Button pulst genau einmal. Ohne JS/mit reduzierter Bewegung:
+   statisches Bild (Linie + Loch + Fahne), der Ball bleibt unsichtbar. */
+.cty-cta { position: relative; overflow: hidden; }
+.cty-cta .mk-cta-inner { position: relative; z-index: 1; }
+.cty-cta-topo { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--paper-100); opacity: .06; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+	.cty-cta-topo { animation: cty-topo-drift 18s ease-in-out infinite alternate; }
+}
+@keyframes cty-topo-drift { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+
+.cty-putt { width: min(720px, 100%); margin: 2px auto 0; }
+.cty-putt svg { display: block; width: 100%; height: auto; overflow: visible; }
+.cty-putt-line { stroke: rgba(251,250,246,.55); stroke-width: 2.5; stroke-dasharray: 1 10; stroke-linecap: round; clip-path: inset(0 100% 0 0); transition: clip-path 1100ms var(--ease-out); }
+.cty-putt.is-draw .cty-putt-line, .cty-putt.is-static .cty-putt-line { clip-path: inset(0 -5% 0 0); }
+.cty-putt-hole { fill: rgba(8,12,9,.85); stroke: rgba(251,250,246,.28); stroke-width: 1; }
+.cty-putt-flag { stroke: rgba(251,250,246,.9); stroke-width: 2.5; stroke-linecap: round; transform-box: fill-box; transform-origin: 50% 100%; }
+.cty-putt-pennant { fill: rgb(0, 200, 150); stroke: none; }
+.cty-putt.is-holed .cty-putt-flag { animation: cty-flag-wave 700ms var(--ease-out) 1; }
+@keyframes cty-flag-wave { 0% { transform: rotate(0); } 30% { transform: rotate(-6deg); } 60% { transform: rotate(3deg); } 100% { transform: rotate(0); } }
+
+.cty-putt-ball { opacity: 0; }
+.cty-putt.is-rolling .cty-putt-ball { opacity: 1; transition: opacity 180ms var(--ease-out); }
+.cty-putt.is-holed .cty-putt-ball { opacity: 0; transition: opacity 220ms var(--ease-out); }
+.cty-putt-ball > circle:first-of-type { fill: var(--paper-100); }
+.cty-putt-ball-spin { transform-box: fill-box; transform-origin: center; }
+.cty-putt.is-rolling .cty-putt-ball-spin { animation: cty-ball-spin 1.35s cubic-bezier(0.18, 0.7, 0.25, 1) 1 both; }
+@keyframes cty-ball-spin { from { transform: rotate(0); } to { transform: rotate(540deg); } }
+.cty-putt-ball-spin circle:first-child { fill: var(--paper-100); }
+.cty-putt-dimple { fill: rgba(14,19,16,.16); }
+.cty-putt-ball-shadow { fill: rgba(0,0,0,.30); }
+
+a.cty-cta-btn { background: var(--paper-100); color: var(--fairway-900); transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background var(--dur-fast) var(--ease-out); }
+a.cty-cta-btn:hover { background: #fff; color: var(--fairway-900); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.30); }
+a.cty-cta-btn:active { transform: translateY(0) scale(.97); }
+.cty-pulse { animation: cty-cta-pulse 900ms var(--ease-out) 1 both; }
+@keyframes cty-cta-pulse {
+	0% { box-shadow: 0 0 0 0 rgba(251,250,246,.5); }
+	55% { transform: scale(1.04); }
+	100% { box-shadow: 0 0 0 28px rgba(251,250,246,0); transform: scale(1); }
+}
+/* Mobil waechst die Grafik ueber die Textbreite hinaus, sonst wird der Ball zu klein
+   (Sektion hat overflow:hidden, nichts laeuft aus dem Layout). */
+@media (max-width: 720px) { .cty-putt { width: 150%; max-width: none; margin: 0 -25%; } }
+
+/* ── Interaktive Platz-Karte mit Anzeigetafel (gpx-*) ────────────────────────
+   Desktop: Karte links, rechts Anzeigetafel + scrollbare Namensliste.
+   Mobil: hohe Karte zum Erkunden, darunter EIN Panel mit dem gewaehlten Platz
+   und eine Wisch-Pill-Leiste statt der 18-Namen-Liste. Partner vorausgewaehlt. */
+.gpx-layout { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 18px; align-items: stretch; }
+.gpx-layout .gpd-map { height: 540px; margin: 0; }
+.gpx-side { display: flex; flex-direction: column; gap: 12px; min-height: 0; max-height: 540px; }
+.gpx-panel { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-lg); overflow: clip; transition: border-color var(--dur-base) var(--ease-out); }
+.gpx-panel--partner { border-color: var(--fairway-300); }
+.gpx-panel-media { aspect-ratio: 16/7; overflow: hidden; background: var(--paper-200); }
+.gpx-panel-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gpx-panel-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
+.gpx-panel-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.gpx-panel-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -.01em; color: var(--ink-900); margin: 0; min-width: 0; }
+.gpx-panel-badge { flex: none; background: var(--fairway-100); color: var(--fairway-800); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; }
+.gpx-panel-meta { font-size: 13px; color: var(--ink-500); }
+.gpx-panel-note { font-size: 13.5px; line-height: 1.55; color: var(--ink-700); margin: 2px 0 4px; }
+.gpx-panel-cta { align-self: flex-start; margin-top: 2px; padding: 10px 18px; font-size: 14px; min-height: 0; }
+/* Weicher Blend beim Platz-Wechsel (Inhalt tauscht waehrend opacity 0). */
+.gpx-panel-media, .gpx-panel-body { transition: opacity 170ms var(--ease-out), transform 170ms var(--ease-out); }
+.gpx-panel.is-swapping .gpx-panel-media, .gpx-panel.is-swapping .gpx-panel-body { opacity: 0; transform: translateY(5px); }
+@media (prefers-reduced-motion: reduce) { .gpx-panel-media, .gpx-panel-body { transition: none; } }
+/* Namensliste (nur Desktop): scrollbar, Auswahl bleibt markiert. */
+.gpx-list { flex: 1; min-height: 120px; overflow-y: auto; border: 1px solid var(--ink-200); border-radius: var(--radius-lg); background: var(--paper-50); padding: 6px; display: flex; flex-direction: column; gap: 2px; scrollbar-width: thin; scrollbar-color: var(--ink-300) transparent; }
+.gpx-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; background: none; border: 0; border-radius: 10px; padding: 9px 11px; font: inherit; font-size: 13.5px; color: var(--ink-800); cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+.gpx-item:hover { background: var(--paper-200); }
+.gpx-item:focus-visible { outline: 2px solid var(--fairway-600); outline-offset: -2px; }
+.gpx-item.is-active { background: var(--fairway-100); color: var(--fairway-900); font-weight: 600; }
+.gpx-item-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+.gpx-item-p { flex: none; width: 8px; height: 8px; border-radius: 999px; background: var(--fairway-600); }
+.gpx-item-km { flex: none; font-size: 12px; color: var(--ink-500); font-variant-numeric: tabular-nums; }
+/* Karten-Karussell unter der Map: nur mobil (Desktop hat Panel + Liste). */
+.gpx-carousel { display: none; }
+@media (max-width: 900px) {
+	.gpx-layout { grid-template-columns: 1fr; gap: 12px; }
+	/* Mobil bewusst hoch: Platz zum Zoomen und Stoebern (Julius, 2026-08-20). */
+	.gpx-layout .gpd-map { height: 480px; }
+	.gpx-side { display: none; } /* Panel + Namensliste ersetzt mobil das Karussell */
+	/* align-items flex-start: Karten ohne Foto strecken sich sonst auf die Hoehe
+	   der Partner-Karten und zeigen grosse Leerflaechen. */
+	.gpx-carousel { display: flex; align-items: flex-start; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 14px 4px 8px; margin: 0 -4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+	.gpx-carousel::-webkit-scrollbar { display: none; }
+	.gpx-slide { flex: 0 0 82%; scroll-snap-align: center; background: var(--paper-50); border: 1.5px solid var(--ink-200); border-radius: var(--radius-lg); overflow: clip; transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+	.gpx-slide.is-active { border-color: var(--fairway-600); box-shadow: var(--shadow-md); }
+	.gpx-slide-media { aspect-ratio: 16/7; background: var(--paper-200); }
+	.gpx-slide-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	.gpx-slide-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 5px; }
+	.gpx-slide-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+	.gpx-slide-name { font-family: var(--font-display); font-size: 15.5px; font-weight: 700; letter-spacing: -.01em; color: var(--ink-900); min-width: 0; }
+	.gpx-slide-meta { font-size: 12.5px; color: var(--ink-500); }
+	.gpx-slide-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--fairway-700); text-decoration: none; }
+	.gpx-slide-cta svg { flex: none; }
+	.gpx-slide-hint { margin-top: 4px; font-size: 12.5px; color: var(--ink-500); }
+	/* Partner-werden-Hinweis mobil als Randnotiz, kein Button-Block. */
+	.gpd-note { justify-content: center; font-size: 13px; margin-top: 18px; }
+	.gpd-note .gpd-note-link { padding: 7px 13px; font-size: 13px; min-height: 0; }
+}
+
+/* ── Event-Karte v2 (evF-*, Test auf der Stadt-Seite) ────────────────────────
+   Inhalte identisch zur Stammkarte (evE), aber: Ort und Rating teilen sich eine
+   Zeile, „Ansehen" ist eine Pill, und unter 520 px wird aus dem hohen Stapel
+   eine horizontale Listen-Karte (Bild links in voller Kartenhoehe).
+   Revert: im Template wieder fge-event-card statt fge-event-card-v2 aufrufen. */
+.evF-card { cursor: pointer; }
+.evF-card:hover { box-shadow: 0 2px 4px rgba(14,19,16,.06), 0 14px 34px rgba(14,19,16,.12); }
+.evF-media { position: relative; aspect-ratio: 16/10; overflow: hidden; background: var(--paper-200); }
+.evF-img { position: absolute; inset: 0; background-size: cover; background-position: center; transition: transform .6s var(--ease-out); }
+.evF-card:hover .evF-img { transform: scale(1.05); }
+@media (prefers-reduced-motion: reduce) { .evF-img { transition: none; } .evF-card:hover .evF-img { transform: none; } }
+.evF-chip { position: absolute; left: 12px; top: 12px; z-index: 2; background: rgba(255,255,255,.92); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--ink-900); font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; }
+.evF-chip--offseason { left: auto; right: 56px; background: #7A5A12; color: #FBF3E0; }
+.evF-body { display: flex; flex-direction: column; gap: 7px; padding: 14px 16px 16px; flex: 1; min-width: 0; }
+.evF-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.evF-venue { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-500); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.evF-venue svg { color: var(--fairway-700); flex: none; }
+.evF-rate { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--ink-500); flex: none; }
+.evF-rate b { color: var(--ink-900); font-weight: 600; }
+.evF-rate svg { color: #E4A930; }
+.evF-title { font-family: var(--font-display); font-weight: 700; letter-spacing: -.02em; color: var(--ink-900); font-size: 17px; line-height: 1.22; margin: 1px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.evF-desc { font-size: 13px; line-height: 1.5; color: var(--ink-500); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.evF-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12.5px; color: var(--ink-500); }
+.evF-meta .m { display: inline-flex; align-items: center; gap: 5px; }
+.evF-meta svg { color: var(--fairway-700); flex: none; }
+.evF-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--paper-200); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.evF-price { font-family: var(--font-display); font-weight: 700; letter-spacing: -.02em; color: var(--ink-900); font-size: 20px; font-variant-numeric: tabular-nums; }
+.evF-price--soft { font-size: 14px; font-weight: 500; color: var(--ink-500); }
+.evF-net { font-size: 12px; font-weight: 500; color: var(--ink-500); margin-left: 4px; }
+.evF-cta { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--fairway-700); font-size: 13.5px; white-space: nowrap; background: var(--fairway-50); border-radius: 999px; padding: 8px 14px; transition: background var(--dur-fast) var(--ease-out), gap var(--dur-fast) var(--ease-out); }
+.evF-card:hover .evF-cta { background: var(--fairway-100); gap: 9px; }
+
+/* Turnier-Varianten (Format×Stadt Golfturnier): zwei Level-Karten, darunter die
+   hervorgehobene Mix-Karte mit CTA als Pointe. */
+.cfv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cfv-card { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-lg); padding: 26px 26px 28px; }
+.cfv-ic { display: inline-flex; width: 42px; height: 42px; align-items: center; justify-content: center; color: var(--fairway-700); background: var(--fairway-50); border-radius: 12px; margin-bottom: 14px; }
+.cfv-ic svg { width: 22px; height: 22px; }
+.cfv-card h3 { font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -.01em; color: var(--ink-900); margin: 0 0 6px; }
+.cfv-card p { font-size: 14.5px; line-height: 1.65; color: var(--ink-600); margin: 0; }
+.cfv-card--mix { grid-column: 1 / -1; background: var(--fairway-50); border-color: var(--fairway-200); display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
+.cfv-card--mix h3 { color: var(--fairway-900); }
+.cfv-card--mix p { color: var(--ink-700); max-width: 62ch; }
+.cfv-card--mix .fg-btn-brand { flex: none; }
+.cfv-mix-copy { min-width: min(100%, 420px); flex: 1; }
+@media (max-width: 760px) {
+	.cfv-grid { grid-template-columns: 1fr; }
+	.cfv-card { padding: 20px 18px 22px; }
+	.cfv-card--mix { gap: 16px; }
+}
+
+/* Anfrage-Fuellkachel im Event-Grid: faengt „nichts Passendes dabei" auf, wenn ein
+   Format wenige Treffer hat, und fuellt die Reihe (Format×Stadt-Seiten). */
+.evF-fill { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 8px; padding: 26px 24px; background: var(--fairway-50); border: 1px solid var(--fairway-200); border-radius: 20px; text-decoration: none; min-height: 300px; transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.evF-fill:hover { border-color: var(--fairway-400); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+.evF-fill-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--fairway-100); color: var(--fairway-700); display: grid; place-items: center; margin-bottom: 4px; }
+.evF-fill-h { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--ink-900); letter-spacing: -.01em; }
+.evF-fill-p { font-size: 13.5px; line-height: 1.55; color: var(--ink-700); }
+.evF-fill-go { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13.5px; font-weight: 600; color: var(--fairway-700); }
+.evF-fill-go svg { flex: none; }
+@media (max-width: 520px) { .evF-fill { min-height: 0; padding: 20px 18px; } }
+
+/* Mobil, eine Spalte: horizontale Listen-Karte statt hohem Stapel. */
+@media (max-width: 520px) {
+	.evF-card a { display: grid; grid-template-columns: 122px minmax(0, 1fr); align-items: stretch; }
+	.evF-media { aspect-ratio: auto; height: 100%; }
+	/* Chip nach unten links: oben rechts sitzt der Share-Button, im 122px-Bild
+	   kollidierten beide (Chip wurde abgeschnitten). */
+	.evF-chip { left: 8px; top: auto; bottom: 8px; font-size: 10.5px; padding: 3px 9px; max-width: calc(100% - 16px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.evF-chip--offseason { left: 8px; top: 8px; bottom: auto; right: auto; }
+	.evF-share.evF-share { right: 8px; top: 8px; width: 28px; height: 28px; }
+	.evF-share svg { width: 13px; height: 13px; }
+	.evF-body { padding: 12px 14px; gap: 5px; }
+	.evF-title { font-size: 15.5px; }
+	.evF-desc { font-size: 12.5px; }
+	.evF-meta { gap: 10px; font-size: 12px; }
+	.evF-foot { padding-top: 9px; }
+	.evF-price { font-size: 17px; }
+	.evF-net { font-size: 11px; }
+	.evF-cta { padding: 6px 11px; font-size: 12.5px; }
+}
+
+/* Sanftes Einblenden beim Scrollen: greift NUR, wenn das Inline-Skript html.cty-io
+   gesetzt hat (JS vorhanden + keine reduzierte Bewegung), sonst bleibt alles sichtbar. */
+html.cty-io .cty-reveal { opacity: 0; transform: translateY(18px); transition: opacity 640ms var(--ease-out), transform 640ms var(--ease-out); }
+html.cty-io .cty-reveal.is-in { opacity: 1; transform: none; }
+
+/* Ein ruhiger Einstiegs-Moment im Hero. */
+@media (prefers-reduced-motion: no-preference) {
+	.cty-page .ev-hero-content { animation: cty-rise 640ms var(--ease-out) both; }
+}
+@keyframes cty-rise { from { opacity: 0; transform: translateY(12px); } }
+
+/* Markendetail: Textauswahl in Markenfarbe statt Browser-Default. */
+.cty-page ::selection { background: var(--fairway-200); }
+
+/* Hero-Scrim fuer helle Stadtbilder (z. B. Muenchen mit Himmel): links dunkler,
+   wo Headline und CTAs stehen, rechts bleibt das Motiv frei. Gilt fuer Desktop
+   UND Mobil (steht nach der 900px-Media-Query und gewinnt daher die Kaskade). */
+.cty-page .ev-hero-scrim {
+	background:
+		linear-gradient(90deg, rgba(14,19,16,.55) 0%, rgba(14,19,16,.22) 48%, rgba(14,19,16,0) 72%),
+		linear-gradient(180deg, rgba(14,19,16,.16) 0%, rgba(14,19,16,.04) 35%, rgba(14,19,16,.68) 100%);
+}
+
+/* Anker-Ziel nicht unter der Sticky-Nav bzw. Mobile-Bar verstecken. */
+.cty-page #angebote { scroll-margin-top: 96px; }
+@media (max-width: 768px) { .cty-page #angebote { scroll-margin-top: 132px; } }
 
 /* Quick channels */
 .ct-channels {
@@ -5720,8 +6039,31 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 .rw-screen { margin-top: auto; margin-bottom: auto; }
 .rw-stage { padding: 40px 24px 48px; }
 .rw-screen.rw-has-photo { max-width: 1060px; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 56px; align-items: stretch; }
-.rw-photo { border-radius: 24px; background-size: cover; background-position: center; min-height: 420px; box-shadow: var(--shadow-sm); }
+.rw-photo { border-radius: 24px; background-size: cover; background-position: center; min-height: 420px; box-shadow: var(--shadow-sm); position: relative; }
 @media (max-width: 980px) { .rw-screen.rw-has-photo { grid-template-columns: 1fr; } .rw-photo { display: none; } }
+/* Trust-Karte im Foto-Panel: echter Ansprechpartner + Werktag-Versprechen.
+   Sticky statt absolute: das Foto-Panel ist formularhoch, die Karte soll aber im
+   sichtbaren Ausschnitt am unteren Rand schweben, nicht unterm Fold liegen. */
+.rw-photo { display: flex; align-items: flex-end; }
+.rw-photo-trust { position: sticky; bottom: 20px; margin: 14px; width: calc(100% - 28px); display: flex; gap: 12px; align-items: center; background: rgba(251,250,246,.94); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow-md); }
+.rw-photo-trust img { width: 44px; height: 44px; border-radius: 999px; object-fit: cover; object-position: 50% 20%; flex: none; }
+.rw-photo-trust b { display: block; font-size: 14px; color: var(--ink-900); }
+.rw-photo-trust span { display: block; font-size: 12.5px; line-height: 1.45; color: var(--ink-600); margin-top: 1px; }
+/* Quick-Formular: kompakterer Kopf, klarere Auswahl. */
+.rw-h--quick { font-size: 34px; }
+@media (max-width: 760px) { .rw-h--quick { font-size: 27px; } }
+/* Zwei-Schritte-Quick: Fortschritts-Punkte im Fuss, Rekap-Chip in Schritt 2. */
+.rw-nav--quick { align-items: center; }
+.rw-dots { display: inline-flex; gap: 6px; align-items: center; }
+.rw-dots i { width: 7px; height: 7px; border-radius: 999px; background: var(--ink-200); transition: background var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
+.rw-dots i.on { background: var(--fairway-600); transform: scale(1.3); }
+.rw-recap { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; background: var(--fairway-50); border: 1px solid var(--fairway-200); color: var(--fairway-800); font: inherit; font-size: 13px; font-weight: 600; border-radius: 999px; padding: 6px 13px; cursor: pointer; margin-bottom: 14px; transition: background var(--dur-fast) var(--ease-out); }
+.rw-recap:hover { background: var(--fairway-100); }
+.rw-recap svg { flex: none; }
+/* Weicher Schrittwechsel (nur bei echtem Screen-Wechsel, s. render()). */
+.rw-anim-in { animation: rw-step-in 260ms var(--ease-out); }
+@keyframes rw-step-in { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) { .rw-anim-in { animation: none; } }
 .rw-overlay .rw-btn-primary {
   font-size: 15px; font-weight: 500;
   background: var(--ink-900); color: var(--paper-50);

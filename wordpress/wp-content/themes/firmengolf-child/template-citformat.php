@@ -27,11 +27,9 @@ $fmeta       = $fmeta_all[ $format_slug ] ?? [ 'h1' => '%s', 'eyeb' => '%s', 'ti
 $intros      = fge_citformat_intros();
 $intro       = $intros[ $city_slug ][ $format_slug ] ?? ( $format['intro'] ?? '' );
 
-// Preis aus den real buchbaren Angeboten statt hartkodiert im Text (Audit 2026-08-12).
-$cf_from = function_exists( 'fge_format_price_from_label' ) ? fge_format_price_from_label( (array) ( $format['types'] ?? [] ) ) : '';
-if ( '' !== $cf_from ) {
-	$intro .= ' ' . $cf_from . '.';
-}
+// Preis-Satz kommt weiter unten aus den Events DIESER Seite (statt deutschlandweit):
+// sonst widersprach der Text der Karte, sobald eine Stadt eigene Preise fährt
+// (z. B. After-Work München 49 € vs. 60 € anderswo, 2026-08-20).
 
 $h1          = sprintf( $fmeta['h1'], $city_name );
 $eyebrow     = sprintf( $fmeta['eyeb'], $city_name );
@@ -51,7 +49,9 @@ $cf_anfrage_quick = add_query_arg( array_filter( [
 // Gründe: 2 Format-Gründe + 2 Stadt-Gründe, dedupliziert nach Titel.
 $reasons = [];
 $seen_r  = [];
-foreach ( array_merge( array_slice( (array) ( $format['reasons'] ?? [] ), 0, 2 ), array_slice( (array) ( $city['reasons'] ?? [] ), 0, 2 ) ) as $r ) {
+// Format-Seite pflegt ihre Argumente unter 'facts' ('reasons' gab es dort nie,
+// deshalb fehlten die Format-Punkte bisher komplett, 2026-08-20).
+foreach ( array_merge( array_slice( (array) ( $format['reasons'] ?? $format['facts'] ?? [] ), 0, 2 ), array_slice( (array) ( $city['reasons'] ?? [] ), 0, 2 ) ) as $r ) {
 	$key = $r['t'] ?? '';
 	if ( $key === '' || isset( $seen_r[ $key ] ) ) {
 		continue;
@@ -87,6 +87,58 @@ if ( empty( $cf_events ) && function_exists( 'fge_get_featured_events' ) ) {
 
 // Andere Formate in dieser Stadt (Cross-Links) + gleiches Format in der anderen Stadt.
 $sibling_cities = array_values( array_diff( fge_citformat_enabled_cities(), [ $city_slug ] ) );
+
+// ── Conversion-Umbau (2026-08-20, Stil der Stadt-Seite) ──────────────────────
+// Hero traegt nur den ersten Intro-Satz plus Kernversprechen; der Rest des
+// Intros erzaehlt in der Story-Sektion weiter (kein Content geht verloren).
+$hero_sub   = $intro;
+$story_text = '';
+if ( preg_match( '/^(.+?[.!?])\s+(.+)$/u', $intro, $cf_m ) ) {
+	$hero_sub   = $cf_m[1] . ' Eine Anfrage, ein Ansprechpartner, eine Rechnung.';
+	$story_text = $cf_m[2];
+}
+
+// Fakten fuer die Hero-Zeile: Golfplaetze im Grossraum + Einstiegspreis
+// (dieselbe Anzeige-Logik wie die Event-Karten, nur Pro-Person-Preise).
+$cf_coords       = function_exists( 'fge_city_coords' ) ? ( fge_city_coords()[ $city_slug ] ?? null ) : null;
+$cf_stat_courses = ( $cf_coords && function_exists( 'fge_verzeichnis_nearby' ) )
+	? count( fge_verzeichnis_nearby( $cf_coords[0], $cf_coords[1], 60, 500 ) )
+	: 0;
+$cf_min_price = 0.0;
+if ( function_exists( 'fge_event_pricing' ) ) {
+	foreach ( $cf_events as $cf_mp_ev ) {
+		$cf_mp_pricing = fge_event_pricing( $cf_mp_ev->ID );
+		$cf_mp = (float) ( $cf_mp_pricing['gross'] ?? 0 );
+		if ( $cf_mp <= 0 && function_exists( 'fge_get_event_price_display' ) ) {
+			// Custom-Preis-Label (z. B. „49 € p.P.", wenn die 5er-Glaettung den
+			// Wunschpreis nicht hergibt): Zahl fuer den „Ab …"-Anker mitzaehlen.
+			$cf_lbl = fge_get_event_price_display( $cf_mp_ev->ID );
+			if ( false !== stripos( $cf_lbl, 'p.P' ) && preg_match( '/([\d]+(?:[.,]\d+)?)\s*€/u', $cf_lbl, $cf_lm ) ) {
+				$cf_mp = (float) str_replace( ',', '.', $cf_lm[1] );
+			}
+		}
+		if ( $cf_mp > 0 && ( $cf_min_price <= 0 || $cf_mp < $cf_min_price ) && ( 'pro Person' === ( $cf_mp_pricing['unit'] ?? '' ) || ( $cf_mp_pricing['gross'] ?? 0 ) <= 0 ) ) {
+			$cf_min_price = $cf_mp;
+		}
+	}
+}
+// Preis-Satz der Story aus den Events DIESER Seite.
+if ( $cf_min_price > 0 ) {
+	$cf_price_sentence = 'Ab ' . number_format_i18n( $cf_min_price, 0 ) . ' € pro Person.';
+	$story_text        = '' !== $story_text ? $story_text . ' ' . $cf_price_sentence : $cf_price_sentence;
+}
+
+// „Alle Events ansehen" vorgefiltert auf die Stadt (Umkreissuche der Events-Seite).
+$events_url_city = $events_url;
+if ( $cf_coords ) {
+	$events_url_city = add_query_arg( [
+		'loc'    => $city_name,
+		'lat'    => round( $cf_coords[0], 4 ),
+		'lng'    => round( $cf_coords[1], 4 ),
+		'radius' => 100,
+	], $events_url );
+}
+$format_name = (string) ( $format['name'] ?? 'Golf-Event' );
 
 // Icon-Set (teilt sich die Helferfunktion mit der City-Seite, falls geladen).
 if ( ! function_exists( 'fge_city_ico' ) ) {
@@ -157,11 +209,11 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 
 get_header();
 ?>
-<div class="fge-page fmt-lp" id="fge-main" role="main" tabindex="-1">
+<div class="fge-page fmt-lp cty-page" id="fge-main" role="main" tabindex="-1">
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] ); ?>
 
-<?php /* Hero */ ?>
+<?php /* Hero: Botschaft, Anfrage, Fakten. Eyebrow und Textwand sind Geschichte. */ ?>
 <section class="ev-hero" aria-label="<?php echo esc_attr( $h1 ); ?>">
 	<?php
 	// Stadtspezifisches Hero-Bild (stadt-<slug>.jpg), sonst generisches Panorama.
@@ -173,125 +225,195 @@ get_header();
 	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( $city_hero ) ); ?>')">
 		<div class="ev-hero-scrim" aria-hidden="true"></div>
 		<div class="ev-hero-content">
-			<div class="ev-hero-eyebrow"><?php echo esc_html( $eyebrow ); ?></div>
 			<h1 class="ev-hero-title"><?php echo esc_html( $h1 ); ?></h1>
-			<p class="ev-hero-sub"><?php echo esc_html( $intro ); ?></p>
-			<?php /* Hero-CTAs wie auf allen Schwester-Landingpages. Format×Stadt war der
-				einzige Seitentyp ohne Conversion above the fold, ausgerechnet auf den
-				Ads-Zielseiten (Audit 2026-08-12). */ ?>
+			<p class="ev-hero-sub"><?php echo esc_html( $hero_sub ); ?></p>
 			<div class="ev-hero-ctas">
-				<a class="fg-btn-brand" href="#angebote">Passende Events ansehen</a>
-				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $cf_anfrage_quick ); ?>">Unverbindlich anfragen</a>
+				<a class="fg-btn-brand" href="<?php echo esc_url( $cf_anfrage_quick ); ?>">Event anfragen</a>
+				<a class="fg-btn-ghost-light" href="#angebote">Events ansehen</a>
 			</div>
+			<?php if ( $cf_stat_courses > 0 || $cf_min_price > 0 ) : ?>
+			<div class="cty-hero-facts">
+				<?php if ( $cf_stat_courses > 0 ) : ?>
+				<span class="cty-hero-fact"><?php echo fge_city_ico( 'flag' ); // phpcs:ignore WordPress.Security.EscapeOutput ?><strong><?php echo esc_html( (string) $cf_stat_courses ); ?></strong>&nbsp;Golfplätze im Großraum <?php echo esc_html( $city_name ); ?></span>
+				<?php endif; ?>
+				<?php if ( $cf_min_price > 0 ) : ?>
+				<span class="cty-hero-fact"><?php echo fge_city_ico( 'gift' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>Ab&nbsp;<strong><?php echo esc_html( number_format_i18n( $cf_min_price, 0 ) ); ?>&nbsp;€</strong>&nbsp;pro Person</span>
+				<?php endif; ?>
+			</div>
+			<?php endif; ?>
 		</div>
 	</div>
 </section>
 
-<?php /* Stats */ ?>
-<div class="trust-strip" aria-label="Auf einen Blick">
-	<div class="trust-inner">
-		<div class="trust-cell"><div class="trust-t"><?php echo esc_html( $city_region ); ?></div><div class="trust-b">Region in unserem Netz</div></div>
-		<div class="trust-cell"><div class="trust-t">1 Werktag</div><div class="trust-b">Antwort auf jede Anfrage</div></div>
-		<div class="trust-cell"><div class="trust-t">Ein Kontakt</div><div class="trust-b">Vom Erstkontakt bis nach dem Event</div></div>
-		<div class="trust-cell"><div class="trust-t">Eine Rechnung</div><div class="trust-b">Sauber abgerechnet</div></div>
-	</div>
-</div>
-
-<?php /* Gründe */ ?>
-<?php if ( ! empty( $reasons ) ) : ?>
-<section class="mk-section city-reasons-section" aria-label="Gründe für <?php echo esc_attr( $h1 ); ?>">
-	<div class="mk-section-head">
-		<div class="mk-eyebrow">Warum <?php echo esc_html( $city_name ); ?></div>
-		<h2 class="mk-h2"><?php echo esc_html( sprintf( '%s in %s, gut aufgehoben.', $format['name'] ?? 'Golf', $city_name ) ); ?></h2>
-	</div>
-	<div class="city-reasons">
-		<?php foreach ( $reasons as $r ) : ?>
-		<div class="city-reason">
-			<span class="city-reason-ic" aria-hidden="true"><?php echo fge_city_ico( $r['ic'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
-			<h3 class="city-reason-t"><?php echo esc_html( $r['t'] ); ?></h3>
-			<p class="city-reason-b"><?php echo esc_html( $r['b'] ); ?></p>
-		</div>
-		<?php endforeach; ?>
-	</div>
-</section>
-<?php endif; ?>
-
-<?php /* Events am Schnittpunkt Stadt × Format */ ?>
+<?php /* Events am Schnittpunkt Stadt × Format, direkt nach dem Hero. Bei wenigen
+	     Treffern fuellt eine Anfrage-Kachel das Grid und faengt „nichts dabei" auf. */ ?>
 <?php if ( ! empty( $cf_events ) ) : ?>
-<section class="fg-grid-section" id="angebote" aria-label="Events in <?php echo esc_attr( $city_name ); ?>">
-	<div class="fg-grid-head">
-		<h2 class="fg-grid-title"><?php echo esc_html( $eyebrow ); ?>, passende Events</h2>
-		<a class="fg-chip" href="<?php echo esc_url( $events_url ); ?>">Alle ansehen</a>
+<section class="mk-section cty-reveal" id="angebote" aria-label="Events in <?php echo esc_attr( $city_name ); ?>">
+	<div class="mk-section-head between">
+		<div>
+			<h2 class="mk-h2">Passende Events in <?php echo esc_html( $city_name ); ?>.</h2>
+			<p class="mk-sub">Feste Pakete mit transparentem Preis pro Person, direkt anfragbar.</p>
+		</div>
+		<a class="fg-btn-ghost" href="<?php echo esc_url( $events_url_city ); ?>">Alle Events ansehen →</a>
 	</div>
-	<div class="fg-grid">
-		<?php foreach ( $cf_events as $ev ) : ?>
-			<?php get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $ev->ID ] ); ?>
-			<?php endforeach; ?>
+	<div class="fg-grid ev-grid4">
+		<?php foreach ( array_slice( $cf_events, 0, 4 ) as $ev ) {
+			get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $ev->ID, 'dist' => null ] );
+		} ?>
+		<?php if ( count( $cf_events ) < 4 ) : ?>
+		<a class="evF-fill" href="<?php echo esc_url( $cf_anfrage_quick ); ?>">
+			<span class="evF-fill-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></span>
+			<span class="evF-fill-h">Nichts Passendes dabei?</span>
+			<span class="evF-fill-p">Wir stellen euer <?php echo esc_html( $format_name ); ?> in <?php echo esc_html( $city_name ); ?> nach Maß zusammen.</span>
+			<span class="evF-fill-go">Event anfragen
+				<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>
+		</a>
+		<?php endif; ?>
 	</div>
 </section>
 <?php endif; ?>
 
-<?php /* FAQ */ ?>
-<?php get_template_part( 'template-parts/fge-wz-promo' ); ?>
-
-<section class="mk-section faq-section" aria-label="FAQ">
-	<div class="faq-shell">
-		<div class="faq-aside">
-			<div class="mk-eyebrow">Häufige Fragen</div>
-			<h2 class="mk-h2" style="margin-top:8px;"><?php echo esc_html( $eyebrow ); ?>, kurz erklärt.</h2>
+<?php /* Turnier-Varianten (nur Firmen-Golfturnier, Julius 2026-08-20): Einsteiger auf
+	     dem Kurzplatz ohne Platzreife, klassisch auf 18 Loch, oder beides gemischt.
+	     Die Mix-Karte ist bewusst breit und hervorgehoben, sie ist die Pointe. */ ?>
+<?php if ( 'golfturnier' === $format_slug ) : ?>
+<section class="mk-section cty-reveal" aria-label="Turnier-Varianten in <?php echo esc_attr( $city_name ); ?>">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Ein Turnier für jedes Level.</h2>
+		<p class="mk-sub">Ob euer Team noch nie einen Schläger in der Hand hatte oder längst die Platzreife hat: Wir bauen euer Turnier passend, auch gemischt.</p>
+	</div>
+	<div class="cfv-grid">
+		<div class="cfv-card">
+			<span class="cfv-ic" aria-hidden="true"><?php echo fge_city_ico( 'leaf' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+			<h3>Für komplette Einsteiger</h3>
+			<p>Turnier auf dem Kurzplatz, ganz ohne Platzreife-Prüfung. Vorab eine Einführung mit dem Golf-Pro, Schläger und Bälle werden gestellt.</p>
 		</div>
-		<ul class="faq-list">
-			<?php foreach ( $faqs as $faq ) : ?>
-				<li class="faq-item">
-					<button class="faq-q" type="button" aria-expanded="false">
-						<span><?php echo esc_html( $faq['q'] ); ?></span>
-						<span class="faq-toggle" aria-hidden="true">+</span>
-					</button>
-					<div class="faq-a">
+		<div class="cfv-card">
+			<span class="cfv-ic" aria-hidden="true"><?php echo fge_city_ico( 'trophy' ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+			<h3>Für Golfer mit Platzreife</h3>
+			<p>Das klassische Firmenturnier auf der 18-Loch-Anlage: Flights, faire Zählformate für alle Handicaps und Siegerehrung.</p>
+		</div>
+		<div class="cfv-card cfv-card--mix">
+			<div class="cfv-mix-copy">
+				<h3>Oder gemischt, beides parallel</h3>
+				<p>Einsteiger lernen die Grundlagen und spielen ihr Turnier auf dem Kurzplatz, Golfer mit Platzreife starten ihr eigenes auf der 18-Loch-Runde. Zur Siegerehrung kommen alle wieder zusammen.</p>
+			</div>
+			<a class="fg-btn-brand" href="<?php echo esc_url( $cf_anfrage_quick ); ?>">Jetzt anfragen</a>
+		</div>
+	</div>
+</section>
+<?php endif; ?>
+
+<?php /* Story: restlicher Intro-Text + Gruende als Liste, daneben das Format-Motiv. */ ?>
+<section class="mk-section cty-story cty-reveal" aria-label="Warum <?php echo esc_attr( $h1 ); ?>">
+	<div class="cty-story-grid">
+		<div class="cty-story-copy">
+			<h2 class="mk-h2"><?php echo esc_html( $format_name ); ?> in <?php echo esc_html( $city_name ); ?>, gut aufgehoben.</h2>
+			<?php if ( '' !== $story_text ) : ?>
+			<p class="cty-story-intro"><?php echo esc_html( $story_text ); ?></p>
+			<?php endif; ?>
+			<?php if ( ! empty( $reasons ) ) : ?>
+			<ul class="cty-story-points">
+				<?php foreach ( $reasons as $r ) : ?>
+				<li class="cty-story-point">
+					<span class="cty-story-ic" aria-hidden="true"><?php echo fge_city_ico( $r['ic'] ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+					<div>
+						<h3><?php echo esc_html( $r['t'] ); ?></h3>
+						<p><?php echo esc_html( $r['b'] ); ?></p>
+					</div>
+				</li>
+				<?php endforeach; ?>
+			</ul>
+			<?php endif; ?>
+		</div>
+		<figure class="cty-story-media">
+			<img src="<?php echo esc_url( fge_get_placeholder_image_url( $format['hero_img'] ?? 'golfplatz-panorama.jpg' ) ); ?>"
+			     alt="<?php echo esc_attr( $format_name . ' auf dem Golfplatz' ); ?>" loading="lazy">
+		</figure>
+	</div>
+</section>
+
+<?php /* FAQ: zentrierte Karten-Akkordeons (gleicher Stil wie die Stadt-Seite) */ ?>
+<section class="mk-section faq-section cty-faq cty-reveal" aria-label="FAQ">
+	<div class="cty-faq-head">
+		<h2 class="mk-h2"><?php echo esc_html( $eyebrow ); ?>, kurz erklärt.</h2>
+		<p class="faq-aside-note">Eure Frage ist nicht dabei? Schreibt mir direkt:
+			<a href="mailto:julius@firmengolf-events.de">julius@firmengolf-events.de</a></p>
+	</div>
+	<ul class="faq-list faq-anim cty-faq-cards">
+		<?php foreach ( $faqs as $faq ) : ?>
+			<li class="faq-item">
+				<button class="faq-q" type="button" aria-expanded="false">
+					<span><?php echo esc_html( $faq['q'] ); ?></span>
+					<span class="faq-toggle cty-faq-chev" aria-hidden="true">
+						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+					</span>
+				</button>
+				<div class="faq-a">
+					<div class="faq-a-in">
 						<?php echo esc_html( $faq['a'] ); ?>
 						<?php if ( ! empty( $faq['link']['url'] ) ) : ?>
 							<a class="faq-a-link" href="<?php echo esc_url( $faq['link']['url'] ); ?>"><?php echo esc_html( $faq['link']['label'] ); ?> &rarr;</a>
 						<?php endif; ?>
 					</div>
-				</li>
-			<?php endforeach; ?>
-		</ul>
-	</div>
+				</div>
+			</li>
+		<?php endforeach; ?>
+	</ul>
 </section>
 
 <?php /* Cross-Links: andere Formate in dieser Stadt + gleiches Format in anderer Stadt */ ?>
-<section class="mk-section" aria-label="Weitere Formate in <?php echo esc_attr( $city_name ); ?>">
+<section class="mk-section cty-reveal" aria-label="Weitere Formate in <?php echo esc_attr( $city_name ); ?>">
 	<div class="mk-section-head">
-		<div class="mk-eyebrow">Weitere Formate in <?php echo esc_html( $city_name ); ?></div>
 		<h2 class="mk-h2">Noch mehr Golf-Events in <?php echo esc_html( $city_name ); ?>.</h2>
 	</div>
-	<div class="city-reasons">
-		<?php foreach ( $fmeta_all as $fslug => $fm ) : if ( $fslug === $format_slug ) { continue; } ?>
-			<a class="city-reason" style="text-decoration:none;" href="<?php echo esc_url( home_url( '/golf-events/' . $city_slug . '/' . $fslug . '/' ) ); ?>">
-				<h3 class="city-reason-t"><?php echo esc_html( sprintf( $fm['eyeb'], $city_name ) ); ?> →</h3>
+	<div class="cty-fmt-bento">
+		<?php
+		// Foto-Kacheln wie auf der Stadt-Seite (Julius, 2026-08-20): 6 Formate ohne das
+		// aktuelle; erste und letzte Kachel breit, damit beide Reihen exakt aufgehen.
+		$cf_fmt_pages = function_exists( 'fge_get_event_format_pages' ) ? fge_get_event_format_pages() : [];
+		$cf_fmt_rest  = array_diff_key( $fmeta_all, [ $format_slug => true ] );
+		$cf_fmt_last  = count( $cf_fmt_rest ) - 1;
+		$cf_fmt_i     = 0;
+		foreach ( $cf_fmt_rest as $fslug => $fm ) :
+			$cf_fmt_title = trim( (string) strtok( sprintf( $fm['eyeb'], $city_name ), '·' ) );
+			$cf_fmt_img   = $cf_fmt_pages[ $fslug ]['hero_img'] ?? 'golfplatz-panorama.jpg';
+		?>
+			<a class="cty-fmt-tile<?php echo ( 0 === $cf_fmt_i || $cf_fmt_last === $cf_fmt_i ) ? ' is-wide' : ''; ?>" href="<?php echo esc_url( home_url( '/golf-events/' . $city_slug . '/' . $fslug . '/' ) ); ?>">
+				<img src="<?php echo esc_url( fge_get_placeholder_image_url( $cf_fmt_img ) ); ?>" alt="" loading="lazy">
+				<span class="cty-fmt-tile-scrim" aria-hidden="true"></span>
+				<span class="cty-fmt-tile-txt">
+					<span class="cty-fmt-tile-h"><?php echo esc_html( $cf_fmt_title ); ?></span>
+					<span class="cty-fmt-tile-p"><?php echo esc_html( sprintf( $fm['desc'], $city_name ) ); ?></span>
+					<span class="cty-fmt-tile-go"><?php echo esc_html( $cf_fmt_title ); ?> in <?php echo esc_html( $city_name ); ?> ansehen
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+					</span>
+				</span>
 			</a>
-		<?php endforeach; ?>
+		<?php $cf_fmt_i++; endforeach; ?>
 	</div>
 	<p class="mk-sub" style="margin-top:18px;">
 		<a href="<?php echo esc_url( $city_url ); ?>">Alle Golf-Events in <?php echo esc_html( $city_name ); ?></a>
-		· <a href="<?php echo esc_url( $format_url ); ?>"><?php echo esc_html( $format['name'] ?? 'Format' ); ?> deutschlandweit</a>
+		· <a href="<?php echo esc_url( $format_url ); ?>"><?php echo esc_html( $format_name ); ?> deutschlandweit</a>
 		<?php foreach ( $sibling_cities as $sib ) : if ( ! isset( $cities[ $sib ] ) ) { continue; } ?>
 			· <a href="<?php echo esc_url( home_url( '/golf-events/' . $sib . '/' . $format_slug . '/' ) ); ?>"><?php echo esc_html( sprintf( $fmeta_all[ $format_slug ]['eyeb'] ?? '%s', $cities[ $sib ]['name'] ) ); ?></a>
 		<?php endforeach; ?>
 	</p>
 </section>
 
-<?php /* CTA */ ?>
-<section class="mk-cta" aria-label="Anfrage">
-	<div class="mk-cta-inner">
-		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für <?php echo esc_html( $city_name ); ?>?</div>
-		<h2 class="mk-cta-h"><?php echo esc_html( $eyebrow ); ?> <em class="mk-italic">planen</em>.</h2>
-		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $cf_anfrage_quick ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>
-			<a class="mk-cta-mail" href="<?php echo esc_url( $city_url ); ?>">Alle Formate in <?php echo esc_html( $city_name ); ?> →</a>
-		</div>
-	</div>
-</section>
+<?php /* CTA mit Putt-Moment (gemeinsamer Baustein) */
+$cf_cta_links = '<a href="' . esc_url( $city_url ) . '">Alle Formate in ' . esc_html( $city_name ) . '</a>';
+foreach ( $sibling_cities as $sib ) {
+	if ( ! isset( $cities[ $sib ] ) ) { continue; }
+	$cf_cta_links .= '<a href="' . esc_url( home_url( '/golf-events/' . $sib . '/' . $format_slug . '/' ) ) . '">' . esc_html( $format_name . ' in ' . $cities[ $sib ]['name'] ) . '</a>';
+}
+get_template_part( 'template-parts/fge-putt-cta', null, [
+	'headline_html' => 'Lasst uns euer ' . esc_html( $format_name ) . ' in ' . esc_html( $city_name ) . ' <em class="mk-italic">planen</em>.',
+	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
+	'anfrage_url'   => $cf_anfrage_quick,
+	'links_html'    => $cf_cta_links,
+] );
+?>
 
 <?php get_template_part( 'template-parts/fge-footer' ); ?>
 
@@ -303,9 +425,20 @@ document.querySelectorAll('.fge-page .faq-q[aria-expanded]').forEach(function (b
 		var item = btn.closest('.faq-item');
 		var open = item.classList.toggle('open');
 		btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-		var t = btn.querySelector('.faq-toggle'); if (t) t.textContent = open ? '−' : '+';
 	});
 });
+/* Sanftes Einblenden der Sektionen beim Scrollen (wie Stadt-Seite): greift nur
+   unter html.cty-io, ohne JS oder mit reduzierter Bewegung bleibt alles sichtbar. */
+(function () {
+	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) { return; }
+	document.documentElement.classList.add('cty-io');
+	var io = new IntersectionObserver(function (entries) {
+		entries.forEach(function (e) {
+			if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+		});
+	}, { rootMargin: '0px 0px -8% 0px' });
+	document.querySelectorAll('.cty-reveal').forEach(function (el) { io.observe(el); });
+})();
 </script>
 
 <?php get_footer();

@@ -332,8 +332,13 @@ add_action( 'wp_enqueue_scripts', function() {
 		);
 	}
 
-	// Anfrage-Wizard (JS-Insel) — auf Individuelle-Events (inkl. Budget-Rechner) und der allgemeinen Anfrage-Seite.
-	if ( is_page( [ 'individuelle-events', 'event-anfrage' ] ) ) {
+	// Anfrage-Wizard (JS-Insel) — auf Individuelle-Events (inkl. Budget-Rechner), der
+	// allgemeinen Anfrage-Seite UND den Stadt-Landingpages: dort öffnen die
+	// „Event anfragen"-CTAs den Wizard als Overlay direkt auf der Seite, statt zur
+	// Anfrage-Seite zu springen. Nach dem Schließen steht man wieder dort, wo man
+	// war (Julius, 2026-08-20). Ohne JS fällt der Link auf die Anfrage-Seite zurück.
+	$fge_is_city_lp = '' !== (string) get_query_var( 'fge_city' ); // Stadt- UND Format×Stadt-Seiten
+	if ( is_page( [ 'individuelle-events', 'event-anfrage' ] ) || $fge_is_city_lp ) {
 		wp_enqueue_script(
 			'fge-individual',
 			plugins_url( 'assets/js/fge-individual.js', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),

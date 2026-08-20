@@ -58,6 +58,28 @@ function fge_city_coords(): array {
 		'frankfurt'   => [ 50.1109, 8.6821 ],
 		'duesseldorf' => [ 51.2277, 6.7735 ],
 		'tegernsee'   => [ 47.7124, 11.7580 ],
+		'augsburg'               => [ 48.3705, 10.8978 ],
+		'bonn'                   => [ 50.7374, 7.0982 ],
+		'bremen'                 => [ 53.0793, 8.8017 ],
+		'dortmund'               => [ 51.5136, 7.4653 ],
+		'dresden'                => [ 51.0504, 13.7373 ],
+		'erlangen'               => [ 49.5897, 11.0120 ],
+		'essen'                  => [ 51.4556, 7.0116 ],
+		'garmisch-partenkirchen' => [ 47.4917, 11.0955 ],
+		'ingolstadt'             => [ 48.7665, 11.4258 ],
+		'itzehoe'                => [ 53.9252, 9.5163 ],
+		'karlsruhe'              => [ 49.0069, 8.4037 ],
+		'kiel'                   => [ 54.3233, 10.1228 ],
+		'landshut'               => [ 48.5370, 12.1508 ],
+		'leipzig'                => [ 51.3397, 12.3731 ],
+		'luebeck'                => [ 53.8655, 10.6866 ],
+		'lueneburg'              => [ 53.2464, 10.4115 ],
+		'mannheim'               => [ 49.4875, 8.4660 ],
+		'penzberg'               => [ 47.7522, 11.3772 ],
+		'regensburg'             => [ 49.0134, 12.1016 ],
+		'rosenheim'              => [ 47.8561, 12.1289 ],
+		'ulm'                    => [ 48.4011, 9.9876 ],
+		'wuerzburg'              => [ 49.7913, 9.9534 ],
 	];
 }
 
@@ -210,6 +232,15 @@ add_action( 'wp_enqueue_scripts', function (): void {
 		$places[] = $self_place;
 	} else {
 	foreach ( fge_verzeichnis_nearby( $coords[0], $coords[1], $radius, 80 ) as $gp ) {
+		// Partner-Foto fürs Auswahl-Panel der City-Seiten: Hero-Bild des verknüpften
+		// Partner-Profils (nur Partner haben Fotos, das stellt sie sichtbar nach vorn).
+		$gp_photo = '';
+		if ( 1 === (int) $gp->ist_partner && (int) $gp->partner_id > 0 ) {
+			$gp_aid = (int) get_post_meta( (int) $gp->partner_id, '_fge_hero_image_attachment_id', true );
+			if ( $gp_aid ) {
+				$gp_photo = (string) wp_get_attachment_image_url( $gp_aid, 'medium_large' );
+			}
+		}
 		$places[] = [
 			'id'      => (int) $gp->id,
 			'name'    => $gp->name,
@@ -219,6 +250,8 @@ add_action( 'wp_enqueue_scripts', function (): void {
 			// nicht der CPT-Link (dort können Alt-Einträge liegen, s. Maxlrain 2026-07).
 			'partner' => 1 === (int) $gp->ist_partner,
 			'meta'    => $gp->ort . ' · ' . round( $gp->dist ) . ' km',
+			'holes'   => (string) $gp->loecher,
+			'photo'   => $gp_photo,
 		];
 	}
 	}

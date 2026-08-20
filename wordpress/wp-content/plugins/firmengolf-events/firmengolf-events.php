@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.126' );
+define( 'FGE_VERSION', '1.9.128' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -29,6 +29,7 @@ require_once FGE_DIR . 'includes/event-pricing.php';
 require_once FGE_DIR . 'includes/event-formats.php';
 require_once FGE_DIR . 'includes/workshop-migration.php';
 require_once FGE_DIR . 'includes/content-fixes-2026-08.php';
+require_once FGE_DIR . 'includes/city-seed-2026-08.php';
 require_once FGE_DIR . 'includes/data-retention.php';
 require_once FGE_DIR . 'includes/wertschaetzung.php';
 require_once FGE_DIR . 'includes/blog-bylines.php';

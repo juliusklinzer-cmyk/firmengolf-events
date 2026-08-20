@@ -67,7 +67,10 @@ function fge_get_event_format_pages(): array {
 	$t_workshop = [ 'workshop', 'offsite', 'offsite_mit_meeting' ];
 	$t_turnier  = [ 'firmen_golfturnier', 'firmenturnier', '9hole_turnier', '18hole_turnier' ];
 	$t_kunden   = [ 'kundenevent' ];
-	$t_afterw   = [ 'after_work_golf', 'coaching', 'putting_challenge', 'kurzspiel_challenge' ];
+	// After-Work listet auch die Teamevents mit: jedes Teamevent ist als
+	// After-Work-Termin buchbar (Julius, 2026-08-20). Kern-Typen stehen vorn,
+	// die Reihenfolge steuert die Sortierung der Format-Seiten.
+	$t_afterw   = array_merge( [ 'after_work_golf', 'coaching', 'putting_challenge', 'kurzspiel_challenge' ], $t_team );
 
 	$from_team     = function_exists( 'fge_format_price_from_label' ) ? fge_format_price_from_label( $t_team ) : '';
 	$from_workshop = function_exists( 'fge_format_price_from_label' ) ? fge_format_price_from_label( $t_workshop ) : '';
@@ -273,12 +276,18 @@ function fge_format_events( array $format, int $limit = 6 ): array {
 	foreach ( $posts as $p ) {
 		if ( ! function_exists( 'fge_event_is_public' ) || fge_event_is_public( $p->ID ) ) {
 			$out[] = $p;
-			if ( count( $out ) >= $limit ) {
-				break;
-			}
 		}
 	}
-	return $out;
+	// Kern-Typen des Formats zuerst (Reihenfolge der types-Liste), danach die
+	// „auch buchbar als"-Events (z. B. Teamevents in der After-Work-Kategorie,
+	// Julius 2026-08-20). Erst sortieren, dann kappen, sonst faellt das
+	// namensgebende Event bei vielen Treffern aus der Auswahl.
+	usort( $out, static function ( $a, $b ) use ( $types ) {
+		$ia = array_search( get_post_meta( $a->ID, '_fge_event_type', true ), $types, true );
+		$ib = array_search( get_post_meta( $b->ID, '_fge_event_type', true ), $types, true );
+		return ( false === $ia ? PHP_INT_MAX : $ia ) <=> ( false === $ib ? PHP_INT_MAX : $ib );
+	} );
+	return array_slice( $out, 0, $limit );
 }
 
 add_action( 'init', static function () {
