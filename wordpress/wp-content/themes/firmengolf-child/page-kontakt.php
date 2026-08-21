@@ -316,8 +316,31 @@ $faqs = [
 		</a>
 	</div>
 	<div class="ct-visit-map">
-		<iframe class="ct-extra-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $office_map ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $co['office_name'] . ', ' . $office_addr ); ?>"></iframe>
+		<iframe class="ct-extra-map-frame" id="fge-visit-map" data-name="googlemaps" data-src="<?php echo esc_url( $office_map ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $co['office_name'] . ', ' . $office_addr ); ?>"></iframe>
+		<?php /* Gestalteter Consent-Hinweis wie auf den Event-/Stadtseiten statt der
+		         rohen Klaro-Box; blendet sich aus, sobald Klaro die Karte lädt. */ ?>
+		<div class="ct-visit-consent" id="fge-visit-consent">
+			<div class="gpd-map-consent">
+				<p>Die Karte lädt erst nach deiner Einwilligung für Google&nbsp;Maps.</p>
+				<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
+			</div>
+		</div>
 	</div>
+	<script>
+	(function () {
+		var overlay = document.getElementById('fge-visit-consent');
+		var frame   = document.getElementById('fge-visit-map');
+		if (!overlay || !frame) { return; }
+		var check = function () {
+			var f = document.getElementById('fge-visit-map');
+			if (f && f.src && f.src.indexOf('google.com') !== -1) { overlay.style.display = 'none'; return true; }
+			return false;
+		};
+		if (check()) { return; }
+		var tries = 0;
+		var t = setInterval(function () { if (check() || ++tries > 120) { clearInterval(t); } }, 500);
+	})();
+	</script>
 </section>
 
 <?php /* ===== FAQ (Karten-Akkordeons im Stil der Landingpages) ===== */ ?>

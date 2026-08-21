@@ -3022,6 +3022,11 @@ a.mk-step:focus-visible { outline: 2px solid var(--fairway-700); outline-offset:
   }
   .evd-related .ev-grid4::-webkit-scrollbar { display: none; }
   .evd-related .ev-grid4 > .fg-event { flex: 0 0 80%; scroll-snap-align: start; }
+  /* Karte v2 in der Wisch-Reihe: vertikale Kachel statt der 122px-Querform,
+     sonst bricht der Preisblock in der 80%-Karte um (Design-QA 2026-08-21). */
+  .evd-related .ev-grid4 .evF-card a { display: flex; flex-direction: column; }
+  .evd-related .ev-grid4 .evF-media { aspect-ratio: 3/2; height: auto; }
+  .evd-related .ev-grid4 .evF-chip { left: 10px; top: 10px; bottom: auto; }
 }
 
 /* Custom sort dropdown (ev-dd) */
@@ -5560,6 +5565,11 @@ a.iv-tile { text-decoration: none; }
 .ct-visit-map { position: relative; border-radius: var(--radius-xl); overflow: hidden; background: var(--paper-200); aspect-ratio: 16/10; }
 .ct-visit-map .ct-extra-map-frame { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ct-visit-map .klaro-placeholder { position: absolute; inset: 0; }
+/* Eigener Consent-Hinweis über der rohen Klaro-Box (JS blendet ihn nach Einwilligung aus). */
+.ct-visit-consent { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; background: var(--paper-200); }
+
+/* Format×Stadt-Crosslinks: Links nie mitten im Label umbrechen. */
+.cfx-links a { white-space: nowrap; }
 
 @media (max-width: 1100px) {
   .contact-shell, .ct-extra-grid { grid-template-columns: 1fr; }

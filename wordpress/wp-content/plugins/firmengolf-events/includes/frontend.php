@@ -717,7 +717,15 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 			}
 		}
 		$pool = fge_placeholder_pool();
-		$list = ! empty( $pool[ $cat ] ) ? $pool[ $cat ] : ( $pool['all'] ?? [] );
+		// „all" ohne Off-Topic (misc: U-Bahn, Cockpit …) und Gründerfotos: der
+		// Gesamtpool ist NUR Fallback für Event-/Platz-Cover, dort haben die
+		// Marketing-Motive nichts verloren (Design-QA 2026-08-21).
+		$pool_cover_all = array_values( array_diff(
+			(array) ( $pool['all'] ?? [] ),
+			(array) ( $pool['misc'] ?? [] ),
+			(array) ( $pool['founder'] ?? [] )
+		) );
+		$list = ! empty( $pool[ $cat ] ) ? $pool[ $cat ] : $pool_cover_all;
 		if ( ! empty( $list ) ) {
 			// Seiten-weiter Dedup (Julius: „nie ein Bild zweimal"): pro Request wird jedes
 			// Pool-Bild nur EINMAL vergeben — kollidiert der Seed-Index, rückt der nächste
@@ -764,7 +772,7 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 			// Dateidubletten nur eine Handvoll Motive): lieber ein passendes Bild
 			// aus dem Gesamtpool als dasselbe Foto zweimal auf einer Seite.
 			if ( null === $pick ) {
-				$fallback = array_values( array_diff( (array) ( $pool['all'] ?? [] ), $list ) );
+				$fallback = array_values( array_diff( $pool_cover_all, $list ) );
 				$fcount   = count( $fallback );
 				for ( $i = 0; $i < $fcount; $i++ ) {
 					$cand = $fallback[ ( abs( crc32( $cat . '|' . $seed ) ) + $offset + $i ) % $fcount ];

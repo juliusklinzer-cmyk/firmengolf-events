@@ -282,7 +282,8 @@
 		var MIN_DATE = (function () { var d = new Date(); d.setDate(d.getDate() + 7); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
 
 		// Anlass-Auswahl: Reihenfolge + Icon-Kacheln (einheitlich mit den Leistungs-Kacheln).
-		var OCCASIONS = ['Teamevent', 'After-Work Golf', 'Workshop', 'Firmenturnier', 'Offsite', 'Kundenevent', 'Nacht-Event', 'Etwas anderes'];
+		/* 'Offsite' entfernt: seit der Workshop-Umstellung kein eigener Anlass mehr (Design-QA 2026-08-21). */
+		var OCCASIONS = ['Teamevent', 'After-Work Golf', 'Workshop', 'Firmenturnier', 'Kundenevent', 'Nacht-Event', 'Etwas anderes'];
 		var OCC_ICONS = {
 			'Teamevent': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
 			'After-Work Golf': '<path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 4v3M5.2 7.2l1.6 1.6M18.8 7.2l-1.6 1.6M3 12h2M19 12h2"/>',

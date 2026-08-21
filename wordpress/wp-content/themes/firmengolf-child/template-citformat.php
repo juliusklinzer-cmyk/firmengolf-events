@@ -392,11 +392,14 @@ get_header();
 			</a>
 		<?php $cf_fmt_i++; endforeach; ?>
 	</div>
-	<p class="mk-sub" style="margin-top:18px;">
+	<?php /* Stadt-Links nur mit Stadtnamen statt „Format · Stadt" in Endlos-Wiederholung;
+	         nowrap via .cfx-links, Kontext liefert das Label davor (Design-QA 2026-08-21). */ ?>
+	<p class="mk-sub cfx-links" style="margin-top:18px;">
 		<a href="<?php echo esc_url( $city_url ); ?>">Alle Golf-Events in <?php echo esc_html( $city_name ); ?></a>
 		· <a href="<?php echo esc_url( $format_url ); ?>"><?php echo esc_html( $format_name ); ?> deutschlandweit</a>
-		<?php foreach ( $sibling_cities as $sib ) : if ( ! isset( $cities[ $sib ] ) ) { continue; } ?>
-			· <a href="<?php echo esc_url( home_url( '/golf-events/' . $sib . '/' . $format_slug . '/' ) ); ?>"><?php echo esc_html( sprintf( $fmeta_all[ $format_slug ]['eyeb'] ?? '%s', $cities[ $sib ]['name'] ) ); ?></a>
+		<span class="cfx-links-label">· <?php echo esc_html( $format_name ); ?> in anderen Städten:</span>
+		<?php $cfx_first = true; foreach ( $sibling_cities as $sib ) : if ( ! isset( $cities[ $sib ] ) ) { continue; } ?>
+			<?php echo $cfx_first ? '' : '· '; $cfx_first = false; ?><a href="<?php echo esc_url( home_url( '/golf-events/' . $sib . '/' . $format_slug . '/' ) ); ?>"><?php echo esc_html( $cities[ $sib ]['name'] ); ?></a>
 		<?php endforeach; ?>
 	</p>
 </section>
