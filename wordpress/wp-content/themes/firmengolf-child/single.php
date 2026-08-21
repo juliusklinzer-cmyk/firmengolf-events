@@ -240,8 +240,9 @@ get_header();
 			l.textContent = 'Kopiert!';
 			setTimeout(function () { l.textContent = orig; }, 1400);
 		};
-		if (navigator.clipboard) { navigator.clipboard.writeText(url).then(done); }
-		else { window.prompt('Link kopieren:', url); }
+		if (navigator.clipboard) {
+			navigator.clipboard.writeText(url).then(done).catch(function () { window.prompt('Link kopieren:', url); });
+		} else { window.prompt('Link kopieren:', url); }
 	});
 })();
 </script>
