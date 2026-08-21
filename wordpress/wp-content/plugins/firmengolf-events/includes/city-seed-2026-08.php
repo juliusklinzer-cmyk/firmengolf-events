@@ -123,3 +123,185 @@ add_action( 'init', static function () {
 		}
 	}
 }, 21 );
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Turnier-Rollout 2026-08-21 (T2): die drei Turnier-Varianten in allen Städten.
+
+   Julius' Varianten-Trio (21.08.): 18-Loch-Firmenturnier (150 € p.P., bis 120),
+   9-Loch-Firmenturnier ohne Half-Way (80 € p.P.) und Firmenturnier ohne
+   Platzreife auf dem Kurzplatz (80 € p.P.). Die zwei neuen Master existieren
+   bisher nur in der lokalen DB → dieser Seed legt sie aus dem Code an (Live
+   hat kein WP-CLI, nur FTPS + Option-Gate), zieht die 18-Loch-Master-Preise
+   nach und klont beide neue Master in JEDE Stadt, in der ein
+   firmen-golfturnier-Klon existiert (deckt Rollout 1 UND 2 ab).
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/** Volldaten der zwei neuen Turnier-Master (München), für die Live-Anlage. */
+function fge_cityseed26_t2_masters(): array {
+	$addons = "Live-Scoring\nMeetingraum (ab 2 Std.)\nAbholservice\nGebrandete Abschläge\nFotograf";
+	return [
+		[
+			'post_title' => '9-Loch-Firmenturnier in München',
+			'post_name'  => '9-loch-firmenturnier-in-muenchen',
+			'meta'       => [
+				'_fge_event_type'       => 'firmen_golfturnier',
+				'_fge_event_status'     => 'freigegeben',
+				'_fge_event_location'   => 'Raum München',
+				'_fge_region'           => 'München',
+				'_fge_city'             => 'München',
+				'_fge_participants_min' => '12',
+				'_fge_participants_max' => '80',
+				'_fge_duration'         => 'Halbtag · ca. 4 bis 5 Std.',
+				'_fge_card_description' => 'Das kompakte Firmenturnier: 9 Löcher im Turniermodus, zügig gespielt ohne Half-Way-Pause, danach Siegerehrung und Barbecue. Bei Buchung als Paket ist alles inklusive, anpassbar auf euer Turnier.',
+				'_fge_price_mode'       => 'gesamt',
+				'_fge_price_basis'      => 'person',
+				'_fge_price_amount'     => '66.50',
+				'_fge_event_dayflow'    => "Anmeldung & Scorekarten\nAnmeldung am Clubhaus, Ausgabe der Scorekarten und des Startgeschenks.\n\nEinweisung & Flight-Einteilung\nBegrüßung, Regeln und faire Flights, auch Scramble, damit alle Level mitspielen.\n\n9-Loch-Turnier\nEine kompakte Turnierrunde, zügig durchgespielt mit Betreuung am Platz; jeder Flight startet organisiert.\n\nSiegerehrung & Barbecue\nAuswertung, Preise und ein gemeinsames Barbecue zum Ausklang.",
+				'_fge_event_includes'   => "Startunterlagen & Scorekarten\nStartgeschenk\nGreenfee & Platznutzung\nStartlisten & Flight-Einteilung\nSiegerehrung & Preise\nBarbecue\nOrganisation & ein Ansprechpartner",
+				'_fge_event_addons'     => $addons,
+				'_fge_geo_lat'          => '48.137',
+				'_fge_geo_lng'          => '11.575',
+			],
+		],
+		[
+			'post_title' => 'Firmenturnier ohne Platzreife in München',
+			'post_name'  => 'firmenturnier-ohne-platzreife-in-muenchen',
+			'meta'       => [
+				'_fge_event_type'       => 'firmen_golfturnier',
+				'_fge_event_status'     => 'freigegeben',
+				'_fge_event_location'   => 'Raum München',
+				'_fge_region'           => 'München',
+				'_fge_city'             => 'München',
+				'_fge_participants_min' => '12',
+				'_fge_participants_max' => '60',
+				'_fge_duration'         => 'Halbtag · ca. 5 bis 6 Std.',
+				'_fge_card_description' => 'Das Firmenturnier für Teams ohne Golferfahrung, ganz ohne Platzreife: erst eine Stunde Einführung mit dem Golf-Pro, dann Turnier auf dem Kurzplatz über 3 bis 6 Löcher, zum Ausklang Siegerehrung und Dinner. Bei Buchung als Paket ist alles inklusive, anpassbar auf euer Turnier.',
+				'_fge_price_mode'       => 'gesamt',
+				'_fge_price_basis'      => 'person',
+				'_fge_price_amount'     => '66.50',
+				'_fge_event_dayflow'    => "Anmeldung & Einführung mit dem Pro\nAnmeldung am Clubhaus, danach eine Stunde Einführung in den Golfsport mit einem Golf-Pro. Schläger und Bälle werden gestellt.\n\nEinweisung & Flight-Einteilung\nBegrüßung, Regeln und faire Flights, damit alle ohne Vorerfahrung mitspielen.\n\nKurzplatz-Turnier\nTurnier über 3 bis 6 Löcher auf dem Kurzplatz, ideal für Einsteigerinnen und Einsteiger, mit Betreuung am Platz.\n\nSiegerehrung & Dinner\nAuswertung, Preise und ein gemeinsames Abendessen zum Ausklang.",
+				'_fge_event_includes'   => "Einführung mit Golf-Pro (1 Std.)\nLeihschläger & Bälle\nStartunterlagen & Scorekarten\nStartgeschenk\nPlatznutzung Kurzplatz\nStartlisten & Flight-Einteilung\nSiegerehrung & Preise\nDinner\nOrganisation & ein Ansprechpartner",
+				'_fge_event_addons'     => $addons,
+				'_fge_geo_lat'          => '48.137',
+				'_fge_geo_lng'          => '11.575',
+			],
+		],
+	];
+}
+
+/** Legt einen T2-Master an, falls er fehlt (idempotent per Slug). */
+function fge_cityseed26_t2_ensure_master( array $def ): ?WP_Post {
+	$existing = get_page_by_path( $def['post_name'], OBJECT, 'firmengolf_event' );
+	if ( $existing instanceof WP_Post ) {
+		return $existing;
+	}
+	$id = wp_insert_post( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => 'publish',
+		'post_title'  => $def['post_title'],
+		'post_name'   => $def['post_name'],
+	] );
+	if ( ! $id || is_wp_error( $id ) ) {
+		return null;
+	}
+	foreach ( $def['meta'] as $key => $value ) {
+		update_post_meta( $id, $key, $value );
+	}
+	if ( function_exists( 'fge_event_price_label' ) ) {
+		$pr = fge_event_pricing( (int) $id );
+		update_post_meta( $id, '_fge_sale_price_net', $pr['gross'] );
+		update_post_meta( $id, '_fge_public_price_label', fge_event_price_label( (int) $id ) );
+	}
+	return get_post( $id );
+}
+
+/**
+ * Zieht einen Stadt-Klon inhaltlich auf den Master-Stand (alle _fge_-Metas
+ * AUSSER Ortsdaten), Preis-Label wird neu berechnet. Für die 18-Loch-Klone
+ * aus Rollout 1, die noch den alten Preisstand (157.50/80) tragen.
+ */
+function fge_cityseed26_t2_sync_clone( WP_Post $master, WP_Post $clone ): void {
+	$keep = [ '_fge_city', '_fge_region', '_fge_event_location', '_fge_geo_lat', '_fge_geo_lng' ];
+	$skip = [ '_fge_views_count', '_fge_requests_count', '_edit_lock', '_edit_last' ];
+	foreach ( get_post_meta( $master->ID ) as $key => $values ) {
+		if ( in_array( $key, $keep, true ) || in_array( $key, $skip, true ) ) {
+			continue;
+		}
+		update_post_meta( $clone->ID, $key, maybe_unserialize( $values[0] ) );
+	}
+	if ( function_exists( 'fge_event_price_label' ) ) {
+		$pr = fge_event_pricing( (int) $clone->ID );
+		update_post_meta( $clone->ID, '_fge_sale_price_net', $pr['gross'] );
+		update_post_meta( $clone->ID, '_fge_public_price_label', fge_event_price_label( (int) $clone->ID ) );
+	}
+}
+
+add_action( 'init', static function () {
+	if ( get_option( 'fge_city_seed_2026_08_t2' ) ) {
+		return;
+	}
+	update_option( 'fge_city_seed_2026_08_t2', '1', true );
+
+	// 1) 18-Loch-Master (München) auf den 21.08.-Stand: 125 netto (150 € p.P.),
+	//    bis 120 Gäste, Paket-Satz in der Beschreibung. Lokal längst so, live neu.
+	$m18 = get_page_by_path( 'firmen-golfturnier-in-muenchen', OBJECT, 'firmengolf_event' );
+	if ( $m18 instanceof WP_Post ) {
+		update_post_meta( $m18->ID, '_fge_price_amount', '125' );
+		update_post_meta( $m18->ID, '_fge_participants_max', '120' );
+		update_post_meta( $m18->ID, '_fge_card_description', 'Klassisches Firmenturnier mit Flights, Live-Scoring und Siegerehrung, auch mit Scramble für gemischte Level. Komplett organisiert, von der Startliste bis zum Dinner. Bei Buchung als Paket ist alles inklusive, anpassbar auf euer Turnier.' );
+		if ( function_exists( 'fge_event_price_label' ) ) {
+			$pr = fge_event_pricing( (int) $m18->ID );
+			update_post_meta( $m18->ID, '_fge_sale_price_net', $pr['gross'] );
+			update_post_meta( $m18->ID, '_fge_public_price_label', fge_event_price_label( (int) $m18->ID ) );
+		}
+	}
+
+	// 2) After-Work München auf das kalibrierte 49-€-Label (Betrag bewusst leer,
+	//    die 5-€-Rundung liesse 49 sonst nicht zu). Lokal längst so, live neu.
+	$maw = get_page_by_path( 'after-work-golf-in-muenchen', OBJECT, 'firmengolf_event' );
+	if ( $maw instanceof WP_Post ) {
+		update_post_meta( $maw->ID, '_fge_price_amount', '' );
+		update_post_meta( $maw->ID, '_fge_public_price_label', '49 € p.P.' );
+	}
+
+	// 3) Die zwei neuen Turnier-Master sicherstellen.
+	$t2_masters = [];
+	foreach ( fge_cityseed26_t2_masters() as $def ) {
+		$m = fge_cityseed26_t2_ensure_master( $def );
+		if ( $m instanceof WP_Post ) {
+			$t2_masters[] = $m;
+		}
+	}
+
+	// 4) Alle Städte über die vorhandenen 18-Loch-Klone finden (Rollout 1 + 2):
+	//    Klon-Preise auf Master-Stand syncen und die neuen Turniere dazustellen.
+	global $wpdb;
+	$clone_ids = $wpdb->get_col( $wpdb->prepare(
+		"SELECT ID FROM {$wpdb->posts}
+		 WHERE post_type = 'firmengolf_event' AND post_status = 'publish'
+		   AND post_name LIKE %s AND post_name != %s",
+		'firmen-golfturnier-in-%',
+		'firmen-golfturnier-in-muenchen'
+	) );
+	foreach ( $clone_ids as $cid ) {
+		$c18 = get_post( (int) $cid );
+		if ( ! $c18 instanceof WP_Post || ! $m18 instanceof WP_Post ) {
+			continue;
+		}
+		fge_cityseed26_t2_sync_clone( $m18, $c18 );
+
+		$city_slug = substr( $c18->post_name, strlen( 'firmen-golfturnier-in-' ) );
+		$city      = [
+			(string) get_post_meta( $c18->ID, '_fge_city', true ),
+			(string) get_post_meta( $c18->ID, '_fge_event_location', true ),
+			(string) get_post_meta( $c18->ID, '_fge_geo_lat', true ),
+			(string) get_post_meta( $c18->ID, '_fge_geo_lng', true ),
+		];
+		if ( '' === $city[0] || '' === $city[2] ) {
+			continue; // ohne Ortsdaten kein sinnvoller Klon
+		}
+		foreach ( $t2_masters as $tm ) {
+			fge_cityseed26_clone_master( $tm, $city_slug, $city );
+		}
+	}
+}, 22 );
