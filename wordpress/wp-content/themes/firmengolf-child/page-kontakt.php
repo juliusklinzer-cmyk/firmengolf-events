@@ -83,6 +83,26 @@ $faqs = [
 		Kein Chatbot, kein Ticketsystem, keine Warteschleife ins Nichts. Wähl den Weg, der dir
 		am liebsten ist, wir antworten innerhalb eines Werktags, oft schneller.
 	</p>
+	<?php /* Die drei Direktwege als ruhige Zeile im Hero: die erste Entscheidung
+	         der Seite (anrufen, schreiben, mailen), statt als Boxenstapel neben
+	         dem Formular (Redesign 2026-08-21). */ ?>
+	<div class="ct-channels" aria-label="Direkte Kontaktwege">
+		<a class="ct-channel" href="tel:<?php echo esc_attr( $co['phone_tel'] ); ?>">
+			<span class="ct-channel-ic"><?php echo $cicon( 'phone', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+			<span class="ct-channel-l">Anrufen</span>
+			<span class="ct-channel-v"><?php echo esc_html( $co['phone_display'] ); ?></span>
+		</a>
+		<a class="ct-channel ct-channel-wa" href="<?php echo esc_url( $co['whatsapp_url'] ); ?>" target="_blank" rel="noopener noreferrer">
+			<span class="ct-channel-ic"><?php echo $cicon( 'chat', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+			<span class="ct-channel-l">WhatsApp</span>
+			<span class="ct-channel-v">Antwort meist in Minuten</span>
+		</a>
+		<a class="ct-channel" href="mailto:<?php echo esc_attr( $co['email_general'] ); ?>">
+			<span class="ct-channel-ic"><?php echo $cicon( 'mail', 16 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+			<span class="ct-channel-l">E-Mail</span>
+			<span class="ct-channel-v"><?php echo esc_html( $co['email_general'] ); ?></span>
+		</a>
+	</div>
 </section>
 
 <?php /* ===== Form + sidebar (Redesign 2026-07: Formular primär, alle anderen Wege kompakt in der Sidebar) ===== */ ?>
@@ -192,23 +212,21 @@ $faqs = [
 
 	<div class="contact-left">
 
-		<?php /* Direkte Wege, kompakt */ ?>
-		<div class="ct-ways" aria-label="Direkte Kontaktwege">
-			<a class="ct-way" href="tel:<?php echo esc_attr( $co['phone_tel'] ); ?>">
-				<span class="ct-way-ic"><?php echo $cicon( 'phone', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				<span class="ct-way-l">Anrufen</span>
-				<span class="ct-way-v"><?php echo esc_html( $co['phone_display'] ); ?></span>
-			</a>
-			<a class="ct-way ct-way-wa" href="<?php echo esc_url( $co['whatsapp_url'] ); ?>" target="_blank" rel="noopener noreferrer">
-				<span class="ct-way-ic"><?php echo $cicon( 'chat', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				<span class="ct-way-l">WhatsApp</span>
-				<span class="ct-way-v">Antwort meist in Minuten</span>
-			</a>
-			<a class="ct-way" href="mailto:<?php echo esc_attr( $co['email_general'] ); ?>">
-				<span class="ct-way-ic"><?php echo $cicon( 'mail', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				<span class="ct-way-l">E-Mail</span>
-				<span class="ct-way-v"><?php echo esc_html( $co['email_general'] ); ?></span>
-			</a>
+		<?php /* Ansprechpartner + Versprechen in EINER Karte (Redesign 2026-08-21:
+		         vorher acht Boxen in der Spalte, die Direktwege sitzen jetzt im Hero). */ ?>
+		<div class="ct-person">
+			<span class="ct-person-photo" role="img" aria-label="Julius Klinzer" style="background-image:url('<?php echo esc_url( $img( 'gruender-julius-klinzer-2.jpg' ) ); ?>')"></span>
+			<div>
+				<div class="ct-person-q">„Anfragen landen direkt bei mir. Ich antworte persönlich, versprochen."</div>
+				<div class="ct-person-id">
+					<span class="ct-person-name">Julius Klinzer</span>
+					<span class="ct-person-role">Gründer · Firmengolf</span>
+				</div>
+				<div class="ct-person-facts">
+					<span class="ct-person-fact"><?php echo $cicon( 'clock', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>Antwort in einem Werktag</span>
+					<span class="ct-person-fact"><?php echo $cicon( 'check', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>Unverbindlich und kostenlos</span>
+				</div>
+			</div>
 		</div>
 
 		<?php /* Rückruf, aufklappbar (offen nach Absenden/Fehler) */ ?>
@@ -258,11 +276,11 @@ $faqs = [
 			</div>
 		</details>
 
-		<?php /* Termin & Besuch, aufklappbar */ ?>
+		<?php /* Termin, aufklappbar (Adresse und Karte haben unten eine eigene Sektion) */ ?>
 		<details class="ct-fold">
 			<summary class="ct-fold-s">
 				<span class="ct-way-ic"><?php echo $cicon( 'calendar', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				<span class="ct-fold-t">Termin buchen oder vorbeikommen</span>
+				<span class="ct-fold-t">Termin buchen</span>
 				<span class="ct-fold-chev" aria-hidden="true"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 			</summary>
 			<div class="ct-fold-body">
@@ -270,84 +288,59 @@ $faqs = [
 				<a class="fg-btn-brand" href="<?php echo esc_url( $hubspot_url ); ?>" target="_blank" rel="noopener noreferrer" style="width:100%;">
 					Termin buchen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				</a>
-				<p class="ct-fold-p" style="margin-top:18px;">
-					<strong>Oder komm auf einen Kaffee vorbei:</strong><br>
-					<?php echo esc_html( $co['office_name'] ); ?>, <?php echo esc_html( $office_addr ); ?> (<?php echo esc_html( $co['office_floor'] ); ?>).
-					Kurz vorher anrufen, dann ist jemand da.
-				</p>
-				<div class="ct-fold-map">
-					<iframe class="ct-extra-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $office_map ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $co['office_name'] . ', ' . $office_addr ); ?>"></iframe>
-				</div>
-				<a class="fg-btn-ghost" href="<?php echo esc_url( $maps_url ); ?>" target="_blank" rel="noopener noreferrer" style="margin-top:10px;">
-					Route anzeigen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-				</a>
 			</div>
 		</details>
-
-		<div class="ct-person">
-			<span class="ct-person-photo" role="img" aria-label="Julius Klinzer" style="background-image:url('<?php echo esc_url( $img( 'gruender-julius-klinzer-2.jpg' ) ); ?>')"></span>
-			<div>
-				<div class="ct-person-q">„Anfragen landen direkt bei mir. Ich antworte persönlich, versprochen."</div>
-				<div class="ct-person-id">
-					<span class="ct-person-name">Julius Klinzer</span>
-					<span class="ct-person-role">Gründer · Firmengolf</span>
-				</div>
-			</div>
-		</div>
-
-		<div class="ct-promise">
-			<div class="ct-promise-row">
-				<span class="ct-promise-ic"><?php echo $cicon( 'clock', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				<div>
-					<div class="ct-promise-t">Antwort in einem Werktag</div>
-					<div class="ct-promise-m">Freitagnachmittag, Sonntag: Montag früh</div>
-				</div>
-			</div>
-			<div class="ct-promise-row">
-				<span class="ct-promise-ic"><?php echo $cicon( 'check', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				<div>
-					<div class="ct-promise-t">Unverbindlich &amp; kostenlos</div>
-					<div class="ct-promise-m">Erst beraten, dann entscheiden</div>
-				</div>
-			</div>
-			<div class="ct-promise-row">
-				<span class="ct-promise-ic"><?php echo $cicon( 'a11y', 18 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-				<div>
-					<div class="ct-promise-t">So, wie's dir passt</div>
-					<div class="ct-promise-m">Mail, Telefon, WhatsApp, oder einfache Sprache auf Wunsch</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="ct-directory">
-			<div class="ct-dir-h">Direkt an die richtige Stelle</div>
-			<a class="ct-dir-row" href="mailto:<?php echo esc_attr( $co['email_events'] ); ?>"><span>Event-Anfragen</span><span class="ct-dir-v"><?php echo esc_html( $co['email_events'] ); ?></span></a>
-			<a class="ct-dir-row" href="mailto:<?php echo esc_attr( $co['email_partner'] ); ?>"><span>Partnerplätze</span><span class="ct-dir-v"><?php echo esc_html( $co['email_partner'] ); ?></span></a>
-			<a class="ct-dir-row" href="mailto:<?php echo esc_attr( $co['email_press'] ); ?>"><span>Presse &amp; Medien</span><span class="ct-dir-v"><?php echo esc_html( $co['email_press'] ); ?></span></a>
-		</div>
 	</div>
 </section>
 
-<?php /* ===== FAQ ===== */ ?>
-<section class="mk-section faq-section" aria-label="Häufige Fragen">
-	<div class="faq-shell">
-		<div class="faq-aside">
-			<div class="mk-eyebrow">FAQ</div>
-			<h2 class="mk-h2" style="margin-top:8px;font-size:36px;">Antworten, bevor du fragst.</h2>
-			<p class="mk-sub">Vieles klärt sich in einem Satz. Was nicht hier steht, frag einfach, auf dem Weg, der dir passt.</p>
-		</div>
-		<ul class="faq-list">
-			<?php foreach ( $faqs as $i => $faq ) : ?>
-				<li class="faq-item" id="ct-faq-<?php echo esc_attr( (string) $i ); ?>">
-					<button class="faq-q" type="button" aria-expanded="false">
-						<span><?php echo esc_html( $faq[0] ); ?></span>
-						<span class="faq-toggle" aria-hidden="true">+</span>
-					</button>
-					<div class="faq-a"><?php echo esc_html( $faq[1] ); ?></div>
-				</li>
-			<?php endforeach; ?>
-		</ul>
+<?php /* ===== Verteiler: eine schlanke Zeile statt eigener Box ===== */ ?>
+<div class="ct-dirline" aria-label="Direkt an die richtige Stelle">
+	<span class="ct-dirline-label">Direkt an die richtige Stelle</span>
+	<a href="mailto:<?php echo esc_attr( $co['email_events'] ); ?>">Event-Anfragen <b><?php echo esc_html( $co['email_events'] ); ?></b></a>
+	<a href="mailto:<?php echo esc_attr( $co['email_partner'] ); ?>">Partnerplätze <b><?php echo esc_html( $co['email_partner'] ); ?></b></a>
+	<a href="mailto:<?php echo esc_attr( $co['email_press'] ); ?>">Presse &amp; Medien <b><?php echo esc_html( $co['email_press'] ); ?></b></a>
+</div>
+
+<?php /* ===== Besuch: Adresse + Karte als eigene ruhige Sektion (vorher im Fold versteckt) ===== */ ?>
+<section class="mk-section ct-visit" aria-label="Besuch uns">
+	<div class="ct-visit-body">
+		<div class="mk-eyebrow">Besuch uns</div>
+		<h2 class="mk-h2">Oder komm auf einen Kaffee vorbei.</h2>
+		<p class="ct-visit-p">
+			<?php echo esc_html( $co['office_name'] ); ?><br>
+			<?php echo esc_html( $office_addr ); ?> (<?php echo esc_html( $co['office_floor'] ); ?>)
+		</p>
+		<p class="ct-visit-hint">Kurz vorher anrufen, dann ist jemand da.</p>
+		<a class="fg-btn-ghost" href="<?php echo esc_url( $maps_url ); ?>" target="_blank" rel="noopener noreferrer">
+			Route anzeigen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+		</a>
 	</div>
+	<div class="ct-visit-map">
+		<iframe class="ct-extra-map-frame" data-name="googlemaps" data-src="<?php echo esc_url( $office_map ); ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="Karte: <?php echo esc_attr( $co['office_name'] . ', ' . $office_addr ); ?>"></iframe>
+	</div>
+</section>
+
+<?php /* ===== FAQ (Karten-Akkordeons im Stil der Landingpages) ===== */ ?>
+<section class="mk-section faq-section cty-faq" aria-label="Häufige Fragen">
+	<div class="cty-faq-head">
+		<h2 class="mk-h2">Antworten, bevor du fragst.</h2>
+		<p class="faq-aside-note">Vieles klärt sich in einem Satz. Was nicht hier steht, frag einfach, auf dem Weg, der dir passt.</p>
+	</div>
+	<ul class="faq-list faq-anim cty-faq-cards">
+		<?php foreach ( $faqs as $i => $faq ) : ?>
+			<li class="faq-item" id="ct-faq-<?php echo esc_attr( (string) $i ); ?>">
+				<button class="faq-q" type="button" aria-expanded="false">
+					<span><?php echo esc_html( $faq[0] ); ?></span>
+					<span class="faq-toggle cty-faq-chev" aria-hidden="true">
+						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+					</span>
+				</button>
+				<div class="faq-a">
+					<div class="faq-a-in"><?php echo esc_html( $faq[1] ); ?></div>
+				</div>
+			</li>
+		<?php endforeach; ?>
+	</ul>
 </section>
 
 <?php get_template_part( 'template-parts/fge-footer' ); ?>
@@ -373,22 +366,12 @@ $faqs = [
 		});
 	});
 
-	// Quick-channel "Rückruf" → scroll to callback + focus phone
-	// FAQ accordion
+	// FAQ-Karten (Muster der Landingpages)
 	document.querySelectorAll('.faq-q').forEach(function (btn) {
 		btn.addEventListener('click', function () {
 			var item = btn.closest('.faq-item');
-			var isOpen = item.classList.contains('open');
-			document.querySelectorAll('.faq-item').forEach(function (el) {
-				el.classList.remove('open');
-				el.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
-				el.querySelector('.faq-toggle').textContent = '+';
-			});
-			if (!isOpen) {
-				item.classList.add('open');
-				btn.setAttribute('aria-expanded', 'true');
-				btn.querySelector('.faq-toggle').textContent = '−';
-			}
+			var open = item.classList.toggle('open');
+			btn.setAttribute('aria-expanded', open ? 'true' : 'false');
 		});
 	});
 })();

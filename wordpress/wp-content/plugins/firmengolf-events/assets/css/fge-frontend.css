@@ -4696,7 +4696,8 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
 /* Kontakt (Contact) — ported pixel-for-pixel from _design site.css */
 /* ============================================================= */
 .ct-hero {
-  max-width: 920px; margin: 0 auto;
+  /* 1080 statt 920: die Kanal-Pills brauchen eine Zeile, H1/Sub haben eigene max-widths. */
+  max-width: 1080px; margin: 0 auto;
   padding: 88px 24px 48px;
   text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 18px;
@@ -5206,48 +5207,8 @@ a.iv-tile { text-decoration: none; }
 .cty-page #angebote { scroll-margin-top: 96px; }
 @media (max-width: 768px) { .cty-page #angebote { scroll-margin-top: 132px; } }
 
-/* Quick channels */
-.ct-channels {
-  max-width: 1280px; margin: 0 auto;
-  padding: 0 24px;
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-.ct-channel {
-  display: flex; align-items: center; gap: 16px;
-  padding: 22px 24px;
-  background: var(--paper-50);
-  border: 1px solid var(--ink-200);
-  border-radius: var(--radius-lg);
-  min-height: 44px;
-  text-decoration: none;
-  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
-}
-.ct-channel:hover { border-color: var(--fairway-300); box-shadow: var(--shadow-sm); }
-.ct-channel-ic {
-  width: 48px; height: 48px; flex: none;
-  border-radius: var(--radius-md);
-  background: var(--fairway-100);
-  color: var(--fairway-700);
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.ct-channel-wa .ct-channel-ic { background: #D9F6EC; color: #00A87E; }
-.ct-channel-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.ct-channel-l {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--ink-500);
-}
-.ct-channel-v {
-  font-family: var(--font-display);
-  font-size: 18px; font-weight: 500; letter-spacing: -0.01em;
-  color: var(--ink-900);
-}
-.ct-channel-m { font-size: 12px; color: var(--ink-500); }
-.ct-channel-go {
-  margin-left: auto; color: var(--ink-400);
-  transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
-}
-.ct-channel:hover .ct-channel-go { color: var(--fairway-700); transform: translateX(2px); }
+/* Quick channels: Legacy-Block des React-Ports entfernt (Redesign 2026-08-21,
+   die Direktwege sitzen jetzt als Pills im Hero, Stile weiter unten). */
 
 /* ── Kontakt-Sidebar (Redesign 2026-07): kompakte Wege + Aufklapper ── */
 .ct-ways {
@@ -5558,21 +5519,61 @@ a.iv-tile { text-decoration: none; }
 .ct-extra-map .klaro-placeholder { position: absolute; inset: 0; }
 .ct-extra-map-body { padding: 32px 36px 36px; display: flex; flex-direction: column; gap: 12px; }
 
+/* ── Kontakt-Redesign 2026-08-21: Direktwege im Hero, eine Personen-Karte,
+      Verteiler als Zeile, Besuch als eigene Sektion. ── */
+.ct-channels { margin-top: 14px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+.ct-channel {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 11px 18px; border: 1px solid rgba(14,19,16,.12); border-radius: 999px;
+  background: var(--paper-50); text-decoration: none;
+  transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.ct-channel:hover { border-color: var(--ink-400); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(14,19,16,.07); }
+.ct-channel:active { transform: scale(.98); }
+.ct-channel-ic { display: inline-flex; color: var(--fairway-700); }
+.ct-channel-wa .ct-channel-ic { color: #00A87E; }
+.ct-channel-l { font-size: 14px; font-weight: 600; color: var(--ink-900); }
+.ct-channel-v { font-size: 13.5px; color: var(--ink-500); }
+
+.ct-person-facts { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ink-100); display: flex; flex-direction: column; gap: 8px; }
+.ct-person-fact { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-700); }
+.ct-person-fact svg { color: var(--fairway-700); flex: none; }
+
+.ct-dirline {
+  max-width: 1280px; margin: 0 auto; padding: 0 24px 8px;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 28px;
+}
+.ct-dirline-label { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-500); }
+.ct-dirline a { font-size: 13.5px; color: var(--ink-600); text-decoration: none; }
+.ct-dirline a b { font-weight: 500; color: var(--fairway-700); }
+.ct-dirline a:hover b { text-decoration: underline; text-underline-offset: 3px; }
+
+.ct-visit { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 56px; align-items: center; padding-top: 72px; padding-bottom: 72px; }
+.ct-visit-body { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.ct-visit-p { font-size: 17px; line-height: 1.6; color: var(--ink-900); margin: 0; }
+.ct-visit-hint { font-size: 14px; color: var(--ink-600); margin: 0 0 6px; }
+.ct-visit-map { position: relative; border-radius: var(--radius-xl); overflow: hidden; background: var(--paper-200); aspect-ratio: 16/10; }
+.ct-visit-map .ct-extra-map-frame { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ct-visit-map .klaro-placeholder { position: absolute; inset: 0; }
+
 @media (max-width: 1100px) {
   .contact-shell, .ct-extra-grid { grid-template-columns: 1fr; }
   .contact-left { position: static; }
-  .ct-channels { grid-template-columns: repeat(2, 1fr); }
   .ct-hero-h { font-size: 46px; }
   .contact-form-card { position: static; }
   .contact-form-grid { grid-template-columns: 1fr; }
+  .ct-visit { grid-template-columns: 1fr; gap: 28px; }
 }
 @media (max-width: 720px) {
   .ct-hero-h { font-size: 40px; }
-  .ct-channels { grid-template-columns: 1fr; }
+  .ct-channels { flex-direction: column; align-items: stretch; margin-top: 8px; }
+  .ct-channel { justify-content: flex-start; }
+  .ct-channel-v { margin-left: auto; text-align: right; }
   .ct-callback { padding: 28px 24px; }
   .ct-callback-row { flex-direction: column; align-items: stretch; }
   .ct-callback-btn { width: 100%; }
   .contact-form-card { padding: 28px 24px; }
+  .ct-dirline { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 
 /* ============================================================= */
