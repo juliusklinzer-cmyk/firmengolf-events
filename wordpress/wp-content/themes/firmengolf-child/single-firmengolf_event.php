@@ -829,7 +829,7 @@ get_header();
 		</div>
 		<div class="fg-grid ev-grid4">
 			<?php foreach ( $related_query->posts as $rp ) {
-				get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $rp->ID ] );
+				get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $rp->ID ] );
 			} wp_reset_postdata(); ?>
 		</div>
 	</section>

@@ -512,7 +512,7 @@ if ( ! $has_filters ) :
 					<a class="ev-catsec-all" href="<?php echo $all_url; ?>">Alle ansehen →</a>
 				</div>
 				<div class="ev-catrow">
-					<?php foreach ( $ids as $id ) { get_template_part( 'template-parts/fge-event-card', null, [ 'id' => $id, 'dist' => null ] ); } ?>
+					<?php foreach ( $ids as $id ) { get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => $id, 'dist' => null ] ); } ?>
 					<a class="ev-allcard" href="<?php echo $all_url; ?>">
 						<span class="ev-allcard-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
 						<span class="ev-allcard-t">Alle <?php echo esc_html( $flabel ); ?></span>
@@ -576,7 +576,7 @@ if ( ! $has_filters ) :
 
 		<div class="fg-grid ev-grid4">
 			<?php foreach ( $event_items as $item ) {
-				get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $item['id'], 'dist' => $item['dist'] ] );
+				get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $item['id'], 'dist' => $item['dist'] ] );
 			} ?>
 		</div>
 

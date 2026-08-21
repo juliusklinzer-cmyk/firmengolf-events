@@ -158,7 +158,7 @@ get_header();
 	</div>
 	<div class="fg-grid ev-grid4">
 		<?php foreach ( $format_events as $ev ) : ?>
-			<?php get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $ev->ID ] ); ?>
+			<?php get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $ev->ID ] ); ?>
 			<?php endforeach; ?>
 	</div>
 </section>

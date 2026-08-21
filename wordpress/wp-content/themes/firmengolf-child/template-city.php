@@ -210,7 +210,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] );
 	</div>
 	<div class="fg-grid ev-grid4">
 		<?php foreach ( $city_events as $ev ) {
-			// TEST Karte v2 (Julius, 2026-08-20). Revert: 'template-parts/fge-event-card'.
+			// Karte v2 (seit 2026-08-21 Standard auf allen Seiten). Revert: 'template-parts/fge-event-card'.
 			get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $ev->ID, 'dist' => null ] );
 		} ?>
 	</div>

@@ -1,14 +1,15 @@
 <?php
 /**
- * Event-Karte v2 — TEST auf der Stadt-Landingpage München (Julius, 2026-08-20).
+ * Event-Karte v2 — seit 2026-08-21 die Standard-Karte auf allen Seiten
+ * (Stadt-Test 2026-08-20, globaler Rollout auf Julius' Wunsch).
  * Identische Inhalte wie fge-event-card.php (Chip, Ort, Titel, Beschreibung,
  * Gruppengröße, Dauer, Rating, Preis, Share), aber:
  *  - Ort links / Rating rechts in einer Zeile (eine Zeile gespart),
  *  - „Ansehen" als Pill statt Textlink,
  *  - unter 520 px eine horizontale Listen-Karte (Bild links, halbe Kartenhöhe)
- *    statt des hohen vertikalen Stapels.
- * Revert: im Aufrufer wieder 'template-parts/fge-event-card' einsetzen; global
- * ausrollen: die übrigen Aufrufer von fge-event-card auf -v2 umstellen.
+ *    statt des hohen vertikalen Stapels; in .ev-catrow-Wischreihen bleibt die
+ *    Kachel vertikal (Override in fge-frontend.css).
+ * Revert: in den Aufrufern wieder 'template-parts/fge-event-card' einsetzen.
  * Args: [ 'id' => int (required), 'dist' => float|null (optional distance badge) ].
  */
 if ( ! defined( 'ABSPATH' ) ) {

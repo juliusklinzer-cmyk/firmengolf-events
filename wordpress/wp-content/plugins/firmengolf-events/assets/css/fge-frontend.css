@@ -5908,6 +5908,12 @@ a.iv-tile { text-decoration: none; }
   .ev-catrow::-webkit-scrollbar { display: none; }
   .ev-catrow .evE-card { flex: 0 0 60%; scroll-snap-align: start; }
   .ev-catrow .evE-card .evE-photo { aspect-ratio: 3/2; }
+  /* Karte v2 in der Wisch-Reihe: schmale vertikale Kachel statt der
+     einspaltigen Listen-Karte (die 520px-Querform gilt nur im Grid). */
+  .ev-catrow .evF-card { flex: 0 0 60%; scroll-snap-align: start; }
+  .ev-catrow .evF-card a { display: flex; flex-direction: column; }
+  .ev-catrow .evF-media { aspect-ratio: 3/2; height: auto; }
+  .ev-catrow .evF-chip { left: 10px; top: 10px; bottom: auto; }
   .ev-allcard {
     flex: 0 0 46%; scroll-snap-align: start;
     display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 12px;

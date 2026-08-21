@@ -45,7 +45,7 @@ get_header();
 	<?php if ( ! empty( $suggestions ) ) : ?>
 		<div class="fg-grid ev-grid4" style="max-width:1200px;margin:0 auto 64px;padding:0 20px;">
 			<?php foreach ( $suggestions as $sp ) {
-				get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $sp->ID, 'dist' => null ] );
+				get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $sp->ID, 'dist' => null ] );
 			} ?>
 		</div>
 	<?php endif; ?>

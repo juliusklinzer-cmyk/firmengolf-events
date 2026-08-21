@@ -244,11 +244,11 @@ get_header();
 					<?php foreach ( $events as $eid ) {
 						if ( in_array( (int) $eid, $preview_ids, true ) ) {
 							echo '<div class="gp-preview-card">';
-							get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $eid ] );
+							get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $eid ] );
 							echo '<span class="gp-preview-tag">In Prüfung, nur für dich sichtbar</span></div>';
 							continue;
 						}
-						get_template_part( 'template-parts/fge-event-card', null, [ 'id' => (int) $eid ] );
+						get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $eid ] );
 					} ?>
 				</div>
 			</section>
