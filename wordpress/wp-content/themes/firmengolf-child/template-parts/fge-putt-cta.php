@@ -9,6 +9,7 @@
  *  - 'sub'           => string Untertitel
  *  - 'anfrage_url'   => string Ziel des Buttons
  *  - 'links_html'    => fertiges, escaptes HTML der kleinen Linkzeile darunter ('' = keine)
+ *  - 'cta_label'     => string Button-Beschriftung (Default 'Event anfragen')
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,6 +19,7 @@ $headline_html = (string) ( $args['headline_html'] ?? '' );
 $cta_sub       = (string) ( $args['sub'] ?? '' );
 $cta_url       = (string) ( $args['anfrage_url'] ?? home_url( '/individuelle-events/?anfrage=quick' ) );
 $links_html    = (string) ( $args['links_html'] ?? '' );
+$cta_label     = (string) ( $args['cta_label'] ?? 'Event anfragen' );
 ?>
 <section class="mk-cta cty-cta" aria-label="Anfrage">
 	<svg class="cty-cta-topo" viewBox="0 0 1440 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
@@ -53,7 +55,7 @@ $links_html    = (string) ( $args['links_html'] ?? '' );
 			</svg>
 		</div>
 		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg cty-cta-btn" id="fge-cta-btn" href="<?php echo esc_url( $cta_url ); ?>">Event anfragen</a>
+			<a class="fg-btn-ink fg-btn-lg cty-cta-btn" id="fge-cta-btn" href="<?php echo esc_url( $cta_url ); ?>"><?php echo esc_html( $cta_label ); ?></a>
 		</div>
 		<?php if ( '' !== $links_html ) : ?>
 		<div class="cty-cta-cities"><?php echo $links_html; // phpcs:ignore WordPress.Security.EscapeOutput -- vom Aufrufer escaptes HTML ?></div>

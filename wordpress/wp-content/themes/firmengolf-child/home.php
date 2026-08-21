@@ -6,10 +6,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 // ── Category filter ──────────────────────────────────────────────────────────
 $active_cat_slug = sanitize_key( $_GET['category_name'] ?? '' );  // phpcs:ignore WordPress.Security.NonceVerification
 
-// Top-Story + maximal 9 Beiträge im Grid (3 pro Zeile, Julius 2026-08-10).
+// Editoriale Hierarchie (Redesign 2026-08-21): 1 Lead-Story gross, 2 Feature-
+// Karten, der Rest als kompakte Zeilenliste. Ein Format pro Rolle statt
+// neun identischer Karten.
 $query_args = [
 	'post_type'      => 'post',
-	'posts_per_page' => 10,
+	'posts_per_page' => 24,
 	'post_status'    => 'publish',
 	'orderby'        => 'date',
 	'order'          => 'DESC',
@@ -20,8 +22,24 @@ if ( $active_cat_slug ) {
 $all_posts = new WP_Query( $query_args );
 $posts_arr = $all_posts->posts;
 
-$featured_post   = $posts_arr[0] ?? null;
-$remaining_posts = array_slice( $posts_arr, 1 );
+$featured_post = $posts_arr[0] ?? null;
+$duo_posts     = array_slice( $posts_arr, 1, 2 );
+$list_posts    = array_slice( $posts_arr, 3 );
+
+// Meta-Zeile pro Beitrag einmal zentral berechnet.
+$blog_meta = static function ( int $pid ): array {
+	$cats = get_the_category( $pid );
+	$wc   = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $pid ) ) );
+	return [
+		'cat'  => $cats[0] ?? null,
+		'read' => max( 1, (int) ceil( $wc / 200 ) ),
+		'date' => get_the_date( 'd. M Y', $pid ),
+		'img'  => has_post_thumbnail( $pid )
+			? (string) get_the_post_thumbnail_url( $pid, 'large' )
+			: fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' ),
+		'by'   => function_exists( 'fge_blog_author' ) ? fge_blog_author( $pid ) : null,
+	];
+};
 
 $categories = get_categories( [ 'hide_empty' => true, 'orderby' => 'name', 'order' => 'ASC' ] );
 
@@ -110,150 +128,120 @@ get_header();
 	})();
 	</script>
 
-	<?php /* ── Page Hero: Text links, kompakte Top-Story rechts (Julius, 2026-08-10) ── */ ?>
-	<div class="page-hero blog-hero-sec">
-		<div class="page-hero-inner blog-hero-grid">
-			<div class="blog-hero-copy">
-				<div class="mk-eyebrow">Magazin</div>
-				<h1 class="page-hero-title blog-hero">
-					Aus dem <em class="mk-italic">Fairway</em>, unser Magazin.
-				</h1>
-				<p class="page-hero-sub">
-					Praxisleitfäden, Inspiration für eure nächste Veranstaltung und Gespräche mit
-					Menschen, die täglich auf den Plätzen unterwegs sind.
-				</p>
-			</div>
-			<?php if ( $featured_post ) :
-				$featured_id    = $featured_post->ID;
-				$featured_thumb = has_post_thumbnail( $featured_id )
-					? get_the_post_thumbnail_url( $featured_id, 'large' )
-					: fge_get_placeholder_image_url( 'golfplatz-drohnenaufnahme.jpg' );
-				$featured_cats  = get_the_category( $featured_id );
-				$featured_cat   = $featured_cats[0] ?? null;
-				$featured_wc    = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $featured_id ) ) );
-				$featured_read  = max( 1, (int) ceil( $featured_wc / 200 ) );
-				$featured_by    = function_exists( 'fge_blog_author' ) ? fge_blog_author( $featured_id ) : null;
-			?>
-			<a href="<?php echo esc_url( get_permalink( $featured_id ) ); ?>" class="blog-topcard">
-				<div class="blog-topcard-photo" style="background-image:url('<?php echo esc_url( $featured_thumb ); ?>')">
-					<span class="blog-top-tag">Top-Story</span>
-				</div>
-				<div class="blog-topcard-body">
-					<div class="blog-meta-row">
-						<?php if ( $featured_cat ) : ?>
-							<span class="blog-tag"><?php echo esc_html( $featured_cat->name ); ?></span>
-							<span>·</span>
-						<?php endif; ?>
-						<span><?php echo esc_html( get_the_date( 'd. M Y', $featured_id ) ); ?></span>
-						<span>·</span>
-						<span><?php echo esc_html( (string) $featured_read ); ?> Min.</span>
-					</div>
-					<h2 class="blog-topcard-h"><?php echo esc_html( get_the_title( $featured_id ) ); ?></h2>
-					<?php if ( $featured_by ) : ?>
-					<span class="blog-card-author">
-						<img class="blog-card-avatar" src="<?php echo esc_url( $featured_by['img'] ); ?>" alt="<?php echo esc_attr( $featured_by['name'] ); ?>" width="24" height="24" loading="lazy">
-						<span class="blog-author-n"><?php echo esc_html( strtok( $featured_by['name'], ' ' ) ); ?></span>
-					</span>
-					<?php endif; ?>
-				</div>
-			</a>
-			<?php endif; ?>
-		</div>
-	</div>
-
-	<?php /* ── Category Filter Chips ── */ ?>
-	<?php if ( $categories ) : ?>
-	<div class="blog-cats">
-		<div class="blog-cats-inner">
-			<a class="fg-chip<?php echo ! $active_cat_slug ? ' active' : ''; ?>"
-			   href="<?php echo esc_url( home_url( '/blog/' ) ); ?>">Alle Themen</a>
+	<?php /* ── Masthead: zentrierter Magazin-Kopf mit Themenzeile (Redesign 2026-08-21) ── */ ?>
+	<header class="bg2-masthead">
+		<div class="mk-eyebrow">Magazin</div>
+		<h1 class="bg2-masthead-h">Aus dem <em class="mk-italic">Fairway</em>.</h1>
+		<p class="bg2-masthead-sub">
+			Praxisleitfäden, Inspiration für eure nächste Veranstaltung und Gespräche mit
+			Menschen, die täglich auf den Plätzen unterwegs sind.
+		</p>
+		<?php if ( $categories ) : ?>
+		<nav class="bg2-cats" aria-label="Themen">
+			<a class="bg2-cat<?php echo ! $active_cat_slug ? ' on' : ''; ?>" href="<?php echo esc_url( $blog_url ); ?>">Alle Themen</a>
 			<?php foreach ( $categories as $cat ) : ?>
-				<a class="fg-chip<?php echo $active_cat_slug === $cat->slug ? ' active' : ''; ?>"
-				   href="<?php echo esc_url( add_query_arg( 'category_name', $cat->slug, home_url( '/blog/' ) ) ); ?>">
+				<a class="bg2-cat<?php echo $active_cat_slug === $cat->slug ? ' on' : ''; ?>"
+				   href="<?php echo esc_url( add_query_arg( 'category_name', $cat->slug, $blog_url ) ); ?>">
 					<?php echo esc_html( $cat->name ); ?>
 				</a>
 			<?php endforeach; ?>
-		</div>
-	</div>
+		</nav>
+		<?php endif; ?>
+	</header>
+
+	<?php if ( $featured_post ) : $fm = $blog_meta( (int) $featured_post->ID ); ?>
+	<?php /* ── Lead-Story: grosser editorialer Split ── */ ?>
+	<section class="bg2-shell" aria-label="Top-Story">
+		<a class="bg2-lead" href="<?php echo esc_url( get_permalink( $featured_post->ID ) ); ?>">
+			<div class="bg2-lead-media">
+				<img src="<?php echo esc_url( $fm['img'] ); ?>" alt="" loading="eager">
+			</div>
+			<div class="bg2-lead-body">
+				<div class="bg2-meta">
+					<?php if ( $fm['cat'] ) : ?><span class="bg2-pill"><?php echo esc_html( $fm['cat']->name ); ?></span><?php endif; ?>
+					<span><?php echo esc_html( $fm['date'] ); ?></span>
+					<span aria-hidden="true">·</span>
+					<span><?php echo esc_html( (string) $fm['read'] ); ?> Min. Lesezeit</span>
+				</div>
+				<h2 class="bg2-lead-h"><?php echo esc_html( get_the_title( $featured_post->ID ) ); ?></h2>
+				<p class="bg2-lead-x"><?php echo esc_html( wp_trim_words( get_the_excerpt( $featured_post->ID ), 32 ) ); ?></p>
+				<div class="bg2-lead-foot">
+					<?php if ( $fm['by'] ) : ?>
+					<span class="blog-card-author">
+						<img class="blog-card-avatar" src="<?php echo esc_url( $fm['by']['img'] ); ?>" alt="<?php echo esc_attr( $fm['by']['name'] ); ?>" width="24" height="24" loading="lazy">
+						<span class="blog-author-n"><?php echo esc_html( $fm['by']['name'] ); ?></span>
+					</span>
+					<?php endif; ?>
+					<span class="bg2-read">Artikel lesen
+						<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+					</span>
+				</div>
+			</div>
+		</a>
+	</section>
 	<?php endif; ?>
 
-	<?php /* ── Blog Grid ── */ ?>
-	<section class="mk-section" style="padding-top:48px;padding-bottom:80px;">
-		<?php if ( $remaining_posts ) : ?>
-			<div class="blog-grid">
-				<?php foreach ( $remaining_posts as $p ) :
-					$pid   = $p->ID;
-					$is_lg = false;
-					$p_url = get_permalink( $pid );
-					$p_img = has_post_thumbnail( $pid )
-						? get_the_post_thumbnail_url( $pid, 'medium_large' )
-						: fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
-					$p_cats = get_the_category( $pid );
-					$p_cat  = $p_cats[0] ?? null;
-					$p_date = get_the_date( 'd. M Y', $pid );
-					$p_wc   = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $pid ) ) );
-					$p_read = max( 1, (int) ceil( $p_wc / 200 ) );
-					$p_exc  = wp_trim_words( get_the_excerpt( $pid ), 20 );
-					$p_by   = function_exists( 'fge_blog_author' ) ? fge_blog_author( $pid ) : null;
-				?>
-				<article class="blog-card<?php echo $is_lg ? ' blog-card-lg' : ''; ?>">
-					<a href="<?php echo esc_url( $p_url ); ?>" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1;">
-						<div class="blog-card-photo" style="background-image:url('<?php echo esc_url( $p_img ); ?>')"><?php if ( $is_lg ) : ?><span class="blog-top-tag">Top-Story</span><?php endif; ?></div>
-						<div class="blog-card-body">
-							<div class="blog-meta-row">
-								<?php if ( $p_cat ) : ?>
-									<span class="blog-tag"><?php echo esc_html( $p_cat->name ); ?></span>
-									<span>·</span>
-								<?php endif; ?>
-								<span><?php echo esc_html( (string) $p_read ); ?> Min.</span>
-							</div>
-							<h3 class="blog-card-h"><?php echo esc_html( get_the_title( $pid ) ); ?></h3>
-							<p class="blog-card-x"><?php echo esc_html( $p_exc ); ?></p>
-							<div class="blog-card-foot">
-								<?php if ( $p_by ) : ?>
-								<span class="blog-card-author">
-									<img class="blog-card-avatar" src="<?php echo esc_url( $p_by['img'] ); ?>" alt="<?php echo esc_attr( $p_by['name'] ); ?>" width="24" height="24" loading="lazy">
-									<span class="blog-author-n"><?php echo esc_html( strtok( $p_by['name'], ' ' ) ); ?></span>
-								</span>
-								<?php endif; ?>
-								<span class="blog-author-r"><?php echo esc_html( $p_date ); ?></span>
-							</div>
-						</div>
-					</a>
-				</article>
-				<?php endforeach; ?>
-			</div>
-			<?php
-			// Mobile (≤768px via CSS): Beiträge nach Kategorie in wischbaren Reihen.
-			$blog_by_cat = [];
-			foreach ( $remaining_posts as $bp ) {
-				$bc  = get_the_category( $bp->ID );
-				$bc0 = $bc[0] ?? null;
-				$bk  = $bc0 ? (int) $bc0->term_id : 0;
-				if ( ! isset( $blog_by_cat[ $bk ] ) ) { $blog_by_cat[ $bk ] = [ 'name' => $bc0 ? $bc0->name : 'Weitere', 'ids' => [] ]; }
-				$blog_by_cat[ $bk ]['ids'][] = (int) $bp->ID;
-			}
-			?>
-			<div class="blog-catbrowse">
-				<?php foreach ( $blog_by_cat as $grp ) : ?>
-					<section class="ev-catsec">
-						<div class="ev-catsec-head">
-							<h3 class="ev-catsec-h"><?php echo esc_html( $grp['name'] ); ?> <span class="ev-catsec-c"><?php echo (int) count( $grp['ids'] ); ?></span></h3>
-						</div>
-						<div class="ev-catrow blog-catrow">
-							<?php foreach ( $grp['ids'] as $bid ) { get_template_part( 'template-parts/fge-blog-card', null, [ 'id' => $bid ] ); } ?>
-						</div>
-					</section>
-				<?php endforeach; ?>
-			</div>
-		<?php elseif ( ! $featured_post ) : ?>
-			<div style="text-align:center;padding:80px 0;">
-				<div class="mk-eyebrow" style="margin-bottom:12px;">Demnächst</div>
-				<h2 class="mk-h2" style="font-size:32px;">Beiträge erscheinen bald.</h2>
-				<p class="muted" style="margin-top:12px;">Hier entstehen Ratgeber, Tipps und Eventideen rund um Golf als Firmenevent.</p>
-			</div>
-		<?php endif; ?>
+	<?php if ( $duo_posts ) : ?>
+	<?php /* ── Zwei Feature-Karten ── */ ?>
+	<section class="bg2-shell" aria-label="Aktuelle Beiträge">
+		<div class="bg2-duo">
+			<?php foreach ( $duo_posts as $dp ) : $dm = $blog_meta( (int) $dp->ID ); ?>
+			<a class="bg2-card" href="<?php echo esc_url( get_permalink( $dp->ID ) ); ?>">
+				<div class="bg2-card-media">
+					<img src="<?php echo esc_url( $dm['img'] ); ?>" alt="" loading="lazy">
+					<?php if ( $dm['cat'] ) : ?><span class="bg2-pill bg2-pill--onimg"><?php echo esc_html( $dm['cat']->name ); ?></span><?php endif; ?>
+				</div>
+				<div class="bg2-card-body">
+					<h3 class="bg2-card-h"><?php echo esc_html( get_the_title( $dp->ID ) ); ?></h3>
+					<p class="bg2-card-x"><?php echo esc_html( wp_trim_words( get_the_excerpt( $dp->ID ), 20 ) ); ?></p>
+					<div class="bg2-meta">
+						<?php if ( $dm['by'] ) : ?><span><?php echo esc_html( strtok( $dm['by']['name'], ' ' ) ); ?></span><span aria-hidden="true">·</span><?php endif; ?>
+						<span><?php echo esc_html( $dm['date'] ); ?></span>
+						<span aria-hidden="true">·</span>
+						<span><?php echo esc_html( (string) $dm['read'] ); ?> Min.</span>
+					</div>
+				</div>
+			</a>
+			<?php endforeach; ?>
+		</div>
 	</section>
+	<?php endif; ?>
+
+	<?php if ( $list_posts ) : ?>
+	<?php /* ── Alle weiteren Beitraege als kompakte Zeilenliste ── */ ?>
+	<section class="bg2-shell bg2-listwrap" aria-label="Alle Beiträge">
+		<h2 class="bg2-list-h">Alle Beiträge</h2>
+		<div class="bg2-list">
+			<?php foreach ( $list_posts as $lp ) : $lm = $blog_meta( (int) $lp->ID ); ?>
+			<a class="bg2-row" href="<?php echo esc_url( get_permalink( $lp->ID ) ); ?>">
+				<span class="bg2-row-thumb"><img src="<?php echo esc_url( $lm['img'] ); ?>" alt="" loading="lazy"></span>
+				<span class="bg2-row-main">
+					<span class="bg2-row-t"><?php echo esc_html( get_the_title( $lp->ID ) ); ?></span>
+					<span class="bg2-meta bg2-row-meta">
+						<?php if ( $lm['cat'] ) : ?><span class="bg2-pill"><?php echo esc_html( $lm['cat']->name ); ?></span><?php endif; ?>
+						<span><?php echo esc_html( $lm['date'] ); ?></span>
+						<span aria-hidden="true">·</span>
+						<span><?php echo esc_html( (string) $lm['read'] ); ?> Min.</span>
+					</span>
+				</span>
+				<span class="bg2-row-go" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+				</span>
+			</a>
+			<?php endforeach; ?>
+		</div>
+	</section>
+	<?php endif; ?>
+
+	<?php if ( ! $featured_post ) : ?>
+	<section class="bg2-shell" aria-label="Demnächst">
+		<div style="text-align:center;padding:80px 0;">
+			<div class="mk-eyebrow" style="margin-bottom:12px;">Demnächst</div>
+			<h2 class="mk-h2" style="font-size:32px;">Beiträge erscheinen bald.</h2>
+			<p class="muted" style="margin-top:12px;">Hier entstehen Ratgeber, Tipps und Eventideen rund um Golf als Firmenevent.</p>
+		</div>
+	</section>
+	<?php endif; ?>
 
 	<?php /* ── Seitenabschluss: Kontakt-Panel + Wertschätzungs-CTA (Julius, 2026-08-10)
 		Das frühere Newsletter-Formular ist raus: es hatte keinen Handler, Mails

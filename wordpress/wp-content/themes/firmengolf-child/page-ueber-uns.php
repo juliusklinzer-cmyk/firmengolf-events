@@ -34,7 +34,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 </section>
 
 <?php /* ===== Founder video, centerpiece (poster placeholder) ===== */ ?>
-<section class="about-video-section" aria-label="In meinen Worten">
+<section class="about-video-section cty-reveal" aria-label="In meinen Worten">
 	<div class="about-video-head">
 		<div class="mk-eyebrow" style="color:var(--fairway-700)">In meinen Worten</div>
 	</div>
@@ -80,7 +80,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 </section>
 
 <?php /* ===== Founder letter ===== */ ?>
-<section class="about-letter" aria-label="Vom Gründer">
+<section class="about-letter cty-reveal" aria-label="Vom Gründer">
 	<div class="about-letter-grid">
 		<div class="about-letter-aside">
 			<div class="about-portrait" role="img" aria-label="Julius Klinzer, Gründer von Firmengolf" style="background-image:url('<?php echo esc_url( $img( 'gruender-julius-klinzer.jpg' ) ); ?>')"></div>
@@ -127,7 +127,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 </section>
 
 <?php /* ===== Wie wir sind, ein dunkler 3er-Block (Philosophie + Werte zusammengeführt, Julius 2026-07-07) ===== */ ?>
-<section class="about-philo" aria-label="Wie wir sind">
+<section class="about-philo cty-reveal" aria-label="Wie wir sind">
 	<div class="about-philo-inner">
 		<div class="about-philo-head">
 			<div class="mk-eyebrow" style="color:var(--fairway-300)">Wie wir sind</div>
@@ -142,8 +142,9 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 				[ 'Inspirierend', 'Wir verkaufen kein Produkt, wir verkaufen ein Gefühl: Bewegung, Natur, Konzentration und gemeinsame Zeit.' ],
 				[ 'Mitfühlend',   'Direkt, persönlich, niemals belehrend. Du bekommst immer einen echten Menschen ans Telefon, kein Ticketsystem.' ],
 			];
-			foreach ( $pillars as $p ) : ?>
+			foreach ( $pillars as $pi => $p ) : ?>
 				<div class="about-philo-card">
+					<div class="about-philo-idx" aria-hidden="true"><?php echo esc_html( sprintf( '%02d', $pi + 1 ) ); ?></div>
 					<div class="about-philo-n"><?php echo esc_html( $p[0] ); ?></div>
 					<p><?php echo esc_html( $p[1] ); ?></p>
 				</div>
@@ -153,7 +154,7 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 </section>
 
 <?php /* ===== Wir sind neu, euer Feedback (Julius: vor dem CTA, 2026-07-07) ===== */ ?>
-<section class="about-new" aria-label="Wir sind neu, euer Feedback zählt">
+<section class="about-new cty-reveal" aria-label="Wir sind neu, euer Feedback zählt">
 	<div class="about-new-grid">
 		<div class="about-new-photo" role="img" aria-label="Greenkeeper mäht das Puttinggrün" style="background-image:url('<?php echo esc_url( $img( 'pool/greenkeeping-maeher.jpg' ) ); ?>')"></div>
 		<div class="about-new-text">
@@ -177,24 +178,30 @@ $url_kontakt = ( $p = get_page_by_path( 'kontakt' ) ) ? (string) get_permalink( 
 	</div>
 </section>
 
-<?php /* ===== Closing CTA ===== */ ?>
-<section class="mk-cta" aria-label="Kontakt">
-	<div class="mk-cta-inner">
-		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Lust auf eine Runde mit uns?</div>
-		<h2 class="mk-cta-h">Lass uns <em class="mk-italic">kennenlernen</em>.</h2>
-		<p class="mk-cta-sub">
-			Ob Event-Anfrage, Idee oder einfach eine Frage, schreib mir. Ich antworte persönlich.
-		</p>
-		<div class="mk-cta-ctas">
-			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $url_kontakt ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">
-				Kontakt aufnehmen <span class="fg-arrow" style="background:var(--fairway-200)"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-			</a>
-			<a class="mk-cta-mail" href="mailto:<?php echo esc_attr( fge_company()['email_general'] ); ?>"><?php echo esc_html( fge_company()['email_general'] ); ?></a>
-		</div>
-	</div>
-</section>
+<?php /* ===== Closing CTA: Putt-Moment wie auf den Landingpages (2026-08-21) ===== */
+get_template_part( 'template-parts/fge-putt-cta', null, [
+	'headline_html' => 'Lass uns <em class="mk-italic">kennenlernen</em>.',
+	'sub'           => 'Ob Event-Anfrage, Idee oder einfach eine Frage, schreib mir. Ich antworte persönlich.',
+	'anfrage_url'   => $url_kontakt,
+	'cta_label'     => 'Kontakt aufnehmen',
+	'links_html'    => '<a href="mailto:' . esc_attr( fge_company()['email_general'] ) . '">' . esc_html( fge_company()['email_general'] ) . '</a>',
+] );
+?>
 
 <?php get_template_part( 'template-parts/fge-footer' ); ?>
 
 </div><?php /* .fge-page */ ?>
+<script>
+/* Sanftes Einblenden der Sektionen beim Scrollen (Muster der Landingpages). */
+(function () {
+	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) { return; }
+	document.documentElement.classList.add('cty-io');
+	var io = new IntersectionObserver(function (entries) {
+		entries.forEach(function (e) {
+			if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+		});
+	}, { rootMargin: '0px 0px -8% 0px' });
+	document.querySelectorAll('.cty-reveal').forEach(function (el) { io.observe(el); });
+})();
+</script>
 <?php get_footer();

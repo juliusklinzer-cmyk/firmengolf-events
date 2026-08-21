@@ -4639,6 +4639,11 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   padding: 40px 36px 44px;
   display: flex; flex-direction: column; gap: 14px;
 }
+.about-philo-idx {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 600; letter-spacing: .12em;
+  color: rgba(251,250,246,0.45);
+}
 .about-philo-n {
   font-family: var(--font-display);
   font-size: 30px; font-weight: 500;
@@ -6259,6 +6264,78 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 .blog-nl-pick-t { font-size: 14.5px; font-weight: 500; color: var(--ink-900); line-height: 1.35; }
 .blog-wz-promo { margin-top: 0; }
 @media (max-width: 900px) { .blog-nl-panel { grid-template-columns: 1fr; padding: 32px 24px; } }
+
+/* ── Blog-Redesign 2026-08-21 (bg2-*): editoriale Hierarchie statt Karten-Raster.
+      Masthead mit Themenzeile, Lead-Split, zwei Feature-Karten, Zeilenliste. ── */
+.bg2-masthead { max-width: 860px; margin: 0 auto; padding: 80px 24px 40px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.bg2-masthead-h { font-family: var(--font-display); font-weight: 500; font-size: clamp(44px, 6vw, 72px); line-height: 1.0; letter-spacing: -.035em; color: var(--ink-900); }
+.bg2-masthead-sub { font-size: 18px; line-height: 1.55; color: var(--ink-700); max-width: 560px; text-wrap: pretty; }
+.bg2-cats { margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px; padding-top: 18px; border-top: 1px solid rgba(14,19,16,.1); }
+.bg2-cat { padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--ink-600); text-decoration: none; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+.bg2-cat:hover { color: var(--ink-900); background: var(--paper-200); }
+.bg2-cat.on { background: var(--ink-900); color: var(--paper-50); }
+
+.bg2-shell { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+.bg2-lead { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 48px; align-items: center; text-decoration: none; padding: 24px 0 8px; }
+.bg2-lead-media { border-radius: var(--radius-xl); overflow: hidden; aspect-ratio: 16/10; background: var(--paper-200); }
+.bg2-lead-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 700ms var(--ease-out); }
+.bg2-lead:hover .bg2-lead-media img { transform: scale(1.04); }
+.bg2-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-500); }
+.bg2-pill { padding: 4px 11px; border-radius: 999px; background: var(--fairway-100); color: var(--fairway-800); font-size: 12px; font-weight: 600; }
+.bg2-pill--onimg { position: absolute; left: 12px; top: 12px; background: rgba(251,250,246,.94); color: var(--ink-900); }
+.bg2-lead-h { margin-top: 16px; font-family: var(--font-display); font-weight: 500; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; letter-spacing: -.025em; color: var(--ink-900); transition: color var(--dur-fast) var(--ease-out); }
+.bg2-lead:hover .bg2-lead-h { color: var(--fairway-800); }
+.bg2-lead-x { margin-top: 14px; font-size: 16px; line-height: 1.6; color: var(--ink-600); }
+.bg2-lead-foot { margin-top: 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.bg2-read { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 999px; background: var(--paper-200); font-size: 13.5px; font-weight: 600; color: var(--ink-900); transition: background var(--dur-fast) var(--ease-out), gap var(--dur-fast) var(--ease-out); }
+.bg2-lead:hover .bg2-read { background: var(--fairway-100); gap: 10px; }
+
+.bg2-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 40px 0 0; }
+.bg2-card { display: flex; flex-direction: column; text-decoration: none; border-radius: var(--radius-xl); overflow: hidden; background: var(--paper-50); border: 1px solid rgba(14,19,16,.08); transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
+.bg2-card:hover { box-shadow: 0 2px 4px rgba(14,19,16,.05), 0 14px 34px rgba(14,19,16,.1); transform: translateY(-2px); }
+.bg2-card-media { position: relative; aspect-ratio: 16/9; overflow: hidden; background: var(--paper-200); }
+.bg2-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 600ms var(--ease-out); }
+.bg2-card:hover .bg2-card-media img { transform: scale(1.05); }
+.bg2-card-body { display: flex; flex-direction: column; gap: 10px; padding: 20px 22px 22px; }
+.bg2-card-h { font-family: var(--font-display); font-weight: 500; font-size: 21px; line-height: 1.2; letter-spacing: -.015em; color: var(--ink-900); }
+.bg2-card:hover .bg2-card-h { color: var(--fairway-800); }
+.bg2-card-x { font-size: 14.5px; line-height: 1.55; color: var(--ink-600); margin: 0; }
+
+.bg2-listwrap { padding-top: 56px; padding-bottom: 88px; }
+.bg2-list-h { font-family: var(--font-display); font-weight: 500; font-size: 24px; letter-spacing: -.02em; color: var(--ink-900); padding-bottom: 14px; border-bottom: 1px solid rgba(14,19,16,.12); }
+.bg2-row { display: flex; align-items: center; gap: 20px; padding: 18px 2px; border-bottom: 1px solid rgba(14,19,16,.08); text-decoration: none; }
+.bg2-row-thumb { flex: none; width: 108px; aspect-ratio: 3/2; border-radius: var(--radius-md); overflow: hidden; background: var(--paper-200); }
+.bg2-row-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bg2-row-main { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.bg2-row-t { font-family: var(--font-display); font-weight: 500; font-size: 19px; line-height: 1.25; letter-spacing: -.015em; color: var(--ink-900); transition: color var(--dur-fast) var(--ease-out); }
+.bg2-row:hover .bg2-row-t { color: var(--fairway-800); }
+.bg2-row-go { margin-left: auto; flex: none; color: var(--ink-400); transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.bg2-row:hover .bg2-row-go { transform: translateX(3px); color: var(--fairway-700); }
+
+@media (max-width: 900px) {
+	.bg2-lead { grid-template-columns: 1fr; gap: 20px; }
+	.bg2-duo { grid-template-columns: 1fr; }
+	.bg2-masthead { padding-top: 48px; }
+}
+@media (max-width: 560px) {
+	.bg2-row { gap: 14px; }
+	.bg2-row-thumb { width: 84px; }
+	.bg2-row-t { font-size: 16.5px; }
+	.bg2-row-go { display: none; }
+	.bg2-lead-foot { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+/* Artikel-Seite: Lesefortschritt, Teilen-Zeile, CTA-Band. */
+.bg2-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60; pointer-events: none; }
+.bg2-progress span { display: block; height: 100%; background: var(--fairway-600); transform: scaleX(0); transform-origin: left; }
+.bg2-share { margin: 40px 0 0; padding: 20px 0 0; border-top: 1px solid rgba(14,19,16,.1); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.bg2-share-l { font-size: 13px; font-weight: 600; color: var(--ink-500); margin-right: 4px; }
+.bg2-share-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 1px solid rgba(14,19,16,.14); border-radius: 999px; background: var(--paper-50); font-size: 13px; font-weight: 500; color: var(--ink-800); text-decoration: none; cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.bg2-share-btn:hover { border-color: var(--ink-400); transform: translateY(-1px); }
+.bg2-share-btn:active { transform: scale(.97); }
+.bg2-article-cta { margin: 56px 0 0; }
+.blog-related-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
 
 /* ── Wizard-Politur (Feedback 2026-08-10): Logo-Topbar ohne Streifen, Stepper,
    Anlass-Kacheln, Erfolgsscreen mit Julius-Karte + Konfetti ── */

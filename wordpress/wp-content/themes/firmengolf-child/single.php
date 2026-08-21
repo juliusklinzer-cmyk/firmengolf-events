@@ -102,6 +102,9 @@ get_header();
 
 	<?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'blog' ] ); ?>
 
+	<?php /* ── Lesefortschritt (Redesign 2026-08-21) ── */ ?>
+	<div class="bg2-progress" aria-hidden="true"><span id="fge-read-progress"></span></div>
+
 	<article class="blog-article">
 
 		<?php /* ── Back link ── */ ?>
@@ -109,13 +112,12 @@ get_header();
 
 		<?php /* ── Article Header ── */ ?>
 		<header class="blog-article-head">
-			<div class="blog-meta-row">
+			<div class="bg2-meta">
 				<?php if ( $cat ) : ?>
-					<span class="blog-tag"><?php echo esc_html( $cat->name ); ?></span>
-					<span>·</span>
+					<span class="bg2-pill"><?php echo esc_html( $cat->name ); ?></span>
 				<?php endif; ?>
 				<span><?php echo esc_html( $date ); ?></span>
-				<span>·</span>
+				<span aria-hidden="true">·</span>
 				<span><?php echo esc_html( (string) $read_minutes ); ?> Min. Lesezeit</span>
 			</div>
 
@@ -138,25 +140,47 @@ get_header();
 		<div class="blog-article-photo" style="background-image:url('<?php echo esc_url( $thumb ); ?>')"></div>
 
 		<?php /* ── Article Body ── */ ?>
-		<div class="blog-article-body">
+		<div class="blog-article-body" id="fge-article-body">
 			<?php the_content(); ?>
+		</div>
+
+		<?php /* ── Teilen ── */ ?>
+		<div class="bg2-share" aria-label="Artikel teilen">
+			<span class="bg2-share-l">Artikel teilen</span>
+			<button type="button" class="bg2-share-btn" id="fge-share-copy" data-url="<?php echo esc_url( get_permalink( $post_id ) ); ?>">
+				<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+				<span data-label>Link kopieren</span>
+			</button>
+			<a class="bg2-share-btn" href="<?php echo esc_url( 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode( get_permalink( $post_id ) ) ); ?>" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+			<a class="bg2-share-btn" href="<?php echo esc_url( 'https://wa.me/?text=' . rawurlencode( $title . ' ' . get_permalink( $post_id ) ) ); ?>" target="_blank" rel="noopener noreferrer">WhatsApp</a>
 		</div>
 
 	</article>
 
-	<?php /* ── Related Posts ── */ ?>
+	<?php /* ── Schlanker CTA vor dem Weiterlesen ── */ ?>
+	<section class="bg2-shell" aria-label="Event anfragen">
+		<div class="fmt-promo bg2-article-cta">
+			<div>
+				<div class="mk-eyebrow">Vom Lesen ins Machen</div>
+				<h2 class="mk-h2" style="font-size:28px;">Golf-Event für euer Team planen?</h2>
+				<p class="mk-sub">Schickt uns eure Eckdaten in 30 Sekunden, ihr bekommt innerhalb eines Werktags konkrete Vorschläge.</p>
+			</div>
+			<a class="fg-btn-brand" href="<?php echo esc_url( home_url( '/individuelle-events/?anfrage=quick' ) ); ?>">In 30 Sekunden anfragen →</a>
+		</div>
+	</section>
+
+	<?php /* ── Weiterlesen: kompakte Zeilenliste (Stil der Blog-Übersicht) ── */ ?>
 	<?php if ( $related_posts ) : ?>
-	<section class="blog-related">
+	<section class="bg2-shell bg2-listwrap" aria-label="Weiterlesen">
 		<div class="blog-related-head">
-			<h2 class="blog-related-h">Weiterlesen</h2>
+			<h2 class="bg2-list-h" style="border-bottom:0;padding-bottom:0;">Weiterlesen</h2>
 			<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/blog/' ) ); ?>">
 				Alle Artikel <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 			</a>
 		</div>
-		<div class="blog-grid">
+		<div class="bg2-list" style="border-top:1px solid rgba(14,19,16,.12);">
 			<?php foreach ( $related_posts as $rp ) :
 				$rid    = $rp->ID;
-				$r_url  = get_permalink( $rid );
 				$r_img  = has_post_thumbnail( $rid )
 					? get_the_post_thumbnail_url( $rid, 'medium_large' )
 					: fge_get_placeholder_image_url( 'golf-coaching-gruppe.jpg' );
@@ -165,29 +189,22 @@ get_header();
 				$r_wc   = str_word_count( wp_strip_all_tags( get_post_field( 'post_content', $rid ) ) );
 				$r_read = max( 1, (int) ceil( $r_wc / 200 ) );
 				$r_date = get_the_date( 'd. M Y', $rid );
-				$r_by   = function_exists( 'fge_blog_author' ) ? fge_blog_author( $rid ) : null;
-				$r_auth = $r_by ? strtok( $r_by['name'], ' ' ) : get_the_author_meta( 'display_name', (int) $rp->post_author );
 			?>
-			<article class="blog-card">
-				<a href="<?php echo esc_url( $r_url ); ?>" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1;">
-					<div class="blog-card-photo" style="background-image:url('<?php echo esc_url( $r_img ); ?>')"></div>
-					<div class="blog-card-body">
-						<div class="blog-meta-row">
-							<?php if ( $r_cat ) : ?>
-								<span class="blog-tag"><?php echo esc_html( $r_cat->name ); ?></span>
-								<span>·</span>
-							<?php endif; ?>
-							<span><?php echo esc_html( (string) $r_read ); ?> Min.</span>
-						</div>
-						<h3 class="blog-card-h"><?php echo esc_html( get_the_title( $rid ) ); ?></h3>
-						<p class="blog-card-x"><?php echo esc_html( wp_trim_words( get_the_excerpt( $rid ), 18 ) ); ?></p>
-						<div class="blog-card-foot">
-							<span class="blog-author-n"><?php echo esc_html( $r_auth ); ?></span>
-							<span class="blog-author-r"><?php echo esc_html( $r_date ); ?></span>
-						</div>
-					</div>
-				</a>
-			</article>
+			<a class="bg2-row" href="<?php echo esc_url( get_permalink( $rid ) ); ?>">
+				<span class="bg2-row-thumb"><img src="<?php echo esc_url( $r_img ); ?>" alt="" loading="lazy"></span>
+				<span class="bg2-row-main">
+					<span class="bg2-row-t"><?php echo esc_html( get_the_title( $rid ) ); ?></span>
+					<span class="bg2-meta bg2-row-meta">
+						<?php if ( $r_cat ) : ?><span class="bg2-pill"><?php echo esc_html( $r_cat->name ); ?></span><?php endif; ?>
+						<span><?php echo esc_html( $r_date ); ?></span>
+						<span aria-hidden="true">·</span>
+						<span><?php echo esc_html( (string) $r_read ); ?> Min.</span>
+					</span>
+				</span>
+				<span class="bg2-row-go" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+				</span>
+			</a>
 			<?php endforeach; ?>
 		</div>
 	</section>
@@ -196,6 +213,38 @@ get_header();
 	<?php get_template_part( 'template-parts/fge-footer' ); ?>
 
 </div><?php /* .fge-page */ ?>
+<script>
+(function () {
+	/* Lesefortschritt: Balken folgt der Scrollposition im Artikeltext. */
+	var bar  = document.getElementById('fge-read-progress');
+	var body = document.getElementById('fge-article-body');
+	if (bar && body) {
+		var update = function () {
+			var r    = body.getBoundingClientRect();
+			var total = r.height - window.innerHeight;
+			var done  = Math.min(Math.max(-r.top, 0), Math.max(total, 1));
+			bar.style.transform = 'scaleX(' + (total > 0 ? done / total : 1) + ')';
+		};
+		window.addEventListener('scroll', update, { passive: true });
+		window.addEventListener('resize', update);
+		update();
+	}
+	/* Link kopieren */
+	var copy = document.getElementById('fge-share-copy');
+	if (copy) copy.addEventListener('click', function () {
+		var url = copy.getAttribute('data-url') || window.location.href;
+		var done = function () {
+			var l = copy.querySelector('[data-label]');
+			if (!l) { return; }
+			var orig = l.textContent;
+			l.textContent = 'Kopiert!';
+			setTimeout(function () { l.textContent = orig; }, 1400);
+		};
+		if (navigator.clipboard) { navigator.clipboard.writeText(url).then(done); }
+		else { window.prompt('Link kopieren:', url); }
+	});
+})();
+</script>
 <?php
 wp_reset_postdata();
 get_footer();
