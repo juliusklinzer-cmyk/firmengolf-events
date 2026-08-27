@@ -72,6 +72,34 @@ function fge_partner_type( int $partner_id ): string {
 }
 
 /**
+ * IBAN normalisieren: Leerzeichen raus, Großbuchstaben. Speicherformat.
+ */
+function fge_normalize_iban( string $iban ): string {
+	return strtoupper( (string) preg_replace( '/\s+/', '', $iban ) );
+}
+
+/**
+ * IBAN-Formatprüfung (ISO 13616): Grundmuster plus Prüfsumme mod 97.
+ * Genutzt vom billing-Slide im Onboarding; toleriert Leerzeichen in der Eingabe.
+ */
+function fge_is_valid_iban( string $iban ): bool {
+	$iban = fge_normalize_iban( $iban );
+	if ( ! preg_match( '/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/', $iban ) ) {
+		return false;
+	}
+	$numeric = '';
+	foreach ( str_split( substr( $iban, 4 ) . substr( $iban, 0, 4 ) ) as $ch ) {
+		$numeric .= ctype_alpha( $ch ) ? (string) ( ord( $ch ) - 55 ) : $ch;
+	}
+	// Die Zahl sprengt jeden int, deshalb mod 97 stückweise.
+	$rem = 0;
+	foreach ( str_split( $numeric, 7 ) as $chunk ) {
+		$rem = (int) ( ( $rem . $chunk ) % 97 );
+	}
+	return 1 === $rem;
+}
+
+/**
  * Deutschen Geldbetrag robust parsen: „2.400" → 2400, „1.200,50" → 1200.50,
  * „67,5" → 67.5, „12.34" → 12.34. Punkt vor genau 3 Ziffern = Tausendertrenner.
  */

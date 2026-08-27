@@ -55,8 +55,9 @@ function fge_onboarding_manifest( string $type = '' ): array {
 		13 => [ 'id' => 'intro-3',  'chapter' => 3, 'kind' => 'intro' ],
 		14 => [ 'id' => 'avail',    'chapter' => 3, 'kind' => 'form' ],
 		15 => [ 'id' => 'pricing',  'chapter' => 3, 'kind' => 'form' ],
-		16 => [ 'id' => 'media',    'chapter' => 3, 'kind' => 'form' ],
-		17 => [ 'id' => 'review',   'chapter' => 3, 'kind' => 'review', 'wide' => true ],
+		16 => [ 'id' => 'billing',  'chapter' => 3, 'kind' => 'form' ],
+		17 => [ 'id' => 'media',    'chapter' => 3, 'kind' => 'form' ],
+		18 => [ 'id' => 'review',   'chapter' => 3, 'kind' => 'review', 'wide' => true ],
 	];
 }
 
@@ -297,6 +298,18 @@ function fge_onboarding_is_submittable( int $partner_id ): bool {
 
 	if ( $m( 'image_rights_confirmed' ) !== '1' ) { return false; }
 
+	// Abrechnung (billing-Slide, Pflicht seit dem 3-Zielgruppen-Plan Schritt 4).
+	if ( $m( 'billing_legal_name' ) === '' )                                { return false; }
+	if ( $m( 'billing_account_holder' ) === '' )                            { return false; }
+	if ( ! is_email( $m( 'billing_email' ) ) )                              { return false; }
+	if ( ! fge_is_valid_iban( $m( 'billing_iban' ) ) )                      { return false; }
+	if ( $m( 'billing_tax_number' ) === '' && $m( 'billing_vat_id' ) === '' ) { return false; }
+	if ( ! in_array( $m( 'billing_small_business' ), [ '0', '1' ], true ) ) { return false; }
+	if ( ! in_array( $m( 'billing_terms' ), [ '0', '7', '14', '30' ], true ) ) { return false; }
+	$b_addr = get_post_meta( $partner_id, '_fge_billing_address', true );
+	$b_addr = is_array( $b_addr ) ? $b_addr : [];
+	if ( '' === trim( (string) ( $b_addr['street'] ?? '' ) ) || '' === trim( (string) ( $b_addr['city'] ?? '' ) ) ) { return false; }
+
 	// Infrastructure (new model: _fge_infra array, ≥1 from catalog).
 	$infra = get_post_meta( $partner_id, '_fge_infra', true );
 	$infra = is_array( $infra ) ? array_intersect( $infra, fge_catalog_infra_ids() ) : [];
@@ -473,6 +486,29 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 		case 'pricing':
 			// Info-only (net stays net; markup added by Firmengolf; per-event net
 			// prices are set in the portal). Nothing to persist.
+			break;
+
+		case 'billing':
+			// Gemeinsamer Abrechnungsblock aller Partnertypen
+			// (docs/onboarding-golflehrer-indoor.md, Abschnitt 6).
+			update_post_meta( $partner_id, '_fge_billing_legal_name', $s( 'fge_billing_legal_name' ) );
+			update_post_meta( $partner_id, '_fge_billing_address', [
+				'street'      => $s( 'fge_billing_street' ),
+				'postal_code' => $s( 'fge_billing_postal_code' ),
+				'city'        => $s( 'fge_billing_city' ),
+				'country'     => $s( 'fge_billing_country' ) ?: 'Deutschland',
+			] );
+			update_post_meta( $partner_id, '_fge_billing_tax_number', $s( 'fge_billing_tax_number' ) );
+			update_post_meta( $partner_id, '_fge_billing_vat_id', $s( 'fge_billing_vat_id' ) );
+			// '' bleibt erhalten = Frage (noch) nicht beantwortet.
+			$small = (string) ( $post['fge_billing_small_business'] ?? '' );
+			update_post_meta( $partner_id, '_fge_billing_small_business', '' === $small ? '' : ( '1' === $small ? 1 : 0 ) );
+			update_post_meta( $partner_id, '_fge_billing_iban', fge_normalize_iban( $s( 'fge_billing_iban' ) ) );
+			update_post_meta( $partner_id, '_fge_billing_account_holder', $s( 'fge_billing_account_holder' ) );
+			update_post_meta( $partner_id, '_fge_billing_email', sanitize_email( wp_unslash( $post['fge_billing_email'] ?? '' ) ) );
+			update_post_meta( $partner_id, '_fge_billing_terms', $san_select( 'fge_billing_terms', [ '0', '7', '14', '30' ] ) );
+			update_post_meta( $partner_id, '_fge_billing_issuer', $san_select( 'fge_billing_issuer', [ 'partner', 'other', 'split' ] ) );
+			update_post_meta( $partner_id, '_fge_billing_note', $sa( 'fge_billing_note' ) );
 			break;
 
 		case 'media':
@@ -823,6 +859,49 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 				? [ 'fge_infra' => 'Bitte wähle mindestens eine Ausstattung aus.' ]
 				: [];
 
+		case 'billing':
+			$errors = fge_onboarding_validate(
+				[
+					'fge_billing_legal_name'     => $s( 'fge_billing_legal_name' ),
+					'fge_billing_street'         => $s( 'fge_billing_street' ),
+					'fge_billing_postal_code'    => $s( 'fge_billing_postal_code' ),
+					'fge_billing_city'           => $s( 'fge_billing_city' ),
+					'fge_billing_account_holder' => $s( 'fge_billing_account_holder' ),
+				],
+				[
+					'fge_billing_legal_name'     => 'Rechnungssteller',
+					'fge_billing_street'         => 'Straße',
+					'fge_billing_postal_code'    => 'PLZ',
+					'fge_billing_city'           => 'Ort',
+					'fge_billing_account_holder' => 'Kontoinhaber',
+				]
+			);
+			if ( $s( 'fge_billing_tax_number' ) === '' && $s( 'fge_billing_vat_id' ) === '' ) {
+				$errors['fge_billing_tax_number'] = 'Steuernummer oder Umsatzsteuer-ID, eine von beiden brauchen wir.';
+			}
+			if ( ! in_array( (string) ( $post['fge_billing_small_business'] ?? '' ), [ '0', '1' ], true ) ) {
+				$errors['fge_billing_small_business'] = 'Bitte gib an, ob die Kleinunternehmerregelung gilt.';
+			}
+			$iban = $s( 'fge_billing_iban' );
+			if ( $iban === '' ) {
+				$errors['fge_billing_iban'] = 'IBAN ist ein Pflichtfeld.';
+			} elseif ( ! fge_is_valid_iban( $iban ) ) {
+				$errors['fge_billing_iban'] = 'Diese IBAN sieht nicht gültig aus. Bitte prüf die Eingabe.';
+			}
+			$bmail = sanitize_email( wp_unslash( $post['fge_billing_email'] ?? '' ) );
+			if ( $bmail === '' ) {
+				$errors['fge_billing_email'] = 'Rechnungs-E-Mail ist ein Pflichtfeld.';
+			} elseif ( ! is_email( $bmail ) ) {
+				$errors['fge_billing_email'] = 'Bitte gib eine gültige E-Mail-Adresse an.';
+			}
+			if ( ! in_array( (string) ( $post['fge_billing_terms'] ?? '' ), [ '0', '7', '14', '30' ], true ) ) {
+				$errors['fge_billing_terms'] = 'Bitte wähle ein Zahlungsziel.';
+			}
+			if ( ! in_array( (string) ( $post['fge_billing_issuer'] ?? '' ), [ 'partner', 'other', 'split' ], true ) ) {
+				$errors['fge_billing_issuer'] = 'Bitte wähle, wer die Rechnung stellt.';
+			}
+			return $errors;
+
 		default:
 			return [];
 	}
@@ -945,6 +1024,7 @@ function fge_onboarding_render_slide_form( string $id, int $step, int $partner_i
 		case 'formats':  fge_onboarding_render_step_8( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'avail':    fge_onboarding_render_step_9( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'pricing':  fge_onboarding_render_step_10( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'billing':  fge_onboarding_render_billing( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'media':    fge_onboarding_render_step_11( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'review':   fge_onboarding_render_step_12( $step, $partner_id, $token, $vals ); break;
 	}
@@ -988,6 +1068,17 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'billing_contact_name'          => (string) $m( 'billing_contact_name' ),
 		'billing_contact_email'         => (string) $m( 'billing_contact_email' ),
 		'billing_contact_phone'         => (string) $m( 'billing_contact_phone' ),
+		'billing_legal_name'            => (string) $m( 'billing_legal_name' ),
+		'billing_address'               => is_array( $m( 'billing_address' ) ) ? $m( 'billing_address' ) : [],
+		'billing_tax_number'            => (string) $m( 'billing_tax_number' ),
+		'billing_vat_id'                => (string) $m( 'billing_vat_id' ),
+		'billing_small_business'        => (string) $m( 'billing_small_business' ),
+		'billing_iban'                  => (string) $m( 'billing_iban' ),
+		'billing_account_holder'        => (string) $m( 'billing_account_holder' ),
+		'billing_email'                 => (string) $m( 'billing_email' ),
+		'billing_terms'                 => (string) $m( 'billing_terms' ),
+		'billing_issuer'                => (string) $m( 'billing_issuer' ),
+		'billing_note'                  => (string) $m( 'billing_note' ),
 		'participants_min_general'      => (string) $m( 'participants_min_general' ),
 		'participants_max_general'      => (string) $m( 'participants_max_general' ),
 		'range_group_capacity'          => (string) $m( 'range_group_capacity' ),
@@ -2103,6 +2194,50 @@ function fge_onboarding_render_step_10( int $step, int $partner_id, string $toke
 	echo '</form>';
 }
 
+function fge_onboarding_render_billing( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Deine Abrechnungsdaten', 'Nach dem Event stellst du deine Rechnung an Firmengolf, nicht an das Unternehmen. Wir prüfen, zahlen dich aus und rechnen anschließend mit dem Unternehmen ab. Du hast damit genau einen Rechnungsempfänger und ein Zahlungsziel.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
+
+	$addr = is_array( $v['billing_address'] ?? null ) ? $v['billing_address'] : [];
+
+	fge_onboarding_input( 'fge_billing_legal_name', 'fge_billing_legal_name', 'Rechnungssteller (Rechtsträger)', $v['billing_legal_name'] ?? '', 'text', true, 'z. B. Golfclub Beispiel e. V. oder Max Mustermann Golf GmbH', $errors, 'So wie es später auf deiner Rechnung steht.' );
+	fge_onboarding_input( 'fge_billing_street', 'fge_billing_street', 'Straße und Hausnummer', $addr['street'] ?? '', 'text', true, 'Musterweg 12', $errors );
+	?>
+	<div class="ob-field-row ob-field-row-1-3">
+		<?php fge_onboarding_input( 'fge_billing_postal_code', 'fge_billing_postal_code', 'PLZ', $addr['postal_code'] ?? '', 'text', true, '20359', $errors, '', 'maxlength="10"' ); ?>
+		<?php fge_onboarding_input( 'fge_billing_city', 'fge_billing_city', 'Ort', $addr['city'] ?? '', 'text', true, 'Hamburg', $errors ); ?>
+	</div>
+	<?php
+	fge_onboarding_input( 'fge_billing_country', 'fge_billing_country', 'Land', ( $addr['country'] ?? '' ) ?: 'Deutschland', 'text', false, 'Deutschland' );
+	?>
+	<div class="ob-field-row">
+		<?php fge_onboarding_input( 'fge_billing_tax_number', 'fge_billing_tax_number', 'Steuernummer', $v['billing_tax_number'] ?? '', 'text', false, 'z. B. 22/815/08154', $errors, 'Steuernummer oder USt-ID, eine von beiden genügt.' ); ?>
+		<?php fge_onboarding_input( 'fge_billing_vat_id', 'fge_billing_vat_id', 'Umsatzsteuer-ID', $v['billing_vat_id'] ?? '', 'text', false, 'z. B. DE123456789', $errors ); ?>
+	</div>
+	<?php
+	fge_onboarding_select( 'fge_billing_small_business', 'fge_billing_small_business', 'Kleinunternehmer nach §19 UStG', (string) ( $v['billing_small_business'] ?? '' ), [
+		'0' => 'Nein, wir weisen Umsatzsteuer aus',
+		'1' => 'Ja, Kleinunternehmerregelung ohne Umsatzsteuer',
+	], true, $errors );
+	fge_onboarding_input( 'fge_billing_iban', 'fge_billing_iban', 'IBAN', $v['billing_iban'] ?? '', 'text', true, 'DE00 0000 0000 0000 0000 00', $errors, 'Auf dieses Konto zahlen wir nach dem Event aus.' );
+	fge_onboarding_input( 'fge_billing_account_holder', 'fge_billing_account_holder', 'Kontoinhaber', $v['billing_account_holder'] ?? '', 'text', true, 'Name auf dem Konto', $errors );
+	fge_onboarding_input( 'fge_billing_email', 'fge_billing_email', 'Rechnungs-E-Mail', $v['billing_email'] ?? '', 'email', true, 'buchhaltung@…', $errors, 'An diese Adresse schicken wir Gutschriften und Rechnungsfragen.' );
+	fge_onboarding_select( 'fge_billing_terms', 'fge_billing_terms', 'Euer Zahlungsziel an uns', (string) ( $v['billing_terms'] ?? '' ), [
+		'0'  => 'Sofort nach Rechnungseingang',
+		'7'  => '7 Tage',
+		'14' => '14 Tage',
+		'30' => '30 Tage',
+	], true, $errors );
+	fge_onboarding_select( 'fge_billing_issuer', 'fge_billing_issuer', 'Wer stellt Firmengolf die Rechnung?', (string) ( $v['billing_issuer'] ?? '' ), [
+		'partner' => 'Wir selbst, alles in einer Rechnung',
+		'other'   => 'Eine andere Partei',
+		'split'   => 'Geteilt, mehrere Rechnungssteller',
+	], true, $errors );
+	fge_onboarding_textarea( 'fge_billing_note', 'fge_billing_note', 'Hinweis zur Rechnungsstellung (optional)', $v['billing_note'] ?? '', 'z. B. die Gastronomie rechnet separat ab', 'Bei „eine andere Partei" oder „geteilt" erklär hier kurz, wer welchen Teil in Rechnung stellt.' );
+	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
+	echo '</form>';
+}
+
 function fge_onboarding_render_step_11( int $step, int $partner_id, string $token, array $v, array $errors ): void {
 	fge_onboarding_render_step_header( $step, 'Bilder, die euren Platz zeigen.', 'Logo und Titelbild sind wichtig, aber du kannst auch ohne weitermachen, wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
@@ -2259,10 +2394,28 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 			[ 'Saison', fge_season_label( (string) $v['season'] ) ],
 		] );
 
-		// ── Preis & Abrechnung ──
-		fge_onboarding_rev_block( 'Preis & Abrechnung', $edit( 'pricing' ), [
+		// ── Preis ──
+		fge_onboarding_rev_block( 'Preis', $edit( 'pricing' ), [
 			[ 'Netto-Preise', 'Pro Event im Portal hinterlegt' ],
 			[ 'Abrechnung', 'Direkt mit Firmengolf · Anfragenummer angeben' ],
+		] );
+
+		// ── Abrechnung ──
+		$b_addr   = is_array( $v['billing_address'] ?? null ) ? $v['billing_address'] : [];
+		$b_terms  = [ '0' => 'Sofort nach Rechnungseingang', '7' => '7 Tage', '14' => '14 Tage', '30' => '30 Tage' ];
+		$b_issuer = [ 'partner' => 'Wir selbst, alles in einer Rechnung', 'other' => 'Eine andere Partei', 'split' => 'Geteilt, mehrere Rechnungssteller' ];
+		$b_small  = (string) ( $v['billing_small_business'] ?? '' );
+		$b_iban   = (string) ( $v['billing_iban'] ?? '' );
+		fge_onboarding_rev_block( 'Abrechnung', $edit( 'billing' ), [
+			[ 'Rechnungssteller', (string) $v['billing_legal_name'] ],
+			[ 'Anschrift', trim( ( $b_addr['street'] ?? '' ) . ', ' . ( $b_addr['postal_code'] ?? '' ) . ' ' . ( $b_addr['city'] ?? '' ), ' ,' ) ],
+			[ 'Steuernummer / USt-ID', trim( ( $v['billing_tax_number'] ?: '' ) . ( $v['billing_tax_number'] && $v['billing_vat_id'] ? ' · ' : '' ) . ( $v['billing_vat_id'] ?: '' ) ) ],
+			[ 'Kleinunternehmer §19', '' === $b_small ? '' : ( '1' === $b_small ? 'Ja' : 'Nein' ) ],
+			[ 'IBAN', '' !== $b_iban ? trim( chunk_split( $b_iban, 4, ' ' ) ) : '' ],
+			[ 'Kontoinhaber', (string) $v['billing_account_holder'] ],
+			[ 'Rechnungs-E-Mail', (string) $v['billing_email'] ],
+			[ 'Zahlungsziel', $b_terms[ (string) ( $v['billing_terms'] ?? '' ) ] ?? '' ],
+			[ 'Wer stellt die Rechnung', $b_issuer[ (string) ( $v['billing_issuer'] ?? '' ) ] ?? '' ],
 		] );
 
 		// ── Medien ──
