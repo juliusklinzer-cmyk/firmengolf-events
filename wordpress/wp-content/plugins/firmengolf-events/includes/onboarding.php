@@ -14,8 +14,31 @@ add_action( 'init', 'fge_onboarding_handle_step', 5 );
 // The wizard mirrors _design_neu/partner-onboarding (STEPS array): 3 chapters,
 // each opened by an intro slide. Navigation is by 1-based ordinal; field logic
 // (render/save/validate) is dispatched by slide id, so order changes stay safe.
+// Since Schritt 3 (docs/onboarding-golflehrer-indoor.md) the manifest is
+// per partner type: callers may pass course/coach/indoor explicitly, otherwise
+// the type of the current onboarding's partner decides.
 
-function fge_onboarding_manifest(): array {
+/**
+ * Partner-Typ des laufenden Onboardings. Ohne Partner-Post (allererster Aufruf)
+ * 'course'; die coach-/indoor-Einstiege setzen den Typ beim Draft-Anlegen.
+ * Statisch gecacht — der Typ eines Partners ändert sich innerhalb eines
+ * Requests nicht (Draft-Anlage legt ihn vor dem ersten Manifest-Zugriff fest).
+ */
+function fge_onboarding_current_type(): string {
+	static $type = null;
+	if ( null === $type ) {
+		$pid  = fge_onboarding_get_current_partner_id();
+		$type = $pid > 0 ? fge_partner_type( $pid ) : 'course';
+	}
+	return $type;
+}
+
+function fge_onboarding_manifest( string $type = '' ): array {
+	if ( '' === $type ) {
+		$type = fge_onboarding_current_type();
+	}
+	// Eigene coach-/indoor-Manifeste folgen mit Formular A/B (Plan Abschnitt 9,
+	// Schritte 7/8); bis dahin laufen alle Typen durch den Platz-Wizard.
 	return [
 		1  => [ 'id' => 'intro-1',  'chapter' => 1, 'kind' => 'intro' ],
 		2  => [ 'id' => 'golftype', 'chapter' => 1, 'kind' => 'form', 'wide' => true ],
@@ -37,17 +60,17 @@ function fge_onboarding_manifest(): array {
 	];
 }
 
-function fge_onboarding_total_slides(): int {
-	return count( fge_onboarding_manifest() );
+function fge_onboarding_total_slides( string $type = '' ): int {
+	return count( fge_onboarding_manifest( $type ) );
 }
 
-function fge_onboarding_slide( int $ordinal ): array {
-	$m = fge_onboarding_manifest();
+function fge_onboarding_slide( int $ordinal, string $type = '' ): array {
+	$m = fge_onboarding_manifest( $type );
 	return $m[ $ordinal ] ?? [];
 }
 
-function fge_onboarding_ordinal_of( string $id ): int {
-	foreach ( fge_onboarding_manifest() as $ord => $slide ) {
+function fge_onboarding_ordinal_of( string $id, string $type = '' ): int {
+	foreach ( fge_onboarding_manifest( $type ) as $ord => $slide ) {
 		if ( $slide['id'] === $id ) {
 			return $ord;
 		}
@@ -205,16 +228,25 @@ function fge_onboarding_get_current_partner_id(): int {
 
 // ── Draft creation ────────────────────────────────────────────────────────────
 
-function fge_onboarding_create_draft_partner(): int {
+function fge_onboarding_create_draft_partner( string $type = 'course' ): int {
+	if ( ! isset( fge_catalog_partner_types()[ $type ] ) ) {
+		$type = 'course';
+	}
+	$titles  = [
+		'course' => 'Neuer Golfplatz Partner (Onboarding)',
+		'coach'  => 'Neuer Golflehrer Partner (Onboarding)',
+		'indoor' => 'Neuer Indoor Partner (Onboarding)',
+	];
 	$post_id = wp_insert_post( [
 		'post_type'   => 'firmengolf_partner',
 		'post_status' => 'draft',
-		'post_title'  => 'Neuer Golfplatz Partner (Onboarding)',
+		'post_title'  => $titles[ $type ],
 	] );
 	if ( is_wp_error( $post_id ) ) {
 		return 0;
 	}
 	$token = bin2hex( random_bytes( 16 ) );
+	update_post_meta( $post_id, '_fge_partner_type', $type );
 	update_post_meta( $post_id, '_fge_onboarding_token', $token );
 	update_post_meta( $post_id, '_fge_onboarding_step', 0 );
 	update_post_meta( $post_id, '_fge_individual_availability_check', 1 );
