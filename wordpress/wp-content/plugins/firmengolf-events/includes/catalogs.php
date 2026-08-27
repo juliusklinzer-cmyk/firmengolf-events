@@ -234,6 +234,157 @@ function fge_catalog_indoor_features(): array {
 }
 
 /**
+ * Anlagentyp Indoor (Formular B, Slide B2). 'club-indoor' ist der Sonderweg
+ * aus Entscheidung 4: Indoor-Bereich eines bestehenden Golfclubs läuft über
+ * dessen Partner-Profil, nicht als eigener Datensatz.
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_indoor_kinds(): array {
+	return [
+		'lounge'      => 'Indoor-Golfclub oder Simulator-Lounge',
+		'club-indoor' => 'Indoor-Bereich eines bestehenden Golfclubs',
+		'range'       => 'Indoor-Range mit Ballflug-Tracking',
+		'bar'         => 'Golf-Bar oder Entertainment-Location',
+		'mobile'      => 'Event-Location mit mobilem Simulator',
+		'academy'     => 'Trainingszentrum oder Golfschule mit Simulator',
+	];
+}
+
+/**
+ * Räume, Flächen und Nebenaktivitäten einer Indoor-Anlage (Formular B, Slide B9).
+ * @return array<string,array<string,string>> Gruppenname => [ id => Label ]
+ */
+function fge_catalog_indoor_infra_groups(): array {
+	return [
+		'Simulatorbereich' => [
+			'sim-putting'   => 'Indoor-Puttinggrün',
+			'sim-chipping'  => 'Chipping-Bereich',
+			'sim-bunker'    => 'Übungsbunker indoor',
+			'sim-lounge'    => 'Lounge am Simulator',
+			'sim-screen'    => 'Präsentations-Screen',
+		],
+		'Aufenthalt' => [
+			'stay-lounge'   => 'Loungebereich',
+			'stay-bar'      => 'Bar',
+			'stay-seats'    => 'Sitzbereich',
+			'stay-terrace'  => 'Terrasse',
+			'stay-smoking'  => 'Raucherbereich',
+		],
+		'Tagen und Arbeiten' => [
+			'work-meeting'    => 'Meetingraum',
+			'work-seminar'    => 'Seminarraum',
+			'work-workshop'   => 'Workshopraum',
+			'work-wifi'       => 'WLAN',
+			'work-beamer'     => 'Beamer',
+			'work-screen'     => 'Bildschirm',
+			'work-flipchart'  => 'Flipchart',
+			'work-whiteboard' => 'Whiteboard',
+			'work-mic'        => 'Mikrofonanlage',
+			'work-moderation' => 'Moderationsmaterial',
+		],
+		'Weitere Aktivitäten' => [
+			'fun-dart'         => 'Dart',
+			'fun-billard'      => 'Billard',
+			'fun-shuffleboard' => 'Shuffleboard',
+			'fun-kicker'       => 'Kicker',
+			'fun-bowling'      => 'Bowling',
+			'fun-kegeln'       => 'Kegeln',
+			'fun-simracing'    => 'Sim-Racing',
+			'fun-tischtennis'  => 'Tischtennis',
+		],
+		'Sonstiges' => [
+			'misc-music'    => 'Musikanlage',
+			'misc-playlist' => 'Eigene Playlist erlaubt',
+			'misc-deko'     => 'Deko erlaubt',
+		],
+	];
+}
+
+/** Flache Liste aller Indoor-Raum-ids (zum Validieren). @return string[] */
+function fge_catalog_indoor_infra_ids(): array {
+	$ids = [];
+	foreach ( fge_catalog_indoor_infra_groups() as $items ) {
+		$ids = array_merge( $ids, array_keys( $items ) );
+	}
+	return array_values( array_unique( $ids ) );
+}
+
+/**
+ * Anbietbare Indoor-Formate (Formular B, Slide B13). Format
+ * 'schlechtwetter-ersatz' existiert bewusst NICHT (Entscheidung 5).
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_indoor_formats(): array {
+	return [
+		'indoor-teamevent'    => 'Indoor-Teamevent',
+		'weihnachtsfeier'     => 'Weihnachtsfeier und Jahresabschluss',
+		'longest-drive'       => 'Longest Drive oder Closest to Pin Turnier',
+		'sim-turnier'         => 'Simulator-Firmenturnier',
+		'afterwork-indoor'    => 'After-Work Indoor Golf',
+		'schnupper-indoor'    => 'Schnupperkurs Indoor',
+		'platzreife-theorie'  => 'Platzreife-Theorie mit Indoor-Praxis',
+		'kundenevent-indoor'  => 'Kundenevent und Netzwerkabend',
+		'kickoff-workshop'    => 'Kick-off oder Workshop mit Golfteil',
+		'gesundheitstag-indoor' => 'Gesundheitstag und Bewegungspause',
+		'wintertraining'      => 'Wintertraining für Golfer im Team',
+	];
+}
+
+/**
+ * Wer meldet sich als Golflehrer an (Formular A, Slide A2).
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_coach_kinds(): array {
+	return [
+		'solo'     => 'Einzelner Golf-Pro oder Trainer',
+		'school'   => 'Golfschule oder Pro-Team',
+		'employed' => 'Trainer fest angestellt bei einem Club',
+	];
+}
+
+/**
+ * Qualifikationen für Golflehrer (Formular A, Slide A3). Abfrage ohne Gate,
+ * ohne Lizenzprüfung (Entscheidung 6); 'other' erlaubt Freitext.
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_coach_quali(): array {
+	return [
+		'pga-a'    => 'PGA of Germany, Level A',
+		'pga-b'    => 'PGA of Germany, Level B',
+		'pga-c'    => 'PGA of Germany, Level C',
+		'dgv-b'    => 'DGV-B-Trainer',
+		'dgv-c'    => 'DGV-C-Trainer',
+		'dosb'     => 'DOSB-Lizenz',
+		'kids'     => 'Kindertrainer-Lizenz',
+		'other'    => 'Sonstige Qualifikation',
+	];
+}
+
+/**
+ * Anbietbare Formate für Golflehrer (Formular A, Slide A8). Die Voraussetzung
+ * steht im Label-Kontext des Wizards, nicht als Gate im Katalog.
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_coach_formats(): array {
+	return [
+		'schnupper-team'            => 'Schnupperkurs für Teams',
+		'platzreife-kompakt'        => 'Platzreife kompakt (1 bis 2 Tage)',
+		'platzreife-serie'          => 'Platzreife über mehrere Termine',
+		'firmenkurs-fortgeschritten' => 'Firmenkurs für Fortgeschrittene',
+		'einzeltraining'            => 'Einzeltraining und Coaching-Gutscheine',
+		'turnierbegleitung'         => 'Turnierbegleitung, Pro am Abschlag',
+		'station-longest-drive'     => 'Longest Drive oder Closest to Pin betreuen',
+		'station-kurzspiel'         => 'Putting- und Kurzspiel-Station',
+		'indoor-training'           => 'Training am Simulator',
+		'theorie-regeln'            => 'Regel- und Etikette-Theorie',
+		'golf-fitness'              => 'Golf-Fitness und Mobility-Einheit',
+		'teambuilding-golf'         => 'Teambuilding-Format mit Golfanteil',
+		'inhouse-golf'              => 'In-House Golf beim Unternehmen',
+		'familientag'               => 'Kinder- und Familientag',
+	];
+}
+
+/**
  * Rollen-Liste für Ansprechpartner (Handoff §1.2.1).
  * @return string[]
  */
