@@ -42,7 +42,8 @@ $event_count   = function_exists( 'fge_event_is_public' )
 $gp_groups = [
 	[
 		'ic'  => '<path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
-		't'   => 'Golfplätze',
+		't'    => 'Golfplätze',
+		'type' => 'course',
 		'sub' => 'Zusatzumsatz an den Tagen, an denen der Platz Luft hat.',
 		'pts' => [
 			'Firmengruppen kommen meist dienstags bis donnerstags, genau dann, wenn Startzeiten frei sind.',
@@ -52,7 +53,8 @@ $gp_groups = [
 	],
 	[
 		'ic'  => '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
-		't'   => 'Golflehrer',
+		't'    => 'Golflehrer',
+		'type' => 'coach',
 		'sub' => 'Firmenkurse als planbare Aufträge, ohne eigene Akquise.',
 		'pts' => [
 			'Grundlagenkurse, Platzreifekurse und Event-Coaching für ganze Teams statt einzelner Schnupperstunden.',
@@ -62,7 +64,8 @@ $gp_groups = [
 	],
 	[
 		'ic'  => '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/><path d="M8 12l2.5-3 2 2L15 8"/>',
-		't'   => 'Indoor-Golfanlagen',
+		't'    => 'Indoor-Golfanlagen',
+		'type' => 'indoor',
 		'sub' => 'Firmenkunden füllen genau die Stunden, die sonst leer laufen.',
 		'pts' => [
 			'Firmenevents finden unter der Woche und tagsüber statt, genau dann haben die meisten Simulatoren freie Kapazität.',
@@ -164,7 +167,8 @@ $faq_teaser = [
 						<li><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span><?php echo esc_html( $pt ); ?></span></li>
 					<?php endforeach; ?>
 				</ul>
-				<a class="gp-aud-cta" href="<?php echo esc_url( $url_onboarding ); ?>">Jetzt Partner werden <?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
+				<?php // Deeplink je Zielgruppe: startet den passenden Wizard ohne Typ-Wahl (Plan 8b). ?>
+			<a class="gp-aud-cta" href="<?php echo esc_url( add_query_arg( 'ob_type', $g['type'] ?? 'course', $url_onboarding ) ); ?>">Jetzt Partner werden <?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
 			</div>
 		<?php endforeach; ?>
 	</div>

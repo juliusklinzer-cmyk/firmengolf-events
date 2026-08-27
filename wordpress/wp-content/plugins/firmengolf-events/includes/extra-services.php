@@ -43,6 +43,10 @@ function fge_extra_services( int $req ): array {
 			'margin'         => max( 0.0, (float) ( $r['margin'] ?? fge_xs_default_margin() ) ),
 			'provider_name'  => (string) ( $r['provider_name'] ?? '' ),
 			'provider_email' => (string) ( $r['provider_email'] ?? '' ),
+			// Mehr-Partner-Angebot (Plan Abschnitt 7.1): Position kann einem
+			// Firmengolf-Partner (z. B. Golflehrer) zugeordnet sein, damit dessen
+			// Eingangsrechnung der Buchung zuordenbar ist.
+			'partner_id'     => max( 0, (int) ( $r['partner_id'] ?? 0 ) ),
 			'wish'           => (string) ( $r['wish'] ?? '' ),
 		];
 	}
@@ -162,17 +166,31 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 	<p class="description" style="margin:0 0 10px;">Verhandelte Zusatzleistungen (Shuttle, Fotograf, Kurs …) und freie Angebotszeilen. Der Kunde sieht nur den Verkaufspreis, Einkauf und Marge bleiben intern. Positionen mit Dienstleister-Mail lösen bei Annahme automatisch Auftrag bzw. Absage aus. Zeile löschen = Leistung leeren.</p>
 	<table class="widefat striped" id="fge-xs-table" style="margin:0 0 8px;">
 		<thead><tr>
-			<th style="width:24%;">Leistung</th>
-			<th style="width:10%;">Einkauf € netto</th>
-			<th style="width:10%;">Basis</th>
-			<th style="width:8%;">Marge %</th>
-			<th style="width:11%;">Verkauf € netto</th>
-			<th style="width:17%;">Dienstleister</th>
+			<th style="width:22%;">Leistung</th>
+			<th style="width:9%;">Einkauf € netto</th>
+			<th style="width:8%;">Basis</th>
+			<th style="width:7%;">Marge %</th>
+			<th style="width:10%;">Verkauf € netto</th>
+			<th style="width:14%;">Firmengolf-Partner</th>
+			<th style="width:14%;">Dienstleister</th>
 			<th>Dienstleister E-Mail</th>
 		</tr></thead>
 		<tbody>
 		<?php
-		$row = static function ( array $it = [] ) {
+		// Aktive Partner für die Positions-Zuordnung (Golflehrer zuerst, dann Rest).
+		$xs_partners = get_posts( [
+			'post_type'      => 'firmengolf_partner',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+			'meta_query'     => [ [ 'key' => '_fge_partner_status', 'value' => 'aktiv' ] ],
+		] );
+		$xs_partner_opts = [];
+		foreach ( $xs_partners as $xp ) {
+			$xs_partner_opts[ (int) $xp->ID ] = get_the_title( $xp ) . ' (' . ( fge_catalog_partner_types()[ fge_partner_type( (int) $xp->ID ) ] ?? 'Partner' ) . ')';
+		}
+		$row = static function ( array $it = [] ) use ( $xs_partner_opts ) {
 			$cost   = (float) ( $it['cost'] ?? 0 );
 			$margin = isset( $it['margin'] ) ? (float) $it['margin'] : fge_xs_default_margin();
 			$sale   = $it ? fge_xs_sale_price( $it + [ 'margin' => $margin ] ) : 0.0;
@@ -187,6 +205,12 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 				</select></td>
 				<td><input type="text" name="fge_xs_margin[]" value="<?php echo esc_attr( number_format( $margin, $margin === floor( $margin ) ? 0 : 1, ',', '.' ) ); ?>" class="widefat fge-xs-margin"></td>
 				<td><span class="fge-xs-sale" style="font-weight:600;"><?php echo $sale > 0 ? esc_html( number_format( $sale, 2, ',', '.' ) . ' €' ) : ''; ?></span></td>
+				<td><select name="fge_xs_partner[]" class="widefat">
+					<option value="0">Extern / keiner</option>
+					<?php $cur_p = (int) ( $it['partner_id'] ?? 0 ); foreach ( $xs_partner_opts as $pid_opt => $plabel ) : ?>
+						<option value="<?php echo esc_attr( (string) $pid_opt ); ?>" <?php selected( $cur_p, $pid_opt ); ?>><?php echo esc_html( $plabel ); ?></option>
+					<?php endforeach; ?>
+				</select></td>
 				<td><input type="text" name="fge_xs_pname[]" value="<?php echo esc_attr( (string) ( $it['provider_name'] ?? '' ) ); ?>" class="widefat" placeholder="optional"></td>
 				<td><input type="email" name="fge_xs_pmail[]" value="<?php echo esc_attr( (string) ( $it['provider_email'] ?? '' ) ); ?>" class="widefat" placeholder="optional"></td>
 			</tr>
@@ -294,6 +318,7 @@ function fge_save_extra_services( int $post_id ) {
 	$margins = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_POST['fge_xs_margin'] ?? [] ) ) );
 	$pnames  = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_POST['fge_xs_pname'] ?? [] ) ) );
 	$pmails  = array_map( 'sanitize_email', wp_unslash( (array) ( $_POST['fge_xs_pmail'] ?? [] ) ) );
+	$partners = array_map( 'absint', wp_unslash( (array) ( $_POST['fge_xs_partner'] ?? [] ) ) );
 	$wishes  = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_POST['fge_xs_wish'] ?? [] ) ) );
 
 	$items = [];
@@ -301,13 +326,30 @@ function fge_save_extra_services( int $post_id ) {
 		if ( '' === trim( $label ) ) {
 			continue;
 		}
+		$xs_pid = (int) ( $partners[ $i ] ?? 0 );
+		if ( $xs_pid > 0 && 'firmengolf_partner' !== get_post_type( $xs_pid ) ) {
+			$xs_pid = 0;
+		}
+		$pname = trim( $pnames[ $i ] ?? '' );
+		$pmail = (string) ( $pmails[ $i ] ?? '' );
+		// Partner-Zuordnung füllt Dienstleister-Name/Mail automatisch nach, damit
+		// die bestehenden Auftrags-/Absage-Mails ohne Sonderfall funktionieren.
+		if ( $xs_pid > 0 ) {
+			if ( '' === $pname ) {
+				$pname = (string) get_post_meta( $xs_pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $xs_pid );
+			}
+			if ( '' === $pmail ) {
+				$pmail = sanitize_email( (string) get_post_meta( $xs_pid, '_fge_main_contact_email', true ) );
+			}
+		}
 		$items[] = [
 			'label'          => trim( $label ),
 			'cost'           => fge_xs_parse_num( $costs[ $i ] ?? '' ),
 			'basis'          => 'person' === ( $basis[ $i ] ?? '' ) ? 'person' : 'pauschal',
 			'margin'         => '' === trim( $margins[ $i ] ?? '' ) ? fge_xs_default_margin() : fge_xs_parse_num( $margins[ $i ] ),
-			'provider_name'  => trim( $pnames[ $i ] ?? '' ),
-			'provider_email' => (string) ( $pmails[ $i ] ?? '' ),
+			'provider_name'  => $pname,
+			'provider_email' => $pmail,
+			'partner_id'     => $xs_pid,
 			'wish'           => trim( $wishes[ $i ] ?? '' ),
 		];
 	}
