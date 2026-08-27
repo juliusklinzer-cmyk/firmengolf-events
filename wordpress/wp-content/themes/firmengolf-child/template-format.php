@@ -283,22 +283,19 @@ get_header();
 			<div class="mk-eyebrow">Häufige Fragen</div>
 			<h2 class="mk-h2" style="margin-top:8px;"><?php echo esc_html( $f_name ); ?>, kurz erklärt.</h2>
 		</div>
-		<ul class="faq-list">
-			<?php foreach ( $faqs as $faq ) : ?>
-				<li class="faq-item">
-					<button class="faq-q" type="button" aria-expanded="false">
-						<span><?php echo esc_html( $faq['q'] ); ?></span>
-						<span class="faq-toggle" aria-hidden="true">+</span>
-					</button>
-					<div class="faq-a">
-						<?php echo esc_html( $faq['a'] ); ?>
-						<?php if ( ! empty( $faq['link']['url'] ) ) : ?>
-							<a class="faq-a-link" href="<?php echo esc_url( $faq['link']['url'] ); ?>"><?php echo esc_html( $faq['link']['label'] ); ?> &rarr;</a>
-						<?php endif; ?>
-					</div>
-				</li>
-			<?php endforeach; ?>
-		</ul>
+		<?php
+		/* Globale FAQ-Komponente (Design-Linie, 28.08.2026); optionale Links wandern
+		   als fertiges HTML in die Antwort. */
+		get_template_part( 'template-parts/fge-faq', null, [
+			'items' => array_map( static function ( $faq ) {
+				$html = esc_html( $faq['a'] );
+				if ( ! empty( $faq['link']['url'] ) ) {
+					$html .= ' <a class="faq-a-link" href="' . esc_url( $faq['link']['url'] ) . '">' . esc_html( $faq['link']['label'] ) . ' &rarr;</a>';
+				}
+				return [ 'q' => $faq['q'], 'a_html' => $html ];
+			}, $faqs ),
+		] );
+		?>
 	</div>
 </section>
 <?php endif; ?>
@@ -337,14 +334,7 @@ get_header();
 	}, { threshold: 0.25 });
 	io.observe(row);
 })();
-document.querySelectorAll('.fge-page .faq-q[aria-expanded]').forEach(function (btn) {
-	btn.addEventListener('click', function () {
-		var item = btn.closest('.faq-item');
-		var open = item.classList.toggle('open');
-		btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-		var t = btn.querySelector('.faq-toggle'); if (t) t.textContent = open ? '−' : '+';
-	});
-});
+/* FAQ-Toggle kommt aus der globalen Komponente (template-parts/fge-faq.php). */
 </script>
 
 <?php get_footer();

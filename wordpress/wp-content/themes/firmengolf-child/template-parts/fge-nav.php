@@ -31,34 +31,8 @@ $nav_items = [
 	[ 'key' => 'kontakt',             'label' => 'Kontakt',             'url' => $url_kontakt ],
 ];
 
-// Mobile-Tabs (das Mobile-Menü, ≤768px). Aktiv-Status aus active_item ableiten.
-$mtab_active = static function ( string $key ) use ( $active_item ): bool {
-	if ( 'events' === $key ) {
-		return 'events' === $active_item;
-	}
-	if ( 'anfrage' === $key ) {
-		return in_array( $active_item, [ 'individuelle-events', 'anfrage' ], true );
-	}
-	if ( 'blog' === $key ) {
-		return 'blog' === $active_item;
-	}
-	if ( 'kontakt' === $key ) {
-		return 'kontakt' === $active_item;
-	}
-	return false;
-};
-$mtab_ic = [
-	'events'  => '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
-	'anfrage' => '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
-	'blog'    => '<path d="M4 5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/>',
-	'kontakt' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
-];
-$mtabs = [
-	[ 'key' => 'events',  'label' => 'Events',  'url' => $url_events ],
-	[ 'key' => 'anfrage', 'label' => 'Anfrage', 'url' => $url_anfrage ],
-	[ 'key' => 'blog',    'label' => 'Blog',    'url' => $url_blog ],
-	[ 'key' => 'kontakt', 'label' => 'Kontakt', 'url' => $url_kontakt ],
-];
+/* Wie der Desktop-CTA direkt in die 30-Sekunden-Schnellanfrage (Julius, 2026-08-10). */
+$url_quick = add_query_arg( 'anfrage', 'quick', $url_anfrage );
 ?>
 <nav class="fg-topnav" aria-label="Hauptnavigation">
 	<div class="fg-topnav-inner">
@@ -74,51 +48,87 @@ $mtabs = [
 		</div>
 		<div class="fg-nav-end">
 			<a class="fg-nav-link" href="<?php echo esc_url( $url_portal ); ?>">Partnerportal</a>
-			<?php /* Direkt in die 30-Sekunden-Schnellanfrage, nicht auf die Landingpage (Julius, 2026-08-10). */ ?>
-			<a class="fg-nav-cta" href="<?php echo esc_url( add_query_arg( 'anfrage', 'quick', $url_anfrage ) ); ?>">
+			<a class="fg-nav-cta" href="<?php echo esc_url( $url_quick ); ?>">
 				Jetzt anfragen
 				<span class="fg-arrow">
 					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
 				</span>
 			</a>
 		</div>
+		<?php /* Mobile (≤768px): nur Logo + Burger, alles statisch, nichts sticky.
+			(Anfrage-Pill entfernt, Julius 28.08.: der Hero trägt denselben Button,
+			und beim Scrollen ist der Header ohnehin aus dem Bild.) */ ?>
+		<button class="fg-nav-burger" type="button" id="fge-burger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="fge-drawer">
+			<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+		</button>
 	</div>
 </nav>
 
-<?php /* Mobile-Menü: obere sticky Leiste mit 3 Icon-Tabs (≤768px), kein Burger. */ ?>
-<div class="ev-msearch-bar <?php echo $mbar_action ? '' : 'tabs-only'; ?>" id="fge-mbar">
-	<div class="ev-mtabs">
-		<?php foreach ( $mtabs as $t ) : ?>
-			<a href="<?php echo esc_url( $t['url'] ); ?>" class="ev-mtab <?php echo $mtab_active( $t['key'] ) ? 'active' : ''; ?>"<?php echo $mtab_active( $t['key'] ) ? ' aria-current="page"' : ''; ?>>
-				<span class="ev-mtab-ic">
-					<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><?php echo $mtab_ic[ $t['key'] ]; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVG-Pfade ?></svg>
-				</span>
-				<span class="ev-mtab-l"><?php echo esc_html( $t['label'] ); ?></span>
+<?php /* Mobiles Slide-in-Menü (Drawer), öffnet über den Burger. */ ?>
+<div class="fg-drawer-scrim" id="fge-drawer" role="dialog" aria-modal="true" aria-label="Menü" hidden>
+	<div class="fg-drawer">
+		<div class="fg-drawer-top">
+			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="fg-brand">
+				<img src="<?php echo esc_url( fge_get_logo_url() ); ?>" alt="Firmengolf" width="104" height="24">
 			</a>
-		<?php endforeach; ?>
+			<button class="fg-drawer-close" type="button" id="fge-drawer-close" aria-label="Menü schließen">
+				<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+			</button>
+		</div>
+		<div class="fg-drawer-items">
+			<?php foreach ( $nav_items as $item ) : ?>
+				<a href="<?php echo esc_url( $item['url'] ); ?>" class="fg-drawer-link <?php echo $active_item === $item['key'] ? 'active' : ''; ?>"<?php echo $active_item === $item['key'] ? ' aria-current="page"' : ''; ?>>
+					<?php echo esc_html( $item['label'] ); ?>
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+				</a>
+			<?php endforeach; ?>
+		</div>
+		<div class="fg-drawer-foot">
+			<a class="fg-nav-cta fg-drawer-cta" href="<?php echo esc_url( $url_quick ); ?>">
+				Jetzt anfragen
+				<span class="fg-arrow">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+				</span>
+			</a>
+			<a class="fg-drawer-partner" href="<?php echo esc_url( $url_portal ); ?>">Partnerportal für Golfplätze</a>
+		</div>
 	</div>
-	<?php
-	if ( $mbar_action ) {
-		echo $mbar_action; // phpcs:ignore WordPress.Security.EscapeOutput -- vom Aufrufer escaptes HTML
-	}
-	?>
 </div>
+
+<?php /* Mobile: kontextuelle Aktion (Such-Pille) statisch oben, scrollt mit weg. */ ?>
+<?php if ( $mbar_action ) : ?>
+<div class="ev-msearch-bar" id="fge-mbar">
+	<?php echo $mbar_action; // phpcs:ignore WordPress.Security.EscapeOutput -- vom Aufrufer escaptes HTML ?>
+</div>
+<?php endif; ?>
+
 <script>
 (function () {
-	var bar = document.getElementById('fge-mbar');
-	if (!bar) { return; }
-	// overflow-anchor:none (CSS, fge-frontend.css) schaltet das Android-Scroll-Anchoring
-	// an der Wurzel ab, das die Einklapp-Hoehenaenderung sonst zurueckkorrigiert. Deshalb
-	// reicht hier eine niedrige Schwelle: die Leiste minimiert sich direkt beim Scrollen
-	// (iPhone wie zuvor), Android flackert dank abgeschaltetem Anchoring trotzdem nicht.
-	// Winzige Hysterese nur gegen 1px-Jitter exakt an der Schwelle.
-	var stuck = false;
-	var onScroll = function () {
-		var y = window.scrollY;
-		if (!stuck && y > 36) { stuck = true; bar.classList.add('is-stuck'); }
-		else if (stuck && y < 12) { stuck = false; bar.classList.remove('is-stuck'); }
+	var burger = document.getElementById('fge-burger');
+	var drawer = document.getElementById('fge-drawer');
+	var close  = document.getElementById('fge-drawer-close');
+	if (!burger || !drawer || !close) { return; }
+	var open = function () {
+		drawer.hidden = false;
+		// hidden-Attribut erst im naechsten Frame durch die Klasse ersetzen,
+		// damit die Einblend-Animation des Drawers greift.
+		requestAnimationFrame(function () { drawer.classList.add('is-open'); });
+		burger.setAttribute('aria-expanded', 'true');
+		document.documentElement.classList.add('fg-drawer-lock');
+		close.focus();
 	};
-	window.addEventListener('scroll', onScroll, { passive: true });
-	onScroll();
+	var shut = function () {
+		drawer.classList.remove('is-open');
+		drawer.hidden = true;
+		burger.setAttribute('aria-expanded', 'false');
+		document.documentElement.classList.remove('fg-drawer-lock');
+		burger.focus();
+	};
+	burger.addEventListener('click', open);
+	close.addEventListener('click', shut);
+	drawer.addEventListener('click', function (e) { if (e.target === drawer) { shut(); } });
+	document.addEventListener('keydown', function (e) {
+		if (e.key === 'Escape' && !drawer.hidden) { shut(); }
+	});
 })();
 </script>

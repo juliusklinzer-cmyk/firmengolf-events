@@ -215,50 +215,48 @@
 		/* Gruppen/Reihenfolge/Wording nach Julius (2026-07-06): Mittagessen statt Lunch,
 		   Grill + Einfach/Gehoben in der Gastro, Logistik direkt nach Gastronomie,
 		   Technik & Show mit neuen Posten. */
+		/* Neu sortiert nach Julius (2026-08-27): konkrete Golf-Formate statt Sammelbegriffe,
+		   Logistik/Foto/Branding zu „Sonstiges" zusammengelegt, Showtechnik eigener Block. */
 		var SERVICE_GROUPS = [
-			{ group: 'Sport & Programm', items: ['Golflehrer / Coaching', 'Schnupperkurs', 'Platzreife', 'Firmenturnier', 'Putting-Challenge'] },
+			{ group: 'Sport & Programm', items: ['Grundlagenkurs', 'Platzreifekurs', 'Kurzplatz-Turnier', '9-Loch-Turnier', '18-Loch-Turnier', 'Putting-Challenge', 'Long-Drive-Challenge'] },
 			{ group: 'Gastronomie', items: ['Frühstück', 'Mittagessen', 'Abendessen', 'Grill', 'Bar & Drinks', 'Einfach', 'Gehoben'] },
-			{ group: 'Logistik', items: ['Meetingraum', 'Shuttle / Transport', 'Übernachtung', 'Schlechtwetter-Alternative'] },
-			{ group: 'Technik & Show', items: ['Bildschirme', 'Musik und DJ', 'Bühne mit Licht und Ton', 'Band', 'Flutlicht und Nacht-Event'] },
-			{ group: 'Foto & Content', items: ['Fotograf', 'Content-Team für Social'] },
-			{ group: 'Branding & Merch', items: ['Branding & Banner', 'Individuelle Artikel', 'Pokale & Preise'] }
+			{ group: 'Sonstiges', items: ['Meetingraum', 'Shuttle / Transport', 'Übernachtung', 'Schlechtwetter-Alternative', 'Fotograf', 'Content-Team für Social Media', 'Branding & Banner', 'Individuelle Artikel', 'Pokale & Preise'] },
+			{ group: 'Showtechnik', items: ['Bildschirme mit Veranstaltungsfotos', 'Musik und DJ', 'Bühne mit Licht und Ton', 'Liveband', 'Flutlicht und Nacht-Event', 'Sonstiges'] }
 		];
+		/* Kleine Zusatzzeile unter einzelnen Kacheln. */
+		var SVC_SUBS = { 'Kurzplatz-Turnier': 'ohne Platzreife möglich' };
 		/* Icon je Leistung (Kachel-Design wie in der Partnerplatz-Anlage). */
 		function svcIcon(it) {
 			var svg = function (p) { return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>'; };
 			var s = it.toLowerCase();
-			if (s.indexOf('golflehrer') >= 0)                          return svg('<path d="M6 21V4l11 3.5L6 11"/><path d="M6 21h6"/>');
-			if (s.indexOf('schnupper') >= 0)                           return svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>');
+			if (s.indexOf('grundlagenkurs') >= 0)                      return svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>');
 			if (s.indexOf('platzreife') >= 0)                          return svg('<path d="M4 12l5 5L20 6"/><path d="M4 19h16"/>');
+			if (s.indexOf('long-drive') >= 0)                          return svg('<path d="M3 12h15"/><path d="M13 6l6 6-6 6"/><circle cx="4.5" cy="18.5" r="1.6"/>');
 			if (s.indexOf('turnier') >= 0 || s.indexOf('pokale') >= 0) return svg('<path d="M8 21h8M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>');
-			if (s.indexOf('putting') >= 0)                             return svg('<circle cx="12" cy="17" r="1.4"/><path d="M12 3v10"/><path d="M12 3l6 2-6 2"/>');
+			if (s.indexOf('putting') >= 0)                             return svg('<path d="M12 16V3"/><path d="M12 4l6 2-6 2"/><path d="M5 19c0-1.4 3.1-2.5 7-2.5s7 1.1 7 2.5-3.1 2.5-7 2.5-7-1.1-7-2.5z"/>');
 			if (s.indexOf('frühstück') >= 0)                           return svg('<path d="M4 8h12v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M16 9h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M7 3v2M11 3v2"/>');
-			if (s.indexOf('mittagessen') >= 0 || s === 'einfach')      return svg('<path d="M5 3v8M8 3v8M6.5 11v10"/><path d="M15 3c-2 2-2 6 0 8v10"/><path d="M15 3h3v8h-3"/>');
+			if (s.indexOf('mittagessen') >= 0 || s === 'einfach')      return svg('<path d="M6 3v5M9 3v5M12 3v5"/><path d="M6 8a3 3 0 0 0 6 0"/><path d="M9 11v10"/><path d="M17 3c-2 2.5-2 6.5 0 9v9"/>');
 			if (s.indexOf('abendessen') >= 0 || s === 'gehoben')       return svg('<path d="M12 4a8 8 0 0 1 8 8H4a8 8 0 0 1 8-8z"/><path d="M3 15h18"/><path d="M12 2v2"/>');
 			if (s.indexOf('grill') >= 0)                               return svg('<path d="M4 9h16a8 8 0 0 1-16 0z"/><path d="M8 17l-2 4M16 17l2 4M12 17v4"/><path d="M9 4c0 1-1 1-1 2M13 4c0 1-1 1-1 2M17 4c0 1-1 1-1 2"/>');
 			if (s.indexOf('bar') >= 0)                                 return svg('<path d="M4 4h16l-8 9z"/><path d="M12 13v6M8 21h8"/>');
 			if (s.indexOf('bildschirm') >= 0)                          return svg('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 21h8M12 16v5"/>');
-			if (s.indexOf('musik') >= 0 || s === 'band')               return svg('<path d="M9 18V6l10-2v11"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="15" r="2.5"/>');
-			if (s.indexOf('bühne') >= 0)                               return svg('<path d="M12 3l4 6H8z"/><path d="M4 21l4-7M20 21l-4-7M12 14v7"/>');
-			if (s.indexOf('flutlicht') >= 0 || s.indexOf('nacht') >= 0) return svg('<path d="M21 13A8 8 0 1 1 11 3a6.5 6.5 0 0 0 10 10z"/>');
+			if (s.indexOf('musik') >= 0 || s.indexOf('band') >= 0)     return svg('<path d="M9 18V6l10-2v11"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="15" r="2.5"/>');
+			if (s.indexOf('bühne') >= 0)                               return svg('<rect x="9" y="3" width="6" height="9" rx="3"/><path d="M7 9a5 5 0 0 0 10 0"/><path d="M12 14v4"/><path d="M5 21h14"/>');
+			if (s.indexOf('flutlicht') >= 0 || s.indexOf('nacht') >= 0) return svg('<rect x="7" y="3" width="10" height="4" rx="1"/><path d="M12 7v14M8 21h8"/><path d="M9 9l-2 3M15 9l2 3"/>');
 			if (s.indexOf('fotograf') >= 0)                            return svg('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.5-3h5L16 7"/><circle cx="12" cy="13" r="3.5"/>');
 			if (s.indexOf('content') >= 0)                             return svg('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>');
-			if (s.indexOf('branding') >= 0)                            return svg('<path d="M20 12l-8 8-9-9V4h7z"/><circle cx="7.5" cy="7.5" r="1.3"/>');
-			if (s.indexOf('artikel') >= 0)                             return svg('<rect x="4" y="8" width="16" height="12" rx="1.5"/><path d="M4 12h16M12 8v12"/><path d="M12 8c-3 0-4-4-1.5-4S12 8 12 8zM12 8c3 0 4-4 1.5-4S12 8 12 8z"/>');
+			if (s.indexOf('branding') >= 0)                            return svg('<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.3"/>');
+			if (s.indexOf('artikel') >= 0)                             return svg('<path d="M8 4 4 7l2 3 2-1v11h8V9l2 1 2-3-4-3a4 4 0 0 1-8 0z"/>');
 			if (s.indexOf('meetingraum') >= 0)                         return svg('<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/><path d="M7 8h6M7 11h4"/>');
 			if (s.indexOf('shuttle') >= 0)                             return svg('<rect x="3" y="5" width="18" height="11" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/>');
 			if (s.indexOf('übernachtung') >= 0)                        return svg('<path d="M3 18v-8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8"/><path d="M3 18h18M6 8V6h5v2"/>');
 			if (s.indexOf('schlechtwetter') >= 0)                      return svg('<path d="M12 3a8 8 0 0 1 8 8H4a8 8 0 0 1 8-8z"/><path d="M12 11v7a2 2 0 0 1-4 0"/>');
+			if (s === 'sonstiges')                                     return svg('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>');
 			return svg('<path d="M12 3l2.2 5.4L20 9l-4.4 3.8L17 19l-5-3-5 3 1.4-6.2L4 9l5.8-.6z"/>');
 		}
-		var BUDGETS = [
-			{ v: 'Unter 5.000 €', h: 'Kleinere Halbtags-Formate' },
-			{ v: '5.000 bis 10.000 €', h: 'Eintägig für 20 bis 40 Gäste' },
-			{ v: '10.000 bis 20.000 €', h: 'Premium-Eintages-Events' },
-			{ v: '20.000 bis 50.000 €', h: 'Mehrtägig oder größere Gruppen' },
-			{ v: 'Über 50.000 €', h: 'Incentive-Reisen, Großformate' },
-			{ v: 'Noch unklar', h: 'Wir gehen es gemeinsam durch' }
-		];
+		/* Budget pro Person statt großer Gesamtsummen (Julius, 27.08.: hohe Beträge
+		   schrecken ab, pro Kopf lässt sich besser planen). */
+		var BUDGETS = ['Bis 50 € p.P.', '50 bis 100 € p.P.', '100 bis 200 € p.P.', '200 bis 500 € p.P.', 'Über 500 € p.P.', 'Noch unklar'];
 		var CONTACT = { name: 'Julius Klinzer', role: 'Gründer' };
 
 		var overlay = null, S = null;
@@ -266,7 +264,7 @@
 		function blank(preset) {
 			var f = {
 				occasion: '', goal: '', size: '20', region: '', place: '', experience: '', startzeit: '',
-				budget: '10.000 bis 20.000 €', when: '', flex: 'flexibel', duration: '',
+				budget: 'Noch unklar', when: '', flex: 'flexibel', duration: '',
 				/* services OHNE Default: der Quick-Modus zeigt keinen Leistungs-Schritt und
 				   hat sonst nie gewählte Wünsche mitgesendet (Kern-Audit H1, 2026-07-08). */
 				date1: '', date2: '', date3: '', services: [],
@@ -282,17 +280,17 @@
 		var MIN_DATE = (function () { var d = new Date(); d.setDate(d.getDate() + 7); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
 
 		// Anlass-Auswahl: Reihenfolge + Icon-Kacheln (einheitlich mit den Leistungs-Kacheln).
-		/* 'Offsite' entfernt: seit der Workshop-Umstellung kein eigener Anlass mehr (Design-QA 2026-08-21). */
-		var OCCASIONS = ['Teamevent', 'After-Work Golf', 'Workshop', 'Firmenturnier', 'Kundenevent', 'Nacht-Event', 'Etwas anderes'];
+		/* Golf-Bezug in allen Anlass-Namen (Julius, 2026-08-27); die Event-KATEGORIEN
+		   auf der Eventliste behalten bewusst die kurzen Namen. */
+		var OCCASIONS = ['Golf-Teamevent', 'After-Work Golf', 'Golf & Workshop', 'Firmen-Golfturnier', 'Golf-Kundenevent', 'Nachtgolf-Event', 'Ein anderes Golf-Event'];
 		var OCC_ICONS = {
-			'Teamevent': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+			'Golf-Teamevent': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
 			'After-Work Golf': '<path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 4v3M5.2 7.2l1.6 1.6M18.8 7.2l-1.6 1.6M3 12h2M19 12h2"/>',
-			'Workshop': '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 20h8"/><path d="M7 8h10M7 11h6"/>',
-			'Firmenturnier': '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
-			'Offsite': '<path d="M3 20l6.5-11 4 6 2-3L21 20z"/>',
-			'Kundenevent': '<circle cx="12" cy="8" r="3"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/><path d="M16 4h4v4"/>',
-			'Nacht-Event': '<path d="M20 13.5A8 8 0 1 1 10.5 4a6.2 6.2 0 0 0 9.5 9.5z"/>',
-			'Etwas anderes': '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'
+			'Golf & Workshop': '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 20h8"/><path d="M7 8h10M7 11h6"/>',
+			'Firmen-Golfturnier': '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
+			'Golf-Kundenevent': '<circle cx="12" cy="8" r="3"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/><path d="M16 4h4v4"/>',
+			'Nachtgolf-Event': '<path d="M20 13.5A8 8 0 1 1 10.5 4a6.2 6.2 0 0 0 9.5 9.5z"/>',
+			'Ein anderes Golf-Event': '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'
 		};
 		function occCards() {
 			// Preset-Anlässe außerhalb der Standardliste (z. B. Sommerfest von den
@@ -302,7 +300,7 @@
 			return '<div class="ind-cards rw-occ-cards">' + list.map(function (o) {
 				var on = S.form.occasion === o;
 				return '<button type="button" class="ind-card' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
-					+ '" data-chip="occasion" data-val="' + esc(o) + '"><span class="ind-card-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (OCC_ICONS[o] || OCC_ICONS['Etwas anderes']) + '</svg></span><span class="ind-card-l">' + esc(o) + '</span></button>';
+					+ '" data-chip="occasion" data-val="' + esc(o) + '"><span class="ind-card-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (OCC_ICONS[o] || OCC_ICONS['Ein anderes Golf-Event']) + '</svg></span><span class="ind-card-l">' + esc(o) + '</span></button>';
 			}).join('') + '</div>';
 		}
 
@@ -335,7 +333,7 @@
 			var places = CFG.places || [];
 			if (!places.length) return '';
 			var opts = places.map(function (p) { return '<option value="' + esc(p) + '">'; }).join('');
-			return '<div class="rw-field">' + label('Konkreter Platzwunsch?', false, 'Optional, tippen zum Suchen')
+			return '<div class="rw-field">' + label('Wunsch-Golfplatz', false, 'Optional, tippen zum Suchen')
 				+ '<input class="fg-input" data-field="place" list="rw-place-list" value="' + esc(S.form.place) + '" placeholder="Golfplatz oder Ort eintippen …" autocomplete="off">'
 				+ '<datalist id="rw-place-list">' + opts + '</datalist></div>';
 		}
@@ -345,8 +343,28 @@
 				'<button class="rw-shortcut" data-act="toggle-mode">'
 				+ (S.mode === 'quick' ? 'Ausführliche Anfrage' : 'Schnell-Anfrage in 30 Sek.') + '</button>' : '';
 			var logo = CFG.logo ? '<img src="' + esc(CFG.logo) + '" alt="Firmengolf" height="24">' : '';
+			/* Hilfe-Popover: Anruf + Mail, wie „Noch Fragen?" beim Partner-Onboarding (Julius, 27.08.). */
+			var help = '';
+			if (CFG.phoneDisplay || CFG.helpEmail) {
+				/* Persönliche Kontaktkarte mit Julius-Foto (Julius, 27.08.): wer hier klickt,
+				   will direkt Kontakt aufnehmen; Anruf und Mail öffnen sofort. */
+				help = '<div class="rw-help">'
+					+ '<button class="rw-help-btn" data-act="help" aria-haspopup="true" aria-expanded="false">Hilfe</button>'
+					+ '<div class="rw-help-pop" hidden>'
+					+ (CFG.juliusImg
+						? '<div class="rw-help-person"><img src="' + esc(CFG.juliusImg) + '" alt="' + esc(CONTACT.name) + '" width="46" height="46">'
+							+ '<span class="rw-help-person-t"><b>' + esc(CONTACT.name) + '</b><i>' + esc(CONTACT.role) + ' · Firmengolf</i></span></div>'
+						: '<div class="rw-help-t">Wir helfen persönlich weiter</div>')
+					+ (CFG.phoneDisplay ? '<a class="rw-help-row" href="tel:' + esc(CFG.phoneTel || '') + '">'
+						+ '<span class="rw-help-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .8 2.9a2 2 0 0 1-.5 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.4 1.9.7 2.9.8a2 2 0 0 1 1.6 2z"/></svg></span>'
+						+ '<span class="rw-help-txt"><b>Anrufen</b><i>' + esc(CFG.phoneDisplay) + '</i></span></a>' : '')
+					+ (CFG.helpEmail ? '<a class="rw-help-row" href="mailto:' + esc(CFG.helpEmail) + '">'
+						+ '<span class="rw-help-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>'
+						+ '<span class="rw-help-txt"><b>E-Mail schreiben</b><i>' + esc(CFG.helpEmail) + '</i></span></a>' : '')
+					+ '</div></div>';
+			}
 			return '<header class="rw-top"><div class="rw-top-brand">' + logo + '<span class="rw-top-title">Event anfragen</span></div>'
-				+ '<div class="rw-top-actions">' + shortcut
+				+ '<div class="rw-top-actions">' + shortcut + help
 				+ '<button class="rw-close" data-act="close" aria-label="Schließen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></header>';
 		}
 
@@ -360,9 +378,12 @@
 
 		function screenIntro() {
 			var occ = S.form.occasion || 'Firmenevent';
+			// Passender Artikel je Anlass (sonst „ein Incentive-Reise").
+			var OCC_ARTICLE = { 'Incentive-Reise': 'eine', 'Platzreife': 'eine' };
+			var art = OCC_ARTICLE[occ] || 'ein';
 			return '<div class="rw-stage"><div class="rw-screen rw-has-photo rw-intro"><div class="rw-main">'
 				+ '<div class="rw-eyebrow">Schön, dass du da bist</div>'
-				+ '<h2 class="rw-h">Toll, ihr plant ein <span class="mk-italic">' + esc(occ) + '</span> für euer Team.</h2>'
+				+ '<h2 class="rw-h">Toll, ihr plant ' + art + ' <span class="mk-italic">' + esc(occ) + '</span> für euer Team.</h2>'
 				+ '<p class="rw-lead">Lass uns kurz ein paar Infos sammeln. Danach meldet sich ' + esc(CONTACT.name)
 				+ ' persönlich bei dir, meist innerhalb eines Werktags, mit ersten Ideen und einem Richtpreis.</p>'
 				+ '<div class="rw-intro-contact"><div><div class="rw-intro-c-name">' + esc(CONTACT.name) + '</div>'
@@ -375,9 +396,10 @@
 				+ '<button class="rw-btn-primary" data-act="intro-start">Los geht\'s ' + ICO_NEXT + '</button></div></div>';
 		}
 
-		/* Fortschritts-Punkte der Schnell-Anfrage (2 Schritte). */
-		function quickDots() {
-			return '<span class="rw-dots" aria-hidden="true"><i class="' + (S.step === 0 ? 'on' : '') + '"></i><i class="' + (S.step === 1 ? 'on' : '') + '"></i></span>';
+		/* Durchgehender Fortschrittsbalken im Fuß (Airbnb-Muster, Julius 2026-08-27):
+		   zwei Segmente, füllen sich pro Schritt von links. */
+		function quickProgress() {
+			return '<div class="rw-qprog" aria-hidden="true"><i class="' + (S.step >= 0 ? 'done' : '') + '"></i><i class="' + (S.step >= 1 ? 'done' : '') + '"></i></div>';
 		}
 
 		/* Schnell-Anfrage in ZWEI leichten Schritten (Julius, 2026-08-20):
@@ -386,27 +408,28 @@
 		   der Fuss traegt nur noch Fortschritt und Aktion. */
 		function screenQuick() {
 			if (S.step === 0) {
+				/* Überschrift + kleiner Text auch mobil sichtbar (Revert, Julius 27.08. spät). */
 				return '<div class="rw-stage"><div class="rw-screen rw-has-photo"><div class="rw-main">'
-					+ '<h2 class="rw-h rw-h--quick">In 30 Sekunden angefragt.</h2>'
-					+ '<p class="rw-lead">Wählt den Anlass, den Rest klären wir persönlich. Kostenlos und unverbindlich.</p>'
+					+ '<h2 class="rw-h rw-h--quick">Euer Anlass für die Anfrage.</h2>'
+					+ '<p class="rw-lead rw-lead--quick">Wählt den Anlass, den Rest klären wir persönlich. Kostenlos und unverbindlich.</p>'
 					+ '<div class="rw-form">'
-					+ '<div class="rw-field">' + label('Anlass', true) + occCards() + '</div>'
+					+ '<div class="rw-field">' + label('Anlass') + occCards() + '</div>'
 					+ '<div class="rw-field">' + label('Teilnehmerzahl') + sizeStepper() + '</div>'
 					+ '</div></div>' + photoPanel() + '</div></div>'
-					+ '<div class="rw-foot"><div class="rw-nav rw-nav--quick"><span class="rw-nav-spacer" aria-hidden="true"></span>' + quickDots()
+					+ '<div class="rw-foot">' + quickProgress() + '<div class="rw-nav rw-nav--quick"><span class="rw-nav-spacer" aria-hidden="true"></span>'
 					+ '<button class="rw-btn-primary" data-act="next">Weiter ' + ICO_NEXT + '</button></div></div>';
 			}
 			return '<div class="rw-stage"><div class="rw-screen rw-has-photo"><div class="rw-main">'
-				+ '<h2 class="rw-h rw-h--quick">Noch kurz zu euch.</h2>'
-				+ '<p class="rw-lead">Innerhalb eines Werktags habt ihr konkrete Vorschläge im Postfach.</p>'
+				+ '<h2 class="rw-h rw-h--quick rw-h--quick2">Noch kurz zu euch.</h2>'
+				+ '<p class="rw-lead rw-lead--quick">Innerhalb eines Werktags habt ihr konkrete Vorschläge im Postfach.</p>'
 				+ '<div class="rw-form">'
 				+ '<div class="rw-row"><div class="rw-field">' + label('Vor- & Nachname', true) + input('firstName', 'required', 'Vor- und Nachname') + '</div>'
 				+ '<div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div></div>'
 				+ '<div class="rw-field">' + label('Firma') + input('company', '', 'Musterfirma GmbH') + '</div>'
-				+ '<div class="rw-field">' + label('Was habt ihr vor?') + '<textarea class="fg-input" data-field="notes" rows="3" placeholder="Ein, zwei Sätze zu Ziel, Stimmung, Wünschen.">' + esc(S.form.notes) + '</textarea></div>'
+				+ '<div class="rw-field">' + label('Was habt ihr vor?') + '<textarea class="fg-input" data-field="notes" rows="2" placeholder="Ein, zwei Sätze zu Ziel, Stimmung, Wünschen.">' + esc(S.form.notes) + '</textarea></div>'
 				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '><span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label>'
 				+ '</div></div>' + photoPanel() + '</div></div>'
-				+ '<div class="rw-foot"><div class="rw-nav rw-nav--quick"><button class="rw-btn-text" data-act="back">Zurück</button>' + quickDots()
+				+ '<div class="rw-foot">' + quickProgress() + '<div class="rw-nav rw-nav--quick"><button class="rw-btn-text" data-act="back">Zurück</button>'
 				+ '<button class="rw-btn-primary" data-act="submit">Anfrage senden ' + ICO_SEND + '</button></div></div>';
 		}
 
@@ -426,45 +449,47 @@
 					+ '</div>';
 			}
 			if (step === 1) {
+				/* Neu strukturiert nach Julius (27.08. spät): schlanke Sektions-Überschriften
+				   statt Doppel-Labels, Wunschort als Freitext statt Region-Chips. */
 				return '<div class="rw-eyebrow">Schritt 2 · ' + FULL_STEPS[1] + '</div>'
-					+ '<h2 class="rw-h">Wann, wo und mit wie vielen?</h2>'
-					+ '<p class="rw-lead">Genau müssen die Angaben jetzt nicht sein.</p>'
-					+ '<div class="rw-form"><div class="rw-field">' + label('Teilnehmerzahl', true) + sizeStepper() + '</div>'
-					+ '<div class="rw-field">' + label('Bis zu drei Wunschtermine', false, 'Optional')
-					+ '<div class="rw-row rw-row-3">' + input('date1', 'type="date" min="' + MIN_DATE + '"', '1. Termin') + input('date2', 'type="date" min="' + MIN_DATE + '"', '2. Termin') + input('date3', 'type="date" min="' + MIN_DATE + '"', '3. Termin') + '</div></div>'
-					+ '<div class="rw-field">' + label('Wie flexibel beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
-					+ '<div class="rw-field">' + label('Gewünschter Startzeitpunkt', false, 'Optional') + chips('startzeit', ['Morgens', 'Vormittags', 'Mittags', 'After-Work', 'Noch offen']) + '</div>'
-					+ '<div class="rw-field">' + label('Golf-Erfahrung im Team', false, 'Optional') + chips('experience', ['Überwiegend Anfänger', 'Gemischt', 'Erfahrene Golfer', 'Weiß noch nicht']) + '</div>'
-					+ '<div class="rw-field">' + label('Wo soll euer Event stattfinden?')
-					+ chips('region', ['In der Nähe', 'Mitte Deutschlands', 'In den Alpen', 'Am Meer / Sylt', 'In Europa', 'An einem besonderen Ort', 'Noch offen'])
-					+ '</div>' + placeField() + '</div>';
+					+ '<h2 class="rw-h">Die Eckdaten eures Events.</h2>'
+					+ '<div class="rw-form">'
+					+ '<section class="rw-sec"><div class="rw-sec-h">Teilnehmerzahl</div>'
+					+ '<div class="rw-field">' + sizeStepper() + '</div></section>'
+					+ '<section class="rw-sec"><div class="rw-sec-h">Wunschtermine</div>'
+					+ '<div class="rw-field"><div class="rw-row rw-row-3">' + input('date1', 'type="date" min="' + MIN_DATE + '"', '1. Termin') + input('date2', 'type="date" min="' + MIN_DATE + '"', '2. Termin') + input('date3', 'type="date" min="' + MIN_DATE + '"', '3. Termin') + '</div></div>'
+					+ '<div class="rw-field">' + label('Wie flexibel seid ihr beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
+					+ '<div class="rw-field">' + label('Gewünschter Startzeitpunkt') + chips('startzeit', ['Morgens', 'Vormittags', 'Mittags', 'After-Work', 'Noch offen']) + '</div></section>'
+					+ '<section class="rw-sec"><div class="rw-sec-h">Ort</div>'
+					+ '<div class="rw-field">' + label('Wunschort') + input('region', '', 'z. B. Raum München, Bodensee, Sylt …') + '</div>'
+					+ placeField() + '</section>'
+					+ '<section class="rw-sec"><div class="rw-sec-h">Golf-Erfahrung</div>'
+					+ '<div class="rw-field">' + chips('experience', ['Überwiegend Anfänger', 'Gemischt', 'Erfahrene Golfer', 'Weiß noch nicht']) + '</div></section>'
+					+ '</div>';
 			}
 			if (step === 2) {
-				/* Icon-Kacheln wie in der Partnerplatz-Anlage (Julius, 2026-07-06) statt Text-Toggles. */
+				/* Kompakte Icon-Pills statt hoher Kachelwand: 26 Optionen in 6 Gruppen waren
+				   unübersichtlich (Julius, 27.08.). Icon links, Label rechts, mehr pro Zeile. */
 				var groups = SERVICE_GROUPS.map(function (g) {
-					return '<div class="ind-svc-pick-group"><div class="ind-svc-pick-h">' + esc(g.group) + '</div><div class="ind-cards">'
+					return '<section class="rw-sec"><div class="rw-sec-h">' + esc(g.group) + '</div><div class="ind-cards rw-svc-cards">'
 						+ g.items.map(function (it) {
 							var on = S.form.services.indexOf(it) >= 0;
 							return '<button type="button" class="ind-card' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
-								+ '" data-svc="' + esc(it) + '"><span class="ind-card-ico">' + svcIcon(it) + '</span><span class="ind-card-l">' + esc(it) + '</span></button>';
-						}).join('') + '</div></div>';
+								+ '" data-svc="' + esc(it) + '"><span class="ind-card-ico">' + svcIcon(it) + '</span><span class="ind-card-l">' + esc(it)
+								+ (SVC_SUBS[it] ? '<span class="ind-card-sub">' + esc(SVC_SUBS[it]) + '</span>' : '') + '</span></button>';
+						}).join('') + '</div></section>';
 				}).join('');
 				return '<div class="rw-eyebrow">Schritt 3 · ' + FULL_STEPS[2] + '</div>'
 					+ '<h2 class="rw-h">Was soll dabei sein?</h2>'
-					+ '<p class="rw-lead">Sag uns deine Vorstellungen, wir besprechen anschließend alles mit dir und bereiten das Event entsprechend vor.</p>'
-					+ '<div class="rw-form"><div class="ind-svc-pick">' + groups + '</div></div>';
+					+ '<p class="rw-lead">Wählt so viel oder wenig ihr wollt, wir besprechen danach alles im Detail.</p>'
+					+ '<div class="rw-form rw-svc-pick">' + groups + '</div>';
 			}
 			if (step === 3) {
-				var cards = BUDGETS.map(function (o) {
-					var on = S.form.budget === o.v;
-					return '<button type="button" class="ind-budget-card' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
-						+ '" data-chip="budget" data-val="' + esc(o.v) + '"><span class="ind-budget-v">' + esc(o.v)
-						+ '</span><span class="ind-budget-h">' + esc(o.h) + '</span></button>';
-				}).join('');
+				/* Chips im Site-Design statt großer Budget-Karten (Julius, 27.08.). */
 				return '<div class="rw-eyebrow">Schritt 4 · ' + FULL_STEPS[3] + '</div>'
 					+ '<h2 class="rw-h">Was wäre euer Budget-Rahmen?</h2>'
-					+ '<p class="rw-lead">Ein Richtwert genügt, so kommen wir direkt mit passenden Angeboten auf euch zu.</p>'
-					+ '<div class="rw-form"><div class="ind-budget-grid">' + cards + '</div>'
+					+ '<p class="rw-lead">Ein Richtwert pro Person genügt, so planen wir passgenau.</p>'
+					+ '<div class="rw-form"><div class="rw-field">' + label('Budget pro Person') + chips('budget', BUDGETS) + '</div>'
 					+ '<div class="rw-field" style="margin-top:8px;">' + label('Verpflegung & Diät', false, 'Optional') + input('diet', '', 'z.B. 5× vegetarisch, 1× vegan, Nussallergie') + '</div>'
 					+ '<div class="rw-field" style="margin-top:8px;">' + label('Was ist euch wichtig?')
 					+ '<textarea class="fg-input" data-field="notes" rows="4" placeholder="Stimmung, Hintergrund, besondere Wünsche, alles was hilft.">' + esc(S.form.notes) + '</textarea></div></div>';
@@ -474,8 +499,8 @@
 				+ '<h2 class="rw-h">Wer seid ihr, und wie erreichen wir dich?</h2>'
 				+ '<p class="rw-lead">Letzter Schritt. Danach melden wir uns innerhalb eines Werktags.</p>'
 				+ '<div class="rw-form"><div class="rw-row"><div class="rw-field">' + label('Unternehmen', true) + input('company', 'required', 'Musterfirma GmbH') + '</div>'
-				+ '<div class="rw-field">' + label('Ort') + input('city', '', 'München') + '</div></div>'
-				+ '<div class="rw-row"><div class="rw-field">' + label('Vorname', true) + input('firstName', 'required', 'Vorname') + '</div>'
+				+ '<div class="rw-field">' + label('Ort') + input('city', 'list="rw-city-list" autocomplete="off"', 'Ort eintippen …') + '<datalist id="rw-city-list"></datalist></div></div>'
+				+ '<div class="rw-row"><div class="rw-field">' + label('Vorname') + input('firstName', '', 'Vorname') + '</div>'
 				+ '<div class="rw-field">' + label('Nachname', true) + input('lastName', 'required', 'Nachname') + '</div></div>'
 				+ '<div class="rw-row"><div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div>'
 				+ '<div class="rw-field">' + label('Telefon') + input('phone', 'type="tel"', '+49 …') + '</div></div>'
@@ -485,18 +510,17 @@
 		}
 
 		function screenFull() {
+			/* Durchgehender Fortschrittsbalken ohne Labels (Airbnb-Muster, Julius 27.08.):
+			   die Schritt-Info trägt die Eyebrow im Inhalt („Schritt 2 · Eckdaten"). */
 			var segs = FULL_STEPS.map(function (lbl, i) {
-				var state = i < S.step ? ' done' : (i === S.step ? ' on' : '');
-				return '<div class="rw-seg' + state + '">'
-					+ '<div class="rw-seg-bar"><div class="rw-seg-fill" style="width:' + (i <= S.step ? 100 : 0) + '%"></div></div>'
-					+ '<span class="rw-seg-label">' + esc(lbl) + '</span></div>';
+				return '<i class="' + (i <= S.step ? 'done' : '') + '"></i>';
 			}).join('');
 			var isLast = S.step === FULL_STEPS.length - 1;
 			var body   = S.step === 0
 				? '<div class="rw-screen rw-has-photo"><div class="rw-main">' + fullStepBody(0) + '</div>' + photoPanel() + '</div>'
 				: '<div class="rw-screen">' + fullStepBody(S.step) + '</div>';
 			return '<div class="rw-stage">' + body + '</div>'
-				+ '<div class="rw-foot"><div class="rw-progress">' + segs + '</div>'
+				+ '<div class="rw-foot"><div class="rw-qprog" aria-hidden="true">' + segs + '</div>'
 				+ '<div class="rw-nav"><button class="rw-btn-text" data-act="back">' + (S.step === 0 ? 'Abbrechen' : 'Zurück') + '</button>'
 				+ '<button class="rw-btn-primary" data-act="next">' + (isLast ? 'Anfrage senden ' + ICO_SEND : 'Weiter ' + ICO_NEXT) + '</button></div></div>';
 		}
@@ -552,6 +576,8 @@
 			else if (S.mode === 'quick') body = topBar() + screenQuick();
 			else body = topBar() + screenFull();
 			overlay.innerHTML = body;
+			// Mobile-Kompaktdarstellung der Schnellanfrage (CSS-Hook, siehe fge-frontend.css)
+			overlay.classList.toggle('rw-mode-quick', S.phase === 'form' && S.mode === 'quick');
 			wireA11y();
 			/* Bei Schrittwechsel Fokus auf die Screen-Überschrift — nicht bei Re-Renders
 			   im selben Schritt (Chip-Klick), sonst springt der Fokus unter der Maus weg. */
@@ -598,7 +624,8 @@
 			}
 			if (S.step === 0) return !!S.form.occasion;
 			if (S.step === 1) return parseInt(S.form.size, 10) > 0; // Pflichtfeld jetzt auch geprüft (Kern-Audit N1)
-			if (S.step === 4) return S.form.company && S.form.firstName && S.form.lastName && S.form.email && S.form.consent;
+			// Vorname ist kein Pflichtfeld mehr (Julius, 2026-08-27).
+			if (S.step === 4) return S.form.company && S.form.lastName && S.form.email && S.form.consent;
 			return true;
 		}
 
@@ -648,6 +675,13 @@
 		}
 
 		function onClick(e) {
+			// Offenes Hilfe-Popover schließt bei jedem Klick außerhalb.
+			var hp = overlay.querySelector('.rw-help-pop');
+			if (hp && !hp.hidden && !e.target.closest('.rw-help')) {
+				hp.hidden = true;
+				var hb = overlay.querySelector('.rw-help-btn');
+				if (hb) { hb.setAttribute('aria-expanded', 'false'); }
+			}
 			var t = e.target.closest('[data-act], [data-chip], [data-svc]');
 			if (!t || !overlay.contains(t)) return;
 
@@ -682,6 +716,11 @@
 				return;
 			}
 			var act = t.getAttribute('data-act');
+			if (act === 'help') {
+				var pop = overlay.querySelector('.rw-help-pop');
+				if (pop) { pop.hidden = !pop.hidden; t.setAttribute('aria-expanded', pop.hidden ? 'false' : 'true'); }
+				return;
+			}
 			if (act === 'close') { close(); return; }
 			if (act === 'toggle-mode') { collect(); S.mode = (S.mode === 'quick' ? 'full' : 'quick'); S.step = 0; render(); return; }
 			if (act === 'to-full') { collect(); S.mode = 'full'; S.step = 0; render(); return; }
@@ -724,7 +763,6 @@
 				add(S.form.occasion, 'Anlass auswählen');
 			} else {
 				add(S.form.company, 'Firma');
-				add(S.form.firstName, 'Vorname');
 				add(S.form.lastName, 'Nachname');
 				add(S.form.email, 'E-Mail');
 				add(S.form.consent, 'Zustimmung zur Datenverarbeitung');
@@ -776,8 +814,34 @@
 				overlay.setAttribute('aria-label', 'Event anfragen');
 				document.body.appendChild(overlay);
 				overlay.addEventListener('click', onClick);
+			/* Ort-Autovervollständigung (Kontakt-Schritt) über die eigene Orts-Datenbank
+			   (fge_geo_suggest), consentfrei ohne Drittanbieter (Julius, 2026-08-27). */
+			var cityT = null;
+			overlay.addEventListener('input', function (e) {
+				if (!e.target.matches('input[data-field="city"]')) { return; }
+				var q = e.target.value.trim();
+				clearTimeout(cityT);
+				if (q.length < 2 || !CFG.ajaxUrl) { return; }
+				cityT = setTimeout(function () {
+					fetch(CFG.ajaxUrl + '?action=fge_geo_suggest&q=' + encodeURIComponent(q))
+						.then(function (r) { return r.json(); })
+						.then(function (res) {
+							var dl = overlay.querySelector('#rw-city-list');
+							if (!dl || !res || !res.success) { return; }
+							dl.innerHTML = '';
+							(res.data || []).forEach(function (s) {
+								var o = document.createElement('option');
+								o.value = s.label;
+								dl.appendChild(o);
+							});
+						}).catch(function () {});
+				}, 220);
+			});
 			}
-			S = { mode: mode || 'full', phase: (intro && mode !== 'quick') ? 'intro' : 'form', step: 0, sending: false, source: source || '', form: blank(preset) };
+			/* Intro (Begrüßung „Toll, ihr plant ein X …") jetzt auch vor der Schnellanfrage
+			   erlaubt: Formate ohne fertige Events landen so persönlich begrüßt im Quick-Flow
+			   (Julius, 2026-08-27). */
+			S = { mode: mode || 'full', phase: intro ? 'intro' : 'form', step: 0, sending: false, source: source || '', form: blank(preset) };
 			document.body.style.overflow = 'hidden';
 			window.addEventListener('keydown', onKey);
 			overlay.hidden = false;
@@ -805,8 +869,9 @@
 	// Anlässe, die per ?anlass= vorgewählt werden dürfen: die Standardliste des
 	// Wizards plus die Formate der Landingpages (fge_format_occasion() in PHP).
 	var ALLOWED_OCCASIONS = [
-		'Teamevent', 'After-Work Golf', 'Workshop', 'Firmenturnier', 'Offsite',
-		'Kundenevent', 'Nacht-Event', 'Etwas anderes', 'Platzreife', 'Incentive-Reise'
+		'Golf-Teamevent', 'After-Work Golf', 'Golf & Workshop', 'Firmen-Golfturnier',
+		'Golf-Kundenevent', 'Nachtgolf-Event', 'Ein anderes Golf-Event',
+		'Platzreife', 'Incentive-Reise', 'Indoor-Golf-Event', 'Sommerfest'
 	];
 
 	ready(function () {
@@ -822,7 +887,9 @@
 			// Anfrage tragen (Audit 2026-08-12).
 			var deepOccRaw = deepParams.get('anlass');
 			var deepOcc = (deepOccRaw && ALLOWED_OCCASIONS.indexOf(deepOccRaw) >= 0) ? deepOccRaw : null;
-			Wizard.open(deepMode, deepOcc ? { occasion: deepOcc } : null, false, 'deeplink');
+			// ?intro=1 zeigt vorab den Begrüßungs-Screen („Toll, ihr plant ein X …"),
+			// z. B. für Formate ohne fertige Events (Home-Slider, Julius 27.08.).
+			Wizard.open(deepMode, deepOcc ? { occasion: deepOcc } : null, deepParams.get('intro') === '1', 'deeplink');
 		}
 		document.querySelectorAll('[data-rw-open]').forEach(function (btn) {
 			btn.addEventListener('click', function (e) {
@@ -853,7 +920,9 @@
 			if (mode !== 'quick' && mode !== 'full') return;
 			e.preventDefault();
 			var preset = (occ && ALLOWED_OCCASIONS.indexOf(occ) >= 0) ? { occasion: occ } : null;
-			Wizard.open(mode, preset, false, 'general_landingpage');
+			var wantIntro = false;
+			try { wantIntro = new URL(a.href, window.location.href).searchParams.get('intro') === '1'; } catch (err2) {}
+			Wizard.open(mode, preset, wantIntro, 'general_landingpage');
 		});
 	});
 

@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Projektübergreifende Wahrheit (Mitgliedschaften, Punktesystem, Partner-Status, Marke & Ton, Infrastruktur, Entscheidungen) liegt in **`~/projects/firmengolf-universum`** (eigenes Git-Repo — README dort erklärt die Regeln). Bei Sessionstart bzw. vor Arbeit an solchen Themen: `git -C ~/projects/firmengolf-universum log --oneline $(cat .universum-stand)..HEAD` zeigt Neues seit dem letzten Sync → relevante Dateien lesen → `.universum-stand` auf den neuen HEAD setzen (Datei fehlt noch → beim ersten Sync anlegen). Änderungen hier mit Wirkung auf Website oder App (z. B. Partner, Preise, Marke) dort dokumentieren + committen. Nachbarprojekte: `~/projects/Firmengolf Webseite` (live: firmengolf.app) und `~/projects/firmengolf-app` (im Aufbau) — separat halten, nicht vermischen.
 
+## Design-Linie
+
+Vor JEDER UI-Arbeit `DESIGN.md` lesen (verbindliche Komponenten: Buttons, Chips, Inputs, Dialoge, Motion). Neue UI-Elemente werden an die zentralen Komponenten-Gruppen am Ende von `fge-frontend.css` angehängt, nie im eigenen Namensraum neu erfunden. Visuelle Änderungen gelten immer für alle Strecken (Website, Wizard, Event-Modal, Filter, Login, Onboarding) oder werden als offene Schuld dokumentiert.
+
+## Responsive-Arbeit
+
+Vor jeder Arbeit an Responsive-Verhalten, Mobile-Layout oder Viewport-Fixes zuerst `CLAUDE-MOBILE.md` lesen (feste Fix-Reihenfolge + Zieldateien); für Befunde den Skill `design-review` nutzen.
+
 ## Project Overview
 
 WordPress-based event marketplace and partner portal for Firmengolf (corporate golf events). The stack is a Docker Compose local dev environment; the only tracked custom code is the plugin and child theme.

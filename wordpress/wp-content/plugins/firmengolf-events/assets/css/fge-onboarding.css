@@ -496,16 +496,17 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 .ob-shell .ob-btn-text:hover:not(:disabled) { background: var(--paper-200); }
 .ob-shell .ob-btn-text:disabled { color: var(--ink-300); cursor: not-allowed; text-decoration: none; }
 
+/* Design-Linie (2026-08-27): Marken-Pille wie ueberall, siehe DESIGN.md */
 .ob-shell .ob-btn-primary {
-  font-size: 15px; font-weight: 500;
-  background: var(--ink-900);
-  color: var(--paper-50);
-  padding: 14px 22px;
-  border-radius: var(--radius-md);
-  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  font-size: 15px; font-weight: 600;
+  background: var(--fairway-700);
+  color: var(--paper-100);
+  padding: 14px 24px;
+  border-radius: var(--radius-pill);
+  transition: background var(--dur-fast) var(--ease-out), transform 100ms var(--ease-out);
 }
-.ob-shell .ob-btn-primary:hover:not(:disabled) { background: var(--ink-800); }
-.ob-shell .ob-btn-primary:active:not(:disabled) { transform: translateY(1px); }
+.ob-shell .ob-btn-primary:hover:not(:disabled) { background: var(--fairway-600); }
+.ob-shell .ob-btn-primary:active:not(:disabled) { transform: scale(0.97); }
 .ob-shell .ob-btn-primary:disabled {
   background: var(--ink-200);
   color: var(--ink-400);
@@ -739,10 +740,10 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 }
 .ob-day:hover { border-color: var(--ink-400); }
 .ob-day.on {
-  background: var(--paper-50);
-  color: var(--ink-900);
-  border-color: var(--ink-900);
-  box-shadow: inset 0 0 0 1px var(--ink-900);
+  background: var(--fairway-50);
+  color: var(--fairway-800);
+  border-color: var(--fairway-600);
+  box-shadow: inset 0 0 0 1px var(--fairway-600);
   font-weight: 600;
 }
 
@@ -1037,7 +1038,7 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
   flex: none;
 }
 .ob-check-row.done .ob-check-mark { background: var(--fairway-700); color: var(--paper-50); }
-.ob-check-row.active .ob-check-mark { background: var(--ink-900); color: var(--paper-50); }
+.ob-check-row.active .ob-check-mark { background: var(--fairway-600); color: var(--paper-50); }
 .ob-check-t {
   font-size: 15px; font-weight: 500;
   color: var(--ink-900);
@@ -1251,7 +1252,7 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 .ob-card-input { position: absolute; opacity: 0; pointer-events: none; }
 .ob-card { position: relative; cursor: pointer; }
 .ob-card-label { font-size: 14px; font-weight: 500; color: var(--ink-900); line-height: 1.3; }
-.ob-card.is-selected { border-color: var(--ink-900); background: var(--paper-200); box-shadow: inset 0 0 0 1px var(--ink-900); }
+.ob-card.is-selected { border-color: var(--fairway-600); background: var(--fairway-50); box-shadow: inset 0 0 0 1px var(--fairway-600); }
 @media (max-width: 560px) { .ob-card-grid { grid-template-columns: 1fr; } }
 
 /* Infra/Format card grids: 4-col default (design used inline columns={4});

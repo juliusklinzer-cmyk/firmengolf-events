@@ -58,7 +58,8 @@ $img = static fn( string $n ): string => fge_get_placeholder_image_url( $n );
 <?php /* Press releases */ ?>
 <section class="mk-section" aria-label="Pressemitteilungen">
 	<div class="mk-section-head"><div class="mk-eyebrow">Pressemitteilungen</div><h2 class="mk-h2">Aktuelles</h2></div>
-	<ul class="faq-list">
+	<?php /* Karten-Optik der globalen FAQ-Komponente (Design-Linie, 28.08.2026) */ ?>
+	<ul class="faq-list faq-anim cty-faq-cards">
 		<?php
 		$releases = [];
 		if ( empty( $releases ) ) : ?>

@@ -746,17 +746,7 @@ get_header();
 					</a>
 				</div>
 			</div>
-			<ul class="faq-list">
-				<?php foreach ( $faq_items as $i => $faq ) : ?>
-					<li class="faq-item" id="faq-ev-<?php echo esc_attr( (string) $i ); ?>">
-						<button class="faq-q" type="button" aria-expanded="false">
-							<span><?php echo esc_html( $faq['q'] ); ?></span>
-							<span class="faq-toggle" aria-hidden="true">+</span>
-						</button>
-						<div class="faq-a"><?php echo esc_html( $faq['a'] ); ?></div>
-					</li>
-				<?php endforeach; ?>
-			</ul>
+			<?php get_template_part( 'template-parts/fge-faq', null, [ 'items' => $faq_items ] ); ?>
 		</div>
 	</section>
 
@@ -1371,23 +1361,7 @@ get_header();
 		});
 	}
 
-	// FAQ accordion
-	document.querySelectorAll('.faq-q').forEach(function (btn) {
-		btn.addEventListener('click', function () {
-			var item = btn.closest('.faq-item');
-			var isOpen = item.classList.contains('open');
-			document.querySelectorAll('.faq-item').forEach(function (el) {
-				el.classList.remove('open');
-				el.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
-				el.querySelector('.faq-toggle').textContent = '+';
-			});
-			if (!isOpen) {
-				item.classList.add('open');
-				btn.setAttribute('aria-expanded', 'true');
-				btn.querySelector('.faq-toggle').textContent = '−';
-			}
-		});
-	});
+	// FAQ-Toggle kommt aus der globalen Komponente (template-parts/fge-faq.php).
 })();
 </script>
 

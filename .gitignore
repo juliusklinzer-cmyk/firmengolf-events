@@ -23,9 +23,21 @@ wordpress/wp-config.php
 .DS_Store
 Thumbs.db
 
+# Deploy-Zugangsdaten (nur lokal, Konvention aus universum/infrastruktur.md)
+.deploy-creds.txt
+.universum-stand
+
+# Lokale Agent-Hook-Configs (absolute Home-Pfade, maschinenspezifisch)
+.codex/
+.impeccable/
+
 .agents/
 .claude/
 skills-lock.json
 
 # React-Design-Export (nur lokale Referenz fürs Portieren, nicht tracken)
 _design/
+
+# Marketing-Bildexport aus der Live-Mediathek (nur lokal, 339 MB)
+_marketing-bilder/
+_marketing-bilder.zip

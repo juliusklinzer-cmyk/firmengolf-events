@@ -84,9 +84,9 @@ $start_req = $bc_start_type_cfg['required'] ?? [];
 // Veranstaltungstyp-Kacheln
 $type_tiles = [
 	[ 't' => 'Sommerfest',    'sub' => 'Der Abend unter freiem Himmel', 'img' => 'hero-golfloch-abendlicht.jpg',    'occasion' => 'Sommerfest' ],
-	[ 't' => 'Firmenturnier', 'sub' => 'Pokale, Flights & Siegerehrung', 'img' => 'golf-gruen-fahne.jpg',            'occasion' => 'Firmenturnier' ],
-	[ 't' => 'Teamevent',     'sub' => 'Spielerisch zusammenwachsen',    'img' => 'golferinnen-duo-green.png',       'occasion' => 'Teamevent' ],
-	[ 't' => 'Kundenevent',   'sub' => 'Golf, Dinner & echte Gespräche', 'img' => 'pool/kundenevent-handshake.jpg',  'occasion' => 'Kundenevent' ],
+	[ 't' => 'Firmenturnier', 'sub' => 'Pokale, Flights & Siegerehrung', 'img' => 'golf-gruen-fahne.jpg',            'occasion' => 'Firmen-Golfturnier' ],
+	[ 't' => 'Teamevent',     'sub' => 'Spielerisch zusammenwachsen',    'img' => 'golferinnen-duo-green.png',       'occasion' => 'Golf-Teamevent' ],
+	[ 't' => 'Kundenevent',   'sub' => 'Golf, Dinner & echte Gespräche', 'img' => 'pool/kundenevent-handshake.jpg',  'occasion' => 'Golf-Kundenevent' ],
 ];
 
 // Golf-Erfahrung
@@ -112,7 +112,7 @@ $faqs = [
 ];
 
 $nacht_preset = wp_json_encode( [
-	'occasion' => 'Nacht-Event',
+	'occasion' => 'Nachtgolf-Event',
 	'notes'    => 'Interesse am Nacht-Event (Flutlicht).',
 	'services' => [ 'Flutlicht / Nacht-Event', 'DJ', 'Bar & Drinks' ],
 ] );
@@ -345,17 +345,7 @@ get_header();
 					</a>
 				</div>
 			</div>
-			<ul class="faq-list">
-				<?php foreach ( $faqs as $i => $faq ) : ?>
-					<li class="faq-item" id="faq-<?php echo esc_attr( (string) $i ); ?>">
-						<button class="faq-q" type="button" aria-expanded="false">
-							<span><?php echo esc_html( $faq['q'] ); ?></span>
-							<span class="faq-toggle" aria-hidden="true">+</span>
-						</button>
-						<div class="faq-a"><?php echo esc_html( $faq['a'] ); ?></div>
-					</li>
-				<?php endforeach; ?>
-			</ul>
+			<?php get_template_part( 'template-parts/fge-faq', null, [ 'items' => $faqs ] ); ?>
 		</div>
 	</section>
 
@@ -363,26 +353,6 @@ get_header();
 
 </div><?php /* .fge-page */ ?>
 
-<script>
-(function () {
-	// FAQ accordion
-	document.querySelectorAll('.faq-q').forEach(function (btn) {
-		btn.addEventListener('click', function () {
-			var item = btn.closest('.faq-item');
-			var isOpen = item.classList.contains('open');
-			document.querySelectorAll('.faq-item').forEach(function (el) {
-				el.classList.remove('open');
-				el.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
-				el.querySelector('.faq-toggle').textContent = '+';
-			});
-			if (!isOpen) {
-				item.classList.add('open');
-				btn.setAttribute('aria-expanded', 'true');
-				btn.querySelector('.faq-toggle').textContent = '−';
-			}
-		});
-	});
-})();
-</script>
+<?php /* FAQ-Toggle kommt aus der globalen Komponente (template-parts/fge-faq.php). */ ?>
 
 <?php get_footer(); ?>

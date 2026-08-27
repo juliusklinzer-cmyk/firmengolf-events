@@ -31,10 +31,20 @@ if ( ( $pricing['gross'] ?? 0 ) > 0 ) {
 	$price_amount = number_format_i18n( (float) $pricing['gross'], 0 ) . ' €';
 	$price_unit   = ( ( $pricing['unit'] ?? '' ) === 'pro Person' ) ? 'p.P. netto' : 'Gesamt netto';
 } else {
-	// Legacy-/Custom-Label oder „Auf Anfrage" — unverändert als große Zeile.
-	$fallback     = (string) fge_get_event_price_display( $pid );
-	$price_amount = $fallback !== '' ? $fallback : 'Auf Anfrage';
-	$price_unit   = ( false === stripos( $price_amount, 'netto' ) && false === stripos( $price_amount, 'Anfrage' ) ) ? 'netto' : '';
+	$fallback = trim( (string) fge_get_event_price_display( $pid ) );
+	if ( $fallback !== '' && preg_match( '/^(.*?€)\s*(.*)$/u', $fallback, $fm ) ) {
+		// „29 € p.P." in große Zahl + kleinen Zusatz trennen, sonst stand der ganze
+		// String fett in der Karte, uneinheitlich zum Strukturpfad (Fund Julius, 27.08.).
+		$price_amount = trim( $fm[1] );
+		$rest         = trim( $fm[2] );
+		if ( false === stripos( $rest, 'netto' ) ) {
+			$rest = trim( $rest . ' netto' );
+		}
+		$price_unit = $rest;
+	} else {
+		$price_amount = $fallback !== '' ? $fallback : 'Auf Anfrage';
+		$price_unit   = '';
+	}
 }
 $cpartner = (int) fge_get_event_meta( $pid, 'assigned_partner_id', 0 );
 $rating   = $cpartner ? (float) get_post_meta( $cpartner, '_fge_rating', true ) : 0;

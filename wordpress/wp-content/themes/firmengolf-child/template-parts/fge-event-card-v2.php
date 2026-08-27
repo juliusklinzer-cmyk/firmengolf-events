@@ -37,9 +37,20 @@ if ( ( $pricing['gross'] ?? 0 ) > 0 ) {
 	$price_amount = number_format_i18n( (float) $pricing['gross'], 0 ) . ' €';
 	$price_unit   = ( ( $pricing['unit'] ?? '' ) === 'pro Person' ) ? 'p.P. netto' : 'Gesamt netto';
 } else {
-	$fallback     = (string) fge_get_event_price_display( $pid );
-	$price_amount = $fallback !== '' ? $fallback : 'Auf Anfrage';
-	$price_unit   = ( false === stripos( $price_amount, 'netto' ) && false === stripos( $price_amount, 'Anfrage' ) ) ? 'netto' : '';
+	$fallback = trim( (string) fge_get_event_price_display( $pid ) );
+	if ( $fallback !== '' && preg_match( '/^(.*?€)\s*(.*)$/u', $fallback, $fm ) ) {
+		// „29 € p.P." in große Zahl + kleinen Zusatz trennen, sonst stand der ganze
+		// String fett in der Karte, uneinheitlich zum Strukturpfad (Fund Julius, 27.08.).
+		$price_amount = trim( $fm[1] );
+		$rest         = trim( $fm[2] );
+		if ( false === stripos( $rest, 'netto' ) ) {
+			$rest = trim( $rest . ' netto' );
+		}
+		$price_unit = $rest;
+	} else {
+		$price_amount = $fallback !== '' ? $fallback : 'Auf Anfrage';
+		$price_unit   = '';
+	}
 }
 $cpartner = (int) fge_get_event_meta( $pid, 'assigned_partner_id', 0 );
 $rating   = $cpartner ? (float) get_post_meta( $cpartner, '_fge_rating', true ) : 0;
@@ -72,14 +83,17 @@ $arrow    = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke=
 			<?php if ( $cpartner && function_exists( 'fge_partner_is_offseason' ) && fge_partner_is_offseason( $cpartner ) ) : ?>
 				<span class="evF-chip evF-chip--offseason">Offseason</span>
 			<?php endif; ?>
-			<button class="evE-share evF-share" type="button" aria-label="Event teilen"
-			        data-share-url="<?php echo esc_url( $permalink ); ?>" data-share-title="<?php echo esc_attr( $title ); ?>">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
-			</button>
 			<?php if ( $edist !== null ) : ?>
 				<span class="ev-distbadge"><?php echo $ic_pin; // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( (string) round( (float) $edist ) ); ?> km</span>
 			<?php endif; ?>
 		</div>
+		<?php /* Teilen-Button hängt an der KARTE, nicht am Bild: am Desktop optisch wie
+			bisher oben rechts überm Bild, in der mobilen Querkarte oben rechts im
+			Karteninhalt (Julius, 2026-08-27). */ ?>
+		<button class="evE-share evF-share" type="button" aria-label="Event teilen"
+		        data-share-url="<?php echo esc_url( $permalink ); ?>" data-share-title="<?php echo esc_attr( $title ); ?>">
+			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+		</button>
 		<div class="evF-body">
 			<div class="evF-top">
 				<span class="evF-venue"><?php echo $ic_pin; // phpcs:ignore WordPress.Security.EscapeOutput ?><?php echo esc_html( $venue ?: $region_m ?: 'k. A.' ); ?></span>

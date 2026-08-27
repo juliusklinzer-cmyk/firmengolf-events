@@ -83,18 +83,12 @@ foreach ( $faq_groups as $items ) {
 
 	<?php foreach ( $faq_groups as $cat => $items ) : ?>
 		<div style="margin-top:40px;">
-			<div class="mk-eyebrow" style="color:var(--fairway-700)"><?php echo esc_html( $cat ); ?></div>
-			<ul class="faq-list" style="margin-top:12px;">
-				<?php foreach ( $items as $i => $faq ) : ?>
-					<li class="faq-item">
-						<button class="faq-q" type="button" aria-expanded="false">
-							<span><?php echo esc_html( $faq[0] ); ?></span>
-							<span class="faq-toggle" aria-hidden="true">+</span>
-						</button>
-						<div class="faq-a"><?php echo esc_html( $faq[1] ); ?></div>
-					</li>
-				<?php endforeach; ?>
-			</ul>
+			<div class="mk-eyebrow" style="color:var(--fairway-700);margin-bottom:14px;"><?php echo esc_html( $cat ); ?></div>
+			<?php
+			get_template_part( 'template-parts/fge-faq', null, [
+				'items' => array_map( static fn( $f ) => [ 'q' => $f[0], 'a' => $f[1] ], $items ),
+			] );
+			?>
 		</div>
 	<?php endforeach; ?>
 </section>
@@ -114,16 +108,6 @@ foreach ( $faq_groups as $items ) {
 
 </div><?php /* .fge-page */ ?>
 
-<script>
-document.querySelectorAll('.fge-page .faq-q[aria-expanded]').forEach(function (btn) {
-	btn.addEventListener('click', function () {
-		var item = btn.closest('.faq-item');
-		var open = item.classList.toggle('open');
-		btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-		var tog = btn.querySelector('.faq-toggle');
-		if (tog) tog.textContent = open ? '−' : '+';
-	});
-});
-</script>
+<?php /* FAQ-Toggle kommt aus der globalen Komponente (template-parts/fge-faq.php). */ ?>
 
 <?php get_footer();

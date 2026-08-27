@@ -205,8 +205,12 @@ a.fg-nav-cta {
 .fg-nav-cta:active { transform: translateY(1px); }
 
 /* Mobile hamburger + drawer (shown ≤768px, see RESPONSIVE) */
-.fg-nav-burger { display: none; flex: none; padding: 6px; color: var(--ink-800); border-radius: var(--radius-sm); }
+.fg-nav-burger { display: none; flex: none; padding: 6px; color: var(--ink-800); border-radius: var(--radius-sm); background: none; border: 0; cursor: pointer; }
 .fg-nav-burger:hover { background: rgba(14,19,16,0.05); }
+.fg-nav-burger:active { transform: scale(0.92); }
+/* (Mobiler Anfrage-Pill am 28.08. komplett entfernt, Julius: Hero trägt den CTA.) */
+/* Hintergrund einfrieren, solange der Drawer offen ist */
+html.fg-drawer-lock { overflow: hidden; }
 
 .fg-drawer-scrim {
   display: none;
@@ -214,20 +218,24 @@ a.fg-nav-cta {
   background: rgba(14,19,16,0.4);
   -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
 }
-.fg-drawer-scrim.is-open { display: flex; }
+.fg-drawer-scrim.is-open { display: flex; animation: fg-scrim-in 240ms ease; }
+@keyframes fg-scrim-in { from { opacity: 0; } to { opacity: 1; } }
 .fg-drawer {
   margin-left: auto;
   width: min(86vw, 360px);
   background: var(--paper-100);
   display: flex; flex-direction: column;
-  padding: 16px 20px 24px;
+  padding: 16px 20px calc(24px + env(safe-area-inset-bottom, 0px));
   box-shadow: var(--shadow-xl);
-  animation: fg-drawer-in var(--dur-base) var(--ease-out);
+  animation: fg-drawer-in 360ms cubic-bezier(0.32, 0.72, 0, 1);
 }
-@keyframes fg-drawer-in { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fg-drawer-in { from { transform: translateX(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .fg-drawer { animation: fg-scrim-in 180ms ease; }
+}
 .fg-drawer-top { display: flex; align-items: center; justify-content: space-between; }
 .fg-drawer-top .fg-brand img { height: 24px; }
-.fg-drawer-close { padding: 6px; color: var(--ink-700); border-radius: var(--radius-sm); }
+.fg-drawer-close { padding: 6px; color: var(--ink-700); border-radius: var(--radius-sm); background: none; border: 0; cursor: pointer; }
 .fg-drawer-close:hover { background: rgba(14,19,16,0.05); }
 .fg-drawer-items { display: flex; flex-direction: column; margin-top: 16px; }
 .fg-drawer-link {
@@ -265,9 +273,11 @@ a.fg-nav-cta {
 .fg-btn-brand:hover, a.fg-btn-brand:hover { background: var(--fairway-600); color: var(--paper-100); }
 .fg-btn-cta:active, .fg-btn-brand:active { transform: translateY(1px); }
 /* CTA button fix — overrides .fge-page button reset (line 157) so a real <button> keeps its background */
-button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper-100); }
+button.fg-btn-cta, button.fg-btn-brand { background: var(--fairway-700); color: var(--paper-100); }
+/* Design-Linie (27.08.2026): kein schwarzer Button mehr, Klasse bleibt als Alias
+   der Marken-Pille erhalten (helle Inline-Overrides auf dunklen Bändern unberührt). */
 .fg-btn-ink, a.fg-btn-ink, button.fg-btn-ink {
-  background: var(--ink-900); color: var(--paper-100);
+  background: var(--fairway-700); color: var(--paper-100);
   border-radius: var(--radius-pill);
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 12px 24px; min-height: 44px;
@@ -441,6 +451,8 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
   display: flex; justify-content: space-between; align-items: baseline;
   margin-bottom: 20px;
 }
+/* Eventliste: enger an die Chip-Reihe (Julius, 2026-08-27: Abstand zu groß) */
+.ev-grid-section { margin-top: 16px; }
 .fg-grid-title {
   font-family: var(--font-display); font-size: 28px;
   font-weight: var(--fw-medium); letter-spacing: -0.015em;
@@ -952,7 +964,8 @@ button.fg-btn-cta, button.fg-btn-brand { background: #4279D1; color: var(--paper
 @media (max-width: 480px) {
   /* nav */
   .fg-topnav               { padding: 12px 16px; }
-  .fg-brand img            { height: 20px; }
+  /* Logo mobil bewusst NICHT verkleinert (Julius, 28.08.: 20px wirkte zu klein) */
+  .fg-brand img            { height: 26px; }
   .fg-nav-cta              { padding: 9px 14px; font-size: 13px; }
 
   /* hero: tall on mobile, image-led */
@@ -2880,8 +2893,11 @@ a.mk-step:focus-visible { outline: 2px solid var(--fairway-700); outline-offset:
 .ev-hero-sub { font-size: 17px; line-height: 1.5; margin-top: 18px; max-width: 560px; opacity: .9; }
 
 /* ── Bare header (event archive – search only, no photo/text) ── */
-.ev-hero--bare { max-width: var(--width-page); margin: 40px auto 0; padding: 0 24px; }
-.ev-hero--bare .fg-search-bar { margin-top: 0; }
+/* Kein massiver Suchblock mehr über der Liste (Julius, 2026-08-27): die Seite startet
+   direkt mit den Format-Kacheln, alles Weitere macht der Filter-Button im Ergebnis-Kopf.
+   Die H1 im Hero bleibt (visually hidden), nur der Suchbalken verschwindet. */
+.ev-hero--bare { max-width: var(--width-page); margin: 0 auto; padding: 0; }
+.ev-hero--bare .fg-search-bar { display: none; }
 .fge-visually-hidden {
   position: absolute !important; width: 1px; height: 1px;
   padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0);
@@ -2901,19 +2917,28 @@ a.mk-step:focus-visible { outline: 2px solid var(--fairway-700); outline-offset:
 .fg-cell-value svg { color: var(--fairway-700); flex: none; vertical-align: -2px; margin-right: 6px; }
 
 /* ── Filter rail ── */
+/* Nicht mehr sticky und linksbündig zu den Event-Karten (Julius, 2026-08-27):
+   exakt derselbe Container-Aufbau wie .fg-grid-section (max-width + padding auf der
+   RAIL, nicht auf der Row), damit der erste Chip bündig über der ersten Karte steht. */
 .fg-filter-rail {
-  position: sticky; top: 56px; z-index: 20;
-  margin: 16px 0 0; padding: 22px 24px 12px; /* oben Luft zur Menü-Linie im Sticky-Zustand (Julius) */
-  background: rgba(251,250,246,0.88);
-  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  max-width: var(--width-page);
+  margin: 20px auto 0; padding: 0 24px;
 }
-.fg-chip-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: var(--width-page); margin: 0 auto; }
+.fg-chip-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start; }
 .fg-chip { white-space: nowrap; font-family: var(--font-body); font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--ink-200); background: var(--paper-50); color: var(--ink-700); text-decoration: none; display: inline-block; transition: background 140ms var(--ease-out); cursor: pointer; }
 .fg-chip:hover { background: var(--paper-200); color: var(--ink-900); }
 .fg-chip.active { background: var(--fairway-100); color: var(--fairway-800); border-color: var(--fairway-200); font-weight: 600; }
 .fg-chip.ghost { background: transparent; border-color: transparent; color: var(--ink-700); }
 .fg-chip.ghost:hover { background: var(--paper-200); }
 .fg-chip.ghost.active { background: var(--fairway-100); color: var(--fairway-800); border-color: transparent; }
+/* Kopfzeile der Kategorie-Ansicht (nur mobil): links Zähler, rechts Filter */
+.ev-cat-head { display: none; }
+@media (max-width: 768px) {
+  .ev-cat-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 8px 16px 2px;
+  }
+}
 
 /* Active filter pills (above results) */
 .fg-grid-head-l { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
@@ -3032,8 +3057,9 @@ a.mk-step:focus-visible { outline: 2px solid var(--fairway-700); outline-offset:
 /* Custom sort dropdown (ev-dd) */
 .ev-dd { position: relative; }
 /* kompakt wie die „Sortieren"-Beschriftung daneben (Julius) */
-.ev-dd-trigger { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-body); font-size: 13px; font-weight: 500; background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: 999px; padding: 4px 12px; color: var(--ink-900); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
-.ev-dd-trigger:hover { border-color: var(--ink-300); background: var(--paper-200); }
+.ev-dd-trigger { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-body); font-size: 13px; font-weight: 500; white-space: nowrap; background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: 999px; padding: 8px 14px; color: var(--ink-900); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+.ev-dd-trigger:hover { border-color: var(--ink-900); background: var(--paper-50); }
+.ev-dd-trigger .ev-dd-sort-ic { color: var(--ink-500); }
 .ev-dd-trigger.open { border-color: var(--fairway-700); box-shadow: 0 0 0 3px var(--fairway-100); }
 .ev-dd-trigger svg { color: var(--fairway-700); transition: transform var(--dur-fast) var(--ease-out); }
 .ev-dd-trigger.open svg { transform: rotate(180deg); }
@@ -3340,7 +3366,7 @@ button.fg-search-btn { background: var(--fairway-700); color: var(--paper-100); 
   font-size: 11px; font-weight: 600; color: var(--ink-500); flex: none;
 }
 .ind-step.done .ind-step-bullet { background: var(--fairway-700); color: var(--paper-50); }
-.ind-step.active .ind-step-bullet { background: var(--ink-900); color: var(--paper-50); }
+.ind-step.active .ind-step-bullet { background: var(--fairway-700); color: var(--paper-50); }
 .ind-step-l { white-space: nowrap; }
 
 /* Form step body */
@@ -3359,16 +3385,22 @@ button.fg-search-btn { background: var(--fairway-700); color: var(--paper-100); 
 .ind-fsec-lead { font-size: 13px; color: var(--ink-500); line-height: 1.5; margin-top: 4px; }
 .ind-fsec-body { padding-left: 44px; }
 
-/* Chip group */
+/* Chip group — Site-Chip-Format statt gefüllter Marken-Buttons (Julius, 27.08.2026):
+   klarer Rahmen im Aus-Zustand, Auswahl hell in Markenfarbe, kleiner Pop beim Wählen. */
 .ind-chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
 button.ind-pchip {
-  padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 500;
-  border: 1.5px solid var(--paper-400); background: var(--paper-50); color: var(--ink-700);
-  cursor: pointer; transition: all var(--dur-fast) var(--ease-out); font-family: var(--font-body);
+  padding: 10px 16px; min-height: 42px; border-radius: 999px; font-size: 13.5px; font-weight: 500;
+  border: 1px solid var(--ink-200); background: var(--paper-50); color: var(--ink-700);
+  cursor: pointer; font-family: var(--font-body);
   white-space: nowrap;
+  transition: background 140ms var(--ease-out), border-color 140ms var(--ease-out), color 140ms var(--ease-out), transform 100ms var(--ease-out);
 }
-button.ind-pchip:hover { border-color: var(--ink-300); color: var(--ink-900); }
-button.ind-pchip.on { background: var(--fairway-700); border-color: var(--fairway-700); color: var(--paper-50); }
+@media (hover: hover) and (pointer: fine) {
+  button.ind-pchip:hover { background: var(--paper-200); color: var(--ink-900); }
+}
+button.ind-pchip:active { transform: scale(0.96); }
+button.ind-pchip.on { background: var(--fairway-100); border-color: var(--fairway-200); color: var(--fairway-800); font-weight: 600; animation: ind-card-pop 180ms var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { button.ind-pchip.on { animation: none; } }
 
 /* Field label */
 .ind-flabel { display: block; font-size: 13px; font-weight: 500; color: var(--ink-700); margin-bottom: 6px; }
@@ -3615,11 +3647,30 @@ img.fg-rail-host-photo { width: 40px; height: 40px; aspect-ratio: 1 / 1; border-
 .fg-modal-scrim { position: fixed; inset: 0; background: rgba(14,19,16,.55); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .fg-modal-scrim.is-hidden { display: none; }
 .fg-modal { background: var(--paper-50); border-radius: var(--radius-xl); padding: 40px; width: 100%; max-width: 560px; position: relative; box-shadow: 0 24px 64px rgba(14,19,16,.18); max-height: 90vh; max-height: 90dvh; overflow-y: auto; }
-button.fg-modal-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 999px; background: var(--paper-200); display: flex; align-items: center; justify-content: center; color: var(--ink-700); cursor: pointer; flex: none; }
-button.fg-modal-close:hover { background: var(--paper-300); }
+/* Schließen: schlichtes X ohne Kreis/Rahmen, wie .rw-close (Julius, 27.08.2026) */
+button.fg-modal-close { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border-radius: var(--radius-sm); background: none; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--ink-800); cursor: pointer; flex: none; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform 100ms var(--ease-out); }
+button.fg-modal-close svg { width: 18px; height: 18px; }
+button.fg-modal-close:hover { background: rgba(14,19,16,0.05); color: var(--ink-900); }
+button.fg-modal-close:active { transform: scale(0.9); }
 .fg-modal-head { margin-bottom: 28px; }
 .fg-modal-title { font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -.02em; color: var(--ink-900); margin: 6px 0 0; line-height: 1.2; }
 .fg-modal-sub { font-size: 14px; color: var(--ink-500); line-height: 1.6; margin-top: 8px; }
+/* Mobil: Anfrage als vollflächige Ansicht statt Popup (Julius, 2026-08-27) */
+@media (max-width: 768px) {
+  .fg-modal-scrim { padding: 0; align-items: stretch; }
+  .fg-modal {
+    max-width: none; max-height: none;
+    height: 100vh; height: 100dvh;
+    border-radius: 0;
+    padding: 60px 20px calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+  button.fg-modal-close {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    right: 8px;
+    z-index: 2;
+  }
+}
 .fg-step-rail { display: flex; gap: 6px; margin-top: 20px; }
 .fg-step { height: 3px; flex: 1; border-radius: 999px; background: var(--paper-300); transition: background var(--dur-base) var(--ease-out); }
 .fg-step.done { background: var(--fairway-700); }
@@ -4178,16 +4229,19 @@ button.ind-card {
   font-family: var(--font-body); font-size: 13.5px; font-weight: 500; color: var(--ink-800);
   transition: border-color 140ms var(--ease-out), background 140ms var(--ease-out), transform 140ms var(--ease-out);
 }
-button.ind-card:hover { border-color: var(--ink-300); transform: translateY(-1px); }
+button.ind-card:hover { border-color: var(--ink-900); transform: translateY(-1px); }
 button.ind-card:focus-visible { outline: 2px solid var(--fairway-600); outline-offset: 2px; }
 button.ind-card { position: relative; }
 button.ind-card:active { transform: scale(.97); }
-button.ind-card.on { border-color: var(--fairway-600); background: var(--fairway-50); color: var(--fairway-900); }
+/* Auswahl wie bei Airbnb optisch 2px dick (Inset-Schatten statt Border, kein Layout-Shift) */
+button.ind-card.on { border-color: var(--fairway-600); background: var(--fairway-50); color: var(--fairway-900); box-shadow: inset 0 0 0 1px var(--fairway-600); }
 /* Gewaehlte Kachel traegt einen Haken: die Auswahl ist auf einen Blick erkennbar. */
 button.ind-card.on::after { content: ''; position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 999px; background: var(--fairway-600) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") center/10px no-repeat; }
 .ind-card-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--paper-200); color: var(--ink-600); flex: none; }
 button.ind-card.on .ind-card-ico { background: var(--fairway-100); color: var(--fairway-700); }
 .ind-card-l { line-height: 1.3; }
+.ind-card-sub { display: block; font-size: 11px; font-weight: 400; color: var(--ink-500); margin-top: 1px; }
+button.ind-card.on .ind-card-sub { color: var(--fairway-700); }
 @keyframes ind-card-pop { 0% { transform: scale(1); } 45% { transform: scale(.96); } 100% { transform: scale(1); } }
 button.ind-card.just-toggled { animation: ind-card-pop 180ms var(--ease-out); }
 @media (prefers-reduced-motion: reduce) { button.ind-card.just-toggled { animation: none; } }
@@ -4255,7 +4309,7 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   height: 100vh;   /* Fallback */
   height: 100dvh;  /* iOS: echte sichtbare Höhe → Fuß/„Weiter" nie hinter Safari-Leiste */
   z-index: 1000;
-  background: var(--paper-100);
+  background: #fff; /* heller Airbnb-Look (Julius, 2026-08-27) */
   display: flex; flex-direction: column;
   animation: rw-in var(--dur-slow) var(--ease-out);
 }
@@ -4292,13 +4346,17 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   transition: background var(--dur-fast) var(--ease-out);
 }
 .rw-shortcut:hover { background: var(--fairway-200); }
+/* Schließen: schlichtes X ohne Kreis/Rahmen, überall gleich (Julius, 27.08.2026) */
 .rw-close {
-  width: 38px; height: 38px; border-radius: 999px;
-  background: var(--paper-200); color: var(--ink-700);
+  width: 44px; height: 44px; border-radius: var(--radius-sm);
+  background: none; border: 0; padding: 0;
+  color: var(--ink-800); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  transition: background var(--dur-fast) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform 100ms var(--ease-out);
 }
-.rw-close:hover { background: var(--paper-300); color: var(--ink-900); }
+.rw-close svg { width: 20px; height: 20px; }
+.rw-close:hover { background: rgba(14,19,16,0.05); color: var(--ink-900); }
+.rw-close:active { transform: scale(0.9); }
 
 .rw-stage {
   flex: 1; overflow-y: auto;
@@ -4348,10 +4406,11 @@ button.ind-launch-quick:hover { background: rgba(255,255,255,0.1); text-decorati
   .rw-progress { gap: 8px; padding: 14px 20px 0; }
   .rw-seg-label { font-size: 11px; }
 }
+/* Buttons ganz außen wie bei Airbnb: Zurück links am Rand, Weiter rechts am Rand,
+   der Inhalt in der Mitte bleibt im Fokus (Julius, 27.08.2026). */
 .rw-nav {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 32px;
-  max-width: 1100px; margin: 0 auto;
+  padding: 14px 24px;
 }
 .rw-back {
   font-size: 15px; font-weight: 500;
@@ -5032,7 +5091,7 @@ a.cty-cta-btn:active { transform: translateY(0) scale(.97); }
    Zeile, „Ansehen" ist eine Pill, und unter 520 px wird aus dem hohen Stapel
    eine horizontale Listen-Karte (Bild links in voller Kartenhoehe).
    Revert: im Template wieder fge-event-card statt fge-event-card-v2 aufrufen. */
-.evF-card { cursor: pointer; }
+.evF-card { cursor: pointer; position: relative; /* Anker für den Teilen-Button auf Kartenebene */ }
 .evF-card:hover { box-shadow: 0 2px 4px rgba(14,19,16,.06), 0 14px 34px rgba(14,19,16,.12); }
 .evF-media { position: relative; aspect-ratio: 16/10; overflow: hidden; background: var(--paper-200); }
 .evF-img { position: absolute; inset: 0; background-size: cover; background-position: center; transition: transform .6s var(--ease-out); }
@@ -5097,8 +5156,18 @@ a.cty-cta-btn:active { transform: translateY(0) scale(.97); }
 	   kollidierten beide (Chip wurde abgeschnitten). */
 	.evF-chip { left: 8px; top: auto; bottom: 8px; font-size: 10.5px; padding: 3px 9px; max-width: calc(100% - 16px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.evF-chip--offseason { left: 8px; top: 8px; bottom: auto; right: auto; }
-	.evF-share.evF-share { right: 8px; top: 8px; width: 28px; height: 28px; }
+	/* Teilen oben rechts in der KARTE (heller Grund): dezente Karten-Variante */
+	.evF-share.evF-share {
+		right: 8px; top: 8px; width: 30px; height: 30px;
+		background: var(--paper-100); border: 1px solid var(--ink-100);
+		color: var(--ink-600); box-shadow: none;
+	}
 	.evF-share svg { width: 13px; height: 13px; }
+	/* Ort/Rating-Zeile läuft nicht unter den Teilen-Button */
+	.evF-top { padding-right: 34px; }
+	/* km-Badge nach oben links: unten links sitzt jetzt der Format-Chip,
+	   beide überlappten (Fund Julius, 2026-08-27). */
+	.evF-card .ev-distbadge { left: 8px; top: 8px; bottom: auto; font-size: 10.5px; padding: 3px 8px; }
 	.evF-body { padding: 12px 14px; gap: 5px; }
 	.evF-title { font-size: 15.5px; }
 	.evF-desc { font-size: 12.5px; }
@@ -5307,7 +5376,8 @@ a.iv-tile { text-decoration: none; }
 }
 .ct-topic:hover, .ct-pref:hover { border-color: var(--ink-400); color: var(--ink-900); }
 .ct-topic.on, .ct-pref.on {
-  background: var(--ink-900); color: var(--paper-100); border-color: var(--ink-900);
+  /* Design-Linie (27.08.2026): helle Marken-Auswahl statt Schwarz */
+  background: var(--fairway-100); color: var(--fairway-800); border-color: var(--fairway-200); font-weight: 600;
 }
 .ct-topic:focus-visible, .ct-pref:focus-visible {
   outline: 2px solid var(--fairway-700); outline-offset: 2px;
@@ -5713,36 +5783,8 @@ a.iv-tile { text-decoration: none; }
   max-width: none;
 }
 
-/* ── Mobile-Menü: obere sticky Leiste mit 3 Icon-Tabs (portiert aus _design_neu) ── */
+/* ── Mobile-Menü: statische Top-Zeile mit Anfrage-Pill + Burger-Drawer ── */
 .ev-msearch-bar { display: none; }
-.ev-mtabs {
-  display: flex; align-items: stretch; gap: 4px;
-  margin-bottom: 14px;
-}
-.ev-mtab {
-  flex: 1;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 8px 4px 12px;
-  color: var(--ink-500);
-  position: relative;
-  text-decoration: none;
-  transition: padding var(--dur-base) var(--ease-out), gap var(--dur-base) var(--ease-out);
-}
-.ev-mtab-ic {
-  color: inherit;
-  display: inline-flex;
-  overflow: hidden;
-  max-height: 26px; opacity: 1;
-  transition: max-height var(--dur-base) var(--ease-out),
-              opacity var(--dur-fast) var(--ease-out),
-              transform var(--dur-base) var(--ease-out);
-}
-.ev-mtab-l { font-size: 13px; font-weight: 500; }
-.ev-mtab.active { color: var(--ink-900); }
-.ev-mtab.active::after {
-  content: ""; position: absolute; left: 22%; right: 22%; bottom: 0;
-  height: 2px; border-radius: 2px; background: var(--ink-900);
-}
 .ev-msearch {
   width: 100%;
   display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -5779,38 +5821,95 @@ a.iv-tile { text-decoration: none; }
   background: var(--paper-50); color: var(--fairway-800);
   display: inline-flex; align-items: center; justify-content: center;
 }
-.ev-msearch-bar.tabs-only.is-stuck { padding-top: 4px; padding-bottom: 4px; }
-
 @media (max-width: 768px) {
-  /* Android-Chrome: Scroll-Anchoring korrigiert die Einklapp-Höhenänderung der
-     Mobile-Bar zurück unter die Schwelle → Flacker-Schleife am is-stuck-Übergang.
-     Der Anker liegt im Inhalt UNTER der Leiste, daher muss die Abschaltung auf dem
-     Dokument-Scroller sitzen (kombiniert mit der JS-Hysterese in fge-nav.php). */
-  html { overflow-anchor: none; }
-  .ev-msearch-bar {
-    display: block; padding: 16px 16px 4px;
-    position: sticky; top: 0; z-index: 40;
-    background: var(--paper-100);
-    transition: box-shadow var(--dur-base) var(--ease-out), padding var(--dur-base) var(--ease-out);
-  }
-  .ev-msearch-bar.is-stuck {
-    padding-top: 10px; padding-bottom: 10px;
-    box-shadow: 0 2px 12px rgba(14,19,16,0.08);
-    border-bottom: 1px solid var(--ink-100);
-  }
-  .ev-mtabs {
-    overflow: hidden;
-    transition: margin-bottom var(--dur-base) var(--ease-out);
-  }
-  .ev-msearch-bar.is-stuck .ev-mtab-ic { max-height: 0; opacity: 0; transform: scale(0.4); }
-  .ev-msearch-bar.is-stuck .ev-mtab { padding-top: 4px; padding-bottom: 8px; gap: 0; }
-  .ev-msearch-bar.is-stuck .ev-mtabs { margin-bottom: 10px; }
-  .ev-msearch-bar.is-stuck .ev-mtab.active::after { bottom: 2px; }
-  /* Die drei Icon-Tabs sind das Mobile-Menü — kein Burger, Logo darf wegscrollen */
+  /* Kontextuelle Aktion (Such-Pille) statisch unter der Topnav, scrollt mit weg */
+  .ev-msearch-bar { display: block; padding: 12px 16px 4px; }
+
+  /* Top-Zeile statisch (scrollt weg, nichts sticky): Logo links, Burger rechts */
   .fg-topnav { position: static; }
-  .fg-nav-burger { display: none; }
+  .fg-topnav-inner { justify-content: space-between; }
+  .fg-brand img { height: 26px; }
+  .fg-nav-burger { display: inline-flex; align-items: center; }
   /* Desktop-Suchbalken auf Mobile ausblenden — das Such-Sheet übernimmt */
   .fg-search-bar { display: none; }
+}
+
+/* ── Standort-Popup auf der Eventliste (Julius, 2026-08-27) ── */
+.ev-geo-scrim {
+  position: fixed; inset: 0; z-index: 950;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: rgba(14,19,16,0.35);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  backdrop-filter: blur(8px) saturate(120%);
+  opacity: 0;
+  transition: opacity 240ms var(--ease-out);
+}
+.ev-geo-scrim[hidden] { display: none; }
+.ev-geo-scrim.is-open { opacity: 1; }
+.ev-geo-card {
+  width: 100%; max-width: 360px;
+  background: #fff;
+  border-radius: 22px;
+  padding: 28px 24px 20px;
+  box-shadow: 0 24px 64px rgba(14,19,16,0.28);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  transform: translateY(14px) scale(0.97);
+  transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.ev-geo-scrim.is-open .ev-geo-card { transform: none; }
+/* Umkreis-Illustration: Ringe wachsen auf, der Standort-Pin fällt ein,
+   die Event-Pins folgen versetzt. Alles nur transform/opacity. */
+.ev-geo-art { display: block; margin: -4px auto 10px; }
+.ev-geo-ring { transform-origin: 110px 68px; }
+.ev-geo-scrim.is-open .ev-geo-ring { animation: ev-geo-ring-in 600ms var(--ease-out) both; }
+.ev-geo-scrim.is-open .ev-geo-ring2 { animation-delay: 80ms; }
+.ev-geo-scrim.is-open .ev-geo-ring3 { animation-delay: 160ms; }
+@keyframes ev-geo-ring-in { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: scale(1); } }
+.ev-geo-pin { transform-origin: 110px 88px; }
+.ev-geo-scrim.is-open .ev-geo-pin { animation: ev-geo-pin-in 460ms cubic-bezier(0.34, 1.4, 0.64, 1) 120ms both; }
+@keyframes ev-geo-pin-in { from { opacity: 0; transform: translateY(-14px) scale(0.7); } to { opacity: 1; transform: none; } }
+.ev-geo-scrim.is-open .ev-geo-dot { animation: ev-geo-dot-in 380ms var(--ease-out) both; }
+.ev-geo-scrim.is-open .ev-geo-dot1 { animation-delay: 280ms; }
+.ev-geo-scrim.is-open .ev-geo-dot2 { animation-delay: 360ms; }
+.ev-geo-scrim.is-open .ev-geo-dot3 { animation-delay: 440ms; }
+.ev-geo-scrim.is-open .ev-geo-dot4 { animation-delay: 500ms; }
+@keyframes ev-geo-dot-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .ev-geo-scrim.is-open .ev-geo-ring,
+  .ev-geo-scrim.is-open .ev-geo-pin,
+  .ev-geo-scrim.is-open .ev-geo-dot { animation: ev-geo-dot-in 200ms ease both; }
+}
+.ev-geo-h {
+  font-family: var(--font-display); font-size: 21px; font-weight: 600;
+  letter-spacing: -0.015em; color: var(--ink-900); margin: 0;
+}
+.ev-geo-p { font-size: 14px; line-height: 1.55; color: var(--ink-600); margin: 8px 0 18px; }
+/* .ev-geo-card-Präfix nötig: der .fge-page-button-Reset (0,1,1) überstimmt sonst
+   die nackte Klasse (Gotcha, siehe auch Onboarding). */
+.ev-geo-card .ev-geo-allow {
+  width: 100%;
+  background: var(--ink-900); color: var(--paper-50);
+  border: 0; border-radius: var(--radius-pill);
+  padding: 13px 20px; font-family: inherit; font-size: 15px; font-weight: 600;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), transform 100ms var(--ease-out);
+}
+.ev-geo-card .ev-geo-allow:hover { background: var(--ink-800); }
+.ev-geo-card .ev-geo-allow:active { transform: scale(0.97); }
+.ev-geo-card .ev-geo-allow:disabled { background: var(--ink-300); cursor: wait; }
+.ev-geo-card .ev-geo-skip {
+  margin-top: 6px;
+  background: none; border: 0; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  color: var(--ink-600);
+  text-decoration: underline; text-underline-offset: 3px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+}
+.ev-geo-card .ev-geo-skip:hover { color: var(--ink-900); }
+@media (prefers-reduced-motion: reduce) {
+  .ev-geo-scrim, .ev-geo-card { transition: none; }
 }
 
 /* ── Mobiles Such-Sheet (portiert aus _design_neu) ── */
@@ -5841,12 +5940,38 @@ a.iv-tile { text-decoration: none; }
   animation: fg-fade var(--dur-base) var(--ease-out);
 }
 .ev-sheet-scrim.is-open { display: flex; }
+/* Am Desktop öffnet der Filter als zentrierter Dialog statt als Bottom-Sheet
+   (der Filter-Button im Ergebnis-Kopf gilt jetzt für Web UND Mobile). */
+@media (min-width: 769px) {
+  .ev-sheet-scrim { align-items: center; justify-content: center; padding: 32px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  .ev-sheet { max-width: 620px; border-radius: 22px; max-height: 86vh; animation: ev-dialog-in 220ms cubic-bezier(0.23, 1, 0.32, 1); }
+}
+@keyframes ev-dialog-in { from { opacity: 0; transform: scale(0.97) translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ev-sheet { animation: fg-fade 180ms ease; } }
+
+/* Dezenter Filter-Button im Ergebnis-Kopf */
+.ev-filter-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-body); font-size: 13px; font-weight: 500; white-space: nowrap;
+  background: var(--paper-50); color: var(--ink-900);
+  border: 1px solid var(--ink-200); border-radius: 999px;
+  padding: 9px 15px; cursor: pointer;
+  position: relative;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.ev-filter-btn:hover { border-color: var(--ink-900); }
+.ev-filter-btn:active { transform: scale(0.96); }
+.ev-filter-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--fairway-600); flex: none; }
+/* Mobil: Filter-Button rechts in der Kopfzeile unter den Eventarten (Julius, 27.08.),
+   die Kopfzeile selbst richtet Button und Zähler-Spalte oben aus */
+@media (max-width: 768px) { .fg-grid-head { align-items: center; } }
 .ev-sheet {
   width: 100%; max-height: 92vh; max-height: 92dvh;
   background: var(--paper-100);
   border-radius: 24px 24px 0 0;
   display: flex; flex-direction: column;
   box-shadow: var(--shadow-xl);
+  overflow: hidden; /* Fuß-Ecken folgen der Rundung (Fund Julius: unten eckig, oben rund) */
   animation: ev-sheet-up var(--dur-slow) var(--ease-out);
 }
 .ev-sheet-top {
@@ -5854,44 +5979,75 @@ a.iv-tile { text-decoration: none; }
   display: flex; align-items: center; justify-content: center;
   padding: 18px 20px; border-bottom: 1px solid var(--ink-100); flex: none;
 }
+/* Schlichtes X wie .rw-close (Julius, 27.08.2026) */
 .ev-sheet-close {
-  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-  width: 38px; height: 38px; border-radius: 999px;
-  background: var(--paper-200); color: var(--ink-800);
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; border-radius: var(--radius-sm);
+  background: none; color: var(--ink-800); padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
   border: 0; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
 }
-.ev-sheet-close:hover { background: var(--paper-300); }
+.ev-sheet-close:hover { background: rgba(14,19,16,0.05); }
+.ev-sheet-close:active { transform: translateY(-50%) scale(0.9); }
 .ev-sheet-title { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--ink-900); }
 .ev-sheet-body { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
 .ev-sheet-card {
   background: var(--paper-50); border: 1px solid var(--ink-100);
   border-radius: var(--radius-xl); padding: 22px;
 }
-.ev-sheet-q { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-900); margin-bottom: 16px; }
+/* Firmengolf-Redesign des Filters (Julius, 27.08.2026): Chips wie die fg-chip-Reihe
+   über der Liste (Markenfarbe statt Schwarz), CTA wie der Site-CTA, ruhiger Reset. */
+.ev-sheet-q { font-family: var(--font-display); font-size: 18px; font-weight: 600; letter-spacing: -0.015em; color: var(--ink-900); margin-bottom: 14px; }
 .ev-sheet-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.ev-sheet-chip {
-  font-size: 14px; font-weight: 500;
-  padding: 11px 18px; min-height: 44px;
+/* .ev-sheet-chips-Präfix: der .fge-page-button-Reset (0,1,1) fraß sonst Rahmen und
+   Hintergrund der Chips — deshalb wirkten sie nie wie Kacheln (Fund 27.08.). */
+.ev-sheet-chips .ev-sheet-chip {
+  font-family: var(--font-body); font-size: 13.5px; font-weight: 500;
+  padding: 10px 16px; min-height: 42px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--ink-200); background: var(--paper-50);
   color: var(--ink-700); cursor: pointer;
+  transition: background 140ms var(--ease-out), border-color 140ms var(--ease-out), transform 100ms var(--ease-out);
 }
-.ev-sheet-chip.on { background: var(--ink-900); color: var(--paper-100); border-color: var(--ink-900); }
-.ev-sheet-picked { margin-top: 12px; font-size: 14px; color: var(--ink-700); }
-.ev-sheet-picked button { background: none; border: 0; color: var(--fairway-700); text-decoration: underline; cursor: pointer; padding: 0 0 0 6px; }
+.ev-sheet-chips .ev-sheet-chip:hover { background: var(--paper-200); color: var(--ink-900); }
+.ev-sheet-chips .ev-sheet-chip:active { transform: scale(0.96); }
+.ev-sheet-chips .ev-sheet-chip.on { background: var(--fairway-100); color: var(--fairway-800); border-color: var(--fairway-200); font-weight: 600; }
+/* Ort-Zeile: „Mein Standort"-Kachel links, Ort/PLZ-Feld rechts. Aus-Zustand neutral
+   wie ein Chip, An-Zustand in Markenfarbe mit Haken. */
+.ev-loc-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.ev-loc-gps-check { display: none; flex: none; }
+.ev-loc-row .ev-loc-gps-sheet {
+  width: auto; margin-top: 0; min-height: 44px;
+  font-size: 13.5px; font-weight: 500; color: var(--ink-700);
+  background: var(--paper-50); border: 1px solid var(--ink-200);
+  transition: background 140ms var(--ease-out), border-color 140ms var(--ease-out), transform 100ms var(--ease-out);
+}
+.ev-loc-row .ev-loc-gps-sheet:hover { background: var(--paper-200); }
+.ev-loc-row .ev-loc-gps-sheet:active { transform: scale(0.96); }
+.ev-loc-row .ev-loc-gps-sheet.on { background: var(--fairway-100); border-color: var(--fairway-200); color: var(--fairway-800); font-weight: 600; }
+.ev-loc-row .ev-loc-gps-sheet.on .ev-loc-gps-check { display: inline-block; }
+.ev-loc-row .ev-loc-gps-sheet.is-err { border-color: var(--clay-600, #B45A37); color: var(--clay-600, #B45A37); }
+.ev-loc-hint { margin: 10px 2px 0; font-size: 12.5px; line-height: 1.5; color: var(--clay-600, #B45A37); }
+.ev-loc-row .ev-loc-input-sheet { border-radius: var(--radius-pill); padding: 11px 18px; }
 .ev-sheet-foot {
   flex: none; display: flex; align-items: center; justify-content: space-between;
   padding: 14px 20px; border-top: 1px solid var(--ink-100); background: var(--paper-50);
 }
-.ev-sheet-clear { font-size: 15px; font-weight: 600; color: var(--ink-900); text-decoration: underline; text-underline-offset: 3px; padding: 12px 8px; background: none; border: 0; cursor: pointer; }
-.ev-sheet-go {
+.ev-sheet-clear { font-size: 14px; font-weight: 500; color: var(--ink-500); text-decoration: underline; text-underline-offset: 3px; padding: 12px 8px; background: none; border: 0; cursor: pointer; transition: color var(--dur-fast) var(--ease-out); }
+.ev-sheet-clear:hover { color: var(--ink-900); }
+/* .ev-sheet-foot-Präfix nötig: der .fge-page-button-Reset (0,1,1) entkernt sonst
+   den CTA zu nacktem Text (gleiche Falle wie beim Standort-Popup). */
+.ev-sheet-foot .ev-sheet-go {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 15px; font-weight: 600; padding: 14px 28px;
-  border-radius: var(--radius-pill); background: var(--fairway-700); color: var(--paper-50);
+  font-family: var(--font-body); font-size: 14px; font-weight: var(--fw-semibold);
+  padding: 12px 24px;
+  border-radius: var(--radius-pill); background: var(--fairway-700); color: var(--paper-100);
   border: 0; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), transform 100ms var(--ease-out);
 }
-.ev-sheet-go:hover { background: var(--fairway-800); }
+.ev-sheet-foot .ev-sheet-go:hover { background: var(--fairway-600); }
+.ev-sheet-foot .ev-sheet-go:active { transform: scale(0.97); }
 
 /* ── Mobile Events: Kategorie-Browse mit wischbaren Reihen (nur ≤768px) ── */
 .ev-catbrowse { display: none; }
@@ -5904,10 +6060,36 @@ a.iv-tile { text-decoration: none; }
 .ev-inline-h { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-900); margin: 4px 0 0; }
 
 @media (max-width: 768px) {
-  /* Archiv-Hero (inkl. Desktop-Suchbalken) + Chip-Rail raus — Mobile-Pille/Sheet übernimmt.
+  /* Archiv-Hero (inkl. Desktop-Suchbalken) raus — Mobile-Pille/Sheet übernimmt.
      Nur --bare (Archiv): die Landingpages (City/Format) brauchen ihren Hero samt H1 auch mobil! */
   .ev-hero--bare { display: none; }
-  .fg-filter-rail { display: none; }
+  /* Format-Chips als wischbare Reihe statt versteckt: schneller Formatwechsel
+     ohne Umweg übers Such-Sheet (Julius, 2026-08-27). Nicht sticky. */
+  .fg-filter-rail {
+    position: static;
+    margin: 0; padding: 10px 0 2px;
+    background: transparent;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  .fg-chip-row {
+    flex-wrap: nowrap; justify-content: flex-start;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 16px 8px;
+    scroll-padding-left: 16px;
+  }
+  .fg-chip-row::-webkit-scrollbar { display: none; }
+  .fg-chip { flex: none; padding: 9px 15px; min-height: 38px; display: inline-flex; align-items: center; }
+
+  /* Ergebnis-Kopf: Zähler + Zurücksetzen links gestapelt, Filter-Button rechts
+     mittig dazu (Julius, 2026-08-27) */
+  .fg-grid-head {
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .fg-grid-head-l { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .ev-grid-controls { flex: none; }
   .fge-hide-mobile { display: none; }
   .ev-catbrowse { display: block; padding: 6px 16px 0; }
   .ev-catsec { margin-bottom: 26px; }
@@ -6037,7 +6219,10 @@ a.iv-tile { text-decoration: none; }
 @media (max-width: 768px) { .fg-gallery-modal-panel { margin: 12px; max-height: calc(100vh - 24px); } .fg-gallery-modal-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; } }
 
 /* Fläche unterhalb des Footers (Clearance für fixe Mobile-Bar) footerfarben statt weiß */
-body { background-color: var(--paper-300); }
+/* Muss dem Seiten-Papierweiß entsprechen: Safari (iOS) färbt die Fläche hinter
+   Status- und Adressleiste nach dem body-Hintergrund; paper-300 wirkte dort als
+   dunkler Braunton über der Seite (Fund Julius, 2026-08-28). */
+body { background-color: var(--paper-100); }
 
 /* Tablet-Zwischenbreite: Wischreihen zeigen ~2¼ Karten statt einer hart gekappten zweiten */
 @media (min-width: 560px) and (max-width: 768px) {
@@ -6161,7 +6346,10 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 .rw-stage { padding: 40px 24px 48px; }
 .rw-screen.rw-has-photo { max-width: 1060px; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 56px; align-items: stretch; }
 .rw-photo { border-radius: 24px; background-size: cover; background-position: center; min-height: 420px; box-shadow: var(--shadow-sm); position: relative; }
-@media (max-width: 980px) { .rw-screen.rw-has-photo { grid-template-columns: 1fr; } .rw-photo { display: none; } }
+/* .rw-overlay-Präfix nötig: das spätere `.rw-photo { display:flex }` (unten) hat sonst
+   gleiche Spezifität und gewinnt per Reihenfolge — das Foto hing dann mobil unterm
+   Formular (Fund Julius, 2026-08-27). */
+@media (max-width: 980px) { .rw-screen.rw-has-photo { grid-template-columns: 1fr; } .rw-overlay .rw-photo { display: none; } }
 /* Trust-Karte im Foto-Panel: echter Ansprechpartner + Werktag-Versprechen.
    Sticky statt absolute: das Foto-Panel ist formularhoch, die Karte soll aber im
    sichtbaren Ausschnitt am unteren Rand schweben, nicht unterm Fold liegen. */
@@ -6173,23 +6361,132 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 /* Quick-Formular: kompakterer Kopf, klarere Auswahl. */
 .rw-h--quick { font-size: 34px; }
 @media (max-width: 760px) { .rw-h--quick { font-size: 27px; } }
-/* Zwei-Schritte-Quick: Fortschritts-Punkte im Fuss, Rekap-Chip in Schritt 2. */
-/* Fuss der Schnell-Anfrage: 3-Spalten-Grid, die Fortschritts-Punkte stehen auf
-   BEIDEN Schritten exakt mittig (vorher sprangen sie von links in die Mitte). */
-.rw-nav--quick { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
-.rw-nav--quick .rw-dots { justify-self: center; }
+
+/* ── Schnellanfrage mobil kompakt (Julius, 2026-08-27): wer den Quick-CTA gedrückt
+   hat, weiß was er tut. Kopftext weg, „Anlass" wird zur Überschrift, kein Bild,
+   Ziel: jeder Schritt passt auch aufs kleinste iPhone ohne Scrollen. ── */
+@media (max-width: 768px) {
+  /* Überschrift + kleiner Erklärtext bleiben mobil sichtbar (Revert, Julius 27.08. spät),
+     nur kompakter als am Desktop. */
+  .rw-mode-quick .rw-h--quick { font-size: 26px; }
+  .rw-mode-quick .rw-lead--quick { font-size: 14.5px; margin-top: 8px; }
+  .rw-mode-quick .rw-stage { padding: 18px 16px 22px; }
+  .rw-mode-quick .rw-form { gap: 16px; margin-top: 18px; }
+  /* Stepper und Felder kompakt */
+  .rw-mode-quick .rw-field { gap: 6px; }
+  .rw-mode-quick .rw-stepper { padding: 4px 8px; }
+  .rw-mode-quick .rw-overlay .rw-stepper-val, .rw-mode-quick .rw-stepper-val { font-size: 20px; }
+  /* Eingaben: 16px verhindert den iOS-Fokus-Zoom (der das Nicht-Scrollen-Ziel bricht) */
+  .rw-mode-quick .fg-input { font-size: 16px; padding: 10px 12px; }
+  .rw-mode-quick .ind-flabel { font-size: 12.5px; margin-bottom: 0; }
+  /* Name + E-Mail bleiben nebeneinander, damit Schritt 2 ohne Scrollen passt */
+  .rw-mode-quick .rw-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; }
+  .rw-mode-quick .ind-consent { font-size: 12.5px; }
+  .rw-mode-quick .rw-nav { padding: 12px 16px; }
+  .rw-mode-quick .rw-nav .rw-btn-primary { white-space: nowrap; }
+}
+/* Kleinstes iPhone (375px): letzte Reserve rausholen, Kacheln bleiben groß */
+@media (max-width: 390px) {
+  .rw-mode-quick .rw-stage { padding: 14px 14px 18px; }
+  .rw-mode-quick .rw-form { gap: 12px; }
+  .rw-mode-quick .rw-occ-cards { gap: 8px; }
+  .rw-mode-quick .rw-occ-cards button.ind-card { padding: 11px 12px 10px; gap: 8px; }
+}
+/* Zwei-Schritte-Quick: durchgehender Fortschrittsbalken im Fuß, Zurück links,
+   Weiter rechts (Airbnb-Muster, Julius 2026-08-27). */
+.rw-nav--quick { display: grid; grid-template-columns: 1fr auto; align-items: center; }
 .rw-nav--quick .rw-btn-primary { justify-self: end; }
 .rw-nav--quick .rw-btn-text { justify-self: start; }
-.rw-dots { display: inline-flex; gap: 6px; align-items: center; }
-.rw-dots i { width: 7px; height: 7px; border-radius: 999px; background: var(--ink-200); transition: background var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
-.rw-dots i.on { background: var(--fairway-600); transform: scale(1.3); }
+/* Hilfe-Popover im Wizard-Kopf: Anruf + Mail (Julius, 27.08.2026) */
+.rw-help { position: relative; }
+.rw-help-btn {
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  color: var(--ink-800);
+  padding: 9px 16px; border-radius: var(--radius-pill);
+  border: 1px solid var(--ink-200); background: #fff;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.rw-help-btn:hover { border-color: var(--ink-900); }
+.rw-help-pop {
+  position: absolute; right: 0; top: calc(100% + 10px); z-index: 30;
+  width: 268px;
+  background: #fff; border: 1px solid var(--ink-100); border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(14,19,16,0.16);
+  padding: 8px;
+  animation: rw-fade var(--dur-base) var(--ease-out);
+}
+.rw-help-t { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-500); padding: 8px 10px 6px; }
+/* Persönliche Kontaktkarte: Julius-Foto + Name über den Direktwegen */
+.rw-help-person { display: flex; align-items: center; gap: 12px; padding: 10px 10px 12px; border-bottom: 1px solid var(--ink-100); margin-bottom: 6px; }
+.rw-help-person img { width: 46px; height: 46px; border-radius: 999px; object-fit: cover; object-position: 50% 20%; flex: none; }
+.rw-help-person-t b { display: block; font-size: 14.5px; font-weight: 600; color: var(--ink-900); }
+.rw-help-person-t i { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-500); margin-top: 1px; }
+.rw-help-row {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px; border-radius: 10px;
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.rw-help-row:hover { background: var(--paper-100); }
+.rw-help-ic {
+  width: 36px; height: 36px; border-radius: 999px; flex: none;
+  display: grid; place-items: center;
+  background: var(--fairway-100); color: var(--fairway-700);
+}
+.rw-help-txt b { display: block; font-size: 14px; font-weight: 600; color: var(--ink-900); }
+.rw-help-txt i { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-500); margin-top: 1px; }
+
+/* Sektionen in den Formular-Schritten: ruhige Blöcke statt Chip-Stapel */
+.rw-sec { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--ink-100); padding-top: 22px; }
+.rw-form > .rw-sec:first-child { border-top: 0; padding-top: 0; }
+.rw-sec-h { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-500); }
+
+/* Leistungs-Schritt: kompakte Icon-Pills, Icon links, mehr pro Zeile */
+.rw-svc-pick { gap: 22px; }
+.rw-svc-cards { gap: 8px; }
+.rw-svc-cards button.ind-card {
+  flex-direction: row; align-items: center; gap: 9px;
+  min-height: 48px; padding: 8px 26px 8px 10px; font-size: 13px;
+}
+.rw-svc-cards .ind-card-ico { width: 30px; height: 30px; border-radius: 8px; }
+.rw-svc-cards .ind-card-ico svg { width: 17px; height: 17px; }
+.rw-svc-cards button.ind-card.on::after { top: 50%; transform: translateY(-50%); right: 7px; width: 16px; height: 16px; }
+
+.rw-qprog { display: flex; gap: 4px; height: 5px; background: transparent; }
+.rw-qprog i { flex: 1; background: var(--ink-100); overflow: hidden; }
+.rw-qprog i::before {
+  content: ''; display: block; height: 100%;
+  background: var(--fairway-700);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 560ms var(--ease-out);
+}
+.rw-qprog i.done::before { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) { .rw-qprog i::before { transition: none; } }
 .rw-recap { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; background: var(--fairway-50); border: 1px solid var(--fairway-200); color: var(--fairway-800); font: inherit; font-size: 13px; font-weight: 600; border-radius: 999px; padding: 6px 13px; cursor: pointer; margin-bottom: 14px; transition: background var(--dur-fast) var(--ease-out); }
 .rw-recap:hover { background: var(--fairway-100); }
 .rw-recap svg { flex: none; }
-/* Weicher Schrittwechsel (nur bei echtem Screen-Wechsel, s. render()). */
-.rw-anim-in { animation: rw-step-in 260ms var(--ease-out); }
-@keyframes rw-step-in { from { opacity: 0; transform: translateY(10px); } }
-@media (prefers-reduced-motion: reduce) { .rw-anim-in { animation: none; } }
+/* Weicher Schrittwechsel (nur bei echtem Screen-Wechsel, s. render()):
+   neuer Inhalt gleitet mit Fade von unten ein, die Kacheln und ihre Icons
+   kommen leicht versetzt nach (Airbnb-Video-Referenz, Julius 2026-08-27). */
+.rw-anim-in { animation: rw-step-in 340ms var(--ease-out) both; }
+@keyframes rw-step-in { from { opacity: 0; transform: translateY(24px); } }
+.rw-anim-in .ind-card { animation: rw-card-in 320ms var(--ease-out) both; }
+@keyframes rw-card-in { from { opacity: 0; transform: translateY(10px); } }
+.rw-anim-in .ind-card .ind-card-ico svg { animation: rw-ico-in 380ms var(--ease-out) both; }
+@keyframes rw-ico-in { from { opacity: 0; transform: scale(0.55); } }
+.rw-anim-in .ind-card:nth-child(1), .rw-anim-in .ind-card:nth-child(1) .ind-card-ico svg { animation-delay: 40ms; }
+.rw-anim-in .ind-card:nth-child(2), .rw-anim-in .ind-card:nth-child(2) .ind-card-ico svg { animation-delay: 70ms; }
+.rw-anim-in .ind-card:nth-child(3), .rw-anim-in .ind-card:nth-child(3) .ind-card-ico svg { animation-delay: 100ms; }
+.rw-anim-in .ind-card:nth-child(4), .rw-anim-in .ind-card:nth-child(4) .ind-card-ico svg { animation-delay: 130ms; }
+.rw-anim-in .ind-card:nth-child(5), .rw-anim-in .ind-card:nth-child(5) .ind-card-ico svg { animation-delay: 160ms; }
+.rw-anim-in .ind-card:nth-child(6), .rw-anim-in .ind-card:nth-child(6) .ind-card-ico svg { animation-delay: 190ms; }
+.rw-anim-in .ind-card:nth-child(7), .rw-anim-in .ind-card:nth-child(7) .ind-card-ico svg { animation-delay: 220ms; }
+.rw-anim-in .ind-card:nth-child(n+8), .rw-anim-in .ind-card:nth-child(n+8) .ind-card-ico svg { animation-delay: 250ms; }
+@media (prefers-reduced-motion: reduce) {
+  .rw-anim-in, .rw-anim-in .ind-card, .rw-anim-in .ind-card .ind-card-ico svg { animation: rw-reduced-fade 200ms ease both; }
+}
+@keyframes rw-reduced-fade { from { opacity: 0; } }
 .rw-overlay .rw-btn-primary {
   font-size: 15px; font-weight: 500;
   background: var(--ink-900); color: var(--paper-50);
@@ -6246,7 +6543,8 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
   100% { opacity: 0; transform: translateY(420px) rotate(340deg); }
 }
 @media (prefers-reduced-motion: reduce) { .wz-conf { animation: none; opacity: 0; } }
-@media (max-width: 640px) {
+/* Mobil vollflächig statt Popup, wie das Anfrage-Formular (Julius, 2026-08-27) */
+@media (max-width: 768px) {
   .wz-modal { padding: 0; }
   .wz-m-card { max-width: none; height: 100dvh; max-height: none; border-radius: 0; }
   .wz-mrow, .wz-mstep .wz-choose { grid-template-columns: 1fr; }
@@ -6283,7 +6581,7 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 .bg2-cats { margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px; padding-top: 18px; border-top: 1px solid rgba(14,19,16,.1); }
 .bg2-cat { padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--ink-600); text-decoration: none; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
 .bg2-cat:hover { color: var(--ink-900); background: var(--paper-200); }
-.bg2-cat.on { background: var(--ink-900); color: var(--paper-50); }
+.bg2-cat.on { background: var(--fairway-100); color: var(--fairway-800); font-weight: 600; }
 
 .bg2-shell { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
 
@@ -6349,12 +6647,18 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 
 /* ── Wizard-Politur (Feedback 2026-08-10): Logo-Topbar ohne Streifen, Stepper,
    Anlass-Kacheln, Erfolgsscreen mit Julius-Karte + Konfetti ── */
-.rw-top, .rw-foot { background: var(--paper-100); }
-.rw-top { border-bottom: 1px solid var(--ink-100); }
+/* Heller Airbnb-Look: Kopf und Fuß weiß, keine Trennlinien, der Fortschritts-
+   balken übernimmt die Abgrenzung (Julius, 2026-08-27). */
+.rw-top, .rw-foot { background: #fff; }
+.rw-top { border-bottom: 0; }
+.rw-foot { border-top: 0; }
+.rw-overlay button.ind-card, .rw-overlay .fg-input, .rw-overlay .rw-stepper { background: #fff; }
 .rw-top-brand img { height: 24px; width: auto; display: block; }
 .rw-stepper { display: inline-flex; align-items: center; gap: 18px; border: 1px solid var(--ink-200); border-radius: 999px; padding: 8px 10px; background: var(--paper-50); }
 .rw-overlay .rw-step-btn { width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--ink-200); background: var(--paper-100); color: var(--ink-900); font-size: 22px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
 .rw-overlay .rw-step-btn:hover { background: var(--paper-200); border-color: var(--ink-300); }
+/* Klick-Feedback wie bei den Kacheln: kurz in Markenfarbe füllen (Julius, 27.08.2026) */
+.rw-overlay .rw-step-btn:active { background: var(--fairway-600); border-color: var(--fairway-600); color: var(--paper-50); transform: scale(0.94); }
 .rw-stepper-mid { display: flex; flex-direction: column; align-items: center; min-width: 96px; }
 .rw-overlay .rw-stepper-val { width: 96px; border: 0; background: transparent; text-align: center; font-size: 24px; font-weight: 600; color: var(--ink-900); font-family: inherit; -moz-appearance: textfield; appearance: textfield; }
 .rw-overlay .rw-stepper-val::-webkit-outer-spin-button, .rw-overlay .rw-stepper-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -6401,10 +6705,314 @@ textarea.wz-input { resize: vertical; line-height: 1.5; }
 /* Wizard-Kopfzeile auf schmalen Geräten: Logo, Label und Umschalt-Pille
    kollidierten bei 390px, „Event anfragen" brach zweizeilig um und die Pille
    wurde dreizeilig zur Ellipse (Audit 2026-08-12). */
+/* „Event anfragen"-Label in der Kopfzeile auf allen Handys ausblenden (Julius, 27.08.2026) */
+@media (max-width: 768px) {
+  .rw-top-title { display: none; }
+  .rw-overlay .rw-h { font-size: 28px; }
+}
+/* Schmale Handys: Logo raus (wie bei Airbnb mobil), sonst überlappen sich
+   Logo, Umschalt-Pille, Hilfe und X in der Kopfzeile. */
+@media (max-width: 560px) {
+  .rw-top-brand { display: none; }
+  .rw-top { justify-content: flex-end; }
+  .rw-help-btn { padding: 9px 13px; }
+}
 @media (max-width: 430px) {
   .rw-top { padding: 14px 16px; gap: 10px; }
   .rw-top-brand { gap: 10px; min-width: 0; }
-  .rw-top-title { display: none; }
   .rw-top-actions { flex: none; }
   .rw-shortcut { white-space: nowrap; font-size: 12.5px; padding: 8px 12px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DESIGN-LINIE: zentrale Komponenten (verbindlich, siehe DESIGN.md im Repo-Root)
+   ─────────────────────────────────────────────────────────────────────────────
+   EINE Identitäts-Definition pro Komponente (Farbe, Form, Schrift-Gewicht,
+   Feedback). Größen dürfen im Kontext variieren, Identität NIE. Jeder neue
+   Button/Chip/Dialog wird hier in die Selektor-Gruppe eingehängt, NIEMALS im
+   eigenen Namensraum neu erfunden (Julius, 2026-08-27: „eine Linie fahren").
+   Steht bewusst am DATEIENDE, damit die Gruppen per Kaskade gewinnen.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1) Primär-Button: Marken-Pille ── */
+.fg-btn-brand, a.fg-btn-brand, button.fg-btn-brand,
+.fg-btn-cta, a.fg-btn-cta, button.fg-btn-cta,
+.fg-nav-cta, a.fg-nav-cta,
+.rw-overlay .rw-btn-primary,
+.wz-modal .rw-btn-primary,
+.ev-sheet-foot .ev-sheet-go,
+.ev-geo-card .ev-geo-allow,
+.fp-gate-card #loginform #fp_gate_submit {
+  background: var(--fairway-700); color: var(--paper-100);
+  border: 0; border-radius: var(--radius-pill);
+  font-family: var(--font-body); font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), transform 100ms var(--ease-out);
+}
+.fg-btn-brand:hover, a.fg-btn-brand:hover, button.fg-btn-brand:hover,
+.fg-btn-cta:hover, a.fg-btn-cta:hover, button.fg-btn-cta:hover,
+.fg-nav-cta:hover, a.fg-nav-cta:hover,
+.rw-overlay .rw-btn-primary:hover:not(:disabled),
+.wz-modal .rw-btn-primary:hover:not(:disabled),
+.ev-sheet-foot .ev-sheet-go:hover,
+.ev-geo-card .ev-geo-allow:hover:not(:disabled),
+.fp-gate-card #loginform #fp_gate_submit:hover {
+  background: var(--fairway-600); color: var(--paper-100);
+}
+.fg-btn-brand:active, .fg-btn-cta:active, .fg-nav-cta:active,
+.rw-overlay .rw-btn-primary:active:not(:disabled),
+.wz-modal .rw-btn-primary:active:not(:disabled),
+.ev-sheet-foot .ev-sheet-go:active,
+.ev-geo-card .ev-geo-allow:active:not(:disabled),
+.fp-gate-card #loginform #fp_gate_submit:active {
+  transform: scale(0.97);
+}
+.rw-overlay .rw-btn-primary:disabled,
+.wz-modal .rw-btn-primary:disabled,
+.ev-geo-card .ev-geo-allow:disabled {
+  background: var(--ink-300); color: var(--paper-100); cursor: not-allowed;
+}
+
+/* ── 2) Text-Button (Zurück / Abbrechen / Zurücksetzen) ── */
+.rw-overlay .rw-btn-text,
+.wz-modal .rw-btn-text,
+.ev-sheet-foot .ev-sheet-clear,
+.ev-geo-card .ev-geo-skip {
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: 14px; font-weight: 500;
+  color: var(--ink-600);
+  text-decoration: underline; text-underline-offset: 3px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.rw-overlay .rw-btn-text:hover,
+.wz-modal .rw-btn-text:hover,
+.ev-sheet-foot .ev-sheet-clear:hover,
+.ev-geo-card .ev-geo-skip:hover { color: var(--ink-900); background: none; }
+
+/* ── 3) Auswahl-Chip: Aus-Zustand neutral mit Rahmen, An-Zustand hell in
+       Markenfarbe. (Basisgrößen stehen bei den Einzelklassen, Identität hier.) ── */
+.fg-chip.active,
+.ev-sheet-chips .ev-sheet-chip.on,
+button.ind-pchip.on,
+.ev-loc-row .ev-loc-gps-sheet.on {
+  background: var(--fairway-100); border-color: var(--fairway-200);
+  color: var(--fairway-800); font-weight: 600;
+}
+
+/* ── 4) Eingabefelder: eine Form- und Fokus-Sprache ── */
+.fp-gate-card #loginform input[type="text"],
+.fp-gate-card #loginform input[type="password"] {
+  border: 1px solid var(--ink-200); border-radius: 12px;
+  background: var(--paper-50);
+}
+.fg-input:focus, .fg-input:focus-visible,
+.fp-gate-card #loginform input[type="text"]:focus,
+.fp-gate-card #loginform input[type="password"]:focus {
+  outline: none; border-color: var(--fairway-700);
+  box-shadow: 0 0 0 3px var(--fairway-100);
+}
+
+/* ── 5) Sekundär-Outline-Button: Pillenform statt Eckradius ── */
+.fp-gate-cta { border-radius: var(--radius-pill); }
+
+/* ── 6) Fortschrittsbalken: durchgehende Segmente, Füllung in Markenfarbe ── */
+.fg-step-rail { gap: 4px; }
+.fg-step { height: 5px; border-radius: 0; background: var(--ink-100); }
+.fg-step.done { background: var(--fairway-700); }
+
+/* ══════════ Startseite: Mobile-Paket + Feinschliff (Julius, 2026-08-27) ══════════ */
+
+/* „Nichts dabei?": nur „Wir planen" in Markenfarbe (Julius, 28.08.) */
+.home-ind-text .mk-h2 .mk-italic { color: var(--fairway-700); }
+
+/* Baukasten-Komposition statt Foto (Julius, 28.08.): Leistungs-Chips schweben um
+   die „Euer Event"-Karte, Ringe wie in der Standort-Illustration. */
+.home-ind-visual {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  max-width: 460px;
+  margin: 0 auto;
+  width: 100%;
+}
+.hiv-rings { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hiv-core {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: var(--fairway-700); color: var(--paper-100);
+  border-radius: 20px;
+  padding: 20px 26px;
+  box-shadow: 0 18px 44px rgba(66, 121, 209, 0.35);
+}
+.hiv-core b { font-family: var(--font-display); font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.hiv-core i { font-style: normal; font-size: 12px; opacity: 0.85; }
+.hiv-chip {
+  position: absolute;
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--paper-50); border: 1px solid var(--ink-200);
+  border-radius: var(--radius-pill);
+  padding: 9px 14px;
+  font-size: 13px; font-weight: 500; color: var(--ink-800);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+.hiv-chip svg { color: var(--fairway-700); flex: none; }
+.hiv-c1 { left: 4%;  top: 14%; transform: rotate(-4deg); }
+.hiv-c2 { right: 2%;  top: 22%; transform: rotate(3deg); }
+.hiv-c3 { left: 0;    top: 52%; transform: rotate(2deg); }
+.hiv-c4 { right: 4%;  top: 58%; transform: rotate(-3deg); }
+.hiv-c5 { left: 16%;  bottom: 6%; transform: rotate(3deg); }
+.hiv-c6 { right: 18%; bottom: 10%; transform: rotate(-2deg); }
+/* Gestaffeltes Einblenden mit der Sektion (nur wenn cty-io aktiv) */
+html.cty-io .cty-reveal .hiv-chip { opacity: 0; transition: opacity 500ms var(--ease-out), translate 500ms var(--ease-out); translate: 0 10px; }
+html.cty-io .cty-reveal.is-in .hiv-chip { opacity: 1; translate: 0 0; }
+html.cty-io .cty-reveal.is-in .hiv-c2 { transition-delay: 90ms; }
+html.cty-io .cty-reveal.is-in .hiv-c3 { transition-delay: 160ms; }
+html.cty-io .cty-reveal.is-in .hiv-c4 { transition-delay: 230ms; }
+html.cty-io .cty-reveal.is-in .hiv-c5 { transition-delay: 300ms; }
+html.cty-io .cty-reveal.is-in .hiv-c6 { transition-delay: 370ms; }
+@media (max-width: 768px) { .home-ind-visual { display: none; } }
+
+/* Angebots-Karten: Tag ist jetzt klar KEIN Button mehr (schlichte Zeile statt
+   weißer Pille, die wie der CTA aussah) */
+.fgp-tag {
+  background: none; padding: 0; border-radius: 0;
+  color: rgba(251,250,246,0.82);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+  margin-bottom: 2px;
+}
+
+/* Angebots-Karten: gestaffelte Scroll-Einblendung (nur wenn cty-io aktiv ist,
+   d. h. JS vorhanden und keine reduzierte Bewegung) */
+html.cty-io .cty-reveal .fgp-card {
+  opacity: 0; transform: translateY(26px);
+  transition: opacity 640ms var(--ease-out), transform 640ms var(--ease-out);
+}
+html.cty-io .cty-reveal.is-in .fgp-card { opacity: 1; transform: none; }
+html.cty-io .cty-reveal.is-in .fgp-card:nth-child(2) { transition-delay: 130ms; }
+
+@media (max-width: 768px) {
+  /* 1) Warum-Golfplatz: 2×2 kompakte Icon-Kacheln statt vier Textblöcke */
+  .fgw .mk-sub { display: none; }
+  .fgw-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fgw-col {
+    background: var(--paper-50); border: 1px solid var(--ink-100);
+    border-radius: var(--radius-lg); padding: 16px 14px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+    margin: 0;
+  }
+  .fgw-col-b { display: none; }
+  .fgw-col-t { font-size: 14px; margin: 0; }
+  .fgw-ic { margin: 0; }
+  .fgw-ic svg { width: 20px; height: 20px; }
+
+  /* 2) Wischreihen (Muster wie .ev-catrow): Schritte, Formate, Blog.
+     Volle Viewport-Breite ohne Seitenrand (Julius, 27.08.): die Reihe bricht aus
+     dem Sektions-Padding aus, der Inhalt startet trotzdem bündig bei 16px. */
+  .mk-steps .mk-steps-grid, .home-fmt-slider, .home-blog-grid {
+    display: flex; flex-wrap: nowrap; gap: 10px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory; scrollbar-width: none;
+    margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
+    padding: 0 16px 6px;
+    scroll-padding-left: 16px;
+  }
+  .mk-steps .mk-steps-grid::-webkit-scrollbar,
+  .home-fmt-slider::-webkit-scrollbar,
+  .home-blog-grid::-webkit-scrollbar { display: none; }
+  .mk-steps .mk-steps-grid > *, .home-fmt-slider > *, .home-blog-grid > * { scroll-snap-align: start; }
+
+  /* 3) Drei Schritte: kompakte Wisch-Karten (Scroll-Pin-Experiment am 27.08. entfernt) */
+  .mk-steps .mk-step { flex: 0 0 76%; padding: 20px 18px; gap: 10px; }
+
+  /* „Nichts dabei?": Bild mobil raus; Sektion sonst normal, nur „Wir planen"
+     trägt die Markenfarbe (Julius, 28.08.: kein farbiger Kasten) */
+  .home-ind-photo { display: none; }
+
+  /* „Worauf ihr euch verlassen könnt": die vier Punkte kompakter */
+  .cty-story-points { margin: 20px 0 0; }
+  .cty-story-point { padding: 11px 0; gap: 12px; }
+  .cty-story-point h3 { font-size: 14.5px; margin: 0 0 2px; }
+  .cty-story-point p { font-size: 13px; line-height: 1.5; }
+
+  /* 4) Formate: große Bild-Kacheln als Wischreihe */
+  .home-fmt-slider { display: flex; }
+  .home-fmt-slider .iv-tile { flex: 0 0 74%; aspect-ratio: 4 / 5; }
+
+  /* 5) Blog: deutlich kleinere Karten als Wischreihe */
+  .home-blog-card { flex: 0 0 64%; }
+  .home-blog-photo { aspect-ratio: 16 / 9; }
+  .home-blog-x, .home-blog-author { display: none; }
+  .home-blog-t { font-size: 15px; }
+  .home-blog-body { padding: 12px 14px; }
+}
+
+/* ══════════ Partner-werden-Seite: drei Zielgruppen (Julius, 2026-08-28) ══════════ */
+.gp-facts { margin-bottom: 80px; }
+@media (max-width: 900px) { .gp-facts { margin-bottom: 56px; } }
+.gp-contact { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 40px; align-items: center; max-width: 960px; margin: 0 auto; }
+.gp-contact-portrait { width: 280px; aspect-ratio: 4 / 5; border-radius: 20px; background: var(--ink-200) center/cover no-repeat; box-shadow: var(--shadow-sm); }
+.gp-contact-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+@media (max-width: 720px) {
+  .gp-contact { grid-template-columns: 1fr; gap: 24px; }
+  .gp-contact-portrait { width: min(280px, 70vw); margin: 0 auto; }
+  .gp-contact-body { text-align: center; }
+  .gp-contact-ctas { justify-content: center; }
+}
+
+/* Zielgruppen-Karten: Golfplätze, Golflehrer, Indoor-Anlagen */
+.gp-aud-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.gp-aud {
+  background: var(--paper-50); border: 1px solid var(--ink-100);
+  border-radius: 20px; padding: 28px 26px;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-aud:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(14,19,16,0.10); }
+}
+.gp-aud-ic {
+  width: 48px; height: 48px; border-radius: 14px;
+  display: grid; place-items: center;
+  background: var(--fairway-100); color: var(--fairway-700);
+}
+.gp-aud-t { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.015em; color: var(--ink-900); margin: 4px 0 0; }
+.gp-aud-sub { font-size: 14.5px; line-height: 1.55; color: var(--ink-600); margin: 0; }
+.gp-aud-pts { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.gp-aud-pts li { display: flex; gap: 10px; font-size: 14px; line-height: 1.55; color: var(--ink-800); }
+.gp-aud-pts svg { color: var(--fairway-700); flex: none; margin-top: 3px; }
+.gp-aud-cta {
+  margin-top: auto; padding-top: 16px;
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 14px; font-weight: 600; color: var(--fairway-700); text-decoration: none;
+  transition: gap var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.gp-aud-cta:hover { color: var(--fairway-600); gap: 10px; }
+@media (max-width: 900px) { .gp-aud-grid { grid-template-columns: 1fr; } }
+
+/* Paket-Sektion: Text links, Baustein-Chips rechts */
+.gp-pack-grid { max-width: var(--width-page); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 56px; align-items: center; }
+.gp-pack-pts { list-style: none; margin: 18px 0 26px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.gp-pack-pts li { display: flex; gap: 10px; font-size: 14.5px; line-height: 1.55; color: var(--ink-800); }
+.gp-pack-pts svg { color: var(--fairway-700); flex: none; margin-top: 3px; }
+.gp-pack-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-content: center; }
+.gp-pack-chip {
+  background: var(--paper-50); border: 1px solid var(--ink-200);
+  border-radius: var(--radius-pill);
+  padding: 11px 18px;
+  font-size: 14px; font-weight: 500; color: var(--ink-800);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+.gp-pack-chip:nth-child(3n)   { rotate: 1.5deg; }
+.gp-pack-chip:nth-child(3n+1) { rotate: -1.5deg; }
+/* Chips blenden gestaffelt mit der Sektion ein */
+html.cty-io .cty-reveal .gp-pack-chip { opacity: 0; translate: 0 10px; transition: opacity 460ms var(--ease-out), translate 460ms var(--ease-out); }
+html.cty-io .cty-reveal.is-in .gp-pack-chip { opacity: 1; translate: 0 0; }
+html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(2n) { transition-delay: 70ms; }
+html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(3n) { transition-delay: 140ms; }
+html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 210ms; }
+@media (max-width: 900px) {
+  .gp-pack-grid { grid-template-columns: 1fr; gap: 28px; }
+  .gp-pack-chips { justify-content: flex-start; }
 }

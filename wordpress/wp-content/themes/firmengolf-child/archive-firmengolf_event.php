@@ -47,6 +47,11 @@ $geo_active    = ( $active_lat && $active_lng && $active_radius > 0 && function_
 
 // ── Format list (canonical — single source: event-formats.php) ───────────────
 $formats = array_merge( [ 'all' => 'Alle' ], fge_event_formats_in_use() );
+/* Indoor Golf als festen Reiter ergänzen (Julius, 2026-08-27): Angebote folgen mit der
+   Portal-Öffnung für Golf-Pros und Indoor-Anlagen; bis dahin zeigt der Filter den Empty-State. */
+if ( ! isset( $formats['indoor-golf'] ) ) {
+	$formats['indoor-golf'] = 'Indoor Golf';
+}
 
 // ── Regions: only those with at least one published event ────────────────────
 global $wpdb;
@@ -196,16 +201,9 @@ $arrow = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="cu
 <div class="fge-page" id="fge-main" role="main" tabindex="-1">
 
 <?php
-// Mobile-Such-Pille für die Nav-Bar (öffnet das Sheet weiter unten).
-$pill_bits = [];
-if ( $active_format !== 'all' && isset( $formats[ $active_format ] ) ) { $pill_bits[] = $formats[ $active_format ]; }
-if ( $active_loc !== '' ) { $pill_bits[] = $active_loc; }
-if ( $active_pax > 0 ) { $pill_bits[] = $active_pax . ' Pers.'; }
-$pill_summary = $pill_bits ? implode( ' · ', $pill_bits ) : 'Jetzt suchen';
-$mbar_action  = '<button class="ev-msearch" type="button" id="fge-ev-pill" aria-label="Suche öffnen">'
-	. '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
-	. '<span class="ev-msearch-t ' . ( $pill_bits ? '' : 'muted' ) . '">' . esc_html( $pill_summary ) . '</span></button>';
-get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events', 'mbar_action' => $mbar_action ] );
+/* Keine Such-Pille mehr in der Nav: Die Liste startet direkt mit den Format-Kacheln,
+   alles Weitere macht der dezente Filter-Button im Ergebnis-Kopf (Julius, 2026-08-27). */
+get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] );
 
 // ── Mobiles Such-Sheet (≤768px) – gleiche GET-Parameter wie der Desktop-Filter ──
 $group_bands = [
@@ -225,26 +223,24 @@ $group_bands = [
 			<span class="ev-sheet-title">Event finden</span>
 		</div>
 		<div class="ev-sheet-body">
-			<section class="ev-sheet-card">
-				<div class="ev-sheet-q">Was möchtet ihr machen?</div>
-				<div class="ev-sheet-chips" id="fge-ev-fmt">
-					<?php foreach ( $formats as $slug => $label ) : ?>
-						<button type="button" class="ev-sheet-chip <?php echo $active_format === $slug ? 'on' : ''; ?>" data-fmt="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></button>
-					<?php endforeach; ?>
-				</div>
-			</section>
+			<?php /* Ort zuerst: „Mein Standort" als Kachel LINKS neben dem Ort-Feld, mit klarem
+				Aktiv-Zustand; Formate ganz nach unten, die stehen schon als Chip-Reihe über
+				der Liste (Julius, 2026-08-27). */ ?>
 			<section class="ev-sheet-card">
 				<div class="ev-sheet-q">Wo seid ihr?</div>
-				<div class="ev-loc-input ev-loc-input-sheet">
-					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-					<input type="text" id="fge-ev-loc" placeholder="Ort oder PLZ" autocomplete="off">
+				<div class="ev-loc-row">
+					<button type="button" class="ev-loc-gps ev-loc-gps-sheet<?php echo 'Mein Standort' === $active_loc ? ' on' : ''; ?>" id="fge-ev-gps" aria-pressed="<?php echo 'Mein Standort' === $active_loc ? 'true' : 'false'; ?>">
+						<span class="ev-loc-gps-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
+						Mein Standort
+						<svg class="ev-loc-gps-check" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+					</button>
+					<div class="ev-loc-input ev-loc-input-sheet">
+						<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+						<input type="text" id="fge-ev-loc" placeholder="Ort oder PLZ" autocomplete="off" value="<?php echo esc_attr( ( $active_loc !== '' && 'Mein Standort' !== $active_loc ) ? $active_loc : '' ); ?>">
+					</div>
 				</div>
-				<button type="button" class="ev-loc-gps ev-loc-gps-sheet" id="fge-ev-gps">
-					<span class="ev-loc-gps-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
-					Meinen Standort
-				</button>
 				<div class="ev-sheet-chips" id="fge-ev-loc-sugg" style="margin-top:10px;"></div>
-				<div class="ev-sheet-picked" id="fge-ev-loc-picked" style="<?php echo $active_loc !== '' ? '' : 'display:none;'; ?>">Gewählt: <strong id="fge-ev-loc-pickedlabel"><?php echo esc_html( $active_loc ); ?></strong> <button type="button" id="fge-ev-loc-clear">ändern</button></div>
+				<p class="ev-loc-hint" id="fge-ev-gps-hint" hidden></p>
 			</section>
 			<section class="ev-sheet-card">
 				<div class="ev-sheet-q">Wie groß ist die Gruppe?</div>
@@ -252,6 +248,30 @@ $group_bands = [
 					<?php foreach ( $group_bands as $b ) :
 						$on = ( 0 === $b['pax'] ) ? ( $active_pax <= 0 ) : ( $active_pax === $b['pax'] ); ?>
 						<button type="button" class="ev-sheet-chip <?php echo $on ? 'on' : ''; ?>" data-pax="<?php echo (int) $b['pax']; ?>"><?php echo esc_html( $b['label'] ); ?></button>
+					<?php endforeach; ?>
+				</div>
+			</section>
+			<section class="ev-sheet-card">
+				<div class="ev-sheet-q">Sortierung</div>
+				<div class="ev-sheet-chips" id="fge-ev-sort">
+					<?php
+					/* Gleiche Optionen wie früher das Dropdown im Ergebnis-Kopf; „In der Nähe"
+					   bleibt bei aktivem Standort der Standard (Julius, 2026-08-27). */
+					$sheet_sorts = [
+						'curated'   => $geo_active ? 'In der Nähe' : 'Empfohlen',
+						'price-asc' => 'Preis aufsteigend',
+						'group'     => 'Größte Gruppen',
+					];
+					foreach ( $sheet_sorts as $sid => $slabel ) : ?>
+						<button type="button" class="ev-sheet-chip <?php echo $active_sort === $sid ? 'on' : ''; ?>" data-sortv="<?php echo esc_attr( $sid ); ?>"><?php echo esc_html( $slabel ); ?></button>
+					<?php endforeach; ?>
+				</div>
+			</section>
+			<section class="ev-sheet-card">
+				<div class="ev-sheet-q">Was möchtet ihr machen?</div>
+				<div class="ev-sheet-chips" id="fge-ev-fmt">
+					<?php foreach ( $formats as $slug => $label ) : ?>
+						<button type="button" class="ev-sheet-chip <?php echo $active_format === $slug ? 'on' : ''; ?>" data-fmt="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></button>
 					<?php endforeach; ?>
 				</div>
 			</section>
@@ -265,6 +285,7 @@ $group_bands = [
 		</div>
 	</div>
 	<input type="hidden" name="format" id="fge-ev-h-format" value="<?php echo esc_attr( $active_format ); ?>">
+	<input type="hidden" name="sort"   id="fge-ev-h-sort"   value="<?php echo esc_attr( $active_sort ); ?>">
 	<input type="hidden" name="lat"    id="fge-ev-h-lat"    value="<?php echo esc_attr( $active_lat ?: '' ); ?>">
 	<input type="hidden" name="lng"    id="fge-ev-h-lng"    value="<?php echo esc_attr( $active_lng ?: '' ); ?>">
 	<input type="hidden" name="radius" id="fge-ev-h-radius" value="<?php echo esc_attr( (string) ( $active_radius ?: 50 ) ); ?>">
@@ -288,6 +309,11 @@ $group_bands = [
 		if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
 	};
 	if (pill) { pill.addEventListener('click', openS); }
+	// Delegiert statt direkt gebunden: die Filter-Buttons stehen im DOM erst NACH
+	// diesem Script (Ergebnis-Kopf bzw. Chip-Reihe).
+	document.addEventListener('click', function (e) {
+		if (e.target.closest('#fge-open-filter, #fge-open-filter-m')) { openS(); }
+	});
 	sheet.addEventListener('click', function (e) { if (e.target === sheet) { closeS(); } });
 	sheet.querySelector('.ev-sheet-close').addEventListener('click', closeS);
 	document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('is-open')) { closeS(); } });
@@ -316,20 +342,33 @@ $group_bands = [
 	}
 	singleSelect('fge-ev-fmt', 'data-fmt', document.getElementById('fge-ev-h-format'));
 	singleSelect('fge-ev-grp', 'data-pax', document.getElementById('fge-ev-h-pax'));
+	singleSelect('fge-ev-sort', 'data-sortv', document.getElementById('fge-ev-h-sort'));
 
 	var ajax    = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
 	var locIn   = document.getElementById('fge-ev-loc');
 	var sugg    = document.getElementById('fge-ev-loc-sugg');
-	var picked  = document.getElementById('fge-ev-loc-picked');
-	var pickedL = document.getElementById('fge-ev-loc-pickedlabel');
+	var gps     = document.getElementById('fge-ev-gps');
 	var hLat = document.getElementById('fge-ev-h-lat'), hLng = document.getElementById('fge-ev-h-lng'), hLoc = document.getElementById('fge-ev-h-loc');
+	/* Zustand sichtbar machen (Julius, 27.08.): „Mein Standort" ist eine Kachel mit
+	   Aktiv-Zustand (Haken), getippte Orte stehen direkt im Feld. Keine „Gewählt:"-Zeile. */
 	function setLoc(label, lat, lng) {
 		hLoc.value = label;
 		if (lat !== null && lat !== undefined) { hLat.value = lat; hLng.value = lng; }
-		pickedL.textContent = label; picked.style.display = ''; sugg.innerHTML = ''; locIn.value = '';
+		sugg.innerHTML = '';
+		var mine = label === 'Mein Standort';
+		if (gps) { gps.classList.toggle('on', mine); gps.setAttribute('aria-pressed', mine ? 'true' : 'false'); }
+		locIn.value = mine ? '' : label;
+	}
+	function clearLocState() {
+		hLat.value = ''; hLng.value = ''; hLoc.value = '';
+		if (gps) { gps.classList.remove('on'); gps.setAttribute('aria-pressed', 'false'); }
+		// Manuell abgewählt: Auto-Standort-Filter für diese Sitzung nicht wieder aufdrängen.
+		try { sessionStorage.setItem('fgeGeoOff', '1'); } catch (err) {}
 	}
 	var t = null;
 	if (locIn) locIn.addEventListener('input', function () {
+		// Tippen wählt „Mein Standort" ab.
+		if (gps && gps.classList.contains('on')) { clearLocState(); }
 		var q = locIn.value.trim(); clearTimeout(t);
 		if (q.length < 2) { sugg.innerHTML = ''; return; }
 		t = setTimeout(function () {
@@ -347,19 +386,44 @@ $group_bands = [
 				}).catch(function () { sugg.innerHTML = ''; });
 		}, 220);
 	});
-	var gps = document.getElementById('fge-ev-gps');
+	var gpsHint = document.getElementById('fge-ev-gps-hint');
 	if (gps) gps.addEventListener('click', function () {
+		// Aktive Kachel nochmal antippen = abwählen.
+		if (gps.classList.contains('on')) { clearLocState(); if (gpsHint) { gpsHint.hidden = true; } return; }
 		if (!navigator.geolocation) { return; }
-		var orig = gps.innerHTML; gps.disabled = true;
+		gps.disabled = true;
+		if (gpsHint) { gpsHint.hidden = true; }
 		navigator.geolocation.getCurrentPosition(function (pos) {
-			gps.disabled = false; gps.innerHTML = orig;
+			gps.disabled = false;
 			setLoc('Mein Standort', pos.coords.latitude.toFixed(5), pos.coords.longitude.toFixed(5));
-		}, function () { gps.disabled = false; gps.innerHTML = orig; }, { timeout: 8000 });
+		}, function (err) {
+			// Safari merkt sich eine frühere Ablehnung pro Website (Fehlercode 1,
+			// sofort, ohne neue Nachfrage). Erklären statt roter Rahmen (Julius, 28.08.).
+			gps.disabled = false;
+			gps.classList.add('is-err');
+			setTimeout(function () { gps.classList.remove('is-err'); }, 2500);
+			if (gpsHint) {
+				gpsHint.textContent = (err && err.code === 1)
+					? 'Standort für diese Website blockiert. In Safari: aA in der Adressleiste, Website-Einstellungen, Standort auf „Fragen" stellen.'
+					: 'Standort gerade nicht ermittelbar, bitte nochmal versuchen oder Ort eintippen.';
+				gpsHint.hidden = false;
+			}
+		}, { timeout: 20000, maximumAge: 300000 });
 	});
-	var clearLoc = document.getElementById('fge-ev-loc-clear');
-	if (clearLoc) clearLoc.addEventListener('click', function () { hLat.value = ''; hLng.value = ''; hLoc.value = ''; picked.style.display = 'none'; });
 	var clearAll = document.getElementById('fge-ev-clear');
-	if (clearAll) clearAll.addEventListener('click', function () { window.location.href = '<?php echo esc_js( $archive_url ); ?>'; });
+	if (clearAll) clearAll.addEventListener('click', function () {
+		// „Alle löschen" setzt Format/Gruppe/Sortierung zurück, der freigegebene
+		// Standort BLEIBT (Julius, 2026-08-28) und geht nur über die Standort-Kachel weg.
+		var base = '<?php echo esc_js( $archive_url ); ?>';
+		if (hLat.value && hLng.value) {
+			var radius = document.getElementById('fge-ev-h-radius');
+			base += '?lat=' + encodeURIComponent(hLat.value)
+				+ '&lng=' + encodeURIComponent(hLng.value)
+				+ '&radius=' + encodeURIComponent((radius && radius.value) || '50')
+				+ '&loc=' + encodeURIComponent(hLoc.value || 'Mein Standort');
+		}
+		window.location.href = base;
+	});
 
 	// Getippten Ort/PLZ ohne Vorschlag-Klick beim Absenden auflösen (besten Treffer übernehmen).
 	sheet.addEventListener('submit', function (e) {
@@ -379,6 +443,105 @@ $group_bands = [
 	});
 })();
 </script>
+
+<?php /* ── Standort-Popup beim Einstieg (Julius, 2026-08-27): kürzt den Weg zu
+	„Events in meiner Nähe" ab. Nur ohne aktiven Standort-Filter gerendert. ── */ ?>
+<?php if ( ! $geo_active ) : ?>
+<div class="ev-geo-scrim" id="fge-geo-prompt" role="dialog" aria-modal="true" aria-labelledby="fge-geo-h" hidden>
+	<div class="ev-geo-card">
+		<?php /* Umkreis-Illustration: euer Standort mittig, Event-Pins im Radius */ ?>
+		<svg class="ev-geo-art" viewBox="0 0 220 128" width="220" height="128" fill="none" aria-hidden="true">
+			<circle class="ev-geo-ring ev-geo-ring1" cx="110" cy="68" r="22" stroke="var(--fairway-200)" stroke-width="1.5"/>
+			<circle class="ev-geo-ring ev-geo-ring2" cx="110" cy="68" r="42" stroke="var(--ink-200)" stroke-width="1.2" stroke-dasharray="3 5"/>
+			<circle class="ev-geo-ring ev-geo-ring3" cx="110" cy="68" r="60" stroke="var(--ink-100)" stroke-width="1" stroke-dasharray="2 6"/>
+			<g class="ev-geo-dot ev-geo-dot1">
+				<circle cx="64" cy="46" r="4" fill="var(--fairway-600)"/>
+				<path d="M64 42v-9m0 0 7 2.6-7 2.6" stroke="var(--fairway-600)" stroke-width="1.6" stroke-linejoin="round" fill="var(--fairway-600)"/>
+			</g>
+			<g class="ev-geo-dot ev-geo-dot2">
+				<circle cx="158" cy="88" r="4" fill="var(--fairway-600)"/>
+				<path d="M158 84v-9m0 0 7 2.6-7 2.6" stroke="var(--fairway-600)" stroke-width="1.6" stroke-linejoin="round" fill="var(--fairway-600)"/>
+			</g>
+			<circle class="ev-geo-dot ev-geo-dot3" cx="146" cy="34" r="3.5" fill="var(--fairway-300)"/>
+			<circle class="ev-geo-dot ev-geo-dot4" cx="76" cy="98" r="3.5" fill="var(--fairway-300)"/>
+			<g class="ev-geo-pin">
+				<path d="M110 88c0-1-14-11.4-14-22a14 14 0 0 1 28 0c0 10.6-14 21-14 22Z" fill="var(--ink-900)"/>
+				<circle cx="110" cy="65" r="5.5" fill="#fff"/>
+			</g>
+		</svg>
+		<h2 class="ev-geo-h" id="fge-geo-h">Events in eurer Nähe finden?</h2>
+		<p class="ev-geo-p">Gebt kurz euren Standort frei, dann zeigen wir nur Events auf Golfplätzen, die ihr gut erreicht.</p>
+		<button type="button" class="ev-geo-allow" id="fge-geo-allow">Standort verwenden</button>
+		<button type="button" class="ev-geo-skip" id="fge-geo-skip">Alle Events ansehen</button>
+	</div>
+</div>
+<script>
+(function () {
+	var prompt = document.getElementById('fge-geo-prompt');
+	if (!prompt || !navigator.geolocation) { return; }
+	var allow = document.getElementById('fge-geo-allow');
+	var skip  = document.getElementById('fge-geo-skip');
+	var KEY = 'fgeGeoPromptSeen', OFF = 'fgeGeoOff';
+	var cleanUrl = window.location.search === '';
+	var storedOff = false, seen = false;
+	try { storedOff = !!sessionStorage.getItem(OFF); seen = !!localStorage.getItem(KEY); } catch (err) {}
+
+	function goNear(pos) {
+		var u = '<?php echo esc_js( $archive_url ); ?>'
+			+ '?lat=' + pos.coords.latitude.toFixed(5)
+			+ '&lng=' + pos.coords.longitude.toFixed(5)
+			+ '&radius=50&loc=' + encodeURIComponent('Mein Standort');
+		window.location.href = u;
+	}
+	function hide() {
+		prompt.classList.remove('is-open');
+		prompt.hidden = true;
+		try { localStorage.setItem(KEY, '1'); } catch (err) {}
+	}
+	function show() {
+		prompt.hidden = false;
+		requestAnimationFrame(function () { prompt.classList.add('is-open'); });
+		allow.focus();
+	}
+	allow.addEventListener('click', function () {
+		allow.disabled = true; allow.textContent = 'Standort wird ermittelt …';
+		/* Safari/iOS: großzügiger Timeout + Cache-Position erlaubt (frischer GPS-Fix
+		   dauert dort gern >10s, der knappe Timeout wirkte wie „kaputt"). */
+		navigator.geolocation.getCurrentPosition(goNear, function (err) {
+			// NIE still schließen (Safari-Fund Julius, 28.08.): Safari merkt sich eine
+			// frühere Ablehnung pro Website und liefert dann sofort Fehlercode 1,
+			// ohne je wieder zu fragen. Das muss erklärt werden, sonst wirkt alles kaputt.
+			allow.disabled = false; allow.textContent = 'Erneut versuchen';
+			var p = prompt.querySelector('.ev-geo-p');
+			if (!p) { return; }
+			if (err && err.code === 1) {
+				p.textContent = 'Der Standort ist für diese Website blockiert. In Safari: aA links in der Adressleiste antippen, Website-Einstellungen, Standort auf „Fragen" stellen. Danach hier nochmal versuchen.';
+			} else {
+				p.textContent = 'Wir konnten euren Standort gerade nicht ermitteln. Prüft, ob der Browser auf den Standort zugreifen darf, und tippt nochmal.';
+			}
+		}, { timeout: 20000, maximumAge: 300000 });
+	});
+	skip.addEventListener('click', hide);
+	prompt.addEventListener('click', function (e) { if (e.target === prompt) { hide(); } });
+	document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !prompt.hidden) { hide(); } });
+
+	// Bereits erteilte Berechtigung: Popup überspringen und direkt filtern,
+	// aber nur auf der sauberen Liste und nicht nach bewusstem „Alle löschen".
+	if (!cleanUrl || storedOff) { return; }
+	if (navigator.permissions && navigator.permissions.query) {
+		navigator.permissions.query({ name: 'geolocation' }).then(function (st) {
+			if (st.state === 'granted') {
+				navigator.geolocation.getCurrentPosition(goNear, function () {}, { timeout: 15000, maximumAge: 300000 });
+			} else if (st.state === 'prompt' && !seen) {
+				setTimeout(show, 500);
+			}
+		}).catch(function () { if (!seen) { setTimeout(show, 500); } });
+	} else if (!seen) {
+		setTimeout(show, 500);
+	}
+})();
+</script>
+<?php endif; ?>
 
 <?php /* ══════════════ SEARCH ══════════════ */ ?>
 <section class="ev-hero ev-hero--bare" aria-label="Events">
@@ -466,6 +629,8 @@ $group_bands = [
 
 <?php /* ══════════════ FORMAT CHIPS ══════════════ */ ?>
 <div class="fg-filter-rail">
+	<?php /* Nur die Eventarten in der Reihe; der Filter-Zugang sitzt in der Zeile
+		darunter rechts (Julius, 2026-08-27). */ ?>
 	<div class="fg-chip-row">
 		<?php foreach ( $formats as $slug => $label ) : ?>
 			<a href="<?php echo esc_url( $chip_url( [ 'format' => $slug ] ) ); ?>"
@@ -501,6 +666,15 @@ if ( ! $has_filters ) :
 	}
 	$ind_link = ( $p = get_page_by_path( 'individuelle-events' ) ) ? get_permalink( $p->ID ) : home_url( '/individuelle-events/' );
 	?>
+	<?php /* Kopfzeile auch in der Kategorie-Ansicht: links Zähler, rechts Filter
+		(Julius, 2026-08-27), gleiche Struktur wie im gefilterten Ergebnis-Kopf. */ ?>
+	<div class="ev-cat-head">
+		<span class="fg-grid-count"><?php echo esc_html( $total . ' ' . ( $total === 1 ? 'Event' : 'Events' ) . ' gefunden' ); ?></span>
+		<button type="button" class="ev-filter-btn" id="fge-open-filter-m">
+			<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+			Filter
+		</button>
+	</div>
 	<div class="ev-catbrowse" aria-label="Events nach Kategorie">
 		<?php foreach ( $formats as $fkey => $flabel ) :
 			if ( 'all' === $fkey || empty( $by_cat[ $fkey ] ) ) { continue; }
@@ -526,50 +700,38 @@ if ( ! $has_filters ) :
 			?anfrage=full, sodass er den Wizard nicht öffnete (Audit 2026-08-12). */ ?>
 	</div>
 <?php endif; ?>
-<section class="fg-grid-section<?php echo ! $has_filters ? ' fge-hide-mobile' : ''; ?>" aria-label="Eventangebote">
+<section class="fg-grid-section ev-grid-section<?php echo ! $has_filters ? ' fge-hide-mobile' : ''; ?>" aria-label="Eventangebote">
 
 	<?php $has_filters = ( $active_format !== 'all' ) || $geo_active || ( $active_pax > 0 ); ?>
 
 	<div class="fg-grid-head">
 		<div class="fg-grid-head-l">
 			<span class="fg-grid-count">
-				<?php echo esc_html( $total . ' ' . ( $total === 1 ? 'Event gefunden' : 'Events gefunden' ) ); ?>
+				<?php
+				$count_txt = $total . ' ' . ( $total === 1 ? 'Event' : 'Events' ) . ( $geo_active ? ' in eurer Nähe' : '' ) . ' gefunden';
+				echo esc_html( $count_txt );
+				?>
 			</span>
-			<?php if ( $has_filters ) : ?>
-				<a class="fg-reset-link" href="<?php echo esc_url( $archive_url ); ?>">Filter zurücksetzen</a>
+			<?php
+			/* Zurücksetzen lässt den freigegebenen Standort stehen (Julius, 2026-08-28):
+			   nur Format/Gruppe/Sortierung fliegen raus; der Standort geht ausschließlich
+			   manuell im Filter weg. Ohne rücksetzbare Filter kein Link. */
+			$resettable = ( $active_format !== 'all' ) || ( $active_pax > 0 ) || ( 'curated' !== $active_sort );
+			$reset_url  = $geo_active
+				? add_query_arg( [ 'lat' => $active_lat, 'lng' => $active_lng, 'radius' => $active_radius, 'loc' => $active_loc ], $archive_url )
+				: $archive_url;
+			?>
+			<?php if ( $resettable ) : ?>
+				<a class="fg-reset-link" href="<?php echo esc_url( $reset_url ); ?>">Filter zurücksetzen</a>
 			<?php endif; ?>
 		</div>
-		<div class="ev-grid-controls">
-			<?php
-			$sort_options = [
-				'curated'   => $geo_active ? 'Nächste zuerst' : 'Empfohlen',
-				'price-asc' => 'Preis aufsteigend',
-				'group'     => 'Größte Gruppen',
-			];
-			$sort_label = $sort_options[ $active_sort ] ?? reset( $sort_options );
-			?>
-			<div class="ev-sort">
-				<span class="fg-cell-label">Sortieren</span>
-				<div class="ev-dd" id="fg-sort-dd">
-					<button type="button" class="ev-dd-trigger" id="fg-sort-trigger" aria-haspopup="listbox" aria-expanded="false">
-						<span><?php echo esc_html( $sort_label ); ?></span>
-						<svg viewBox="0 0 12 8" width="12" height="8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l5 5 5-5"/></svg>
-					</button>
-					<ul class="ev-dd-menu" id="fg-sort-menu" role="listbox">
-						<?php foreach ( $sort_options as $sid => $slabel ) : ?>
-							<li>
-								<a class="ev-dd-item<?php echo $active_sort === $sid ? ' on' : ''; ?>" href="<?php echo esc_url( $chip_url( [ 'sort' => $sid ] ) ); ?>" role="option" aria-selected="<?php echo $active_sort === $sid ? 'true' : 'false'; ?>">
-									<?php echo esc_html( $slabel ); ?>
-									<?php if ( $active_sort === $sid ) : ?>
-										<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-									<?php endif; ?>
-								</a>
-							</li>
-						<?php endforeach; ?>
-					</ul>
-				</div>
-			</div>
-		</div>
+		<?php /* Dezenter Filter-Button statt großem Suchblock + Sortier-Dropdown:
+			öffnet das Sheet (Ort, Format, Gruppe, Sortierung), Web wie Mobile (Julius, 27.08.). */ ?>
+		<button type="button" class="ev-filter-btn" id="fge-open-filter">
+			<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+			Filter
+			<?php if ( $has_filters ) : ?><span class="ev-filter-dot" aria-hidden="true"></span><?php endif; ?>
+		</button>
 	</div>
 
 	<?php if ( ! empty( $event_items ) ) : ?>

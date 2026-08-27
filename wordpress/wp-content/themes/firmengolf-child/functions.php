@@ -363,6 +363,10 @@ add_action( 'wp_enqueue_scripts', function() {
 			'juliusImg'   => function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'gruender-julius-klinzer.jpg' ) : '',
 			'juliusEmail' => 'julius@firmengolf-events.de',
 			'privacyUrl'  => home_url( '/datenschutz/' ),
+			// Hilfe-Popover im Wizard-Kopf (Anruf + Mail, zentrale Daten aus fge_company()).
+			'phoneDisplay' => function_exists( 'fge_company' ) ? fge_company()['phone_display'] : '',
+			'phoneTel'     => function_exists( 'fge_company' ) ? fge_company()['phone_tel'] : '',
+			'helpEmail'    => function_exists( 'fge_company' ) ? fge_company()['email_events'] : '',
 		] );
 	}
 } );

@@ -58,8 +58,8 @@ $check_svg  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" strok
 <div class="fge-page cty-page" id="fge-main" role="main" tabindex="-1">
 
 <?php
-$mbar_action = '<a class="ev-msearch" href="' . esc_url( get_post_type_archive_link( 'firmengolf_event' ) ) . '"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="ev-msearch-t muted">Events suchen</span></a>';
-get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_action' => $mbar_action ] );
+/* Keine Such-Pille auf der Startseite: Hero-CTAs reichen, oben bleibt frei (Julius, 2026-08-27). */
+get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] );
 ?>
 
 <?php /* ══════════════════ 1. HERO ══════════════════ */ ?>
@@ -76,12 +76,14 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '', 'mbar_
 				in ganz Deutschland. Eine Anfrage, eine Rechnung, ein Ansprechpartner.
 			</p>
 			<div class="mk-hero-ctas">
-				<a class="fg-btn-cta fg-btn-lg" href="<?php echo esc_url( add_query_arg( 'anfrage', 'quick', $url_ind ) ); ?>">
-					Event anfragen
+				<?php /* Events entdecken als Primär-CTA (Julius, 28.08.): der einfachere
+					Einstieg gewinnt, die Anfrage bleibt als zweiter Weg daneben. */ ?>
+				<a class="fg-btn-cta fg-btn-lg" href="<?php echo esc_url( $url_events ); ?>">
+					Events entdecken
 					<span class="fg-arrow"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				</a>
-				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $url_events ); ?>">
-					Events entdecken →
+				<a class="fg-btn-ghost-light" href="<?php echo esc_url( add_query_arg( 'anfrage', 'quick', $url_ind ) ); ?>">
+					Event anfragen →
 				</a>
 			</div>
 			<?php /* Gebuendelte Fakten direkt im Hero (Julius, 2026-08-20): 500+ Locations
@@ -202,7 +204,7 @@ $why_items = [
 	[ 'ic' => '<path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01M10 21v-4h4v4"/>',
 	  'k' => 'Clubhaus & Meetingräume', 't' => 'Moderne Räume für Empfang, Präsentation oder Workshop, direkt am Grün.' ],
 	[ 'ic' => '<path d="M3 2v7c0 1.1.9 2 2 2s2-.9 2-2V2"/><path d="M5 11v11"/><path d="M18 2c-1.7 0-3 2.7-3 6 0 2.6 1.1 4 3 4v10"/>',
-	  'k' => 'Küche & Terrasse', 't' => 'Vom Business-Lunch bis zum Grillabend, die Gastronomie vor Ort trägt jeden Anlass.' ],
+	  'k' => 'Gastronomie & Terrasse', 't' => 'Vom Business-Lunch bis zum Grillabend, die Gastronomie vor Ort trägt jeden Anlass.' ],
 ];
 ?>
 <section class="mk-section fgw cty-reveal" aria-label="Warum der Golfplatz die perfekte Event-Location ist">
@@ -253,7 +255,9 @@ $why_items = [
 	</div>
 </section>
 
-<?php /* ══════════════════ 3. HOW IT WORKS ══════════════════ */ ?>
+<?php /* ══════════════════ 3. HOW IT WORKS ══════════════════
+	(Scroll-Pin-Experiment am 27.08. wieder entfernt, Julius: fühlte sich nicht gut an.
+	Mobil bleibt die normale Wischreihe.) */ ?>
 <section class="mk-section mk-steps mk-band cty-reveal" aria-label="So funktioniert es">
 	<div class="mk-section-head">
 		<h2 class="mk-h2">Drei Schritte. Ein Ansprechpartner.</h2>
@@ -261,10 +265,11 @@ $why_items = [
 	</div>
 	<div class="mk-steps-grid">
 		<?php
+		/* Schritt 2 ohne Werktags-Versprechen, Schritt 3 endet beim Ergebnis (Julius, 27.08.). */
 		$steps = [
-			[ '01', 'Ihr sagt uns, was ihr plant.',      'Anlass, Gruppe, Zeitraum. Eine Anfrage, mehr brauchen wir nicht.' ],
-			[ '02', 'Wir kuratieren passende Plätze.',  'Innerhalb eines Werktags bekommt ihr zwei bis drei Optionen mit Format, Preis und Verfügbarkeit.' ],
-			[ '03', 'Ihr wählt, wir koordinieren.',     'Ein Ansprechpartner, eine Rechnung. Der Platz organisiert vor Ort, ihr seid nur Gastgeber.' ],
+			[ '01', 'Ihr sagt uns, was ihr plant.',              'Anlass, Gruppe, Zeitraum. Eine Anfrage, mehr brauchen wir nicht.' ],
+			[ '02', 'Wir finden das passende Angebot für euch.', 'Golfplatz, Golflehrer, Gastronomie und Meetingraum: Wir stellen zusammen, was zu eurer Veranstaltung passt.' ],
+			[ '03', 'Ihr habt einen tollen Teamtag.',            'Ein Ansprechpartner, eine Rechnung. Der Platz organisiert vor Ort, ihr seid nur Gastgeber.' ],
 		];
 		foreach ( $steps as $step ) : ?>
 			<?php /* Ganze Karte klickbar zur 30-Sekunden-Anfrage (Julius, 2026-07-06) */ ?>
@@ -277,25 +282,29 @@ $why_items = [
 	</div>
 </section>
 
-<?php /* ══════════════════ 4. FORMATE (Bildkarten wie auf Individuelle Events) ══════════════════ */
-/* Kachel-Design der Individuelle-Events-Seite (Julius, 2026-08-20): Bildkarte,
-   Ueberbegriff, kleiner Satz, Pfeil. Nur die vier Kern-Formate; der Rest ist
-   ueber die Textlinks darunter erreichbar. */
+<?php /* ══════════════════ 4. FORMATE: ALLE Eventarten als Slider ══════════════════ */
+/* Alle Eventarten in einer wischbaren Reihe (Julius, 2026-08-27). Eventarten MIT
+   fertigen Events verlinken auf die gefilterte Eventliste; die ohne (Incentive,
+   Indoor Golf) springen mit Begrüßung + vorgewähltem Anlass in die Schnellanfrage. */
 $home_fmt_tiles = [
-	[ 't' => 'Teamevent',        'sub' => 'Spielerisch zusammenwachsen',     'img' => 'firmenevent-afterwork-golf.jpg',     'slug' => 'teamevent' ],
-	[ 't' => 'After-Work Golf',  'sub' => 'Der Feierabend im Grünen',        'img' => 'pool/afterwork-range-abendlicht.jpg', 'slug' => 'after-work-golf' ],
-	[ 't' => 'Workshop & Golf',  'sub' => 'Arbeiten, wo der Kopf frei ist',  'img' => 'pool/workshop-clubhaus-aussen.jpg',   'slug' => 'workshop' ],
-	[ 't' => 'Firmenturnier',    'sub' => 'Flights, Pokale & Siegerehrung',  'img' => 'golf-gruen-fahne.jpg',                'slug' => 'golfturnier' ],
+	[ 't' => 'Teamevent',        'sub' => 'Spielerisch zusammenwachsen',     'img' => 'firmenevent-afterwork-golf.jpg',      'url' => add_query_arg( 'format', 'teamevent', $url_events ) ],
+	[ 't' => 'After-Work Golf',  'sub' => 'Der Feierabend im Grünen',        'img' => 'pool/afterwork-range-abendlicht.jpg', 'url' => add_query_arg( 'format', 'after_work_golf', $url_events ) ],
+	[ 't' => 'Workshop & Golf',  'sub' => 'Arbeiten, wo der Kopf frei ist',  'img' => 'pool/workshop-clubhaus-aussen.jpg',   'url' => add_query_arg( 'format', 'workshop', $url_events ) ],
+	[ 't' => 'Firmenturnier',    'sub' => 'Flights, Pokale & Siegerehrung',  'img' => 'golf-gruen-fahne.jpg',                'url' => add_query_arg( 'format', 'firmen_golfturnier', $url_events ) ],
+	[ 't' => 'Platzreife',       'sub' => 'Gemeinsam zur Platzreife',        'img' => 'golf-coaching-gruppe.jpg',            'url' => add_query_arg( 'format', 'platzreife', $url_events ) ],
+	[ 't' => 'Kundenevent',      'sub' => 'Golf, Dinner & echte Gespräche',  'img' => 'pool/kundenevent-handshake.jpg',      'url' => add_query_arg( 'format', 'kundenevent', $url_events ) ],
+	[ 't' => 'Incentive',        'sub' => 'Belohnung mit Erinnerungswert',   'img' => 'golfplatz-luftaufnahme-2.jpg',        'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Incentive-Reise', 'intro' => '1' ], $url_ind ) ],
+	[ 't' => 'Indoor Golf',      'sub' => 'Ganzjährig & wetterfest',         'img' => 'pool/nachtevent-flutlicht-gruen.jpg', 'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Indoor-Golf-Event', 'intro' => '1' ], $url_ind ) ],
 ];
 ?>
 <section class="mk-section cty-reveal" aria-label="Das passende Format">
 	<div class="mk-section-head">
 		<h2 class="mk-h2">Das passende Format für euer <em class="mk-italic">Team</em>.</h2>
-		<p class="mk-sub">Vier erprobte Formate, jedes mit eigener Seite: was drinsteckt, für wen es passt und was es kostet.</p>
+		<p class="mk-sub">Erprobte Formate für jeden Anlass: was drinsteckt, für wen es passt und was es kostet.</p>
 	</div>
-	<div class="iv-tiles">
+	<div class="iv-tiles home-fmt-slider">
 		<?php foreach ( $home_fmt_tiles as $tile ) : ?>
-			<a class="iv-tile" href="<?php echo esc_url( home_url( '/firmenevent/' . $tile['slug'] . '/' ) ); ?>">
+			<a class="iv-tile" href="<?php echo esc_url( $tile['url'] ); ?>">
 				<span class="iv-tile-img" style="background-image:url('<?php echo esc_url( $img( $tile['img'] ) ); ?>')"></span>
 				<span class="iv-tile-scrim"></span>
 				<span class="iv-tile-label">
@@ -308,17 +317,32 @@ $home_fmt_tiles = [
 			</a>
 		<?php endforeach; ?>
 	</div>
-	<p class="fmt4-more">Außerdem:
-		<a href="<?php echo esc_url( home_url( '/firmenevent/platzreife/' ) ); ?>">Platzreife</a>
-		· <a href="<?php echo esc_url( home_url( '/firmenevent/kundenevent/' ) ); ?>">Kundenevent</a>
-		· <a href="<?php echo esc_url( home_url( '/firmenevent/incentive/' ) ); ?>">Incentive</a>
-	</p>
 </section>
 
 <?php /* ══════════════════ 6. INDIVIDUAL TEASER ══════════════════ */ ?>
 <section class="mk-section home-individual cty-reveal" aria-label="Individuelle Events">
 	<div class="home-individual-grid">
-		<div class="home-ind-photo" style="background-image:url('<?php echo esc_url( $img( 'golfplatz-luftaufnahme-2.jpg' ) ); ?>')"></div>
+		<?php /* Statt Foto (zu viele Bilder, Julius 28.08.): gezeichnete Baukasten-Komposition
+			in der Designsprache der Standort-Illustration. Die Leistungs-Bausteine schweben
+			um „Euer Event", gestaffeltes Einblenden über cty-reveal. */ ?>
+		<div class="home-ind-visual" aria-hidden="true">
+			<svg class="hiv-rings" viewBox="0 0 420 420" fill="none">
+				<circle cx="210" cy="210" r="96"  stroke="var(--fairway-200)" stroke-width="1.5"/>
+				<circle cx="210" cy="210" r="150" stroke="var(--ink-200)" stroke-width="1.2" stroke-dasharray="3 6"/>
+				<circle cx="210" cy="210" r="198" stroke="var(--ink-100)" stroke-width="1" stroke-dasharray="2 7"/>
+			</svg>
+			<div class="hiv-core">
+				<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4l11 3.5L6 11"/><path d="M6 21h6"/></svg>
+				<b>Euer Event</b>
+				<i>nach Maß geplant</i>
+			</div>
+			<span class="hiv-chip hiv-c1"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Golfplatz</span>
+			<span class="hiv-chip hiv-c2"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Golflehrer</span>
+			<span class="hiv-chip hiv-c3"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a8 8 0 0 1 8 8H4a8 8 0 0 1 8-8z"/><path d="M3 15h18"/><path d="M12 2v2"/></svg>Gastronomie</span>
+			<span class="hiv-chip hiv-c4"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/><path d="M7 8h6M7 11h4"/></svg>Meetingraum</span>
+			<span class="hiv-chip hiv-c5"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="11" rx="2"/><path d="M3 11h18"/><circle cx="7.5" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/></svg>Shuttle</span>
+			<span class="hiv-chip hiv-c6"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l10-2v11"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="15" r="2.5"/></svg>Musik &amp; DJ</span>
+		</div>
 		<div class="home-ind-text">
 			<h2 class="mk-h2">
 				Nichts dabei? <em class="mk-italic">Wir planen</em> euer Event nach euren Ansprüchen.
@@ -408,90 +432,16 @@ $home_fmt_tiles = [
 	</div>
 </section>
 
-<?php /* ══════════════════ 11. CLOSING CTA (Putt-Moment, gemeinsames Part) ══════════════════ */
-$home_cta_links = '<a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '">' . esc_html( fge_company()['email_events'] ) . '</a>';
-if ( function_exists( 'fge_get_cities' ) ) {
-	foreach ( fge_get_cities() as $cslug => $c ) {
-		$home_cta_links .= '<a href="' . esc_url( home_url( '/golf-events/' . $cslug . '/' ) ) . '">' . esc_html( $c['name'] ) . '</a>';
-	}
-}
+<?php /* ══════════════════ 9. CLOSING CTA ══════════════════
+	Ohne Städte-Linkliste (Julius, 2026-08-28): der Footer direkt darunter listet
+	bereits alle Orte. Blog-Teaser-Sektion entfernt (Julius, 2026-08-28). */
 get_template_part( 'template-parts/fge-putt-cta', null, [
 	'headline_html' => 'Lasst uns euer nächstes Event <em class="mk-italic">zusammen</em> planen.',
 	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
 	'anfrage_url'   => add_query_arg( 'anfrage', 'quick', $url_ind ),
-	'links_html'    => $home_cta_links,
+	'links_html'    => '<a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '">' . esc_html( fge_company()['email_events'] ) . '</a>',
 ] );
 ?>
-
-<?php /* ══════════════════ 10. BLOG TEASER ══════════════════ */ ?>
-<section class="mk-section cty-reveal" aria-label="Aus dem Magazin">
-	<div class="mk-section-head between">
-		<div>
-			<h2 class="mk-h2">Was wir grad denken &amp; schreiben.</h2>
-		</div>
-		<a class="fg-btn-ghost" href="<?php echo esc_url( $url_blog ); ?>">
-			Alle Artikel <?php echo $arrow_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?>
-		</a>
-	</div>
-	<div class="home-blog-grid">
-		<?php if ( ! empty( $blog_posts ) ) : ?>
-			<?php foreach ( $blog_posts as $post ) :
-				$thumb = has_post_thumbnail( $post->ID ) ? get_the_post_thumbnail_url( $post->ID, 'large' ) : $img( 'golf-coaching-gruppe.jpg' );
-				$tags  = wp_get_post_tags( $post->ID, [ 'fields' => 'names' ] );
-				$tag   = ! empty( $tags ) ? $tags[0] : '';
-				$words = str_word_count( wp_strip_all_tags( $post->post_content ) );
-				$read  = max( 1, (int) round( $words / 200 ) ) . ' Min.';
-			?>
-				<article class="home-blog-card">
-					<a href="<?php echo esc_url( get_permalink( $post->ID ) ); ?>" style="display:contents">
-						<div class="home-blog-photo" style="background-image:url('<?php echo esc_url( $thumb ); ?>')"></div>
-						<div class="home-blog-body">
-							<div class="home-blog-meta">
-								<?php if ( $tag ) : ?>
-									<span class="home-blog-tag"><?php echo esc_html( $tag ); ?></span>
-									<span>·</span>
-								<?php endif; ?>
-								<span><?php echo esc_html( $read ); ?></span>
-							</div>
-							<h3 class="home-blog-t"><?php echo esc_html( $post->post_title ); ?></h3>
-							<p class="home-blog-x"><?php echo esc_html( wp_trim_words( $post->post_excerpt ?: wp_strip_all_tags( $post->post_content ), 20 ) ); ?></p>
-							<div class="home-blog-author">
-								<?php /* Redaktions-Byline statt WP-Loginname (Audit 2026-08-12: 3x „julius") */ ?>
-								<span class="home-blog-author-name"><?php echo esc_html( function_exists( 'fge_blog_author' ) ? fge_blog_author( (int) $post->ID )['name'] : get_the_author_meta( 'display_name', (int) $post->post_author ) ); ?></span>
-								<span class="home-blog-author-date"><?php echo esc_html( get_the_date( 'j. F Y', $post ) ); ?></span>
-							</div>
-						</div>
-					</a>
-				</article>
-			<?php endforeach; ?>
-		<?php else : ?>
-			<?php
-			$static_posts = [
-				[ 'Benefits', 'Warum Golf zum Corporate Benefit passt', 'golf-coaching-gruppe.jpg', '6 Min.', 'Julius Klinzer', '14. Mai 2026', '50 € steuerfreier Sachbezug und fittere Mitarbeitende. Wir erklären die wichtigsten Punkte.' ],
-				[ 'Praxis', 'Die 12-Punkte-Checkliste für dein erstes Firmen-Golfevent', 'firmenevent-afterwork-golf.jpg', '4 Min.', 'Julius Klinzer', '2. Mai 2026', 'Vom richtigen Zeitfenster bis zum Wetter-Backup. Das solltest du im Blick haben.' ],
-				[ 'Einsteiger', '"Aber wir können doch alle nicht Golf spielen"', 'golfplatz-rasen-qualitaet.jpg', '5 Min.', 'Julius Klinzer', '18. April 2026', 'Genau das ist der Punkt. Wie ein Schnupperkurs für absolute Einsteigende funktioniert.' ],
-			];
-			foreach ( $static_posts as $p ) : ?>
-				<article class="home-blog-card">
-					<div class="home-blog-photo" style="background-image:url('<?php echo esc_url( $img( $p[2] ) ); ?>')"></div>
-					<div class="home-blog-body">
-						<div class="home-blog-meta">
-							<span class="home-blog-tag"><?php echo esc_html( $p[0] ); ?></span>
-							<span>·</span>
-							<span><?php echo esc_html( $p[3] ); ?></span>
-						</div>
-						<h3 class="home-blog-t"><?php echo esc_html( $p[1] ); ?></h3>
-						<p class="home-blog-x"><?php echo esc_html( $p[6] ); ?></p>
-						<div class="home-blog-author">
-							<span class="home-blog-author-name"><?php echo esc_html( $p[4] ); ?></span>
-							<span class="home-blog-author-date"><?php echo esc_html( $p[5] ); ?></span>
-						</div>
-					</div>
-				</article>
-			<?php endforeach; ?>
-		<?php endif; ?>
-	</div>
-</section>
 
 <?php get_template_part( 'template-parts/fge-footer' ); ?>
 
