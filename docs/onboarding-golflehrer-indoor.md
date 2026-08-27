@@ -1,6 +1,8 @@
 # Onboarding-Konzept: Golflehrer & Indoor-Golfsimulatoren
 
-Stand: 27.08.2026, Rev. 2 (Entscheidungen Julius eingearbeitet) · Status: **Plan, noch nicht umgesetzt**
+Stand: 28.08.2026, Rev. 3 (Ergänzungen Julius in Abschnitt 8b) · Status: **Schritte 1 bis 10 umgesetzt**
+(1.9.154 bis 1.9.160; Schritt 1 live, Rest lokal und ungetestet durch Julius; v1-Vereinfachungen
+und offene Fragen siehe Fragenliste der Session vom 28.08.)
 Umsetzung folgt in Claude Code im Projekt `firmengolf-events` (Plugin `firmengolf-events`,
 Wizard in `includes/onboarding.php`).
 
