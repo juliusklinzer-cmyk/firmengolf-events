@@ -15,10 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 const FGE_MARKUP_PERCENT = 20;
 
 /**
- * Glättet den Kundenpreis auf schöne Stufen (Julius, 2026-07-23: "61,20 ist kein
- * schöner Preis"): pro Person auf volle 5 Euro, Gesamt/Pauschal auf volle 50 Euro,
- * immer AUFgerundet. Der Partner erhält weiterhin exakt sein Netto, die
- * Rundungsdifferenz ist zusätzliche Firmengolf-Marge (Aufschlag mindestens 20 %).
+ * Glättet den Kundenpreis auf Endziffer 4 oder 9 (Julius, 2026-08-27, Entscheidung 2
+ * in docs/onboarding-golflehrer-indoor.md Abschnitt 4): 5er- und 50er-Endungen wie
+ * 65/70/650 wirkten gesetzt statt kalkuliert. Neu: dasselbe Raster (5 pro Person,
+ * 50 pauschal), nur um eins nach unten versetzt, also 64, 69, 649, 1.049.
+ * Immer AUFgerundet, Ergebnis nie unter dem Bruttopreis: Der Partner erhält weiterhin
+ * exakt sein Netto, die Rundungsdifferenz ist zusätzliche Firmengolf-Marge (Aufschlag
+ * mindestens 20 %). Preise, die schon auf 4 oder 9 enden, bleiben unverändert.
  * JS-Zwilling in der Portal-Summenbox (partner-portal.php) identisch halten!
  */
 function fge_price_smooth( float $gross, string $unit ): float {
@@ -26,7 +29,7 @@ function fge_price_smooth( float $gross, string $unit ): float {
 		return 0.0;
 	}
 	$step = ( 'pro Person' === $unit ) ? 5 : 50;
-	return (float) ( ceil( $gross / $step ) * $step );
+	return (float) ( ceil( ( $gross + 1 ) / $step ) * $step - 1 );
 }
 
 /** Gesetzliche Umsatzsteuer in Prozent. Preise (gross) werden NETTO ausgewiesen, USt kommt oben drauf. */

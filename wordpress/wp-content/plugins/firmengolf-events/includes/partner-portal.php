@@ -4050,9 +4050,10 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						netLabel = fmt(net) + (perPerson ? ' pro Person' : '');
 					}
 					// Kundenpreis geglättet wie in PHP (fge_price_smooth, event-pricing.php):
-					// p.P. auf volle 5 Euro, Gesamt auf volle 50 Euro, immer aufgerundet.
+					// aufrunden auf Endziffer 4 oder 9 (5er-Raster p.P., 50er-Raster Gesamt,
+					// um eins nach unten versetzt). Zwilling identisch zur PHP-Funktion halten!
 					var step  = perPerson ? 5 : 50;
-					var total = net > 0 ? Math.ceil((net * (1 + markup / 100)) / step) * step : 0;
+					var total = net > 0 ? Math.ceil((net * (1 + markup / 100) + 1) / step) * step - 1 : 0;
 					byId('fp-sum-net').textContent   = netLabel;
 					byId('fp-sum-fee').textContent   = fmt(total - net) + (perPerson ? ' pro Person' : '');
 					byId('fp-sum-total').textContent = (einzel && perPerson ? 'ab ' : '') + fmt(total) + (perPerson ? ' pro Person' : '') + (einzel && perPerson && paxMax ? ' (bei ' + paxMax + ' Personen)' : '');
