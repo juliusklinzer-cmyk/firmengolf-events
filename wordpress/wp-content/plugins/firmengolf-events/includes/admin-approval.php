@@ -295,6 +295,14 @@ function fge_partner_list_filters( string $post_type ): void {
 		printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $cur, $val, false ), esc_html( $label ) );
 	}
 	echo '</select>';
+
+	$cur_type = sanitize_key( $_GET['fge_filter_partner_type'] ?? '' );
+	echo '<select name="fge_filter_partner_type">';
+	printf( '<option value=""%s>Alle Typen</option>', selected( $cur_type, '', false ) );
+	foreach ( fge_catalog_partner_types() as $val => $label ) {
+		printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $cur_type, $val, false ), esc_html( $label ) );
+	}
+	echo '</select>';
 }
 
 add_action( 'pre_get_posts', 'fge_apply_partner_list_filters' );
@@ -306,9 +314,26 @@ function fge_apply_partner_list_filters( WP_Query $q ): void {
 	if ( ( $q->get( 'post_type' ) ?: '' ) !== 'firmengolf_partner' ) {
 		return;
 	}
-	$status = sanitize_key( $_GET['fge_filter_partner_status'] ?? '' );
+	$clauses = [];
+	$status  = sanitize_key( $_GET['fge_filter_partner_status'] ?? '' );
 	if ( $status !== '' ) {
-		$q->set( 'meta_query', [ [ 'key' => '_fge_partner_status', 'value' => $status ] ] );
+		$clauses[] = [ 'key' => '_fge_partner_status', 'value' => $status ];
+	}
+	$type = sanitize_key( $_GET['fge_filter_partner_type'] ?? '' );
+	if ( isset( fge_catalog_partner_types()[ $type ] ) ) {
+		if ( 'course' === $type ) {
+			// Bestand ohne Meta gilt als Golfplatz (Default in fge_partner_type()).
+			$clauses[] = [
+				'relation' => 'OR',
+				[ 'key' => '_fge_partner_type', 'value' => 'course' ],
+				[ 'key' => '_fge_partner_type', 'compare' => 'NOT EXISTS' ],
+			];
+		} else {
+			$clauses[] = [ 'key' => '_fge_partner_type', 'value' => $type ];
+		}
+	}
+	if ( $clauses ) {
+		$q->set( 'meta_query', $clauses );
 	}
 }
 

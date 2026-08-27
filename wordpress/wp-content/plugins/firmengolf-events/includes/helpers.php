@@ -62,6 +62,16 @@ function fge_partner_number( int $partner_id ): string {
 }
 
 /**
+ * Partner-Typ (course/coach/indoor, Katalog fge_catalog_partner_types()).
+ * Bestandspartner ohne Meta und unbekannte Werte gelten als 'course', damit
+ * Live-Daten auch vor der Migration korrekt einsortiert werden.
+ */
+function fge_partner_type( int $partner_id ): string {
+	$type = (string) get_post_meta( $partner_id, '_fge_partner_type', true );
+	return isset( fge_catalog_partner_types()[ $type ] ) ? $type : 'course';
+}
+
+/**
  * Deutschen Geldbetrag robust parsen: „2.400" → 2400, „1.200,50" → 1200.50,
  * „67,5" → 67.5, „12.34" → 12.34. Punkt vor genau 3 Ziffern = Tausendertrenner.
  */

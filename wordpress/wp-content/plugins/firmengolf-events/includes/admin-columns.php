@@ -74,6 +74,7 @@ function fge_partner_columns( array $columns ): array {
 	unset( $columns['date'] );
 	return array_merge( $columns, [
 		'fge_partner_status'          => 'Status',
+		'fge_partner_type'            => 'Typ',
 		'fge_city'                    => 'Ort',
 		'fge_federal_state'           => 'Bundesland',
 		'fge_main_contact'            => 'Hauptansprechpartner',
@@ -103,6 +104,9 @@ function fge_partner_column_content( string $column, int $post_id ) {
 			} else {
 				echo $ps_val !== '' ? esc_html( $ps_val ) : 'k. A.';
 			}
+			break;
+		case 'fge_partner_type':
+			echo esc_html( fge_catalog_partner_types()[ fge_partner_type( $post_id ) ] );
 			break;
 		case 'fge_city':
 			echo esc_html( get_post_meta( $post_id, '_fge_city', true ) ?: 'k. A.' );

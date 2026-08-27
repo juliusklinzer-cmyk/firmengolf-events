@@ -12,6 +12,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Partner-Typ (drei Zielgruppen seit 28.08.2026, docs/onboarding-golflehrer-indoor.md).
+ * Gespeichert als _fge_partner_type; Bestand ohne Meta gilt als 'course'
+ * (fge_partner_type() liefert den Default, Migration: wp firmengolf migrate-partner-type).
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_partner_types(): array {
+	return [
+		'course' => 'Golfplatz',
+		'coach'  => 'Golflehrer',
+		'indoor' => 'Indoor-Anlage',
+	];
+}
+
+/**
  * Golf-Angebot / Platztyp (Single-Select, erste Onboarding-Frage).
  * @return array<string,string> id => Label
  */

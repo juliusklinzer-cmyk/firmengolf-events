@@ -90,6 +90,49 @@ class FGE_CLI_Migrations {
 		WP_CLI::success( sprintf( 'Done. Partners updated: %d %s', $changed, $dry_run ? '(dry-run, not written)' : '' ) );
 	}
 
+	/**
+	 * Set _fge_partner_type = course on all partners that have no type yet
+	 * (Schritt 2 aus docs/onboarding-golflehrer-indoor.md, Abschnitt 9).
+	 * Idempotent: partners that already carry a valid type are left untouched.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--dry-run]
+	 * : Print what would change, without writing.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp firmengolf migrate-partner-type --dry-run
+	 *     wp firmengolf migrate-partner-type
+	 */
+	public function migrate_partner_type( $args, $assoc_args ) {
+		$dry_run = isset( $assoc_args['dry-run'] );
+		WP_CLI::line( $dry_run ? '[DRY RUN] No data will be written.' : 'Running migration…' );
+
+		$valid    = array_keys( fge_catalog_partner_types() );
+		$partners = get_posts( [
+			'post_type'      => 'firmengolf_partner',
+			'post_status'    => 'any',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+		] );
+
+		$changed = 0;
+		foreach ( $partners as $pid ) {
+			$type = (string) get_post_meta( $pid, '_fge_partner_type', true );
+			if ( in_array( $type, $valid, true ) ) {
+				continue;
+			}
+			WP_CLI::line( sprintf( '  partner #%d (%s): %s → course', $pid, get_the_title( $pid ), $type === '' ? '(leer)' : $type ) );
+			if ( ! $dry_run ) {
+				update_post_meta( $pid, '_fge_partner_type', 'course' );
+			}
+			$changed++;
+		}
+
+		WP_CLI::success( sprintf( 'Done. Partners: %d total, %d set to course %s', count( $partners ), $changed, $dry_run ? '(dry-run, not written)' : '' ) );
+	}
+
 	private function migrate_single_meta( string $post_type, string $meta_key, array $map, bool $dry_run ): int {
 		$posts = get_posts( [
 			'post_type'      => $post_type,
@@ -149,3 +192,4 @@ class FGE_CLI_Migrations {
 
 WP_CLI::add_command( 'firmengolf migrate-formats', [ new FGE_CLI_Migrations(), 'migrate_formats' ] );
 WP_CLI::add_command( 'firmengolf migrate-cover-to-gallery', [ new FGE_CLI_Migrations(), 'migrate_cover_to_gallery' ] );
+WP_CLI::add_command( 'firmengolf migrate-partner-type', [ new FGE_CLI_Migrations(), 'migrate_partner_type' ] );
