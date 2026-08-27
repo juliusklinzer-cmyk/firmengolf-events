@@ -194,6 +194,46 @@ function fge_catalog_partner_formats(): array {
 }
 
 /**
+ * Simulator-Systeme / Hersteller (Indoor-Detailblock + Formular B,
+ * docs/onboarding-golflehrer-indoor.md B8). 'other' erlaubt Freitext.
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_indoor_systems(): array {
+	return [
+		'trackman'   => 'Trackman',
+		'foresight'  => 'Foresight (GCQuad, GCHawk)',
+		'uneekor'    => 'Uneekor',
+		'fullswing'  => 'Full Swing',
+		'skytrak'    => 'SkyTrak',
+		'garmin'     => 'Garmin Approach',
+		'toptracer'  => 'Toptracer',
+		'xgolf'      => 'X-Golf',
+		'golfzon'    => 'Golfzon',
+		'trugolf'    => 'TruGolf',
+		'other'      => 'Anderes System',
+	];
+}
+
+/**
+ * Event-relevante Software-Features der Simulatoren (gekürzter Katalog für den
+ * Indoor-Detailblock bei Bestandspartnern; Formular B nutzt denselben).
+ * Das Live-Leaderboard ist das zentrale Firmenevent-Feature.
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_indoor_features(): array {
+	return [
+		'turniermodus'  => 'Turniermodus (Scramble, Texas)',
+		'leaderboard'   => 'Live-Leaderboard über alle Boxen',
+		'longest-drive' => 'Longest Drive',
+		'closest-pin'   => 'Closest to Pin',
+		'zielschiessen' => 'Zielschießen',
+		'mini-games'    => 'Mini-Games (Fußballgolf, Darts, Bowling)',
+		'famous'        => 'Berühmte Plätze spielen',
+		'multiplayer'   => 'Multiplayer je Box',
+	];
+}
+
+/**
  * Rollen-Liste für Ansprechpartner (Handoff §1.2.1).
  * @return string[]
  */

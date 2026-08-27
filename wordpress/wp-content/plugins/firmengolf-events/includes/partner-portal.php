@@ -31,6 +31,7 @@ function fge_portal_enqueue_media(): void {
 	}
 }
 add_action( 'init', 'fge_portal_handle_profile_update', 10 );
+add_action( 'init', 'fge_portal_handle_indoor_update', 10 );
 add_action( 'init', 'fge_portal_handle_lifecycle', 10 );
 add_action( 'init', 'fge_portal_handle_contacts', 10 );
 add_action( 'init', 'fge_portal_handle_request', 10 );
@@ -555,6 +556,39 @@ function fge_portal_handle_profile_update(): void {
  * Info an die BISHERIGE Kontaktadresse, wenn die Hauptkontakt-E-Mail gewechselt
  * wird — damit ein unbefugter Wechsel auffällt (Julius, 2026-07-06).
  */
+/**
+ * Speichert die Indoor-Detaildaten aus dem Portal-Reiter. Validierung und
+ * Persistenz laufen über die Onboarding-Slide-Logik (gleiche Feldnamen,
+ * gleicher Meta-Schlüssel _fge_indoor_sim) — EIN Datenmodell für beide Wege.
+ */
+function fge_portal_handle_indoor_update(): void {
+	if ( ( $_POST['fge_action'] ?? '' ) !== 'portal_indoor_update' ) {
+		return;
+	}
+	if ( ! is_user_logged_in() ) {
+		wp_die( 'Nicht autorisiert.', '', [ 'response' => 403 ] );
+	}
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['fge_portal_nonce'] ?? '' ) ), 'fge_portal_indoor_update' ) ) {
+		wp_die( 'Ungültige Sicherheitsüberprüfung.', '', [ 'response' => 403 ] );
+	}
+	$partner_id = fge_portal_get_partner_id();
+	if ( $partner_id <= 0 || ! fge_partner_has_indoor( $partner_id ) ) {
+		wp_die( 'Kein gültiges Partnerprofil.', '', [ 'response' => 403 ] );
+	}
+
+	$base   = fge_portal_page_url();
+	$errors = fge_onboarding_validate_slide( 'indoor-detail', $_POST );
+	if ( ! empty( $errors ) ) {
+		$token = wp_generate_uuid4();
+		set_transient( 'fge_form_err_' . $token, [ 'errors' => $errors, 'data' => wp_unslash( $_POST ) ], 300 );
+		wp_redirect( esc_url_raw( $base . '?tab=indoor&portal_err=' . rawurlencode( $token ) ), 303 );
+		exit;
+	}
+	fge_onboarding_save_slide( $partner_id, 'indoor-detail', $_POST );
+	wp_redirect( esc_url_raw( $base . '?tab=indoor&portal_success=indoor_saved' ), 303 );
+	exit;
+}
+
 function fge_portal_notify_contact_email_change( int $partner_id, string $old_email, string $new_email ): void {
 	if ( ! function_exists( 'fge_email_wrap' ) ) {
 		return;
@@ -692,7 +726,7 @@ function fge_portal_render_gate(): void {
 }
 
 function fge_portal_get_active_tab(): string {
-	$allowed = [ 'uebersicht', 'angebote', 'anfragen', 'kalender', 'platz', 'team', 'kennzahlen', 'sichtbarkeit' ];
+	$allowed = [ 'uebersicht', 'angebote', 'indoor', 'anfragen', 'kalender', 'platz', 'team', 'kennzahlen', 'sichtbarkeit' ];
 	$tab     = sanitize_key( $_GET['tab'] ?? 'uebersicht' );
 	return in_array( $tab, $allowed, true ) ? $tab : 'uebersicht';
 }
@@ -1083,11 +1117,16 @@ function fge_portal_render(): void {
 	$tabs = [
 		'uebersicht' => [ 'Übersicht',       '<path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/>' ],
 		'angebote'   => [ 'Angebote',        '<path d="M5 22V4M5 4l13 3-13 3"/>' ],
+		'indoor'     => [ 'Indoor-Golf',     '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>' ],
 		'anfragen'   => [ 'Anfragen',        '<path d="M22 12h-5l-2 3h-6l-2-3H2"/><path d="M5 5h14l3 7v7H2v-7z"/>' ],
 		'kalender'   => [ 'Kalender',        '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>' ],
 		'platz'      => [ 'Platz',           '<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' ],
 		'team'       => [ 'Ansprechpartner', '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>' ],
 	];
+	// Indoor-Reiter nur für Partner mit Indoor in der Ausstattung (Abschnitt 3b).
+	if ( ! fge_partner_has_indoor( $partner_id ) ) {
+		unset( $tabs['indoor'] );
+	}
 	?>
 	<div class="fgpp">
 	<nav class="nav">
@@ -1185,6 +1224,8 @@ function fge_portal_render(): void {
 					Ansprechpartner entfernt.
 				<?php elseif ( $success === 'date_confirmed' ) : ?>
 					Termin bestätigt, Firmengolf kümmert sich um Angebot und Buchung.
+				<?php elseif ( $success === 'indoor_saved' ) : ?>
+					Eure Indoor-Daten sind gespeichert.
 				<?php endif; ?>
 			</div>
 		<?php endif; ?>
@@ -1195,6 +1236,7 @@ function fge_portal_render(): void {
 		$sections_map = [
 			'uebersicht' => 'fge_portal_section_uebersicht',
 			'angebote'   => 'fge_portal_section_angebote',
+			'indoor'     => 'fge_portal_section_indoor',
 			'anfragen'   => 'fge_portal_section_requests',
 			'kalender'   => 'fge_portal_section_kalender',
 			'platz'      => 'fge_portal_section_platz',
@@ -1800,7 +1842,9 @@ function fge_portal_render_todo_row( int $partner_id ): void {
  * über die „Andere"-Kachel — als Inspiration statt Pflichtprogramm.
  */
 function fge_portal_hidden_empty_types(): array {
-	return [ 'gesundheitstag', 'networking', 'nacht_event' ];
+	// indoor-golf: leere Kachel nie im allgemeinen Grid — Anlegen läuft über den
+	// Indoor-Reiter, den nur Partner mit Indoor-Ausstattung sehen.
+	return [ 'gesundheitstag', 'networking', 'nacht_event', 'indoor-golf' ];
 }
 
 function fge_portal_render_cat_grid( int $partner_id, string $base, bool $compact = false ): void {
@@ -2143,6 +2187,196 @@ function fge_portal_section_angebote( int $partner_id ): void {
 // ══════════════════════════════════════════════════════════════════════════════
 // SECTION: ANFRAGEN
 // ══════════════════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SECTION: INDOOR-GOLF (nur Partner mit Indoor in der Ausstattung, Abschnitt 3b)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function fge_portal_section_indoor( int $partner_id ): void {
+	if ( ! fge_partner_has_indoor( $partner_id ) ) {
+		echo '<p class="fg-portal-error-text">Für dieses Profil ist kein Indoor-Golf in der Ausstattung hinterlegt. Ergänze es im Tab „Platz" unter Ausstattung.</p>';
+		return;
+	}
+	$base = fge_portal_page_url();
+	[ 'errors' => $errors, 'data' => $err_data ] = fge_load_form_state( 'portal_err' );
+
+	$sim = get_post_meta( $partner_id, '_fge_indoor_sim', true );
+	$sim = is_array( $sim ) ? $sim : [];
+	// Nach einem Validierungsfehler die frische Eingabe zeigen, nicht den alten Stand.
+	$val = static function( string $flat, string $key, $default = '' ) use ( $errors, $err_data, $sim ) {
+		if ( ! empty( $errors ) ) {
+			return $err_data[ $flat ] ?? $default;
+		}
+		return $sim[ $key ] ?? $default;
+	};
+	$num = static function( $v ): string {
+		$v = absint( $v );
+		return $v > 0 ? (string) $v : '';
+	};
+	$err_html = static function( string $key ) use ( $errors ): string {
+		return isset( $errors[ $key ] ) ? '<p class="fg-form-error" role="alert">' . esc_html( $errors[ $key ] ) . '</p>' : '';
+	};
+	$sel_systems  = array_map( 'strval', (array) $val( 'fge_indoor_systems', 'systems', [] ) );
+	$sel_features = array_map( 'strval', (array) $val( 'fge_indoor_features', 'features', [] ) );
+
+	$indoor_events = get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'meta_query'  => [
+			'relation' => 'AND',
+			[ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ],
+			[ 'key' => '_fge_event_type', 'value' => 'indoor-golf' ],
+		],
+	] );
+	$new_url  = esc_url( $base . '?tab=angebote&portal_action=new&preset_type=indoor-golf' );
+	$has_data = ! empty( $sim ) && absint( $sim['boxes'] ?? 0 ) > 0;
+	?>
+	<div class="fgpp"><div class="page-wide">
+		<div class="section-head" style="margin-bottom:22px;">
+			<div>
+				<div class="eyebrow">Indoor-Golf</div>
+				<h2>Euer Indoor-Bereich</h2>
+				<p>Indoor ist euer Winter- und Ganzjahresangebot: Firmenkunden kommen unter der Woche und tagsüber, genau dann, wenn Boxen sonst frei sind. Mit vollständigen Daten können wir euch für Indoor-Events vorschlagen.</p>
+			</div>
+			<a href="<?php echo $new_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>" class="btn btn-brand">Indoor-Angebot anlegen</a>
+		</div>
+
+		<?php if ( ! $has_data && empty( $errors ) ) : ?>
+			<div class="fg-portal-global-notice" role="status">Eure Indoor-Details fehlen noch. Einmal ausgefüllt, tauchen sie in eurem Profil auf und wir können Indoor-Anfragen passend zuordnen.</div>
+		<?php endif; ?>
+
+		<?php if ( ! empty( $indoor_events ) ) : ?>
+			<h3 style="margin:8px 0 12px;">Eure Indoor-Angebote</h3>
+			<div class="cat-grid" style="margin-bottom:28px;">
+				<?php foreach ( $indoor_events as $iidx => $iev ) {
+					fge_portal_render_cat_card( $iev, 'Indoor Golf', $base, $iidx );
+				} ?>
+			</div>
+		<?php endif; ?>
+
+		<form method="post" action="<?php echo esc_url( $base ); ?>">
+			<input type="hidden" name="fge_action" value="portal_indoor_update">
+			<?php wp_nonce_field( 'fge_portal_indoor_update', 'fge_portal_nonce' ); ?>
+			<div class="panel" style="padding:24px;">
+				<h3 style="margin-top:0;">Simulatoren und Technik</h3>
+				<div class="fg-form-row fg-form-row--2col">
+					<div>
+						<label class="fg-form-label" for="fge_indoor_boxes">Anzahl Simulator-Boxen *</label>
+						<input class="fg-form-input" type="number" min="1" max="99" id="fge_indoor_boxes" name="fge_indoor_boxes" value="<?php echo esc_attr( $num( $val( 'fge_indoor_boxes', 'boxes' ) ) ); ?>">
+						<?php echo $err_html( 'fge_indoor_boxes' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+					<div>
+						<label class="fg-form-label" for="fge_indoor_max_persons">Maximal Personen im Indoor-Bereich *</label>
+						<input class="fg-form-input" type="number" min="1" max="999" id="fge_indoor_max_persons" name="fge_indoor_max_persons" value="<?php echo esc_attr( $num( $val( 'fge_indoor_max_persons', 'max_persons' ) ) ); ?>">
+						<?php echo $err_html( 'fge_indoor_max_persons' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+				</div>
+				<div class="fg-form-row">
+					<label class="fg-form-label">System und Hersteller *</label>
+					<div class="fp-check-grid">
+						<?php foreach ( fge_catalog_indoor_systems() as $sid => $slabel ) : ?>
+							<label class="fp-check"><input type="checkbox" name="fge_indoor_systems[]" value="<?php echo esc_attr( $sid ); ?>" <?php checked( in_array( (string) $sid, $sel_systems, true ) ); ?>> <?php echo esc_html( $slabel ); ?></label>
+						<?php endforeach; ?>
+					</div>
+					<?php echo $err_html( 'fge_indoor_systems' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				</div>
+				<div class="fg-form-row">
+					<label class="fg-form-label" for="fge_indoor_systems_other">Anderes System (falls oben angehakt)</label>
+					<input class="fg-form-input" type="text" id="fge_indoor_systems_other" name="fge_indoor_systems_other" value="<?php echo esc_attr( (string) $val( 'fge_indoor_systems_other', 'systems_other' ) ); ?>" placeholder="Herstellername">
+				</div>
+				<div class="fg-form-row">
+					<label class="fg-form-label">Event-Features der Software</label>
+					<div class="fp-check-grid">
+						<?php foreach ( fge_catalog_indoor_features() as $fid => $flabel ) : ?>
+							<label class="fp-check"><input type="checkbox" name="fge_indoor_features[]" value="<?php echo esc_attr( $fid ); ?>" <?php checked( in_array( (string) $fid, $sel_features, true ) ); ?>> <?php echo esc_html( $flabel ); ?></label>
+						<?php endforeach; ?>
+					</div>
+				</div>
+				<div class="fg-form-row fg-form-row--2col">
+					<div>
+						<label class="fg-form-label" for="fge_indoor_box_comfort">Personen pro Box, komfortabel *</label>
+						<input class="fg-form-input" type="number" min="1" max="20" id="fge_indoor_box_comfort" name="fge_indoor_box_comfort" value="<?php echo esc_attr( $num( $val( 'fge_indoor_box_comfort', 'box_comfort' ) ) ); ?>">
+						<?php echo $err_html( 'fge_indoor_box_comfort' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+					<div>
+						<label class="fg-form-label" for="fge_indoor_box_max">Personen pro Box, maximal *</label>
+						<input class="fg-form-input" type="number" min="1" max="20" id="fge_indoor_box_max" name="fge_indoor_box_max" value="<?php echo esc_attr( $num( $val( 'fge_indoor_box_max', 'box_max' ) ) ); ?>">
+						<?php echo $err_html( 'fge_indoor_box_max' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+				</div>
+
+				<h3>Betreuung und Buchung</h3>
+				<div class="fg-form-row fg-form-row--2col">
+					<div>
+						<label class="fg-form-label" for="fge_indoor_lefthand">Können Linkshänder spielen? *</label>
+						<select class="fg-form-input" id="fge_indoor_lefthand" name="fge_indoor_lefthand">
+							<option value="">bitte wählen …</option>
+							<?php foreach ( [ 'all' => 'Ja, in allen Boxen', 'some' => 'In einzelnen Boxen', 'no' => 'Nein' ] as $k => $l ) : ?>
+								<option value="<?php echo esc_attr( $k ); ?>" <?php selected( (string) $val( 'fge_indoor_lefthand', 'lefthand' ), $k ); ?>><?php echo esc_html( $l ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<?php echo $err_html( 'fge_indoor_lefthand' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+					<div>
+						<label class="fg-form-label" for="fge_indoor_rental_clubs">Leihschläger vorhanden? *</label>
+						<select class="fg-form-input" id="fge_indoor_rental_clubs" name="fge_indoor_rental_clubs">
+							<option value="">bitte wählen …</option>
+							<option value="1" <?php selected( (string) $val( 'fge_indoor_rental_clubs', 'rental_clubs' ), '1' ); ?>>Ja</option>
+							<option value="0" <?php selected( (string) $val( 'fge_indoor_rental_clubs', 'rental_clubs' ), '0' ); ?>>Nein</option>
+						</select>
+						<?php echo $err_html( 'fge_indoor_rental_clubs' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+				</div>
+				<div class="fg-form-row fg-form-row--2col">
+					<div>
+						<label class="fg-form-label" for="fge_indoor_support">Betreuung bei Firmenevents *</label>
+						<select class="fg-form-input" id="fge_indoor_support" name="fge_indoor_support">
+							<option value="">bitte wählen …</option>
+							<?php foreach ( [ 'inklusive' => 'Inklusive', 'aufpreis' => 'Gegen Aufpreis', 'nein' => 'Nicht möglich' ] as $k => $l ) : ?>
+								<option value="<?php echo esc_attr( $k ); ?>" <?php selected( (string) $val( 'fge_indoor_support', 'support' ), $k ); ?>><?php echo esc_html( $l ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<?php echo $err_html( 'fge_indoor_support' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+					<div>
+						<label class="fg-form-label" for="fge_indoor_exclusive">Exklusivbuchung möglich? *</label>
+						<select class="fg-form-input" id="fge_indoor_exclusive" name="fge_indoor_exclusive">
+							<option value="">bitte wählen …</option>
+							<?php foreach ( [ 'ja' => 'Ja', 'ab' => 'Ja, ab einer Mindestpersonenzahl', 'nein' => 'Nein' ] as $k => $l ) : ?>
+								<option value="<?php echo esc_attr( $k ); ?>" <?php selected( (string) $val( 'fge_indoor_exclusive', 'exclusive' ), $k ); ?>><?php echo esc_html( $l ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<?php echo $err_html( 'fge_indoor_exclusive' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+				</div>
+				<div class="fg-form-row fg-form-row--2col">
+					<div>
+						<label class="fg-form-label" for="fge_indoor_exclusive_from">Exklusiv ab wie vielen Personen?</label>
+						<input class="fg-form-input" type="number" min="1" max="999" id="fge_indoor_exclusive_from" name="fge_indoor_exclusive_from" value="<?php echo esc_attr( $num( $val( 'fge_indoor_exclusive_from', 'exclusive_from' ) ) ); ?>">
+						<?php echo $err_html( 'fge_indoor_exclusive_from' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					</div>
+					<div>
+						<label class="fg-form-label" for="fge_indoor_offseason">Auch außerhalb der Golfsaison nutzbar?</label>
+						<select class="fg-form-input" id="fge_indoor_offseason" name="fge_indoor_offseason">
+							<option value="">bitte wählen …</option>
+							<option value="1" <?php selected( (string) $val( 'fge_indoor_offseason', 'offseason' ), '1' ); ?>>Ja, ganzjährig</option>
+							<option value="0" <?php selected( (string) $val( 'fge_indoor_offseason', 'offseason' ), '0' ); ?>>Nein, nur während der Saison</option>
+						</select>
+					</div>
+				</div>
+				<div class="fg-form-row">
+					<label class="fg-form-label" for="fge_indoor_winter_hours">Öffnungszeiten im Winter (optional)</label>
+					<input class="fg-form-input" type="text" id="fge_indoor_winter_hours" name="fge_indoor_winter_hours" value="<?php echo esc_attr( (string) $val( 'fge_indoor_winter_hours', 'winter_hours' ) ); ?>" placeholder="z. B. Montag bis Sonntag 9 bis 22 Uhr">
+				</div>
+				<div style="margin-top:18px;">
+					<button type="submit" class="btn btn-brand">Indoor-Daten speichern</button>
+				</div>
+			</div>
+		</form>
+	</div></div>
+	<?php
+}
 
 function fge_portal_section_requests( int $partner_id ): void {
 	$base      = fge_portal_page_url();
@@ -3326,6 +3560,11 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 	};
 
 	$event_types = fge_get_event_formats()['standard'];
+	// Indoor Golf nur anbieten, wenn der Partner Indoor in der Ausstattung hat
+	// (oder das Event den Typ schon trägt, damit Bestand editierbar bleibt).
+	if ( ! fge_partner_has_indoor( $partner_id ) && 'indoor-golf' !== (string) ( $saved['fge_event_type'] ?? '' ) ) {
+		unset( $event_types['indoor-golf'] );
+	}
 	$weekdays       = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
 	$saved_weekdays = (array) ( $saved['fge_available_weekdays'] ?? [] );
 

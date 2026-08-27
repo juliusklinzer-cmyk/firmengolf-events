@@ -647,6 +647,25 @@ Klein und nicht blockierend, aber irgendwann zu entscheiden:
 
 ---
 
+## 8b. Ergänzungen Julius, 28.08.2026 (bindend, aus dem Review von Schritt 2 bis 4)
+
+1. **Typ-Wahl VOR dem Wizard.** Wer ohne typspezifischen Link auf das Onboarding kommt,
+   wählt zuerst, als was er sich anmeldet (Golfplatz / Indoor-Golf / Golflehrer). Die
+   Landingpages je Typ verlinken direkt in den passenden Wizard und überspringen die Wahl.
+2. **Indoor-Intro-Ton:** „Mach deine Indoor-Golfanlage zur Eventlocation für Unternehmen",
+   dann Vorteile, dann der Wizard (Technik, Boxen, Gastronomie, Parken).
+3. **Coach-Intro-Ton:** „Erweitere dein Angebot mit Firmenevents", dann Vorteile.
+4. **Coach-Pfad zusätzlich:** Zu jedem angegebenen Golfplatz werden auch BILDER
+   hochgeladen (nicht nur im vollen Pfad); Portraitfoto Pflicht plus Freitext
+   „Über dich und deinen Unterricht"; eigene Frage, ob der Golflehrer die Gastronomie
+   der Anlage mit ins Boot holen will (Anfragen laufen dann direkt über die Gastronomie).
+5. **Anmeldeprozess im Kern identisch für alle drei Typen:** E-Mail-Verifikation,
+   Erstanmeldung, Zwei-Faktor-Authentifizierung, wie beim Golfplatz-Onboarding.
+6. **Portal-Ansichten je Typ:** Nach dem Login sieht jeder Typ seine eigene Ansicht.
+   Indoor kann z. B. After-Work, Schnupperkurs, Tagesevents und Simulator-Turniere
+   anbieten, aber alle Fragen und Masken sind auf Indoor ausgerichtet, nicht auf
+   Golfplatz-Ebene.
+
 ## 9. Umsetzungsreihenfolge (Vorschlag für Claude Code)
 
 1. **Preisglättung umstellen** (`fge_price_smooth()` plus JS-Zwilling in `partner-portal.php`).

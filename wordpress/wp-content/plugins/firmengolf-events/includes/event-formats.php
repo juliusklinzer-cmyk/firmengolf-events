@@ -16,6 +16,9 @@ function fge_get_event_formats(): array {
 			'networking'         => 'Networking',
 			'firmen_golfturnier' => 'Firmen-Golfturnier',
 			'nacht_event'        => 'Nacht-Event',
+			// Key = fester Reiter der öffentlichen Eventliste (archive, 2026-08-27).
+			// Anlegbar im Portal nur für Partner mit Indoor in der Ausstattung.
+			'indoor-golf'        => 'Indoor Golf',
 			'andere'             => 'Andere',
 		],
 		'on_request' => [

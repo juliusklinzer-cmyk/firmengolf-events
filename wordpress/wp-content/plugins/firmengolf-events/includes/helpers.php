@@ -72,6 +72,16 @@ function fge_partner_type( int $partner_id ): string {
 }
 
 /**
+ * Hat der Partner Indoor-Golf in der Ausstattung? (indoor, trackman oder
+ * toptracer in _fge_infra). Steuert den Indoor-Detailblock im Onboarding
+ * und den Indoor-Reiter im Portal (docs/onboarding-golflehrer-indoor.md, Abschnitt 3).
+ */
+function fge_partner_has_indoor( int $partner_id ): bool {
+	$infra = get_post_meta( $partner_id, '_fge_infra', true );
+	return is_array( $infra ) && [] !== array_intersect( [ 'indoor', 'trackman', 'toptracer' ], $infra );
+}
+
+/**
  * IBAN normalisieren: Leerzeichen raus, Großbuchstaben. Speicherformat.
  */
 function fge_normalize_iban( string $iban ): string {
