@@ -1181,6 +1181,10 @@ get_header();
 			if (f.length) { f[0].focus(); }
 		}
 		function closeModal() {
+			// Nach dem Erfolgsscreen oben auf der Eventseite landen statt an der
+			// gemerkten Scrollposition (Julius, 28.08.).
+			var fgSuccess = document.getElementById('fg-modal-step-3');
+			if (fgSuccess && fgSuccess.style.display !== 'none') { fgLockY = 0; }
 			modal.classList.add('is-hidden');
 			fgUnlockPage();
 			document.removeEventListener('keydown', fgTrapKey);
