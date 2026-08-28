@@ -282,13 +282,14 @@
 		// Anlass-Auswahl: Reihenfolge + Icon-Kacheln (einheitlich mit den Leistungs-Kacheln).
 		/* Golf-Bezug in allen Anlass-Namen (Julius, 2026-08-27); die Event-KATEGORIEN
 		   auf der Eventliste behalten bewusst die kurzen Namen. */
-		var OCCASIONS = ['Golf-Teamevent', 'After-Work Golf', 'Golf & Workshop', 'Firmen-Golfturnier', 'Golf-Kundenevent', 'Nachtgolf-Event', 'Ein anderes Golf-Event'];
+		var OCCASIONS = ['Golf-Teamevent', 'After-Work Golf', 'Golf & Workshop', 'Firmen-Golfturnier', 'Golf-Kundenevent', 'Indoor-Golf-Event', 'Nachtgolf-Event', 'Ein anderes Golf-Event'];
 		var OCC_ICONS = {
 			'Golf-Teamevent': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
 			'After-Work Golf': '<path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 4v3M5.2 7.2l1.6 1.6M18.8 7.2l-1.6 1.6M3 12h2M19 12h2"/>',
 			'Golf & Workshop': '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 20h8"/><path d="M7 8h10M7 11h6"/>',
 			'Firmen-Golfturnier': '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
 			'Golf-Kundenevent': '<circle cx="12" cy="8" r="3"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/><path d="M16 4h4v4"/>',
+			'Indoor-Golf-Event': '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M8 12l2.5-3 2 2L15 8"/>',
 			'Nachtgolf-Event': '<path d="M20 13.5A8 8 0 1 1 10.5 4a6.2 6.2 0 0 0 9.5 9.5z"/>',
 			'Ein anderes Golf-Event': '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'
 		};
