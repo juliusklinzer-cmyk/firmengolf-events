@@ -789,6 +789,7 @@
 		}
 
 		var lastFocus = null;
+		var lockY = 0;
 		function focusables() {
 			if (!overlay) { return []; }
 			return Array.prototype.filter.call(
@@ -843,9 +844,16 @@
 			   erlaubt: Formate ohne fertige Events landen so persönlich begrüßt im Quick-Flow
 			   (Julius, 2026-08-27). */
 			S = { mode: mode || 'full', phase: intro ? 'intro' : 'form', step: 0, sending: false, source: source || '', form: blank(preset) };
-			// Sperre auf <html>: iOS ignoriert overflow:hidden am <body>, die Seite
-			// dahinter scrollte mit und fuhr die Safari-Leisten über den Wizard-Fuß.
+			/* Positionsfeste Sperre wie beim Event-Modal: die Klassen-Sperre
+			   (overflow hidden) überrollt iOS beim Input-Fokus und scrollt die
+			   Seite hinter dem Wizard — der Wizard hing dann als Band mitten im
+			   Bildschirm, Seite oben und unten sichtbar (Julius-Video 3, 28.08.).
+			   position:fixed am body friert die Seite exakt ein, beim Schließen
+			   wird die Scrollposition wiederhergestellt. */
+			lockY = window.scrollY || window.pageYOffset || 0;
 			document.documentElement.classList.add('fg-drawer-lock');
+			var bs = document.body.style;
+			bs.position = 'fixed'; bs.top = (-lockY) + 'px'; bs.left = '0'; bs.right = '0'; bs.width = '100%';
 			window.addEventListener('keydown', onKey);
 			overlay.hidden = false;
 			render();
@@ -855,6 +863,9 @@
 		function close() {
 			if (overlay) overlay.hidden = true;
 			document.documentElement.classList.remove('fg-drawer-lock');
+			var bs = document.body.style;
+			bs.position = ''; bs.top = ''; bs.left = ''; bs.right = ''; bs.width = '';
+			window.scrollTo(0, lockY);
 			window.removeEventListener('keydown', onKey);
 			if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
 		}
