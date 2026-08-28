@@ -426,7 +426,11 @@
 				+ '<div class="rw-form">'
 				+ '<div class="rw-row"><div class="rw-field">' + label('Vor- & Nachname', true) + input('firstName', 'required', 'Vor- und Nachname') + '</div>'
 				+ '<div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div></div>'
-				+ '<div class="rw-field">' + label('Firma') + input('company', '', 'Musterfirma GmbH') + '</div>'
+				/* Kontakt wie in der ausführlichen Anfrage (Julius, 28.08.): Telefon
+				   optional plus die Kontaktart-Buttons, sonst wäre „Telefon" nicht wählbar. */
+				+ '<div class="rw-row"><div class="rw-field">' + label('Firma') + input('company', '', 'Musterfirma GmbH') + '</div>'
+				+ '<div class="rw-field">' + label('Telefon') + input('phone', 'type="tel"', '+49 …') + '</div></div>'
+				+ '<div class="rw-field">' + label('Bevorzugte Kontaktart') + chips('contactPref', ['E-Mail', 'Telefon', 'Egal']) + '</div>'
 				+ '<div class="rw-field">' + label('Was habt ihr vor?') + '<textarea class="fg-input" data-field="notes" rows="2" placeholder="Ein, zwei Sätze zu Ziel, Stimmung, Wünschen.">' + esc(S.form.notes) + '</textarea></div>'
 				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '><span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label>'
 				+ '</div></div>' + photoPanel() + '</div></div>'
