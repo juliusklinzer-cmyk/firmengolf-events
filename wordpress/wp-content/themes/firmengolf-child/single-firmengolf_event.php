@@ -899,6 +899,7 @@ get_header();
 					</div>
 				</div>
 				<span class="fg-field-help">Gib bis zu drei Termine in deiner Wunschreihenfolge an. Wir stimmen sie mit dem Platz ab.<?php if ( $fg_lead_days > 0 ) : ?> Mindestens <?php echo (int) $fg_lead_days; ?> Tage Vorlauf nötig, frühere Termine sind gesperrt.<?php endif; ?></span>
+				<p class="fg-date-hint" id="fg-date-hint" hidden></p>
 			</div>
 
 			<div class="fg-form-grid">
@@ -1190,6 +1191,33 @@ get_header();
 			document.removeEventListener('keydown', fgTrapKey);
 			if (fgLastFocus && fgLastFocus.focus) { fgLastFocus.focus(); }
 		}
+
+		/* Wunschtermine prüfen: iOS Safari erzwingt das min-Attribut bei type=date
+		   nicht (Android schon), und doppelte Termine prüft kein Browser
+		   (Julius, 28.08.). Zu frühe oder doppelte Termine werden geleert,
+		   der Hinweis erscheint unter der Termin-Zeile. */
+		(function () {
+			var minDate = '<?php echo esc_js( $fg_min_date ); ?>';
+			var dHint = document.getElementById('fg-date-hint');
+			var dIds = ['fg-date-1', 'fg-date-2', 'fg-date-3'];
+			function fmtDE(iso) { var p = (iso || '').split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : iso; }
+			function checkDates() {
+				var msg = '', seen = {};
+				dIds.forEach(function (id) {
+					var inp = document.getElementById(id);
+					if (!inp || !inp.value) { return; }
+					if (minDate && inp.value < minDate) {
+						inp.value = '';
+						msg = msg || ('Wunschtermine brauchen Vorlauf, der früheste Termin ist der ' + fmtDE(minDate) + '.');
+					} else if (seen[inp.value]) {
+						inp.value = '';
+						msg = msg || 'Diesen Termin hast du schon gewählt, gib gern einen anderen Ausweichtermin an.';
+					} else { seen[inp.value] = true; }
+				});
+				if (dHint) { dHint.textContent = msg; dHint.hidden = !msg; }
+			}
+			dIds.forEach(function (id) { var inp = document.getElementById(id); if (inp) inp.addEventListener('change', checkDates); });
+		})();
 
 		openBtn.addEventListener('click', openModal);
 		document.getElementById('fg-modal-close').addEventListener('click', closeModal);

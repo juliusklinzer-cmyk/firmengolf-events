@@ -279,6 +279,34 @@
 		// Anfragen sind unrealistisch und erzeugen nur Absagen.
 		var MIN_DATE = (function () { var d = new Date(); d.setDate(d.getDate() + 7); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
 
+		function fmtDateDE(iso) {
+			var p = (iso || '').split('-');
+			return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : iso;
+		}
+		/* iOS Safari erzwingt das min-Attribut bei type=date nicht, und doppelte
+		   Wunschtermine prüft kein Browser (Julius, 28.08.). Zu frühe oder
+		   doppelte Termine werden geleert, der Hinweis erscheint unter der Zeile. */
+		function checkDates() {
+			if (!overlay) { return true; }
+			var msg = '', seen = {};
+			['date1', 'date2', 'date3'].forEach(function (f) {
+				var inp = overlay.querySelector('[data-field="' + f + '"]');
+				if (!inp || !inp.value) { S.form[f] = ''; return; }
+				if (inp.value < MIN_DATE) {
+					inp.value = ''; S.form[f] = '';
+					msg = msg || ('Wunschtermine brauchen mindestens 7 Tage Vorlauf, der früheste Termin ist der ' + fmtDateDE(MIN_DATE) + '.');
+				} else if (seen[inp.value]) {
+					inp.value = ''; S.form[f] = '';
+					msg = msg || 'Diesen Termin hast du schon gewählt, gib gern einen anderen Ausweichtermin an.';
+				} else {
+					seen[inp.value] = true; S.form[f] = inp.value;
+				}
+			});
+			var hint = overlay.querySelector('#rw-date-hint');
+			if (hint) { hint.textContent = msg; hint.hidden = !msg; }
+			return !msg;
+		}
+
 		// Anlass-Auswahl: Reihenfolge + Icon-Kacheln (einheitlich mit den Leistungs-Kacheln).
 		/* Golf-Bezug in allen Anlass-Namen (Julius, 2026-08-27); die Event-KATEGORIEN
 		   auf der Eventliste behalten bewusst die kurzen Namen. */
@@ -462,7 +490,8 @@
 					+ '<section class="rw-sec"><div class="rw-sec-h">Teilnehmerzahl</div>'
 					+ '<div class="rw-field">' + sizeStepper() + '</div></section>'
 					+ '<section class="rw-sec"><div class="rw-sec-h">Wunschtermine</div>'
-					+ '<div class="rw-field"><div class="rw-row rw-row-3">' + input('date1', 'type="date" min="' + MIN_DATE + '"', '1. Termin') + input('date2', 'type="date" min="' + MIN_DATE + '"', '2. Termin') + input('date3', 'type="date" min="' + MIN_DATE + '"', '3. Termin') + '</div></div>'
+					+ '<div class="rw-field"><div class="rw-row rw-row-3">' + input('date1', 'type="date" min="' + MIN_DATE + '"', '1. Termin') + input('date2', 'type="date" min="' + MIN_DATE + '"', '2. Termin') + input('date3', 'type="date" min="' + MIN_DATE + '"', '3. Termin') + '</div>'
+				+ '<p class="rw-date-hint" id="rw-date-hint" hidden></p></div>'
 					+ '<div class="rw-field">' + label('Wie flexibel seid ihr beim Datum?') + chips('flex', ['fix', '± 1 Woche', 'flexibel', 'noch offen']) + '</div>'
 					+ '<div class="rw-field">' + label('Gewünschter Startzeitpunkt') + chips('startzeit', ['Morgens', 'Vormittags', 'Mittags', 'After-Work', 'Noch offen']) + '</div></section>'
 					+ '<section class="rw-sec"><div class="rw-sec-h">Ort</div>'
@@ -628,7 +657,7 @@
 				return S.form.firstName && S.form.email && S.form.occasion && S.form.consent;
 			}
 			if (S.step === 0) return !!S.form.occasion;
-			if (S.step === 1) return parseInt(S.form.size, 10) > 0; // Pflichtfeld jetzt auch geprüft (Kern-Audit N1)
+			if (S.step === 1) return checkDates() && parseInt(S.form.size, 10) > 0; // Pflichtfeld + Termin-Regeln geprüft
 			// Vorname ist kein Pflichtfeld mehr (Julius, 2026-08-27).
 			if (S.step === 4) return S.form.company && S.form.lastName && S.form.email && S.form.consent;
 			return true;
@@ -820,6 +849,14 @@
 				overlay.setAttribute('aria-label', 'Event anfragen');
 				document.body.appendChild(overlay);
 				overlay.addEventListener('click', onClick);
+			/* Wunschtermine prüfen: iOS Safari erzwingt das min-Attribut der
+			   Datumsfelder NICHT (Android schon), und Duplikate prüfte niemand
+			   (Julius, 28.08.). Zu frühe oder doppelte Termine werden geleert,
+			   mit Hinweis unter der Termin-Zeile. */
+			overlay.addEventListener('change', function (e) {
+				if (!e.target.matches('input[type="date"][data-field]')) { return; }
+				checkDates();
+			});
 			/* Ort-Autovervollständigung (Kontakt-Schritt) über die eigene Orts-Datenbank
 			   (fge_geo_suggest), consentfrei ohne Drittanbieter (Julius, 2026-08-27). */
 			var cityT = null;
