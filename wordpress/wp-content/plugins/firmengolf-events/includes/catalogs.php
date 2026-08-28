@@ -331,32 +331,54 @@ function fge_catalog_indoor_formats(): array {
 }
 
 /**
- * Wer meldet sich als Golflehrer an (Formular A, Slide A2).
+ * Wer meldet sich als Golflehrer an (Labels Julius, 28.08.2026).
+ * Relevanz vor allem für die Rechnungsstellung: bei 'employed' ist der
+ * Rechnungssteller der Golfclub, nicht der Pro selbst (Backend fragt den
+ * Rechnungssteller dann als Golfplatz ab — noch offen).
  * @return array<string,string> id => Label
  */
 function fge_catalog_coach_kinds(): array {
 	return [
-		'solo'     => 'Einzelner Golf-Pro oder Trainer',
-		'school'   => 'Golfschule oder Pro-Team',
-		'employed' => 'Trainer fest angestellt bei einem Club',
+		'solo'     => 'Einzelner oder selbstständiger Golflehrer',
+		'school'   => 'Golfschule oder Pro Team',
+		'employed' => 'Golflehrer fest angestellt bei einem Golfclub',
 	];
 }
 
 /**
- * Qualifikationen für Golflehrer (Formular A, Slide A3). Abfrage ohne Gate,
- * ohne Lizenzprüfung (Entscheidung 6); 'other' erlaubt Freitext.
+ * Qualifikationen für Golflehrer (Liste Julius, 28.08.2026; eine Auswahl).
+ * Abfrage ohne Gate, ohne Lizenzprüfung (Entscheidung 6); 'other' öffnet Freitext.
  * @return array<string,string> id => Label
  */
 function fge_catalog_coach_quali(): array {
 	return [
-		'pga-a'    => 'PGA of Germany, Level A',
-		'pga-b'    => 'PGA of Germany, Level B',
-		'pga-c'    => 'PGA of Germany, Level C',
-		'dgv-b'    => 'DGV-B-Trainer',
-		'dgv-c'    => 'DGV-C-Trainer',
-		'dosb'     => 'DOSB-Lizenz',
-		'kids'     => 'Kindertrainer-Lizenz',
-		'other'    => 'Sonstige Qualifikation',
+		'pga-pro'       => 'PGA Golfprofessional (PGA of Germany)',
+		'pga-assistant' => 'PGA Assistant (in Ausbildung)',
+		'dosb-a'        => 'DOSB A-Trainer Golf',
+		'dosb-b'        => 'DOSB B-Trainer Golf',
+		'dosb-c'        => 'DOSB C-Trainer Golf',
+		'pga-intl'      => 'Internationale PGA-Qualifikation (z. B. Großbritannien, USA)',
+		'other'         => 'Sonstige Qualifikation',
+	];
+}
+
+/**
+ * Was die Anlage dem Golflehrer für Kurse und größere Eventmodule bietet
+ * (Julius, 28.08.: inkl. Kurzplatz, ids = Infra-/Golftyp-ids für die globalen
+ * Icons in fge_onboarding_icon_map()).
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_coach_venue_use(): array {
+	return [
+		'driving-range'   => 'Driving Range',
+		'short-game'      => 'Kurzspielbereich',
+		'practice-bunker' => 'Übungsbunker',
+		'short-course'    => 'Kurzplatz',
+		'course-9'        => '9-Loch-Platz',
+		'course-18'       => '18-Loch-Platz',
+		'indoor'          => 'Indoor-Simulator',
+		'seminar'         => 'Seminarraum',
+		'restaurant'      => 'Gastronomie',
 	];
 }
 
@@ -367,7 +389,9 @@ function fge_catalog_coach_quali(): array {
  */
 function fge_catalog_coach_formats(): array {
 	return [
-		'schnupper-team'            => 'Schnupperkurs für Teams',
+		// Key bleibt (gespeicherte Auswahlen), Label folgt der globalen Richtlinie
+		// „Grundlagenkurs" (Julius, 28.08.).
+		'schnupper-team'            => 'Grundlagenkurs für Teams',
 		'platzreife-kompakt'        => 'Platzreife kompakt (1 bis 2 Tage)',
 		'platzreife-serie'          => 'Platzreife über mehrere Termine',
 		'firmenkurs-fortgeschritten' => 'Firmenkurs für Fortgeschrittene',

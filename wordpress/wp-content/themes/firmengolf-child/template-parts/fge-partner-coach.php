@@ -24,11 +24,13 @@ $city        = $m( 'city' );
 // Qualifikations-Zeile im Stil „PGA Golf Professional · über 10 Jahre · Deutsch, Englisch"
 // (Plan A3: klein anzeigen, kein Gate, kein Badge, das andere abwertet).
 $quali_all   = function_exists( 'fge_catalog_coach_quali' ) ? fge_catalog_coach_quali() : [];
+$quali_raw   = get_post_meta( $pid, '_fge_coach_quali', true );
+$quali_id    = is_array( $quali_raw ) ? (string) ( $quali_raw[0] ?? '' ) : (string) $quali_raw;
 $quali_names = [];
-foreach ( (array) get_post_meta( $pid, '_fge_coach_quali', true ) as $qid ) {
-	if ( isset( $quali_all[ $qid ] ) ) {
-		$quali_names[] = 'other' === $qid && '' !== $m( 'coach_quali_other' ) ? $m( 'coach_quali_other' ) : $quali_all[ $qid ];
-	}
+if ( 'other' === $quali_id && '' !== $m( 'coach_quali_other' ) ) {
+	$quali_names[] = $m( 'coach_quali_other' );
+} elseif ( isset( $quali_all[ $quali_id ] ) ) {
+	$quali_names[] = $quali_all[ $quali_id ];
 }
 $years_l = [ 'u3' => 'Trainererfahrung', '3-5' => '3 bis 5 Jahre Erfahrung', '6-10' => '6 bis 10 Jahre Erfahrung', '10plus' => 'Über 10 Jahre Erfahrung' ];
 $years   = $years_l[ $m( 'coach_years' ) ] ?? '';
@@ -45,14 +47,13 @@ $quali_line = implode( ' · ', array_filter( [ $quali_names[0] ?? '', $years, im
 
 // Die Anlage des Golflehrers (Korrektur Julius 28.08.: er ist der Initiator und
 // legt sie selbst an; Adresse/Pin liegen als _fge_city usw. am Coach-Profil).
-$venue_name = $m( 'coach_venue_name' );
-$venue_city = $city;
-$is_mobile  = '1' === $m( 'coach_mobile' );
-$mobile_km  = (int) $m( 'coach_mobile_radius' );
+$venue_name  = $m( 'coach_venue_name' );
+$venue_city  = $city;
+$more_venues = array_filter( array_map( 'strval', (array) get_post_meta( $pid, '_fge_coach_more_venues', true ) ) );
 
 $ccap     = (array) get_post_meta( $pid, '_fge_coach_cap', true );
-$cap_line = ( (int) ( $ccap['min'] ?? 0 ) > 0 && (int) ( $ccap['solo_max'] ?? 0 ) > 0 )
-	? ( (int) $ccap['min'] . ' bis ' . max( (int) $ccap['solo_max'], (int) ( $ccap['team_max'] ?? 0 ) ) . ' Personen' )
+$cap_line = ( (int) ( $ccap['min'] ?? 0 ) > 0 && (int) ( $ccap['max'] ?? 0 ) > 0 )
+	? ( (int) $ccap['min'] . ' bis ' . (int) $ccap['max'] . ' Personen' )
 	: '';
 
 $cf_all    = function_exists( 'fge_catalog_coach_formats' ) ? fge_catalog_coach_formats() : [];
@@ -190,7 +191,7 @@ get_header();
 						if ( $years )                  { $coach_facts[] = [ 'Erfahrung', $years ]; }
 						if ( $lang_names )             { $coach_facts[] = [ 'Sprachen', implode( ', ', $lang_names ) ]; }
 						if ( $venue_name )             { $coach_facts[] = [ 'Hauptstandort', trim( $venue_name . ( $venue_city ? ', ' . $venue_city : '' ) ) ]; }
-						if ( $is_mobile )              { $coach_facts[] = [ 'Mobil', 'Kommt auch zu euch' . ( $mobile_km > 0 ? ', bis ' . $mobile_km . ' km' : '' ) ]; }
+						if ( $more_venues )            { $coach_facts[] = [ 'Weitere Plätze', implode( ', ', $more_venues ) ]; }
 						if ( $cap_line )               { $coach_facts[] = [ 'Gruppengröße', $cap_line ]; }
 						foreach ( $coach_facts as $f ) : ?>
 							<div class="fact-row"><span class="lbl"><?php echo esc_html( $f[0] ); ?></span><span class="val"><?php echo esc_html( $f[1] ); ?></span></div>
@@ -276,11 +277,9 @@ get_header();
 				<div class="panel" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
 					<div>
 						<p style="margin:0 0 4px;font-weight:600;"><?php echo esc_html( trim( $venue_name . ( $venue_city ? ', ' . $venue_city : '' ) ) ); ?></p>
-						<p style="margin:0;font-size:14px;color:var(--ink-600);">
-							<?php echo $is_mobile ? 'Auf Wunsch kommt ' . esc_html( $first ?: 'der Trainer' ) . ' auch zu euch ins Unternehmen' . ( $mobile_km > 0 ? ', bis ' . (int) $mobile_km . ' km.' : '.' ) : 'Kurse und Events finden direkt auf der Anlage statt.'; ?>
-						</p>
-						<?php if ( '' !== $m( 'coach_venues_note' ) ) : ?>
-							<p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-500);">Außerdem: <?php echo esc_html( $m( 'coach_venues_note' ) ); ?></p>
+						<p style="margin:0;font-size:14px;color:var(--ink-600);">Kurse und Events finden direkt auf der Anlage statt.</p>
+						<?php if ( $more_venues ) : ?>
+							<p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-500);">Außerdem: <?php echo esc_html( implode( ', ', $more_venues ) ); ?></p>
 						<?php endif; ?>
 					</div>
 				</div>

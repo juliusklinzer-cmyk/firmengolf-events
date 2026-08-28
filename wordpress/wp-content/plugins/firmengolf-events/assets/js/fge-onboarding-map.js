@@ -93,7 +93,7 @@
 		var search = byId('fge_map_search');
 		if (search && google.maps.places && google.maps.places.Autocomplete) {
 			var ac = new google.maps.places.Autocomplete(search, {
-				fields: ['place_id', 'geometry', 'address_components'],
+				fields: ['place_id', 'geometry', 'address_components', 'name'],
 				componentRestrictions: { country: 'de' }
 			});
 			ac.addListener('place_changed', function () {
@@ -104,6 +104,10 @@
 				setPin(loc.lat(), loc.lng(), true);
 				fillAddress(place.address_components || []);
 				if (placeEl) { placeEl.value = place.place_id || ''; }
+				// Golflehrer-Wizard: die Suche füllt auch den Anlagen-Namen
+				// (Google-Autofill, Julius 28.08.).
+				var venueEl = byId('fge_coach_venue_name');
+				if (venueEl && place.name) { venueEl.value = place.name; }
 			});
 			// Enter inside the search box must not submit the wizard form.
 			search.addEventListener('keydown', function (e) {
