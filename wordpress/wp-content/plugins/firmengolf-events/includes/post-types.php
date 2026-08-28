@@ -58,3 +58,44 @@ function fge_register_post_types() {
 }
 
 add_action( 'init', 'fge_register_post_types' );
+
+// ── Eigener URL-Stamm je Partner-Typ (Julius, 28.08.) ─────────────────────────
+// Golflehrer-Visitenkarten laufen unter /golflehrer/<name>/ statt /golfplatz/…,
+// der CPT-Rewrite bleibt für Plätze (und vorerst Indoor) unverändert.
+
+add_action( 'init', static function () {
+	add_rewrite_rule( '^golflehrer/([^/]+)/?$', 'index.php?firmengolf_partner=$matches[1]', 'top' );
+}, 10 );
+
+/** Permalinks von Coach-Partnern auf den golflehrer-Stamm umschreiben. */
+add_filter( 'post_type_link', static function ( string $link, WP_Post $post ): string {
+	if ( 'firmengolf_partner' === $post->post_type
+		&& function_exists( 'fge_partner_type' )
+		&& 'coach' === fge_partner_type( (int) $post->ID ) ) {
+		return str_replace( '/golfplatz/', '/golflehrer/', $link );
+	}
+	return $link;
+}, 10, 2 );
+
+// Kanonisch: falscher Stamm (alter Link, geratene URL) leitet 301 auf den
+// richtigen um — /golfplatz/<coach>/ → /golflehrer/<coach>/ und umgekehrt.
+add_action( 'template_redirect', static function () {
+	if ( ! is_singular( 'firmengolf_partner' ) ) {
+		return;
+	}
+	$path      = (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_PATH );
+	$canonical = get_permalink();
+	$want_base = function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( (int) get_the_ID() ) ? '/golflehrer/' : '/golfplatz/';
+	if ( $canonical && '' !== $path && ! str_starts_with( $path, $want_base ) ) {
+		wp_safe_redirect( $canonical, 301 );
+		exit;
+	}
+}, 2 );
+
+// Einmaliger Flush, sobald die golflehrer-Regel fehlt (Muster aus partner-invite.php).
+add_action( 'init', static function () {
+	$rules = get_option( 'rewrite_rules' );
+	if ( is_array( $rules ) && ! isset( $rules['^golflehrer/([^/]+)/?$'] ) ) {
+		flush_rewrite_rules( false );
+	}
+}, 99 );
