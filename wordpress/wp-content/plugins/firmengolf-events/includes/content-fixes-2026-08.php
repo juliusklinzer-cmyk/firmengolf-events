@@ -316,3 +316,28 @@ add_action( 'init', static function () {
 		fge_cf26_replace_in_event( (int) $id, $pairs );
 	}
 }, 22 );
+
+// ── Seed: Typ-Landingpages für Golflehrer und Indoor (28.08.2026) ─────────────
+// Legt die WP-Seiten /golflehrer-partner/ und /indoor-partner/ an (die Templates
+// page-golflehrer-partner.php / page-indoor-partner.php greifen über den Slug).
+// Option-gegated + idempotent, weil live nur FTPS erreichbar ist.
+add_action( 'init', static function () {
+	if ( get_option( 'fge_partner_type_pages_2026_08' ) ) {
+		return;
+	}
+	foreach ( [
+		'golflehrer-partner' => 'Golflehrer-Partner werden',
+		'indoor-partner'     => 'Indoor-Partner werden',
+	] as $seed_slug => $seed_title ) {
+		if ( get_page_by_path( $seed_slug ) ) {
+			continue;
+		}
+		wp_insert_post( [
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_name'   => $seed_slug,
+			'post_title'  => $seed_title,
+		] );
+	}
+	update_option( 'fge_partner_type_pages_2026_08', 1, false );
+}, 20 );
