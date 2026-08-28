@@ -15,6 +15,8 @@ Feste Reihenfolge für alle Responsive-Arbeiten. Erst Befund (Skill `design-revi
    - `min-height: 100vh` auf Seiten mit sticky-Fuß zusätzlich als `min-height: var(--fg-vvh, 100dvh)` setzen, sonst wächst die Seite über den sichtbaren Bereich hinaus.
    - Fuß-Paddings nehmen `env(safe-area-inset-bottom, 0px)` mit.
    - Neue Vollbild-Flächen nie mit nacktem `inset: 0` bauen (Julius, 28.08.2026).
+   - Vollbild-Flächen mit `height` UND Padding brauchen `box-sizing: border-box`, es gibt keinen globalen Reset dafür. Ohne ihn ragt die Box um das Padding unter den Viewport, der Fuß liegt hinter der Safari-Leiste (fg-modal-Fall, 28.08.2026). Zweite Falle desselben Falls: spätere Mobile-Blöcke (z. B. 720px) können das Vollbild-Padding des 768px-Blocks überschreiben, bei Änderungen an Modal-Paddings beide Blöcke prüfen.
+   - Aktions-Füße in scrollenden Vollbild-Dialogen `position: sticky; bottom: 0` mit eigenem Grund + safe-area-Padding geben, dann sind die Buttons in jedem Leisten-Zustand ohne Scrollen sichtbar.
 6. **Scroll-Verhalten**: 
    - Die Topnav bleibt statisch und scrollt weg. Fixierte Füße sind erlaubt, aber nur mit der Mechanik aus Punkt 5. Das ersetzt die ältere Regel "nie fixed Chrome unten" vom 27.08.2026, die den Fuß nur verschob statt die Ursache zu beheben.
    - Scroll-Schwellen-Effekte immer mit Hysterese bauen (Flacker-Gefahr durch Android-Scroll-Anchoring, siehe Memory `mobile-nav`).
