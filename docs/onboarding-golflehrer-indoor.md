@@ -685,6 +685,28 @@ Golflehrer als Ansprechpartner). Die Anfragen laufen initial über den Golflehre
 Damit entfällt auch das bedingte Anlagen-Fragebogen-Kapitel (A5a bis A5e) aus
 Entscheidung 1; die Platz-Formate stehen jedem Coach als „Größere Eventmodule" offen.
 
+## 8d. Feedback-Runde Julius, 28.08.2026 abends (umgesetzt in 1.9.174)
+
+Grundsatz: Der Coach-Wizard bleibt KLEIN (schnelle Anmeldung), Details werden beim
+Anlegen eines Angebots im Partnerportal abgefragt. Umgesetzt: neue Quali-Liste als
+Einzelauswahl (PGA Golfprofessional, PGA Assistant, DOSB A/B/C, internationale PGA,
+Sonstige mit Freitext), Sprachen mit aufklappendem Freitext, Firmengruppen-Frage
+gestrichen, Jahre-Frage neu formuliert; coach-kind-Labels neu; kombinierte
+Standort-Slide (Anlagen-Name per Google-Autofill + Pin, weitere Golfplätze per
+Plus-Button, Anlagen-Möglichkeiten inkl. Kurzplatz mit globalen Icons); mobiles
+Angebot KOMPLETT gestrichen (wir holen Unternehmen auf den Golfplatz); Anmeldender
+= Hauptkontakt; Gruppengrößen als Stepper (min 4 / max 10, Trainer mal Richtwert
+ergibt Maximum, Leihschläger für X Personen), includes-Slide gestrichen;
+avail-Default Mi bis So, Gastro-Einbindung dort; **Abschnitt 6 (Abrechnungsblock)
+KOMPLETT GESTRICHEN für alle Typen**: Partner stellen Firmengolf eine Rechnung,
+alle Rechnungsdaten stehen dort, keine IBAN-/Bankdaten-Abfrage.
+
+Offen aus dieser Runde:
+1. Backend: bei coach-kind 'employed' den Rechnungssteller als Golfplatz abfragen.
+2. Partnerportal: Freifelder unter „Angebote", in denen der Golflehrer die
+   Format-Details (Ablauf, Leistungen, Platzreife-Kosten, Equipment je Event)
+   pro Angebot befüllt.
+
 ## 9. Umsetzungsreihenfolge (Vorschlag für Claude Code)
 
 1. **Preisglättung umstellen** (`fge_price_smooth()` plus JS-Zwilling in `partner-portal.php`).
