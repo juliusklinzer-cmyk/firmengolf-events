@@ -53,7 +53,7 @@ $cicon = static function ( string $name, int $size = 22 ): string {
 $topics = [
 	'event'   => 'Event anfragen',
 	'individ' => 'Individuelles Event',
-	'partner' => 'Partnerplatz werden',
+	'partner' => 'Partner werden',
 	'benefit' => 'Benefit-Programm',
 	'press'   => 'Presse',
 	'other'   => 'Etwas anderes',

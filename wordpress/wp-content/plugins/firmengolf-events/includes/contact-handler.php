@@ -65,7 +65,7 @@ function fge_handle_kontakt_submit() {
 	$topics = [
 		'event'   => 'Event anfragen',
 		'individ' => 'Individuelles Event',
-		'partner' => 'Partnerplatz werden',
+		'partner' => 'Partner werden',
 		'benefit' => 'Benefit-Programm',
 		'press'   => 'Presse',
 		'other'   => 'Etwas anderes',

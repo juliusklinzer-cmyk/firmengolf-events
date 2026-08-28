@@ -9,6 +9,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $pid = (int) get_the_ID();
+
+// Golflehrer bekommen die Online-Visitenkarte statt der Platz-Seite (Julius, 28.08.).
+if ( function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $pid ) ) {
+	get_template_part( 'template-parts/fge-partner-coach' );
+	return;
+}
+
 $m   = static fn( string $k ): string => (string) get_post_meta( $pid, '_fge_' . $k, true );
 
 $name      = $m( 'public_golfclub_name' ) ?: get_the_title();

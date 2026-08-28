@@ -462,6 +462,16 @@ function fge_portal_handle_profile_update(): void {
 	$P       = wp_unslash( $_POST );
 
 	switch ( $section ) {
+		// Coach-Sektionen: Persistenz über die Onboarding-Slide-Logik (gleiche
+		// Feldnamen, gleiche Sanitisierung) — EIN Datenmodell für beide Wege.
+		case 'profil':
+			fge_onboarding_save_slide( $partner_id, 'coach-profile', $_POST );
+			break;
+
+		case 'standorte':
+			fge_onboarding_save_slide( $partner_id, 'coach-venue', $_POST );
+			break;
+
 		case 'steckbrief':
 			update_post_meta( $partner_id, '_fge_public_golfclub_name',    sanitize_text_field( $P['fge_public_golfclub_name'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_public_short_description', sanitize_textarea_field( $P['fge_public_short_description'] ?? '' ) );
@@ -692,7 +702,7 @@ function fge_portal_render_gate(): void {
 				<img src="<?php echo esc_url( $logo_url ); ?>" alt="Firmengolf" width="122" height="28">
 			</a>
 			<h1 class="fp-gate-title">Partner-Portal</h1>
-			<p class="fp-gate-sub">Melde dich mit deinen Zugangsdaten an, um dein Golfplatz-Profil zu verwalten.</p>
+			<p class="fp-gate-sub">Melde dich mit deinen Zugangsdaten an, um dein Partner-Profil zu verwalten.</p>
 
 			<?php
 			wp_login_form( [
@@ -712,14 +722,14 @@ function fge_portal_render_gate(): void {
 			<div class="fp-gate-divider"><span>Noch kein Konto?</span></div>
 
 			<a href="<?php echo esc_url( $onboarding_url ); ?>" class="fp-gate-cta">
-				Jetzt Golfplatz registrieren
+				Jetzt Partner werden
 				<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 					<path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 				</svg>
 			</a>
 
 			<?php // Einstieg für Interessenten, die erst hier landen (Funnel-Audit Paket A): erst verstehen, dann registrieren. ?>
-			<p class="fp-gate-info">Neu bei Firmengolf? <a href="<?php echo esc_url( home_url( '/golfplatz-partner/' ) ); ?>">So funktioniert die Partnerschaft für Golfplätze →</a></p>
+			<p class="fp-gate-info">Neu bei Firmengolf? <a href="<?php echo esc_url( home_url( '/golfplatz-partner/' ) ); ?>">So funktioniert die Partnerschaft →</a></p>
 		</div>
 	</div>
 	<?php
@@ -1126,6 +1136,15 @@ function fge_portal_render(): void {
 	// Indoor-Reiter nur für Partner mit Indoor in der Ausstattung (Abschnitt 3b).
 	if ( ! fge_partner_has_indoor( $partner_id ) ) {
 		unset( $tabs['indoor'] );
+	}
+	// Ansicht je Partner-Typ (Julius, 28.08.): Der Coach verwaltet eine PERSON,
+	// die Indoor-Anlage eine Location, kein „Platz".
+	$portal_ptype = function_exists( 'fge_partner_type' ) ? fge_partner_type( $partner_id ) : 'course';
+	if ( 'coach' === $portal_ptype ) {
+		$tabs['platz'][0] = 'Profil';
+		$tabs['platz'][1] = '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>';
+	} elseif ( 'indoor' === $portal_ptype ) {
+		$tabs['platz'][0] = 'Anlage';
 	}
 	?>
 	<div class="fgpp">
@@ -3184,11 +3203,179 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 	<?php
 }
 
+/** Portal-Ansicht für Golflehrer: stellt die PERSON vor, nicht einen Platz (Julius, 28.08.). */
+function fge_portal_render_coach_profile( int $partner_id ): void {
+	$m        = static fn( string $k ): string => (string) get_post_meta( $partner_id, '_fge_' . $k, true );
+	$base     = fge_portal_page_url();
+	$edit_sec = static fn( string $s ): string => esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => $s ], $base ) );
+
+	$first      = $m( 'coach_first' );
+	$coach_name = trim( $first . ' ' . $m( 'coach_last' ) ) ?: get_the_title( $partner_id );
+	$status     = $m( 'partner_status' );
+	$cover_id   = (int) $m( 'hero_image_attachment_id' );
+	$cover      = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, '2048x2048' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $partner_id );
+	$portrait   = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'thumbnail' ) : '';
+	$mono       = strtoupper( mb_substr( $first ?: $coach_name, 0, 1 ) . mb_substr( $m( 'coach_last' ) ?: '', 0, 1 ) );
+
+	$vis_public = function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id );
+	if ( 'aktiv' === $status ) {
+		$vis_label = $vis_public ? 'Öffentlich sichtbar auf Firmengolf' : 'Freigeschaltet, öffentlich, sobald ein Event freigegeben ist';
+	} elseif ( 'pausiert' === $status ) {
+		$vis_label = 'Pausiert, nicht öffentlich sichtbar';
+	} elseif ( 'in_pruefung' === $status ) {
+		$vis_label = 'In Prüfung, noch nicht öffentlich';
+	} elseif ( 'abgelehnt' === $status ) {
+		$vis_label = 'Nicht freigeschaltet';
+	} else {
+		$vis_label = 'Noch nicht eingereicht, nicht öffentlich';
+	}
+
+	$quali_all   = fge_catalog_coach_quali();
+	$quali_names = [];
+	foreach ( (array) get_post_meta( $partner_id, '_fge_coach_quali', true ) as $qid ) {
+		if ( isset( $quali_all[ $qid ] ) ) {
+			$quali_names[] = 'other' === $qid && '' !== $m( 'coach_quali_other' ) ? $m( 'coach_quali_other' ) : $quali_all[ $qid ];
+		}
+	}
+	$lang_all   = [ 'de' => 'Deutsch', 'en' => 'Englisch', 'fr' => 'Französisch', 'it' => 'Italienisch', 'es' => 'Spanisch' ];
+	$lang_names = [];
+	foreach ( (array) get_post_meta( $partner_id, '_fge_coach_langs', true ) as $lid ) {
+		if ( isset( $lang_all[ $lid ] ) ) { $lang_names[] = $lang_all[ $lid ]; }
+	}
+	$venue_pid  = (int) $m( 'coach_venue_partner_id' );
+	$venue_name = $venue_pid > 0
+		? ( (string) get_post_meta( $venue_pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $venue_pid ) )
+		: $m( 'coach_venue_name' );
+	$cf_all   = fge_catalog_coach_formats();
+	$cf_names = [];
+	foreach ( (array) get_post_meta( $partner_id, '_fge_coach_formats', true ) as $fid ) {
+		if ( isset( $cf_all[ $fid ] ) ) { $cf_names[] = $cf_all[ $fid ]; }
+	}
+	$years_l = [ 'u3' => 'Unter 3 Jahre', '3-5' => '3 bis 5 Jahre', '6-10' => '6 bis 10 Jahre', '10plus' => 'Über 10 Jahre' ];
+
+	$facts = [];
+	if ( $m( 'public_golfclub_name' ) ) { $facts[] = [ 'Titel', $m( 'public_golfclub_name' ) ]; }
+	if ( $quali_names )                 { $facts[] = [ 'Qualifikation', implode( ', ', $quali_names ) ]; }
+	if ( isset( $years_l[ $m( 'coach_years' ) ] ) ) { $facts[] = [ 'Erfahrung', $years_l[ $m( 'coach_years' ) ] ]; }
+	if ( $lang_names )                  { $facts[] = [ 'Sprachen', implode( ', ', $lang_names ) ]; }
+	if ( $venue_name )                  { $facts[] = [ 'Hauptstandort', $venue_name ]; }
+	if ( '1' === $m( 'coach_mobile' ) ) { $facts[] = [ 'Mobil', 'Bis ' . (int) $m( 'coach_mobile_radius' ) . ' km' ]; }
+	?>
+	<div class="fgpp">
+		<div class="page-wide">
+
+			<section class="hero">
+				<div class="hero-photo" style="background-image:url('<?php echo esc_url( $cover ); ?>')">
+					<div class="hero-scrim"></div>
+					<div class="hero-top">
+						<div class="hero-status"><span class="dot"></span> <?php echo esc_html( $vis_label ); ?></div>
+						<div class="hero-actions">
+							<?php if ( $vis_public ) : ?>
+								<a class="hero-btn" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" target="_blank" rel="noopener">Öffentliche Visitenkarte ansehen&nbsp;↗</a>
+							<?php endif; ?>
+							<a class="hero-btn solid" href="<?php echo $edit_sec( 'profil' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Profil bearbeiten</a>
+						</div>
+					</div>
+					<div class="hero-body">
+						<div class="hero-id">
+							<?php if ( $portrait !== '' ) : ?>
+								<div class="hero-monogram hero-logo"><img src="<?php echo esc_url( $portrait ); ?>" alt="Portrait <?php echo esc_attr( $coach_name ); ?>"></div>
+							<?php else : ?>
+								<div class="hero-monogram"><?php echo esc_html( $mono ); ?></div>
+							<?php endif; ?>
+							<div class="hero-text">
+								<div class="hero-eyebrow">Golflehrer auf Firmengolf</div>
+								<h1 class="hero-name"><?php echo esc_html( $coach_name ); ?></h1>
+								<div class="hero-meta">
+									<?php if ( $m( 'public_golfclub_name' ) ) : ?><span><?php echo esc_html( $m( 'public_golfclub_name' ) ); ?></span><?php endif; ?>
+									<?php if ( $m( 'city' ) ) : ?><span class="dot">·</span><span><?php echo esc_html( $m( 'city' ) ); ?></span><?php endif; ?>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="section">
+				<div class="two-col">
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Über dich</h3><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'profil' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Bearbeiten</a></div>
+						<?php if ( $m( 'public_short_description' ) !== '' ) : ?>
+							<p style="font-size:14.5px;line-height:1.6;color:var(--ink-700);"><?php echo esc_html( $m( 'public_short_description' ) ); ?></p>
+						<?php endif; ?>
+						<?php if ( $m( 'coach_about' ) !== '' ) : ?>
+							<p style="font-size:14px;line-height:1.6;color:var(--ink-600);"><?php echo esc_html( $m( 'coach_about' ) ); ?></p>
+						<?php endif; ?>
+						<?php if ( $m( 'public_short_description' ) === '' && $m( 'coach_about' ) === '' ) : ?>
+							<p style="font-size:14px;color:var(--ink-500);">Noch keine Beschreibung. Dein Kurzprofil und deine Geschichte sind das Herz deiner Visitenkarte.</p>
+						<?php endif; ?>
+					</div>
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Auf einen Blick</h3></div>
+						<?php foreach ( $facts as $f ) : ?>
+							<div class="fact-row"><span class="lbl"><?php echo esc_html( $f[0] ); ?></span><span class="val"><?php echo esc_html( $f[1] ); ?></span></div>
+						<?php endforeach; ?>
+						<?php if ( empty( $facts ) ) : ?>
+							<p style="font-size:14px;color:var(--ink-500);">Noch keine Angaben.</p>
+						<?php endif; ?>
+					</div>
+				</div>
+			</section>
+
+			<section class="section">
+				<div class="two-col">
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Deine Formate</h3></div>
+						<?php if ( $cf_names ) : ?>
+							<p style="font-size:14px;line-height:1.9;color:var(--ink-700);"><?php echo esc_html( implode( ' · ', $cf_names ) ); ?></p>
+						<?php else : ?>
+							<p style="font-size:14px;color:var(--ink-500);">Noch keine Formate gewählt.</p>
+						<?php endif; ?>
+					</div>
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Wo du unterrichtest</h3><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'standorte' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Bearbeiten</a></div>
+						<p style="font-size:14px;color:var(--ink-700);margin:0 0 6px;"><strong><?php echo esc_html( $venue_name ?: 'Noch kein Hauptstandort' ); ?></strong></p>
+						<?php if ( '1' === $m( 'coach_mobile' ) ) : ?>
+							<p style="font-size:13.5px;color:var(--ink-600);margin:0;">Mobiles Angebot: du kommst auch zum Unternehmen<?php echo (int) $m( 'coach_mobile_radius' ) > 0 ? ', bis ' . (int) $m( 'coach_mobile_radius' ) . ' km' : ''; ?>.</p>
+						<?php endif; ?>
+						<?php if ( $m( 'coach_venues_note' ) !== '' ) : ?>
+							<p style="font-size:13.5px;color:var(--ink-500);margin:6px 0 0;">Außerdem: <?php echo esc_html( $m( 'coach_venues_note' ) ); ?></p>
+						<?php endif; ?>
+					</div>
+				</div>
+			</section>
+
+			<section class="section">
+				<div class="two-col">
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Fotos</h3><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'medien' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Bearbeiten</a></div>
+						<p style="font-size:14px;color:var(--ink-600);margin:0;">Dein Portraitfoto ist das erste Bild (Titelfoto), es ist der stärkste Vertrauensfaktor deiner Visitenkarte. Dazu 3 bis 8 Bilder aus deinen Kursen.</p>
+					</div>
+					<div class="panel">
+						<div class="panel-head"><h3 style="font-size:18px;">Kontaktdaten</h3><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'kontakt' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Bearbeiten</a></div>
+						<p style="font-size:14px;color:var(--ink-700);margin:0;"><?php echo esc_html( $m( 'main_contact_name' ) ?: 'Noch kein Kontakt hinterlegt' ); ?><?php echo $m( 'main_contact_email' ) ? ' · ' . esc_html( $m( 'main_contact_email' ) ) : ''; ?></p>
+					</div>
+				</div>
+			</section>
+
+		</div>
+	</div>
+	<?php
+}
+
 function fge_portal_section_platz( int $partner_id ): void {
-	$edit = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
-	if ( '1' === $edit ) { $edit = 'steckbrief'; } // back-compat with the old single edit form
-	if ( in_array( $edit, [ 'steckbrief', 'ausstattung', 'standort', 'medien', 'kontakt' ], true ) ) {
+	$is_coach = function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $partner_id );
+	$edit     = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+	if ( '1' === $edit ) { $edit = $is_coach ? 'profil' : 'steckbrief'; } // back-compat with the old single edit form
+	$sections = $is_coach
+		? [ 'profil', 'standorte', 'medien', 'kontakt' ]
+		: [ 'steckbrief', 'ausstattung', 'standort', 'medien', 'kontakt' ];
+	if ( in_array( $edit, $sections, true ) ) {
 		fge_portal_render_platz_edit_section( $partner_id, $edit );
+		return;
+	}
+	if ( $is_coach ) {
+		fge_portal_render_coach_profile( $partner_id );
 		return;
 	}
 	fge_portal_render_platz_profile( $partner_id );
@@ -3199,7 +3386,13 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 	$m    = static fn( string $k ): string => (string) get_post_meta( $partner_id, '_fge_' . $k, true );
 	$base = fge_portal_page_url();
 	$back = esc_url( add_query_arg( [ 'tab' => 'platz' ], $base ) );
-	$titles = [
+	$is_coach = function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $partner_id );
+	$titles = $is_coach ? [
+		'profil'    => 'Dein Profil',
+		'standorte' => 'Wo du unterrichtest',
+		'medien'    => 'Fotos',
+		'kontakt'   => 'Kontaktdaten',
+	] : [
 		'steckbrief'  => 'Über den Platz',
 		'ausstattung' => 'Ausstattung',
 		'standort'    => 'Standort & Anfahrt',
@@ -3207,6 +3400,9 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 		'kontakt'     => 'Kontaktdaten',
 	];
 	$intros = [
+		'profil'    => 'Name, Titel, Qualifikation und deine Geschichte, das Herz deiner öffentlichen Visitenkarte.',
+		'standorte' => 'Dein Hauptstandort und dein mobiles Angebot, daraus entstehen Karte und Zuordnung deiner Events.',
+	] + [
 		'steckbrief'  => 'Name, Beschreibung und Eckdaten, der erste Eindruck deines Platzes für Firmen.',
 		'ausstattung' => 'Hake einfach an, was es bei euch gibt. Mehr Häkchen = mehr Treffer bei Firmen.',
 		'standort'    => 'Adresse und Anfahrt, damit Firmen wissen, wie sie zu euch kommen.',
@@ -3214,6 +3410,9 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 		'kontakt'     => 'Wen erreichen wir bei euch, und wer bekommt Terminanfragen?',
 	];
 	$helps = [
+		'profil'    => [ 'Alles hier erscheint auf deiner öffentlichen Visitenkarte.', 'Die Qualifikation ist keine Voraussetzung, sie steht als kleine Zeile unter deinem Namen.', 'Das Kurzprofil sind 2 bis 3 Sätze; deine Geschichte erzählst du unter „Über dich und deinen Unterricht".' ],
+		'standorte' => [ 'Wählst du einen Firmengolf-Partnerplatz, übernehmen wir Stadt und Karten-Pin automatisch.', 'Das mobile Angebot erscheint auf deiner Visitenkarte („Kommt auch zu euch").' ],
+	] + [
 		'steckbrief'  => [ 'Alles hier erscheint auf deiner öffentlichen Platzseite.', 'Beschreibung: 2 bis 3 Sätze reichen. Was macht euren Platz für Firmen besonders, Lage, Gastronomie, Atmosphäre?', 'Die Veranstaltungstypen entscheiden, für welche Anfragen Firmen dich finden.' ],
 		'ausstattung' => [ 'Die Ausstattung erscheint als Icon-Liste auf deiner öffentlichen Platzseite.', 'Fehlt etwas in der Liste? Trag es unten bei „Weitere Ausstattung" ein.' ],
 		'standort'    => [ 'Die Adresse setzt den Karten-Pin auf deiner Platzseite und bei deinen Events.', 'Die Anfahrts-Felder (Auto, Bahn, Parken, Shuttle) helfen Firmen bei der Planung, kurz und konkret, z. B. „100 kostenfreie Parkplätze".', 'Breiten-/Längengrad nur ändern, wenn der Pin falsch sitzt.' ],
@@ -3248,6 +3447,202 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 			<div class="panel pe-main">
 			<?php
 			switch ( $section ) {
+				case 'profil':
+					$sel_quali = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_coach_quali', true ) );
+					$sel_langs = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_coach_langs', true ) );
+					?>
+					<div class="fg-form-row fg-form-row--2col">
+						<div>
+							<label class="fg-form-label" for="fge_coach_first">Vorname</label>
+							<input class="fg-form-input" type="text" id="fge_coach_first" name="fge_coach_first" value="<?php echo esc_attr( $m( 'coach_first' ) ); ?>">
+						</div>
+						<div>
+							<label class="fg-form-label" for="fge_coach_last">Nachname</label>
+							<input class="fg-form-input" type="text" id="fge_coach_last" name="fge_coach_last" value="<?php echo esc_attr( $m( 'coach_last' ) ); ?>">
+						</div>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_public_golfclub_name">Öffentlicher Titel</label>
+						<input class="fg-form-input" type="text" id="fge_public_golfclub_name" name="fge_public_golfclub_name" value="<?php echo esc_attr( $m( 'public_golfclub_name' ) ); ?>" placeholder="z. B. PGA Golf Professional">
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label">Qualifikation</label>
+						<div class="fp-check-grid">
+							<?php foreach ( fge_catalog_coach_quali() as $qid => $ql ) : ?>
+								<label class="fp-check"><input type="checkbox" name="fge_coach_quali[]" value="<?php echo esc_attr( $qid ); ?>" <?php checked( in_array( (string) $qid, $sel_quali, true ) ); ?>> <?php echo esc_html( $ql ); ?></label>
+							<?php endforeach; ?>
+						</div>
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div>
+							<label class="fg-form-label" for="fge_coach_quali_other">Sonstige Qualifikation</label>
+							<input class="fg-form-input" type="text" id="fge_coach_quali_other" name="fge_coach_quali_other" value="<?php echo esc_attr( $m( 'coach_quali_other' ) ); ?>">
+						</div>
+						<div>
+							<label class="fg-form-label" for="fge_coach_years">Jahre Unterrichtserfahrung</label>
+							<select class="fg-form-input" id="fge_coach_years" name="fge_coach_years">
+								<option value="">bitte wählen …</option>
+								<?php foreach ( [ 'u3' => 'Unter 3 Jahre', '3-5' => '3 bis 5 Jahre', '6-10' => '6 bis 10 Jahre', '10plus' => 'Über 10 Jahre' ] as $yk => $yl ) : ?>
+									<option value="<?php echo esc_attr( $yk ); ?>" <?php selected( $m( 'coach_years' ), $yk ); ?>><?php echo esc_html( $yl ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label">Sprachen</label>
+						<div class="fp-check-grid">
+							<?php foreach ( [ 'de' => 'Deutsch', 'en' => 'Englisch', 'fr' => 'Französisch', 'it' => 'Italienisch', 'es' => 'Spanisch', 'other' => 'Weitere' ] as $lid => $ll ) : ?>
+								<label class="fp-check"><input type="checkbox" name="fge_coach_langs[]" value="<?php echo esc_attr( $lid ); ?>" <?php checked( in_array( $lid, $sel_langs, true ) ); ?>> <?php echo esc_html( $ll ); ?></label>
+							<?php endforeach; ?>
+						</div>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_coach_langs_other">Weitere Sprachen</label>
+						<input class="fg-form-input" type="text" id="fge_coach_langs_other" name="fge_coach_langs_other" value="<?php echo esc_attr( $m( 'coach_langs_other' ) ); ?>">
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_public_short_description">Kurzprofil</label>
+						<textarea class="fg-form-textarea" id="fge_public_short_description" name="fge_public_short_description" rows="3" placeholder="2 bis 3 Sätze über dich"><?php echo esc_textarea( $m( 'public_short_description' ) ); ?></textarea>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_coach_about">Über dich und deinen Unterricht</label>
+						<textarea class="fg-form-textarea" id="fge_coach_about" name="fge_coach_about" rows="5" placeholder="Wie unterrichtest du, was macht deine Events besonders?"><?php echo esc_textarea( $m( 'coach_about' ) ); ?></textarea>
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div>
+							<label class="fg-form-label" for="fge_website_url">Website oder Social</label>
+							<input class="fg-form-input" type="url" id="fge_website_url" name="fge_website_url" value="<?php echo esc_attr( $m( 'website_url' ) ); ?>" placeholder="https://...">
+						</div>
+						<div>
+							<label class="fg-form-label" for="fge_coach_corp_exp">Erfahrung mit Firmengruppen</label>
+							<select class="fg-form-input" id="fge_coach_corp_exp" name="fge_coach_corp_exp">
+								<option value="">bitte wählen …</option>
+								<option value="1" <?php selected( $m( 'coach_corp_exp' ), '1' ); ?>>Ja</option>
+								<option value="0" <?php selected( $m( 'coach_corp_exp' ), '0' ); ?>>Noch nicht</option>
+							</select>
+						</div>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_coach_corp_per_year">Ungefähr wie viele pro Jahr?</label>
+						<input class="fg-form-input" type="text" id="fge_coach_corp_per_year" name="fge_coach_corp_per_year" value="<?php echo esc_attr( $m( 'coach_corp_per_year' ) ); ?>" placeholder="z. B. 5 bis 10">
+					</div>
+					<?php
+					break;
+
+				case 'standorte':
+					$venue_pid       = (int) $m( 'coach_venue_partner_id' );
+					$course_partners = get_posts( [
+						'post_type'      => 'firmengolf_partner',
+						'post_status'    => 'publish',
+						'posts_per_page' => -1,
+						'orderby'        => 'title',
+						'order'          => 'ASC',
+						'meta_query'     => [ [ 'key' => '_fge_partner_status', 'value' => 'aktiv' ] ],
+					] );
+					?>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_coach_venue_partner_id">Dein Hauptstandort</label>
+						<select class="fg-form-input" id="fge_coach_venue_partner_id" name="fge_coach_venue_partner_id">
+							<option value="0" <?php selected( $venue_pid, 0 ); ?>>Meine Anlage ist kein Firmengolf-Partner</option>
+							<?php foreach ( $course_partners as $cp ) :
+								if ( 'course' !== fge_partner_type( (int) $cp->ID ) ) { continue; }
+								$cp_city = (string) get_post_meta( $cp->ID, '_fge_city', true ); ?>
+								<option value="<?php echo esc_attr( (string) $cp->ID ); ?>" <?php selected( $venue_pid, (int) $cp->ID ); ?>><?php echo esc_html( get_the_title( $cp ) . ( $cp_city ? ', ' . $cp_city : '' ) ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_coach_venue_name">Falls kein Partner: Name der Anlage</label>
+						<input class="fg-form-input" type="text" id="fge_coach_venue_name" name="fge_coach_venue_name" value="<?php echo esc_attr( $m( 'coach_venue_name' ) ); ?>">
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div>
+							<label class="fg-form-label" for="fge_coach_venue_zip">PLZ</label>
+							<input class="fg-form-input" type="text" id="fge_coach_venue_zip" name="fge_coach_venue_zip" value="<?php echo esc_attr( $m( 'coach_venue_zip' ) ); ?>">
+						</div>
+						<div>
+							<label class="fg-form-label" for="fge_coach_venue_city">Ort</label>
+							<input class="fg-form-input" type="text" id="fge_coach_venue_city" name="fge_coach_venue_city" value="<?php echo esc_attr( $m( 'coach_venue_city' ) ); ?>">
+						</div>
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div>
+							<label class="fg-form-label" for="fge_coach_venue_role">Deine Rolle dort</label>
+							<select class="fg-form-input" id="fge_coach_venue_role" name="fge_coach_venue_role">
+								<option value="">bitte wählen …</option>
+								<?php foreach ( [ 'hauspro' => 'Haus-Pro', 'angestellt' => 'Fest angestellt', 'frei' => 'Freier Trainer mit Vereinbarung', 'gelegentlich' => 'Gelegentlich nach Absprache' ] as $rk => $rl ) : ?>
+									<option value="<?php echo esc_attr( $rk ); ?>" <?php selected( $m( 'coach_venue_role' ), $rk ); ?>><?php echo esc_html( $rl ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+						<div>
+							<label class="fg-form-label" for="fge_coach_venue_groups">Firmengruppen dort möglich?</label>
+							<select class="fg-form-input" id="fge_coach_venue_groups" name="fge_coach_venue_groups">
+								<option value="">bitte wählen …</option>
+								<?php foreach ( [ 'ja' => 'Ja', 'absprache' => 'Ja, nach Absprache', 'nein' => 'Nein' ] as $gk => $gl ) : ?>
+									<option value="<?php echo esc_attr( $gk ); ?>" <?php selected( $m( 'coach_venue_groups' ), $gk ); ?>><?php echo esc_html( $gl ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div>
+							<label class="fg-form-label" for="fge_coach_venue_fees">Range-Bälle und Greenfee</label>
+							<select class="fg-form-input" id="fge_coach_venue_fees" name="fge_coach_venue_fees">
+								<option value="">bitte wählen …</option>
+								<?php foreach ( [ 'inklusive' => 'In meinem Preis enthalten', 'separat' => 'Rechnet die Anlage separat ab', 'format' => 'Je nach Format' ] as $fk => $fl ) : ?>
+									<option value="<?php echo esc_attr( $fk ); ?>" <?php selected( $m( 'coach_venue_fees' ), $fk ); ?>><?php echo esc_html( $fl ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+						<div>
+							<label class="fg-form-label" for="fge_coach_gastro_involve">Gastronomie der Anlage einbinden?</label>
+							<select class="fg-form-input" id="fge_coach_gastro_involve" name="fge_coach_gastro_involve">
+								<option value="">bitte wählen …</option>
+								<?php foreach ( [ 'ja' => 'Ja, Anfragen direkt über die Gastronomie', 'nein' => 'Nein', 'offen' => 'Später klären' ] as $gk => $gl ) : ?>
+									<option value="<?php echo esc_attr( $gk ); ?>" <?php selected( $m( 'coach_gastro_involve' ), $gk ); ?>><?php echo esc_html( $gl ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+					</div>
+					<div class="fg-form-row fg-form-row--2col">
+						<div>
+							<label class="fg-form-label" for="fge_coach_mobile">Kommst du auch zum Unternehmen?</label>
+							<select class="fg-form-input" id="fge_coach_mobile" name="fge_coach_mobile">
+								<option value="">bitte wählen …</option>
+								<option value="1" <?php selected( $m( 'coach_mobile' ), '1' ); ?>>Ja, mobiles Angebot</option>
+								<option value="0" <?php selected( $m( 'coach_mobile' ), '0' ); ?>>Nein</option>
+							</select>
+						</div>
+						<div>
+							<label class="fg-form-label" for="fge_coach_mobile_radius">Reiseradius in km</label>
+							<input class="fg-form-input" type="number" min="0" max="999" id="fge_coach_mobile_radius" name="fge_coach_mobile_radius" value="<?php echo esc_attr( (string) ( (int) $m( 'coach_mobile_radius' ) ?: '' ) ); ?>">
+						</div>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_coach_mobile_costs">Reisekosten</label>
+						<select class="fg-form-input" id="fge_coach_mobile_costs" name="fge_coach_mobile_costs">
+							<option value="">bitte wählen …</option>
+							<?php foreach ( [ 'inklusive' => 'Enthalten', 'pauschale' => 'Pauschale', 'km' => 'Pro Kilometer' ] as $ck => $cl ) : ?>
+								<option value="<?php echo esc_attr( $ck ); ?>" <?php selected( $m( 'coach_mobile_costs' ), $ck ); ?>><?php echo esc_html( $cl ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_coach_mobile_equipment">Was bringst du mit?</label>
+						<textarea class="fg-form-textarea" id="fge_coach_mobile_equipment" name="fge_coach_mobile_equipment" rows="3" placeholder="z. B. Schläger-Sets, Abschlagmatten, Launch Monitor"><?php echo esc_textarea( $m( 'coach_mobile_equipment' ) ); ?></textarea>
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_coach_mobile_space">Platzbedarf für dein Setup</label>
+						<input class="fg-form-input" type="text" id="fge_coach_mobile_space" name="fge_coach_mobile_space" value="<?php echo esc_attr( $m( 'coach_mobile_space' ) ); ?>" placeholder="z. B. 6 x 4 m, 3,5 m Deckenhöhe">
+					</div>
+					<div class="fg-form-row">
+						<label class="fg-form-label" for="fge_coach_venues_note">Weitere Standorte</label>
+						<textarea class="fg-form-textarea" id="fge_coach_venues_note" name="fge_coach_venues_note" rows="3" placeholder="z. B. GC Zweitstadt, freier Trainer, Range und Kurzspiel"><?php echo esc_textarea( $m( 'coach_venues_note' ) ); ?></textarea>
+					</div>
+					<?php
+					break;
+
 				case 'steckbrief':
 					?>
 					<div class="fg-form-row">

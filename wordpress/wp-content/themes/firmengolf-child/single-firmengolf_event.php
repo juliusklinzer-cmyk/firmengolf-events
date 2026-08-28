@@ -533,7 +533,7 @@ get_header();
 				<?php /* Vor Ort am Platz, Infrastruktur-Highlights des Golfplatzes */ ?>
 				<?php if ( $onsite ) : ?>
 				<section>
-					<div class="fg-section-eyebrow">Vor Ort am Platz</div>
+					<div class="fg-section-eyebrow"><?php echo esc_html( $partner_id && function_exists( 'fge_partner_type' ) && 'course' !== fge_partner_type( $partner_id ) ? 'Vor Ort' : 'Vor Ort am Platz' ); ?></div>
 					<div class="evd-poi-grid evd-onsite">
 						<?php foreach ( $onsite as $o ) : ?>
 						<div class="evd-poi">
@@ -586,9 +586,16 @@ get_header();
 					<?php endforeach; ?>
 				</div>
 				<?php endif; ?>
-				<?php if ( $partner_id && function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) ) : ?>
+				<?php if ( $partner_id && function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) ) :
+					// Veranstalter-Wording je Partner-Typ (Julius, 28.08.: Coach und Indoor
+					// sind Veranstalter wie ein Platz, der Weg zu ihnen führt übers Event).
+					$venue_more = 'Mehr zum Golfplatz';
+					if ( function_exists( 'fge_partner_type' ) ) {
+						$venue_more = [ 'course' => 'Mehr zum Golfplatz', 'coach' => 'Mehr über', 'indoor' => 'Mehr zur Anlage' ][ fge_partner_type( $partner_id ) ] ?? $venue_more;
+					}
+					?>
 				<a class="fg-btn fg-btn-outline evd-venue-link" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" style="margin-top:20px;">
-					Mehr zum Golfplatz <?php echo esc_html( $venue ?: get_the_title( $partner_id ) ); ?> →
+					<?php echo esc_html( $venue_more ); ?> <?php echo esc_html( $venue ?: get_the_title( $partner_id ) ); ?> →
 				</a>
 				<?php endif; ?>
 			</div>
