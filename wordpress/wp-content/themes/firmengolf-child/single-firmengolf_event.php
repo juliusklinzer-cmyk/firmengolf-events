@@ -420,10 +420,21 @@ get_header();
 		(function () {
 			var btn = document.querySelector('.fg-gallery-more'), all = document.getElementById('fg-gallery-all');
 			if (!btn || !all) return;
+			var galLockY = 0;
 			function setOpen(open) {
 				all.hidden = !open;
 				btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-				document.body.style.overflow = open ? 'hidden' : '';
+				// Positionsfeste Sperre wie beim Anfrage-Wizard (iOS ignoriert body-overflow).
+				var b = document.body.style;
+				if (open) {
+					galLockY = window.scrollY || 0;
+					document.documentElement.classList.add('fg-drawer-lock');
+					b.position = 'fixed'; b.top = (-galLockY) + 'px'; b.left = '0'; b.right = '0'; b.width = '100%';
+				} else {
+					document.documentElement.classList.remove('fg-drawer-lock');
+					b.position = ''; b.top = ''; b.left = ''; b.right = ''; b.width = '';
+					window.scrollTo(0, galLockY);
+				}
 				if (open) { var c = all.querySelector('.fg-gallery-modal-close'); if (c) c.focus(); } else { btn.focus(); }
 			}
 			btn.addEventListener('click', function () { setOpen(all.hidden); });
@@ -1142,15 +1153,36 @@ get_header();
 			if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
 			else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 		}
+		/* Positionsfeste Seiten-Sperre statt body.overflow: iOS ignoriert
+		   overflow:hidden am body, die Seite scrollte hinter dem Wizard mit —
+		   nach dem Schließen landete man irgendwo unten statt an der
+		   Ausgangsstelle (Julius-Video 2, 28.08.). position:fixed am body
+		   friert die Seite exakt ein, beim Schließen wird die Scrollposition
+		   wiederhergestellt. */
+		var fgLockY = 0;
+		function fgLockPage() {
+			fgLockY = window.scrollY || window.pageYOffset || 0;
+			document.documentElement.classList.add('fg-drawer-lock');
+			var b = document.body.style;
+			b.position = 'fixed'; b.top = (-fgLockY) + 'px'; b.left = '0'; b.right = '0'; b.width = '100%';
+		}
+		function fgUnlockPage() {
+			document.documentElement.classList.remove('fg-drawer-lock');
+			var b = document.body.style;
+			b.position = ''; b.top = ''; b.left = ''; b.right = ''; b.width = '';
+			window.scrollTo(0, fgLockY);
+		}
 		function openModal()  {
 			fgLastFocus = document.activeElement;
-			modal.classList.remove('is-hidden'); document.body.style.overflow = 'hidden'; show(0);
+			fgLockPage();
+			modal.classList.remove('is-hidden'); show(0);
 			document.addEventListener('keydown', fgTrapKey);
 			var f = fgVisibleFocusable();
 			if (f.length) { f[0].focus(); }
 		}
 		function closeModal() {
-			modal.classList.add('is-hidden'); document.body.style.overflow = '';
+			modal.classList.add('is-hidden');
+			fgUnlockPage();
 			document.removeEventListener('keydown', fgTrapKey);
 			if (fgLastFocus && fgLastFocus.focus) { fgLastFocus.focus(); }
 		}

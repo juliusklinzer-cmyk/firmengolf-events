@@ -7066,3 +7066,20 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
   .gp-pack-grid { grid-template-columns: 1fr; gap: 28px; }
   .gp-pack-chips { justify-content: flex-start; }
 }
+
+/* ── iOS-Zoom-Sperre für alle Formularfelder (CLAUDE-MOBILE Punkt 2) ─────────
+   Unter 16px zoomt iOS Safari beim Fokus in die Seite und bleibt danach
+   gezoomt: die Seite wirkt „leicht gezoomt und komisch", und fixierte Wizards
+   decken den sichtbaren Ausschnitt nicht mehr (Julius-Video 2, 28.08.2026).
+   Zentral für ALLE Formular-Klassen der Strecken (Design-Linie: eine Regel,
+   keine Kopien pro Namensraum). */
+@media (max-width: 768px) {
+  .fg-input,
+  .fg-form-input, .fg-form-select, .fg-form-textarea,
+  .ob-input, .ob-select, .ob-textarea,
+  .wz-input,
+  .fg-modal input, .fg-modal select, .fg-modal textarea,
+  .rw-overlay input, .rw-overlay select, .rw-overlay textarea {
+    font-size: 16px;
+  }
+}
