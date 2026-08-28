@@ -91,7 +91,7 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 		<p style="margin:0 0 8px;"><strong>Wie es jetzt weitergeht</strong></p>
 		<ul style="margin:0 0 16px;padding-left:20px;">
 			<li style="margin-bottom:6px;">Wir sehen uns deine Angaben in Ruhe an und prüfen passende Optionen.</li>
-			<li style="margin-bottom:6px;">Innerhalb eines Werktags meldet sich ein:e echte:r Ansprechpartner:in persönlich bei dir.</li>
+			<li style="margin-bottom:6px;">Innerhalb eines Werktags meldet sich ein echter Ansprechpartner persönlich bei dir.</li>
 		</ul>
 		<p style="margin:0 0 16px;">Du musst nichts weiter tun. Fällt dir in der Zwischenzeit noch etwas ein, antworte einfach auf diese E-Mail oder schreib uns an <a href="mailto:' . esc_attr( $events_email ) . '" style="color:#4279D1;">' . esc_html( $events_email ) . '</a>.</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( fge_offer_link( $request_id ), 'Status meiner Anfrage ansehen' ) . '</p>

@@ -2432,7 +2432,7 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 		<?php fge_onboarding_input( 'fge_contact_last_name', 'fge_contact_last_name', 'Nachname', $saved_last, 'text', true, 'Hoffmann', $errors ); ?>
 	</div>
 	<?php
-	fge_onboarding_input( 'fge_contact_role', 'fge_contact_role', 'Rolle im Club', $v['main_contact_role'] ?? '', 'text', false, 'z. B. Clubmanager:in, Eventleitung' );
+	fge_onboarding_input( 'fge_contact_role', 'fge_contact_role', 'Rolle im Club', $v['main_contact_role'] ?? '', 'text', false, 'z. B. Clubmanager, Eventleitung' );
 	?>
 	<div class="ob-field-row">
 		<?php fge_onboarding_input( 'fge_contact_email', 'fge_contact_email', 'E-Mail', $v['main_contact_email'] ?? '', 'email', true, 'name@golfclub.de', $errors, 'Wird zum Login.', '', true ); ?>
