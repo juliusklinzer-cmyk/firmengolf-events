@@ -114,6 +114,39 @@
 			search.addEventListener('keydown', function (e) {
 				if (e.key === 'Enter') { e.preventDefault(); }
 			});
+
+			// Indoor-Wizard: das Suchfeld ist mit dem Namen aus dem vorherigen
+			// Schritt vorbelegt (data-fge-autolookup). Solange noch kein Pin steht,
+			// einmal automatisch bei Google nachschlagen, damit die Location direkt
+			// gefunden wird (Julius, 28.08.). Der Nutzer kann Treffer/Pin danach
+			// jederzeit korrigieren.
+			if (search.getAttribute('data-fge-autolookup') === '1'
+				&& search.value.trim()
+				&& !hasCoords
+				&& google.maps.places.PlacesService) {
+				var svc = new google.maps.places.PlacesService(map);
+				svc.findPlaceFromQuery({
+					query: search.value.trim(),
+					fields: ['place_id', 'geometry', 'formatted_address', 'name']
+				}, function (results, status) {
+					if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results[0]) { return; }
+					if (pinLocked) { return; }
+					var top = results[0];
+					if (top.geometry && top.geometry.location) {
+						setPin(top.geometry.location.lat(), top.geometry.location.lng(), true);
+					}
+					if (placeEl && top.place_id) { placeEl.value = top.place_id; }
+					// Adresse per Details holen (findPlaceFromQuery liefert keine
+					// address_components), damit Straße/PLZ/Ort/Bundesland füllen.
+					if (top.place_id && google.maps.places.PlacesService) {
+						svc.getDetails({ placeId: top.place_id, fields: ['address_components'] }, function (detail, dStatus) {
+							if (dStatus === google.maps.places.PlacesServiceStatus.OK && detail && !pinLocked) {
+								fillAddress(detail.address_components || []);
+							}
+						});
+					}
+				});
+			}
 		}
 
 		// ── 2) Manual entry: geocode the typed address once it is complete ──

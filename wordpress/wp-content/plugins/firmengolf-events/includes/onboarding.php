@@ -2318,11 +2318,21 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 
 	if ( fge_gmaps_api_key() !== '' && ! $is_coach ) :
 		// Beim Coach übernimmt das Anlagen-Namensfeld oben die Google-Suche.
+		// Indoor: eigener Ton (kein „Golfplatz") + Vorbelegung mit dem Namen aus
+		// dem vorherigen Schritt, damit Google direkt die Location findet (Julius, 28.08.).
+		$search_label       = $is_indoor ? 'Euren Standort suchen' : 'Golfplatz suchen';
+		$search_hint        = $is_indoor
+			? 'Such euren Indoor Golf Standort bei Google, Adresse, Bundesland und Kartenpin füllen sich automatisch.'
+			: 'Such deinen Golfplatz bei Google, Adresse, Bundesland und Kartenpin füllen sich automatisch.';
+		$search_placeholder = $is_indoor ? 'z. B. euer Studio-Name oder eure Adresse…' : 'z. B. Golfclub Hamburg-Wendlohe…';
+		// Nur vorbelegen, wenn noch keine Adresse gesetzt ist (sonst überschreibt
+		// die Suche keine bestätigten Angaben).
+		$search_prefill = ( $is_indoor && '' === (string) ( $v['street'] ?? '' ) ) ? (string) ( $v['public_golfclub_name'] ?? '' ) : '';
 		?>
 		<div class="ob-field full">
-			<label class="ob-field-label" for="fge_map_search">Golfplatz suchen</label>
-			<span class="ob-field-hint">Such deinen Golfplatz bei Google, Adresse, Bundesland und Kartenpin füllen sich automatisch.</span>
-			<input type="text" id="fge_map_search" class="ob-input" placeholder="z. B. Golfclub Hamburg-Wendlohe…" autocomplete="off">
+			<label class="ob-field-label" for="fge_map_search"><?php echo esc_html( $search_label ); ?></label>
+			<span class="ob-field-hint"><?php echo esc_html( $search_hint ); ?></span>
+			<input type="text" id="fge_map_search" class="ob-input" placeholder="<?php echo esc_attr( $search_placeholder ); ?>" value="<?php echo esc_attr( $search_prefill ); ?>" autocomplete="off"<?php echo '' !== $search_prefill ? ' data-fge-autolookup="1"' : ''; ?>>
 		</div>
 		<?php
 	endif;
