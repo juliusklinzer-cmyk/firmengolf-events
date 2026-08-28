@@ -14,6 +14,7 @@ Feste Reihenfolge für alle Responsive-Arbeiten. Erst Befund (Skill `design-revi
    - Fixierte oder sticky Füße: `bottom: var(--fg-vvb, 0px);`
    - `min-height: 100vh` auf Seiten mit sticky-Fuß zusätzlich als `min-height: var(--fg-vvh, 100dvh)` setzen, sonst wächst die Seite über den sichtbaren Bereich hinaus.
    - Fuß-Paddings nehmen `env(safe-area-inset-bottom, 0px)` mit.
+   - Bei offener TASTATUR friert `fge-viewport.js` die Werte ein (solange ein Eingabefeld den Fokus hat): Vollbild-Wizards dürfen NICHT auf den Bereich über der Tastatur schrumpfen, die Tastatur legt sich wie in einer nativen App über den Wizard (Julius, 28.08.2026 abends). Nach dem Blur misst der nächste resize frisch.
    - Neue Vollbild-Flächen nie mit nacktem `inset: 0` bauen (Julius, 28.08.2026).
    - Vollbild-Flächen mit `height` UND Padding brauchen `box-sizing: border-box`, es gibt keinen globalen Reset dafür. Ohne ihn ragt die Box um das Padding unter den Viewport, der Fuß liegt hinter der Safari-Leiste (fg-modal-Fall, 28.08.2026). Zweite Falle desselben Falls: spätere Mobile-Blöcke (z. B. 720px) können das Vollbild-Padding des 768px-Blocks überschreiben, bei Änderungen an Modal-Paddings beide Blöcke prüfen.
    - Aktions-Füße in scrollenden Vollbild-Dialogen `position: sticky; bottom: 0` mit eigenem Grund + safe-area-Padding geben, dann sind die Buttons in jedem Leisten-Zustand ohne Scrollen sichtbar.

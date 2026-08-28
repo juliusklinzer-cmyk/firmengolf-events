@@ -30,8 +30,22 @@
 	var vv = window.visualViewport || null;
 	var pending = 0;
 
+	/* Tastatur offen? Dann NICHT nachziehen (Julius, 28.08. abends): sonst
+	   schrumpfen Vollbild-Wizards auf den Bereich über der Tastatur, springen
+	   hoch und geben den Blick auf die Seite dahinter frei. Die Tastatur soll
+	   sich wie in einer nativen App einfach über den Wizard legen; nach dem
+	   Blur liefert der nächste visualViewport-resize wieder echte Maße. */
+	function editableFocused() {
+		var a = document.activeElement;
+		if (!a) { return false; }
+		var t = a.tagName;
+		return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || a.isContentEditable === true;
+	}
+
 	function apply() {
 		pending = 0;
+
+		if (editableFocused()) { return; }
 
 		var h = vv ? vv.height : window.innerHeight;
 		var t = vv ? vv.offsetTop : 0;
@@ -63,6 +77,9 @@
 	}
 	window.addEventListener('resize', sync);
 	window.addEventListener('orientationchange', sync);
+	// Nach dem Verlassen eines Feldes frisch messen: die Tastatur fährt gerade
+	// ein, der letzte resize danach bringt wieder die vollen Maße.
+	document.addEventListener('focusout', function () { setTimeout(sync, 250); });
 	// Zurück-Navigation aus dem bfcache liefert sonst veraltete Maße.
 	window.addEventListener('pageshow', sync);
 	document.addEventListener('DOMContentLoaded', sync);
