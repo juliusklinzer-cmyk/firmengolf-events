@@ -1396,3 +1396,51 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 .ob-foot-legal a:hover, .ob-foot-legal a:focus-visible { color: var(--fairway-700, #4279D1); text-decoration: underline; text-underline-offset: 2px; }
 .ob-privacy-note { margin: 14px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-600, #5C6660); }
 .ob-privacy-note a { color: var(--fairway-700, #4279D1); }
+
+/* ── Indoor-Feedback-Runde (Julius, 28.08.) ────────────────────────────────── */
+/* Karten mit Erklärzeile (Anlagentyp-Auswahl): Label + Untertitel gestapelt. */
+.ob-card-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ob-card-txt .ob-card-l { display: block; }
+.ob-card-sub { font-size: 13px; font-weight: 400; color: var(--ink-500); line-height: 1.45; }
+.ob-card:has(.ob-card-input:checked) .ob-card-sub { color: var(--fairway-900); opacity: 0.75; }
+
+/* Kontakte-Slide: konkrete Rollen-Buttons untereinander. */
+.ob-add-contact-row { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.ob-add-contact-row .ob-add-contact { width: 100%; justify-content: flex-start; }
+
+/* Nur-Code-Ansicht der E-Mail-Bestätigung. */
+.ob-verify--solo { margin-top: 0; padding-top: 0; border-top: 0; max-width: 420px; }
+.ob-verify-mail {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 600; color: var(--ink-900);
+  background: var(--paper-200); border-radius: var(--radius-pill);
+  padding: 8px 16px; margin-bottom: 16px; word-break: break-all;
+}
+
+/* Preis-Slide: Hero-Karte + nummerierte Schritte. */
+.ob-price-hero {
+  display: flex; gap: 18px; align-items: flex-start;
+  background: var(--fairway-50); border: 1px solid var(--fairway-200, var(--ink-200));
+  border-radius: var(--radius-xl, 18px); padding: 22px 24px;
+}
+.ob-price-hero-ico {
+  width: 44px; height: 44px; flex: none; border-radius: 999px;
+  background: var(--fairway-700); color: var(--paper-50);
+  display: grid; place-items: center;
+}
+.ob-price-hero-ico svg { width: 24px; height: 24px; }
+.ob-price-hero-t { font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--ink-900); letter-spacing: -0.01em; }
+.ob-price-hero-s { font-size: 14px; line-height: 1.6; color: var(--ink-700); margin: 6px 0 0; }
+.ob-price-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.ob-price-step { display: flex; gap: 16px; align-items: flex-start; padding: 16px 4px; }
+.ob-price-step + .ob-price-step { border-top: 1px solid var(--ink-200); }
+.ob-price-num {
+  width: 30px; height: 30px; flex: none; border-radius: 999px;
+  border: 1.5px solid var(--fairway-700); color: var(--fairway-700);
+  display: grid; place-items: center; font-size: 14px; font-weight: 700;
+}
+.ob-price-step-t { display: block; font-size: 15px; font-weight: 600; color: var(--ink-900); }
+.ob-price-step-s { display: block; font-size: 13.5px; line-height: 1.55; color: var(--ink-500); margin-top: 3px; }
+@media (max-width: 560px) {
+  .ob-price-hero { flex-direction: column; gap: 12px; padding: 18px; }
+}

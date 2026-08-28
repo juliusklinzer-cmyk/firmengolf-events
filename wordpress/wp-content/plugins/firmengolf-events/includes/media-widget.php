@@ -18,6 +18,14 @@ function fge_media_widget_config( int $partner_id ): array {
 	$lim = fge_onboarding_media_limits();
 	$lid = (int) get_post_meta( $partner_id, '_fge_logo_attachment_id', true );
 
+	// Leertexte je Partnertyp (Julius, 28.08.): „Platz" passt nur zum Golfplatz.
+	$ptype        = function_exists( 'fge_partner_type' ) ? fge_partner_type( $partner_id ) : 'course';
+	$empty_titles = [
+		'course' => 'Füge ein paar Fotos deines Platzes hinzu',
+		'indoor' => 'Füge ein paar Fotos eurer Location hinzu',
+		'coach'  => 'Füge Fotos von dir und deinen Kursen hinzu',
+	];
+
 	return [
 		'restRoot'  => esc_url_raw( rest_url( 'firmengolf/v1' ) ),
 		'nonce'     => wp_create_nonce( 'wp_rest' ),
@@ -33,7 +41,7 @@ function fge_media_widget_config( int $partner_id ): array {
 		'gallery'   => fge_rest_gallery_payload( $partner_id ),
 		'logo'      => $lid > 0 ? fge_rest_photo_payload( $lid ) : null,
 		'i18n'      => [
-			'emptyTitle'   => 'Füge ein paar Fotos deines Platzes hinzu',
+			'emptyTitle'   => $empty_titles[ $ptype ] ?? $empty_titles['course'],
 			'emptyHint'    => 'Du brauchst mindestens 5 Fotos, um loszulegen. Du kannst später jederzeit weitere hinzufügen oder ändern.',
 			'addPhotos'    => 'Fotos hinzufügen',
 			'addMore'      => 'Weitere hinzufügen',

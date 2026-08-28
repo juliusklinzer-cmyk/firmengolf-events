@@ -31,12 +31,14 @@
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 10px; line-height: 1; color: transparent;
 }
-.fge-check.is-ok { color: var(--fairway-700); border-color: var(--fairway-200); background: var(--fairway-100); }
+/* Ruhige Chips statt grüner Flächen (Julius, 28.08.): nur Punkt + Text färben. */
+.fge-check.is-ok { color: var(--fairway-700); border-color: var(--ink-200); background: var(--paper-50); }
 .fge-check.is-ok .fge-check-dot { background: var(--fairway-700); border-color: var(--fairway-700); color: #fff; }
 
-/* ── Slots (Logo + Titelbild) ────────────────────────────────────────────── */
-.fge-slots { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
-.fge-slots.no-logo { grid-template-columns: 1fr; }
+/* ── Slots (Titelbild groß voran, Logo klein darunter — Julius, 28.08.) ──── */
+.fge-slots { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.fge-slot-wrap-cover { order: 1; }
+.fge-slot-wrap-logo { order: 2; max-width: 200px; }
 .fge-slot-label { font-size: 14px; font-weight: 600; color: var(--ink-900); margin-bottom: 8px; }
 .fge-slot-specs { font-size: 12px; color: var(--ink-500); line-height: 1.5; margin-top: 8px; }
 .fge-slot-warn { font-size: 12px; font-weight: 500; color: #b45309; line-height: 1.5; margin-top: 6px; }
@@ -48,7 +50,7 @@
   gap: 8px; text-align: center; padding: 18px;
   transition: border-color var(--dur-fast, .15s) var(--ease-out, ease), background var(--dur-fast, .15s) var(--ease-out, ease);
 }
-.fge-slot:hover, .fge-slot.is-dragover { border-color: var(--fairway-700); background: var(--fairway-100); }
+.fge-slot:hover, .fge-slot.is-dragover { border-color: var(--fairway-600); background: var(--paper-200); }
 .fge-slot.is-filled { border-style: solid; border-color: var(--ink-200); background: var(--paper-200); padding: 0; }
 .fge-slot-logo  { aspect-ratio: 1/1; }
 .fge-slot-cover { aspect-ratio: 16/9; }
@@ -85,7 +87,7 @@
   border: 1.5px dashed transparent;
   transition: border-color var(--dur-fast, .15s) var(--ease-out, ease), background var(--dur-fast, .15s) var(--ease-out, ease);
 }
-.fge-gallery-grid.is-dragover { border-color: var(--fairway-700); background: var(--fairway-100); }
+.fge-gallery-grid.is-dragover { border-color: var(--fairway-600); background: var(--paper-200); }
 .fge-gallery-item {
   position: relative; aspect-ratio: 3/2; border-radius: var(--radius-lg, 16px);
   background-size: cover; background-position: center; background-color: var(--paper-200);
@@ -140,7 +142,7 @@
   font: inherit; font-size: 13px; font-weight: 500; padding: 10px; text-align: center;
   transition: border-color var(--dur-fast, .15s) var(--ease-out, ease), background var(--dur-fast, .15s) var(--ease-out, ease);
 }
-.fge-media .fge-gallery-add:hover { border-color: var(--fairway-700); color: var(--fairway-700); background: var(--fairway-100); }
+.fge-media .fge-gallery-add:hover { border-color: var(--fairway-600); color: var(--fairway-700); background: var(--paper-200); }
 .fge-gallery-add-plus { font-size: 28px; font-weight: 300; line-height: 1; }
 /* Leere Platzhalter-Kacheln: gleicher gestrichelter Look, ohne Plus. */
 .fge-gallery-ph {
@@ -151,8 +153,7 @@
 .fge-gallery-ph svg { width: 26px; height: 26px; }
 
 @media (max-width: 700px) {
-  .fge-slots { grid-template-columns: 1fr; }
-  .fge-slot-logo { aspect-ratio: 16/9; }
+  .fge-slot-wrap-logo { max-width: 160px; }
   .fge-gallery-grid { grid-template-columns: 1fr 1fr; padding: 0; border: 0; }
 }
 

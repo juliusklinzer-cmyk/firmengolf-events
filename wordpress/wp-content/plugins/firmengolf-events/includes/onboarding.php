@@ -60,8 +60,9 @@ function fge_onboarding_manifest( string $type = '' ): array {
 
 	if ( 'indoor' === $type ) {
 		// Formular B (Plan Abschnitt 2): eigene Slides für Anlagentyp, Technik,
-		// Räume, Formate, Wintersaison und Öffnungszeiten; basics/location/
-		// arrival/main/contacts/gastro/pricing/billing/media/review geteilt.
+		// Räume, Formate und Öffnungszeiten; basics/location/arrival/main/
+		// contacts/gastro/pricing/media/review geteilt. Die Wintersaison-Slide
+		// ist gestrichen (Julius, 28.08.): Saison lebt bei den Öffnungszeiten.
 		$slides = [
 			[ 'id' => 'intro-1',        'chapter' => 1, 'kind' => 'intro' ],
 			[ 'id' => 'indoor-kind',    'chapter' => 1, 'kind' => 'form', 'wide' => true ],
@@ -75,7 +76,6 @@ function fge_onboarding_manifest( string $type = '' ): array {
 			[ 'id' => 'indoor-spaces',  'chapter' => 2, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'gastro',         'chapter' => 2, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'indoor-formats', 'chapter' => 2, 'kind' => 'form', 'wide' => true ],
-			[ 'id' => 'indoor-winter',  'chapter' => 2, 'kind' => 'form' ],
 			[ 'id' => 'intro-3',        'chapter' => 3, 'kind' => 'intro' ],
 			[ 'id' => 'indoor-hours',   'chapter' => 3, 'kind' => 'form' ],
 			[ 'id' => 'pricing',        'chapter' => 3, 'kind' => 'form' ],
@@ -394,8 +394,9 @@ function fge_onboarding_is_submittable( int $partner_id ): bool {
 		$sim = is_array( $sim ) ? $sim : [];
 		if ( (int) ( $sim['boxes'] ?? 0 ) < 1 )       { return false; }
 		if ( (int) ( $sim['max_persons'] ?? 0 ) < 1 ) { return false; }
-		$fmts = get_post_meta( $partner_id, '_fge_indoor_formats', true );
-		return is_array( $fmts ) && ! empty( $fmts );
+		// Formate sind optional (Julius, 28.08.): sie dienen nur als Platzhalter-
+		// Vorschläge, die konkreten Angebote entstehen später im Portal.
+		return true;
 	}
 
 	// ── Golflehrer (Formular A): Person, eigene Anlage mit Adresse, Formate ──
@@ -502,9 +503,8 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 				update_post_meta( $partner_id, '_fge_google_maps_url', $su( 'fge_google_maps_url' ) );
 			}
 			// Indoor-Zusatzfelder (B4): nur speichern, wenn das Formular sie hatte.
-			if ( isset( $post['fge_indoor_floor'] ) ) {
-				update_post_meta( $partner_id, '_fge_indoor_floor', $s( 'fge_indoor_floor' ) );
-				update_post_meta( $partner_id, '_fge_indoor_elevator', $san_select( 'fge_indoor_elevator', [ '1', '0' ] ) );
+			// Etage/Aufzug sind gestrichen (Julius, 28.08.), der Eingangs-Hinweis reicht.
+			if ( isset( $post['fge_indoor_entrance_note'] ) ) {
 				update_post_meta( $partner_id, '_fge_indoor_entrance_note', $sa( 'fge_indoor_entrance_note' ) );
 			}
 			// Coach: die kombinierte Standort-Slide trägt auch Anlagen-Name,
@@ -640,6 +640,8 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'indoor-detail':
+			// Verschlankt (Julius, 28.08.): Leihschläger leben bei den Spielmöglich-
+			// keiten, Betreuung/Exklusiv/Offseason/Winterzeiten sind gestrichen.
 			// Gleiche Schlüssel wie beim künftigen indoor-Partnertyp (Abschnitt 3a),
 			// damit Suche, Filter und Angebote nur EIN Datenmodell kennen.
 			update_post_meta( $partner_id, '_fge_indoor_sim', [
@@ -650,13 +652,7 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 				'box_comfort'    => absint( $post['fge_indoor_box_comfort'] ?? 0 ),
 				'box_max'        => absint( $post['fge_indoor_box_max'] ?? 0 ),
 				'lefthand'       => $san_select( 'fge_indoor_lefthand', [ 'all', 'some', 'no' ] ),
-				'rental_clubs'   => $san_select( 'fge_indoor_rental_clubs', [ '1', '0' ] ),
-				'support'        => $san_select( 'fge_indoor_support', [ 'inklusive', 'aufpreis', 'nein' ] ),
-				'exclusive'      => $san_select( 'fge_indoor_exclusive', [ 'ja', 'ab', 'nein' ] ),
-				'exclusive_from' => absint( $post['fge_indoor_exclusive_from'] ?? 0 ),
 				'max_persons'    => absint( $post['fge_indoor_max_persons'] ?? 0 ),
-				'offseason'      => $san_select( 'fge_indoor_offseason', [ '1', '0' ] ),
-				'winter_hours'   => $s( 'fge_indoor_winter_hours' ),
 			] );
 			break;
 
@@ -668,6 +664,11 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 
 		case 'indoor-spaces':
 			update_post_meta( $partner_id, '_fge_indoor_spaces', $san_group( 'fge_indoor_spaces', fge_catalog_indoor_infra_ids() ) );
+			// Eigene Kacheln aus dem Freitext (Julius, 28.08.): abgewählte fliegen raus.
+			$custom_spaces = is_array( $post['fge_indoor_spaces_custom'] ?? null )
+				? array_values( array_filter( array_map( 'sanitize_text_field', array_map( 'wp_unslash', $post['fge_indoor_spaces_custom'] ) ) ) )
+				: [];
+			update_post_meta( $partner_id, '_fge_indoor_spaces_custom', array_slice( $custom_spaces, 0, 12 ) );
 			update_post_meta( $partner_id, '_fge_indoor_area', absint( $post['fge_indoor_area'] ?? 0 ) );
 			break;
 
@@ -675,30 +676,20 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			update_post_meta( $partner_id, '_fge_indoor_formats', $san_group( 'fge_indoor_formats', array_keys( fge_catalog_indoor_formats() ) ) );
 			break;
 
-		case 'indoor-winter':
-			$pf = min( 12, max( 1, absint( $post['fge_indoor_peak_from'] ?? 10 ) ) );
-			$pt = min( 12, max( 1, absint( $post['fge_indoor_peak_to'] ?? 3 ) ) );
-			update_post_meta( $partner_id, '_fge_indoor_peak_from', $pf );
-			update_post_meta( $partner_id, '_fge_indoor_peak_to', $pt );
-			update_post_meta( $partner_id, '_fge_indoor_closures', $sa( 'fge_indoor_closures' ) );
-			update_post_meta( $partner_id, '_fge_indoor_shortnotice', $san_select( 'fge_indoor_shortnotice', [ '72', '48', '24', 'regular' ] ) );
-			update_post_meta( $partner_id, '_fge_indoor_hold_slots', $san_select( 'fge_indoor_hold_slots', [ '1', '0' ] ) );
-			update_post_meta( $partner_id, '_fge_indoor_nearby', $sa( 'fge_indoor_nearby' ) );
-			update_post_meta( $partner_id, '_fge_indoor_radius_km', absint( $post['fge_indoor_radius_km'] ?? 0 ) );
-			break;
-
 		case 'indoor-hours':
+			// Neu geschnitten (Julius, 28.08.): Öffnungszeiten + Ganzjährig-Frage
+			// (bei Nein: geöffnet von/bis, deckt auch Betriebsferien ab) + Standard-
+			// Tages-Kacheln + außerhalb-der-Zeiten Ja/Nein. Eventstart, Mindestdauer
+			// und Vorlauf-Auswahl sind gestrichen (Standardvorlauf gilt).
 			update_post_meta( $partner_id, '_fge_indoor_open_note', $s( 'fge_indoor_open_note' ) );
-			update_post_meta( $partner_id, '_fge_indoor_year_round', $san_select( 'fge_indoor_year_round', [ '1', '0' ] ) );
+			$year_round = $san_select( 'fge_indoor_year_round', [ '1', '0' ] );
+			update_post_meta( $partner_id, '_fge_indoor_year_round', $year_round );
+			update_post_meta( $partner_id, '_fge_indoor_open_from', min( 12, max( 1, absint( $post['fge_indoor_open_from'] ?? 1 ) ) ) );
+			update_post_meta( $partner_id, '_fge_indoor_open_to', min( 12, max( 1, absint( $post['fge_indoor_open_to'] ?? 12 ) ) ) );
 			update_post_meta( $partner_id, '_fge_preferred_event_days', $san_group( 'fge_preferred_event_days', $allowed_days ) );
-			update_post_meta( $partner_id, '_fge_indoor_start_earliest', $s( 'fge_indoor_start_earliest' ) );
-			update_post_meta( $partner_id, '_fge_indoor_start_latest', $s( 'fge_indoor_start_latest' ) );
-			update_post_meta( $partner_id, '_fge_indoor_after_hours', $san_select( 'fge_indoor_after_hours', [ 'ja', 'aufpreis', 'nein' ] ) );
-			update_post_meta( $partner_id, '_fge_indoor_min_hours', absint( $post['fge_indoor_min_hours'] ?? 0 ) );
-			$lead_in = absint( $post['fge_min_lead_time_days'] ?? 14 );
-			update_post_meta( $partner_id, '_fge_min_lead_time_days', in_array( $lead_in, [ 7, 14, 20, 30 ], true ) ? $lead_in : 14 );
+			update_post_meta( $partner_id, '_fge_indoor_after_hours', $san_select( 'fge_indoor_after_hours', [ 'ja', 'nein' ] ) );
 			// Saison-Label für alle bestehenden Anzeigen; ganzjährig ist der Normalfall.
-			update_post_meta( $partner_id, '_fge_season', '0' === (string) ( $post['fge_indoor_year_round'] ?? '' ) ? 'Saisonal, siehe Öffnungszeiten' : 'Ganzjährig' );
+			update_post_meta( $partner_id, '_fge_season', '0' === $year_round ? 'Saisonal, siehe Öffnungszeiten' : 'Ganzjährig' );
 			update_post_meta( $partner_id, '_fge_individual_availability_check', 1 );
 			break;
 
@@ -981,6 +972,9 @@ function fge_onboarding_handle_step(): void {
 				// Neuer Code, wenn: „erneut senden", noch kein Code eingegeben,
 				// oder die Adresse seit dem letzten Versand geändert wurde.
 				if ( ! empty( $_POST['fge_ob_resend'] ) || '' === $code || $code_sent_to !== $email ) {
+					// Kontaktdaten schon jetzt in die Metas schreiben (ohne Account):
+					// die Nur-Code-Ansicht trägt sie als Hidden-Felder weiter (Julius, 28.08.).
+					fge_onboarding_save_slide( $partner_id, 'main', $_POST );
 					$send = fge_ev_send_code( $email, $ev_ctx );
 					set_transient( 'fge_ob_verify_' . $partner_id, $email, 15 * MINUTE_IN_SECONDS );
 					$errs = is_wp_error( $send ) ? [ 'fge_contact_code' => $send->get_error_message() ] : [];
@@ -1200,18 +1194,6 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 			if ( ! in_array( (string) ( $post['fge_indoor_lefthand'] ?? '' ), [ 'all', 'some', 'no' ], true ) ) {
 				$errors['fge_indoor_lefthand'] = 'Bitte gib an, ob Linkshänder spielen können.';
 			}
-			if ( ! in_array( (string) ( $post['fge_indoor_rental_clubs'] ?? '' ), [ '1', '0' ], true ) ) {
-				$errors['fge_indoor_rental_clubs'] = 'Bitte gib an, ob es Leihschläger gibt.';
-			}
-			if ( ! in_array( (string) ( $post['fge_indoor_support'] ?? '' ), [ 'inklusive', 'aufpreis', 'nein' ], true ) ) {
-				$errors['fge_indoor_support'] = 'Bitte gib an, ob ihr Firmenevents betreut.';
-			}
-			$excl = (string) ( $post['fge_indoor_exclusive'] ?? '' );
-			if ( ! in_array( $excl, [ 'ja', 'ab', 'nein' ], true ) ) {
-				$errors['fge_indoor_exclusive'] = 'Bitte gib an, ob Exklusivbuchung möglich ist.';
-			} elseif ( 'ab' === $excl && absint( $post['fge_indoor_exclusive_from'] ?? 0 ) < 1 ) {
-				$errors['fge_indoor_exclusive_from'] = 'Ab wie vielen Personen ist Exklusiv möglich?';
-			}
 			if ( absint( $post['fge_indoor_max_persons'] ?? 0 ) < 1 ) {
 				$errors['fge_indoor_max_persons'] = 'Maximale Personenzahl im Indoor-Bereich fehlt.';
 			}
@@ -1223,25 +1205,13 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 				: [ 'fge_indoor_kind' => 'Bitte wähle aus, was eure Anlage am besten beschreibt.' ];
 
 		case 'indoor-formats':
-			$chosen = is_array( $post['fge_indoor_formats'] ?? null ) ? array_intersect( array_map( 'sanitize_text_field', $post['fge_indoor_formats'] ), array_keys( fge_catalog_indoor_formats() ) ) : [];
-			return empty( $chosen )
-				? [ 'fge_indoor_formats' => 'Bitte wähle mindestens ein Format aus.' ]
-				: [];
-
-		case 'indoor-winter':
-			return in_array( (string) ( $post['fge_indoor_shortnotice'] ?? '' ), [ '72', '48', '24', 'regular' ], true )
-				? []
-				: [ 'fge_indoor_shortnotice' => 'Bitte gib an, wie kurzfristig ihr Anfragen annehmt.' ];
+			// Optional (Julius, 28.08.): die Auswahl erzeugt nur Platzhalter-Events.
+			return [];
 
 		case 'indoor-hours':
-			$errors = [];
-			if ( $s( 'fge_indoor_open_note' ) === '' ) {
-				$errors['fge_indoor_open_note'] = 'Bitte beschreibt kurz eure Öffnungszeiten.';
-			}
-			if ( absint( $post['fge_indoor_min_hours'] ?? 0 ) < 1 ) {
-				$errors['fge_indoor_min_hours'] = 'Wie viele Stunden dauert eine Buchung mindestens?';
-			}
-			return $errors;
+			return $s( 'fge_indoor_open_note' ) === ''
+				? [ 'fge_indoor_open_note' => 'Bitte beschreibt kurz eure Öffnungszeiten.' ]
+				: [];
 
 		case 'coach-kind':
 			return in_array( $s( 'fge_coach_kind' ), array_keys( fge_catalog_coach_kinds() ), true )
@@ -1447,7 +1417,6 @@ function fge_onboarding_render_slide_form( string $id, int $step, int $partner_i
 		case 'indoor-kind':    fge_onboarding_render_indoor_kind( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'indoor-spaces':  fge_onboarding_render_indoor_spaces( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'indoor-formats': fge_onboarding_render_indoor_formats( $step, $partner_id, $token, $vals, $errors ); break;
-		case 'indoor-winter':  fge_onboarding_render_indoor_winter( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'indoor-hours':   fge_onboarding_render_indoor_hours( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-kind':     fge_onboarding_render_coach_kind( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-profile':  fge_onboarding_render_coach_profile( $step, $partner_id, $token, $vals, $errors ); break;
@@ -1546,6 +1515,7 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'indoor_sim'                    => is_array( $m( 'indoor_sim' ) ) ? $m( 'indoor_sim' ) : [],
 		'indoor_kind'                   => (string) $m( 'indoor_kind' ),
 		'indoor_spaces'                 => is_array( $m( 'indoor_spaces' ) ) ? $m( 'indoor_spaces' ) : [],
+		'indoor_spaces_custom'          => is_array( $m( 'indoor_spaces_custom' ) ) ? $m( 'indoor_spaces_custom' ) : [],
 		'indoor_area'                   => (string) $m( 'indoor_area' ),
 		'indoor_formats'                => is_array( $m( 'indoor_formats' ) ) ? $m( 'indoor_formats' ) : [],
 		'indoor_peak_from'              => (string) $m( 'indoor_peak_from' ),
@@ -1557,6 +1527,8 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'indoor_radius_km'              => (string) $m( 'indoor_radius_km' ),
 		'indoor_open_note'              => (string) $m( 'indoor_open_note' ),
 		'indoor_year_round'             => (string) $m( 'indoor_year_round' ),
+		'indoor_open_from'              => (string) $m( 'indoor_open_from' ),
+		'indoor_open_to'                => (string) $m( 'indoor_open_to' ),
 		'indoor_start_earliest'         => (string) $m( 'indoor_start_earliest' ),
 		'indoor_start_latest'           => (string) $m( 'indoor_start_latest' ),
 		'indoor_after_hours'            => (string) $m( 'indoor_after_hours' ),
@@ -2027,7 +1999,7 @@ function fge_onboarding_icon_map(): array {
  * the choice for the server POST and drives the no-JS `:has(:checked)` styling;
  * the design icon turns fairway-green and the box keeps its colour when selected.
  */
-function fge_onboarding_card( string $type, string $name, string $id, string $label, bool $checked, ?string $icon_html = null ): void {
+function fge_onboarding_card( string $type, string $name, string $id, string $label, bool $checked, ?string $icon_html = null, string $sub = '' ): void {
 	static $map = null;
 	if ( null === $map ) {
 		$map = fge_onboarding_icon_map();
@@ -2044,7 +2016,11 @@ function fge_onboarding_card( string $type, string $name, string $id, string $la
 		<?php if ( '' !== $icon_html ) : ?>
 		<span class="ob-card-ico" aria-hidden="true"><?php echo $icon_html; // phpcs:ignore WordPress.Security.EscapeOutput, static, trusted SVG ?></span>
 		<?php endif; ?>
+		<?php if ( '' !== $sub ) : ?>
+		<span class="ob-card-txt"><span class="ob-card-l"><?php echo esc_html( $label ); ?></span><span class="ob-card-sub"><?php echo esc_html( $sub ); ?></span></span>
+		<?php else : ?>
 		<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
+		<?php endif; ?>
 	</label>
 	<?php
 }
@@ -2144,7 +2120,7 @@ function fge_onboarding_render_intro( string $id ): void {
 	$typed = [
 		'indoor:intro-1' => [
 			'eyebrow' => 'Schritt 1 · Erzählt uns von eurer Anlage',
-			'title'   => 'Macht eure Indoor-Anlage zur <span class="ob-italic">Eventlocation</span> für Unternehmen.',
+			'title'   => 'Macht eure Simulatoren zur <span class="ob-italic">Eventlocation</span> für Unternehmen.',
 			'lead'    => 'Firmenkunden kommen unter der Woche und tagsüber, genau dann, wenn Boxen sonst frei sind. In ein paar Schritten erfassen wir eure Anlage, danach können Unternehmen euch für Indoor-Events anfragen. Zwischendurch speichern geht jederzeit.',
 			'list'    => [ 'Anlage und Standort', 'Hauptkontakt + euer Login fürs Partnerportal', 'Simulatoren, Räume und Formate', 'Öffnungszeiten, Preis-Prinzip &amp; Fotos' ],
 			'meta'    => 'Dauer ungefähr 10 Minuten · keine Verpflichtung · kostenlos',
@@ -2154,15 +2130,15 @@ function fge_onboarding_render_intro( string $id ): void {
 			'eyebrow' => 'Schritt 2 · Was ihr anbieten könnt',
 			'title'   => 'Was macht eure Anlage zum <span class="ob-italic">Firmenevent</span>?',
 			'lead'    => 'Boxen, Technik, Räume und Nebenaktivitäten: Wir erfassen, was Firmengruppen bei euch erleben können, vom After-Work bis zum Simulator-Turnier mit Live-Leaderboard.',
-			'list'    => [ 'Simulatoren und Technik', 'Räume, Gastronomie und Aktivitäten', 'Formate und Wintersaison' ],
+			'list'    => [ 'Simulatoren und Technik', 'Räume, Gastronomie und Aktivitäten', 'Formate für Firmenevents' ],
 			'meta'    => '',
 			'photo'   => $img( 'onboarding-chapter-2.jpg' ),
 		],
 		'indoor:intro-3' => [
 			'eyebrow' => 'Schritt 3 · Rahmen &amp; Preis',
 			'title'   => 'Fast geschafft, jetzt die <span class="ob-italic">Rahmenbedingungen</span>.',
-			'lead'    => 'Öffnungszeiten, Preis-Prinzip, Abrechnung und Bilder, danach prüft ihr alles und reicht euer Profil ein. Wir melden uns innerhalb eines Werktags.',
-			'list'    => [ 'Öffnungszeiten &amp; Vorlauf', 'Preis-Prinzip &amp; Abrechnung', 'Fotos eurer Anlage', 'Zusammenfassung &amp; Einreichung' ],
+			'lead'    => 'Öffnungszeiten, Preis-Prinzip und Bilder, danach prüft ihr alles und reicht euer Profil ein. Wir melden uns innerhalb eines Werktags.',
+			'list'    => [ 'Öffnungszeiten &amp; Verfügbarkeit', 'Preis-Prinzip', 'Fotos eurer Location', 'Zusammenfassung &amp; Einreichung' ],
 			'meta'    => '',
 			'photo'   => $img( 'onboarding-chapter-3.jpg' ),
 		],
@@ -2245,14 +2221,16 @@ function fge_onboarding_render_golftype( int $step, int $partner_id, string $tok
 
 function fge_onboarding_render_basics( int $step, int $partner_id, string $token, array $v, array $errors ): void {
 	$is_indoor = 'indoor' === fge_onboarding_current_type();
+	// „Anlage" trifft den Ton der Branche nicht (Julius, 28.08.; vgl. Ruff Golf,
+	// Eisen 7): Indoor-Betriebe sprechen von ihrem „Indoor Golf".
 	fge_onboarding_render_step_header(
 		$step,
-		$is_indoor ? 'Wie heißt eure Anlage?' : 'Wie heißt euer Golfplatz?',
+		$is_indoor ? 'Wie heißt euer Indoor Golf?' : 'Wie heißt euer Golfplatz?',
 		'Diese Angaben erscheinen später öffentlich auf deinem Partnerprofil. Du kannst alles jederzeit ändern.'
 	);
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
-	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', '', $v['public_golfclub_name'] ?? '', 'text', true, $is_indoor ? 'z. B. City Golf Lounge Hamburg' : 'z. B. GC Augusta National', $errors );
+	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', '', $v['public_golfclub_name'] ?? '', 'text', true, $is_indoor ? 'z. B. Ruff Golf München oder Eisen 7 Indoor Golf' : 'z. B. GC Augusta National', $errors );
 	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Öffentliche Kurzbeschreibung', $v['public_short_description'] ?? '', $is_indoor ? 'z. B. 4 Trackman-Boxen mitten in der Stadt, Bar und Lounge, perfekt für After-Work und Wintertermine…' : 'z. B. 18-Loch-Anlage am Stadtrand, gemütliche Clubhaus-Terrasse, Driving Range mit 30 Plätzen…', '2 bis 3 Sätze. Du kannst das später noch ausbauen.' );
 	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website', $v['website_url'] ?? '', 'url', false, 'https://…' );
 	echo '</form>';
@@ -2381,13 +2359,8 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 	endif;
 
 	if ( $is_indoor ) :
-		// Indoor-Anlagen liegen oft im Gewerbepark, der Eingang ist schwer zu finden (B4).
-		?>
-		<div class="ob-field-row">
-			<?php fge_onboarding_input( 'fge_indoor_floor', 'fge_indoor_floor', 'Etage (optional)', (string) ( $v['indoor_floor'] ?? '' ), 'text', false, 'z. B. 2. OG' ); ?>
-			<?php fge_onboarding_select( 'fge_indoor_elevator', 'fge_indoor_elevator', 'Aufzug vorhanden?', (string) ( $v['indoor_elevator'] ?? '' ), [ '1' => 'Ja', '0' => 'Nein' ], false, $errors ); ?>
-		</div>
-		<?php
+		// Indoor-Betriebe liegen oft im Gewerbepark, der Eingang ist schwer zu
+		// finden (B4). Etage/Aufzug sind gestrichen (Julius, 28.08.).
 		fge_onboarding_textarea( 'fge_indoor_entrance_note', 'fge_indoor_entrance_note', 'Hinweis zum Eingang (optional)', (string) ( $v['indoor_entrance_note'] ?? '' ), 'z. B. Eingang auf der Rückseite des Gebäudes, beim roten Tor klingeln' );
 	endif;
 
@@ -2412,7 +2385,8 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 }
 
 function fge_onboarding_render_arrival( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Anfahrt & Location', 'Wie kommen Gäste zu euch? Diese Angaben helfen Firmen bei der Planung. Alles ist optional, füll einfach aus, was zutrifft.' );
+	$arr_indoor = 'indoor' === fge_onboarding_current_type();
+	fge_onboarding_render_step_header( $step, 'Anfahrt & Parken', 'Wie kommen Gäste zu euch? Diese Angaben helfen Firmen bei der Planung. Alles ist optional, füll einfach aus, was zutrifft.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	// Maps to _fge_poi_* / _fge_arrival_estation (same keys as admin/Platz view).
@@ -2423,14 +2397,15 @@ function fge_onboarding_render_arrival( int $step, int $partner_id, string $toke
 		<div class="ob-field">
 			<label class="ob-field-label" for="fge_poi_car">Mit dem Auto</label>
 			<span class="ob-field-hint">Fahrzeit ab Stadtzentrum oder Autobahn.</span>
-			<input type="text" class="ob-input" id="fge_poi_car" name="fge_poi_car" value="<?php echo esc_attr( (string) ( $v['poi_car'] ?? '' ) ); ?>" placeholder="z. B. 15 Min ab Stadtzentrum">
+			<input type="text" class="ob-input" id="fge_poi_car" name="fge_poi_car" value="<?php echo esc_attr( (string) ( $v['poi_car'] ?? '' ) ); ?>" placeholder="z. B. 10 Minuten vom Zentrum">
 		</div>
 		<div class="ob-field">
 			<label class="ob-field-label" for="fge_poi_parking">Parken</label>
 			<span class="ob-field-hint">Anzahl und Art der Parkplätze.</span>
-			<input type="text" class="ob-input" id="fge_poi_parking" name="fge_poi_parking" value="<?php echo esc_attr( (string) ( $v['poi_parking'] ?? '' ) ); ?>" placeholder="z. B. 100 kostenfreie Parkplätze">
+			<input type="text" class="ob-input" id="fge_poi_parking" name="fge_poi_parking" value="<?php echo esc_attr( (string) ( $v['poi_parking'] ?? '' ) ); ?>" placeholder="z. B. großes Parkhaus vorhanden">
 		</div>
 	</div>
+	<?php if ( ! $arr_indoor ) : /* Indoor braucht keine E-Ladesäulen-Frage (Julius, 28.08.). */ ?>
 	<div class="ob-field full">
 		<label class="ob-field-label">Ladestation für E-Autos vorhanden?</label>
 		<span class="ob-field-hint">Wird Gästen mit E-Auto als Hinweis angezeigt.</span>
@@ -2445,16 +2420,17 @@ function fge_onboarding_render_arrival( int $step, int $partner_id, string $toke
 			</label>
 		</div>
 	</div>
+	<?php endif; ?>
 	<div class="ob-field-row">
 		<div class="ob-field">
 			<label class="ob-field-label" for="fge_poi_train">Mit der Bahn</label>
 			<span class="ob-field-hint">Nächste Station und Gehweg.</span>
-			<input type="text" class="ob-input" id="fge_poi_train" name="fge_poi_train" value="<?php echo esc_attr( (string) ( $v['poi_train'] ?? '' ) ); ?>" placeholder="z. B. S2 Riem, 10 Gehminuten">
+			<input type="text" class="ob-input" id="fge_poi_train" name="fge_poi_train" value="<?php echo esc_attr( (string) ( $v['poi_train'] ?? '' ) ); ?>" placeholder="z. B. S2, Haltestelle Testhausen">
 		</div>
 		<div class="ob-field">
 			<label class="ob-field-label" for="fge_poi_shuttle">Shuttle-Service</label>
 			<span class="ob-field-hint">Falls ihr einen Transfer anbietet.</span>
-			<input type="text" class="ob-input" id="fge_poi_shuttle" name="fge_poi_shuttle" value="<?php echo esc_attr( (string) ( $v['poi_shuttle'] ?? '' ) ); ?>" placeholder="z. B. Abholung nach Absprache">
+			<input type="text" class="ob-input" id="fge_poi_shuttle" name="fge_poi_shuttle" value="<?php echo esc_attr( (string) ( $v['poi_shuttle'] ?? '' ) ); ?>" placeholder="z. B. Abholung möglich">
 		</div>
 	</div>
 	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
@@ -2473,6 +2449,33 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 	if ( $main_is_coach && '' === $saved_first && '' === $saved_last ) {
 		$saved_first = (string) ( $v['coach_first'] ?? '' );
 		$saved_last  = (string) ( $v['coach_last'] ?? '' );
+	}
+
+	// Nur-Code-Ansicht (Julius, 28.08.): sobald ein Code unterwegs ist, zeigen wir
+	// NICHT nochmal alle Felder, sondern nur die Code-Eingabe. Die Kontaktdaten
+	// stecken in den Metas (beim Codeversand gespeichert) und reisen als
+	// Hidden-Felder mit; „E-Mail-Adresse anpassen" holt das volle Formular zurück.
+	$ob_verify_email = $partner_id > 0 ? (string) get_transient( 'fge_ob_verify_' . $partner_id ) : '';
+	$verify_pending  = '' !== $ob_verify_email && ! fge_ev_is_verified( $ob_verify_email, 'onboarding_' . $partner_id );
+	if ( $verify_pending && ! isset( $_GET['ob_editmail'] ) ) {
+		fge_onboarding_render_step_header( $step, 'Bestätige deine E-Mail-Adresse', 'Wir haben an diese E-Mail-Adresse einen Bestätigungscode geschickt. Gib ihn ein, dann geht es direkt weiter.' );
+		fge_onboarding_form_open( $step, $partner_id, $token );
+		?>
+		<input type="hidden" name="fge_contact_first_name" value="<?php echo esc_attr( $saved_first ); ?>">
+		<input type="hidden" name="fge_contact_last_name" value="<?php echo esc_attr( $saved_last ); ?>">
+		<input type="hidden" name="fge_contact_role" value="<?php echo esc_attr( (string) ( $v['main_contact_role'] ?? '' ) ); ?>">
+		<input type="hidden" name="fge_contact_phone" value="<?php echo esc_attr( (string) ( $v['main_contact_phone'] ?? '' ) ); ?>">
+		<input type="hidden" name="fge_contact_email" value="<?php echo esc_attr( $ob_verify_email ); ?>">
+		<div class="ob-verify ob-verify--solo">
+			<div class="ob-verify-mail"><?php echo esc_html( $ob_verify_email ); ?></div>
+			<?php fge_onboarding_input( 'fge_contact_code', 'fge_contact_code', 'Bestätigungscode', '', 'text', true, '6-stelliger Code', $errors, '', 'inputmode="numeric" autocomplete="one-time-code" maxlength="6"' ); ?>
+			<p class="ob-verify-resend">Keinen Code bekommen? <button type="submit" name="fge_ob_resend" value="1" class="ob-linkbtn" formnovalidate>Code erneut senden</button></p>
+			<p class="ob-verify-resend"><a class="ob-linkbtn" href="<?php echo esc_url( add_query_arg( 'ob_editmail', '1', fge_onboarding_step_url( $step, $token ) ) ); ?>">E-Mail-Adresse anpassen</a></p>
+		</div>
+		<?php
+		fge_onboarding_next_btn( 'Code bestätigen', 'fge_ob_save_exit' );
+		echo '</form>';
+		return;
 	}
 
 	fge_onboarding_render_step_header(
@@ -2503,16 +2506,6 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 	</div>
 	<?php /* Datenschutzhinweis direkt an der Erhebung (Audit 2026-08-12: fehlte im gesamten Onboarding) */ ?>
 	<p class="ob-privacy-note">Wir verarbeiten diese Kontaktdaten, um euren Partnerzugang einzurichten und mit euch zu den Anfragen zu kommunizieren. Details stehen in unserer <a href="<?php echo esc_url( home_url( '/datenschutz/' ) ); ?>" target="_blank" rel="noopener">Datenschutzerklärung</a>.</p>
-	<?php
-	// E-Mail-Verifizierung: sobald ein Code an die eingegebene Adresse ging, hier
-	// das Eingabefeld + „erneut senden" zeigen (Julius, 2026-07-06).
-	$ob_verify_email = $partner_id > 0 ? (string) get_transient( 'fge_ob_verify_' . $partner_id ) : '';
-	if ( '' !== $ob_verify_email && ! fge_ev_is_verified( $ob_verify_email, 'onboarding_' . $partner_id ) ) : ?>
-	<div class="ob-verify">
-		<?php fge_onboarding_input( 'fge_contact_code', 'fge_contact_code', 'Bestätigungscode', '', 'text', false, '6-stelliger Code', $errors, 'Wir haben dir einen 6-stelligen Code an ' . $ob_verify_email . ' geschickt.' ); ?>
-		<p class="ob-verify-resend">Keinen Code bekommen? <button type="submit" name="fge_ob_resend" value="1" class="ob-linkbtn" formnovalidate>Code erneut senden</button></p>
-	</div>
-	<?php endif; ?>
 	<script>
 	(function () {
 		var input = document.getElementById('fge_contact_email');
@@ -2529,14 +2522,7 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 }
 
 function fge_onboarding_render_step_5( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Möchtest du weitere Ansprechpartner hinzufügen?', 'So beantwortet ihr Anfragen von Unternehmen schneller und alle Beteiligten bleiben automatisch auf dem Laufenden. Komplett optional: Füg nur hinzu, wen du einbinden möchtest.' );
-	?>
-	<ul class="ob-intro-list">
-		<li><span class="ob-intro-dot"></span><span><strong>Schnellere Termine:</strong> Wunschtermine aus Anfragen können die richtigen Personen direkt per Link bestätigen. So werden Events schneller verbindlich.</span></li>
-		<li><span class="ob-intro-dot"></span><span><strong>Automatisch informiert:</strong> Buchhaltung oder Schatzmeister bekommen relevante Updates von selbst, du musst nichts weiterleiten.</span></li>
-		<li><span class="ob-intro-dot"></span><span><strong>Jederzeit änderbar:</strong> Überspring den Schritt einfach und ergänze Ansprechpartner später im Portal.</span></li>
-	</ul>
-	<?php
+	fge_onboarding_render_step_header( $step, 'Möchtest du weitere Ansprechpartner hinzufügen?', 'Lade die Personen ein, mit denen du künftig Events perfekt abstimmst. Das können interne Ansprechpartner sein, aber auch externe Dienstleister, die bei Anfragen direkt ihre Freigabe geben. Komplett optional und jederzeit im Portal änderbar.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$existing = $partner_id > 0 ? fge_contacts_get( $partner_id ) : [];
@@ -2544,6 +2530,15 @@ function fge_onboarding_render_step_5( int $step, int $partner_id, string $token
 	$existing = array_values( array_filter( $existing, static function ( $c ) {
 		return (int) $c['user_id'] === 0;
 	} ) );
+
+	// Konkrete Rollen-Buttons je Partnertyp (Julius, 28.08.): ein Klick legt die
+	// Karte mit vorbelegter Rolle an; die Rollen müssen im Rollen-Select existieren.
+	$role_buttons = [
+		'course' => [ 'Gastronomiebetreiber' => 'Ansprechpartner für Gastronomie hinzufügen', 'Golfschule' => 'Ansprechpartner für die Golfschule hinzufügen', 'Shuttleservice' => 'Ansprechpartner für Shuttleservice hinzufügen' ],
+		'indoor' => [ 'Gastronomiebetreiber' => 'Ansprechpartner für Gastronomie hinzufügen', 'Technik' => 'Ansprechpartner für Technik hinzufügen', 'Shuttleservice' => 'Ansprechpartner für Shuttleservice hinzufügen' ],
+		'coach'  => [ 'Golfplatz' => 'Ansprechpartner für den Golfplatz hinzufügen', 'Gastronomiebetreiber' => 'Ansprechpartner für Gastronomie hinzufügen' ],
+	];
+	$type_btns = $role_buttons[ fge_onboarding_current_type() ] ?? $role_buttons['course'];
 	?>
 	<div class="ob-contacts-list" id="ob-contacts-list">
 		<?php foreach ( $existing as $c ) {
@@ -2551,9 +2546,16 @@ function fge_onboarding_render_step_5( int $step, int $partner_id, string $token
 		} ?>
 	</div>
 
-	<button type="button" class="ob-add-contact" id="ob-add-contact">
-		<span class="ob-add-contact-ic">+</span> Ansprechpartner hinzufügen
-	</button>
+	<div class="ob-add-contact-row">
+		<?php foreach ( $type_btns as $r_val => $r_label ) : ?>
+		<button type="button" class="ob-add-contact" data-ob-add-role="<?php echo esc_attr( $r_val ); ?>">
+			<span class="ob-add-contact-ic">+</span> <?php echo esc_html( $r_label ); ?>
+		</button>
+		<?php endforeach; ?>
+		<button type="button" class="ob-add-contact" id="ob-add-contact">
+			<span class="ob-add-contact-ic">+</span> Weiteren Ansprechpartner hinzufügen
+		</button>
+	</div>
 
 	<template id="ob-contact-template"><?php fge_onboarding_contact_card( null ); ?></template>
 
@@ -2561,21 +2563,39 @@ function fge_onboarding_render_step_5( int $step, int $partner_id, string $token
 	(function(){
 		var list = document.getElementById('ob-contacts-list');
 		var tpl  = document.getElementById('ob-contact-template');
-		var add  = document.getElementById('ob-add-contact');
-		if (!list || !tpl || !add) return;
+		if (!list || !tpl) return;
 		function wire(card){
 			var rm = card.querySelector('[data-ob-remove]');
-			if (rm) rm.addEventListener('click', function(){ card.remove(); });
+			if (rm) rm.addEventListener('click', function(){ card.remove(); syncNext(); });
 			var role = card.querySelector('[data-ob-role]');
 			var tag  = card.querySelector('.ob-contact-tag');
 			if (role && tag) role.addEventListener('change', function(){ tag.textContent = role.value || 'Ansprechpartner'; });
 		}
-		list.querySelectorAll('.ob-contact-card').forEach(wire);
-		add.addEventListener('click', function(){
+		function addCard(roleVal){
 			var node = tpl.content.firstElementChild.cloneNode(true);
 			list.appendChild(node); wire(node);
+			if (roleVal) {
+				var role = node.querySelector('[data-ob-role]');
+				var tag  = node.querySelector('.ob-contact-tag');
+				if (role) { role.value = roleVal; }
+				if (tag) { tag.textContent = roleVal; }
+			}
 			var n = node.querySelector('input'); if (n) n.focus();
+			syncNext();
+		}
+		// Weiter-Button im Footer: ohne Karten heißt er „Ohne Ansprechpartner fortfahren".
+		var next = document.querySelector('button[form="ob-step-form"].ob-btn-primary');
+		function syncNext(){
+			if (!next) return;
+			next.textContent = list.querySelector('.ob-contact-card') ? 'Weiter' : 'Ohne Ansprechpartner fortfahren';
+		}
+		list.querySelectorAll('.ob-contact-card').forEach(wire);
+		syncNext();
+		document.querySelectorAll('[data-ob-add-role]').forEach(function(btn){
+			btn.addEventListener('click', function(){ addCard(btn.getAttribute('data-ob-add-role')); });
 		});
+		var add = document.getElementById('ob-add-contact');
+		if (add) add.addEventListener('click', function(){ addCard(''); });
 	})();
 	</script>
 	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
@@ -2765,7 +2785,13 @@ function fge_onboarding_cap_stepper( string $key, string $label, string $hint, $
 }
 
 function fge_onboarding_render_indoor_detail( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Euer Indoor-Golf im Detail', 'Ihr habt Indoor-Golf in der Ausstattung. Mit ein paar Details dazu können Unternehmen euch auch im Winter und ganzjährig für Events anfragen.' );
+	fge_onboarding_render_step_header(
+		$step,
+		'indoor' === fge_onboarding_current_type() ? 'Welche Ausstattung hat eure Indoor Golf Anlage?' : 'Euer Indoor-Golf im Detail',
+		'indoor' === fge_onboarding_current_type()
+			? 'Boxen, Systeme und Event-Features. Damit sehen Firmen sofort, was bei euch technisch möglich ist.'
+			: 'Ihr habt Indoor-Golf in der Ausstattung. Mit ein paar Details dazu können Unternehmen euch auch im Winter und ganzjährig für Events anfragen.'
+	);
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$sim = is_array( $v['indoor_sim'] ?? null ) ? $v['indoor_sim'] : [];
@@ -2775,26 +2801,53 @@ function fge_onboarding_render_indoor_detail( int $step, int $partner_id, string
 	};
 	$systems  = (array) ( $sim['systems'] ?? [] );
 	$features = (array) ( $sim['features'] ?? [] );
+	// „Anderes System": kein Karten-Eintrag, sondern ein Button, der das
+	// Freitextfeld öffnet und die versteckte other-Checkbox setzt (Julius, 28.08.).
+	$sys_other_on = in_array( 'other', $systems, true ) || '' !== (string) ( $sim['systems_other'] ?? '' );
+	$sys_catalog  = fge_catalog_indoor_systems();
+	unset( $sys_catalog['other'] );
 	?>
 	<div class="ob-field-row">
-		<?php fge_onboarding_input( 'fge_indoor_boxes', 'fge_indoor_boxes', 'Anzahl Simulator-Boxen', $n( 'boxes' ), 'number', true, 'z. B. 4', $errors, '', 'min="1" max="99" inputmode="numeric"' ); ?>
-		<?php fge_onboarding_input( 'fge_indoor_max_persons', 'fge_indoor_max_persons', 'Maximal Personen im Indoor-Bereich', $n( 'max_persons' ), 'number', true, 'z. B. 30', $errors, '', 'min="1" max="999" inputmode="numeric"' ); ?>
+		<?php fge_onboarding_input( 'fge_indoor_boxes', 'fge_indoor_boxes', 'Anzahl Simulatorboxen', $n( 'boxes' ), 'number', true, 'z. B. 4', $errors, '', 'min="1" max="99" inputmode="numeric"' ); ?>
+	</div>
+	<div class="ob-field-row">
+		<?php fge_onboarding_input( 'fge_indoor_box_comfort', 'fge_indoor_box_comfort', 'Personen pro Box, komfortabel', $n( 'box_comfort' ), 'number', true, 'z. B. 4', $errors, '', 'min="1" max="20" inputmode="numeric"' ); ?>
+		<?php fge_onboarding_input( 'fge_indoor_box_max', 'fge_indoor_box_max', 'Personen pro Box, maximal', $n( 'box_max' ), 'number', true, 'z. B. 6', $errors, '', 'min="1" max="20" inputmode="numeric"' ); ?>
 	</div>
 	<div class="ob-field full<?php echo isset( $errors['fge_indoor_systems'] ) ? ' ob-field--error' : ''; ?>">
 		<label class="ob-label">System und Hersteller <span class="ob-required">*</span></label>
 		<span class="ob-field-hint">Die Marken sind für viele Firmen ein Verkaufsargument.</span>
 		<div class="ob-cards">
-			<?php foreach ( fge_catalog_indoor_systems() as $sid => $slabel ) :
+			<?php foreach ( $sys_catalog as $sid => $slabel ) :
 				fge_onboarding_card( 'checkbox', 'fge_indoor_systems[]', (string) $sid, (string) $slabel, in_array( $sid, $systems, true ) );
 			endforeach; ?>
 		</div>
+		<label style="display:none"><input type="checkbox" name="fge_indoor_systems[]" value="other" id="fge_sys_other_cb" <?php checked( $sys_other_on ); ?>></label>
+		<button type="button" class="ob-venue-add" id="fge_sys_other_btn" <?php echo $sys_other_on ? 'style="display:none"' : ''; ?>>
+			<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+			Anderes System hinzufügen
+		</button>
+		<div id="fge_sys_other_wrap" <?php echo $sys_other_on ? '' : 'style="display:none"'; ?>>
+			<?php fge_onboarding_input( 'fge_indoor_systems_other', 'fge_indoor_systems_other', 'Welches andere System?', (string) ( $sim['systems_other'] ?? '' ), 'text', false, 'Herstellername' ); ?>
+		</div>
+		<script>
+		(function(){
+			var btn = document.getElementById('fge_sys_other_btn');
+			var wrap = document.getElementById('fge_sys_other_wrap');
+			var cb = document.getElementById('fge_sys_other_cb');
+			if (!btn || !wrap || !cb) return;
+			btn.addEventListener('click', function(){
+				btn.style.display = 'none';
+				wrap.style.display = '';
+				cb.checked = true;
+				var inp = wrap.querySelector('input'); if (inp) inp.focus();
+			});
+			var inp = wrap.querySelector('input');
+			if (inp) inp.addEventListener('input', function(){ cb.checked = inp.value.trim() !== ''; });
+		})();
+		</script>
 		<?php fge_onboarding_error( $errors, 'fge_indoor_systems' ); ?>
 	</div>
-	<?php
-	if ( in_array( 'other', $systems, true ) || '' !== (string) ( $sim['systems_other'] ?? '' ) ) {
-		fge_onboarding_input( 'fge_indoor_systems_other', 'fge_indoor_systems_other', 'Welches andere System?', (string) ( $sim['systems_other'] ?? '' ), 'text', false, 'Herstellername' );
-	}
-	?>
 	<div class="ob-field full">
 		<label class="ob-label">Was kann eure Software für Events?</label>
 		<span class="ob-field-hint">Das Live-Leaderboard über alle Boxen ist das beliebteste Firmenevent-Feature.</span>
@@ -2804,36 +2857,13 @@ function fge_onboarding_render_indoor_detail( int $step, int $partner_id, string
 			endforeach; ?>
 		</div>
 	</div>
-	<div class="ob-field-row">
-		<?php fge_onboarding_input( 'fge_indoor_box_comfort', 'fge_indoor_box_comfort', 'Personen pro Box, komfortabel', $n( 'box_comfort' ), 'number', true, 'z. B. 4', $errors, '', 'min="1" max="20" inputmode="numeric"' ); ?>
-		<?php fge_onboarding_input( 'fge_indoor_box_max', 'fge_indoor_box_max', 'Personen pro Box, maximal', $n( 'box_max' ), 'number', true, 'z. B. 6', $errors, '', 'min="1" max="20" inputmode="numeric"' ); ?>
-	</div>
 	<?php
 	fge_onboarding_select( 'fge_indoor_lefthand', 'fge_indoor_lefthand', 'Können Linkshänder spielen?', (string) ( $sim['lefthand'] ?? '' ), [
 		'all'  => 'Ja, in allen Boxen',
 		'some' => 'In einzelnen Boxen',
 		'no'   => 'Nein',
 	], true, $errors );
-	fge_onboarding_select( 'fge_indoor_rental_clubs', 'fge_indoor_rental_clubs', 'Leihschläger vorhanden?', (string) ( $sim['rental_clubs'] ?? '' ), [
-		'1' => 'Ja',
-		'0' => 'Nein',
-	], true, $errors );
-	fge_onboarding_select( 'fge_indoor_support', 'fge_indoor_support', 'Betreuung bei Firmenevents', (string) ( $sim['support'] ?? '' ), [
-		'inklusive' => 'Inklusive',
-		'aufpreis'  => 'Gegen Aufpreis',
-		'nein'      => 'Nicht möglich',
-	], true, $errors );
-	fge_onboarding_select( 'fge_indoor_exclusive', 'fge_indoor_exclusive', 'Exklusivbuchung des Indoor-Bereichs möglich?', (string) ( $sim['exclusive'] ?? '' ), [
-		'ja'   => 'Ja',
-		'ab'   => 'Ja, ab einer Mindestpersonenzahl',
-		'nein' => 'Nein',
-	], true, $errors );
-	fge_onboarding_input( 'fge_indoor_exclusive_from', 'fge_indoor_exclusive_from', 'Exklusiv ab wie vielen Personen?', $n( 'exclusive_from' ), 'number', false, 'z. B. 10', $errors, 'Nur nötig, wenn Exklusiv erst ab einer Gruppengröße geht.', 'min="1" max="999" inputmode="numeric"' );
-	fge_onboarding_select( 'fge_indoor_offseason', 'fge_indoor_offseason', 'Indoor auch außerhalb der Golfsaison nutzbar?', (string) ( $sim['offseason'] ?? '' ), [
-		'1' => 'Ja, ganzjährig',
-		'0' => 'Nein, nur während der Saison',
-	], false, $errors );
-	fge_onboarding_input( 'fge_indoor_winter_hours', 'fge_indoor_winter_hours', 'Öffnungszeiten im Winter (optional)', (string) ( $sim['winter_hours'] ?? '' ), 'text', false, 'z. B. Montag bis Sonntag 9 bis 22 Uhr' );
+	fge_onboarding_input( 'fge_indoor_max_persons', 'fge_indoor_max_persons', 'Maximal Personen gleichzeitig bei euch', $n( 'max_persons' ), 'number', true, 'z. B. 30', $errors, '', 'min="1" max="999" inputmode="numeric"' );
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
@@ -2841,13 +2871,20 @@ function fge_onboarding_render_indoor_detail( int $step, int $partner_id, string
 // ── Formular B: Indoor-Slides ─────────────────────────────────────────────────
 
 function fge_onboarding_render_indoor_kind( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Was beschreibt eure Anlage am besten?', 'Danach stellen wir nur die Fragen, die zu eurer Anlage passen.' );
+	fge_onboarding_render_step_header( $step, 'Was beschreibt euch am besten?', 'Kernfrage: professioneller Ganzjahresbetrieb oder Simulator auf der Golfanlage? Danach stellen wir nur die Fragen, die zu euch passen.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	$current = (string) ( $v['indoor_kind'] ?? '' );
+	// Gestapelte Karten mit Icon + Erklärzeile (gleiches Muster wie coach-kind).
+	$kind_icons = [
+		'lounge' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="1"/><path d="M3 18v2M21 18v2M9 8l6 6M15 8l-6 6"/></svg>',
+		'club'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 21V4l8 2.6L7 9.2"/><path d="M4 21h7"/></svg>',
+		'fun'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9h4M8 7v4"/><circle cx="16" cy="9" r="1"/><circle cx="18.5" cy="11.5" r="1"/><path d="M5.5 6h13a3.5 3.5 0 0 1 3.4 4.3l-1.2 5.2a2.4 2.4 0 0 1-4.2 1L14.8 14h-5.6l-1.7 2.5a2.4 2.4 0 0 1-4.2-1L2.1 10.3A3.5 3.5 0 0 1 5.5 6z"/></svg>',
+	];
+	$kind_subs = fge_catalog_indoor_kind_subs();
 	?>
-	<div class="ob-cards">
+	<div class="ob-cards ob-cards--stack">
 		<?php foreach ( fge_catalog_indoor_kinds() as $id => $label ) :
-			fge_onboarding_card( 'radio', 'fge_indoor_kind', (string) $id, (string) $label, ( $current === $id ) );
+			fge_onboarding_card( 'radio', 'fge_indoor_kind', (string) $id, (string) $label, ( $current === $id ), $kind_icons[ $id ] ?? '', (string) ( $kind_subs[ $id ] ?? '' ) );
 		endforeach; ?>
 	</div>
 	<?php fge_onboarding_error( $errors, 'fge_indoor_kind' ); ?>
@@ -2862,6 +2899,7 @@ function fge_onboarding_render_indoor_spaces( int $step, int $partner_id, string
 	fge_onboarding_render_step_header( $step, 'Räume, Flächen und was es sonst noch gibt', 'Wähl alles aus, was Firmengruppen bei euch nutzen können. Gerade Nebenaktivitäten wie Dart oder Kicker machen ein Event runder.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	$selected = is_array( $v['indoor_spaces'] ?? null ) ? $v['indoor_spaces'] : [];
+	$custom   = is_array( $v['indoor_spaces_custom'] ?? null ) ? $v['indoor_spaces_custom'] : [];
 	?>
 	<div class="ob-form">
 		<?php foreach ( fge_catalog_indoor_infra_groups() as $group_label => $items ) : ?>
@@ -2874,6 +2912,46 @@ function fge_onboarding_render_indoor_spaces( int $step, int $partner_id, string
 			</div>
 		</div>
 		<?php endforeach; ?>
+		<?php /* Eigene Kacheln statt fester „Sonstiges"-Liste (Julius, 28.08.):
+		         eintippen, hinzufügen, fertig. Abwählen entfernt die Kachel beim Speichern. */ ?>
+		<div class="ob-cat">
+			<div class="ob-cat-h">Sonstiges</div>
+			<div class="ob-cards" id="fge-spaces-custom">
+				<?php foreach ( $custom as $c_name ) :
+					fge_onboarding_card( 'checkbox', 'fge_indoor_spaces_custom[]', (string) $c_name, (string) $c_name, true, '' );
+				endforeach; ?>
+			</div>
+			<div class="ob-venue-row">
+				<input type="text" class="ob-input" id="fge-spaces-custom-input" placeholder="z. B. Eventküche, Terrasse, Fotobox …">
+				<button type="button" class="ob-venue-add" id="fge-spaces-custom-add">
+					<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+					Hinzufügen
+				</button>
+			</div>
+		</div>
+		<script>
+		(function(){
+			var list = document.getElementById('fge-spaces-custom');
+			var inp  = document.getElementById('fge-spaces-custom-add') ? document.getElementById('fge-spaces-custom-input') : null;
+			var btn  = document.getElementById('fge-spaces-custom-add');
+			if (!list || !inp || !btn) return;
+			function add(){
+				var name = inp.value.trim();
+				if (!name) { inp.focus(); return; }
+				var lab = document.createElement('label');
+				lab.className = 'ob-card';
+				var cb = document.createElement('input');
+				cb.type = 'checkbox'; cb.className = 'ob-card-input'; cb.name = 'fge_indoor_spaces_custom[]'; cb.value = name; cb.checked = true;
+				var dot = document.createElement('span'); dot.className = 'ob-card-dot'; dot.setAttribute('aria-hidden', 'true');
+				var l = document.createElement('span'); l.className = 'ob-card-l'; l.textContent = name;
+				lab.appendChild(cb); lab.appendChild(dot); lab.appendChild(l);
+				list.appendChild(lab);
+				inp.value = ''; inp.focus();
+			}
+			btn.addEventListener('click', add);
+			inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); add(); } });
+		})();
+		</script>
 		<?php fge_onboarding_input( 'fge_indoor_area', 'fge_indoor_area', 'Gesamtfläche in m² (optional)', (string) ( absint( $v['indoor_area'] ?? 0 ) ?: '' ), 'number', false, 'z. B. 350', $errors, '', 'min="0" max="99999" inputmode="numeric"' ); ?>
 	</div>
 	<?php
@@ -2882,7 +2960,7 @@ function fge_onboarding_render_indoor_spaces( int $step, int $partner_id, string
 }
 
 function fge_onboarding_render_indoor_formats( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Welche Formate könnt ihr anbieten?', 'Wähl alles aus, was ihr euch vorstellen könnt. Eure konkreten Angebote legt ihr später im Partnerportal an, so kreativ ihr wollt.' );
+	fge_onboarding_render_step_header( $step, 'Welche Formate könnt ihr euch vorstellen?', 'Komplett optional: Aus deiner Auswahl bauen wir zwei bis drei Beispiel-Events als Startpunkt. Eure konkreten Angebote legt ihr später im Partnerportal an, so kreativ ihr wollt.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	$selected = is_array( $v['indoor_formats'] ?? null ) ? $v['indoor_formats'] : [];
 	?>
@@ -2896,67 +2974,76 @@ function fge_onboarding_render_indoor_formats( int $step, int $partner_id, strin
 	echo '</form>';
 }
 
-function fge_onboarding_render_indoor_winter( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Wintersaison und kurzfristige Anfragen', 'Indoor ist euer Winter- und Ganzjahresgeschäft. Damit wir euch richtig einplanen, sagt uns, wann bei euch am meisten los ist und wie schnell ihr reagieren könnt.' );
-	fge_onboarding_form_open( $step, $partner_id, $token );
-	$months = fge_month_names();
-	?>
-	<div class="ob-field-row">
-		<?php fge_onboarding_select( 'fge_indoor_peak_from', 'fge_indoor_peak_from', 'Hochsaison von', (string) ( absint( $v['indoor_peak_from'] ?? 0 ) ?: '10' ), array_combine( array_map( 'strval', array_keys( $months ) ), $months ), false, $errors ); ?>
-		<?php fge_onboarding_select( 'fge_indoor_peak_to', 'fge_indoor_peak_to', 'Hochsaison bis', (string) ( absint( $v['indoor_peak_to'] ?? 0 ) ?: '3' ), array_combine( array_map( 'strval', array_keys( $months ) ), $months ), false, $errors ); ?>
-	</div>
-	<?php
-	fge_onboarding_textarea( 'fge_indoor_closures', 'fge_indoor_closures', 'Betriebsferien oder Schließzeiten (optional)', (string) ( $v['indoor_closures'] ?? '' ), 'z. B. zwischen Weihnachten und Neujahr geschlossen' );
-	fge_onboarding_select( 'fge_indoor_shortnotice', 'fge_indoor_shortnotice', 'Nehmt ihr kurzfristige Anfragen an?', (string) ( $v['indoor_shortnotice'] ?? '' ), [
-		'72'      => 'Ja, bis 72 Stunden vorher',
-		'48'      => 'Ja, bis 48 Stunden vorher',
-		'24'      => 'Ja, bis 24 Stunden vorher',
-		'regular' => 'Nur mit regulärem Vorlauf',
-	], true, $errors );
-	fge_onboarding_select( 'fge_indoor_hold_slots', 'fge_indoor_hold_slots', 'Haltet ihr Kapazität für kurzfristige Anfragen frei?', (string) ( $v['indoor_hold_slots'] ?? '' ), [
-		'1' => 'Ja, feste Slots',
-		'0' => 'Nein, nur nach Verfügbarkeit',
-	], false, $errors );
-	fge_onboarding_textarea( 'fge_indoor_nearby', 'fge_indoor_nearby', 'Golfanlagen in eurer Nähe (optional)', (string) ( $v['indoor_nearby'] ?? '' ), 'z. B. GC Beispielstadt, 10 Minuten entfernt', 'Für regionale Winterangebote bündeln wir Indoor-Anlagen mit Plätzen in der Umgebung.' );
-	fge_onboarding_input( 'fge_indoor_radius_km', 'fge_indoor_radius_km', 'Maximale Entfernung, die ihr abdeckt (km, optional)', (string) ( absint( $v['indoor_radius_km'] ?? 0 ) ?: '' ), 'number', false, 'z. B. 50', $errors, '', 'min="0" max="999" inputmode="numeric"' );
-	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
-	echo '</form>';
-}
-
 function fge_onboarding_render_indoor_hours( int $step, int $partner_id, string $token, array $v, array $errors ): void {
 	fge_onboarding_render_step_header( $step, 'Öffnungszeiten und Verfügbarkeit', 'Statt einer Saison zählen bei euch die Öffnungszeiten. Firmenevents laufen oft nachmittags oder als After-Work.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	fge_onboarding_input( 'fge_indoor_open_note', 'fge_indoor_open_note', 'Eure Öffnungszeiten', (string) ( $v['indoor_open_note'] ?? '' ), 'text', true, 'z. B. Montag bis Freitag 9 bis 22 Uhr, Wochenende 10 bis 20 Uhr', $errors );
-	fge_onboarding_select( 'fge_indoor_year_round', 'fge_indoor_year_round', 'Ganzjährig geöffnet?', (string) ( $v['indoor_year_round'] ?? '' ), [
-		'1' => 'Ja, ganzjährig',
-		'0' => 'Nein, mit Pausen (siehe Schließzeiten)',
-	], false, $errors );
-	$day_labels = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
-	$sel_days   = is_array( $v['preferred_event_days'] ?? null ) ? $v['preferred_event_days'] : [];
+
+	// Ganzjährig-Frage (Julius, 28.08.): erst bei „Nein" erscheinen die Monate;
+	// das deckt auch Betriebsferien ab, eine eigene Schließzeiten-Frage entfällt.
+	$year_round = (string) ( $v['indoor_year_round'] ?? '' );
+	$months     = fge_month_names();
 	?>
 	<div class="ob-field full">
-		<label class="ob-field-label">Bevorzugte Event-Tage</label>
-		<span class="ob-field-hint">Wann passen euch Firmenevents am besten?</span>
-		<div class="ob-cards">
-			<?php foreach ( $day_labels as $dk => $dl ) :
-				fge_onboarding_card( 'checkbox', 'fge_preferred_event_days[]', $dk, $dl, in_array( $dk, $sel_days, true ) );
-			endforeach; ?>
+		<label class="ob-field-label">Ganzjährig geöffnet?</label>
+		<div class="ob-radio-row">
+			<label class="ob-radio">
+				<input type="radio" name="fge_indoor_year_round" value="1" <?php checked( '1' === $year_round ); ?> style="position:absolute;opacity:0">
+				<span class="ob-radio-dot" aria-hidden="true"></span> Ja
+			</label>
+			<label class="ob-radio">
+				<input type="radio" name="fge_indoor_year_round" value="0" <?php checked( '0' === $year_round ); ?> style="position:absolute;opacity:0">
+				<span class="ob-radio-dot" aria-hidden="true"></span> Nein
+			</label>
 		</div>
 	</div>
-	<div class="ob-field-row">
-		<?php fge_onboarding_input( 'fge_indoor_start_earliest', 'fge_indoor_start_earliest', 'Frühester Event-Start (optional)', (string) ( $v['indoor_start_earliest'] ?? '' ), 'text', false, 'z. B. 9 Uhr' ); ?>
-		<?php fge_onboarding_input( 'fge_indoor_start_latest', 'fge_indoor_start_latest', 'Spätester Event-Start (optional)', (string) ( $v['indoor_start_latest'] ?? '' ), 'text', false, 'z. B. 20 Uhr' ); ?>
+	<div class="ob-field-row" id="fge-indoor-season" <?php echo '0' === $year_round ? '' : 'style="display:none"'; ?>>
+		<?php fge_onboarding_select( 'fge_indoor_open_from', 'fge_indoor_open_from', 'Geöffnet von', (string) ( absint( $v['indoor_open_from'] ?? 0 ) ?: '10' ), array_combine( array_map( 'strval', array_keys( $months ) ), $months ), false, $errors ); ?>
+		<?php fge_onboarding_select( 'fge_indoor_open_to', 'fge_indoor_open_to', 'Geöffnet bis', (string) ( absint( $v['indoor_open_to'] ?? 0 ) ?: '4' ), array_combine( array_map( 'strval', array_keys( $months ) ), $months ), false, $errors ); ?>
+	</div>
+	<script>
+	(function(){
+		var wrap = document.getElementById('fge-indoor-season');
+		if (!wrap) return;
+		document.querySelectorAll('input[name="fge_indoor_year_round"]').forEach(function(r){
+			r.addEventListener('change', function(){ wrap.style.display = r.value === '0' && r.checked ? '' : 'none'; });
+		});
+	})();
+	</script>
+	<?php
+	// Standard-Tages-Kacheln wie überall (avail-Slide), keine eigene Optik.
+	$weekdays = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
+	$raw_days = $partner_id > 0 ? get_post_meta( $partner_id, '_fge_preferred_event_days', true ) : '';
+	$sel_days = is_array( $raw_days ) ? $raw_days : array_keys( $weekdays );
+	?>
+	<div class="ob-field full">
+		<span class="ob-field-label">Bevorzugte Event-Wochentage</span>
+		<div class="ob-day-row">
+			<?php foreach ( $weekdays as $dk => $dl ) : ?>
+			<label class="ob-day">
+				<input type="checkbox" name="fge_preferred_event_days[]" value="<?php echo esc_attr( $dk ); ?>" <?php checked( in_array( $dk, $sel_days, true ) ); ?>>
+				<?php echo esc_html( $dl ); ?>
+			</label>
+			<?php endforeach; ?>
+		</div>
+		<span class="ob-field-hint">Mehrfachauswahl. Du kannst jederzeit weitere Tage freischalten.</span>
 	</div>
 	<?php
-	fge_onboarding_select( 'fge_indoor_after_hours', 'fge_indoor_after_hours', 'Events außerhalb der Öffnungszeiten?', (string) ( $v['indoor_after_hours'] ?? '' ), [
-		'ja'       => 'Ja, möglich',
-		'aufpreis' => 'Gegen Aufpreis',
-		'nein'     => 'Nein',
-	], false, $errors );
+	$after_hours = (string) ( $v['indoor_after_hours'] ?? '' );
+	if ( 'aufpreis' === $after_hours ) { $after_hours = 'ja'; } // Alt-Wert weich migrieren.
 	?>
-	<div class="ob-field-row">
-		<?php fge_onboarding_input( 'fge_indoor_min_hours', 'fge_indoor_min_hours', 'Mindestdauer einer Buchung (Stunden)', (string) ( absint( $v['indoor_min_hours'] ?? 0 ) ?: '' ), 'number', true, 'z. B. 2', $errors, '', 'min="1" max="24" inputmode="numeric"' ); ?>
-		<?php fge_onboarding_select( 'fge_min_lead_time_days', 'fge_min_lead_time_days', 'Mindest-Vorlauf', (string) ( $v['min_lead_time_days'] ?? '14' ), [ '7' => '7 Tage', '14' => '14 Tage', '20' => '20 Tage', '30' => '30 Tage' ], false, $errors ); ?>
+	<div class="ob-field full">
+		<label class="ob-field-label">Sind Events außerhalb der Öffnungszeiten möglich?</label>
+		<div class="ob-radio-row">
+			<label class="ob-radio">
+				<input type="radio" name="fge_indoor_after_hours" value="ja" <?php checked( 'ja' === $after_hours ); ?> style="position:absolute;opacity:0">
+				<span class="ob-radio-dot" aria-hidden="true"></span> Ja
+			</label>
+			<label class="ob-radio">
+				<input type="radio" name="fge_indoor_after_hours" value="nein" <?php checked( 'nein' === $after_hours ); ?> style="position:absolute;opacity:0">
+				<span class="ob-radio-dot" aria-hidden="true"></span> Nein
+			</label>
+		</div>
 	</div>
 	<?php
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
@@ -3395,25 +3482,40 @@ function fge_onboarding_render_step_9( int $step, int $partner_id, string $token
 function fge_onboarding_render_step_10( int $step, int $partner_id, string $token, array $v, array $errors ): void {
 	fge_onboarding_render_step_header( $step, 'Preis und Abrechnung', 'Du hinterlegst deine Netto-Preise pro Event. Firmengolf kalkuliert darauf den Verkaufspreis für das Unternehmen.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
+	// Visuell neu geschnitten (Julius, 28.08.): Hero-Karte + drei nummerierte
+	// Schritte statt zwei Textboxen.
 	?>
 	<div class="ob-form">
-		<div class="ob-fixed ob-fixed--positive full">
-			<div class="ob-fixed-head">
-				<span class="ob-fixed-l">Dein Netto-Preis, ohne Abzüge</span>
+		<div class="ob-price-hero full">
+			<span class="ob-price-hero-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5A4.4 4.4 0 0 0 12 7a5 5 0 0 0 0 10 4.4 4.4 0 0 0 3.5-1.5"/><path d="M7.5 10.5h5M7.5 13.5h5"/></svg></span>
+			<div class="ob-price-hero-txt">
+				<div class="ob-price-hero-t">Dein Netto-Preis. Ohne Abzüge.</div>
+				<p class="ob-price-hero-s">Du hinterlegst pro Event deinen Netto-Preis. Den Firmengolf-Aufschlag kalkulieren wir oben drauf, er wird <strong>nie</strong> von deinem Anteil abgezogen. Genau deinen hinterlegten Betrag rechnest du nach dem Event ab.</p>
 			</div>
-			<p class="ob-fixed-body">Du hinterlegst pro Event deinen Netto-Preis. Den Firmengolf-Aufschlag kalkulieren wir oben drauf, er wird <strong>nie</strong> von deinem Anteil abgezogen. Genau deinen hinterlegten Betrag rechnest du nach dem Event ab.</p>
 		</div>
-		<div class="ob-fixed full">
-			<div class="ob-fixed-head">
-				<span class="ob-fixed-l">So rechnest du ab</span>
-				<span class="ob-fixed-badge">Wichtig</span>
-			</div>
-			<ul class="ob-intro-list ob-benefit-list ob-fixed-list">
-				<li><span class="ob-intro-dot"></span><span>Nach dem Event stellst du deine Rechnung <strong>direkt an Firmengolf</strong>. Das Unternehmen bekommt die Gesamtrechnung von uns.</span></li>
-				<li><span class="ob-intro-dot"></span><span>Gib immer die <strong>Anfragenummer</strong> an (z.&nbsp;B. FG-26-001), damit wir die Rechnung dem Event zuordnen können.</span></li>
-				<li><span class="ob-intro-dot"></span><span>Unsere Rechnungsdaten findest du jederzeit im Partner-Portal.</span></li>
-			</ul>
-		</div>
+		<ol class="ob-price-steps full">
+			<li class="ob-price-step">
+				<span class="ob-price-num" aria-hidden="true">1</span>
+				<div class="ob-price-step-txt">
+					<span class="ob-price-step-t">Du legst deine Preise fest</span>
+					<span class="ob-price-step-s">Pro Angebot hinterlegst du deinen Netto-Preis, jederzeit im Portal änderbar.</span>
+				</div>
+			</li>
+			<li class="ob-price-step">
+				<span class="ob-price-num" aria-hidden="true">2</span>
+				<div class="ob-price-step-txt">
+					<span class="ob-price-step-t">Wir übernehmen den Verkauf</span>
+					<span class="ob-price-step-s">Das Unternehmen bekommt die Gesamtrechnung von Firmengolf, du hast damit nichts zu tun.</span>
+				</div>
+			</li>
+			<li class="ob-price-step">
+				<span class="ob-price-num" aria-hidden="true">3</span>
+				<div class="ob-price-step-txt">
+					<span class="ob-price-step-t">Du stellst uns eine Rechnung</span>
+					<span class="ob-price-step-s">Nach dem Event, direkt an Firmengolf, mit der Anfragenummer (z.&nbsp;B. FG-26-001). Unsere Rechnungsdaten findest du jederzeit im Portal.</span>
+				</div>
+			</li>
+		</ol>
 	</div>
 	<?php fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
@@ -3464,7 +3566,12 @@ function fge_onboarding_render_billing( int $step, int $partner_id, string $toke
 }
 
 function fge_onboarding_render_step_11( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Bilder, die euren Platz zeigen.', 'Logo und Titelbild sind wichtig, aber du kannst auch ohne weitermachen, wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.' );
+	$media_titles = [
+		'course' => 'Bilder, die euren Platz zeigen.',
+		'indoor' => 'Bilder, die eure Location zeigen.',
+		'coach'  => 'Bilder, die dich und deine Kurse zeigen.',
+	];
+	fge_onboarding_render_step_header( $step, $media_titles[ fge_onboarding_current_type() ] ?? $media_titles['course'], 'Logo und Titelbild sind wichtig, aber du kannst auch ohne weitermachen, wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$rights_on = ( (string) ( $v['image_rights_confirmed'] ?? '' ) === '1' );
@@ -3544,8 +3651,8 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 				[ 'Adresse', trim( $v['street'] . ' ' . $v['house_number'] . ', ' . $v['postal_code'] . ' ' . $v['city'], ' ,' ) ],
 				[ 'Bundesland', $states[ (string) $v['federal_state'] ] ?? (string) $v['federal_state'] ],
 			];
-			if ( 'indoor' === $rev_type && '' !== (string) ( $v['indoor_floor'] ?? '' ) ) {
-				$loc_rows[] = [ 'Etage', (string) $v['indoor_floor'] . ( '1' === (string) ( $v['indoor_elevator'] ?? '' ) ? ' · Aufzug vorhanden' : '' ) ];
+			if ( 'indoor' === $rev_type && '' !== (string) ( $v['indoor_entrance_note'] ?? '' ) ) {
+				$loc_rows[] = [ 'Eingang', (string) $v['indoor_entrance_note'], true ];
 			}
 			fge_onboarding_rev_block( 'Standort', $edit( 'location' ), $loc_rows );
 
@@ -3636,18 +3743,14 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 					$feat_names[] = $feat_all[ $fid ];
 				}
 			}
-			$support_l = [ 'inklusive' => 'Inklusive', 'aufpreis' => 'Gegen Aufpreis', 'nein' => 'Nicht möglich' ];
-			$excl_l    = [ 'ja' => 'Ja', 'ab' => 'Ab ' . (int) ( $sim['exclusive_from'] ?? 0 ) . ' Personen', 'nein' => 'Nein' ];
-			$lh_l      = [ 'all' => 'Alle Boxen', 'some' => 'Einzelne Boxen', 'no' => 'Nein' ];
-			$boxes     = (int) ( $sim['boxes'] ?? 0 );
+			$lh_l  = [ 'all' => 'Alle Boxen', 'some' => 'Einzelne Boxen', 'no' => 'Nein' ];
+			$boxes = (int) ( $sim['boxes'] ?? 0 );
 			fge_onboarding_rev_block( 'Indoor-Golf', $edit( 'indoor-detail' ), [
 				[ 'Boxen', $boxes > 0 ? $boxes . ' · ' . (int) ( $sim['box_comfort'] ?? 0 ) . ' bis ' . (int) ( $sim['box_max'] ?? 0 ) . ' Personen pro Box' : '' ],
 				[ 'Systeme', implode( ' · ', $sys_names ) ],
 				[ 'Event-Features', implode( ' · ', $feat_names ) ],
 				[ 'Linkshänder', $lh_l[ (string) ( $sim['lefthand'] ?? '' ) ] ?? '' ],
-				[ 'Betreuung', $support_l[ (string) ( $sim['support'] ?? '' ) ] ?? '' ],
-				[ 'Exklusivbuchung', $excl_l[ (string) ( $sim['exclusive'] ?? '' ) ] ?? '' ],
-				[ 'Max. Personen indoor', (int) ( $sim['max_persons'] ?? 0 ) > 0 ? (string) (int) $sim['max_persons'] : '' ],
+				[ 'Max. Personen', (int) ( $sim['max_persons'] ?? 0 ) > 0 ? (string) (int) $sim['max_persons'] : '' ],
 			] );
 		}
 
@@ -3770,6 +3873,12 @@ function fge_onboarding_review_blocks_indoor_extra( int $partner_id, array $v, c
 			$space_names[] = $space_index[ (string) $sid ];
 		}
 	}
+	// Eigene Kacheln aus dem Sonstiges-Freitext mit aufführen.
+	foreach ( (array) ( $v['indoor_spaces_custom'] ?? [] ) as $c_name ) {
+		if ( '' !== (string) $c_name ) {
+			$space_names[] = (string) $c_name;
+		}
+	}
 	$space_rows = [ [ '', $space_names ? implode( ' · ', $space_names ) : 'Keine Angaben', true ] ];
 	if ( absint( $v['indoor_area'] ?? 0 ) > 0 ) {
 		$space_rows[] = [ 'Gesamtfläche', absint( $v['indoor_area'] ) . ' m²' ];
@@ -3796,19 +3905,7 @@ function fge_onboarding_review_blocks_indoor_extra( int $partner_id, array $v, c
 	}
 	fge_onboarding_rev_block( 'Formate', $edit( 'indoor-formats' ), [ [ '', implode( ' · ', $fmt_names ), true ] ] );
 
-	// ── Wintersaison ──
-	$months  = fge_month_names();
-	$sn_l    = [ '72' => 'Bis 72 Stunden vorher', '48' => 'Bis 48 Stunden vorher', '24' => 'Bis 24 Stunden vorher', 'regular' => 'Nur mit regulärem Vorlauf' ];
-	$pf      = absint( $v['indoor_peak_from'] ?? 0 );
-	$pt      = absint( $v['indoor_peak_to'] ?? 0 );
-	fge_onboarding_rev_block( 'Wintersaison', $edit( 'indoor-winter' ), [
-		[ 'Hochsaison', ( $months[ $pf ] ?? '' ) && ( $months[ $pt ] ?? '' ) ? ( $months[ $pf ] . ' bis ' . $months[ $pt ] ) : '' ],
-		[ 'Kurzfristige Anfragen', $sn_l[ (string) ( $v['indoor_shortnotice'] ?? '' ) ] ?? '' ],
-		[ 'Kapazität freigehalten', '' === (string) ( $v['indoor_hold_slots'] ?? '' ) ? '' : ( '1' === (string) $v['indoor_hold_slots'] ? 'Ja, feste Slots' : 'Nach Verfügbarkeit' ) ],
-		[ 'Umkreis', absint( $v['indoor_radius_km'] ?? 0 ) > 0 ? absint( $v['indoor_radius_km'] ) . ' km' : '' ],
-	] );
-
-	// ── Öffnungszeiten ──
+	// ── Öffnungszeiten (Wintersaison-Block ist gestrichen, Julius 28.08.) ──
 	$day_labels = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
 	$days       = [];
 	foreach ( (array) ( $v['preferred_event_days'] ?? [] ) as $dk ) {
@@ -3816,13 +3913,21 @@ function fge_onboarding_review_blocks_indoor_extra( int $partner_id, array $v, c
 			$days[] = $day_labels[ $dk ];
 		}
 	}
-	$ah_l = [ 'ja' => 'Ja, möglich', 'aufpreis' => 'Gegen Aufpreis', 'nein' => 'Nein' ];
+	$months = fge_month_names();
+	$season = '';
+	if ( '1' === (string) ( $v['indoor_year_round'] ?? '' ) ) {
+		$season = 'Ganzjährig geöffnet';
+	} elseif ( '0' === (string) ( $v['indoor_year_round'] ?? '' ) ) {
+		$of     = absint( $v['indoor_open_from'] ?? 0 );
+		$ot     = absint( $v['indoor_open_to'] ?? 0 );
+		$season = ( $months[ $of ] ?? '' ) && ( $months[ $ot ] ?? '' ) ? 'Geöffnet ' . $months[ $of ] . ' bis ' . $months[ $ot ] : 'Saisonal geöffnet';
+	}
+	$ah_l = [ 'ja' => 'Ja, möglich', 'aufpreis' => 'Ja, möglich', 'nein' => 'Nein' ];
 	fge_onboarding_rev_block( 'Öffnungszeiten', $edit( 'indoor-hours' ), [
 		[ 'Öffnungszeiten', (string) ( $v['indoor_open_note'] ?? '' ), true ],
+		[ 'Saison', $season ],
 		[ 'Event-Tage', implode( ', ', $days ) ],
 		[ 'Außerhalb der Zeiten', $ah_l[ (string) ( $v['indoor_after_hours'] ?? '' ) ] ?? '' ],
-		[ 'Mindestdauer', absint( $v['indoor_min_hours'] ?? 0 ) > 0 ? absint( $v['indoor_min_hours'] ) . ' Stunden' : '' ],
-		[ 'Vorlauf', (string) ( $v['min_lead_time_days'] ?? '' ) !== '' ? $v['min_lead_time_days'] . ' Tage' : '' ],
 	] );
 }
 

@@ -199,18 +199,15 @@ function fge_catalog_partner_formats(): array {
  * @return array<string,string> id => Label
  */
 function fge_catalog_indoor_systems(): array {
+	// Auf die vier gängigsten Anbieter reduziert (Julius, 28.08.); 'other'
+	// öffnet ein Freitextfeld. Hersteller-Logos folgen, sobald die Bild-Assets
+	// von Julius da sind.
 	return [
-		'trackman'   => 'Trackman',
-		'foresight'  => 'Foresight (GCQuad, GCHawk)',
-		'uneekor'    => 'Uneekor',
-		'fullswing'  => 'Full Swing',
-		'skytrak'    => 'SkyTrak',
-		'garmin'     => 'Garmin Approach',
-		'toptracer'  => 'Toptracer',
-		'xgolf'      => 'X-Golf',
-		'golfzon'    => 'Golfzon',
-		'trugolf'    => 'TruGolf',
-		'other'      => 'Anderes System',
+		'trackman'  => 'Trackman',
+		'foresight' => 'Foresight',
+		'golfzon'   => 'Golfzon',
+		'fullswing' => 'Full Swing',
+		'other'     => 'Anderes System',
 	];
 }
 
@@ -221,15 +218,14 @@ function fge_catalog_indoor_systems(): array {
  * @return array<string,string> id => Label
  */
 function fge_catalog_indoor_features(): array {
+	// Nur die eventfähigsten Features (Julius, 28.08.).
 	return [
-		'turniermodus'  => 'Turniermodus (Scramble, Texas)',
-		'leaderboard'   => 'Live-Leaderboard über alle Boxen',
+		'closest-pin'   => 'Nearest to the Pin',
 		'longest-drive' => 'Longest Drive',
-		'closest-pin'   => 'Closest to Pin',
-		'zielschiessen' => 'Zielschießen',
-		'mini-games'    => 'Mini-Games (Fußballgolf, Darts, Bowling)',
+		'mini-games'    => 'Minigames',
+		'turniermodus'  => 'Turniermodus',
 		'famous'        => 'Berühmte Plätze spielen',
-		'multiplayer'   => 'Multiplayer je Box',
+		'leaderboard'   => 'Ergebnisanzeige (Leaderboard)',
 	];
 }
 
@@ -240,13 +236,21 @@ function fge_catalog_indoor_features(): array {
  * @return array<string,string> id => Label
  */
 function fge_catalog_indoor_kinds(): array {
+	// Drei klar differenzierte Typen (Julius, 28.08.): Kernfrage ist
+	// „professioneller Ganzjahresbetrieb oder kleine Box auf dem Golfplatz?".
 	return [
-		'lounge'      => 'Indoor-Golfclub oder Simulator-Lounge',
-		'club-indoor' => 'Indoor-Bereich eines bestehenden Golfclubs',
-		'range'       => 'Indoor-Range mit Ballflug-Tracking',
-		'bar'         => 'Golf-Bar oder Entertainment-Location',
-		'mobile'      => 'Event-Location mit mobilem Simulator',
-		'academy'     => 'Trainingszentrum oder Golfschule mit Simulator',
+		'lounge' => 'Indoor Golf Lounge oder Studio',
+		'club'   => 'Simulator auf einem Golfplatz',
+		'fun'    => 'Freizeit- und Entertainment-Anlage',
+	];
+}
+
+/** Erklärzeilen zu den Anlagentypen (Kachel-Untertitel). @return array<string,string> */
+function fge_catalog_indoor_kind_subs(): array {
+	return [
+		'lounge' => 'Eigenständiger Indoor-Golf-Betrieb, ganzjährig geöffnet, mehrere Bays, oft mit Bar und Gastronomie.',
+		'club'   => 'Ein bis zwei Simulatoren auf der Golfanlage, vor allem von Mitgliedern genutzt.',
+		'fun'    => 'Simulatoren plus weitere Aktivitäten, z. B. Minigolf oder Tracking-Range.',
 	];
 }
 
@@ -255,20 +259,20 @@ function fge_catalog_indoor_kinds(): array {
  * @return array<string,array<string,string>> Gruppenname => [ id => Label ]
  */
 function fge_catalog_indoor_infra_groups(): array {
+	// Struktur Julius, 28.08.: Spielmöglichkeiten (inkl. Minigolf), Ausstattung
+	// (Leihschläger lebt HIER, nicht bei der Technik), Tagen und Arbeiten,
+	// weitere Aktivitäten. Gastronomie hat ihre EIGENE Slide (keine Doppelung).
 	return [
-		'Simulatorbereich' => [
-			'sim-putting'   => 'Indoor-Puttinggrün',
-			'sim-chipping'  => 'Chipping-Bereich',
-			'sim-bunker'    => 'Übungsbunker indoor',
-			'sim-lounge'    => 'Lounge am Simulator',
-			'sim-screen'    => 'Präsentations-Screen',
+		'Spielmöglichkeiten' => [
+			'sim-boxes'    => 'Simulatorboxen',
+			'sim-putting'  => 'Indoor Putting-Grün',
+			'sim-chipping' => 'Kurzspielbereich',
+			'sim-bunker'   => 'Übungsbunker Indoor',
+			'fun-minigolf' => 'Minigolf',
 		],
-		'Aufenthalt' => [
-			'stay-lounge'   => 'Loungebereich',
-			'stay-bar'      => 'Bar',
-			'stay-seats'    => 'Sitzbereich',
-			'stay-terrace'  => 'Terrasse',
-			'stay-smoking'  => 'Raucherbereich',
+		'Ausstattung' => [
+			'rental-clubs' => 'Leihschläger',
+			'lockers'      => 'Umkleide und Schließfächer',
 		],
 		'Tagen und Arbeiten' => [
 			'work-meeting'    => 'Meetingraum',
@@ -279,8 +283,6 @@ function fge_catalog_indoor_infra_groups(): array {
 			'work-screen'     => 'Bildschirm',
 			'work-flipchart'  => 'Flipchart',
 			'work-whiteboard' => 'Whiteboard',
-			'work-mic'        => 'Mikrofonanlage',
-			'work-moderation' => 'Moderationsmaterial',
 		],
 		'Weitere Aktivitäten' => [
 			'fun-dart'         => 'Dart',
@@ -291,11 +293,6 @@ function fge_catalog_indoor_infra_groups(): array {
 			'fun-kegeln'       => 'Kegeln',
 			'fun-simracing'    => 'Sim-Racing',
 			'fun-tischtennis'  => 'Tischtennis',
-		],
-		'Sonstiges' => [
-			'misc-music'    => 'Musikanlage',
-			'misc-playlist' => 'Eigene Playlist erlaubt',
-			'misc-deko'     => 'Deko erlaubt',
 		],
 	];
 }
@@ -315,18 +312,14 @@ function fge_catalog_indoor_infra_ids(): array {
  * @return array<string,string> id => Label
  */
 function fge_catalog_indoor_formats(): array {
+	// Bewusst kurz (Julius, 28.08.): nur Platzhalter-Formate, alles Weitere
+	// legt der Partner später selbst im Portal an.
 	return [
-		'indoor-teamevent'    => 'Indoor-Teamevent',
-		'weihnachtsfeier'     => 'Weihnachtsfeier und Jahresabschluss',
-		'longest-drive'       => 'Longest Drive oder Closest to Pin Turnier',
-		'sim-turnier'         => 'Simulator-Firmenturnier',
-		'afterwork-indoor'    => 'After-Work Indoor Golf',
-		'schnupper-indoor'    => 'Schnupperkurs Indoor',
-		'platzreife-theorie'  => 'Platzreife-Theorie mit Indoor-Praxis',
-		'kundenevent-indoor'  => 'Kundenevent und Netzwerkabend',
-		'kickoff-workshop'    => 'Kick-off oder Workshop mit Golfteil',
-		'gesundheitstag-indoor' => 'Gesundheitstag und Bewegungspause',
-		'wintertraining'      => 'Wintertraining für Golfer im Team',
+		'platzreife-indoor' => 'Indoor Platzreife',
+		'sim-turnier'       => 'Simulator Firmenturnier',
+		'afterwork-indoor'  => 'After Work Indoor Golf',
+		'grundlagen-indoor' => 'Grundlagenkurs Indoor',
+		'workshop-indoor'   => 'Tagung und Workshop',
 	];
 }
 
@@ -419,6 +412,7 @@ function fge_catalog_contact_roles(): array {
 		'Golfprofessional', 'Golflehrer', 'Golfschule', 'Sportwart', 'Spielleitung',
 		'Turnierleitung', 'Marshal', 'Starter', 'Head Greenkeeper', 'Greenkeeper',
 		'Course Manager', 'Gastronomiebetreiber', 'Restaurantleitung', 'Eventmanager',
+		'Shuttleservice', 'Technik', 'Golfplatz',
 		'Pro Shop Mitarbeiter', 'Caddiemaster', 'Cart Verantwortlicher', 'Jugendwart',
 		'Captain', 'Mannschaftsführer', 'Sonstige',
 	];
