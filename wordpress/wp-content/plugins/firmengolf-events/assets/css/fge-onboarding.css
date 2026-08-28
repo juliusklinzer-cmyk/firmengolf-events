@@ -142,14 +142,14 @@
   margin: 0; padding: 20px;
   font-size: .9rem; line-height: 1.5; color: var(--ink-600);
 }
-.ob-map-consent-btn {
+.ob-shell .ob-map-consent-btn {
   font: inherit; cursor: pointer;
-  padding: 8px 14px;
+  padding: 8px 14px; min-height: 40px;
   border: 1px solid var(--ink-300, var(--ink-200));
   border-radius: var(--radius-md);
   background: var(--paper-100, #fff); color: var(--ink-800, inherit);
 }
-.ob-map-consent-btn:hover { border-color: var(--green1, currentColor); }
+.ob-shell .ob-map-consent-btn:hover { border-color: var(--fairway-600, currentColor); }
 /* Places autocomplete dropdown must clear the sticky footer/topbar. */
 .pac-container { z-index: 200; }
 
@@ -602,12 +602,15 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   padding: 5px 10px;
   border-radius: var(--radius-pill);
 }
-.ob-contact-remove {
-  font-size: 13px; color: var(--ink-500);
-  padding: 6px 10px;
+/* .ob-shell-Präfix (0-2-0): schlägt den `.ob-shell button`-Reset, sonst wird der
+   Entfernen-Button auf 25px zusammengedrückt. */
+.ob-shell .ob-contact-remove {
+  font-size: 13px; font-weight: 500; color: var(--ink-500);
+  background: transparent; border: 0; cursor: pointer; font-family: inherit;
+  padding: 8px 12px; min-height: 40px;
   border-radius: var(--radius-sm);
 }
-.ob-contact-remove:hover { background: var(--paper-50); color: var(--danger); }
+.ob-shell .ob-contact-remove:hover { background: var(--paper-50); color: var(--danger); }
 
 /* ====================================================
    CAPACITY (steppers)
@@ -626,8 +629,10 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   color: var(--ink-900);
 }
 .ob-cap-h { font-size: 13px; color: var(--ink-500); }
-.ob-add-contact { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: var(--ink-700); background: var(--paper-50); border: 1.5px dashed var(--ink-300); border-radius: var(--radius-lg); padding: 14px 22px; transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-.ob-add-contact:hover { border-color: var(--fairway-500); color: var(--fairway-700); }
+/* .ob-shell-Präfix (0-2-0): schlägt den globalen `.ob-shell button`-Reset (0-1-1),
+   der sonst Rahmen/Padding/Background strippt und den Button zur Textzeile macht. */
+.ob-shell .ob-add-contact { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: var(--ink-700); background: var(--paper-50); border: 1.5px dashed var(--ink-300); border-radius: var(--radius-lg); padding: 14px 22px; cursor: pointer; font-family: inherit; transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.ob-shell .ob-add-contact:hover { border-color: var(--fairway-500); color: var(--fairway-700); }
 .ob-add-contact-ic { font-size: 20px; line-height: 1; font-weight: 400; }
 .ob-cat { margin-top: 8px; }
 .ob-cat + .ob-cat { margin-top: 32px; }
@@ -1084,9 +1089,9 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 }
 /* Constrain the content column while the panel itself is full-bleed. */
 .ob-help > *:not(.ob-help-close) { width: 100%; max-width: 560px; }
-.ob-help-close {
+.ob-shell .ob-help-close {
   position: fixed; top: 24px; right: 24px;
-  width: 40px; height: 40px;
+  width: 44px; height: 44px; cursor: pointer;
   border-radius: 999px;
   border: 1px solid var(--ink-900);
   background: var(--paper-50);
@@ -1386,8 +1391,10 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 /* E-Mail-Verifizierung: Code-Feld im Hauptkontakt-Slide (Julius, 2026-07-06) */
 .ob-verify { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--ink-200, #E4E2DA); }
 .ob-verify-resend { font-size: 13px; color: var(--ink-600, #5C6660); margin: 8px 0 0; }
-.ob-shell button.ob-linkbtn, button.ob-linkbtn { font: inherit; font-size: 13px; font-weight: 600; color: var(--fairway-700, #4279D1); background: none; border: 0; padding: 0; margin: 0; width: auto; min-height: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-.ob-shell button.ob-linkbtn:hover { color: var(--fairway-600, #3568BC); background: none; }
+.ob-shell button.ob-linkbtn, button.ob-linkbtn, .ob-shell a.ob-linkbtn, a.ob-linkbtn { font: inherit; font-size: 13px; font-weight: 600; color: var(--fairway-700, #4279D1); background: none; border: 0; padding: 0; margin: 0; width: auto; min-height: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.ob-shell button.ob-linkbtn:hover, .ob-shell a.ob-linkbtn:hover { color: var(--fairway-600, #3568BC); background: none; }
+/* Die „für alle übernehmen"-Zeile im Öffnungszeiten-Raster: etwas mehr Luft. */
+.ob-shell button.ob-hours-copy { font-size: 14px; }
 
 /* Pflichtangaben im Onboarding-Footer + Datenschutzhinweis an der Kontakterhebung
    (Audit 2026-08-12: Standalone-Seite ganz ohne Impressum/Datenschutz/AGB). */
@@ -1406,7 +1413,7 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 
 /* Kontakte-Slide: konkrete Rollen-Buttons untereinander. */
 .ob-add-contact-row { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-.ob-add-contact-row .ob-add-contact { width: 100%; justify-content: flex-start; }
+.ob-shell .ob-add-contact-row .ob-add-contact { width: 100%; justify-content: flex-start; }
 
 /* Nur-Code-Ansicht der E-Mail-Bestätigung. */
 .ob-verify--solo { margin-top: 0; padding-top: 0; border-top: 0; max-width: 420px; }
@@ -1444,3 +1451,79 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 @media (max-width: 560px) {
   .ob-price-hero { flex-direction: column; gap: 12px; padding: 18px; }
 }
+
+/* ── Öffnungszeiten-Raster (Indoor, Julius 28.08.): pro Tag Schalter + von/bis ── */
+.ob-hours { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.ob-hours-row {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 10px 14px; border: 1px solid var(--ink-200); border-radius: var(--radius-md);
+  background: var(--paper-50);
+}
+.ob-hours-row.is-closed { background: var(--paper-100); }
+/* Schalter (Geöffnet/Geschlossen) als iOS-Style-Toggle, Tag-Name daneben. */
+.ob-hours-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; min-width: 148px; flex: none; }
+.ob-hours-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ob-hours-track {
+  position: relative; width: 42px; height: 25px; flex: none; border-radius: 999px;
+  background: var(--ink-300); transition: background var(--dur-fast) var(--ease-out);
+}
+.ob-hours-knob {
+  position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 999px;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.ob-hours-switch input:checked + .ob-hours-track { background: var(--fairway-700); }
+.ob-hours-switch input:checked + .ob-hours-track .ob-hours-knob { transform: translateX(17px); }
+.ob-hours-switch input:focus-visible + .ob-hours-track { box-shadow: 0 0 0 3px var(--fairway-200, rgba(66,121,209,.35)); }
+.ob-hours-day { font-size: 15px; font-weight: 600; color: var(--ink-900); }
+.ob-hours-times { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.ob-hours-time { width: 108px; margin: 0; }
+.ob-hours-sep { font-size: 14px; color: var(--ink-500); }
+.ob-hours-closed { display: none; font-size: 14px; font-weight: 500; color: var(--ink-500); }
+.ob-hours-row.is-closed .ob-hours-times .ob-hours-time,
+.ob-hours-row.is-closed .ob-hours-times .ob-hours-sep { display: none; }
+.ob-hours-row.is-closed .ob-hours-closed { display: inline; }
+.ob-shell button.ob-hours-copy { margin-top: 10px; align-self: flex-start; }
+@media (max-width: 560px) {
+  .ob-hours-switch { min-width: 0; }
+  .ob-hours-times { margin-left: 0; width: 100%; }
+  .ob-hours-time { flex: 1; width: auto; }
+}
+
+/* ── A11y & Touch-Targets (Audit 28.08.) ───────────────────────────────────── */
+/* Tastaturfokus auf den Auswahl-Karten sichtbar: der echte Input ist visuell
+   versteckt, daher den Fokusring auf das Label/den Container spiegeln. */
+.ob-card:has(.ob-card-input:focus-visible),
+.ob-day:has(input:focus-visible),
+.ob-radio:has(input:focus-visible) {
+  outline: 2px solid var(--fairway-700);
+  outline-offset: 2px;
+}
+/* Ja/Nein-Pillen auf die 44px-Touch-Linie heben. */
+.ob-radio { min-height: 44px; }
+/* „Bearbeiten"-Links auf der Review-Slide als echtes Touch-Ziel. */
+.ob-rev-edit { display: inline-flex; align-items: center; min-height: 40px; padding: 4px 8px; }
+/* Legal-Links im Sticky-Footer etwas größer antippbar. */
+.ob-foot-legal a { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 2px; }
+
+/* ── rw-Stepper im Onboarding (coach-capacity): die .rw-step-btn/.rw-stepper-val
+   Regeln in fge-frontend.css sind unter .rw-overlay gescoped und greifen hier
+   nicht; zusätzlich strippt der .ob-shell button-Reset Rahmen/Padding. Darum
+   .ob-shell-Präfix (0-2-0), 1:1 nach dem Vorbild des Anfrage-Wizards. */
+.ob-shell .rw-step-btn {
+  width: 44px; height: 44px; flex: none; border-radius: 999px;
+  border: 1px solid var(--ink-200); background: var(--paper-100); color: var(--ink-900);
+  font-size: 22px; line-height: 1; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.ob-shell .rw-step-btn:hover { background: var(--paper-200); border-color: var(--ink-300); }
+.ob-shell .rw-step-btn:active { background: var(--fairway-600); border-color: var(--fairway-600); color: var(--paper-50); transform: scale(0.94); }
+.ob-shell .rw-stepper-val {
+  width: 96px; border: 0; background: transparent; text-align: center;
+  font-size: 24px; font-weight: 600; color: var(--ink-900); font-family: inherit;
+  -moz-appearance: textfield; appearance: textfield; padding: 0; min-height: 0;
+}
+.ob-shell .rw-stepper-val::-webkit-outer-spin-button,
+.ob-shell .rw-stepper-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.rw-stepper-unit { font-size: 13px; color: var(--ink-500); }

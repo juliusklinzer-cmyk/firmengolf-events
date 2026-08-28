@@ -1190,7 +1190,7 @@ function fge_portal_render(): void {
 				<span class="fg-portal-status-pill"><span class="fg-portal-status-dot"></span>In Prüfung</span>
 				<span>
 					Dein Partnerprofil ist eingereicht<?php if ( $p_submitted_fmt !== '' ) : ?> (am <?php echo esc_html( $p_submitted_fmt ); ?><?php echo $p_number !== '' ? ', Vorgang ' . esc_html( $p_number ) : ''; ?>)<?php endif; ?> und wird von Firmengolf geprüft, in der Regel innerhalb von zwei Werktagen.
-					Du kannst schon jetzt alles einrichten und Events erstellen. Sobald dein Profil freigeschaltet ist, geht dein Platz öffentlich online.
+					Du kannst schon jetzt alles einrichten und Events erstellen. Sobald dein Profil freigeschaltet ist, geht es öffentlich online.
 				</span>
 			</div>
 		<?php endif; ?>
@@ -2333,68 +2333,15 @@ function fge_portal_section_indoor( int $partner_id ): void {
 					</div>
 				</div>
 
-				<h3>Betreuung und Buchung</h3>
-				<div class="fg-form-row fg-form-row--2col">
-					<div>
-						<label class="fg-form-label" for="fge_indoor_lefthand">Können Linkshänder spielen? *</label>
-						<select class="fg-form-input" id="fge_indoor_lefthand" name="fge_indoor_lefthand">
-							<option value="">bitte wählen …</option>
-							<?php foreach ( [ 'all' => 'Ja, in allen Boxen', 'some' => 'In einzelnen Boxen', 'no' => 'Nein' ] as $k => $l ) : ?>
-								<option value="<?php echo esc_attr( $k ); ?>" <?php selected( (string) $val( 'fge_indoor_lefthand', 'lefthand' ), $k ); ?>><?php echo esc_html( $l ); ?></option>
-							<?php endforeach; ?>
-						</select>
-						<?php echo $err_html( 'fge_indoor_lefthand' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-					</div>
-					<div>
-						<label class="fg-form-label" for="fge_indoor_rental_clubs">Leihschläger vorhanden? *</label>
-						<select class="fg-form-input" id="fge_indoor_rental_clubs" name="fge_indoor_rental_clubs">
-							<option value="">bitte wählen …</option>
-							<option value="1" <?php selected( (string) $val( 'fge_indoor_rental_clubs', 'rental_clubs' ), '1' ); ?>>Ja</option>
-							<option value="0" <?php selected( (string) $val( 'fge_indoor_rental_clubs', 'rental_clubs' ), '0' ); ?>>Nein</option>
-						</select>
-						<?php echo $err_html( 'fge_indoor_rental_clubs' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-					</div>
-				</div>
-				<div class="fg-form-row fg-form-row--2col">
-					<div>
-						<label class="fg-form-label" for="fge_indoor_support">Betreuung bei Firmenevents *</label>
-						<select class="fg-form-input" id="fge_indoor_support" name="fge_indoor_support">
-							<option value="">bitte wählen …</option>
-							<?php foreach ( [ 'inklusive' => 'Inklusive', 'aufpreis' => 'Gegen Aufpreis', 'nein' => 'Nicht möglich' ] as $k => $l ) : ?>
-								<option value="<?php echo esc_attr( $k ); ?>" <?php selected( (string) $val( 'fge_indoor_support', 'support' ), $k ); ?>><?php echo esc_html( $l ); ?></option>
-							<?php endforeach; ?>
-						</select>
-						<?php echo $err_html( 'fge_indoor_support' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-					</div>
-					<div>
-						<label class="fg-form-label" for="fge_indoor_exclusive">Exklusivbuchung möglich? *</label>
-						<select class="fg-form-input" id="fge_indoor_exclusive" name="fge_indoor_exclusive">
-							<option value="">bitte wählen …</option>
-							<?php foreach ( [ 'ja' => 'Ja', 'ab' => 'Ja, ab einer Mindestpersonenzahl', 'nein' => 'Nein' ] as $k => $l ) : ?>
-								<option value="<?php echo esc_attr( $k ); ?>" <?php selected( (string) $val( 'fge_indoor_exclusive', 'exclusive' ), $k ); ?>><?php echo esc_html( $l ); ?></option>
-							<?php endforeach; ?>
-						</select>
-						<?php echo $err_html( 'fge_indoor_exclusive' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-					</div>
-				</div>
-				<div class="fg-form-row fg-form-row--2col">
-					<div>
-						<label class="fg-form-label" for="fge_indoor_exclusive_from">Exklusiv ab wie vielen Personen?</label>
-						<input class="fg-form-input" type="number" min="1" max="999" id="fge_indoor_exclusive_from" name="fge_indoor_exclusive_from" value="<?php echo esc_attr( $num( $val( 'fge_indoor_exclusive_from', 'exclusive_from' ) ) ); ?>">
-						<?php echo $err_html( 'fge_indoor_exclusive_from' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-					</div>
-					<div>
-						<label class="fg-form-label" for="fge_indoor_offseason">Auch außerhalb der Golfsaison nutzbar?</label>
-						<select class="fg-form-input" id="fge_indoor_offseason" name="fge_indoor_offseason">
-							<option value="">bitte wählen …</option>
-							<option value="1" <?php selected( (string) $val( 'fge_indoor_offseason', 'offseason' ), '1' ); ?>>Ja, ganzjährig</option>
-							<option value="0" <?php selected( (string) $val( 'fge_indoor_offseason', 'offseason' ), '0' ); ?>>Nein, nur während der Saison</option>
-						</select>
-					</div>
-				</div>
 				<div class="fg-form-row">
-					<label class="fg-form-label" for="fge_indoor_winter_hours">Öffnungszeiten im Winter (optional)</label>
-					<input class="fg-form-input" type="text" id="fge_indoor_winter_hours" name="fge_indoor_winter_hours" value="<?php echo esc_attr( (string) $val( 'fge_indoor_winter_hours', 'winter_hours' ) ); ?>" placeholder="z. B. Montag bis Sonntag 9 bis 22 Uhr">
+					<label class="fg-form-label" for="fge_indoor_lefthand">Können Linkshänder spielen? *</label>
+					<select class="fg-form-input" id="fge_indoor_lefthand" name="fge_indoor_lefthand">
+						<option value="">bitte wählen …</option>
+						<?php foreach ( [ 'all' => 'Ja, in allen Boxen', 'some' => 'In einzelnen Boxen', 'no' => 'Nein' ] as $k => $l ) : ?>
+							<option value="<?php echo esc_attr( $k ); ?>" <?php selected( (string) $val( 'fge_indoor_lefthand', 'lefthand' ), $k ); ?>><?php echo esc_html( $l ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<?php echo $err_html( 'fge_indoor_lefthand' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 				</div>
 				<div style="margin-top:18px;">
 					<button type="submit" class="btn btn-brand">Indoor-Daten speichern</button>

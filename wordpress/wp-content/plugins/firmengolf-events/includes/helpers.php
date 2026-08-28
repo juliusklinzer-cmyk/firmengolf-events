@@ -77,6 +77,13 @@ function fge_partner_type( int $partner_id ): string {
  * und den Indoor-Reiter im Portal (docs/onboarding-golflehrer-indoor.md, Abschnitt 3).
  */
 function fge_partner_has_indoor( int $partner_id ): bool {
+	// Indoor-Partner (Formular B) haben ihren eigenen Wizard und schreiben KEIN
+	// _fge_infra=indoor; sie werden über den Partnertyp erkannt (Audit 28.08.,
+	// sonst fehlt ihnen der Indoor-Reiter im Portal komplett). Golfplätze mit
+	// Indoor in der Ausstattung weiterhin über _fge_infra.
+	if ( 'indoor' === fge_partner_type( $partner_id ) ) {
+		return true;
+	}
 	$infra = get_post_meta( $partner_id, '_fge_infra', true );
 	return is_array( $infra ) && [] !== array_intersect( [ 'indoor', 'trackman', 'toptracer' ], $infra );
 }

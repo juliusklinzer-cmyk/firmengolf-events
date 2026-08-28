@@ -677,16 +677,29 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'indoor-hours':
-			// Neu geschnitten (Julius, 28.08.): Öffnungszeiten + Ganzjährig-Frage
-			// (bei Nein: geöffnet von/bis, deckt auch Betriebsferien ab) + Standard-
-			// Tages-Kacheln + außerhalb-der-Zeiten Ja/Nein. Eventstart, Mindestdauer
-			// und Vorlauf-Auswahl sind gestrichen (Standardvorlauf gilt).
-			update_post_meta( $partner_id, '_fge_indoor_open_note', $s( 'fge_indoor_open_note' ) );
+			// Öffnungszeiten als Wochentags-Raster (Julius, 28.08., statt Freitext):
+			// pro Tag Geöffnet-Schalter + von/bis. Daraus leiten wir die lesbare
+			// _fge_indoor_open_note UND die bevorzugten Event-Tage ab.
+			$hours_in  = is_array( $post['fge_indoor_hours'] ?? null ) ? $post['fge_indoor_hours'] : [];
+			$hours_out = [];
+			$open_days = [];
+			foreach ( $allowed_days as $dk ) {
+				$row  = is_array( $hours_in[ $dk ] ?? null ) ? $hours_in[ $dk ] : [];
+				$open = ! empty( $row['open'] );
+				$from = preg_match( '/^\d{2}:\d{2}$/', (string) ( $row['from'] ?? '' ) ) ? $row['from'] : '';
+				$to   = preg_match( '/^\d{2}:\d{2}$/', (string) ( $row['to'] ?? '' ) ) ? $row['to'] : '';
+				$hours_out[ $dk ] = [ 'open' => $open ? '1' : '', 'from' => $from, 'to' => $to ];
+				if ( $open && '' !== $from && '' !== $to ) {
+					$open_days[] = $dk;
+				}
+			}
+			update_post_meta( $partner_id, '_fge_indoor_hours', $hours_out );
+			update_post_meta( $partner_id, '_fge_indoor_open_note', fge_indoor_hours_summary( $hours_out ) );
+			update_post_meta( $partner_id, '_fge_preferred_event_days', $open_days );
 			$year_round = $san_select( 'fge_indoor_year_round', [ '1', '0' ] );
 			update_post_meta( $partner_id, '_fge_indoor_year_round', $year_round );
 			update_post_meta( $partner_id, '_fge_indoor_open_from', min( 12, max( 1, absint( $post['fge_indoor_open_from'] ?? 1 ) ) ) );
 			update_post_meta( $partner_id, '_fge_indoor_open_to', min( 12, max( 1, absint( $post['fge_indoor_open_to'] ?? 12 ) ) ) );
-			update_post_meta( $partner_id, '_fge_preferred_event_days', $san_group( 'fge_preferred_event_days', $allowed_days ) );
 			update_post_meta( $partner_id, '_fge_indoor_after_hours', $san_select( 'fge_indoor_after_hours', [ 'ja', 'nein' ] ) );
 			// Saison-Label für alle bestehenden Anzeigen; ganzjährig ist der Normalfall.
 			update_post_meta( $partner_id, '_fge_season', '0' === $year_round ? 'Saisonal, siehe Öffnungszeiten' : 'Ganzjährig' );
@@ -1202,16 +1215,26 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 		case 'indoor-kind':
 			return in_array( $s( 'fge_indoor_kind' ), array_keys( fge_catalog_indoor_kinds() ), true )
 				? []
-				: [ 'fge_indoor_kind' => 'Bitte wähle aus, was eure Anlage am besten beschreibt.' ];
+				: [ 'fge_indoor_kind' => 'Bitte wähle aus, was euch am besten beschreibt.' ];
 
 		case 'indoor-formats':
 			// Optional (Julius, 28.08.): die Auswahl erzeugt nur Platzhalter-Events.
 			return [];
 
 		case 'indoor-hours':
-			return $s( 'fge_indoor_open_note' ) === ''
-				? [ 'fge_indoor_open_note' => 'Bitte beschreibt kurz eure Öffnungszeiten.' ]
-				: [];
+			$hours_in = is_array( $post['fge_indoor_hours'] ?? null ) ? $post['fge_indoor_hours'] : [];
+			$has_open = false;
+			foreach ( $hours_in as $row ) {
+				if ( is_array( $row ) && ! empty( $row['open'] )
+					&& preg_match( '/^\d{2}:\d{2}$/', (string) ( $row['from'] ?? '' ) )
+					&& preg_match( '/^\d{2}:\d{2}$/', (string) ( $row['to'] ?? '' ) ) ) {
+					$has_open = true;
+					break;
+				}
+			}
+			return $has_open
+				? []
+				: [ 'fge_indoor_hours' => 'Bitte trag mindestens einen Öffnungstag mit Uhrzeit ein.' ];
 
 		case 'coach-kind':
 			return in_array( $s( 'fge_coach_kind' ), array_keys( fge_catalog_coach_kinds() ), true )
@@ -1526,6 +1549,7 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'indoor_nearby'                 => (string) $m( 'indoor_nearby' ),
 		'indoor_radius_km'              => (string) $m( 'indoor_radius_km' ),
 		'indoor_open_note'              => (string) $m( 'indoor_open_note' ),
+		'indoor_hours'                  => is_array( $m( 'indoor_hours' ) ) ? $m( 'indoor_hours' ) : [],
 		'indoor_year_round'             => (string) $m( 'indoor_year_round' ),
 		'indoor_open_from'              => (string) $m( 'indoor_open_from' ),
 		'indoor_open_to'                => (string) $m( 'indoor_open_to' ),
@@ -1644,8 +1668,8 @@ function fge_onboarding_render_footer( int $step, string $token ): void {
 	// Typ und bei bedingten Slides wie indoor-detail); Labels je Partner-Typ.
 	$chapter_labels = [
 		'course' => [ 1 => 'Dein Platz', 2 => 'Dein Angebot', 3 => 'Verfügbarkeit & Preis' ],
-		'indoor' => [ 1 => 'Eure Anlage', 2 => 'Euer Angebot', 3 => 'Rahmen & Preis' ],
-		'coach'  => [ 1 => 'Über dich', 2 => 'Deine Anlage', 3 => 'Dein Angebot', 4 => 'Rahmen & Preis' ],
+		'indoor' => [ 1 => 'Eure Location', 2 => 'Euer Angebot', 3 => 'Rahmen & Preis' ],
+		'coach'  => [ 1 => 'Über dich', 2 => 'Dein Angebot', 3 => 'Rahmen & Preis' ],
 	];
 	$labels   = $chapter_labels[ fge_onboarding_current_type() ] ?? $chapter_labels['course'];
 	$chapters = [];
@@ -1821,8 +1845,9 @@ function fge_onboarding_form_open( int $step, int $partner_id, string $token ): 
 
 function fge_onboarding_error( array $errors, string $field, string $desc_id = '' ): void {
 	if ( isset( $errors[ $field ] ) ) {
+		// role=alert: Screenreader liest die Fehlermeldung beim Erscheinen vor (A11y-Audit).
 		printf(
-			'<p class="ob-field-error"%s>%s</p>',
+			'<p class="ob-field-error" role="alert"%s>%s</p>',
 			$desc_id !== '' ? ' id="' . esc_attr( $desc_id ) . '"' : '',
 			esc_html( $errors[ $field ] )
 		);
@@ -2080,7 +2105,7 @@ function fge_onboarding_render_type_chooser(): void {
 	$page  = fge_onboarding_page_url();
 	$cards = [
 		'course' => [ 'Golfplatz', 'Ihr betreibt eine Golfanlage und wollt Firmenevents anbieten.', 'course-18' ],
-		'indoor' => [ 'Indoor-Golf', 'Ihr betreibt eine Indoor-Anlage mit Simulatoren, ganzjährig buchbar.', 'indoor' ],
+		'indoor' => [ 'Indoor-Golf', 'Ihr betreibt Indoor Golf mit Simulatoren, ganzjährig buchbar.', 'indoor' ],
 		'coach'  => [ 'Golflehrer', 'Du unterrichtest Golf und willst dein Angebot um Firmenevents erweitern.', 'coach' ],
 	];
 	?>
@@ -2095,7 +2120,7 @@ function fge_onboarding_render_type_chooser(): void {
 				<div class="ob-intro-text">
 					<div class="ob-eyebrow">Partner werden</div>
 					<h1 class="ob-step-title big">Als was möchtest du <span class="ob-italic">Partner</span> werden?</h1>
-					<p class="ob-intro-lead">Firmengolf vermittelt Firmenevents an Golfplätze, Indoor-Anlagen und Golflehrer. Wähle aus, was auf dich zutrifft, danach stellen wir nur die Fragen, die zu dir passen.</p>
+					<p class="ob-intro-lead">Firmengolf vermittelt Firmenevents an Golfplätze, Indoor Golf und Golflehrer. Wähle aus, was auf dich zutrifft, danach stellen wir nur die Fragen, die zu dir passen.</p>
 					<div class="ob-cards" style="margin-top:24px;">
 						<?php foreach ( $cards as $type => $c ) : ?>
 						<a class="ob-card" href="<?php echo esc_url( add_query_arg( [ 'ob_step' => 1, 'ob_type' => $type ], $page ) ); ?>" style="text-decoration:none;">
@@ -2119,16 +2144,16 @@ function fge_onboarding_render_intro( string $id ): void {
 	// Typspezifische Intros (Ton aus Plan Abschnitt 8b); Fallback: Platz-Intros.
 	$typed = [
 		'indoor:intro-1' => [
-			'eyebrow' => 'Schritt 1 · Erzählt uns von eurer Anlage',
+			'eyebrow' => 'Schritt 1 · Erzählt uns von eurem Indoor Golf',
 			'title'   => 'Macht eure Simulatoren zur <span class="ob-italic">Eventlocation</span> für Unternehmen.',
-			'lead'    => 'Firmenkunden kommen unter der Woche und tagsüber, genau dann, wenn Boxen sonst frei sind. In ein paar Schritten erfassen wir eure Anlage, danach können Unternehmen euch für Indoor-Events anfragen. Zwischendurch speichern geht jederzeit.',
-			'list'    => [ 'Anlage und Standort', 'Hauptkontakt + euer Login fürs Partnerportal', 'Simulatoren, Räume und Formate', 'Öffnungszeiten, Preis-Prinzip &amp; Fotos' ],
+			'lead'    => 'Firmenkunden kommen unter der Woche und tagsüber, genau dann, wenn Boxen sonst frei sind. In ein paar Schritten erfassen wir euer Indoor Golf, danach können Unternehmen euch für Indoor-Events anfragen. Zwischendurch speichern geht jederzeit.',
+			'list'    => [ 'Standort und Kontakt', 'Hauptkontakt + euer Login fürs Partnerportal', 'Simulatoren, Räume und Formate', 'Öffnungszeiten, Preis-Prinzip &amp; Fotos' ],
 			'meta'    => 'Dauer ungefähr 10 Minuten · keine Verpflichtung · kostenlos',
 			'photo'   => $img( 'onboarding-abschlag.jpg' ),
 		],
 		'indoor:intro-2' => [
 			'eyebrow' => 'Schritt 2 · Was ihr anbieten könnt',
-			'title'   => 'Was macht eure Anlage zum <span class="ob-italic">Firmenevent</span>?',
+			'title'   => 'Was macht euer Indoor Golf zum <span class="ob-italic">Firmenevent</span>?',
 			'lead'    => 'Boxen, Technik, Räume und Nebenaktivitäten: Wir erfassen, was Firmengruppen bei euch erleben können, vom After-Work bis zum Simulator-Turnier mit Live-Leaderboard.',
 			'list'    => [ 'Simulatoren und Technik', 'Räume, Gastronomie und Aktivitäten', 'Formate für Firmenevents' ],
 			'meta'    => '',
@@ -2145,8 +2170,8 @@ function fge_onboarding_render_intro( string $id ): void {
 		'coach:intro-1' => [
 			'eyebrow' => 'Schritt 1 · Erzähl uns von dir',
 			'title'   => 'Erweitere dein Angebot mit <span class="ob-italic">Firmenevents</span>.',
-			'lead'    => 'Unternehmen suchen Golflehrer für Schnupperkurse, Platzreife und Teamevents. Wir erfassen dein Profil und deine Standorte, danach können Firmen dich anfragen. Du führst durch, wir kümmern uns um Anfragen und Abrechnung.',
-			'list'    => [ 'Dein Profil und deine Qualifikation', 'Wo du unterrichtest', 'Deine Formate und Gruppengrößen', 'Abrechnung, Fotos &amp; Einreichung' ],
+			'lead'    => 'Unternehmen suchen Golflehrer für Grundlagenkurse, Platzreife und Teamevents. Wir erfassen dein Profil und deine Standorte, danach können Firmen dich anfragen. Du führst durch, wir kümmern uns um Anfragen und Abrechnung.',
+			'list'    => [ 'Dein Profil und deine Qualifikation', 'Wo du unterrichtest', 'Deine Formate und Gruppengrößen', 'Preis, Fotos &amp; Einreichung' ],
 			'meta'    => 'Dauer ungefähr 10 Minuten · keine Verpflichtung · kostenlos',
 			'photo'   => $img( 'onboarding-abschlag.jpg' ),
 		],
@@ -2172,7 +2197,7 @@ function fge_onboarding_render_intro( string $id ): void {
 			'eyebrow' => 'Schritt 3 · Verfügbarkeit, Preis &amp; Medien',
 			'title'   => 'Fast geschafft, jetzt die <span class="ob-italic">Rahmenbedingungen</span>.',
 			'lead'    => 'Verfügbarkeit, Aufschlag und Bilder, danach prüfst du alles und reichst dein Profil bei uns ein. Wir melden uns innerhalb eines Werktags zurück.',
-			'list'    => [ 'Verfügbarkeit &amp; Vorlauf', 'Preis-Aufschlag &amp; Abrechnung', 'Logo, Titelbild &amp; Galerie', 'Zusammenfassung &amp; Einreichung' ],
+			'list'    => [ 'Verfügbarkeit &amp; Vorlauf', 'Preis-Prinzip', 'Logo, Titelbild &amp; Galerie', 'Zusammenfassung &amp; Einreichung' ],
 			'meta'    => '',
 			'photo'   => $img( 'onboarding-chapter-3.jpg' ),
 		],
@@ -2485,15 +2510,29 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 		<?php
 		fge_onboarding_next_btn( 'Code bestätigen', 'fge_ob_save_exit' );
 		echo '</form>';
+		// Der Footer-Weiter-Button rendert generisch „Weiter" (fge_onboarding_next_btn
+		// ist ein No-op); auf dieser Slide soll er „Code bestätigen" heißen.
+		?>
+		<script>
+		(function(){
+			var b = document.querySelector('button[form="ob-step-form"].ob-btn-primary');
+			if (b) b.textContent = 'Code bestätigen';
+		})();
+		</script>
+		<?php
 		return;
 	}
 
+	$main_is_course = 'course' === fge_onboarding_current_type();
+	$main_mail_ph   = $main_is_course ? 'name@golfclub.de' : 'name@firma.de';
 	fge_onboarding_render_step_header(
 		$step,
 		$main_is_coach ? 'Dein Zugang zum Partnerportal' : 'Wer ist der Hauptkontakt?',
 		$main_is_coach
 			? 'Du selbst bist der Hauptkontakt. Mit diesem Login verwaltest du dein Profil, deine Angebote und Anfragen. Wenn die E-Mail-Adresse bereits existiert, verbinden wir das bestehende Konto.'
-			: 'Diese Person wird mit dem Platz verknüpft und bekommt einen Login fürs Partnerportal. Wenn die E-Mail-Adresse bereits existiert, verbinden wir das bestehende Konto.'
+			: ( $main_is_course
+				? 'Diese Person wird mit dem Platz verknüpft und bekommt einen Login fürs Partnerportal. Wenn die E-Mail-Adresse bereits existiert, verbinden wir das bestehende Konto.'
+				: 'Diese Person wird mit eurem Profil verknüpft und bekommt einen Login fürs Partnerportal. Wenn die E-Mail-Adresse bereits existiert, verbinden wir das bestehende Konto.' )
 	);
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	?>
@@ -2503,11 +2542,11 @@ function fge_onboarding_render_step_4( int $step, int $partner_id, string $token
 	</div>
 	<?php
 	if ( ! $main_is_coach ) {
-		fge_onboarding_input( 'fge_contact_role', 'fge_contact_role', 'Rolle im Club', $v['main_contact_role'] ?? '', 'text', false, 'z. B. Clubmanager, Eventleitung' );
+		fge_onboarding_input( 'fge_contact_role', 'fge_contact_role', $main_is_course ? 'Rolle im Club' : 'Rolle', $v['main_contact_role'] ?? '', 'text', false, $main_is_course ? 'z. B. Clubmanager, Eventleitung' : 'z. B. Inhaber, Eventleitung' );
 	}
 	?>
 	<div class="ob-field-row">
-		<?php fge_onboarding_input( 'fge_contact_email', 'fge_contact_email', 'E-Mail', $v['main_contact_email'] ?? '', 'email', true, 'name@golfclub.de', $errors, 'Wird zum Login.', '', true ); ?>
+		<?php fge_onboarding_input( 'fge_contact_email', 'fge_contact_email', 'E-Mail', $v['main_contact_email'] ?? '', 'email', true, $main_mail_ph, $errors, 'Wird zum Login.', '', true ); ?>
 		<?php fge_onboarding_input( 'fge_contact_phone', 'fge_contact_phone', 'Telefon', $v['main_contact_phone'] ?? '', 'tel', false, '+49 …' ); ?>
 	</div>
 	<div class="ob-info-box">
@@ -2544,9 +2583,9 @@ function fge_onboarding_render_step_5( int $step, int $partner_id, string $token
 	// Konkrete Rollen-Buttons je Partnertyp (Julius, 28.08.): ein Klick legt die
 	// Karte mit vorbelegter Rolle an; die Rollen müssen im Rollen-Select existieren.
 	$role_buttons = [
-		'course' => [ 'Gastronomiebetreiber' => 'Ansprechpartner für Gastronomie hinzufügen', 'Golfschule' => 'Ansprechpartner für die Golfschule hinzufügen', 'Shuttleservice' => 'Ansprechpartner für Shuttleservice hinzufügen' ],
-		'indoor' => [ 'Gastronomiebetreiber' => 'Ansprechpartner für Gastronomie hinzufügen', 'Technik' => 'Ansprechpartner für Technik hinzufügen', 'Shuttleservice' => 'Ansprechpartner für Shuttleservice hinzufügen' ],
-		'coach'  => [ 'Golfplatz' => 'Ansprechpartner für den Golfplatz hinzufügen', 'Gastronomiebetreiber' => 'Ansprechpartner für Gastronomie hinzufügen' ],
+		'course' => [ 'Gastronom' => 'Gastronom hinzufügen', 'Golfschule' => 'Golfschule hinzufügen', 'Shuttle-Unternehmen' => 'Shuttle-Unternehmen hinzufügen' ],
+		'indoor' => [ 'Golflehrer' => 'Golflehrer hinzufügen', 'Gastronom' => 'Gastronom hinzufügen', 'Shuttle-Unternehmen' => 'Shuttle-Unternehmen hinzufügen' ],
+		'coach'  => [ 'Golfplatz' => 'Golfplatz hinzufügen', 'Gastronom' => 'Gastronom hinzufügen' ],
 	];
 	$type_btns = $role_buttons[ fge_onboarding_current_type() ] ?? $role_buttons['course'];
 	?>
@@ -2640,7 +2679,7 @@ function fge_onboarding_contact_card( ?array $c ): void {
 			</div>
 			<div class="ob-field">
 				<label class="ob-field-label">E-Mail</label>
-				<input type="email" class="ob-input" name="fge_contact_email[]" value="<?php echo esc_attr( $mail ); ?>" placeholder="name@golfclub.de">
+				<input type="email" class="ob-input" name="fge_contact_email[]" value="<?php echo esc_attr( $mail ); ?>" placeholder="name@beispiel.de">
 			</div>
 		</div>
 		<div class="ob-field full">
@@ -2987,8 +3026,70 @@ function fge_onboarding_render_indoor_formats( int $step, int $partner_id, strin
 function fge_onboarding_render_indoor_hours( int $step, int $partner_id, string $token, array $v, array $errors ): void {
 	fge_onboarding_render_step_header( $step, 'Öffnungszeiten und Verfügbarkeit', 'Statt einer Saison zählen bei euch die Öffnungszeiten. Firmenevents laufen oft nachmittags oder als After-Work.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
-	fge_onboarding_input( 'fge_indoor_open_note', 'fge_indoor_open_note', 'Eure Öffnungszeiten', (string) ( $v['indoor_open_note'] ?? '' ), 'text', true, 'z. B. Montag bis Freitag 9 bis 22 Uhr, Wochenende 10 bis 20 Uhr', $errors );
 
+	// Öffnungszeiten als Wochentags-Raster mit Zeit-Pickern statt Freitext
+	// (Julius, 28.08.: „kein Mensch will Freitext"; Muster wie Google Business /
+	// Buchungsplattformen: pro Tag Geöffnet-Schalter + von/bis, „für alle übernehmen").
+	$day_names = [
+		'monday' => 'Montag', 'tuesday' => 'Dienstag', 'wednesday' => 'Mittwoch',
+		'thursday' => 'Donnerstag', 'friday' => 'Freitag', 'saturday' => 'Samstag', 'sunday' => 'Sonntag',
+	];
+	$saved_hours = is_array( $v['indoor_hours'] ?? null ) ? $v['indoor_hours'] : [];
+	?>
+	<div class="ob-field full<?php echo isset( $errors['fge_indoor_hours'] ) ? ' ob-field--error' : ''; ?>">
+		<label class="ob-field-label">Eure Öffnungszeiten <span class="ob-required">*</span></label>
+		<span class="ob-field-hint">Schalte je Tag auf „Geöffnet" und stell die Uhrzeiten ein. Firmenevents planen wir innerhalb dieser Zeiten (und auf Wunsch auch darüber hinaus, siehe unten).</span>
+		<div class="ob-hours" id="fge-indoor-hours">
+			<?php foreach ( $day_names as $dk => $dl ) :
+				$row  = is_array( $saved_hours[ $dk ] ?? null ) ? $saved_hours[ $dk ] : [];
+				$open = empty( $saved_hours ) ? true : ! empty( $row['open'] );
+				$from = preg_match( '/^\d{2}:\d{2}$/', (string) ( $row['from'] ?? '' ) ) ? $row['from'] : '09:00';
+				$to   = preg_match( '/^\d{2}:\d{2}$/', (string) ( $row['to'] ?? '' ) ) ? $row['to'] : '22:00';
+				?>
+				<div class="ob-hours-row<?php echo $open ? '' : ' is-closed'; ?>" data-day="<?php echo esc_attr( $dk ); ?>">
+					<label class="ob-hours-switch">
+						<input type="checkbox" name="fge_indoor_hours[<?php echo esc_attr( $dk ); ?>][open]" value="1" <?php checked( $open ); ?> data-hours-toggle>
+						<span class="ob-hours-track" aria-hidden="true"><span class="ob-hours-knob"></span></span>
+						<span class="ob-hours-day"><?php echo esc_html( $dl ); ?></span>
+					</label>
+					<div class="ob-hours-times">
+						<input type="time" class="ob-input ob-hours-time" name="fge_indoor_hours[<?php echo esc_attr( $dk ); ?>][from]" value="<?php echo esc_attr( $from ); ?>" step="900" aria-label="<?php echo esc_attr( $dl ); ?> geöffnet ab"<?php echo $open ? '' : ' disabled'; ?>>
+						<span class="ob-hours-sep">bis</span>
+						<input type="time" class="ob-input ob-hours-time" name="fge_indoor_hours[<?php echo esc_attr( $dk ); ?>][to]" value="<?php echo esc_attr( $to ); ?>" step="900" aria-label="<?php echo esc_attr( $dl ); ?> geöffnet bis"<?php echo $open ? '' : ' disabled'; ?>>
+						<span class="ob-hours-closed">Geschlossen</span>
+					</div>
+				</div>
+			<?php endforeach; ?>
+		</div>
+		<button type="button" class="ob-linkbtn ob-hours-copy" id="fge-hours-copy">Zeiten von Montag für alle Tage übernehmen</button>
+		<?php fge_onboarding_error( $errors, 'fge_indoor_hours' ); ?>
+	</div>
+	<script>
+	(function(){
+		var box = document.getElementById('fge-indoor-hours');
+		if (!box) return;
+		function sync(row){
+			var on = row.querySelector('[data-hours-toggle]').checked;
+			row.classList.toggle('is-closed', !on);
+			row.querySelectorAll('.ob-hours-time').forEach(function(t){ t.disabled = !on; });
+		}
+		box.querySelectorAll('.ob-hours-row').forEach(function(row){
+			row.querySelector('[data-hours-toggle]').addEventListener('change', function(){ sync(row); });
+		});
+		var copy = document.getElementById('fge-hours-copy');
+		if (copy) copy.addEventListener('click', function(){
+			var first = box.querySelector('.ob-hours-row');
+			if (!first) return;
+			var f = first.querySelector('input[name*="[from]"]').value;
+			var t = first.querySelector('input[name*="[to]"]').value;
+			box.querySelectorAll('.ob-hours-row').forEach(function(row){
+				row.querySelector('input[name*="[from]"]').value = f;
+				row.querySelector('input[name*="[to]"]').value = t;
+			});
+		});
+	})();
+	</script>
+	<?php
 	// Ganzjährig-Frage (Julius, 28.08.): erst bei „Nein" erscheinen die Monate;
 	// das deckt auch Betriebsferien ab, eine eigene Schließzeiten-Frage entfällt.
 	$year_round = (string) ( $v['indoor_year_round'] ?? '' );
@@ -3021,24 +3122,8 @@ function fge_onboarding_render_indoor_hours( int $step, int $partner_id, string 
 	})();
 	</script>
 	<?php
-	// Standard-Tages-Kacheln wie überall (avail-Slide), keine eigene Optik.
-	$weekdays = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
-	$raw_days = $partner_id > 0 ? get_post_meta( $partner_id, '_fge_preferred_event_days', true ) : '';
-	$sel_days = is_array( $raw_days ) ? $raw_days : array_keys( $weekdays );
-	?>
-	<div class="ob-field full">
-		<span class="ob-field-label">Bevorzugte Event-Wochentage</span>
-		<div class="ob-day-row">
-			<?php foreach ( $weekdays as $dk => $dl ) : ?>
-			<label class="ob-day">
-				<input type="checkbox" name="fge_preferred_event_days[]" value="<?php echo esc_attr( $dk ); ?>" <?php checked( in_array( $dk, $sel_days, true ) ); ?>>
-				<?php echo esc_html( $dl ); ?>
-			</label>
-			<?php endforeach; ?>
-		</div>
-		<span class="ob-field-hint">Mehrfachauswahl. Du kannst jederzeit weitere Tage freischalten.</span>
-	</div>
-	<?php
+	// Die bevorzugten Event-Tage leiten wir jetzt aus den geöffneten Tagen ab
+	// (Julius, 28.08.): keine doppelte Wochentags-Abfrage mehr.
 	$after_hours = (string) ( $v['indoor_after_hours'] ?? '' );
 	if ( 'aufpreis' === $after_hours ) { $after_hours = 'ja'; } // Alt-Wert weich migrieren.
 	?>
@@ -3058,6 +3143,39 @@ function fge_onboarding_render_indoor_hours( int $step, int $partner_id, string 
 	<?php
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
+}
+
+/**
+ * Lesbare Öffnungszeiten-Zusammenfassung aus dem Wochentags-Raster.
+ * Fasst aufeinanderfolgende Tage mit gleichen Zeiten zusammen. Ohne Gedanken-
+ * striche (Copy-Regel): „Mo bis Fr 09:00 bis 22:00 Uhr, Sa 10:00 bis 20:00 Uhr, So geschlossen".
+ *
+ * @param array<string,array{open:string,from:string,to:string}> $hours
+ */
+function fge_indoor_hours_summary( array $hours ): string {
+	$order = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
+	$keys  = array_keys( $order );
+	$sig   = static function ( string $d ) use ( $hours ): string {
+		$h = $hours[ $d ] ?? null;
+		if ( ! is_array( $h ) || empty( $h['open'] ) || '' === (string) ( $h['from'] ?? '' ) || '' === (string) ( $h['to'] ?? '' ) ) {
+			return 'zu';
+		}
+		return $h['from'] . ' bis ' . $h['to'] . ' Uhr';
+	};
+	$parts = [];
+	$n     = count( $keys );
+	$i     = 0;
+	while ( $i < $n ) {
+		$j = $i;
+		while ( $j + 1 < $n && $sig( $keys[ $j + 1 ] ) === $sig( $keys[ $i ] ) ) {
+			$j++;
+		}
+		$s     = $sig( $keys[ $i ] );
+		$range = $i === $j ? $order[ $keys[ $i ] ] : $order[ $keys[ $i ] ] . ' bis ' . $order[ $keys[ $j ] ];
+		$parts[] = 'zu' === $s ? ( $range . ' geschlossen' ) : ( $range . ' ' . $s );
+		$i       = $j + 1;
+	}
+	return implode( ', ', $parts );
 }
 
 // ── Formular A: Golflehrer-Slides ─────────────────────────────────────────────
@@ -4063,9 +4181,43 @@ function fge_onboarding_summary_section( string $title, array $rows ): void { ?>
 <?php }
 
 function fge_onboarding_render_confirmation(): void {
-	$portal    = trailingslashit( home_url( '/partnerportal/' ) );
-	$new_event = $portal . '?tab=angebote&portal_action=new&preset_type=teamevent';
-	$bg        = function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' ) : '';
+	$portal   = trailingslashit( home_url( '/partnerportal/' ) );
+	$bg       = function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' ) : '';
+	$done_pid = fge_onboarding_get_current_partner_id();
+	$type     = $done_pid > 0 ? fge_partner_type( $done_pid ) : 'course';
+
+	// Typspezifische Texte (Julius/Audit 28.08.: vorher überall „Golfplatz").
+	$copy = [
+		'course' => [
+			'title'    => 'Geschafft! Dein Golfplatz ist bei uns.',
+			'receipt'  => 'Platz',
+			'freigabe' => 'Wir schauen uns alles persönlich an und geben deinen Platz frei. Meldet sich innerhalb eines Werktags niemand bei dir, ist alles glattgelaufen und du hörst von uns mit der Freischaltung.',
+			'next_h'   => 'Fang gern schon mal an: dein erstes Event',
+			'next_p'   => 'Wir empfehlen den Start mit dem meistgebuchten Format, dem <strong>Teamevent</strong>. Gestalte Unternehmen in deiner Nähe einen richtig guten Tagesablauf und gewinn dabei neue Besucher, Interessenten und Mitglieder.',
+			'cta'      => 'Erstes Teamevent erstellen',
+			'preset'   => 'teamevent',
+		],
+		'indoor' => [
+			'title'    => 'Geschafft! Euer Indoor Golf ist bei uns.',
+			'receipt'  => 'Location',
+			'freigabe' => 'Wir schauen uns alles persönlich an und geben euer Profil frei. Meldet sich innerhalb eines Werktags niemand bei euch, ist alles glattgelaufen und ihr hört von uns mit der Freischaltung.',
+			'next_h'   => 'Fangt gern schon mal an: euer erstes Event',
+			'next_p'   => 'Wir empfehlen den Start mit einem <strong>After Work Indoor Golf</strong> oder einem <strong>Simulator Firmenturnier</strong>. Gestaltet Unternehmen in eurer Nähe einen entspannten Abend an den Boxen.',
+			'cta'      => 'Erstes Indoor-Event erstellen',
+			'preset'   => 'indoor-golf',
+		],
+		'coach' => [
+			'title'    => 'Geschafft! Dein Profil ist bei uns.',
+			'receipt'  => 'Profil',
+			'freigabe' => 'Wir schauen uns alles persönlich an und geben dein Profil frei. Meldet sich innerhalb eines Werktags niemand bei dir, ist alles glattgelaufen und du hörst von uns mit der Freischaltung.',
+			'next_h'   => 'Fang gern schon mal an: dein erstes Angebot',
+			'next_p'   => 'Leg dein erstes Format an, zum Beispiel einen <strong>Grundlagenkurs für Teams</strong>. So können Unternehmen dich direkt anfragen.',
+			'cta'      => 'Erstes Angebot erstellen',
+			'preset'   => 'teamevent',
+		],
+	];
+	$c         = $copy[ $type ] ?? $copy['course'];
+	$new_event = $portal . '?tab=angebote&portal_action=new&preset_type=' . $c['preset'];
 	?>
 <div class="ob-done-hero" style="background-image:url('<?php echo esc_url( $bg ); ?>')">
 	<div class="ob-done-scrim" aria-hidden="true"></div>
@@ -4074,11 +4226,10 @@ function fge_onboarding_render_confirmation(): void {
 			<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></svg>
 		</div>
 		<div class="ob-eyebrow">Eingereicht</div>
-		<h1 class="ob-done-title">Geschafft! Dein Golfplatz ist bei uns.</h1>
+		<h1 class="ob-done-title"><?php echo esc_html( $c['title'] ); ?></h1>
 		<p class="ob-done-lead">Danke für deine Zeit. Du bekommst in Kürze eine Bestätigung per E-Mail.</p>
 
 		<?php
-		$done_pid = fge_onboarding_get_current_partner_id();
 		if ( $done_pid > 0 ) :
 			$done_name    = (string) get_post_meta( $done_pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $done_pid );
 			$done_contact = trim( (string) get_post_meta( $done_pid, '_fge_main_contact_name', true ) );
@@ -4086,7 +4237,7 @@ function fge_onboarding_render_confirmation(): void {
 			$done_ref     = fge_partner_number( $done_pid );
 		?>
 		<div class="ob-done-receipt">
-			<div><span>Platz</span><span><?php echo esc_html( $done_name ?: 'k. A.' ); ?></span></div>
+			<div><span><?php echo esc_html( $c['receipt'] ); ?></span><span><?php echo esc_html( $done_name ?: 'k. A.' ); ?></span></div>
 			<div><span>Hauptkontakt</span><span><?php echo esc_html( trim( $done_contact . ( $done_email ? ' · ' . $done_email : '' ) ) ?: 'k. A.' ); ?></span></div>
 			<div><span>Status</span><span><span class="ob-done-pill"><span class="ob-done-dot"></span>In Prüfung</span></span></div>
 			<div><span>Vorgangs-Nr.</span><span class="ob-done-mono"><?php echo esc_html( $done_ref ); ?></span></div>
@@ -4095,14 +4246,14 @@ function fge_onboarding_render_confirmation(): void {
 
 		<div class="ob-done-status">
 			<span class="ob-done-pill"><span class="ob-done-dot"></span>Wird geprüft</span>
-			<p>Wir schauen uns alles persönlich an und geben deinen Platz frei. Meldet sich innerhalb eines Werktags niemand bei dir, ist alles glattgelaufen und du hörst von uns mit der Freischaltung.</p>
+			<p><?php echo esc_html( $c['freigabe'] ); ?></p>
 		</div>
 
 		<div class="ob-done-next">
-			<div class="ob-done-next-h">Fang gern schon mal an: dein erstes Event</div>
-			<p>Wir empfehlen den Start mit dem meistgebuchten Format, dem <strong>Teamevent</strong>. Gestalte Unternehmen in deiner Nähe einen richtig guten Tagesablauf und gewinn dabei neue Besucher, Interessenten und Mitglieder.</p>
+			<div class="ob-done-next-h"><?php echo esc_html( $c['next_h'] ); ?></div>
+			<p><?php echo wp_kses_post( $c['next_p'] ); ?></p>
 			<div class="ob-done-actions">
-				<a href="<?php echo esc_url( $new_event ); ?>" class="ob-done-btn ob-done-btn-primary">Erstes Teamevent erstellen</a>
+				<a href="<?php echo esc_url( $new_event ); ?>" class="ob-done-btn ob-done-btn-primary"><?php echo esc_html( $c['cta'] ); ?></a>
 				<a href="<?php echo esc_url( $portal ); ?>" class="ob-done-btn ob-done-btn-ghost">Zum Partner-Portal</a>
 			</div>
 		</div>

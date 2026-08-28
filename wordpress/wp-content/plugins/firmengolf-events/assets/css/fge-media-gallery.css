@@ -109,8 +109,12 @@
   display: flex; gap: 6px;
   opacity: 0; transition: opacity var(--dur-fast, .15s) var(--ease-out, ease);
 }
-.fge-gallery-item:hover .fge-tile-actions { opacity: 1; }
+.fge-gallery-item:hover .fge-tile-actions,
+.fge-gallery-item:focus-within .fge-tile-actions { opacity: 1; }
 @media (hover: none) { .fge-tile-actions { opacity: 1; } }
+/* Slot-Fokus sichtbar (A11y-Audit): der Titelbild-/Logo-Slot ist per Tastatur erreichbar. */
+.fge-slot:focus-visible { outline: 2px solid var(--fairway-700); outline-offset: 2px; }
+.fge-slot:focus-within .fge-slot-swap { opacity: 1; }
 .fge-tile-btn {
   width: 32px; height: 32px; border: 0; border-radius: 999px; cursor: pointer;
   background: rgba(255,255,255,.95); color: var(--ink-900);

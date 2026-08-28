@@ -83,6 +83,17 @@
 		if ( html != null ) { e.innerHTML = html; }
 		return e;
 	}
+
+	// Ein div mit role=button reagiert nicht von selbst auf Enter/Leertaste
+	// (A11y-Audit 28.08.): Tastatur-Aktivierung explizit nachrüsten.
+	function keyActivate( node ) {
+		node.addEventListener( 'keydown', function ( e ) {
+			if ( e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' ) {
+				e.preventDefault();
+				node.click();
+			}
+		} );
+	}
 	function pickFiles( cb, multiple ) {
 		var inp = document.createElement( 'input' );
 		inp.type = 'file';
@@ -171,6 +182,7 @@
 		if ( state.logoBusy ) { slot.appendChild( el( 'span', 'fge-tile-spin' ) ); }
 		var handle = function ( files ) { doLogoUpload( files[ 0 ] ); };
 		slot.addEventListener( 'click', function () { if ( ! state.logoBusy ) { pickFiles( handle, false ); } } );
+		keyActivate( slot );
 		wireDrop( slot, handle );
 		wrap.appendChild( slot );
 		wrap.appendChild( el( 'div', 'fge-slot-specs', L.exts + ' · ideal 400 × 400 px · max. ' + human( L.logo ) ) );
@@ -196,6 +208,7 @@
 		}
 		var handle = function ( files ) { queueUploads( [ files[ 0 ] ], true ); };
 		slot.addEventListener( 'click', function () { pickFiles( handle, false ); } );
+		keyActivate( slot );
 		wireDrop( slot, handle );
 		wrap.appendChild( slot );
 		wrap.appendChild( el( 'div', 'fge-slot-specs', L.exts + ' · mind. ' + L.coverMinW + ' px breit · max. ' + human( L.gallery ) ) );

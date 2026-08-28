@@ -411,8 +411,8 @@ function fge_catalog_contact_roles(): array {
 		'Sekretariat', 'Rezeption', 'Mitgliederverwaltung', 'Buchhaltung', 'Head Pro',
 		'Golfprofessional', 'Golflehrer', 'Golfschule', 'Sportwart', 'Spielleitung',
 		'Turnierleitung', 'Marshal', 'Starter', 'Head Greenkeeper', 'Greenkeeper',
-		'Course Manager', 'Gastronomiebetreiber', 'Restaurantleitung', 'Eventmanager',
-		'Shuttleservice', 'Technik', 'Golfplatz',
+		'Course Manager', 'Gastronomiebetreiber', 'Gastronom', 'Restaurantleitung', 'Eventmanager',
+		'Shuttleservice', 'Shuttle-Unternehmen', 'Technik', 'Golfplatz',
 		'Pro Shop Mitarbeiter', 'Caddiemaster', 'Cart Verantwortlicher', 'Jugendwart',
 		'Captain', 'Mannschaftsführer', 'Sonstige',
 	];
