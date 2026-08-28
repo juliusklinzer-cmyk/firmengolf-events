@@ -3656,7 +3656,11 @@ img.fg-rail-host-photo { width: 40px; height: 40px; aspect-ratio: 1 / 1; border-
 /* Modal */
 .fg-modal-scrim { box-sizing: border-box; position: fixed; left: 0; right: 0; top: var(--fg-vvt, 0px); height: 100dvh; height: var(--fg-vvh, 100dvh); background: rgba(14,19,16,.55); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .fg-modal-scrim.is-hidden { display: none; }
-.fg-modal { background: var(--paper-50); border-radius: var(--radius-xl); padding: 40px; width: 100%; max-width: 560px; position: relative; box-shadow: 0 24px 64px rgba(14,19,16,.18); max-height: 90%; overscroll-behavior: contain; overflow-y: auto; }
+/* box-sizing: border-box ist hier tragend: im Vollbild (Mobile) gilt height:100%,
+   OHNE border-box addiert das 60px-Top-Padding oben drauf und die ganze Box ragt
+   60px unter den Viewport — der Fuß mit „Weiter" lag genau dahinter (Julius-Video,
+   28.08.). */
+.fg-modal { box-sizing: border-box; background: var(--paper-50); border-radius: var(--radius-xl); padding: 40px; width: 100%; max-width: 560px; position: relative; box-shadow: 0 24px 64px rgba(14,19,16,.18); max-height: 90%; overscroll-behavior: contain; overflow-y: auto; }
 /* Schließen: schlichtes X ohne Kreis/Rahmen, wie .rw-close (Julius, 27.08.2026) */
 button.fg-modal-close { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border-radius: var(--radius-sm); background: none; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--ink-800); cursor: pointer; flex: none; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform 100ms var(--ease-out); }
 button.fg-modal-close svg { width: 18px; height: 18px; }
@@ -3672,13 +3676,29 @@ button.fg-modal-close:active { transform: scale(0.9); }
     max-width: none; max-height: none;
     height: 100%;
     border-radius: 0;
-    padding: 60px 20px calc(28px + env(safe-area-inset-bottom, 0px));
+    /* Unten 0: das Boden-Padding bringt der sticky Fuß selbst mit, sonst
+       entsteht unter der Fuß-Leiste ein Versatz. */
+    padding: 60px 20px 0;
   }
   button.fg-modal-close {
     position: fixed;
     top: calc(8px + env(safe-area-inset-top, 0px));
     right: 8px;
     z-index: 2;
+  }
+  /* Fuß mit Abbrechen/Weiter klebt am sichtbaren unteren Rand des Modals, egal ob
+     die Safari-Leisten gerade ein- oder ausgefahren sind. Sticky im Scrollcontainer
+     .fg-modal, eigener Grund + safe-area, damit nichts hinter der Leiste liegt
+     (Julius-Video, 28.08.). Negative Seitenränder spannen die Leiste über das
+     20px-Padding des Modals. */
+  .fg-modal .fg-modal-foot {
+    position: sticky;
+    bottom: 0;
+    margin: 28px -20px 0;
+    padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: var(--paper-50);
+    border-top: 1px solid var(--paper-300);
+    z-index: 1;
   }
 }
 .fg-step-rail { display: flex; gap: 6px; margin-top: 20px; }
@@ -3824,7 +3844,9 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
   .fg-wants-grid { grid-template-columns: 1fr; }
   .fg-cat-grid { grid-template-columns: 1fr; }
   .fg-dates-row { grid-template-columns: 1fr; }
-  .fg-modal { padding: 28px 24px; }
+  /* KEIN .fg-modal-Padding hier: der spätere 720px-Block hat das Vollbild-Padding
+     aus dem 768px-Block (60px oben, safe-area unten) überschrieben — die
+     Fuß-Buttons klebten dadurch unter der iOS-Leiste (Julius-Video, 28.08.). */
   .fg-quote { padding: 24px; }
   .fg-quote p { font-size: 16px; }
   .evd-poi-grid { grid-template-columns: 1fr; }
