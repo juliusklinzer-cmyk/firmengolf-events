@@ -868,8 +868,11 @@ get_header();
 
 		<?php
 		/* Step 0 — Mindest-Vorlauf des Platzes begrenzt die wählbaren Termine. */
-		$fg_lead_days = $partner_id ? (int) get_post_meta( $partner_id, '_fge_min_lead_time_days', true ) : 0;
-		$fg_min_date  = gmdate( 'Y-m-d', current_time( 'timestamp' ) + max( 0, $fg_lead_days ) * DAY_IN_SECONDS );
+		// Mindestens 7 Tage Vorlauf für ALLE Events (Julius, 28.08.): ohne Untergrenze
+		// waren Events ohne Partner-Vorlauf (Selbstplaner/Seeds) sogar für heute
+		// anfragbar. Ein höherer Partner-Vorlauf gewinnt weiterhin.
+		$fg_lead_days = max( 7, $partner_id ? (int) get_post_meta( $partner_id, '_fge_min_lead_time_days', true ) : 0 );
+		$fg_min_date  = gmdate( 'Y-m-d', current_time( 'timestamp' ) + $fg_lead_days * DAY_IN_SECONDS );
 		// Gäste-Rahmen des Events für die Live-Hinweise zur Gruppengröße.
 		if ( $p_min && $p_max ) {
 			$fg_group_help = 'Dieses Event ist für ' . $p_min . ' bis ' . $p_max . ' Gäste ausgelegt.';
