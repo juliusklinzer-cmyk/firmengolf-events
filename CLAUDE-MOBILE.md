@@ -8,12 +8,19 @@ Feste Reihenfolge für alle Responsive-Arbeiten. Erst Befund (Skill `design-revi
 2. **Input-Schriftgrößen**: alle `input`, `select`, `textarea` auf Mobile mindestens `16px`, sonst zoomt iOS Safari beim Fokus in die Seite. Zentral über die Formular-Klassen in `fge-frontend.css` lösen, nicht pro Feld.
 3. **Horizontaler Overflow**: Seite darf nie seitlich scrollen. Übliche Täter: feste Breiten, `100vw` (nimmt die Scrollbar nicht aus), zu breite Bilder/Tabellen, negative Margins. Gewollte Wisch-Reihen brauchen einen eigenen Container mit `overflow-x: auto`; die Wurzel behält `overflow-x: clip` (nicht `hidden`, das würde `position: sticky` in Kindern brechen).
 4. **Touch-Targets**: interaktive Elemente auf Mobile mindestens 44 × 44 CSS-px (Padding erhöhen, nicht die Schrift aufblasen). Abstand zwischen benachbarten Zielen mindestens 8px.
-5. **Scroll-Verhalten**: 
-   - Auf Mobile NIE fixed/sticky Chrome am unteren Viewport-Rand (kollidiert mit den ein-/ausblendenden Browser-Leisten; Entscheidung Julius 27.08.2026). Die Topnav bleibt statisch und scrollt weg.
+5. **Sichtbarer Viewport (iOS)**: Auf iOS ist der Layout-Viewport größer als der sichtbare Bereich. Alles was per `position: fixed`, `inset: 0`, `bottom: 0` oder `100vh` daran hängt, liegt teilweise hinter der Safari-Leiste. `100dvh` allein reicht nicht, Safari zieht den Wert bei fixierten Overlays nicht zuverlässig nach. Verbindlich: `assets/js/fge-viewport.js` (global im Head) schreibt die echten Maße der visualViewport-API auf `<html>`:
+   - `--fg-vvh` sichtbare Höhe, `--fg-vvt` Abstand nach oben, `--fg-vvb` Abstand nach unten.
+   - Vollbild-Flächen: `top: var(--fg-vvt, 0px); height: var(--fg-vvh, 100dvh);` (mit `100vh`/`100dvh` als Fallback-Kette davor).
+   - Fixierte oder sticky Füße: `bottom: var(--fg-vvb, 0px);`
+   - `min-height: 100vh` auf Seiten mit sticky-Fuß zusätzlich als `min-height: var(--fg-vvh, 100dvh)` setzen, sonst wächst die Seite über den sichtbaren Bereich hinaus.
+   - Fuß-Paddings nehmen `env(safe-area-inset-bottom, 0px)` mit.
+   - Neue Vollbild-Flächen nie mit nacktem `inset: 0` bauen (Julius, 28.08.2026).
+6. **Scroll-Verhalten**: 
+   - Die Topnav bleibt statisch und scrollt weg. Fixierte Füße sind erlaubt, aber nur mit der Mechanik aus Punkt 5. Das ersetzt die ältere Regel "nie fixed Chrome unten" vom 27.08.2026, die den Fuß nur verschob statt die Ursache zu beheben.
    - Scroll-Schwellen-Effekte immer mit Hysterese bauen (Flacker-Gefahr durch Android-Scroll-Anchoring, siehe Memory `mobile-nav`).
    - Dialoge sperren den Hintergrund (`html.fg-drawer-lock` bzw. `body overflow hidden`) und geben ihn beim Schließen wieder frei.
    - Formular-Dialoge sind auf Mobile vollflächig (100dvh, kein zentriertes Popup ≤768px), Schließen-Button bleibt fixiert erreichbar.
-6. **Animationen**: nur `transform` und `opacity` animieren (compositor-freundlich). Einblendende Flächen mit Ausstieg auf demselben Weg. Jede Animation braucht einen `prefers-reduced-motion: reduce`-Zweig (Crossfade statt Slide). Keine Animation auf dem Eingabepfad verzögern (Feedback bei pointer-down, nicht erst bei Release).
+7. **Animationen**: nur `transform` und `opacity` animieren (compositor-freundlich). Einblendende Flächen mit Ausstieg auf demselben Weg. Jede Animation braucht einen `prefers-reduced-motion: reduce`-Zweig (Crossfade statt Slide). Keine Animation auf dem Eingabepfad verzögern (Feedback bei pointer-down, nicht erst bei Release).
 
 ## Wohin gehören Fixes
 
