@@ -44,6 +44,12 @@ add_filter( 'pre_get_document_title', function ( $title ) {
 	if ( is_page( 'partner-faq' ) ) {
 		return 'Partner-FAQ für Golfplätze: Kosten, Ablauf, Konditionen | Firmengolf';
 	}
+	if ( is_page( 'golflehrer-partner' ) ) {
+		return 'Golflehrer-Partner werden: Firmenkurse ohne Akquise | Firmengolf';
+	}
+	if ( is_page( 'indoor-partner' ) ) {
+		return 'Indoor-Golf-Partner werden: Firmenevents für eure Boxen | Firmengolf';
+	}
 	return $title;
 } );
 add_action( 'wp_head', function () {
@@ -58,6 +64,20 @@ add_action( 'wp_head', function () {
 		fge_render_seo_meta( [
 			'title' => 'Partner-FAQ für Golfplätze | Firmengolf',
 			'desc'  => 'Alle Antworten für Golfplätze: kostenlos listen, keine Bindung, Provision zahlt der Kunde. Wie Anfragen, Terminabstimmung und Abrechnung bei Firmengolf laufen.',
+			'url'   => get_permalink(),
+		] );
+	}
+	if ( is_page( 'golflehrer-partner' ) ) {
+		fge_render_seo_meta( [
+			'title' => 'Golflehrer-Partner werden | Firmengolf',
+			'desc'  => 'Firmenkurse als planbare Aufträge: Schnupperkurse, Platzreife und Teamevents für Unternehmen. Kostenlos listen, keine Akquise, eine Rechnung. In wenigen Werktagen live.',
+			'url'   => get_permalink(),
+		] );
+	}
+	if ( is_page( 'indoor-partner' ) ) {
+		fge_render_seo_meta( [
+			'title' => 'Indoor-Golf-Partner werden | Firmengolf',
+			'desc'  => 'Firmenevents für eure Simulator-Boxen: After-Work, Turniere mit Leaderboard, Weihnachtsfeiern. Firmenkunden kommen werktags und tagsüber. Kostenlos listen, keine Bindung.',
 			'url'   => get_permalink(),
 		] );
 	}
