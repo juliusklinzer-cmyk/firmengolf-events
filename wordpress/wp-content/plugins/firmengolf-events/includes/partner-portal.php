@@ -4408,8 +4408,8 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						}
 					});
 				}
-				function openSvc()  { if (overlay) { overlay.hidden = false; document.body.style.overflow = 'hidden'; } }
-				function closeSvc() { if (overlay) { overlay.hidden = true; document.body.style.overflow = ''; } }
+				function openSvc()  { if (overlay) { overlay.hidden = false; document.documentElement.classList.add('fg-drawer-lock'); } }
+				function closeSvc() { if (overlay) { overlay.hidden = true; document.documentElement.classList.remove('fg-drawer-lock'); } }
 				var addBtnSvc = byId('fp-inc-addbtn');
 				if (addBtnSvc) { addBtnSvc.addEventListener('click', openSvc); }
 				var closeBtnSvc = byId('fp-svc-close');

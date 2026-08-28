@@ -20,7 +20,11 @@
 .ob-mono { font-family: var(--font-mono); }
 
 .ob-shell {
+  /* Sichtbare Höhe statt 100vh: 100vh ist auf iOS der GROSSE Viewport, die Seite
+     wurde dadurch höher als der sichtbare Bereich und der sticky-Fuß landete
+     hinter der Safari-Leiste (Julius, 2026-08-28). */
   min-height: 100vh;
+  min-height: var(--fg-vvh, 100dvh);
   display: grid;
   grid-template-rows: 80px 1fr auto;
   grid-template-columns: minmax(0, 1fr);
@@ -60,6 +64,7 @@
   display: flex; align-items: center; justify-content: center;
   padding: 56px 40px 96px;
   min-height: calc(100vh - 80px - 88px);
+  min-height: calc(var(--fg-vvh, 100dvh) - 80px - 88px);
   animation: ob-fade var(--dur-page) var(--ease-out);
 }
 @keyframes ob-fade {
@@ -443,7 +448,7 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   display: block; height: auto; padding: 0; gap: 0;
   border-top: 1px solid var(--ink-100);
   background: var(--paper-50);
-  position: sticky; bottom: 0; z-index: 10;
+  position: sticky; bottom: var(--fg-vvb, 0px); z-index: 10;
 }
 /* Constant width on every slide so the progress bar looks identical
    from the intro through to submission. */
@@ -469,7 +474,7 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 .ob-prog-count { display: none; font-size: 13px; font-weight: 600; color: var(--fairway-700); padding-top: 14px; }
 
 .ob-nav {
-  padding: 16px 0 18px;
+  padding: 16px 0 calc(18px + env(safe-area-inset-bottom, 0px));
   display: flex; align-items: center; justify-content: space-between;
 }
 .ob-nav-right { display: flex; align-items: center; gap: 8px; }
@@ -1059,7 +1064,7 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
    HELP DRAWER
    ==================================================== */
 .ob-help-scrim {
-  position: fixed; inset: 0; z-index: 100;
+  position: fixed; left: 0; right: 0; top: var(--fg-vvt, 0px); height: 100dvh; height: var(--fg-vvh, 100dvh); z-index: 100;
   background: var(--paper-50);
   display: flex; justify-content: center;
   animation: ob-fade-scrim var(--dur-base) var(--ease-out);
@@ -1073,6 +1078,7 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
   position: relative;
   width: 100%; max-width: 100%;
   min-height: 100vh;
+  min-height: var(--fg-vvh, 100dvh);
   overflow-y: auto;
   background: var(--paper-50);
   padding: 96px 24px 48px;
@@ -1139,7 +1145,7 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
    ==================================================== */
 .ob-toast {
   position: fixed;
-  left: 50%; bottom: 110px;
+  left: 50%; bottom: calc(110px + var(--fg-vvb, 0px));
   transform: translateX(-50%);
   background: var(--ink-900);
   color: var(--paper-50);
@@ -1325,7 +1331,7 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 .ob-group-title { font-family: var(--font-display); font-size: 18px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink-900); }
 
 /* ── Exit-Dialog (mobil: Tippen aufs Logo) ─────────────────────────────────── */
-.ob-exit-scrim { position: fixed; inset: 0; z-index: 200; background: rgba(14,19,16,0.5); display: flex; align-items: center; justify-content: center; padding: 24px; animation: ob-fade-scrim var(--dur-base) var(--ease-out); }
+.ob-exit-scrim { box-sizing: border-box; position: fixed; left: 0; right: 0; top: var(--fg-vvt, 0px); height: 100dvh; height: var(--fg-vvh, 100dvh); z-index: 200; background: rgba(14,19,16,0.5); display: flex; align-items: center; justify-content: center; padding: 24px; animation: ob-fade-scrim var(--dur-base) var(--ease-out); }
 .ob-exit-scrim[hidden] { display: none; }
 .ob-exit-dialog { background: var(--paper-50); border-radius: var(--radius-2xl, 20px); padding: 28px 24px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-xl); }
 .ob-exit-h { font-family: var(--font-display); font-size: 22px; font-weight: 500; color: var(--ink-900); margin: 0; }

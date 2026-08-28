@@ -28,11 +28,11 @@
 	function open( start ) {
 		show( start || 0 );
 		box.hidden = false;
-		document.body.style.overflow = 'hidden';
+		document.documentElement.classList.add('fg-drawer-lock');
 	}
 	function close() {
 		box.hidden = true;
-		document.body.style.overflow = '';
+		document.documentElement.classList.remove('fg-drawer-lock');
 	}
 
 	openers.forEach( function ( b ) { b.addEventListener( 'click', function () { open( 0 ); } ); } );

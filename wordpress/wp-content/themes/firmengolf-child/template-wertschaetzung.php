@@ -327,11 +327,11 @@ get_header();
 		success.hidden = true;
 		renderStep();
 		modal.hidden = false;
-		document.documentElement.style.overflow = 'hidden';
+		document.documentElement.classList.add('fg-drawer-lock');
 	}
 	function closeModal() {
 		modal.hidden = true;
-		document.documentElement.style.overflow = '';
+		document.documentElement.classList.remove('fg-drawer-lock');
 	}
 
 	document.querySelectorAll('[data-wz-open]').forEach(function (b) {

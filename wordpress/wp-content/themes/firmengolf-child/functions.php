@@ -272,6 +272,16 @@ add_action( 'wp_enqueue_scripts', function() {
 		[],
 		defined( 'FGE_VERSION' ) ? FGE_VERSION : '1'
 	);
+	// Sichtbare Viewport-Maße als CSS-Variablen (--fg-vvh/--fg-vvt/--fg-vvb).
+	// Läuft im Head: sonst werden Vollbild-Flächen und fixierte Füße einen Frame
+	// lang mit der falschen (zu großen) iOS-Höhe gezeichnet.
+	wp_enqueue_script(
+		'fge-viewport',
+		plugins_url( 'assets/js/fge-viewport.js', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
+		[],
+		defined( 'FGE_VERSION' ) ? FGE_VERSION : '1',
+		false
+	);
 	// Type-System (Redesign 2026-07): global, bewusst NACH fge-frontend geladen —
 	// gewinnt bei gleicher Spezifität (Headline-/Highlight-Regeln).
 	wp_enqueue_style(

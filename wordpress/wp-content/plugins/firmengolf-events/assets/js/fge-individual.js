@@ -842,7 +842,9 @@
 			   erlaubt: Formate ohne fertige Events landen so persönlich begrüßt im Quick-Flow
 			   (Julius, 2026-08-27). */
 			S = { mode: mode || 'full', phase: intro ? 'intro' : 'form', step: 0, sending: false, source: source || '', form: blank(preset) };
-			document.body.style.overflow = 'hidden';
+			// Sperre auf <html>: iOS ignoriert overflow:hidden am <body>, die Seite
+			// dahinter scrollte mit und fuhr die Safari-Leisten über den Wizard-Fuß.
+			document.documentElement.classList.add('fg-drawer-lock');
 			window.addEventListener('keydown', onKey);
 			overlay.hidden = false;
 			render();
@@ -851,7 +853,7 @@
 		}
 		function close() {
 			if (overlay) overlay.hidden = true;
-			document.body.style.overflow = '';
+			document.documentElement.classList.remove('fg-drawer-lock');
 			window.removeEventListener('keydown', onKey);
 			if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
 		}

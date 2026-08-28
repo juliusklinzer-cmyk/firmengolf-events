@@ -171,11 +171,11 @@
 		if ( ! lib ) { buildLib(); }
 		renderLib();
 		lib.hidden = false;
-		document.body.style.overflow = 'hidden';
+		document.documentElement.classList.add('fg-drawer-lock');
 	}
 	function closeLib() {
 		if ( lib ) { lib.hidden = true; }
-		document.body.style.overflow = '';
+		document.documentElement.classList.remove('fg-drawer-lock');
 	}
 	function renderLib() {
 		if ( ! lib || ! libGrid ) { return; }
