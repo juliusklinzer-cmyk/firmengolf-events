@@ -97,6 +97,7 @@ function fge_onboarding_manifest( string $type = '' ): array {
 			[ 'id' => 'intro-1',        'chapter' => 1, 'kind' => 'intro' ],
 			[ 'id' => 'coach-kind',     'chapter' => 1, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'coach-profile',  'chapter' => 1, 'kind' => 'form' ],
+			[ 'id' => 'coach-story',    'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'location',       'chapter' => 1, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'main',           'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'contacts',       'chapter' => 1, 'kind' => 'form', 'skippable' => true ],
@@ -168,9 +169,16 @@ function fge_onboarding_account_ordinal(): int {
 	return fge_onboarding_ordinal_of( 'main' );
 }
 
-/** Slides before account creation are addressed by URL token (no login yet). */
+/**
+ * Der Onboarding-Token bleibt bis zur Einreichung in JEDER URL (Julius-Bug,
+ * 28.08.: nach dem Konto-Schritt wurden die URLs tokenlos gebaut — wer als
+ * Admin testet oder wessen Browser das Auto-Login-Cookie nicht annimmt, z. B.
+ * iOS-Privatmodus, verlor die Partner-Zuordnung und fiel mitten im Flow auf
+ * den Golfplatz-Wizard zurück). Beim Einreichen wird der Token entwertet,
+ * danach greifen die URLs ohnehin nicht mehr.
+ */
 function fge_onboarding_uses_token( int $ordinal ): bool {
-	return $ordinal < fge_onboarding_account_ordinal();
+	return true;
 }
 
 // ── Google Maps (location picker) ─────────────────────────────────────────────
@@ -289,7 +297,18 @@ function fge_onboarding_get_partner_id_by_token( string $token ): int {
 }
 
 function fge_onboarding_get_current_partner_id(): int {
-	// After step 4: user is logged in, find by user ID.
+	// Der URL-Token gewinnt IMMER (Julius-Bug, 28.08.): Wer eingeloggt ist
+	// (z. B. mit einem bestehenden Partnerkonto) und ein NEUES Onboarding über
+	// einen Token-Link durchläuft, landete sonst mitten im Wizard seines alten
+	// Partners — falscher Typ, falsche Slides, Daten am falschen Datensatz.
+	$token = fge_onboarding_get_token();
+	if ( $token !== '' ) {
+		$by_token = fge_onboarding_get_partner_id_by_token( $token );
+		if ( $by_token > 0 ) {
+			return $by_token;
+		}
+	}
+	// Ohne Token: eingeloggten Nutzer über sein Partnerprofil zuordnen.
 	if ( is_user_logged_in() && ! current_user_can( 'manage_options' ) ) {
 		$posts = get_posts( [
 			'post_type'     => 'firmengolf_partner',
@@ -302,11 +321,6 @@ function fge_onboarding_get_current_partner_id(): int {
 		if ( $posts ) {
 			return (int) $posts[0]->ID;
 		}
-	}
-	// Before step 4 (or admin): use URL token.
-	$token = fge_onboarding_get_token();
-	if ( $token !== '' ) {
-		return fge_onboarding_get_partner_id_by_token( $token );
 	}
 	return 0;
 }
@@ -695,19 +709,23 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'coach-profile':
+			// Schlanker Über-dich-Schritt (Julius, 28.08.): Name, Titel,
+			// Ausbildung (Mehrfachauswahl), Sprachen. Rest in coach-story.
 			update_post_meta( $partner_id, '_fge_coach_first', $s( 'fge_coach_first' ) );
 			update_post_meta( $partner_id, '_fge_coach_last', $s( 'fge_coach_last' ) );
 			update_post_meta( $partner_id, '_fge_public_golfclub_name', $s( 'fge_public_golfclub_name' ) );
 			wp_update_post( [ 'ID' => $partner_id, 'post_title' => trim( $s( 'fge_coach_first' ) . ' ' . $s( 'fge_coach_last' ) ) ?: $s( 'fge_public_golfclub_name' ) ] );
-			// Eine Qualifikation (Julius, 28.08.), gespeichert als String.
-			update_post_meta( $partner_id, '_fge_coach_quali', $san_select( 'fge_coach_quali', array_keys( fge_catalog_coach_quali() ) ) );
+			update_post_meta( $partner_id, '_fge_coach_quali', $san_group( 'fge_coach_quali', array_keys( fge_catalog_coach_quali() ) ) );
 			update_post_meta( $partner_id, '_fge_coach_quali_other', $s( 'fge_coach_quali_other' ) );
-			update_post_meta( $partner_id, '_fge_coach_years', $san_select( 'fge_coach_years', [ 'u3', '3-5', '6-10', '10plus' ] ) );
 			update_post_meta( $partner_id, '_fge_coach_langs', $san_group( 'fge_coach_langs', [ 'de', 'en', 'fr', 'it', 'es', 'other' ] ) );
 			update_post_meta( $partner_id, '_fge_coach_langs_other', $s( 'fge_coach_langs_other' ) );
+			break;
+
+		case 'coach-story':
 			update_post_meta( $partner_id, '_fge_public_short_description', $sa( 'fge_public_short_description' ) );
 			update_post_meta( $partner_id, '_fge_coach_about', $sa( 'fge_coach_about' ) );
 			update_post_meta( $partner_id, '_fge_website_url', $su( 'fge_website_url' ) );
+			update_post_meta( $partner_id, '_fge_coach_years', $san_select( 'fge_coach_years', [ 'u3', '3-5', '6-10', '10plus' ] ) );
 			break;
 
 		case 'coach-venue':
@@ -1003,14 +1021,14 @@ function fge_onboarding_handle_step(): void {
 		if ( $return_review ) {
 			$n = fge_onboarding_ordinal_of( 'review' );
 		}
-		wp_redirect( fge_onboarding_step_url( $n ) );
+		wp_redirect( fge_onboarding_step_url( $n, $token ) );
 		exit;
 	}
 
 	// Review slide: submit.
 	if ( 'review' === $id ) {
 		if ( ! fge_onboarding_is_submittable( $partner_id ) ) {
-			wp_redirect( add_query_arg( 'ob_missing', '1', fge_onboarding_step_url( $step ) ) );
+			wp_redirect( add_query_arg( 'ob_missing', '1', fge_onboarding_step_url( $step, $token ) ) );
 			exit;
 		}
 		update_post_meta( $partner_id, '_fge_onboarding_final_note', sanitize_textarea_field( wp_unslash( $_POST['fge_final_note'] ?? '' ) ) );
@@ -1038,7 +1056,7 @@ function fge_onboarding_handle_step(): void {
 
 	// Advance to next slide (oder zurück zur Zusammenfassung nach „Bearbeiten").
 	if ( $return_review ) {
-		wp_redirect( fge_onboarding_step_url( fge_onboarding_ordinal_of( 'review' ) ) );
+		wp_redirect( fge_onboarding_step_url( fge_onboarding_ordinal_of( 'review' ), $token ) );
 		exit;
 	}
 	[ $n, $ntok ] = $next( $step );
@@ -1233,16 +1251,14 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 		case 'coach-profile':
 			$errors = fge_onboarding_validate(
 				[
-					'fge_coach_first'              => $s( 'fge_coach_first' ),
-					'fge_coach_last'               => $s( 'fge_coach_last' ),
-					'fge_public_golfclub_name'     => $s( 'fge_public_golfclub_name' ),
-					'fge_public_short_description' => trim( sanitize_textarea_field( wp_unslash( $post['fge_public_short_description'] ?? '' ) ) ),
+					'fge_coach_first'          => $s( 'fge_coach_first' ),
+					'fge_coach_last'           => $s( 'fge_coach_last' ),
+					'fge_public_golfclub_name' => $s( 'fge_public_golfclub_name' ),
 				],
 				[
-					'fge_coach_first'              => 'Vorname',
-					'fge_coach_last'               => 'Nachname',
-					'fge_public_golfclub_name'     => 'Öffentlicher Titel',
-					'fge_public_short_description' => 'Kurzprofil',
+					'fge_coach_first'          => 'Vorname',
+					'fge_coach_last'           => 'Nachname',
+					'fge_public_golfclub_name' => 'Öffentlicher Titel',
 				]
 			);
 			$langs = is_array( $post['fge_coach_langs'] ?? null ) ? $post['fge_coach_langs'] : [];
@@ -1250,6 +1266,11 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 				$errors['fge_coach_langs'] = 'Bitte wähle mindestens eine Sprache.';
 			}
 			return $errors;
+
+		case 'coach-story':
+			return trim( sanitize_textarea_field( wp_unslash( $post['fge_public_short_description'] ?? '' ) ) ) === ''
+				? [ 'fge_public_short_description' => 'Kurzprofil ist ein Pflichtfeld.' ]
+				: [];
 
 		case 'coach-venue':
 			return $s( 'fge_coach_venue_name' ) === ''
@@ -1396,7 +1417,11 @@ function fge_onboarding_render(): void {
 		<?php else : ?>
 		<main class="ob-stage">
 			<div class="ob-step<?php echo $wide ? ' ob-step-wide' : ''; ?>">
-			<?php fge_onboarding_render_slide_form( $id, $step, $partner_id, $token, $vals, $errors ); ?>
+			<?php
+			fge_onboarding_render_slide_form( $id, $step, $partner_id, $token, $vals, $errors );
+			// Auswahl-Pop + Gruppenzähler auf ALLEN Kachel-Slides (einmal pro Seite).
+			fge_onboarding_cards_script();
+			?>
 			</div>
 		</main>
 		<?php fge_onboarding_render_footer( $step, $token ); ?>
@@ -1426,6 +1451,7 @@ function fge_onboarding_render_slide_form( string $id, int $step, int $partner_i
 		case 'indoor-hours':   fge_onboarding_render_indoor_hours( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-kind':     fge_onboarding_render_coach_kind( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-profile':  fge_onboarding_render_coach_profile( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'coach-story':    fge_onboarding_render_coach_story( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-venue':    fge_onboarding_render_coach_venue( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-authority': fge_onboarding_render_coach_authority( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-formats':  fge_onboarding_render_coach_formats( $step, $partner_id, $token, $vals, $errors ); break;
@@ -1541,7 +1567,7 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'coach_kind'                    => (string) $m( 'coach_kind' ),
 		'coach_first'                   => (string) $m( 'coach_first' ),
 		'coach_last'                    => (string) $m( 'coach_last' ),
-		'coach_quali'                   => is_array( $m( 'coach_quali' ) ) ? (string) ( $m( 'coach_quali' )[0] ?? '' ) : (string) $m( 'coach_quali' ),
+		'coach_quali'                   => is_array( $m( 'coach_quali' ) ) ? $m( 'coach_quali' ) : array_filter( [ (string) $m( 'coach_quali' ) ] ),
 		'coach_quali_other'             => (string) $m( 'coach_quali_other' ),
 		'coach_years'                   => (string) $m( 'coach_years' ),
 		'coach_langs'                   => is_array( $m( 'coach_langs' ) ) ? $m( 'coach_langs' ) : [],
@@ -2001,16 +2027,23 @@ function fge_onboarding_icon_map(): array {
  * the choice for the server POST and drives the no-JS `:has(:checked)` styling;
  * the design icon turns fairway-green and the box keeps its colour when selected.
  */
-function fge_onboarding_card( string $type, string $name, string $id, string $label, bool $checked ): void {
+function fge_onboarding_card( string $type, string $name, string $id, string $label, bool $checked, ?string $icon_html = null ): void {
 	static $map = null;
 	if ( null === $map ) {
 		$map = fge_onboarding_icon_map();
 	}
-	$icon = fge_onboarding_card_icon( $map[ $id ] ?? '' );
+	// $icon_html: null = Icon aus der Map (falls vorhanden), '' = bewusst ohne
+	// Icon (der Check-Kreis reicht, Julius 28.08.), sonst eigenes Markup (Flaggen).
+	if ( null === $icon_html ) {
+		$icon_html = isset( $map[ $id ] ) ? fge_onboarding_card_icon( $map[ $id ] ) : '';
+	}
 	?>
 	<label class="ob-card">
 		<input type="<?php echo esc_attr( $type ); ?>" class="ob-card-input" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $id ); ?>" <?php checked( $checked ); ?>>
-		<span class="ob-card-ico" aria-hidden="true"><?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput, static, trusted SVG ?></span>
+		<span class="ob-card-dot" aria-hidden="true"></span>
+		<?php if ( '' !== $icon_html ) : ?>
+		<span class="ob-card-ico" aria-hidden="true"><?php echo $icon_html; // phpcs:ignore WordPress.Security.EscapeOutput, static, trusted SVG ?></span>
+		<?php endif; ?>
 		<span class="ob-card-l"><?php echo esc_html( $label ); ?></span>
 	</label>
 	<?php
@@ -2021,6 +2054,11 @@ function fge_onboarding_card( string $type, string $name, string $id, string $la
  * counter per group header + a subtle pop on selecting a card.
  */
 function fge_onboarding_cards_script(): void {
+	static $printed = false;
+	if ( $printed ) {
+		return;
+	}
+	$printed = true;
 	?>
 	<script>
 	(function () {
@@ -2239,20 +2277,25 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	if ( $is_coach ) :
-		// Anlagen-Name (füllt sich über die Google-Suche unten) plus weitere
-		// Plätze direkt dabei (Julius, 28.08.).
-		fge_onboarding_input( 'fge_coach_venue_name', 'fge_coach_venue_name', 'Name der Anlage', (string) ( $v['coach_venue_name'] ?? '' ), 'text', true, 'z. B. GC Beispielstadt', $errors );
+		// Das Namensfeld IST die Google-Suche (Julius, 28.08.): tippen, Platz
+		// wählen, Name + Adresse + Karten-Pin füllen sich automatisch
+		// (fge-onboarding-map.js bindet die Places-Suche an dieses Feld).
+		fge_onboarding_input( 'fge_coach_venue_name', 'fge_coach_venue_name', 'Deine Golfanlage', (string) ( $v['coach_venue_name'] ?? '' ), 'text', true, 'Golfplatz eintippen und auswählen …', $errors, 'Aus der Google-Suche wählen, Adresse und Karten-Pin füllen sich automatisch.', 'autocomplete="off"' );
 		$more_venues = is_array( $v['coach_more_venues'] ?? null ) ? $v['coach_more_venues'] : [];
 		?>
 		<div class="ob-field full">
-			<label class="ob-field-label">Weitere Golfplätze für deinen Unterricht?</label>
-			<span class="ob-field-hint">Optional. Dein Hauptplatz steht oben, hier kommen weitere dazu.</span>
 			<div id="fge-more-venues">
-				<?php foreach ( $more_venues as $mv_i => $mv_name ) : ?>
-					<input class="ob-input" name="fge_coach_more_venues[]" value="<?php echo esc_attr( (string) $mv_name ); ?>" placeholder="Name des Golfplatzes" style="margin-bottom:8px;">
+				<?php foreach ( $more_venues as $mv_name ) : ?>
+					<div class="ob-venue-row">
+						<input class="ob-input" name="fge_coach_more_venues[]" value="<?php echo esc_attr( (string) $mv_name ); ?>" placeholder="Weiterer Golfplatz">
+						<button type="button" class="ob-venue-del" data-venue-del aria-label="Golfplatz entfernen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+					</div>
 				<?php endforeach; ?>
 			</div>
-			<button type="button" class="ob-btn-text" id="fge-more-venues-add" style="padding:0;">+ Golfplatz hinzufügen</button>
+			<button type="button" class="ob-venue-add" id="fge-more-venues-add">
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+				Weiteren Golfplatz hinzufügen
+			</button>
 		</div>
 		<script>
 		(function () {
@@ -2260,13 +2303,16 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 			var list = document.getElementById('fge-more-venues');
 			if (!btn || !list) { return; }
 			btn.addEventListener('click', function () {
-				var inp = document.createElement('input');
-				inp.className = 'ob-input';
-				inp.name = 'fge_coach_more_venues[]';
-				inp.placeholder = 'Name des Golfplatzes';
-				inp.style.marginBottom = '8px';
-				list.appendChild(inp);
-				inp.focus();
+				var row = document.createElement('div');
+				row.className = 'ob-venue-row';
+				row.innerHTML = '<input class="ob-input" name="fge_coach_more_venues[]" placeholder="Weiterer Golfplatz">'
+					+ '<button type="button" class="ob-venue-del" data-venue-del aria-label="Golfplatz entfernen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>';
+				list.appendChild(row);
+				row.querySelector('input').focus();
+			});
+			list.addEventListener('click', function (e) {
+				var del = e.target.closest('[data-venue-del]');
+				if (del) { del.closest('.ob-venue-row').remove(); }
 			});
 		})();
 		</script>
@@ -2292,7 +2338,8 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 		'thueringen'           => 'Thüringen',
 	];
 
-	if ( fge_gmaps_api_key() !== '' ) :
+	if ( fge_gmaps_api_key() !== '' && ! $is_coach ) :
+		// Beim Coach übernimmt das Anlagen-Namensfeld oben die Google-Suche.
 		?>
 		<div class="ob-field full">
 			<label class="ob-field-label" for="fge_map_search">Golfplatz suchen</label>
@@ -2922,10 +2969,17 @@ function fge_onboarding_render_coach_kind( int $step, int $partner_id, string $t
 	fge_onboarding_render_step_header( $step, 'Wer meldet sich an?', 'Danach stellen wir nur die Fragen, die zu dir passen.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	$current = (string) ( $v['coach_kind'] ?? '' );
+	// Eigene Icons (Julius, 28.08.): Person, Haus, Golffahne.
+	$svg = static fn( string $paths ): string => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $paths . '</svg>';
+	$kind_icons = [
+		'solo'     => $svg( '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>' ),
+		'school'   => $svg( '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>' ),
+		'employed' => $svg( '<path d="M6 21V4"/><path d="M6 4l10 3-10 3"/><path d="M3 21h7"/>' ),
+	];
 	?>
-	<div class="ob-cards">
+	<div class="ob-cards ob-cards--stack">
 		<?php foreach ( fge_catalog_coach_kinds() as $id => $label ) :
-			fge_onboarding_card( 'radio', 'fge_coach_kind', (string) $id, (string) $label, ( $current === $id ) );
+			fge_onboarding_card( 'radio', 'fge_coach_kind', (string) $id, (string) $label, ( $current === $id ), $kind_icons[ $id ] ?? '' );
 		endforeach; ?>
 	</div>
 	<?php fge_onboarding_error( $errors, 'fge_coach_kind' );
@@ -2933,7 +2987,7 @@ function fge_onboarding_render_coach_kind( int $step, int $partner_id, string $t
 }
 
 function fge_onboarding_render_coach_profile( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Dein Profil', 'Diese Angaben erscheinen später auf deiner öffentlichen Profilseite. Die Qualifikation ist keine Voraussetzung, sie wird nur klein im Profil angezeigt.' );
+	fge_onboarding_render_step_header( $step, 'Über dich', 'Name, Ausbildung und Sprachen, danach geht es direkt weiter. Die Ausbildung ist keine Voraussetzung, sie wird nur klein im Profil angezeigt.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	?>
 	<div class="ob-field-row">
@@ -2942,35 +2996,31 @@ function fge_onboarding_render_coach_profile( int $step, int $partner_id, string
 	</div>
 	<?php
 	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', 'Öffentlicher Titel', (string) ( $v['public_golfclub_name'] ?? '' ), 'text', true, 'z. B. PGA Golf Professional oder Head Pro', $errors, 'Steht auf deinem Profil unter deinem Namen.' );
-	$sel_quali = (string) ( $v['coach_quali'] ?? '' );
+	$sel_quali = is_array( $v['coach_quali'] ?? null ) ? array_map( 'strval', $v['coach_quali'] ) : [];
 	?>
 	<div class="ob-field full">
-		<label class="ob-field-label">Qualifikation (optional)</label>
-		<span class="ob-field-hint">Keine Voraussetzung, kein Gate. Wird als kleine Zeile im Profil angezeigt.</span>
-		<div class="ob-cards">
+		<label class="ob-field-label">Ausbildung (optional)</label>
+		<span class="ob-field-hint">Mehrfachauswahl möglich. Keine Voraussetzung, kein Gate.</span>
+		<div class="ob-cards ob-cards--stack">
 			<?php foreach ( fge_catalog_coach_quali() as $id => $label ) :
-				fge_onboarding_card( 'radio', 'fge_coach_quali', (string) $id, (string) $label, ( $sel_quali === $id ) );
+				fge_onboarding_card( 'checkbox', 'fge_coach_quali[]', (string) $id, (string) $label, in_array( (string) $id, $sel_quali, true ), '' );
 			endforeach; ?>
 		</div>
 	</div>
-	<div id="fge-quali-other-wrap"<?php echo 'other' === $sel_quali ? '' : ' hidden'; ?>>
-		<?php fge_onboarding_input( 'fge_coach_quali_other', 'fge_coach_quali_other', 'Welche sonstige Qualifikation?', (string) ( $v['coach_quali_other'] ?? '' ), 'text', false, '' ); ?>
+	<div id="fge-quali-other-wrap"<?php echo in_array( 'other', $sel_quali, true ) ? '' : ' hidden'; ?>>
+		<?php fge_onboarding_input( 'fge_coach_quali_other', 'fge_coach_quali_other', 'Welche sonstige Ausbildung?', (string) ( $v['coach_quali_other'] ?? '' ), 'text', false, '' ); ?>
 	</div>
 	<?php
-	fge_onboarding_select( 'fge_coach_years', 'fge_coach_years', 'Wie viele Jahre arbeitest du schon als Golflehrer? (optional)', (string) ( $v['coach_years'] ?? '' ), [
-		'u3'     => 'Unter 3 Jahre',
-		'3-5'    => '3 bis 5 Jahre',
-		'6-10'   => '6 bis 10 Jahre',
-		'10plus' => 'Über 10 Jahre',
-	], false, $errors );
 	$sel_langs = is_array( $v['coach_langs'] ?? null ) ? $v['coach_langs'] : [];
+	// Flaggen statt Icons (Julius, 28.08.: da darf ein bisschen mehr Liebe rein).
+	$flags = [ 'de' => '🇩🇪', 'en' => '🇬🇧', 'fr' => '🇫🇷', 'it' => '🇮🇹', 'es' => '🇪🇸', 'other' => '🌍' ];
 	?>
 	<div class="ob-field full<?php echo isset( $errors['fge_coach_langs'] ) ? ' ob-field--error' : ''; ?>">
 		<label class="ob-field-label">Sprachen <span class="ob-required">*</span></label>
-		<span class="ob-field-hint">Internationale Teams filtern danach.</span>
+		<span class="ob-field-hint">Wichtig für Unternehmen mit mehrsprachigen Teams.</span>
 		<div class="ob-cards">
 			<?php foreach ( [ 'de' => 'Deutsch', 'en' => 'Englisch', 'fr' => 'Französisch', 'it' => 'Italienisch', 'es' => 'Spanisch', 'other' => 'Weitere' ] as $lid => $ll ) :
-				fge_onboarding_card( 'checkbox', 'fge_coach_langs[]', $lid, $ll, in_array( $lid, $sel_langs, true ) );
+				fge_onboarding_card( 'checkbox', 'fge_coach_langs[]', $lid, $ll, in_array( $lid, $sel_langs, true ), '<span class="ob-card-flag">' . $flags[ $lid ] . '</span>' );
 			endforeach; ?>
 		</div>
 		<?php fge_onboarding_error( $errors, 'fge_coach_langs' ); ?>
@@ -2978,26 +3028,19 @@ function fge_onboarding_render_coach_profile( int $step, int $partner_id, string
 	<div id="fge-langs-other-wrap"<?php echo in_array( 'other', $sel_langs, true ) ? '' : ' hidden'; ?>>
 		<?php fge_onboarding_input( 'fge_coach_langs_other', 'fge_coach_langs_other', 'Welche weiteren Sprachen?', (string) ( $v['coach_langs_other'] ?? '' ), 'text', false, '' ); ?>
 	</div>
-	<?php
-	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Kurzprofil', (string) ( $v['public_short_description'] ?? '' ), '2 bis 3 Sätze über dich, maximal 400 Zeichen', 'Pflichtfeld, erscheint prominent auf deinem Profil.' );
-	fge_onboarding_error( $errors, 'fge_public_short_description' );
-	fge_onboarding_textarea( 'fge_coach_about', 'fge_coach_about', 'Über dich und deinen Unterricht (optional)', (string) ( $v['coach_about'] ?? '' ), 'Wie unterrichtest du, was macht deine Events besonders?' );
-	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website oder Social (optional)', (string) ( $v['website_url'] ?? '' ), 'url', false, 'https://…' );
-	?>
 	<script>
-	/* „Sonstige Qualifikation" und „Weitere Sprachen" klappen ihr Freitextfeld
-	   sofort auf (Julius, 28.08.), nicht erst nach dem Speichern. */
+	/* „Sonstige Ausbildung" und „Weitere Sprachen" klappen ihr Freitextfeld sofort auf. */
 	(function () {
 		function tgl() {
-			var q = document.querySelector('input[name="fge_coach_quali"]:checked');
+			var q = document.querySelector('input[name="fge_coach_quali[]"][value="other"]');
 			var qw = document.getElementById('fge-quali-other-wrap');
-			if (qw) { qw.hidden = !(q && q.value === 'other'); }
+			if (qw) { qw.hidden = !(q && q.checked); }
 			var lo = document.querySelector('input[name="fge_coach_langs[]"][value="other"]');
 			var lw = document.getElementById('fge-langs-other-wrap');
 			if (lw) { lw.hidden = !(lo && lo.checked); }
 		}
 		document.addEventListener('change', function (e) {
-			if (e.target && (e.target.name === 'fge_coach_quali' || e.target.name === 'fge_coach_langs[]')) { tgl(); }
+			if (e.target && (e.target.name === 'fge_coach_quali[]' || e.target.name === 'fge_coach_langs[]')) { tgl(); }
 		});
 		tgl();
 	})();
@@ -3007,6 +3050,22 @@ function fge_onboarding_render_coach_profile( int $step, int $partner_id, string
 	echo '</form>';
 }
 
+function fge_onboarding_render_coach_story( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Deine Geschichte', 'Zwei, drei Sätze reichen. Das Kurzprofil erscheint prominent auf deiner öffentlichen Visitenkarte.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
+	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Kurzprofil', (string) ( $v['public_short_description'] ?? '' ), '2 bis 3 Sätze über dich, maximal 400 Zeichen' );
+	fge_onboarding_error( $errors, 'fge_public_short_description' );
+	fge_onboarding_textarea( 'fge_coach_about', 'fge_coach_about', 'Über dich und deinen Unterricht (optional)', (string) ( $v['coach_about'] ?? '' ), 'Wie unterrichtest du, was macht deine Events besonders?' );
+	fge_onboarding_select( 'fge_coach_years', 'fge_coach_years', 'Wie viele Jahre arbeitest du schon als Golflehrer? (optional)', (string) ( $v['coach_years'] ?? '' ), [
+		'u3'     => 'Unter 3 Jahre',
+		'3-5'    => '3 bis 5 Jahre',
+		'6-10'   => '6 bis 10 Jahre',
+		'10plus' => 'Über 10 Jahre',
+	], false, $errors );
+	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website oder Social (optional)', (string) ( $v['website_url'] ?? '' ), 'url', false, 'https://…' );
+	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
+	echo '</form>';
+}
 function fge_onboarding_render_coach_venue( int $step, int $partner_id, string $token, array $v, array $errors ): void {
 	fge_onboarding_render_step_header( $step, 'Wo unterrichtest du?', 'Du legst die Anlage an, auf der deine Kurse und Events stattfinden. Größere Eventmodule stimmst du selbst mit dem Platz ab, die Anfragen laufen über dich. Den genauen Standort setzt du im nächsten Schritt auf der Karte.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
@@ -3771,11 +3830,16 @@ function fge_onboarding_review_blocks_indoor_extra( int $partner_id, array $v, c
 /** Golflehrer-Review: Profil, Anlage mit Standort, Formate, Gruppengrößen. */
 function fge_onboarding_review_blocks_coach( int $partner_id, array $v, callable $edit ): void {
 	// ── Profil ──
-	$quali_all  = fge_catalog_coach_quali();
-	$quali_id   = (string) ( $v['coach_quali'] ?? '' );
-	$quali_name = 'other' === $quali_id && '' !== (string) ( $v['coach_quali_other'] ?? '' )
-		? (string) $v['coach_quali_other']
-		: ( $quali_all[ $quali_id ] ?? '' );
+	$quali_all   = fge_catalog_coach_quali();
+	$quali_names = [];
+	foreach ( (array) ( $v['coach_quali'] ?? [] ) as $qid ) {
+		if ( 'other' === $qid && '' !== (string) ( $v['coach_quali_other'] ?? '' ) ) {
+			$quali_names[] = (string) $v['coach_quali_other'];
+		} elseif ( isset( $quali_all[ $qid ] ) ) {
+			$quali_names[] = $quali_all[ $qid ];
+		}
+	}
+	$quali_name = implode( ', ', $quali_names );
 	$lang_all   = [ 'de' => 'Deutsch', 'en' => 'Englisch', 'fr' => 'Französisch', 'it' => 'Italienisch', 'es' => 'Spanisch', 'other' => (string) ( $v['coach_langs_other'] ?? 'Weitere' ) ];
 	$lang_names = [];
 	foreach ( (array) ( $v['coach_langs'] ?? [] ) as $lid ) {
@@ -3787,10 +3851,15 @@ function fge_onboarding_review_blocks_coach( int $partner_id, array $v, callable
 	fge_onboarding_rev_block( 'Profil', $edit( 'coach-profile' ), [
 		[ 'Name', trim( (string) ( $v['coach_first'] ?? '' ) . ' ' . (string) ( $v['coach_last'] ?? '' ) ) ],
 		[ 'Titel', (string) ( $v['public_golfclub_name'] ?? '' ) ],
-		[ 'Qualifikation', $quali_name ],
-		[ 'Als Golflehrer tätig', $years_l[ (string) ( $v['coach_years'] ?? '' ) ] ?? '' ],
+		[ 'Ausbildung', $quali_name ],
 		[ 'Sprachen', implode( ', ', $lang_names ) ],
+	] );
+
+	// ── Deine Geschichte (eigene Slide, Julius 28.08.) ──
+	fge_onboarding_rev_block( 'Deine Geschichte', $edit( 'coach-story' ), [
 		[ 'Kurzprofil', (string) ( $v['public_short_description'] ?? '' ), true ],
+		[ 'Als Golflehrer tätig', $years_l[ (string) ( $v['coach_years'] ?? '' ) ] ?? '' ],
+		[ 'Website', (string) ( $v['website_url'] ?? '' ) ],
 	] );
 
 	// ── Anlage & Standort (kombinierte location-Slide) ──

@@ -346,18 +346,18 @@ function fge_catalog_coach_kinds(): array {
 }
 
 /**
- * Qualifikationen für Golflehrer (Liste Julius, 28.08.2026; eine Auswahl).
+ * Ausbildung des Golflehrers (Liste Julius, 28.08.2026; Mehrfachauswahl).
  * Abfrage ohne Gate, ohne Lizenzprüfung (Entscheidung 6); 'other' öffnet Freitext.
  * @return array<string,string> id => Label
  */
 function fge_catalog_coach_quali(): array {
 	return [
-		'pga-pro'       => 'PGA Golfprofessional (PGA of Germany)',
-		'pga-assistant' => 'PGA Assistant (in Ausbildung)',
+		'pga-pro'       => 'PGA Golfprofessional',
+		'pga-assistant' => 'PGA Assistant',
 		'dosb-a'        => 'DOSB A-Trainer Golf',
 		'dosb-b'        => 'DOSB B-Trainer Golf',
 		'dosb-c'        => 'DOSB C-Trainer Golf',
-		'pga-intl'      => 'Internationale PGA-Qualifikation (z. B. Großbritannien, USA)',
+		'pga-intl'      => 'Internationale PGA-Qualifikation',
 		'other'         => 'Sonstige Qualifikation',
 	];
 }

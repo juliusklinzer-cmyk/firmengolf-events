@@ -90,7 +90,8 @@
 		});
 
 		// ── 1) Place search: fills address, Bundesland, pin and place_id ──
-		var search = byId('fge_map_search');
+		// Golflehrer-Wizard: das Anlagen-Namensfeld IST die Suche (Julius, 28.08.).
+		var search = byId('fge_coach_venue_name') || byId('fge_map_search');
 		if (search && google.maps.places && google.maps.places.Autocomplete) {
 			var ac = new google.maps.places.Autocomplete(search, {
 				fields: ['place_id', 'geometry', 'address_components', 'name'],

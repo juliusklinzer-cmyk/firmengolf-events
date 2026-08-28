@@ -25,12 +25,14 @@ $city        = $m( 'city' );
 // (Plan A3: klein anzeigen, kein Gate, kein Badge, das andere abwertet).
 $quali_all   = function_exists( 'fge_catalog_coach_quali' ) ? fge_catalog_coach_quali() : [];
 $quali_raw   = get_post_meta( $pid, '_fge_coach_quali', true );
-$quali_id    = is_array( $quali_raw ) ? (string) ( $quali_raw[0] ?? '' ) : (string) $quali_raw;
+$quali_ids   = is_array( $quali_raw ) ? array_map( 'strval', $quali_raw ) : array_filter( [ (string) $quali_raw ] );
 $quali_names = [];
-if ( 'other' === $quali_id && '' !== $m( 'coach_quali_other' ) ) {
-	$quali_names[] = $m( 'coach_quali_other' );
-} elseif ( isset( $quali_all[ $quali_id ] ) ) {
-	$quali_names[] = $quali_all[ $quali_id ];
+foreach ( $quali_ids as $qid ) {
+	if ( 'other' === $qid && '' !== $m( 'coach_quali_other' ) ) {
+		$quali_names[] = $m( 'coach_quali_other' );
+	} elseif ( isset( $quali_all[ $qid ] ) ) {
+		$quali_names[] = $quali_all[ $qid ];
+	}
 }
 $years_l = [ 'u3' => 'Trainererfahrung', '3-5' => '3 bis 5 Jahre Erfahrung', '6-10' => '6 bis 10 Jahre Erfahrung', '10plus' => 'Über 10 Jahre Erfahrung' ];
 $years   = $years_l[ $m( 'coach_years' ) ] ?? '';
@@ -187,7 +189,7 @@ get_header();
 						<h4>Auf einen Blick</h4>
 						<?php
 						$coach_facts = [];
-						if ( ! empty( $quali_names ) ) { $coach_facts[] = [ 'Qualifikation', implode( ', ', $quali_names ) ]; }
+						if ( ! empty( $quali_names ) ) { $coach_facts[] = [ 'Ausbildung', implode( ', ', $quali_names ) ]; }
 						if ( $years )                  { $coach_facts[] = [ 'Erfahrung', $years ]; }
 						if ( $lang_names )             { $coach_facts[] = [ 'Sprachen', implode( ', ', $lang_names ) ]; }
 						if ( $venue_name )             { $coach_facts[] = [ 'Hauptstandort', trim( $venue_name . ( $venue_city ? ', ' . $venue_city : '' ) ) ]; }

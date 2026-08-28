@@ -465,7 +465,9 @@ function fge_portal_handle_profile_update(): void {
 		// Coach-Sektionen: Persistenz über die Onboarding-Slide-Logik (gleiche
 		// Feldnamen, gleiche Sanitisierung) — EIN Datenmodell für beide Wege.
 		case 'profil':
+			// Der Portal-Schritt bündelt beide Wizard-Slides (Über dich + Geschichte).
 			fge_onboarding_save_slide( $partner_id, 'coach-profile', $_POST );
+			fge_onboarding_save_slide( $partner_id, 'coach-story', $_POST );
 			break;
 
 		case 'standorte':
@@ -3238,12 +3240,14 @@ function fge_portal_render_coach_profile( int $partner_id ): void {
 
 	$quali_all   = fge_catalog_coach_quali();
 	$quali_raw   = get_post_meta( $partner_id, '_fge_coach_quali', true );
-	$quali_id    = is_array( $quali_raw ) ? (string) ( $quali_raw[0] ?? '' ) : (string) $quali_raw;
+	$quali_ids   = is_array( $quali_raw ) ? array_map( 'strval', $quali_raw ) : array_filter( [ (string) $quali_raw ] );
 	$quali_names = [];
-	if ( 'other' === $quali_id && '' !== $m( 'coach_quali_other' ) ) {
-		$quali_names[] = $m( 'coach_quali_other' );
-	} elseif ( isset( $quali_all[ $quali_id ] ) ) {
-		$quali_names[] = $quali_all[ $quali_id ];
+	foreach ( $quali_ids as $qid ) {
+		if ( 'other' === $qid && '' !== $m( 'coach_quali_other' ) ) {
+			$quali_names[] = $m( 'coach_quali_other' );
+		} elseif ( isset( $quali_all[ $qid ] ) ) {
+			$quali_names[] = $quali_all[ $qid ];
+		}
 	}
 	$lang_all   = [ 'de' => 'Deutsch', 'en' => 'Englisch', 'fr' => 'Französisch', 'it' => 'Italienisch', 'es' => 'Spanisch' ];
 	$lang_names = [];
@@ -3260,7 +3264,7 @@ function fge_portal_render_coach_profile( int $partner_id ): void {
 
 	$facts = [];
 	if ( $m( 'public_golfclub_name' ) ) { $facts[] = [ 'Titel', $m( 'public_golfclub_name' ) ]; }
-	if ( $quali_names )                 { $facts[] = [ 'Qualifikation', implode( ', ', $quali_names ) ]; }
+	if ( $quali_names )                 { $facts[] = [ 'Ausbildung', implode( ', ', $quali_names ) ]; }
 	if ( isset( $years_l[ $m( 'coach_years' ) ] ) ) { $facts[] = [ 'Als Golflehrer tätig', $years_l[ $m( 'coach_years' ) ] ]; }
 	if ( $lang_names )                  { $facts[] = [ 'Sprachen', implode( ', ', $lang_names ) ]; }
 	if ( $venue_name )                  { $facts[] = [ 'Hauptstandort', $venue_name ]; }
@@ -3451,7 +3455,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 			switch ( $section ) {
 				case 'profil':
 					$quali_raw = get_post_meta( $partner_id, '_fge_coach_quali', true );
-					$sel_quali = is_array( $quali_raw ) ? (string) ( $quali_raw[0] ?? '' ) : (string) $quali_raw;
+					$sel_quali = is_array( $quali_raw ) ? array_map( 'strval', $quali_raw ) : array_filter( [ (string) $quali_raw ] );
 					$sel_langs = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_coach_langs', true ) );
 					?>
 					<div class="fg-form-row fg-form-row--2col">
@@ -3469,13 +3473,12 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 						<input class="fg-form-input" type="text" id="fge_public_golfclub_name" name="fge_public_golfclub_name" value="<?php echo esc_attr( $m( 'public_golfclub_name' ) ); ?>" placeholder="z. B. PGA Golf Professional">
 					</div>
 					<div class="fg-form-row">
-						<label class="fg-form-label" for="fge_coach_quali">Qualifikation</label>
-						<select class="fg-form-input" id="fge_coach_quali" name="fge_coach_quali">
-							<option value="">bitte wählen …</option>
+						<label class="fg-form-label">Ausbildung</label>
+						<div class="fp-check-grid">
 							<?php foreach ( fge_catalog_coach_quali() as $qid => $ql ) : ?>
-								<option value="<?php echo esc_attr( $qid ); ?>" <?php selected( $sel_quali, (string) $qid ); ?>><?php echo esc_html( $ql ); ?></option>
+								<label class="fp-check"><input type="checkbox" name="fge_coach_quali[]" value="<?php echo esc_attr( $qid ); ?>" <?php checked( in_array( (string) $qid, $sel_quali, true ) ); ?>> <?php echo esc_html( $ql ); ?></label>
 							<?php endforeach; ?>
-						</select>
+						</div>
 					</div>
 					<div class="fg-form-row fg-form-row--2col">
 						<div>
