@@ -3242,10 +3242,7 @@ function fge_portal_render_coach_profile( int $partner_id ): void {
 	foreach ( (array) get_post_meta( $partner_id, '_fge_coach_langs', true ) as $lid ) {
 		if ( isset( $lang_all[ $lid ] ) ) { $lang_names[] = $lang_all[ $lid ]; }
 	}
-	$venue_pid  = (int) $m( 'coach_venue_partner_id' );
-	$venue_name = $venue_pid > 0
-		? ( (string) get_post_meta( $venue_pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $venue_pid ) )
-		: $m( 'coach_venue_name' );
+	$venue_name = $m( 'coach_venue_name' );
 	$cf_all   = fge_catalog_coach_formats();
 	$cf_names = [];
 	foreach ( (array) get_post_meta( $partner_id, '_fge_coach_formats', true ) as $fid ) {
@@ -3530,39 +3527,24 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 					break;
 
 				case 'standorte':
-					$venue_pid       = (int) $m( 'coach_venue_partner_id' );
-					$course_partners = get_posts( [
-						'post_type'      => 'firmengolf_partner',
-						'post_status'    => 'publish',
-						'posts_per_page' => -1,
-						'orderby'        => 'title',
-						'order'          => 'ASC',
-						'meta_query'     => [ [ 'key' => '_fge_partner_status', 'value' => 'aktiv' ] ],
-					] );
 					?>
+					<p style="font-size:13.5px;color:var(--ink-600);margin:0 0 16px;line-height:1.55;">Du bist der Organisator: Größere Eventmodule stimmst du selbst mit deiner Anlage ab, die Anfragen laufen über dich. Die Adresse setzt Karten-Pin, Umkreissuche und Stadt-Zuordnung deiner Events.</p>
 					<div class="fg-form-row">
-						<label class="fg-form-label" for="fge_coach_venue_partner_id">Dein Hauptstandort</label>
-						<select class="fg-form-input" id="fge_coach_venue_partner_id" name="fge_coach_venue_partner_id">
-							<option value="0" <?php selected( $venue_pid, 0 ); ?>>Meine Anlage ist kein Firmengolf-Partner</option>
-							<?php foreach ( $course_partners as $cp ) :
-								if ( 'course' !== fge_partner_type( (int) $cp->ID ) ) { continue; }
-								$cp_city = (string) get_post_meta( $cp->ID, '_fge_city', true ); ?>
-								<option value="<?php echo esc_attr( (string) $cp->ID ); ?>" <?php selected( $venue_pid, (int) $cp->ID ); ?>><?php echo esc_html( get_the_title( $cp ) . ( $cp_city ? ', ' . $cp_city : '' ) ); ?></option>
-							<?php endforeach; ?>
-						</select>
+						<label class="fg-form-label" for="fge_coach_venue_name">Name der Anlage</label>
+						<input class="fg-form-input" type="text" id="fge_coach_venue_name" name="fge_coach_venue_name" value="<?php echo esc_attr( $m( 'coach_venue_name' ) ); ?>" placeholder="z. B. GC Beispielstadt">
 					</div>
 					<div class="fg-form-row">
-						<label class="fg-form-label" for="fge_coach_venue_name">Falls kein Partner: Name der Anlage</label>
-						<input class="fg-form-input" type="text" id="fge_coach_venue_name" name="fge_coach_venue_name" value="<?php echo esc_attr( $m( 'coach_venue_name' ) ); ?>">
+						<label class="fg-form-label" for="fge_street">Straße und Hausnummer</label>
+						<input class="fg-form-input" type="text" id="fge_street" name="fge_street" value="<?php echo esc_attr( trim( $m( 'street' ) . ' ' . $m( 'house_number' ) ) ); ?>">
 					</div>
 					<div class="fg-form-row fg-form-row--2col">
 						<div>
-							<label class="fg-form-label" for="fge_coach_venue_zip">PLZ</label>
-							<input class="fg-form-input" type="text" id="fge_coach_venue_zip" name="fge_coach_venue_zip" value="<?php echo esc_attr( $m( 'coach_venue_zip' ) ); ?>">
+							<label class="fg-form-label" for="fge_postal_code">PLZ</label>
+							<input class="fg-form-input" type="text" id="fge_postal_code" name="fge_postal_code" value="<?php echo esc_attr( $m( 'postal_code' ) ); ?>">
 						</div>
 						<div>
-							<label class="fg-form-label" for="fge_coach_venue_city">Ort</label>
-							<input class="fg-form-input" type="text" id="fge_coach_venue_city" name="fge_coach_venue_city" value="<?php echo esc_attr( $m( 'coach_venue_city' ) ); ?>">
+							<label class="fg-form-label" for="fge_city">Ort</label>
+							<input class="fg-form-input" type="text" id="fge_city" name="fge_city" value="<?php echo esc_attr( $m( 'city' ) ); ?>">
 						</div>
 					</div>
 					<div class="fg-form-row fg-form-row--2col">

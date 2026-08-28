@@ -43,15 +43,12 @@ foreach ( (array) get_post_meta( $pid, '_fge_coach_langs', true ) as $lid ) {
 }
 $quali_line = implode( ' · ', array_filter( [ $quali_names[0] ?? '', $years, implode( ', ', $lang_names ) ] ) );
 
-// Hauptstandort: Firmengolf-Partnerplatz (verlinkbar wenn öffentlich) oder Freitext-Anlage.
-$venue_pid    = (int) $m( 'coach_venue_partner_id' );
-$venue_public = $venue_pid > 0 && function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $venue_pid );
-$venue_name   = $venue_pid > 0
-	? ( (string) get_post_meta( $venue_pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $venue_pid ) )
-	: $m( 'coach_venue_name' );
-$venue_city   = $venue_pid > 0 ? (string) get_post_meta( $venue_pid, '_fge_city', true ) : $m( 'coach_venue_city' );
-$is_mobile    = '1' === $m( 'coach_mobile' );
-$mobile_km    = (int) $m( 'coach_mobile_radius' );
+// Die Anlage des Golflehrers (Korrektur Julius 28.08.: er ist der Initiator und
+// legt sie selbst an; Adresse/Pin liegen als _fge_city usw. am Coach-Profil).
+$venue_name = $m( 'coach_venue_name' );
+$venue_city = $city;
+$is_mobile  = '1' === $m( 'coach_mobile' );
+$mobile_km  = (int) $m( 'coach_mobile_radius' );
 
 $ccap     = (array) get_post_meta( $pid, '_fge_coach_cap', true );
 $cap_line = ( (int) ( $ccap['min'] ?? 0 ) > 0 && (int) ( $ccap['solo_max'] ?? 0 ) > 0 )
@@ -286,9 +283,6 @@ get_header();
 							<p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-500);">Außerdem: <?php echo esc_html( $m( 'coach_venues_note' ) ); ?></p>
 						<?php endif; ?>
 					</div>
-					<?php if ( $venue_public ) : ?>
-						<a class="btn btn-ghost btn-sm" href="<?php echo esc_url( get_permalink( $venue_pid ) ); ?>">Zum Golfplatz →</a>
-					<?php endif; ?>
 				</div>
 			</section>
 			<?php endif; ?>

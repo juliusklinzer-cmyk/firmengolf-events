@@ -668,6 +668,23 @@ Klein und nicht blockierend, aber irgendwann zu entscheiden:
    anbieten, aber alle Fragen und Masken sind auf Indoor ausgerichtet, nicht auf
    Golfplatz-Ebene.
 
+## 8c. Korrektur Julius, 28.08.2026 nachmittags (bindend, ersetzt Teile von Entscheidung 1 und A4)
+
+**Kein Partner-Dropdown im Coach-Wizard.** Sind Anlagen bereits Partner, braucht es dort
+keine Golflehrer als Initiatoren. Der Coach-Wizard ist für Anlagen gedacht, bei denen der
+GOLFLEHRER der Initiator ist: Er legt „seinen" Golfplatz selbst an. Es reicht:
+
+- ein Location-Pin (wo er unterrichtet; umgesetzt über die geteilte location-Slide
+  mit Google-Suche und Karten-Pin direkt nach der Anlagen-Slide),
+- welche Möglichkeiten der Platz für größere Eventmodule bietet (Mehrfachauswahl
+  auf der Anlagen-Slide).
+
+Die Eventmodule bespricht der Golflehrer als Organisator selbst mit der Anlage,
+spiegelbildlich zum bestehenden Weg (Platz erstellt Events und hinterlegt freie
+Golflehrer als Ansprechpartner). Die Anfragen laufen initial über den Golflehrer.
+Damit entfällt auch das bedingte Anlagen-Fragebogen-Kapitel (A5a bis A5e) aus
+Entscheidung 1; die Platz-Formate stehen jedem Coach als „Größere Eventmodule" offen.
+
 ## 9. Umsetzungsreihenfolge (Vorschlag für Claude Code)
 
 1. **Preisglättung umstellen** (`fge_price_smooth()` plus JS-Zwilling in `partner-portal.php`).

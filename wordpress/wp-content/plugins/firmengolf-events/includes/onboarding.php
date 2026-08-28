@@ -53,23 +53,6 @@ function fge_onboarding_current_has_indoor(): bool {
 	return $has;
 }
 
-/**
- * Läuft das Coach-Onboarding im vollen Pfad (Hauptstandort ist KEIN
- * Firmengolf-Partner, Entscheidung 1)? Statisch gecacht wie der Indoor-Flag;
- * der coach-venue-Save ändert das Flag und redirectet sofort, und die
- * bedingten Slides liegen hinter der venue-Slide, daher ist ein innerhalb
- * des Requests veralteter Wert harmlos.
- */
-function fge_onboarding_current_coach_fullpath(): bool {
-	static $full = null;
-	if ( null === $full ) {
-		$pid  = fge_onboarding_get_current_partner_id();
-		$full = $pid > 0 && 'coach' === fge_partner_type( $pid )
-			&& '1' === (string) get_post_meta( $pid, '_fge_coach_venue_custom', true );
-	}
-	return $full;
-}
-
 function fge_onboarding_manifest( string $type = '' ): array {
 	if ( '' === $type ) {
 		$type = fge_onboarding_current_type();
@@ -101,33 +84,29 @@ function fge_onboarding_manifest( string $type = '' ): array {
 			[ 'id' => 'review',         'chapter' => 3, 'kind' => 'review', 'wide' => true ],
 		];
 	} elseif ( 'coach' === $type ) {
-		// Formular A (Plan Abschnitt 1), kurzer Pfad; Kapitel 2 „Deine Anlage"
-		// wird nur eingefügt, wenn der Hauptstandort kein Partner ist.
+		// Formular A. Korrektur Julius 28.08. (nachmittags): Der Golflehrer ist der
+		// INITIATOR und legt seine Anlage selbst an — Location-Pin (geteilte
+		// location-Slide) plus Möglichkeiten für größere Eventmodule in coach-venue.
+		// Kein Partner-Dropdown, kein bedingtes Anlagen-Fragebogen-Kapitel: die
+		// Eventmodule bespricht der Golflehrer selbst mit der Anlage, die Events
+		// laufen initial über ihn.
 		$slides = [
 			[ 'id' => 'intro-1',        'chapter' => 1, 'kind' => 'intro' ],
 			[ 'id' => 'coach-kind',     'chapter' => 1, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'coach-profile',  'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'coach-venue',    'chapter' => 1, 'kind' => 'form' ],
+			[ 'id' => 'location',       'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'main',           'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'contacts',       'chapter' => 1, 'kind' => 'form', 'skippable' => true ],
-			[ 'id' => 'coach-formats',  'chapter' => 3, 'kind' => 'form', 'wide' => true ],
-			[ 'id' => 'coach-capacity', 'chapter' => 3, 'kind' => 'form' ],
-			[ 'id' => 'coach-includes', 'chapter' => 3, 'kind' => 'form' ],
-			[ 'id' => 'avail',          'chapter' => 4, 'kind' => 'form' ],
-			[ 'id' => 'pricing',        'chapter' => 4, 'kind' => 'form' ],
-			[ 'id' => 'billing',        'chapter' => 4, 'kind' => 'form' ],
-			[ 'id' => 'media',          'chapter' => 4, 'kind' => 'form' ],
-			[ 'id' => 'review',         'chapter' => 4, 'kind' => 'review', 'wide' => true ],
+			[ 'id' => 'coach-formats',  'chapter' => 2, 'kind' => 'form', 'wide' => true ],
+			[ 'id' => 'coach-capacity', 'chapter' => 2, 'kind' => 'form' ],
+			[ 'id' => 'coach-includes', 'chapter' => 2, 'kind' => 'form' ],
+			[ 'id' => 'avail',          'chapter' => 3, 'kind' => 'form' ],
+			[ 'id' => 'pricing',        'chapter' => 3, 'kind' => 'form' ],
+			[ 'id' => 'billing',        'chapter' => 3, 'kind' => 'form' ],
+			[ 'id' => 'media',          'chapter' => 3, 'kind' => 'form' ],
+			[ 'id' => 'review',         'chapter' => 3, 'kind' => 'review', 'wide' => true ],
 		];
-		if ( fge_onboarding_current_coach_fullpath() ) {
-			$at = array_search( 'contacts', array_column( $slides, 'id' ), true );
-			array_splice( $slides, (int) $at + 1, 0, [
-				[ 'id' => 'infra',           'chapter' => 2, 'kind' => 'form', 'wide' => true ],
-				[ 'id' => 'gastro',          'chapter' => 2, 'kind' => 'form', 'wide' => true ],
-				[ 'id' => 'capacity',        'chapter' => 2, 'kind' => 'form' ],
-				[ 'id' => 'coach-authority', 'chapter' => 2, 'kind' => 'form' ],
-			] );
-		}
 	} else {
 		$slides = [
 			[ 'id' => 'intro-1',  'chapter' => 1, 'kind' => 'intro' ],
@@ -416,21 +395,14 @@ function fge_onboarding_is_submittable( int $partner_id ): bool {
 		return is_array( $fmts ) && ! empty( $fmts );
 	}
 
-	// ── Golflehrer (Formular A): Person, Standort, Formate ──
+	// ── Golflehrer (Formular A): Person, eigene Anlage mit Adresse, Formate ──
 	if ( 'coach' === $type ) {
 		if ( $m( 'coach_first' ) === '' || $m( 'coach_last' ) === '' ) { return false; }
-		$venue_pid = (int) $m( 'coach_venue_partner_id' );
-		if ( $venue_pid <= 0 && ( $m( 'coach_venue_name' ) === '' || $m( 'coach_venue_city' ) === '' ) ) { return false; }
+		if ( $m( 'coach_venue_name' ) === '' ) { return false; }
+		// Adresse + Pin kommen von der geteilten location-Slide.
+		if ( $m( 'street' ) === '' || $m( 'postal_code' ) === '' || $m( 'city' ) === '' || $m( 'federal_state' ) === '' ) { return false; }
 		$cfmts = get_post_meta( $partner_id, '_fge_coach_formats', true );
-		if ( ! is_array( $cfmts ) || empty( $cfmts ) ) { return false; }
-		// Voller Pfad: die selbst beschriebene Anlage braucht Ausstattung + Berechtigung.
-		if ( '1' === $m( 'coach_venue_custom' ) ) {
-			$infra = get_post_meta( $partner_id, '_fge_infra', true );
-			$infra = is_array( $infra ) ? array_intersect( $infra, fge_catalog_infra_ids() ) : [];
-			if ( empty( $infra ) )                { return false; }
-			if ( '1' !== $m( 'coach_authorized' ) ) { return false; }
-		}
-		return true;
+		return is_array( $cfmts ) && ! empty( $cfmts );
 	}
 
 	// ── Golfplatz (Bestand) ──
@@ -742,15 +714,10 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'coach-venue':
-			$venue_pid = absint( $post['fge_coach_venue_partner_id'] ?? 0 );
-			if ( $venue_pid > 0 && ( 'firmengolf_partner' !== get_post_type( $venue_pid ) || 'course' !== fge_partner_type( $venue_pid ) ) ) {
-				$venue_pid = 0;
-			}
-			update_post_meta( $partner_id, '_fge_coach_venue_partner_id', $venue_pid );
-			update_post_meta( $partner_id, '_fge_coach_venue_custom', $venue_pid > 0 ? 0 : 1 );
+			// Korrektur Julius 28.08.: KEIN Partner-Dropdown. Der Golflehrer ist der
+			// Initiator und legt seine Anlage selbst an; Adresse und Location-Pin
+			// kommen von der geteilten location-Slide direkt danach.
 			update_post_meta( $partner_id, '_fge_coach_venue_name', $s( 'fge_coach_venue_name' ) );
-			update_post_meta( $partner_id, '_fge_coach_venue_zip', $s( 'fge_coach_venue_zip' ) );
-			update_post_meta( $partner_id, '_fge_coach_venue_city', $s( 'fge_coach_venue_city' ) );
 			update_post_meta( $partner_id, '_fge_coach_venue_role', $san_select( 'fge_coach_venue_role', [ 'hauspro', 'angestellt', 'frei', 'gelegentlich' ] ) );
 			update_post_meta( $partner_id, '_fge_coach_venue_use', $san_group( 'fge_coach_venue_use', [ 'range', 'kurzspiel', 'gruen', 'bunker', '9loch', '18loch', 'indoor', 'raum', 'clubhaus', 'gastro' ] ) );
 			update_post_meta( $partner_id, '_fge_coach_venue_groups', $san_select( 'fge_coach_venue_groups', [ 'ja', 'absprache', 'nein' ] ) );
@@ -762,16 +729,6 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			update_post_meta( $partner_id, '_fge_coach_mobile_equipment', $sa( 'fge_coach_mobile_equipment' ) );
 			update_post_meta( $partner_id, '_fge_coach_mobile_space', $s( 'fge_coach_mobile_space' ) );
 			update_post_meta( $partner_id, '_fge_coach_venues_note', $sa( 'fge_coach_venues_note' ) );
-			// Standort des Coach-Profils: vom Partnerplatz übernehmen (Karte,
-			// Umkreissuche, Städteseiten), sonst PLZ/Ort aus der Freitexteingabe.
-			if ( $venue_pid > 0 ) {
-				foreach ( [ '_fge_city', '_fge_postal_code', '_fge_federal_state', '_fge_latitude', '_fge_longitude' ] as $copy_key ) {
-					update_post_meta( $partner_id, $copy_key, get_post_meta( $venue_pid, $copy_key, true ) );
-				}
-			} else {
-				update_post_meta( $partner_id, '_fge_city', $s( 'fge_coach_venue_city' ) );
-				update_post_meta( $partner_id, '_fge_postal_code', $s( 'fge_coach_venue_zip' ) );
-			}
 			break;
 
 		case 'coach-authority':
@@ -1302,10 +1259,9 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 			return $errors;
 
 		case 'coach-venue':
-			$errors    = [];
-			$venue_pid = absint( $post['fge_coach_venue_partner_id'] ?? 0 );
-			if ( $venue_pid <= 0 && ( $s( 'fge_coach_venue_name' ) === '' || $s( 'fge_coach_venue_city' ) === '' ) ) {
-				$errors['fge_coach_venue_partner_id'] = 'Bitte wähle deinen Hauptstandort aus oder trag Name und Ort der Anlage ein.';
+			$errors = [];
+			if ( $s( 'fge_coach_venue_name' ) === '' ) {
+				$errors['fge_coach_venue_name'] = 'Wie heißt die Anlage, an der du unterrichtest?';
 			}
 			if ( ! in_array( (string) ( $post['fge_coach_venue_role'] ?? '' ), [ 'hauspro', 'angestellt', 'frei', 'gelegentlich' ], true ) ) {
 				$errors['fge_coach_venue_role'] = 'Bitte gib deine Rolle auf der Anlage an.';
@@ -2288,11 +2244,19 @@ function fge_onboarding_render_basics( int $step, int $partner_id, string $token
 }
 
 function fge_onboarding_render_location( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	$is_indoor = 'indoor' === fge_onboarding_current_type();
+	$loc_type  = fge_onboarding_current_type();
+	$is_indoor = 'indoor' === $loc_type;
+	$loc_heads = [
+		'course' => 'Wo befindet sich dein Platz?',
+		'indoor' => 'Wo findet man euch?',
+		'coach'  => 'Wo liegt deine Anlage?',
+	];
 	fge_onboarding_render_step_header(
 		$step,
-		$is_indoor ? 'Wo findet man euch?' : 'Wo befindet sich dein Platz?',
-		'Wir nutzen die Adresse für die Karte und die Anfahrtsbeschreibung. Genaue Anfahrt geht erst nach Bestätigung an Kunden raus.'
+		$loc_heads[ $loc_type ] ?? $loc_heads['course'],
+		'coach' === $loc_type
+			? 'Setz den Pin auf die Golfanlage, an der deine Kurse und Events stattfinden. Daraus entstehen Karte, Umkreissuche und die Zuordnung zu deiner Stadt.'
+			: 'Wir nutzen die Adresse für die Karte und die Anfahrtsbeschreibung. Genaue Anfahrt geht erst nach Bestätigung an Kunden raus.'
 	);
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
@@ -2981,42 +2945,10 @@ function fge_onboarding_render_coach_profile( int $step, int $partner_id, string
 }
 
 function fge_onboarding_render_coach_venue( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Wo unterrichtest du?', 'Dein Hauptstandort entscheidet, wie es weitergeht: Ist die Anlage schon Firmengolf-Partner, sparst du dir die Beschreibung der Anlage. Wenn nicht, beschreibst du sie gleich selbst und kannst damit auch große Events inklusive Verpflegung anbieten.' );
+	fge_onboarding_render_step_header( $step, 'Wo unterrichtest du?', 'Du legst die Anlage an, auf der deine Kurse und Events stattfinden. Größere Eventmodule stimmst du selbst mit dem Platz ab, die Anfragen laufen über dich. Den genauen Standort setzt du im nächsten Schritt auf der Karte.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
-	// Aktive Golfplatz-Partner als Auswahlliste (Autocomplete kommt später).
-	$course_partners = get_posts( [
-		'post_type'      => 'firmengolf_partner',
-		'post_status'    => 'publish',
-		'posts_per_page' => -1,
-		'orderby'        => 'title',
-		'order'          => 'ASC',
-		'meta_query'     => [ [ 'key' => '_fge_partner_status', 'value' => 'aktiv' ] ],
-	] );
-	$venue_pid = absint( $v['coach_venue_partner_id'] ?? 0 );
-	?>
-	<div class="ob-field full<?php echo isset( $errors['fge_coach_venue_partner_id'] ) ? ' ob-field--error' : ''; ?>">
-		<label class="ob-field-label" for="fge_coach_venue_partner_id">Dein Hauptstandort <span class="ob-required">*</span></label>
-		<span class="ob-field-hint">Ist die Anlage schon Firmengolf-Partner? Dann wähl sie hier aus. Sonst „Meine Anlage ist nicht dabei" lassen und unten eintragen.</span>
-		<select class="ob-input" id="fge_coach_venue_partner_id" name="fge_coach_venue_partner_id">
-			<option value="0" <?php selected( $venue_pid, 0 ); ?>>Meine Anlage ist nicht dabei</option>
-			<?php foreach ( $course_partners as $cp ) :
-				if ( 'course' !== fge_partner_type( (int) $cp->ID ) ) { continue; }
-				$cp_city = (string) get_post_meta( $cp->ID, '_fge_city', true ); ?>
-				<option value="<?php echo esc_attr( (string) $cp->ID ); ?>" <?php selected( $venue_pid, (int) $cp->ID ); ?>><?php echo esc_html( get_the_title( $cp ) . ( $cp_city ? ', ' . $cp_city : '' ) ); ?></option>
-			<?php endforeach; ?>
-		</select>
-		<?php fge_onboarding_error( $errors, 'fge_coach_venue_partner_id' ); ?>
-	</div>
-	<div class="ob-field full">
-		<span class="ob-field-hint">Falls deine Anlage nicht dabei ist:</span>
-	</div>
-	<?php fge_onboarding_input( 'fge_coach_venue_name', 'fge_coach_venue_name', 'Name der Anlage', (string) ( $v['coach_venue_name'] ?? '' ), 'text', false, 'z. B. GC Beispielstadt', $errors ); ?>
-	<div class="ob-field-row ob-field-row-1-3">
-		<?php fge_onboarding_input( 'fge_coach_venue_zip', 'fge_coach_venue_zip', 'PLZ', (string) ( $v['coach_venue_zip'] ?? '' ), 'text', false, '20359', $errors, '', 'maxlength="5"' ); ?>
-		<?php fge_onboarding_input( 'fge_coach_venue_city', 'fge_coach_venue_city', 'Ort', (string) ( $v['coach_venue_city'] ?? '' ), 'text', false, 'Hamburg', $errors ); ?>
-	</div>
-	<?php
+	fge_onboarding_input( 'fge_coach_venue_name', 'fge_coach_venue_name', 'Name der Anlage', (string) ( $v['coach_venue_name'] ?? '' ), 'text', true, 'z. B. GC Beispielstadt', $errors );
 	fge_onboarding_select( 'fge_coach_venue_role', 'fge_coach_venue_role', 'Deine Rolle dort', (string) ( $v['coach_venue_role'] ?? '' ), [
 		'hauspro'      => 'Haus-Pro',
 		'angestellt'   => 'Fest angestellt',
@@ -3026,7 +2958,8 @@ function fge_onboarding_render_coach_venue( int $step, int $partner_id, string $
 	$sel_use = is_array( $v['coach_venue_use'] ?? null ) ? $v['coach_venue_use'] : [];
 	?>
 	<div class="ob-field full">
-		<label class="ob-field-label">Was darfst du dort nutzen?</label>
+		<label class="ob-field-label">Was bietet die Anlage für deine Kurse und größere Eventmodule?</label>
+		<span class="ob-field-hint">Wähl aus, was dir dort zur Verfügung steht. Daran sehen Firmen, welche Formate bei dir möglich sind.</span>
 		<div class="ob-cards">
 			<?php foreach ( [ 'range' => 'Driving Range', 'kurzspiel' => 'Kurzspielbereich', 'gruen' => 'Übungsgrün', 'bunker' => 'Übungsbunker', '9loch' => '9-Loch-Platz', '18loch' => '18-Loch-Platz', 'indoor' => 'Indoor-Simulator', 'raum' => 'Schulungsraum', 'clubhaus' => 'Clubhaus', 'gastro' => 'Gastronomie' ] as $uid => $ul ) :
 				fge_onboarding_card( 'checkbox', 'fge_coach_venue_use[]', $uid, $ul, in_array( $uid, $sel_use, true ) );
@@ -3098,10 +3031,7 @@ function fge_onboarding_render_coach_authority( int $step, int $partner_id, stri
 }
 
 function fge_onboarding_render_coach_formats( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	$fullpath = fge_onboarding_current_coach_fullpath();
-	fge_onboarding_render_step_header( $step, 'Was kannst du anbieten?', $fullpath
-		? 'Wähl alles aus, was du dir vorstellen kannst. Weil du die Anlage selbst anbietest, stehen dir auch die großen Platz-Formate offen.'
-		: 'Wähl alles aus, was du dir vorstellen kannst. Deine konkreten Angebote legst du später im Partnerportal an.' );
+	fge_onboarding_render_step_header( $step, 'Was kannst du anbieten?', 'Wähl alles aus, was du dir vorstellen kannst. Deine konkreten Angebote legst du später im Partnerportal an.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	$selected = is_array( $v['coach_formats'] ?? null ) ? $v['coach_formats'] : [];
 	?>
@@ -3110,19 +3040,21 @@ function fge_onboarding_render_coach_formats( int $step, int $partner_id, string
 			fge_onboarding_card( 'checkbox', 'fge_coach_formats[]', (string) $id, (string) $label, in_array( $id, $selected, true ) );
 		endforeach; ?>
 	</div>
-	<?php fge_onboarding_error( $errors, 'fge_coach_formats' ); ?>
-	<?php if ( $fullpath ) :
-		$sel_pf = is_array( $v['event_formats'] ?? null ) ? $v['event_formats'] : [];
-		?>
-		<div class="ob-cat" style="margin-top:20px;">
-			<div class="ob-cat-h">Platz-Formate (weil du die Anlage selbst anbietest)</div>
-			<div class="ob-cards">
-				<?php foreach ( fge_catalog_partner_formats() as $pid_f => $pl ) :
-					fge_onboarding_card( 'checkbox', 'fge_event_formats[]', (string) $pid_f, (string) $pl, in_array( $pid_f, $sel_pf, true ) );
-				endforeach; ?>
-			</div>
+	<?php fge_onboarding_error( $errors, 'fge_coach_formats' );
+	// Größere Eventmodule (Julius, 28.08.): Der Golflehrer ist der Organisator und
+	// stimmt sie selbst mit der Anlage ab, die Events laufen initial über ihn.
+	$sel_pf = is_array( $v['event_formats'] ?? null ) ? $v['event_formats'] : [];
+	?>
+	<div class="ob-cat" style="margin-top:20px;">
+		<div class="ob-cat-h">Größere Eventmodule</div>
+		<span class="ob-field-hint">Formate, die du gemeinsam mit deiner Anlage anbieten kannst. Du stimmst sie mit dem Platz ab, die Anfragen laufen über dich.</span>
+		<div class="ob-cards">
+			<?php foreach ( fge_catalog_partner_formats() as $pid_f => $pl ) :
+				fge_onboarding_card( 'checkbox', 'fge_event_formats[]', (string) $pid_f, (string) $pl, in_array( $pid_f, $sel_pf, true ) );
+			endforeach; ?>
 		</div>
-	<?php endif;
+	</div>
+	<?php
 	fge_onboarding_cards_script();
 	echo '</form>';
 }
@@ -3494,7 +3426,7 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 				$active_infra[] = $infra_index[ (string) $iid ];
 			}
 		}
-		if ( 'course' === $rev_type || fge_onboarding_current_coach_fullpath() ) {
+		if ( 'course' === $rev_type ) {
 			$infra_rows = [ [ '', implode( ' · ', $active_infra ), true ] ];
 			if ( '' !== (string) ( $v['additional_equipment'] ?? '' ) ) {
 				$infra_rows[] = [ 'Weitere Ausstattung', (string) $v['additional_equipment'], true ];
@@ -3758,11 +3690,8 @@ function fge_onboarding_review_blocks_coach( int $partner_id, array $v, callable
 		[ 'Firmengruppen', '' === (string) ( $v['coach_corp_exp'] ?? '' ) ? '' : ( '1' === (string) $v['coach_corp_exp'] ? 'Ja' . ( '' !== (string) ( $v['coach_corp_per_year'] ?? '' ) ? ', ca. ' . $v['coach_corp_per_year'] . ' pro Jahr' : '' ) : 'Noch nicht' ) ],
 	] );
 
-	// ── Hauptstandort ──
-	$venue_pid  = absint( $v['coach_venue_partner_id'] ?? 0 );
-	$venue_name = $venue_pid > 0
-		? get_the_title( $venue_pid ) . ' (Firmengolf-Partner)'
-		: trim( (string) ( $v['coach_venue_name'] ?? '' ) . ', ' . (string) ( $v['coach_venue_zip'] ?? '' ) . ' ' . (string) ( $v['coach_venue_city'] ?? '' ), ' ,' );
+	// ── Deine Anlage ──
+	$venue_name = (string) ( $v['coach_venue_name'] ?? '' );
 	$role_l   = [ 'hauspro' => 'Haus-Pro', 'angestellt' => 'Fest angestellt', 'frei' => 'Freier Trainer', 'gelegentlich' => 'Gelegentlich nach Absprache' ];
 	$groups_l = [ 'ja' => 'Ja', 'absprache' => 'Ja, nach Absprache', 'nein' => 'Nein' ];
 	$fees_l   = [ 'inklusive' => 'Im Preis enthalten', 'separat' => 'Anlage rechnet separat ab', 'format' => 'Je nach Format' ];
@@ -3782,18 +3711,13 @@ function fge_onboarding_review_blocks_coach( int $partner_id, array $v, callable
 	}
 	fge_onboarding_rev_block( 'Wo du unterrichtest', $edit( 'coach-venue' ), $venue_rows );
 
-	// ── Berechtigung (nur voller Pfad) ──
-	if ( fge_onboarding_current_coach_fullpath() ) {
-		$conf_l = [ 'selbst' => 'Ich selbst', 'sekretariat' => 'Sekretariat', 'management' => 'Clubmanagement', 'gastro' => 'Gastronomie' ];
-		$bill_l = [ 'ich' => 'Ich, alles in einer Rechnung', 'anlage' => 'Die Anlage separat', 'geteilt' => 'Geteilt' ];
-		fge_onboarding_rev_block( 'Berechtigung', $edit( 'coach-authority' ), [
-			[ 'Berechtigt', '1' === (string) ( $v['coach_authorized'] ?? '' ) ? 'Bestätigt ✓' : 'Noch nicht bestätigt' ],
-			[ 'Verfügbarkeit bestätigt', $conf_l[ (string) ( $v['coach_venue_confirmer'] ?? '' ) ] ?? '' ],
-			[ 'Rechnung', $bill_l[ (string) ( $v['coach_venue_billing'] ?? '' ) ] ?? '' ],
-		] );
-	}
+	// ── Standort (geteilte location-Slide: Adresse + Pin) ──
+	fge_onboarding_rev_block( 'Standort', $edit( 'location' ), [
+		[ 'Adresse', trim( (string) ( $v['street'] ?? '' ) . ' ' . (string) ( $v['house_number'] ?? '' ) . ', ' . (string) ( $v['postal_code'] ?? '' ) . ' ' . (string) ( $v['city'] ?? '' ), ' ,' ) ],
+		[ 'Karten-Pin', ( '' !== (string) ( $v['latitude'] ?? '' ) && '' !== (string) ( $v['longitude'] ?? '' ) ) ? 'Gesetzt ✓' : 'Noch nicht gesetzt' ],
+	] );
 
-	// ── Formate ──
+	// ── Formate (eigene plus größere Eventmodule mit der Anlage) ──
 	$cf_all   = fge_catalog_coach_formats();
 	$cf_names = [];
 	foreach ( (array) ( $v['coach_formats'] ?? [] ) as $fid ) {
@@ -3801,12 +3725,10 @@ function fge_onboarding_review_blocks_coach( int $partner_id, array $v, callable
 			$cf_names[] = $cf_all[ $fid ];
 		}
 	}
-	if ( fge_onboarding_current_coach_fullpath() ) {
-		$pf_all = fge_catalog_partner_formats();
-		foreach ( (array) ( $v['event_formats'] ?? [] ) as $fid ) {
-			if ( isset( $pf_all[ $fid ] ) ) {
-				$cf_names[] = $pf_all[ $fid ];
-			}
+	$pf_all = fge_catalog_partner_formats();
+	foreach ( (array) ( $v['event_formats'] ?? [] ) as $fid ) {
+		if ( isset( $pf_all[ $fid ] ) ) {
+			$cf_names[] = $pf_all[ $fid ];
 		}
 	}
 	fge_onboarding_rev_block( 'Deine Formate', $edit( 'coach-formats' ), [ [ '', implode( ' · ', $cf_names ), true ] ] );
