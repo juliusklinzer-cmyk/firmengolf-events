@@ -1539,3 +1539,18 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 .ob-shell .rw-stepper-val::-webkit-outer-spin-button,
 .ob-shell .rw-stepper-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .rw-stepper-unit { font-size: 13px; color: var(--ink-500); }
+
+/* ── Partner-Typ-Wahl als Bild-Kacheln (Julius, 01.09.): Stil der Startseiten-
+   Formate (.iv-tile), je ein Bild pro Typ. ───────────────────────────────── */
+.ob-typewahl-wrap {
+  width: 100%; max-width: 1080px;
+  display: flex; flex-direction: column; align-items: center; gap: 28px;
+}
+.ob-typewahl-head { align-items: center; text-align: center; }
+.ob-typewahl-head .ob-intro-lead { max-width: 620px; margin-inline: auto; }
+.ob-shell .ob-typewahl { grid-template-columns: repeat(3, 1fr); width: 100%; }
+@media (max-width: 760px) {
+  .ob-shell .ob-typewahl { grid-template-columns: 1fr; gap: 14px; }
+  /* Gestapelt querformatiger, damit alle drei ohne langes Scrollen sichtbar sind. */
+  .ob-shell .ob-typewahl .iv-tile { aspect-ratio: 16 / 9; }
+}

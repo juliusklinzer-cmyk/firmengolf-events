@@ -2095,11 +2095,16 @@ function fge_onboarding_cards_script(): void {
  * wird bei „Start" (intro-1) fest am Draft-Partner gespeichert.
  */
 function fge_onboarding_render_type_chooser(): void {
-	$page  = fge_onboarding_page_url();
+	$page = fge_onboarding_page_url();
+	$img  = static function ( string $file ): string {
+		return function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( $file ) : '';
+	};
+	// Bild-Kacheln im Stil der Startseiten-Formate (Julius, 01.09.): je ein Bild
+	// pro Partnertyp. [ Titel, Kurzzeile, Bilddatei ].
 	$cards = [
-		'course' => [ 'Golfplatz', 'Ihr betreibt eine Golfanlage und wollt Firmenevents anbieten.', 'course-18' ],
-		'indoor' => [ 'Indoor-Golf', 'Ihr betreibt Indoor Golf mit Simulatoren, ganzjährig buchbar.', 'indoor' ],
-		'coach'  => [ 'Golflehrer', 'Du unterrichtest Golf und willst dein Angebot um Firmenevents erweitern.', 'coach' ],
+		'course' => [ 'Golfplatz', 'Eure Golfanlage für Firmenevents öffnen.', 'onboarding-course-portrait.jpg' ],
+		'coach'  => [ 'Golflehrer', 'Dein Angebot um Firmenevents erweitern.', 'onboarding-coach-portrait.jpg' ],
+		'indoor' => [ 'Indoor-Golf', 'Simulatoren, ganzjährig für Events buchbar.', 'onboarding-indoor-lounge.jpg' ],
 	];
 	?>
 	<div class="ob-shell">
@@ -2109,19 +2114,26 @@ function fge_onboarding_render_type_chooser(): void {
 			</a>
 		</header>
 		<main class="ob-stage is-intro">
-			<div class="ob-intro" style="grid-template-columns:1fr;max-width:760px;">
-				<div class="ob-intro-text">
+			<div class="ob-typewahl-wrap">
+				<div class="ob-step-head ob-typewahl-head">
 					<div class="ob-eyebrow">Partner werden</div>
 					<h1 class="ob-step-title big">Als was möchtest du <span class="ob-italic">Partner</span> werden?</h1>
 					<p class="ob-intro-lead">Firmengolf vermittelt Firmenevents an Golfplätze, Indoor Golf und Golflehrer. Wähle aus, was auf dich zutrifft, danach stellen wir nur die Fragen, die zu dir passen.</p>
-					<div class="ob-cards" style="margin-top:24px;">
-						<?php foreach ( $cards as $type => $c ) : ?>
-						<a class="ob-card" href="<?php echo esc_url( add_query_arg( [ 'ob_step' => 1, 'ob_type' => $type ], $page ) ); ?>" style="text-decoration:none;">
-							<span class="ob-card-ico" aria-hidden="true"><?php echo fge_onboarding_card_icon( $c[2] ); // phpcs:ignore WordPress.Security.EscapeOutput, static trusted SVG ?></span>
-							<span class="ob-card-l"><strong><?php echo esc_html( $c[0] ); ?></strong><br><span style="font-weight:400;color:var(--ink-600);"><?php echo esc_html( $c[1] ); ?></span></span>
-						</a>
-						<?php endforeach; ?>
-					</div>
+				</div>
+				<div class="iv-tiles ob-typewahl">
+					<?php foreach ( $cards as $type => $c ) : ?>
+					<a class="iv-tile" href="<?php echo esc_url( add_query_arg( [ 'ob_step' => 1, 'ob_type' => $type ], $page ) ); ?>">
+						<span class="iv-tile-img" style="background-image:url('<?php echo esc_url( $img( $c[2] ) ); ?>')"></span>
+						<span class="iv-tile-scrim"></span>
+						<span class="iv-tile-label">
+							<span>
+								<span class="iv-tile-t"><?php echo esc_html( $c[0] ); ?></span>
+								<span class="iv-tile-sub" style="display:block;"><?php echo esc_html( $c[1] ); ?></span>
+							</span>
+							<span class="iv-tile-arrow"><?php echo function_exists( 'fge_icon_arrow_right' ) ? fge_icon_arrow_right() : '→'; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+						</span>
+					</a>
+					<?php endforeach; ?>
 				</div>
 			</div>
 		</main>
