@@ -102,13 +102,15 @@ function fge_onboarding_manifest( string $type = '' ): array {
 			[ 'id' => 'coach-quali',    'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'coach-story',    'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'location',       'chapter' => 1, 'kind' => 'form', 'wide' => true ],
-			[ 'id' => 'main',           'chapter' => 1, 'kind' => 'form' ],
-			[ 'id' => 'contacts',       'chapter' => 1, 'kind' => 'form', 'skippable' => true ],
 			[ 'id' => 'coach-formats',  'chapter' => 2, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'coach-capacity', 'chapter' => 2, 'kind' => 'form' ],
 			[ 'id' => 'avail',          'chapter' => 3, 'kind' => 'form' ],
 			[ 'id' => 'pricing',        'chapter' => 3, 'kind' => 'form' ],
 			[ 'id' => 'media',          'chapter' => 3, 'kind' => 'form' ],
+			// Portal-Zugang + weitere Ansprechpartner ans Ende (Julius, 01.09.):
+			// erst alles ausfüllen, dann Login anlegen, dann einreichen.
+			[ 'id' => 'main',           'chapter' => 3, 'kind' => 'form' ],
+			[ 'id' => 'contacts',       'chapter' => 3, 'kind' => 'form', 'skippable' => true ],
 			[ 'id' => 'review',         'chapter' => 3, 'kind' => 'review', 'wide' => true ],
 		];
 	} else {
