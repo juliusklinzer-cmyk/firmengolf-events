@@ -1753,13 +1753,6 @@ function fge_onboarding_render_footer( int $step, string $token ): void {
 				<?php endif; ?>
 			</div>
 		</div>
-		<?php /* Pflichtangaben: das Onboarding ist eine eigenständige Seite ohne Site-Footer
-			(Audit 2026-08-12: Impressumspflicht gilt für jede Seite). */ ?>
-		<div class="ob-foot-legal">
-			<a href="<?php echo esc_url( home_url( '/impressum/' ) ); ?>" target="_blank" rel="noopener">Impressum</a>
-			<a href="<?php echo esc_url( home_url( '/datenschutz/' ) ); ?>" target="_blank" rel="noopener">Datenschutz</a>
-			<a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a>
-		</div>
 	</div>
 </footer>
 <?php }
@@ -2146,10 +2139,10 @@ function fge_onboarding_render_intro( string $id ): void {
 		'indoor:intro-1' => [
 			'eyebrow' => 'Schritt 1 · Erzählt uns von eurem Indoor Golf',
 			'title'   => 'Macht eure Simulatoren zur <span class="ob-italic">Eventlocation</span> für Unternehmen.',
-			'lead'    => 'Firmenkunden kommen unter der Woche und tagsüber, genau dann, wenn Boxen sonst frei sind. In ein paar Schritten erfassen wir euer Indoor Golf, danach können Unternehmen euch für Indoor-Events anfragen. Zwischendurch speichern geht jederzeit.',
+			'lead'    => 'In ein paar Schritten ist euer Indoor Golf für Firmenevents anfragbar.',
 			'list'    => [ 'Standort und Kontakt', 'Hauptkontakt + euer Login fürs Partnerportal', 'Simulatoren, Räume und Formate', 'Öffnungszeiten, Preis-Prinzip &amp; Fotos' ],
 			'meta'    => 'Dauer ungefähr 10 Minuten · keine Verpflichtung · kostenlos',
-			'photo'   => $img( 'onboarding-abschlag.jpg' ),
+			'photo'   => $img( 'onboarding-indoor-lounge.jpg' ),
 		],
 		'indoor:intro-2' => [
 			'eyebrow' => 'Schritt 2 · Was ihr anbieten könnt',
