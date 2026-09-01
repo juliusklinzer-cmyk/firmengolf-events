@@ -96,8 +96,9 @@ function fge_onboarding_manifest( string $type = '' ): array {
 		// Abrechnungsdaten werden NICHT abgefragt (der Coach stellt uns Rechnung).
 		$slides = [
 			[ 'id' => 'intro-1',        'chapter' => 1, 'kind' => 'intro' ],
-			// „Wer meldet sich an?" (coach-kind) gestrichen (Julius, 01.09.): die
-			// Antwort wurde nirgends verwendet, reine Einstiegshürde.
+			// Einzel-Pro oder Schule ganz am Anfang (Julius, 01.09.): steuert die
+			// Gruppengrößen-Slide und später die Team-Verwaltung.
+			[ 'id' => 'coach-kind',     'chapter' => 1, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'coach-profile',  'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'coach-quali',    'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'coach-story',    'chapter' => 1, 'kind' => 'form' ],
@@ -1315,13 +1316,12 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 				: [];
 
 		case 'coach-capacity':
+			// Optional (Julius, 01.09.): überspringbar. Nur wenn beide gesetzt sind,
+			// muss Max >= Min sein.
 			$ccap = is_array( $post['fge_coach_cap'] ?? null ) ? $post['fge_coach_cap'] : [];
 			$cmin = absint( $ccap['min'] ?? 0 );
 			$cmax = absint( $ccap['max'] ?? 0 );
-			if ( $cmin < 1 || $cmax < 1 ) {
-				return [ 'fge_coach_cap' => 'Bitte gib Mindest- und Maximalteilnehmerzahl an.' ];
-			}
-			if ( $cmax < $cmin ) {
+			if ( $cmin > 0 && $cmax > 0 && $cmax < $cmin ) {
 				return [ 'fge_coach_cap' => 'Das Maximum muss mindestens so groß sein wie das Minimum.' ];
 			}
 			return [];
@@ -1693,44 +1693,11 @@ function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void 
  * The per-step "Weiter" submit stays inside each step's <form> (server-rendered PRG).
  */
 function fge_onboarding_render_footer( int $step, string $token ): void {
-	// Kapitel dynamisch aus dem Manifest (die Slide-Ordinale verschieben sich je
-	// Typ und bei bedingten Slides wie indoor-detail); Labels je Partner-Typ.
-	$chapter_labels = [
-		'course' => [ 1 => 'Dein Platz', 2 => 'Dein Angebot', 3 => 'Verfügbarkeit & Preis' ],
-		'indoor' => [ 1 => 'Eure Location', 2 => 'Euer Angebot', 3 => 'Rahmen & Preis' ],
-		'coach'  => [ 1 => 'Über dich', 2 => 'Dein Angebot', 3 => 'Rahmen & Preis' ],
-	];
-	$labels   = $chapter_labels[ fge_onboarding_current_type() ] ?? $chapter_labels['course'];
-	$chapters = [];
-	foreach ( fge_onboarding_manifest() as $ord => $slide ) {
-		if ( 'intro' === ( $slide['kind'] ?? 'form' ) ) {
-			continue;
-		}
-		$ch = (int) ( $slide['chapter'] ?? 1 );
-		if ( ! isset( $chapters[ $ch ] ) ) {
-			$chapters[ $ch ] = [ 'label' => $labels[ $ch ] ?? 'Kapitel ' . $ch, 'steps' => [] ];
-		}
-		$chapters[ $ch ]['steps'][] = $ord;
-	}
-	ksort( $chapters );
-	$segments    = [];
-	$active_label = '';
-	foreach ( $chapters as $c ) {
-		$total  = count( $c['steps'] );
-		$done   = 0;
-		$active = false;
-		foreach ( $c['steps'] as $s ) {
-			if ( $s < $step ) { $done++; }
-			elseif ( $s === $step ) { $active = true; }
-		}
-		$ratio = $total ? ( $active ? ( $done + 0.5 ) / $total : $done / $total ) : 0;
-		$ratio = max( 0, min( 1, $ratio ) );
-		$segments[] = [ 'label' => $c['label'], 'ratio' => $ratio, 'done' => $ratio >= 1, 'active' => $active ];
-		if ( $active ) { $active_label = $c['label']; }
-	}
-	if ( '' === $active_label ) {
-		foreach ( array_reverse( $segments ) as $seg ) { if ( $seg['done'] ) { $active_label = $seg['label']; break; } }
-	}
+	// EIN durchgehender Fortschrittsbalken statt drei Kapitel-Segmente
+	// (Julius, 01.09.): füllt sich linear über alle Schritte, das ist bei
+	// fortlaufenden Fragen logischer als springende Kapitel-Blöcke.
+	$total_slides = fge_onboarding_total_slides();
+	$progress     = max( 0.04, min( 1, $step / max( 1, $total_slides ) ) );
 
 	$kind      = fge_onboarding_slide( $step )['kind'] ?? 'form';
 	$back_step = $step - 1;
@@ -1748,17 +1715,9 @@ function fge_onboarding_render_footer( int $step, string $token ): void {
 	?>
 <footer class="ob-footer">
 	<div class="ob-foot-inner">
-		<div class="ob-prog" aria-label="Fortschritt">
-			<?php foreach ( $segments as $seg ) : ?>
-			<div class="ob-prog-seg<?php echo $seg['done'] ? ' done' : ''; echo $seg['active'] ? ' on' : ''; ?>">
-				<span class="ob-prog-bar"><span class="ob-prog-fill" style="width:<?php echo esc_attr( number_format( $seg['ratio'] * 100, 1, '.', '' ) ); ?>%"></span></span>
-				<span class="ob-prog-label"><?php echo esc_html( $seg['label'] ); ?></span>
-			</div>
-			<?php endforeach; ?>
+		<div class="ob-prog ob-prog--single" aria-label="Fortschritt">
+			<span class="ob-prog-bar"><span class="ob-prog-fill" style="width:<?php echo esc_attr( number_format( $progress * 100, 1, '.', '' ) ); ?>%"></span></span>
 		</div>
-		<?php if ( '' !== $active_label ) : ?>
-		<div class="ob-prog-count"><?php echo esc_html( $active_label ); ?></div>
-		<?php endif; ?>
 		<div class="ob-nav">
 			<?php if ( '' !== $back_url ) : ?>
 			<a class="ob-btn-text" href="<?php echo esc_url( $back_url ); ?>">Zurück</a>
@@ -3224,20 +3183,22 @@ function fge_indoor_hours_summary( array $hours ): string {
 // ── Formular A: Golflehrer-Slides ─────────────────────────────────────────────
 
 function fge_onboarding_render_coach_kind( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Wer meldet sich an?', 'Danach stellen wir nur die Fragen, die zu dir passen.' );
+	fge_onboarding_render_step_header( $step, 'Meldest du dich einzeln oder als Schule an?', 'Das entscheidet, wie wir gleich die Gruppengrößen erfassen. Eine Schule kann später im Portal weitere Lehrer einladen.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	$current = (string) ( $v['coach_kind'] ?? '' );
-	// Eigene Icons (Julius, 28.08.): Person, Haus, Golffahne.
 	$svg = static fn( string $paths ): string => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $paths . '</svg>';
 	$kind_icons = [
-		'solo'     => $svg( '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>' ),
-		'school'   => $svg( '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>' ),
-		'employed' => $svg( '<path d="M6 21V4"/><path d="M6 4l10 3-10 3"/><path d="M3 21h7"/>' ),
+		'solo'   => $svg( '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>' ),
+		'school' => $svg( '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>' ),
+	];
+	$kind_subs = [
+		'solo'   => 'Du unterrichtest selbst, meldest nur dein eigenes Profil an.',
+		'school' => 'Mehrere Lehrer unter einem Dach, die du nach und nach einladen kannst.',
 	];
 	?>
 	<div class="ob-cards ob-cards--stack">
 		<?php foreach ( fge_catalog_coach_kinds() as $id => $label ) :
-			fge_onboarding_card( 'radio', 'fge_coach_kind', (string) $id, (string) $label, ( $current === $id ), $kind_icons[ $id ] ?? '' );
+			fge_onboarding_card( 'radio', 'fge_coach_kind', (string) $id, (string) $label, ( $current === $id ), $kind_icons[ $id ] ?? '', (string) ( $kind_subs[ $id ] ?? '' ) );
 		endforeach; ?>
 	</div>
 	<?php fge_onboarding_error( $errors, 'fge_coach_kind' );
@@ -3513,16 +3474,34 @@ function fge_onboarding_stepper( string $name, string $id, int $val, int $min, i
 <?php }
 
 function fge_onboarding_render_coach_capacity( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Deine Gruppengrößen', 'Deine Standardwerte für alle Angebote, du musst sie nicht jedes Mal neu ausfüllen. Anpassen geht später jederzeit, pro Angebot im Partnerportal.' );
+	fge_onboarding_render_step_header( $step, 'Deine Gruppengrößen', 'Nur Standardwerte, du kannst sie pro Angebot im Portal anpassen. Keine Pflicht, du kannst den Schritt auch überspringen.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
-	$c        = is_array( $v['coach_cap'] ?? null ) ? $v['coach_cap'] : [];
-	$cap_min  = absint( $c['min'] ?? 0 ) ?: 4;
-	$cap_max  = absint( $c['max'] ?? 0 ) ?: 10;
-	$trainers = absint( $c['trainers'] ?? 0 ) ?: 1;
-	$per_tr   = absint( $c['per_trainer'] ?? 0 ) ?: 8;
-	$rental   = absint( $c['rental_persons'] ?? 0 );
+	$c         = is_array( $v['coach_cap'] ?? null ) ? $v['coach_cap'] : [];
+	$is_school = 'school' === (string) ( $v['coach_kind'] ?? '' );
+	$cap_min   = absint( $c['min'] ?? 0 ) ?: ( $is_school ? 2 : 4 );
+	$cap_max   = absint( $c['max'] ?? 0 ) ?: ( $is_school ? 12 : 10 );
+	$lehrer    = absint( $c['trainers'] ?? 0 ) ?: 2;
+	$per_l     = absint( $c['per_trainer'] ?? 0 ) ?: 6;
+	// Leihschläger: Vorschlag 12, aber KEIN Auto-Anpassen (Julius, 01.09.).
+	$rental = isset( $c['rental_persons'] ) ? absint( $c['rental_persons'] ) : 12;
 	fge_onboarding_error( $errors, 'fge_coach_cap' );
 	?>
+	<?php if ( $is_school ) : ?>
+	<div class="ob-field-row">
+		<div class="ob-field">
+			<label class="ob-field-label" for="fge_cc_lehrer">Anzahl Lehrer</label>
+			<?php fge_onboarding_stepper( 'fge_coach_cap[trainers]', 'fge_cc_lehrer', $lehrer, 1, 99, 'Lehrer' ); ?>
+		</div>
+		<div class="ob-field">
+			<label class="ob-field-label" for="fge_cc_per">Teilnehmer pro Lehrer</label>
+			<?php fge_onboarding_stepper( 'fge_coach_cap[per_trainer]', 'fge_cc_per', $per_l, 1, 99 ); ?>
+		</div>
+	</div>
+	<p class="ob-field-hint" id="fge-cc-auto" style="margin:4px 0 4px;"></p>
+	<?php else : ?>
+		<input type="hidden" name="fge_coach_cap[trainers]" value="1">
+		<input type="hidden" name="fge_coach_cap[per_trainer]" value="<?php echo esc_attr( (string) $cap_max ); ?>">
+	<?php endif; ?>
 	<div class="ob-field-row">
 		<div class="ob-field">
 			<label class="ob-field-label" for="fge_cc_min">Mindestteilnehmerzahl</label>
@@ -3533,27 +3512,12 @@ function fge_onboarding_render_coach_capacity( int $step, int $partner_id, strin
 			<?php fge_onboarding_stepper( 'fge_coach_cap[max]', 'fge_cc_max', $cap_max, 1, 999 ); ?>
 		</div>
 	</div>
-	<div class="ob-field-row">
-		<div class="ob-field">
-			<label class="ob-field-label" for="fge_cc_trainers">Wie viele Trainer sind bei euch beschäftigt?</label>
-			<?php fge_onboarding_stepper( 'fge_coach_cap[trainers]', 'fge_cc_trainers', $trainers, 1, 99, 'Trainer' ); ?>
-		</div>
-		<div class="ob-field">
-			<label class="ob-field-label" for="fge_cc_per">Richtwert Teilnehmer pro Trainer</label>
-			<?php fge_onboarding_stepper( 'fge_coach_cap[per_trainer]', 'fge_cc_per', $per_tr, 1, 99 ); ?>
-		</div>
-	</div>
-	<div class="ob-field full">
-		<span class="ob-field-hint" id="fge-cc-auto"></span>
-	</div>
 	<div class="ob-field">
-		<label class="ob-field-label" for="fge_cc_rental">Leihschläger für wie viele Personen? (optional)</label>
-		<span class="ob-field-hint">Können auch geteilt werden. 0 = keine Leihschläger.</span>
+		<label class="ob-field-label" for="fge_cc_rental">Leihschläger für wie viele Personen?</label>
+		<span class="ob-field-hint">Vorschlag 12, können auch geteilt werden. 0 = keine Leihschläger.</span>
 		<?php fge_onboarding_stepper( 'fge_coach_cap[rental_persons]', 'fge_cc_rental', $rental, 0, 99 ); ?>
 	</div>
 	<script>
-	/* Stepper-Klicks (Plus/Minus mit Clamp) + Auto-Maximum: Trainer mal
-	   Richtwert setzt die Maximalteilnehmerzahl (bleibt manuell anpassbar). */
 	(function () {
 		document.querySelectorAll('[data-ob-stepper]').forEach(function (st) {
 			var inp = st.querySelector('.rw-stepper-val');
@@ -3569,19 +3533,26 @@ function fge_onboarding_render_coach_capacity( int $step, int $partner_id, strin
 				});
 			});
 		});
-		var tr = document.getElementById('fge_cc_trainers');
+		// Schule: Lehrer × Teilnehmer pro Lehrer schlägt Min/Max vor. Nur bei
+		// Änderung von Lehrer/pro-Lehrer (nicht beim Laden), damit angepasste
+		// Werte erhalten bleiben.
+		var le = document.getElementById('fge_cc_lehrer');
 		var per = document.getElementById('fge_cc_per');
+		var min = document.getElementById('fge_cc_min');
 		var max = document.getElementById('fge_cc_max');
 		var auto = document.getElementById('fge-cc-auto');
-		function recalc(setMax) {
-			var t = parseInt(tr.value, 10) || 1, p = parseInt(per.value, 10) || 1;
-			if (setMax && max) { max.value = Math.min(999, t * p); }
-			if (auto) { auto.textContent = 'Mit ' + t + ' Trainer' + (t === 1 ? '' : 'n') + ' und ' + p + ' Teilnehmern pro Trainer sind bis zu ' + (t * p) + ' Teilnehmende möglich.'; }
+		if (le && per) {
+			function recalc(setVals) {
+				var l = parseInt(le.value, 10) || 1, p = parseInt(per.value, 10) || 1;
+				if (setVals) { if (max) max.value = Math.min(999, l * p); if (min) min.value = l; }
+				if (auto) auto.textContent = 'Mit ' + l + ' Lehrer' + (l === 1 ? '' : 'n') + ' und ' + p + ' Teilnehmern pro Lehrer sind bis zu ' + (l * p) + ' Teilnehmende möglich.';
+			}
+			[ le, per ].forEach(function (e) { e.addEventListener('change', function () { recalc(true); }); });
+			recalc(false);
 		}
-		[tr, per].forEach(function (el) { if (el) el.addEventListener('change', function () { recalc(true); }); });
-		recalc(false);
 	})();
 	</script>
+	<p class="ob-cc-skip"><a class="ob-linkbtn" href="<?php echo esc_url( fge_onboarding_step_url( $step + 1, $token ) ); ?>">Überspringen</a></p>
 	<?php
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
@@ -4237,11 +4208,14 @@ function fge_onboarding_review_blocks_coach( int $partner_id, array $v, callable
 	fge_onboarding_rev_block( 'Deine Formate', $edit( 'coach-formats' ), [ [ '', implode( ' · ', $cf_names ), true ] ] );
 
 	// ── Gruppengrößen ──
-	$cc = is_array( $v['coach_cap'] ?? null ) ? $v['coach_cap'] : [];
+	$cc       = is_array( $v['coach_cap'] ?? null ) ? $v['coach_cap'] : [];
 	$cap_rows = [
 		[ 'Gruppengröße', ( absint( $cc['min'] ?? 0 ) ?: '?' ) . ' bis ' . ( absint( $cc['max'] ?? 0 ) ?: '?' ) . ' Teilnehmende' ],
-		[ 'Trainer', ( absint( $cc['trainers'] ?? 0 ) ?: '?' ) . ' · Richtwert ' . ( absint( $cc['per_trainer'] ?? 0 ) ?: '?' ) . ' pro Trainer' ],
 	];
+	// Lehrer-Zeile nur bei der Schule (Julius, 01.09.).
+	if ( 'school' === (string) ( $v['coach_kind'] ?? '' ) ) {
+		$cap_rows[] = [ 'Lehrer', ( absint( $cc['trainers'] ?? 0 ) ?: '?' ) . ' · ' . ( absint( $cc['per_trainer'] ?? 0 ) ?: '?' ) . ' Teilnehmer pro Lehrer' ];
+	}
 	if ( absint( $cc['rental_persons'] ?? 0 ) > 0 ) {
 		$cap_rows[] = [ 'Leihschläger', 'Für bis zu ' . absint( $cc['rental_persons'] ) . ' Personen' ];
 	}

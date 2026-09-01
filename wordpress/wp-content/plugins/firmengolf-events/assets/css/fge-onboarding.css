@@ -467,6 +467,9 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
 .ob-foot-inner { max-width: none; margin: 0; padding: 0; }
 .ob-prog { display: flex; gap: 8px; padding: 0; }
 .ob-prog-seg { flex: 1; min-width: 0; }
+/* Durchgehender Einzel-Balken (Julius, 01.09.): ein Balken, füllt sich linear. */
+.ob-prog--single { display: block; }
+.ob-prog--single .ob-prog-bar { width: 100%; }
 .ob-prog-bar {
   height: 5px; border-radius: 0;
   background: var(--ink-100); overflow: hidden; display: block;
@@ -1577,3 +1580,17 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 /* Zweispaltige Karten-Variante (kompakte Auswahllisten wie Coach-Ausbildung). */
 .ob-shell .ob-cards--2col { grid-template-columns: repeat(2, 1fr); }
 @media (max-width: 560px) { .ob-shell .ob-cards--2col { grid-template-columns: 1fr; } }
+
+/* ── Kompakte, rahmenlose Stepper im Onboarding (Julius, 01.09.) ──────────────
+   Kein umschließender Pillen-Rahmen, schlanke Zahl, dezente +/- Kreise. */
+.ob-shell .rw-stepper { border: 0; background: transparent; padding: 0; gap: 4px; width: max-content; }
+.ob-shell .rw-stepper-mid { min-width: 0; }
+.ob-shell .rw-step-btn {
+  width: 38px; height: 38px; border: 0; background: var(--paper-200); color: var(--ink-900);
+}
+.ob-shell .rw-step-btn:hover { background: var(--paper-300); }
+.ob-shell .rw-step-btn:active { background: var(--fairway-600); color: var(--paper-50); }
+.ob-shell .rw-stepper-val { width: 54px; }
+
+/* Überspringen-Link unter optionalen Slides (z. B. Gruppengrößen). */
+.ob-cc-skip { text-align: center; margin-top: 16px; }

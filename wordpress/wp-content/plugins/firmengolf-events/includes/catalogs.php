@@ -330,10 +330,11 @@ function fge_catalog_indoor_formats(): array {
  * @return array<string,string> id => Label
  */
 function fge_catalog_coach_kinds(): array {
+	// Auf zwei reduziert (Julius, 01.09.): steuert die Gruppengrößen-Logik und
+	// später das Team (eine Schule darf mehrere Lehrer einladen, ein Einzel-Pro nicht).
 	return [
-		'solo'     => 'Einzelner oder selbstständiger Golflehrer',
-		'school'   => 'Golfschule oder Pro Team',
-		'employed' => 'Golflehrer fest angestellt bei einem Golfclub',
+		'solo'   => 'Einzelner Golflehrer',
+		'school' => 'Golfschule mit mehreren Lehrern',
 	];
 }
 
