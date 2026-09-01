@@ -2628,7 +2628,7 @@ function fge_onboarding_render_step_5( int $step, int $partner_id, string $token
 	$role_buttons = [
 		'course' => [ 'Gastronom' => 'Gastronom hinzufügen', 'Golfschule' => 'Golfschule hinzufügen', 'Shuttle-Unternehmen' => 'Shuttle-Unternehmen hinzufügen' ],
 		'indoor' => [ 'Golflehrer' => 'Golflehrer hinzufügen', 'Gastronom' => 'Gastronom hinzufügen', 'Shuttle-Unternehmen' => 'Shuttle-Unternehmen hinzufügen' ],
-		'coach'  => [ 'Golfplatz' => 'Golfplatz hinzufügen', 'Gastronom' => 'Gastronom hinzufügen' ],
+		'coach'  => [ 'Golfplatz' => 'Golfplatz Ansprechpartner hinzufügen', 'Gastronom' => 'Gastronom hinzufügen' ],
 	];
 	$type_btns = $role_buttons[ fge_onboarding_current_type() ] ?? $role_buttons['course'];
 	?>
