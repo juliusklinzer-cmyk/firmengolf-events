@@ -16,7 +16,10 @@
 .ob-shell input, .ob-shell textarea, .ob-shell select { font: inherit; color: inherit; margin: 0; }
 .ob-shell a { color: inherit; text-decoration: none; cursor: pointer; }
 .ob-shell h1, .ob-shell h2, .ob-shell h3, .ob-shell p, .ob-shell ul, .ob-shell li, .ob-shell figure { margin: 0; padding: 0; }
-.ob-italic { font-family: var(--font-serif); font-style: italic; font-weight: 400; color: var(--fairway-700); }
+/* Akzentwort in der Wizard-Überschrift: wie im Startseiten-Hero die Display-
+   Schrift, aufrecht (nicht mehr kursiv-serif), nur über die Marken-Farbe
+   abgesetzt (Julius, 01.09.). Klassenname bleibt aus Kompatibilität. */
+.ob-italic { font-family: var(--font-display); font-style: normal; font-weight: 500; color: var(--fairway-700); }
 .ob-mono { font-family: var(--font-mono); }
 
 .ob-shell {
