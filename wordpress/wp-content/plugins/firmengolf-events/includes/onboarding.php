@@ -2141,7 +2141,7 @@ function fge_onboarding_render_intro( string $id ): void {
 			'title'   => 'Macht eure Simulatoren zur <span class="ob-italic">Eventlocation</span> für Unternehmen.',
 			'lead'    => 'In ein paar Schritten ist euer Indoor Golf für Firmenevents anfragbar.',
 			'list'    => [ 'Standort und Kontakt', 'Hauptkontakt + euer Login fürs Partnerportal', 'Simulatoren, Räume und Formate', 'Öffnungszeiten, Preis-Prinzip &amp; Fotos' ],
-			'meta'     => 'Dauer ungefähr 10 Minuten · keine Verpflichtung · kostenlos',
+			'meta'     => 'Dauer ungefähr 10 Minuten · kostenlos',
 			'photo'    => $img( 'onboarding-indoor-lounge.jpg' ),
 			'portrait' => true,
 		],

@@ -19,7 +19,7 @@
 /* Akzentwort in der Wizard-Überschrift: wie im Startseiten-Hero die Display-
    Schrift, aufrecht (nicht mehr kursiv-serif), nur über die Marken-Farbe
    abgesetzt (Julius, 01.09.). Klassenname bleibt aus Kompatibilität. */
-.ob-italic { font-family: var(--font-display); font-style: normal; font-weight: 500; color: var(--fairway-700); }
+.ob-italic { font-family: var(--font-display); font-style: normal; font-weight: 700; color: var(--fairway-700); }
 .ob-mono { font-family: var(--font-mono); }
 
 .ob-shell {
