@@ -67,6 +67,7 @@ function fge_onboarding_manifest( string $type = '' ): array {
 			[ 'id' => 'intro-1',        'chapter' => 1, 'kind' => 'intro' ],
 			[ 'id' => 'indoor-kind',    'chapter' => 1, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'basics',         'chapter' => 1, 'kind' => 'form' ],
+			[ 'id' => 'beschreibung',   'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'location',       'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'arrival',        'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'main',           'chapter' => 1, 'kind' => 'form' ],
@@ -95,7 +96,8 @@ function fge_onboarding_manifest( string $type = '' ): array {
 		// Abrechnungsdaten werden NICHT abgefragt (der Coach stellt uns Rechnung).
 		$slides = [
 			[ 'id' => 'intro-1',        'chapter' => 1, 'kind' => 'intro' ],
-			[ 'id' => 'coach-kind',     'chapter' => 1, 'kind' => 'form', 'wide' => true ],
+			// „Wer meldet sich an?" (coach-kind) gestrichen (Julius, 01.09.): die
+			// Antwort wurde nirgends verwendet, reine Einstiegshürde.
 			[ 'id' => 'coach-profile',  'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'coach-story',    'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'location',       'chapter' => 1, 'kind' => 'form', 'wide' => true ],
@@ -111,8 +113,10 @@ function fge_onboarding_manifest( string $type = '' ): array {
 	} else {
 		$slides = [
 			[ 'id' => 'intro-1',  'chapter' => 1, 'kind' => 'intro' ],
-			[ 'id' => 'golftype', 'chapter' => 1, 'kind' => 'form', 'wide' => true ],
-			[ 'id' => 'basics',   'chapter' => 1, 'kind' => 'form' ],
+			// Platztyp (golftype) in die basics-Slide gebündelt (Julius, 01.09.):
+			// steuert keine Folgefragen, gehört zu den Stammdaten des Platzes.
+			[ 'id' => 'basics',       'chapter' => 1, 'kind' => 'form' ],
+			[ 'id' => 'beschreibung', 'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'location', 'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'arrival',  'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'main',     'chapter' => 1, 'kind' => 'form' ],
@@ -475,11 +479,18 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'basics':
-			update_post_meta( $partner_id, '_fge_public_golfclub_name',    $s( 'fge_public_golfclub_name' ) );
-			update_post_meta( $partner_id, '_fge_website_url',             $su( 'fge_website_url' ) );
-			update_post_meta( $partner_id, '_fge_public_short_description', $sa( 'fge_public_short_description' ) );
+			update_post_meta( $partner_id, '_fge_public_golfclub_name', $s( 'fge_public_golfclub_name' ) );
+			update_post_meta( $partner_id, '_fge_website_url',          $su( 'fge_website_url' ) );
+			// Platztyp hier gebündelt (nur Golfplatz sendet das Feld).
+			if ( isset( $post['fge_golf_type'] ) ) {
+				update_post_meta( $partner_id, '_fge_golf_type', $san_select( 'fge_golf_type', array_keys( fge_catalog_golf_types() ) ) );
+			}
 			// Sync post title to public name.
 			wp_update_post( [ 'ID' => $partner_id, 'post_title' => $s( 'fge_public_golfclub_name' ) ] );
+			break;
+
+		case 'beschreibung':
+			update_post_meta( $partner_id, '_fge_public_short_description', $sa( 'fge_public_short_description' ) );
 			break;
 
 		case 'location':
@@ -1085,10 +1096,16 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 				: [ 'fge_golf_type' => 'Bitte wähle aus, was dein Golfangebot am besten beschreibt.' ];
 
 		case 'basics':
-			return fge_onboarding_validate(
+			$errors = fge_onboarding_validate(
 				[ 'fge_public_golfclub_name' => $s( 'fge_public_golfclub_name' ) ],
 				[ 'fge_public_golfclub_name' => 'Öffentlicher Anzeigename' ]
 			);
+			// Platztyp beim Golfplatz Pflicht (hier gebündelt, Julius 01.09.).
+			if ( 'course' === fge_onboarding_current_type()
+				&& ! in_array( $s( 'fge_golf_type' ), array_keys( fge_catalog_golf_types() ), true ) ) {
+				$errors['fge_golf_type'] = 'Bitte wähle aus, was dein Golfangebot am besten beschreibt.';
+			}
+			return $errors;
 
 		case 'location':
 			$errors = fge_onboarding_validate(
@@ -1429,6 +1446,7 @@ function fge_onboarding_render_slide_form( string $id, int $step, int $partner_i
 	switch ( $id ) {
 		case 'golftype': fge_onboarding_render_golftype( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'basics':   fge_onboarding_render_basics( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'beschreibung': fge_onboarding_render_beschreibung( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'location': fge_onboarding_render_location( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'arrival':  fge_onboarding_render_arrival( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'main':     fge_onboarding_render_step_4( $step, $partner_id, $token, $vals, $errors ); break;
@@ -2264,8 +2282,28 @@ function fge_onboarding_render_basics( int $step, int $partner_id, string $token
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', '', $v['public_golfclub_name'] ?? '', 'text', true, $is_indoor ? 'z. B. Ruff Golf München oder Eisen 7 Indoor Golf' : 'z. B. GC Augusta National', $errors );
-	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Öffentliche Kurzbeschreibung', $v['public_short_description'] ?? '', $is_indoor ? 'z. B. 4 Trackman-Boxen mitten in der Stadt, Bar und Lounge, perfekt für After-Work und Wintertermine…' : 'z. B. 18-Loch-Anlage am Stadtrand, gemütliche Clubhaus-Terrasse, Driving Range mit 30 Plätzen…', '2 bis 3 Sätze. Du kannst das später noch ausbauen.' );
+	// Platztyp beim Golfplatz hier gebündelt (Julius, 01.09.): kompaktes Dropdown
+	// statt eigener Kachel-Slide.
+	if ( 'course' === fge_onboarding_current_type() ) {
+		fge_onboarding_select( 'fge_golf_type', 'fge_golf_type', 'Platztyp', (string) ( $v['golf_type'] ?? '' ), fge_catalog_golf_types(), true, $errors );
+	}
+	// Kurzbeschreibung lebt jetzt in einer eigenen Slide (Julius, 01.09.: kleine
+	// Schritte, kein Overload) — hier nur die kompakten Stammdaten.
 	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website', $v['website_url'] ?? '', 'url', false, 'https://…' );
+	echo '</form>';
+}
+
+/** Eigene kleine Slide für die öffentliche Kurzbeschreibung (aus basics ausgelagert). */
+function fge_onboarding_render_beschreibung( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	$is_indoor = 'indoor' === fge_onboarding_current_type();
+	fge_onboarding_render_step_header(
+		$step,
+		$is_indoor ? 'Beschreibt euer Indoor Golf in ein paar Sätzen.' : 'Beschreibt euren Platz in ein paar Sätzen.',
+		'Diese Kurzbeschreibung erscheint öffentlich auf eurem Partnerprofil. Du kannst sie später jederzeit ausbauen.'
+	);
+	fge_onboarding_form_open( $step, $partner_id, $token );
+	fge_onboarding_textarea( 'fge_public_short_description', 'fge_public_short_description', 'Öffentliche Kurzbeschreibung', $v['public_short_description'] ?? '', $is_indoor ? 'z. B. 4 Trackman-Boxen mitten in der Stadt, Bar und Lounge, perfekt für After-Work und Wintertermine…' : 'z. B. 18-Loch-Anlage am Stadtrand, gemütliche Clubhaus-Terrasse, Driving Range mit 30 Plätzen…', '2 bis 3 Sätze reichen.' );
+	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
 

@@ -236,21 +236,20 @@ function fge_catalog_indoor_features(): array {
  * @return array<string,string> id => Label
  */
 function fge_catalog_indoor_kinds(): array {
-	// Drei klar differenzierte Typen (Julius, 28.08.): Kernfrage ist
-	// „professioneller Ganzjahresbetrieb oder kleine Box auf dem Golfplatz?".
+	// Auf die zwei wesentlichen Pole gebrochen (Julius, 01.09.): professioneller
+	// Ganzjahresbetrieb oder Simulator auf der Golfanlage. Entertainment-Anlagen
+	// zählen zum eigenständigen Betrieb (lounge).
 	return [
 		'lounge' => 'Indoor Golf Lounge oder Studio',
 		'club'   => 'Simulator auf einem Golfplatz',
-		'fun'    => 'Freizeit- und Entertainment-Anlage',
 	];
 }
 
 /** Erklärzeilen zu den Anlagentypen (Kachel-Untertitel). @return array<string,string> */
 function fge_catalog_indoor_kind_subs(): array {
 	return [
-		'lounge' => 'Eigenständiger Indoor-Golf-Betrieb, ganzjährig geöffnet, mehrere Bays, oft mit Bar und Gastronomie.',
+		'lounge' => 'Eigenständiger, ganzjährig geöffneter Indoor-Golf-Betrieb, oft mit Bar, Gastronomie oder weiteren Aktivitäten.',
 		'club'   => 'Ein bis zwei Simulatoren auf der Golfanlage, vor allem von Mitgliedern genutzt.',
-		'fun'    => 'Simulatoren plus weitere Aktivitäten, z. B. Minigolf oder Tracking-Range.',
 	];
 }
 
