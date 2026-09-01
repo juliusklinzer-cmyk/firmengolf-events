@@ -3490,15 +3490,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 							<input class="fg-form-input" type="text" id="fge_city" name="fge_city" value="<?php echo esc_attr( $m( 'city' ) ); ?>">
 						</div>
 					</div>
-					<div class="fg-form-row">
-						<label class="fg-form-label">Was bietet die Anlage für deine Kurse und größere Eventmodule?</label>
-						<?php $sel_use = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_coach_venue_use', true ) ); ?>
-						<div class="fp-check-grid">
-							<?php foreach ( fge_catalog_coach_venue_use() as $uid => $ul ) : ?>
-								<label class="fp-check"><input type="checkbox" name="fge_coach_venue_use[]" value="<?php echo esc_attr( $uid ); ?>" <?php checked( in_array( (string) $uid, $sel_use, true ) ); ?>> <?php echo esc_html( $ul ); ?></label>
-							<?php endforeach; ?>
-						</div>
-					</div>
+					<?php /* Ausstattungs-Liste des Platzes gestrichen (Julius, 01.09.): Pin + Name reichen. */ ?>
 					<div class="fg-form-row">
 						<label class="fg-form-label">Weitere Golfplätze für deinen Unterricht?</label>
 						<?php $pv_more = array_filter( array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_coach_more_venues', true ) ) ); ?>

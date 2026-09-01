@@ -755,7 +755,7 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			// Rolle, Fees, mobiles Angebot sind gestrichen (Julius, 28.08.);
 			// Adresse und Karten-Pin laufen über den location-Case.
 			update_post_meta( $partner_id, '_fge_coach_venue_name', $s( 'fge_coach_venue_name' ) );
-			update_post_meta( $partner_id, '_fge_coach_venue_use', $san_group( 'fge_coach_venue_use', array_keys( fge_catalog_coach_venue_use() ) ) );
+			// Ausstattungs-Liste (venue_use) gestrichen (Julius, 01.09.): Pin + Name reichen.
 			$more_v = array_values( array_filter(
 				array_map( static fn( $x ) => sanitize_text_field( wp_unslash( (string) $x ) ), (array) ( $post['fge_coach_more_venues'] ?? [] ) ),
 				static fn( $x ) => '' !== trim( $x )
@@ -2454,23 +2454,9 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 		fge_onboarding_textarea( 'fge_indoor_entrance_note', 'fge_indoor_entrance_note', 'Hinweis zum Eingang (optional)', (string) ( $v['indoor_entrance_note'] ?? '' ), 'z. B. Eingang auf der Rückseite des Gebäudes, beim roten Tor klingeln' );
 	endif;
 
-	if ( $is_coach ) :
-		// Was die Anlage für Kurse und größere Eventmodule bietet — globale
-		// Icon-Karten (ids = Infra-/Golftyp-ids, Julius 28.08.).
-		$sel_use = is_array( $v['coach_venue_use'] ?? null ) ? $v['coach_venue_use'] : [];
-		?>
-		<div class="ob-field full">
-			<label class="ob-field-label">Was bietet die Anlage für deine Kurse und größere Eventmodule?</label>
-			<span class="ob-field-hint">Wähl aus, was dir dort zur Verfügung steht. Daran sehen Firmen, welche Formate bei dir möglich sind.</span>
-			<div class="ob-cards">
-				<?php foreach ( fge_catalog_coach_venue_use() as $uid => $ul ) :
-					fge_onboarding_card( 'checkbox', 'fge_coach_venue_use[]', (string) $uid, (string) $ul, in_array( $uid, $sel_use, true ) );
-				endforeach; ?>
-			</div>
-		</div>
-		<?php
-		fge_onboarding_cards_script();
-	endif;
+	// Ausstattungs-Liste des Platzes beim Coach gestrichen (Julius, 01.09.):
+	// Pin + Name reichen. Die Ausstattung pflegt der Platz selbst, sobald er
+	// eigener Partner am selben Standort ist (Doppelpflege vermeiden).
 	echo '</form>';
 }
 
@@ -4221,18 +4207,10 @@ function fge_onboarding_review_blocks_coach( int $partner_id, array $v, callable
 	] );
 
 	// ── Anlage & Standort (kombinierte location-Slide) ──
-	$use_all   = fge_catalog_coach_venue_use();
-	$use_names = [];
-	foreach ( (array) ( $v['coach_venue_use'] ?? [] ) as $uid ) {
-		if ( isset( $use_all[ $uid ] ) ) {
-			$use_names[] = $use_all[ $uid ];
-		}
-	}
 	$venue_rows = [
 		[ 'Anlage', (string) ( $v['coach_venue_name'] ?? '' ) ],
 		[ 'Adresse', trim( (string) ( $v['street'] ?? '' ) . ' ' . (string) ( $v['house_number'] ?? '' ) . ', ' . (string) ( $v['postal_code'] ?? '' ) . ' ' . (string) ( $v['city'] ?? '' ), ' ,' ) ],
 		[ 'Karten-Pin', ( '' !== (string) ( $v['latitude'] ?? '' ) && '' !== (string) ( $v['longitude'] ?? '' ) ) ? 'Gesetzt ✓' : 'Noch nicht gesetzt' ],
-		[ 'Die Anlage bietet', implode( ' · ', $use_names ), true ],
 	];
 	$more_v = (array) ( $v['coach_more_venues'] ?? [] );
 	if ( ! empty( $more_v ) ) {
