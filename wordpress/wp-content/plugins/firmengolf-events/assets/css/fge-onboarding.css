@@ -1307,7 +1307,7 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
   transform: scale(1.05);
 }
-.ob-card-flag { font-size: 20px; line-height: 1; flex: none; }
+.ob-card-flag { font-size: 20px; line-height: 1; flex: none; display: inline-flex; align-items: center; color: var(--ink-500); }
 /* Weitere-Golfplätze-Zeilen: Feld + Löschen-Icon, Plus-Button als Outline-Pille. */
 .ob-venue-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
 .ob-venue-row .ob-input { flex: 1; margin: 0; }
@@ -1554,3 +1554,26 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
   /* Gestapelt querformatiger, damit alle drei ohne langes Scrollen sichtbar sind. */
   .ob-shell .ob-typewahl .iv-tile { aspect-ratio: 16 / 9; }
 }
+
+/* ── Aufklappbares Info-Feld (z. B. hinter der Gesundheits-Zertifizierung) ── */
+.ob-info-details { margin-top: 12px; border: 1px solid var(--ink-200); border-radius: var(--radius-md); background: var(--paper-50); }
+.ob-shell .ob-info-details > summary {
+  cursor: pointer; list-style: none; padding: 12px 16px;
+  font-size: 14px; font-weight: 600; color: var(--fairway-700);
+  display: flex; align-items: center; gap: 8px;
+}
+.ob-info-details > summary::-webkit-details-marker { display: none; }
+.ob-info-details > summary::before {
+  content: "?"; flex: none;
+  width: 20px; height: 20px; border-radius: 999px;
+  background: var(--fairway-700); color: var(--paper-50);
+  display: inline-grid; place-items: center; font-size: 12px; font-weight: 700;
+}
+.ob-info-details[open] > summary { border-bottom: 1px solid var(--ink-100); }
+.ob-info-details-body { padding: 12px 16px; font-size: 13.5px; line-height: 1.6; color: var(--ink-700); }
+.ob-info-details-body p { margin: 0 0 10px; }
+.ob-info-details-body p:last-child { margin-bottom: 0; }
+
+/* Zweispaltige Karten-Variante (kompakte Auswahllisten wie Coach-Ausbildung). */
+.ob-shell .ob-cards--2col { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 560px) { .ob-shell .ob-cards--2col { grid-template-columns: 1fr; } }

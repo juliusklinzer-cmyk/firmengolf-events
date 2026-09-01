@@ -99,6 +99,7 @@ function fge_onboarding_manifest( string $type = '' ): array {
 			// „Wer meldet sich an?" (coach-kind) gestrichen (Julius, 01.09.): die
 			// Antwort wurde nirgends verwendet, reine Einstiegshürde.
 			[ 'id' => 'coach-profile',  'chapter' => 1, 'kind' => 'form' ],
+			[ 'id' => 'coach-quali',    'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'coach-story',    'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'location',       'chapter' => 1, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'main',           'chapter' => 1, 'kind' => 'form' ],
@@ -724,22 +725,27 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'coach-profile':
-			// Schlanker Über-dich-Schritt (Julius, 28.08.): Name, Titel,
-			// Ausbildung (Mehrfachauswahl), Sprachen. Rest in coach-story.
+			// Über dich (Julius, 01.09.): Name, Titel, Golfschule (optional),
+			// Website, Sprachen. Ausbildung + Zertifizierung in coach-quali.
 			update_post_meta( $partner_id, '_fge_coach_first', $s( 'fge_coach_first' ) );
 			update_post_meta( $partner_id, '_fge_coach_last', $s( 'fge_coach_last' ) );
 			update_post_meta( $partner_id, '_fge_public_golfclub_name', $s( 'fge_public_golfclub_name' ) );
 			wp_update_post( [ 'ID' => $partner_id, 'post_title' => trim( $s( 'fge_coach_first' ) . ' ' . $s( 'fge_coach_last' ) ) ?: $s( 'fge_public_golfclub_name' ) ] );
-			update_post_meta( $partner_id, '_fge_coach_quali', $san_group( 'fge_coach_quali', array_keys( fge_catalog_coach_quali() ) ) );
-			update_post_meta( $partner_id, '_fge_coach_quali_other', $s( 'fge_coach_quali_other' ) );
+			update_post_meta( $partner_id, '_fge_coach_school', $s( 'fge_coach_school' ) );
+			update_post_meta( $partner_id, '_fge_website_url', $su( 'fge_website_url' ) );
 			update_post_meta( $partner_id, '_fge_coach_langs', $san_group( 'fge_coach_langs', [ 'de', 'en', 'fr', 'it', 'es', 'other' ] ) );
 			update_post_meta( $partner_id, '_fge_coach_langs_other', $s( 'fge_coach_langs_other' ) );
+			break;
+
+		case 'coach-quali':
+			update_post_meta( $partner_id, '_fge_coach_quali', $san_group( 'fge_coach_quali', array_keys( fge_catalog_coach_quali() ) ) );
+			update_post_meta( $partner_id, '_fge_coach_quali_other', $s( 'fge_coach_quali_other' ) );
+			update_post_meta( $partner_id, '_fge_coach_health_cert', '1' === (string) ( $post['fge_coach_health_cert'] ?? '' ) ? '1' : '' );
 			break;
 
 		case 'coach-story':
 			update_post_meta( $partner_id, '_fge_public_short_description', $sa( 'fge_public_short_description' ) );
 			update_post_meta( $partner_id, '_fge_coach_about', $sa( 'fge_coach_about' ) );
-			update_post_meta( $partner_id, '_fge_website_url', $su( 'fge_website_url' ) );
 			update_post_meta( $partner_id, '_fge_coach_years', $san_select( 'fge_coach_years', [ 'u3', '3-5', '6-10', '10plus' ] ) );
 			break;
 
@@ -1461,6 +1467,7 @@ function fge_onboarding_render_slide_form( string $id, int $step, int $partner_i
 		case 'indoor-hours':   fge_onboarding_render_indoor_hours( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-kind':     fge_onboarding_render_coach_kind( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-profile':  fge_onboarding_render_coach_profile( $step, $partner_id, $token, $vals, $errors ); break;
+		case 'coach-quali':    fge_onboarding_render_coach_quali( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-story':    fge_onboarding_render_coach_story( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-venue':    fge_onboarding_render_coach_venue( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-authority': fge_onboarding_render_coach_authority( $step, $partner_id, $token, $vals, $errors ); break;
@@ -1583,6 +1590,8 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'coach_last'                    => (string) $m( 'coach_last' ),
 		'coach_quali'                   => is_array( $m( 'coach_quali' ) ) ? $m( 'coach_quali' ) : array_filter( [ (string) $m( 'coach_quali' ) ] ),
 		'coach_quali_other'             => (string) $m( 'coach_quali_other' ),
+		'coach_health_cert'             => (string) $m( 'coach_health_cert' ),
+		'coach_school'                  => (string) $m( 'coach_school' ),
 		'coach_years'                   => (string) $m( 'coach_years' ),
 		'coach_langs'                   => is_array( $m( 'coach_langs' ) ) ? $m( 'coach_langs' ) : [],
 		'coach_langs_other'             => (string) $m( 'coach_langs_other' ),
@@ -3248,7 +3257,7 @@ function fge_onboarding_render_coach_kind( int $step, int $partner_id, string $t
 }
 
 function fge_onboarding_render_coach_profile( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Über dich', 'Name, Ausbildung und Sprachen, danach geht es direkt weiter. Die Ausbildung ist keine Voraussetzung, sie wird nur klein im Profil angezeigt.' );
+	fge_onboarding_render_step_header( $step, 'Über dich', 'Name, Titel und Sprachen, danach geht es direkt weiter.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	?>
 	<div class="ob-field-row">
@@ -3257,12 +3266,85 @@ function fge_onboarding_render_coach_profile( int $step, int $partner_id, string
 	</div>
 	<?php
 	fge_onboarding_input( 'fge_public_golfclub_name', 'fge_public_golfclub_name', 'Öffentlicher Titel', (string) ( $v['public_golfclub_name'] ?? '' ), 'text', true, 'z. B. PGA Golf Professional oder Head Pro', $errors, 'Steht auf deinem Profil unter deinem Namen.' );
+	?>
+	<div class="ob-field-row">
+		<?php
+		// Golfschule/Team optional (Julius, 01.09.): heute ein Name auf der
+		// Visitenkarte, später die Brücke zur verknüpften Golfschule am selben Standort.
+		fge_onboarding_input( 'fge_coach_school', 'fge_coach_school', 'Golfschule oder Team (optional)', (string) ( $v['coach_school'] ?? '' ), 'text', false, 'z. B. Golfschule München' );
+		fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website (optional)', (string) ( $v['website_url'] ?? '' ), 'url', false, 'https://…' );
+		?>
+	</div>
+	<?php
+	$sel_langs = is_array( $v['coach_langs'] ?? null ) ? $v['coach_langs'] : [];
+	?>
+	<div class="ob-field full<?php echo isset( $errors['fge_coach_langs'] ) ? ' ob-field--error' : ''; ?>">
+		<label class="ob-field-label">Sprachen <span class="ob-required">*</span></label>
+		<span class="ob-field-hint">Wichtig für Unternehmen mit mehrsprachigen Teams.</span>
+		<div class="ob-cards">
+			<?php foreach ( [ 'de' => 'Deutsch', 'en' => 'Englisch', 'fr' => 'Französisch', 'it' => 'Italienisch', 'es' => 'Spanisch', 'other' => 'Weitere' ] as $lid => $ll ) :
+				// Echte SVG-Flaggen statt Emoji (Julius, 01.09.): Emoji-Flaggen
+				// werden auf Windows systembedingt nicht angezeigt.
+				fge_onboarding_card( 'checkbox', 'fge_coach_langs[]', $lid, $ll, in_array( $lid, $sel_langs, true ), '<span class="ob-card-flag">' . fge_flag_svg( $lid ) . '</span>' );
+			endforeach; ?>
+		</div>
+		<?php fge_onboarding_error( $errors, 'fge_coach_langs' ); ?>
+	</div>
+	<div id="fge-langs-other-wrap"<?php echo in_array( 'other', $sel_langs, true ) ? '' : ' hidden'; ?>>
+		<?php fge_onboarding_input( 'fge_coach_langs_other', 'fge_coach_langs_other', 'Welche weiteren Sprachen?', (string) ( $v['coach_langs_other'] ?? '' ), 'text', false, '' ); ?>
+	</div>
+	<script>
+	/* „Weitere Sprachen" klappt sein Freitextfeld sofort auf. */
+	(function () {
+		function tgl() {
+			var lo = document.querySelector('input[name="fge_coach_langs[]"][value="other"]');
+			var lw = document.getElementById('fge-langs-other-wrap');
+			if (lw) { lw.hidden = !(lo && lo.checked); }
+		}
+		document.addEventListener('change', function (e) {
+			if (e.target && e.target.name === 'fge_coach_langs[]') { tgl(); }
+		});
+		tgl();
+	})();
+	</script>
+	<?php
+	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
+	echo '</form>';
+}
+
+/**
+ * Kleine Länder-Flagge als inline-SVG (rendert überall, anders als Emoji-Flaggen,
+ * die Windows nicht anzeigt). 20x14, abgerundet.
+ */
+function fge_flag_svg( string $code ): string {
+	$a = 'width="22" height="15" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg" style="border-radius:2px;display:block;box-shadow:0 0 0 1px rgba(0,0,0,.08)"';
+	switch ( $code ) {
+		case 'de':
+			return '<svg ' . $a . '><rect width="20" height="14" fill="#000"/><rect y="4.67" width="20" height="4.67" fill="#DD0000"/><rect y="9.34" width="20" height="4.66" fill="#FFCE00"/></svg>';
+		case 'fr':
+			return '<svg ' . $a . '><rect width="20" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#0055A4"/><rect x="13.33" width="6.67" height="14" fill="#EF4135"/></svg>';
+		case 'it':
+			return '<svg ' . $a . '><rect width="20" height="14" fill="#fff"/><rect width="6.67" height="14" fill="#009246"/><rect x="13.33" width="6.67" height="14" fill="#CE2B37"/></svg>';
+		case 'es':
+			return '<svg ' . $a . '><rect width="20" height="14" fill="#AA151B"/><rect y="3.5" width="20" height="7" fill="#F1BF00"/></svg>';
+		case 'en':
+			// Vereinfachter Union Jack, bei dieser Größe klar als UK erkennbar.
+			return '<svg ' . $a . '><rect width="20" height="14" fill="#012169"/><path d="M0 0l20 14M20 0L0 14" stroke="#fff" stroke-width="2.8"/><path d="M0 0l20 14M20 0L0 14" stroke="#C8102E" stroke-width="1.4"/><path d="M10 0v14M0 7h20" stroke="#fff" stroke-width="4.4"/><path d="M10 0v14M0 7h20" stroke="#C8102E" stroke-width="2.4"/></svg>';
+		default:
+			return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="display:block"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></svg>';
+	}
+}
+
+/** Qualifikation: Ausbildung (Mehrfachauswahl) + Zertifizierung Gesundheitsförderung. */
+function fge_onboarding_render_coach_quali( int $step, int $partner_id, string $token, array $v, array $errors ): void {
+	fge_onboarding_render_step_header( $step, 'Deine Qualifikation', 'Ausbildung und Zertifizierungen. Alles optional, es wird nur klein im Profil angezeigt und ist keine Voraussetzung.' );
+	fge_onboarding_form_open( $step, $partner_id, $token );
 	$sel_quali = is_array( $v['coach_quali'] ?? null ) ? array_map( 'strval', $v['coach_quali'] ) : [];
 	?>
 	<div class="ob-field full">
 		<label class="ob-field-label">Ausbildung (optional)</label>
-		<span class="ob-field-hint">Mehrfachauswahl möglich. Keine Voraussetzung, kein Gate.</span>
-		<div class="ob-cards ob-cards--stack">
+		<span class="ob-field-hint">Mehrfachauswahl möglich.</span>
+		<div class="ob-cards ob-cards--2col">
 			<?php foreach ( fge_catalog_coach_quali() as $id => $label ) :
 				fge_onboarding_card( 'checkbox', 'fge_coach_quali[]', (string) $id, (string) $label, in_array( (string) $id, $sel_quali, true ), '' );
 			endforeach; ?>
@@ -3272,37 +3354,29 @@ function fge_onboarding_render_coach_profile( int $step, int $partner_id, string
 		<?php fge_onboarding_input( 'fge_coach_quali_other', 'fge_coach_quali_other', 'Welche sonstige Ausbildung?', (string) ( $v['coach_quali_other'] ?? '' ), 'text', false, '' ); ?>
 	</div>
 	<?php
-	$sel_langs = is_array( $v['coach_langs'] ?? null ) ? $v['coach_langs'] : [];
-	// Flaggen statt Icons (Julius, 28.08.: da darf ein bisschen mehr Liebe rein).
-	$flags = [ 'de' => '🇩🇪', 'en' => '🇬🇧', 'fr' => '🇫🇷', 'it' => '🇮🇹', 'es' => '🇪🇸', 'other' => '🌍' ];
+	// Zertifizierung Gesundheitsförderung mit aufklappbarem Info-Feld (Julius,
+	// 01.09.): damit niemand blind ankreuzt, weil es gut klingt.
+	$health_on = '1' === (string) ( $v['coach_health_cert'] ?? '' );
 	?>
-	<div class="ob-field full<?php echo isset( $errors['fge_coach_langs'] ) ? ' ob-field--error' : ''; ?>">
-		<label class="ob-field-label">Sprachen <span class="ob-required">*</span></label>
-		<span class="ob-field-hint">Wichtig für Unternehmen mit mehrsprachigen Teams.</span>
-		<div class="ob-cards">
-			<?php foreach ( [ 'de' => 'Deutsch', 'en' => 'Englisch', 'fr' => 'Französisch', 'it' => 'Italienisch', 'es' => 'Spanisch', 'other' => 'Weitere' ] as $lid => $ll ) :
-				fge_onboarding_card( 'checkbox', 'fge_coach_langs[]', $lid, $ll, in_array( $lid, $sel_langs, true ), '<span class="ob-card-flag">' . $flags[ $lid ] . '</span>' );
-			endforeach; ?>
+	<div class="ob-field full">
+		<label class="ob-field-label">Zertifizierung</label>
+		<div class="ob-cards ob-cards--stack">
+			<?php fge_onboarding_card( 'checkbox', 'fge_coach_health_cert', '1', 'Zertifiziert für gesundheitsfördernde Maßnahmen', $health_on, '' ); ?>
 		</div>
-		<?php fge_onboarding_error( $errors, 'fge_coach_langs' ); ?>
-	</div>
-	<div id="fge-langs-other-wrap"<?php echo in_array( 'other', $sel_langs, true ) ? '' : ' hidden'; ?>>
-		<?php fge_onboarding_input( 'fge_coach_langs_other', 'fge_coach_langs_other', 'Welche weiteren Sprachen?', (string) ( $v['coach_langs_other'] ?? '' ), 'text', false, '' ); ?>
+		<details class="ob-info-details">
+			<summary>Was sind gesundheitsfördernde Maßnahmen?</summary>
+			<div class="ob-info-details-body">
+				<p>Das sind zertifizierte Kurse für Prävention und Gesundheit nach § 20 SGB V. Arbeitgeber können solche Maßnahmen steuerfrei und ohne Sozialabgaben mit bis zu 600 € pro Mitarbeitenden und Jahr bezuschussen (§ 3 Nr. 34 EStG).</p>
+				<p>Voraussetzung ist eine anerkannte Zertifizierung, in der Regel über die Zentrale Prüfstelle Prävention im Auftrag der gesetzlichen Krankenkassen. Bitte nur auswählen, wenn du diese Zertifizierung wirklich hast.</p>
+			</div>
+		</details>
 	</div>
 	<script>
-	/* „Sonstige Ausbildung" und „Weitere Sprachen" klappen ihr Freitextfeld sofort auf. */
 	(function () {
-		function tgl() {
-			var q = document.querySelector('input[name="fge_coach_quali[]"][value="other"]');
-			var qw = document.getElementById('fge-quali-other-wrap');
-			if (qw) { qw.hidden = !(q && q.checked); }
-			var lo = document.querySelector('input[name="fge_coach_langs[]"][value="other"]');
-			var lw = document.getElementById('fge-langs-other-wrap');
-			if (lw) { lw.hidden = !(lo && lo.checked); }
-		}
-		document.addEventListener('change', function (e) {
-			if (e.target && (e.target.name === 'fge_coach_quali[]' || e.target.name === 'fge_coach_langs[]')) { tgl(); }
-		});
+		var o = document.querySelector('input[name="fge_coach_quali[]"][value="other"]');
+		var w = document.getElementById('fge-quali-other-wrap');
+		function tgl(){ if (w) w.hidden = !(o && o.checked); }
+		document.addEventListener('change', function (e) { if (e.target && e.target.name === 'fge_coach_quali[]') tgl(); });
 		tgl();
 	})();
 	</script>
@@ -3323,7 +3397,6 @@ function fge_onboarding_render_coach_story( int $step, int $partner_id, string $
 		'6-10'   => '6 bis 10 Jahre',
 		'10plus' => 'Über 10 Jahre',
 	], false, $errors );
-	fge_onboarding_input( 'fge_website_url', 'fge_website_url', 'Website oder Social (optional)', (string) ( $v['website_url'] ?? '' ), 'url', false, 'https://…' );
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
@@ -4130,15 +4203,21 @@ function fge_onboarding_review_blocks_coach( int $partner_id, array $v, callable
 	fge_onboarding_rev_block( 'Profil', $edit( 'coach-profile' ), [
 		[ 'Name', trim( (string) ( $v['coach_first'] ?? '' ) . ' ' . (string) ( $v['coach_last'] ?? '' ) ) ],
 		[ 'Titel', (string) ( $v['public_golfclub_name'] ?? '' ) ],
-		[ 'Ausbildung', $quali_name ],
+		[ 'Golfschule oder Team', (string) ( $v['coach_school'] ?? '' ) ],
+		[ 'Website', (string) ( $v['website_url'] ?? '' ) ],
 		[ 'Sprachen', implode( ', ', $lang_names ) ],
+	] );
+
+	// ── Qualifikation (eigene Slide, Julius 01.09.) ──
+	fge_onboarding_rev_block( 'Qualifikation', $edit( 'coach-quali' ), [
+		[ 'Ausbildung', $quali_name ],
+		[ 'Gesundheitsförderung', '1' === (string) ( $v['coach_health_cert'] ?? '' ) ? 'Zertifiziert' : '' ],
 	] );
 
 	// ── Deine Geschichte (eigene Slide, Julius 28.08.) ──
 	fge_onboarding_rev_block( 'Deine Geschichte', $edit( 'coach-story' ), [
 		[ 'Kurzprofil', (string) ( $v['public_short_description'] ?? '' ), true ],
 		[ 'Als Golflehrer tätig', $years_l[ (string) ( $v['coach_years'] ?? '' ) ] ?? '' ],
-		[ 'Website', (string) ( $v['website_url'] ?? '' ) ],
 	] );
 
 	// ── Anlage & Standort (kombinierte location-Slide) ──
