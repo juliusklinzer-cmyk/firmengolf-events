@@ -64,7 +64,10 @@
    STAGE
    ==================================================== */
 .ob-stage {
-  display: flex; align-items: center; justify-content: center;
+  /* Inhaltscontainer immer mittig (Julius, 01.09.): horizontal + vertikal.
+     „safe center" fällt bei Slides, die höher als die Bühne sind, automatisch
+     auf oben zurück, damit langer Inhalt nicht abgeschnitten wird. */
+  display: flex; align-items: safe center; justify-content: center;
   padding: 56px 40px 96px;
   min-height: calc(100vh - 80px - 88px);
   min-height: calc(var(--fg-vvh, 100dvh) - 80px - 88px);
@@ -1175,10 +1178,10 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
    RESPONSIVE
    ==================================================== */
 /* Intro: stack early so the photo + text never crowd into each other on tablets.
-   Order: photo first, then text — full row, no overlap. Top-align so tall stacked content
-   flows from the top instead of being vertically centered (which clipped/overlapped the title). */
+   Order: photo first, then text — full row, no overlap. Zentrierung bleibt auch
+   hier (Julius, 01.09.): „safe center" verhindert das Abschneiden langer Slides. */
 @media (max-width: 1024px) {
-  .ob-stage { align-items: flex-start; }
+  .ob-stage { align-items: safe center; }
   .ob-intro { grid-template-columns: 1fr; gap: 28px; align-items: start; }
   /* Deko-Startbild mobil ausblenden (Julius, 01.09.): schafft Platz für den Inhalt. */
   .ob-intro-art { display: none; }
