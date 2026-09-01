@@ -71,7 +71,7 @@
   padding: 56px 40px 96px;
   min-height: calc(100vh - 80px - 88px);
   min-height: calc(var(--fg-vvh, 100dvh) - 80px - 88px);
-  animation: ob-fade var(--dur-page) var(--ease-out);
+  animation: ob-fade var(--dur-slow) var(--ease-out);
 }
 @keyframes ob-fade {
   from { opacity: 0; transform: translateY(8px); }
@@ -543,12 +543,14 @@ select.ob-input { cursor: pointer; padding-right: 36px; appearance: none;
   display: flex; flex-direction: row; align-items: center; gap: 12px;
   text-align: left;
   min-height: 64px;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .ob-card:hover {
   border-color: var(--ink-400);
   background: var(--paper-100);
 }
+/* Dezentes Press-Feedback (Emil-Politur, 01.09.): die Karte reagiert auf den Griff. */
+.ob-card:active { transform: scale(0.99); }
 .ob-card-ico {
   color: var(--ink-800);
   width: 28px; height: 28px;
@@ -1587,10 +1589,20 @@ a.ob-rev-edit { text-decoration: none; display: inline-flex; align-items: center
 .ob-shell .rw-stepper-mid { min-width: 0; }
 .ob-shell .rw-step-btn {
   width: 38px; height: 38px; border: 0; background: var(--paper-200); color: var(--ink-900);
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 .ob-shell .rw-step-btn:hover { background: var(--paper-300); }
-.ob-shell .rw-step-btn:active { background: var(--fairway-600); color: var(--paper-50); }
+/* Press-Feedback (Emil-Politur): spürbarer Druck auf den kleinen +/- Kreisen. */
+.ob-shell .rw-step-btn:active { background: var(--fairway-600); color: var(--paper-50); transform: scale(0.9); }
 .ob-shell .rw-stepper-val { width: 54px; }
 
 /* Überspringen-Link unter optionalen Slides (z. B. Gruppengrößen). */
 .ob-cc-skip { text-align: center; margin-top: 16px; }
+
+/* Unauffälliger Überspringen-Link im Fuß, direkt vor „Weiter". */
+.ob-shell .ob-btn-skip {
+  align-self: center; font-size: 14px; font-weight: 500;
+  color: var(--ink-500); text-decoration: none; padding: 8px 4px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.ob-shell .ob-btn-skip:hover { color: var(--ink-800); text-decoration: underline; text-underline-offset: 2px; }

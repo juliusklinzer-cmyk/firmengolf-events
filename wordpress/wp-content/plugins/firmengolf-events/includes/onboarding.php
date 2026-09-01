@@ -104,7 +104,7 @@ function fge_onboarding_manifest( string $type = '' ): array {
 			[ 'id' => 'coach-story',    'chapter' => 1, 'kind' => 'form' ],
 			[ 'id' => 'location',       'chapter' => 1, 'kind' => 'form', 'wide' => true ],
 			[ 'id' => 'coach-formats',  'chapter' => 2, 'kind' => 'form', 'wide' => true ],
-			[ 'id' => 'coach-capacity', 'chapter' => 2, 'kind' => 'form' ],
+			[ 'id' => 'coach-capacity', 'chapter' => 2, 'kind' => 'form', 'skip_link' => true ],
 			[ 'id' => 'avail',          'chapter' => 3, 'kind' => 'form' ],
 			[ 'id' => 'pricing',        'chapter' => 3, 'kind' => 'form' ],
 			[ 'id' => 'media',          'chapter' => 3, 'kind' => 'form' ],
@@ -1725,6 +1725,13 @@ function fge_onboarding_render_footer( int $step, string $token ): void {
 			<span class="ob-btn-text" aria-disabled="true" style="visibility:hidden">Zurück</span>
 			<?php endif; ?>
 			<div class="ob-nav-right">
+				<?php
+				// Unauffälliger Überspringen-Link direkt vor „Weiter" bei optionalen
+				// Slides (Julius, 01.09.); Slide markiert sich per skip_link im Manifest.
+				$skip_slide = fge_onboarding_slide( $step );
+				if ( ! empty( $skip_slide['skip_link'] ) && 'form' === $kind ) : ?>
+				<a class="ob-btn-skip" href="<?php echo esc_url( fge_onboarding_step_url( $step + 1, $token ) ); ?>">Überspringen</a>
+				<?php endif; ?>
 				<?php if ( 'intro' === $kind ) : ?>
 				<form method="post" class="ob-foot-form">
 					<?php wp_nonce_field( 'fge_onboarding_step_' . $step, 'fge_ob_nonce' ); ?>
@@ -3552,8 +3559,8 @@ function fge_onboarding_render_coach_capacity( int $step, int $partner_id, strin
 		}
 	})();
 	</script>
-	<p class="ob-cc-skip"><a class="ob-linkbtn" href="<?php echo esc_url( fge_onboarding_step_url( $step + 1, $token ) ); ?>">Überspringen</a></p>
 	<?php
+	// Überspringen-Link steht jetzt unauffällig im Fuß vor „Weiter" (skip_link).
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }
