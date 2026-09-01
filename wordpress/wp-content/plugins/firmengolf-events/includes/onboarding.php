@@ -2141,8 +2141,9 @@ function fge_onboarding_render_intro( string $id ): void {
 			'title'   => 'Macht eure Simulatoren zur <span class="ob-italic">Eventlocation</span> für Unternehmen.',
 			'lead'    => 'In ein paar Schritten ist euer Indoor Golf für Firmenevents anfragbar.',
 			'list'    => [ 'Standort und Kontakt', 'Hauptkontakt + euer Login fürs Partnerportal', 'Simulatoren, Räume und Formate', 'Öffnungszeiten, Preis-Prinzip &amp; Fotos' ],
-			'meta'    => 'Dauer ungefähr 10 Minuten · keine Verpflichtung · kostenlos',
-			'photo'   => $img( 'onboarding-indoor-lounge.jpg' ),
+			'meta'     => 'Dauer ungefähr 10 Minuten · keine Verpflichtung · kostenlos',
+			'photo'    => $img( 'onboarding-indoor-lounge.jpg' ),
+			'portrait' => true,
 		],
 		'indoor:intro-2' => [
 			'eyebrow' => 'Schritt 2 · Was ihr anbieten könnt',
@@ -2213,7 +2214,7 @@ function fge_onboarding_render_intro( string $id ): void {
 	</div>
 	<div class="ob-intro-art" aria-hidden="true">
 		<?php if ( '' !== $d['photo'] ) : ?>
-		<div class="ob-art-photo">
+		<div class="ob-art-photo<?php echo ! empty( $d['portrait'] ) ? ' ob-art-photo--portrait' : ''; ?>">
 			<img src="<?php echo esc_url( $d['photo'] ); ?>" alt="">
 		</div>
 		<?php endif; ?>
