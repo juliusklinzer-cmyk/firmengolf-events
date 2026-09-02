@@ -552,6 +552,11 @@ function fge_portal_handle_profile_update(): void {
 			fge_onboarding_save_slide( $partner_id, 'indoor-detail', $_POST );
 			// Gastro-Kacheln (nur im Indoor-Formular enthalten, Marker-Feld).
 			fge_onboarding_save_slide( $partner_id, 'gastro', $_POST );
+			// Vorlaufzeit (Indoor hat keine avail-Slide, Paket 4).
+			$it_lead_in = absint( $_POST['fge_min_lead_time_days'] ?? 0 );
+			if ( in_array( $it_lead_in, [ 7, 14, 20, 30 ], true ) ) {
+				update_post_meta( $partner_id, '_fge_min_lead_time_days', $it_lead_in );
+			}
 			break;
 
 		case 'standort':
@@ -566,6 +571,14 @@ function fge_portal_handle_profile_update(): void {
 			// '' = keine Angabe (gleiche Drei-Zustands-Logik wie im Onboarding).
 			$est = (string) ( $P['fge_arrival_estation'] ?? '' );
 			update_post_meta( $partner_id, '_fge_arrival_estation', '' === $est ? '' : ( '1' === $est ? 1 : 0 ) );
+			break;
+
+		case 'verfuegbarkeit':
+			fge_onboarding_save_slide( $partner_id, 'avail', $_POST );
+			if ( function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $partner_id ) ) {
+				fge_onboarding_save_slide( $partner_id, 'coach-formats', $_POST );
+				fge_onboarding_save_slide( $partner_id, 'coach-capacity', $_POST );
+			}
 			break;
 
 		case 'golflehrer':
@@ -2447,6 +2460,16 @@ function fge_portal_render_indoor_tech_fields( int $partner_id ): void {
 					</select>
 					<?php echo $err_html( 'fge_indoor_staffing' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 				</div>
+				<?php if ( function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $partner_id ) ) : ?>
+				<div class="fg-form-row" style="max-width:320px;">
+					<label class="fg-form-label" for="fge_min_lead_time_days">Vorlaufzeit für Anfragen</label>
+					<select class="fg-form-input" id="fge_min_lead_time_days" name="fge_min_lead_time_days">
+						<?php $it_lead = (int) ( get_post_meta( $partner_id, '_fge_min_lead_time_days', true ) ?: 14 ); foreach ( [ 7, 14, 20, 30 ] as $it_lv ) : ?>
+							<option value="<?php echo (int) $it_lv; ?>" <?php selected( $it_lead, $it_lv ); ?>><?php echo (int) $it_lv; ?> Tage</option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+				<?php endif; ?>
 				<?php if ( function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $partner_id ) ) :
 					// Gastro nur beim reinen Indoor-Partner (Golfplätze pflegen ihre
 					// Gastronomie in der Ausstattung). Kacheln aus der Top-50-Recherche.
@@ -3252,6 +3275,32 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 					'' !== $it_staff ? [ 'Betrieb', $it_staff ] : null,
 					'' !== $it_gastro ? [ 'Gastronomie', $it_gastro ] : null,
 				] );
+				// Bisher tote Pflicht-/Slide-Daten sichtbar machen (Persona-Audit, Paket 3).
+				if ( absint( $it_sim['box_max'] ?? 0 ) > 0 ) {
+					$it_rows[] = [ 'Pro Box maximal', absint( $it_sim['box_max'] ) . ' Personen' ];
+				}
+				$it_feat = array_filter( array_map( static fn( $f ) => function_exists( 'fge_catalog_indoor_features' ) ? ( fge_catalog_indoor_features()[ (string) $f ] ?? '' ) : '', (array) ( $it_sim['features'] ?? [] ) ) );
+				if ( $it_feat ) {
+					$it_rows[] = [ 'Event-Features', implode( ', ', $it_feat ) ];
+				}
+				$it_spaces = [];
+				foreach ( (array) get_post_meta( $partner_id, '_fge_indoor_spaces', true ) as $it_sp ) {
+					foreach ( function_exists( 'fge_catalog_indoor_infra_groups' ) ? fge_catalog_indoor_infra_groups() : [] as $it_grp ) {
+						if ( isset( $it_grp[ $it_sp ] ) ) { $it_spaces[] = $it_grp[ $it_sp ]; }
+					}
+				}
+				foreach ( (array) get_post_meta( $partner_id, '_fge_indoor_spaces_custom', true ) as $it_sp ) {
+					if ( '' !== trim( (string) $it_sp ) ) { $it_spaces[] = (string) $it_sp; }
+				}
+				if ( $it_spaces ) {
+					$it_rows[] = [ 'Räume & Aktivitäten', implode( ', ', $it_spaces ) ];
+				}
+				if ( '' !== (string) get_post_meta( $partner_id, '_fge_indoor_area', true ) ) {
+					$it_rows[] = [ 'Fläche', (string) get_post_meta( $partner_id, '_fge_indoor_area', true ) ];
+				}
+				if ( '' !== (string) get_post_meta( $partner_id, '_fge_indoor_open_note', true ) ) {
+					$it_rows[] = [ 'Öffnungszeiten', (string) get_post_meta( $partner_id, '_fge_indoor_open_note', true ) ];
+				}
 				?>
 			<section class="section">
 				<div class="section-head">
@@ -3549,10 +3598,10 @@ function fge_portal_section_platz( int $partner_id ): void {
 	// Indoor: Technik statt Golfplatz-Ausstattung; kein Golflehrer-Block (die
 	// Verknüpfung zielt bisher nur auf Golfplatz-Partner).
 	$sections = $is_coach
-		? [ 'profil', 'standorte', 'medien', 'kontakt' ]
+		? [ 'profil', 'standorte', 'verfuegbarkeit', 'medien', 'kontakt' ]
 		: ( $is_indoor
 			? [ 'steckbrief', 'indoortech', 'standort', 'medien', 'kontakt' ]
-			: [ 'steckbrief', 'ausstattung', 'standort', 'golflehrer', 'medien', 'kontakt' ] );
+			: [ 'steckbrief', 'ausstattung', 'standort', 'verfuegbarkeit', 'golflehrer', 'medien', 'kontakt' ] );
 	if ( in_array( $edit, $sections, true ) ) {
 		fge_portal_render_platz_edit_section( $partner_id, $edit );
 		return;
@@ -3573,10 +3622,11 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 	$is_coach  = 'coach' === $ptype;
 	$is_indoor = 'indoor' === $ptype;
 	$titles = $is_coach ? [
-		'profil'    => 'Dein Profil',
-		'standorte' => 'Wo du unterrichtest',
-		'medien'    => 'Fotos',
-		'kontakt'   => 'Kontaktdaten',
+		'profil'         => 'Dein Profil',
+		'standorte'      => 'Wo du unterrichtest',
+		'verfuegbarkeit' => 'Verfügbarkeit & Formate',
+		'medien'         => 'Fotos',
+		'kontakt'        => 'Kontaktdaten',
 	] : ( $is_indoor ? [
 		'steckbrief'  => 'Über eure Location',
 		'indoortech'  => 'Simulatoren & Technik',
@@ -3587,6 +3637,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 		'steckbrief'  => 'Über den Platz',
 		'ausstattung' => 'Ausstattung',
 		'standort'    => 'Standort & Anfahrt',
+		'verfuegbarkeit' => 'Verfügbarkeit',
 		'golflehrer'  => 'Golflehrer',
 		'medien'      => 'Fotos & Logo',
 		'kontakt'     => 'Kontaktdaten',
@@ -3599,6 +3650,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 		'ausstattung' => 'Hake einfach an, was es bei euch gibt. Mehr Häkchen = mehr Treffer bei Firmen.',
 		'indoortech'  => 'Boxen, Systeme und Software-Features: damit ordnen wir Indoor-Anfragen passend zu.',
 		'standort'    => 'Adresse und Anfahrt, damit Firmen wissen, wie sie zu euch kommen.',
+		'verfuegbarkeit' => $is_coach ? 'Wochentage, Saison, Vorlauf und deine Formate: das steuert, für welche Anfragen wir dich vorschlagen.' : 'Wochentage, Saison und Vorlauf: das steuert, für welche Anfragen wir euch vorschlagen.',
 		'golflehrer'  => 'Die Golflehrer an eurem Platz: verknüpfen, wenn es sie schon gibt, oder neu anlegen und einladen.',
 		'medien'      => $is_indoor ? 'Gute Fotos verkaufen eure Location. Das erste Foto ist euer Titelbild.' : 'Gute Fotos verkaufen deinen Platz. Das erste Foto ist dein Titelbild.',
 		'kontakt'     => 'Wen erreichen wir bei euch, und wer bekommt Terminanfragen?',
@@ -3611,6 +3663,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 		'ausstattung' => [ 'Die Ausstattung erscheint als Icon-Liste auf deiner öffentlichen Platzseite.', 'Fehlt etwas in der Liste? Trag es unten bei „Weitere Ausstattung" ein.' ],
 		'standort'    => [ 'Die Adresse setzt den Karten-Pin auf deiner Platzseite und bei deinen Events.', 'Die Anfahrts-Felder (Auto, Bahn, Parken, Shuttle) helfen Firmen bei der Planung, kurz und konkret, z. B. „100 kostenfreie Parkplätze".', 'Breiten-/Längengrad nur ändern, wenn der Pin falsch sitzt.' ],
 		'golflehrer'  => [ 'Verknüpfte Golflehrer erscheinen mit ihrem eigenen Profil, ihr müsst nichts pflegen.', 'Ein neu angelegter Golflehrer bekommt per Mail seinen eigenen Zugang und vervollständigt sein Profil selbst.', 'Golflehrer mit eigenem Firmengolf-Profil, die euren Platz als Heimatplatz angegeben haben, schlagen wir hier automatisch vor.' ],
+		'verfuegbarkeit' => [ 'Diese Angaben fließen direkt ins Anfragen-Matching ein: passt der Wunschtermin nicht zu Tagen, Saison oder Vorlauf, schlagen wir euch nicht vor.', 'Lieber großzügig angeben und im Einzelfall absagen, als gar nicht vorgeschlagen zu werden.' ],
 		'indoortech'  => [ 'Die Technik-Daten erscheinen auf eurem Profil und steuern, für welche Gruppengrößen wir euch vorschlagen.', 'Anzahl Boxen und maximale Personenzahl sind Pflicht, der Rest macht euer Profil überzeugender.', 'Neues System oder umgebaut? Einfach hier aktualisieren, die Angebote bleiben unberührt.' ],
 		'medien'      => [ 'Empfehlung: mindestens 5 Fotos im Querformat, Platz, Clubhaus, Terrasse, Gastronomie.', 'Das Titelbild ist das große Bild auf deiner Platzseite und deinen Event-Karten.', 'Fotos werden sofort hochgeladen, „Speichern" bestätigt nur die Reihenfolge.' ],
 		'kontakt'     => [ 'Der Hauptkontakt ist unsere erste Anlaufstelle und steht nur intern im Portal, nicht öffentlich.', 'Terminanfragen gehen an den Verfügbarkeits-Kontakt. Leer lassen = Hauptkontakt bekommt sie.', 'Mehrere Personen (Gastro, Head Pro, Sekretariat) für die Terminabstimmung verwaltest du im Tab „Ansprechpartner".' ],
@@ -3993,6 +4046,72 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 							<option value="0" <?php selected( $m( 'arrival_estation' ), '0' ); ?>>Nein</option>
 						</select>
 					</div>
+					<?php
+					break;
+
+				case 'verfuegbarkeit':
+					// Persona-Audit Paket 4: Matching-Steuerung (Tage/Saison/Vorlauf,
+					// beim Coach + Formate und Gruppengröße) nach dem Onboarding pflegbar.
+					$vf_days   = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_preferred_event_days', true ) );
+					$vf_day_l  = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
+					$vf_eve    = (string) get_post_meta( $partner_id, '_fge_evening_events_possible', true );
+					$vf_lead   = (int) ( get_post_meta( $partner_id, '_fge_min_lead_time_days', true ) ?: 14 );
+					$vf_sf     = (int) ( get_post_meta( $partner_id, '_fge_season_from', true ) ?: 4 );
+					$vf_st     = (int) ( get_post_meta( $partner_id, '_fge_season_to', true ) ?: 10 );
+					$vf_months = [ 1 => 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember' ];
+					?>
+					<div class="pe-subhead">Bevorzugte Event-Tage</div>
+					<div class="fp-check-grid" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr));">
+						<?php foreach ( $vf_day_l as $vd => $vl ) : ?>
+							<label class="fp-check"><input type="checkbox" name="fge_preferred_event_days[]" value="<?php echo esc_attr( $vd ); ?>" <?php checked( in_array( $vd, $vf_days, true ) ); ?>> <?php echo esc_html( $vl ); ?></label>
+						<?php endforeach; ?>
+					</div>
+					<div class="fg-form-row fg-form-row--3col" style="margin-top:18px;">
+						<div>
+							<label class="fg-form-label" for="fge_evening_events_possible">Abend-Events möglich?</label>
+							<select class="fg-form-input" id="fge_evening_events_possible" name="fge_evening_events_possible">
+								<option value="" <?php selected( $vf_eve, '' ); ?>>Keine Angabe</option>
+								<option value="1" <?php selected( $vf_eve, '1' ); ?>>Ja</option>
+								<option value="0" <?php selected( $vf_eve, '0' ); ?>>Nein</option>
+							</select>
+						</div>
+						<div>
+							<label class="fg-form-label" for="fge_min_lead_time_days">Vorlaufzeit für Anfragen</label>
+							<select class="fg-form-input" id="fge_min_lead_time_days" name="fge_min_lead_time_days">
+								<?php foreach ( [ 7, 14, 20, 30 ] as $vlead ) : ?>
+									<option value="<?php echo (int) $vlead; ?>" <?php selected( $vf_lead, $vlead ); ?>><?php echo (int) $vlead; ?> Tage</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+						<div>
+							<label class="fg-form-label" for="fge_season_from">Saison von / bis</label>
+							<div style="display:flex;gap:8px;">
+								<select class="fg-form-input" id="fge_season_from" name="fge_season_from"><?php foreach ( $vf_months as $vmn => $vml ) : ?><option value="<?php echo (int) $vmn; ?>" <?php selected( $vf_sf, $vmn ); ?>><?php echo esc_html( $vml ); ?></option><?php endforeach; ?></select>
+								<select class="fg-form-input" name="fge_season_to" aria-label="Saison bis"><?php foreach ( $vf_months as $vmn => $vml ) : ?><option value="<?php echo (int) $vmn; ?>" <?php selected( $vf_st, $vmn ); ?>><?php echo esc_html( $vml ); ?></option><?php endforeach; ?></select>
+							</div>
+						</div>
+					</div>
+					<?php if ( $is_coach ) :
+						$vf_cf  = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_coach_formats', true ) );
+						$vf_cap = (array) get_post_meta( $partner_id, '_fge_coach_cap', true );
+						?>
+					<div class="pe-subhead" style="margin-top:26px;">Deine Formate</div>
+					<p class="fp-help">Was du für Firmen anbieten kannst, steuert Vorschläge und deine Visitenkarte.</p>
+					<div class="fp-check-grid">
+						<?php foreach ( function_exists( 'fge_catalog_coach_formats' ) ? fge_catalog_coach_formats() : [] as $vcf => $vcl ) : ?>
+							<label class="fp-check"><input type="checkbox" name="fge_coach_formats[]" value="<?php echo esc_attr( $vcf ); ?>" <?php checked( in_array( $vcf, $vf_cf, true ) ); ?>> <?php echo esc_html( $vcl ); ?></label>
+						<?php endforeach; ?>
+					</div>
+					<div class="pe-subhead" style="margin-top:26px;">Gruppengröße</div>
+					<div class="fg-form-row fg-form-row--2col" style="max-width:420px;">
+						<div><label class="fg-form-label" for="fge_coach_cap_min">Minimum</label><input class="fg-form-input" type="number" min="1" id="fge_coach_cap_min" name="fge_coach_cap[min]" value="<?php echo esc_attr( (string) ( $vf_cap['min'] ?? 4 ) ); ?>"></div>
+						<div><label class="fg-form-label" for="fge_coach_cap_max">Maximum</label><input class="fg-form-input" type="number" min="1" id="fge_coach_cap_max" name="fge_coach_cap[max]" value="<?php echo esc_attr( (string) ( $vf_cap['max'] ?? 10 ) ); ?>"></div>
+					</div>
+					<?php // Bestand mitschicken, sonst setzt der coach-capacity-Save Defaults. ?>
+					<input type="hidden" name="fge_coach_cap[trainers]" value="<?php echo esc_attr( (string) ( $vf_cap['trainers'] ?? 1 ) ); ?>">
+					<input type="hidden" name="fge_coach_cap[per_trainer]" value="<?php echo esc_attr( (string) ( $vf_cap['per_trainer'] ?? 8 ) ); ?>">
+					<input type="hidden" name="fge_coach_cap[rental_persons]" value="<?php echo esc_attr( (string) ( $vf_cap['rental_persons'] ?? 0 ) ); ?>">
+					<?php endif; ?>
 					<?php
 					break;
 

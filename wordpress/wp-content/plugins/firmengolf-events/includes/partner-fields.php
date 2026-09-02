@@ -381,7 +381,6 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 	$season                     = get_post_meta( $post->ID, '_fge_season', true );
 	$evening_events_possible    = get_post_meta( $post->ID, '_fge_evening_events_possible', true );
 	$min_lead_time_days         = get_post_meta( $post->ID, '_fge_min_lead_time_days', true );
-	$individual_availability    = get_post_meta( $post->ID, '_fge_individual_availability_check', true );
 	$event_formats              = (array) get_post_meta( $post->ID, '_fge_event_formats', true );
 
 	$weekdays = [
@@ -436,11 +435,6 @@ function fge_render_pmb_kapazitaeten( WP_Post $post ) {
 			<th scope="row">Abend-Events möglich</th>
 			<td><label><input type="checkbox" name="fge_evening_events_possible" value="1"
 			                  <?php checked( $evening_events_possible, '1' ); ?>> Ja</label></td>
-		</tr>
-		<tr>
-			<th scope="row">Individuelle Verfügbarkeitsprüfung</th>
-			<td><label><input type="checkbox" name="fge_individual_availability_check" value="1"
-			                  <?php checked( $individual_availability !== '0' ? '1' : '0', '1' ); ?>> Ja (Standard: aktiv)</label></td>
 		</tr>
 		<tr>
 			<th scope="row">Eventformate</th>
@@ -723,7 +717,6 @@ function fge_save_partner_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_evening_events_possible',  isset( $_POST['fge_evening_events_possible'] ) ? 1 : 0 );
 	update_post_meta( $post_id, '_fge_min_lead_time_days',       absint( $_POST['fge_min_lead_time_days'] ?? 0 ) );
 	update_post_meta( $post_id, '_fge_season',                $san_select( 'fge_season', $allowed_seasons ) );
-	update_post_meta( $post_id, '_fge_individual_availability_check', isset( $_POST['fge_individual_availability_check'] ) ? 1 : 0 );
 	$allowed_formats = array_keys( fge_get_event_format_options() );
 	update_post_meta( $post_id, '_fge_event_formats', $san_group( 'fge_event_formats', $allowed_formats ) );
 

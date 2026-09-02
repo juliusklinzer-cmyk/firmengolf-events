@@ -15,6 +15,12 @@ if ( function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $pid
 	get_template_part( 'template-parts/fge-partner-coach' );
 	return;
 }
+// Indoor-Locations bekommen ihre eigene Seite (Persona-Audit D1, 02.09.):
+// vorher rannten sie ins Golfplatz-Template mit leeren Platz-Facts.
+if ( function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $pid ) ) {
+	get_template_part( 'template-parts/fge-partner-indoor' );
+	return;
+}
 
 $m   = static fn( string $k ): string => (string) get_post_meta( $pid, '_fge_' . $k, true );
 

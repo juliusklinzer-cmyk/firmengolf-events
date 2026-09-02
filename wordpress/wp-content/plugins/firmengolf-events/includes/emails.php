@@ -774,6 +774,8 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 			<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>Kontakt</strong></td><td>' . esc_html( $contact ) . '</td></tr>
 			<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>E-Mail</strong></td><td><a href="mailto:' . esc_attr( $email ) . '" style="color:#4279D1;">' . esc_html( $email ) . '</a></td></tr>
 			' . ( $final_note !== '' ? '<tr><td style="padding:6px 16px 6px 0;color:#555;vertical-align:top;"><strong>Hinweis</strong></td><td>' . nl2br( esc_html( $final_note ) ) . '</td></tr>' : '' ) . '
+			' . ( '' !== (string) get_post_meta( $partner_id, '_fge_image_rights_note', true ) ? '<tr><td style="padding:6px 16px 6px 0;color:#555;vertical-align:top;"><strong>Bildrechte</strong></td><td>' . nl2br( esc_html( (string) get_post_meta( $partner_id, '_fge_image_rights_note', true ) ) ) . '</td></tr>' : '' ) . '
+			' . ( '' !== (string) get_post_meta( $partner_id, '_fge_coach_gastro_involve', true ) ? '<tr><td style="padding:6px 16px 6px 0;color:#555;"><strong>Gastro einbinden</strong></td><td>' . esc_html( [ 'ja' => 'Ja, über die Anlagen-Gastronomie', 'nein' => 'Nein', 'offen' => 'Später klären' ][ (string) get_post_meta( $partner_id, '_fge_coach_gastro_involve', true ) ] ?? '' ) . '</td></tr>' : '' ) . '
 		</table>
 		<p style="margin-top:28px;">
 			' . fge_email_button( $admin_url, 'Im Admin öffnen' ) . '

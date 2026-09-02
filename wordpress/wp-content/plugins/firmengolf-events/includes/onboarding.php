@@ -357,7 +357,6 @@ function fge_onboarding_create_draft_partner( string $type = 'course' ): int {
 	update_post_meta( $post_id, '_fge_partner_type', $type );
 	update_post_meta( $post_id, '_fge_onboarding_token', $token );
 	update_post_meta( $post_id, '_fge_onboarding_step', 0 );
-	update_post_meta( $post_id, '_fge_individual_availability_check', 1 );
 	update_post_meta( $post_id, '_fge_default_markup_percent', 20.0 );
 	return $post_id;
 }
@@ -626,8 +625,6 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			update_post_meta( $partner_id, '_fge_season_from', $sf );
 			update_post_meta( $partner_id, '_fge_season_to', $st );
 			update_post_meta( $partner_id, '_fge_season', fge_season_range_label( $sf, $st ) );
-			// Keine Frage mehr — es wird immer individuell geprüft.
-			update_post_meta( $partner_id, '_fge_individual_availability_check', 1 );
 			// Coach: Gastro-Einbindung lebt auf dieser Slide (Julius, 28.08.).
 			if ( isset( $post['fge_coach_gastro_involve'] ) ) {
 				update_post_meta( $partner_id, '_fge_coach_gastro_involve', $san_select( 'fge_coach_gastro_involve', [ 'ja', 'nein', 'offen' ] ) );
@@ -742,7 +739,6 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			// die schrieb der Indoor-Wizard nie, der Ganzjahres-Vorteil war unsichtbar.
 			update_post_meta( $partner_id, '_fge_season_from', '0' === $year_round ? min( 12, max( 1, absint( $post['fge_indoor_open_from'] ?? 1 ) ) ) : 1 );
 			update_post_meta( $partner_id, '_fge_season_to', '0' === $year_round ? min( 12, max( 1, absint( $post['fge_indoor_open_to'] ?? 12 ) ) ) : 12 );
-			update_post_meta( $partner_id, '_fge_individual_availability_check', 1 );
 			break;
 
 		// ── Formular A: Golflehrer-Wizard ─────────────────────────────────────
@@ -825,14 +821,6 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			if ( function_exists( 'fge_coach_apply_venue_link' ) ) {
 				fge_coach_apply_venue_link( $partner_id );
 			}
-			break;
-
-		case 'coach-authority':
-			update_post_meta( $partner_id, '_fge_coach_authorized', isset( $post['fge_coach_authorized'] ) ? 1 : 0 );
-			update_post_meta( $partner_id, '_fge_coach_venue_confirmer', $san_select( 'fge_coach_venue_confirmer', [ 'selbst', 'sekretariat', 'management', 'gastro' ] ) );
-			update_post_meta( $partner_id, '_fge_coach_venue_billing', $san_select( 'fge_coach_venue_billing', [ 'ich', 'anlage', 'geteilt' ] ) );
-			update_post_meta( $partner_id, '_fge_coach_venue_billing_note', $sa( 'fge_coach_venue_billing_note' ) );
-			update_post_meta( $partner_id, '_fge_coach_venue_aware', $san_select( 'fge_coach_venue_aware', [ 'ja', 'nochnicht', 'unnoetig' ] ) );
 			break;
 
 		case 'coach-formats':
@@ -1381,19 +1369,6 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 				? [ 'fge_coach_venue_name' => 'Wie heißt die Anlage, an der du unterrichtest?' ]
 				: [];
 
-		case 'coach-authority':
-			$errors = [];
-			if ( empty( $post['fge_coach_authorized'] ) ) {
-				$errors['fge_coach_authorized'] = 'Ohne diese Bestätigung können wir die Anlage nicht anbieten.';
-			}
-			if ( ! in_array( (string) ( $post['fge_coach_venue_confirmer'] ?? '' ), [ 'selbst', 'sekretariat', 'management', 'gastro' ], true ) ) {
-				$errors['fge_coach_venue_confirmer'] = 'Bitte gib an, wer die Verfügbarkeit bestätigt.';
-			}
-			if ( ! in_array( (string) ( $post['fge_coach_venue_billing'] ?? '' ), [ 'ich', 'anlage', 'geteilt' ], true ) ) {
-				$errors['fge_coach_venue_billing'] = 'Bitte gib an, wer die Rechnung stellt.';
-			}
-			return $errors;
-
 		case 'coach-formats':
 			$chosen = is_array( $post['fge_coach_formats'] ?? null ) ? array_intersect( array_map( 'sanitize_text_field', $post['fge_coach_formats'] ), array_keys( fge_catalog_coach_formats() ) ) : [];
 			return empty( $chosen )
@@ -1557,10 +1532,8 @@ function fge_onboarding_render_slide_form( string $id, int $step, int $partner_i
 		case 'coach-quali':    fge_onboarding_render_coach_quali( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-story':    fge_onboarding_render_coach_story( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-venue':    fge_onboarding_render_coach_venue( $step, $partner_id, $token, $vals, $errors ); break;
-		case 'coach-authority': fge_onboarding_render_coach_authority( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-formats':  fge_onboarding_render_coach_formats( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'coach-capacity': fge_onboarding_render_coach_capacity( $step, $partner_id, $token, $vals, $errors ); break;
-		case 'coach-includes': fge_onboarding_render_coach_includes( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'formats':  fge_onboarding_render_step_8( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'avail':    fge_onboarding_render_step_9( $step, $partner_id, $token, $vals, $errors ); break;
 		case 'pricing':  fge_onboarding_render_step_10( $step, $partner_id, $token, $vals, $errors ); break;
@@ -1634,7 +1607,6 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'evening_events_possible'       => (string) $m( 'evening_events_possible' ),
 		'min_lead_time_days'            => (string) $m( 'min_lead_time_days' ),
 		'season'                        => (string) $m( 'season' ),
-		'individual_availability_check' => $m( 'individual_availability_check' ) !== '0' ? '1' : '0',
 		'default_markup_percent'        => (string) $m( 'default_markup_percent' ),
 		'vat_required'                  => (string) $m( 'vat_required' ),
 		'billing_method_internal'       => (string) $m( 'billing_method_internal' ),
@@ -1703,16 +1675,8 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'coach_mobile_equipment'        => (string) $m( 'coach_mobile_equipment' ),
 		'coach_mobile_space'            => (string) $m( 'coach_mobile_space' ),
 		'coach_venues_note'             => (string) $m( 'coach_venues_note' ),
-		'coach_authorized'              => (string) $m( 'coach_authorized' ),
-		'coach_venue_confirmer'         => (string) $m( 'coach_venue_confirmer' ),
-		'coach_venue_billing'           => (string) $m( 'coach_venue_billing' ),
-		'coach_venue_billing_note'      => (string) $m( 'coach_venue_billing_note' ),
-		'coach_venue_aware'             => (string) $m( 'coach_venue_aware' ),
 		'coach_formats'                 => is_array( $m( 'coach_formats' ) ) ? $m( 'coach_formats' ) : [],
 		'coach_cap'                     => is_array( $m( 'coach_cap' ) ) ? $m( 'coach_cap' ) : [],
-		'coach_includes'                => is_array( $m( 'coach_includes' ) ) ? $m( 'coach_includes' ) : [],
-		'coach_includes_clubs_note'     => (string) $m( 'coach_includes_clubs_note' ),
-		'coach_includes_video_system'   => (string) $m( 'coach_includes_video_system' ),
 		'coach_platzreife_note'         => (string) $m( 'coach_platzreife_note' ),
 		'golf_type'                     => (string) $m( 'golf_type' ),
 		'poi_car'                       => (string) $m( 'poi_car' ),
@@ -3604,37 +3568,6 @@ function fge_onboarding_render_coach_venue( int $step, int $partner_id, string $
 	fge_onboarding_textarea( 'fge_coach_mobile_equipment', 'fge_coach_mobile_equipment', 'Was bringst du mit? (optional)', (string) ( $v['coach_mobile_equipment'] ?? '' ), 'z. B. Schläger-Sets, Abschlagmatten, Fangnetz, Putting-Matten, Launch Monitor' );
 	fge_onboarding_input( 'fge_coach_mobile_space', 'fge_coach_mobile_space', 'Platzbedarf für dein Setup (optional)', (string) ( $v['coach_mobile_space'] ?? '' ), 'text', false, 'z. B. 6 x 4 m, 3,5 m Deckenhöhe' );
 	fge_onboarding_textarea( 'fge_coach_venues_note', 'fge_coach_venues_note', 'Weitere Standorte (optional)', (string) ( $v['coach_venues_note'] ?? '' ), 'z. B. GC Zweitstadt, freier Trainer, Range und Kurzspiel', 'Weitere Anlagen, auf denen du unterrichtest, mit Rolle und Nutzung.' );
-	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
-	echo '</form>';
-}
-
-function fge_onboarding_render_coach_authority( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Berechtigung und Zuständigkeit', 'Du beschreibst hier die Anlage, auf der du deine Events durchführst. Damit kannst du auch größere Formate mit Verpflegung anbieten, nicht nur Kurse. Wichtig ist nur, dass du die Leistungen wirklich anbieten darfst und alles über eine Abrechnung mit uns läuft.' );
-	fge_onboarding_form_open( $step, $partner_id, $token );
-	?>
-	<label class="ob-consent<?php echo isset( $errors['fge_coach_authorized'] ) ? ' ob-field--error' : ''; ?>">
-		<input type="checkbox" name="fge_coach_authorized" value="1" <?php checked( '1' === (string) ( $v['coach_authorized'] ?? '' ) ); ?>>
-		<span>Ich bin berechtigt, diese Anlage und die genannten Leistungen für Firmenevents anzubieten.</span>
-	</label>
-	<?php
-	fge_onboarding_error( $errors, 'fge_coach_authorized' );
-	fge_onboarding_select( 'fge_coach_venue_confirmer', 'fge_coach_venue_confirmer', 'Wer bestätigt die Verfügbarkeit der Anlage?', (string) ( $v['coach_venue_confirmer'] ?? '' ), [
-		'selbst'      => 'Ich selbst',
-		'sekretariat' => 'Das Sekretariat',
-		'management'  => 'Das Clubmanagement',
-		'gastro'      => 'Die Gastronomie',
-	], true, $errors );
-	fge_onboarding_select( 'fge_coach_venue_billing', 'fge_coach_venue_billing', 'Wer stellt Firmengolf die Rechnung für Platz und Gastronomie?', (string) ( $v['coach_venue_billing'] ?? '' ), [
-		'ich'     => 'Ich, alles in einer Rechnung',
-		'anlage'  => 'Die Anlage separat',
-		'geteilt' => 'Geteilt',
-	], true, $errors );
-	fge_onboarding_textarea( 'fge_coach_venue_billing_note', 'fge_coach_venue_billing_note', 'Bei „geteilt": wer stellt was in Rechnung? (optional)', (string) ( $v['coach_venue_billing_note'] ?? '' ), '' );
-	fge_onboarding_select( 'fge_coach_venue_aware', 'fge_coach_venue_aware', 'Weiß die Anlage von deiner Anmeldung bei Firmengolf?', (string) ( $v['coach_venue_aware'] ?? '' ), [
-		'ja'        => 'Ja',
-		'nochnicht' => 'Noch nicht',
-		'unnoetig'  => 'Nicht nötig',
-	], false, $errors );
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
 }

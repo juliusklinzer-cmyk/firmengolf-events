@@ -199,11 +199,14 @@ get_header();
 						$coach_facts = [];
 						if ( ! empty( $quali_names ) ) { $coach_facts[] = [ 'Ausbildung', implode( ', ', $quali_names ) ]; }
 						if ( $years )                  { $coach_facts[] = [ 'Erfahrung', $years ]; }
+						if ( $m( 'coach_school' ) )     { $coach_facts[] = [ 'Golfschule', $m( 'coach_school' ) ]; }
 						if ( $health_cert )            { $coach_facts[] = [ 'Gesundheitsförderung', 'Zertifiziert (§ 20 SGB V)' ]; }
 						if ( $lang_names )             { $coach_facts[] = [ 'Sprachen', implode( ', ', $lang_names ) ]; }
 						if ( $venue_name )             { $coach_facts[] = [ 'Heimatplatz', trim( $venue_name . ( $venue_city ? ', ' . $venue_city : '' ) ) ]; }
 						if ( $more_venues )            { $coach_facts[] = [ 'Weitere Locations', implode( ', ', $more_venues ) ]; }
 						if ( $cap_line )               { $coach_facts[] = [ 'Gruppengröße', $cap_line ]; }
+						if ( 'school' === $m( 'coach_kind' ) && (int) ( $ccap['trainers'] ?? 0 ) > 1 ) { $coach_facts[] = [ 'Team', 'Bis zu ' . (int) $ccap['trainers'] . ' Golflehrer' ]; }
+						if ( (int) ( $ccap['rental_persons'] ?? 0 ) > 0 ) { $coach_facts[] = [ 'Leihschläger', 'für bis zu ' . (int) $ccap['rental_persons'] . ' Personen' ]; }
 						foreach ( $coach_facts as $f ) : ?>
 							<div class="fact-row"><span class="lbl"><?php echo esc_html( $f[0] ); ?></span><span class="val"><?php echo esc_html( $f[1] ); ?></span></div>
 						<?php endforeach; ?>
