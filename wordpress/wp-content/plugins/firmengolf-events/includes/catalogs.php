@@ -112,6 +112,18 @@ function fge_catalog_infra_groups(): array {
 			'drinks-flat'     => 'Getränkepauschale',
 			'coffee-break'    => 'Kaffeepause',
 		],
+		// Top-100-Recherche (02.09.): Hotel vor Ort 16, Unterkunft 19, Partnerhotels 29,
+		// Wellness 14, Sauna 9, Tennis 9, Fitness 9, Padel 2 — wichtig für
+		// Incentives, Offsites und Anreise am Vorabend.
+		'Übernachtung & Freizeit' => [
+			'hotel'          => 'Hotel oder Zimmer am Platz',
+			'partner-hotels' => 'Partnerhotels in der Nähe',
+			'wellness'       => 'Wellness & Spa',
+			'sauna'          => 'Sauna',
+			'tennis'         => 'Tennis',
+			'padel'          => 'Padel',
+			'fitness'        => 'Fitnessbereich',
+		],
 	];
 }
 

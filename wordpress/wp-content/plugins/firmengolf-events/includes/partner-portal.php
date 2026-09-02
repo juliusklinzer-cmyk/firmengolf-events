@@ -560,7 +560,7 @@ function fge_portal_handle_profile_update(): void {
 			}
 			update_post_meta( $partner_id, '_fge_latitude',  '' === ( $P['fge_latitude'] ?? '' )  ? '' : (string) (float) $P['fge_latitude'] );
 			update_post_meta( $partner_id, '_fge_longitude', '' === ( $P['fge_longitude'] ?? '' ) ? '' : (string) (float) $P['fge_longitude'] );
-			foreach ( [ 'poi_car', 'poi_parking', 'poi_train', 'poi_shuttle' ] as $k ) {
+			foreach ( [ 'poi_car', 'poi_parking', 'poi_train', 'poi_shuttle', 'poi_hotel' ] as $k ) {
 				update_post_meta( $partner_id, '_fge_' . $k, sanitize_text_field( $P[ 'fge_' . $k ] ?? '' ) );
 			}
 			// '' = keine Angabe (gleiche Drei-Zustands-Logik wie im Onboarding).
@@ -3983,6 +3983,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 					<div class="fg-form-row fg-form-row--2col">
 						<div><label class="fg-form-label" for="fge_poi_train">Mit der Bahn</label><input class="fg-form-input" type="text" id="fge_poi_train" name="fge_poi_train" value="<?php echo esc_attr( $m( 'poi_train' ) ); ?>" placeholder="z. B. S2 Riem, 10 Gehminuten"></div>
 						<div><label class="fg-form-label" for="fge_poi_shuttle">Shuttle-Service</label><input class="fg-form-input" type="text" id="fge_poi_shuttle" name="fge_poi_shuttle" value="<?php echo esc_attr( $m( 'poi_shuttle' ) ); ?>" placeholder="z. B. Abholung nach Absprache"></div>
+						<div><label class="fg-form-label" for="fge_poi_hotel">Hotel-Tipp in der Nähe</label><input class="fg-form-input" type="text" id="fge_poi_hotel" name="fge_poi_hotel" value="<?php echo esc_attr( $m( 'poi_hotel' ) ); ?>" placeholder="z. B. Hotel Seeblick, 5 Minuten"></div>
 					</div>
 					<div class="fg-form-row">
 						<label class="fg-form-label" for="fge_arrival_estation">Ladestation für E-Autos</label>
@@ -4145,6 +4146,7 @@ function fge_partner_arrival_pois( int $partner_id ): array {
 		'Bahn'    => $m( 'poi_train' ),
 		'Parken'  => $m( 'poi_parking' ),
 		'Shuttle' => $m( 'poi_shuttle' ),
+		'Hotel'   => $m( 'poi_hotel' ),
 	] );
 	if ( '1' === $m( 'arrival_estation' ) ) {
 		$pois['E-Ladestation'] = 'Vorhanden';

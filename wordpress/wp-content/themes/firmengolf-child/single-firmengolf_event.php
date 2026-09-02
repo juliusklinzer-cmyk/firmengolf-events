@@ -84,11 +84,9 @@ $review_quote  = (string) get_post_meta( $partner_id, '_fge_review_quote', true 
 $review_author = (string) get_post_meta( $partner_id, '_fge_review_author', true );
 $review_role   = (string) get_post_meta( $partner_id, '_fge_review_role', true );
 $directions    = (string) get_post_meta( $partner_id, '_fge_directions_text', true );
+// Hotel-Tipp kommt seit 02.09. zentral aus fge_partner_arrival_pois (poi_hotel
+// wird jetzt auch im Wizard/Portal erfasst, Top-100-Recherche).
 $pois = function_exists( 'fge_partner_arrival_pois' ) ? fge_partner_arrival_pois( $partner_id ) : [];
-$poi_hotel = (string) get_post_meta( $partner_id, '_fge_poi_hotel', true );
-if ( $poi_hotel !== '' ) {
-	$pois['Hotel'] = $poi_hotel;
-}
 $price_mode    = (string) get_post_meta( $post_id, '_fge_price_mode', true );
 $booking_label = 'gesamt' === $price_mode ? 'Als Paket, alles inklusive' : ( 'einzel' === $price_mode ? 'Einzelpreise' : 'Auf Anfrage' );
 // Im Event inkludierte Anfrage-Wünsche (für „✓ inklusive"-Markierung im Anfrage-Modal).

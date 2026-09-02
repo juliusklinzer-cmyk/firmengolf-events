@@ -533,6 +533,7 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 		case 'arrival':
 			// Same keys as admin meta box / Platz view.
 			update_post_meta( $partner_id, '_fge_poi_car',         $s( 'fge_poi_car' ) );
+			update_post_meta( $partner_id, '_fge_poi_hotel',       $s( 'fge_poi_hotel' ) );
 			update_post_meta( $partner_id, '_fge_poi_parking',     $s( 'fge_poi_parking' ) );
 			update_post_meta( $partner_id, '_fge_poi_train',       $s( 'fge_poi_train' ) );
 			update_post_meta( $partner_id, '_fge_poi_shuttle',     $s( 'fge_poi_shuttle' ) );
@@ -1715,6 +1716,7 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'coach_platzreife_note'         => (string) $m( 'coach_platzreife_note' ),
 		'golf_type'                     => (string) $m( 'golf_type' ),
 		'poi_car'                       => (string) $m( 'poi_car' ),
+		'poi_hotel'                     => (string) $m( 'poi_hotel' ),
 		'poi_parking'                   => (string) $m( 'poi_parking' ),
 		'poi_train'                     => (string) $m( 'poi_train' ),
 		'poi_shuttle'                   => (string) $m( 'poi_shuttle' ),
@@ -2007,6 +2009,9 @@ function fge_onboarding_card_icon( string $name ): string {
 		'weather'         => '<path d="M8 16a4 4 0 1 1 0-8 5 5 0 0 1 10 1 3 3 0 0 1 0 6H8z"/><path d="M9 19l-1 2M12 19l-1 2M15 19l-1 2"/>',
 		'branding'        => '<path d="M4 21V7a2 2 0 0 1 2-2h8l4 4v12"/><path d="M14 5v4h4"/>',
 		'tournament'      => '<path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M12 13v4M9 21h6"/>',
+		'hotel'           => '<path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M2 17h20"/><path d="M12 4v6"/>',
+		'wellness'        => '<path d="M4 20h16"/><path d="M7 16c0-1.5 1-2 1-3.5S7 10.5 7 9"/><path d="M12 16c0-1.5 1-2 1-3.5s-1-2-1-3.5"/><path d="M17 16c0-1.5 1-2 1-3.5s-1-2-1-3.5"/>',
+		'racket'          => '<circle cx="9" cy="9" r="6"/><path d="M13.5 13.5 20 20"/><path d="M6.5 9h5M9 6.5v5"/>',
 		'shower'          => '<path d="M12 4v3"/><circle cx="12" cy="9" r="2"/><path d="M8 13l-1 4M12 13l-1 4M16 13l-1 4"/>',
 		'cart'            => '<path d="M3 17h11l3-5h4"/><path d="M3 7h6v5"/><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/>',
 		'trolley'         => '<path d="M6 21V5a2 2 0 0 1 4 0v16"/><path d="M10 8l8 1.5L10 12"/><circle cx="6" cy="21" r="1.4"/>',
@@ -2073,6 +2078,7 @@ function fge_onboarding_icon_map(): array {
 		'shower' => 'shower', 'beamer' => 'beamer', 'screen' => 'screen', 'mic' => 'mic', 'wifi' => 'wifi',
 		'flipchart' => 'flipchart', 'whiteboard' => 'flipchart', 'moderation' => 'branding',
 		'catering-area' => 'plate', 'coach' => 'coach', 'trial-course' => 'intro-golf',
+		'hotel' => 'hotel', 'partner-hotels' => 'hotel', 'wellness' => 'wellness', 'sauna' => 'wellness', 'tennis' => 'racket', 'padel' => 'racket', 'fitness' => 'health',
 		'company-course' => 'team-challenge', 'advanced-course' => 'range-training',
 		'rental-clubs' => 'clubs', 'range-balls' => 'balls',
 		// Gastronomy
@@ -2631,6 +2637,11 @@ function fge_onboarding_render_arrival( int $step, int $partner_id, string $toke
 		</div>
 	</div>
 	<?php endif; ?>
+	<div class="ob-field full">
+		<label class="ob-field-label" for="fge_poi_hotel">Hotel-Tipp in der Nähe</label>
+		<span class="ob-field-hint">Für Teams mit Anreise am Vorabend, z. B. Hotel am Platz oder Partnerhotel.</span>
+		<input type="text" class="ob-input" id="fge_poi_hotel" name="fge_poi_hotel" value="<?php echo esc_attr( (string) ( $v['poi_hotel'] ?? '' ) ); ?>" placeholder="z. B. Hotel Seeblick, 5 Minuten entfernt">
+	</div>
 	<div class="ob-field-row">
 		<div class="ob-field">
 			<label class="ob-field-label" for="fge_poi_train">Mit der Bahn</label>
@@ -4049,7 +4060,7 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 
 			// ── Anfahrt ──
 			$arrival_rows = [];
-			foreach ( [ 'poi_car' => 'Auto', 'poi_parking' => 'Parken', 'poi_train' => 'Bahn', 'poi_shuttle' => 'Shuttle' ] as $pk => $pl ) {
+			foreach ( [ 'poi_car' => 'Auto', 'poi_parking' => 'Parken', 'poi_train' => 'Bahn', 'poi_shuttle' => 'Shuttle', 'poi_hotel' => 'Hotel' ] as $pk => $pl ) {
 				if ( '' !== (string) ( $v[ $pk ] ?? '' ) ) {
 					$arrival_rows[] = [ $pl, (string) $v[ $pk ] ];
 				}
