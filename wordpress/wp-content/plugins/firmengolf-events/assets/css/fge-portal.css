@@ -852,3 +852,8 @@
 	outline: 2px solid var(--fairway-700);
 	outline-offset: 2px;
 }
+
+/* Mobile-QA 03.09.: Nav-Ziele auf 44px Touch-Höhe (waren 36-37px). */
+@media (max-width: 768px) {
+	.fgpp .nav-tab, .fgpp .nav-link { min-height: 44px; padding-top: 11px; padding-bottom: 11px; }
+}
