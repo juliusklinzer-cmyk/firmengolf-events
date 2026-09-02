@@ -34,7 +34,7 @@ foreach ( $quali_ids as $qid ) {
 		$quali_names[] = $quali_all[ $qid ];
 	}
 }
-$years_l = [ 'u3' => 'Trainererfahrung', '3-5' => '3 bis 5 Jahre Erfahrung', '6-10' => '6 bis 10 Jahre Erfahrung', '10plus' => 'Über 10 Jahre Erfahrung' ];
+$years_l = [ 'u3' => 'Unter 3 Jahre Erfahrung', '3-5' => '3 bis 5 Jahre Erfahrung', '6-10' => '6 bis 10 Jahre Erfahrung', '10plus' => 'Über 10 Jahre Erfahrung' ];
 $years   = $years_l[ $m( 'coach_years' ) ] ?? '';
 $lang_all   = [ 'de' => 'Deutsch', 'en' => 'Englisch', 'fr' => 'Französisch', 'it' => 'Italienisch', 'es' => 'Spanisch' ];
 $lang_names = [];
@@ -169,7 +169,7 @@ get_header();
 			</section>
 
 			<section class="section">
-				<div class="section-head"><div><div class="eyebrow">Über <?php echo esc_html( $first ?: 'mich' ); ?></div><h2>Wer dein Team <em>trainiert</em></h2></div></div>
+				<div class="section-head"><div><div class="eyebrow">Über <?php echo esc_html( $first ?: 'mich' ); ?></div><h2>Wer dein Team <em>unterrichtet</em></h2></div></div>
 				<div class="about">
 					<div class="about-main">
 						<?php if ( $quali_line !== '' ) : ?>
@@ -223,12 +223,12 @@ get_header();
 						<p style="font-size:14px;color:var(--ink-600);margin:0;">Die Anfrage läuft über Firmengolf, kostenlos und unverbindlich. Wir klären Termin und Gruppengröße.</p>
 					</div>
 					<div class="panel">
-						<div class="panel-head"><h3 style="font-size:16px;">2 · <?php echo esc_html( $first ?: 'Der Pro' ); ?> plant mit euch</h3></div>
-						<p style="font-size:14px;color:var(--ink-600);margin:0;">Format, Ablauf und Niveau werden auf euer Team zugeschnitten, vom Schnupperkurs bis zur Platzreife.</p>
+						<div class="panel-head"><h3 style="font-size:16px;">2 · <?php echo esc_html( $first ?: 'Dein Golflehrer' ); ?> plant mit euch</h3></div>
+						<p style="font-size:14px;color:var(--ink-600);margin:0;">Format, Ablauf und Niveau werden auf euer Team zugeschnitten, vom Grundlagenkurs bis zur Platzreife.</p>
 					</div>
 					<div class="panel">
 						<div class="panel-head"><h3 style="font-size:16px;">3 · Ein Preis, eine Rechnung</h3></div>
-						<p style="font-size:14px;color:var(--ink-600);margin:0;">Ihr bekommt ein Gesamtangebot über Firmengolf, keine Einzelabrechnungen mit Trainer oder Anlage.</p>
+						<p style="font-size:14px;color:var(--ink-600);margin:0;">Ihr bekommt ein Gesamtangebot über Firmengolf, keine Einzelabrechnungen mit Golflehrer oder Anlage.</p>
 					</div>
 				</div>
 			</section>

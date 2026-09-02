@@ -381,23 +381,23 @@ function fge_catalog_coach_venue_use(): array {
  * @return array<string,string> id => Label
  */
 function fge_catalog_coach_formats(): array {
+	// Aus echten Golflehrer-Angeboten abgeleitet (Recherche 50 Anlagen, 02.09.):
+	// die tatsächlich verbreiteten Formate statt erfundener Sonderfälle. Keys der
+	// Bestandsformate bleiben (gespeicherte Auswahlen). Wording „Grundlagenkurs"
+	// statt „Schnupperkurs", „Golflehrer/Lehrer" statt „Pro".
 	return [
-		// Key bleibt (gespeicherte Auswahlen), Label folgt der globalen Richtlinie
-		// „Grundlagenkurs" (Julius, 28.08.).
-		'schnupper-team'            => 'Grundlagenkurs für Teams',
-		'platzreife-kompakt'        => 'Platzreife kompakt (1 bis 2 Tage)',
-		'platzreife-serie'          => 'Platzreife über mehrere Termine',
-		'firmenkurs-fortgeschritten' => 'Firmenkurs für Fortgeschrittene',
-		'einzeltraining'            => 'Einzeltraining und Coaching-Gutscheine',
-		'turnierbegleitung'         => 'Turnierbegleitung, Pro am Abschlag',
-		'station-longest-drive'     => 'Longest Drive oder Closest to Pin betreuen',
-		'station-kurzspiel'         => 'Putting- und Kurzspiel-Station',
-		'indoor-training'           => 'Training am Simulator',
-		'theorie-regeln'            => 'Regel- und Etikette-Theorie',
-		'golf-fitness'              => 'Golf-Fitness und Mobility-Einheit',
-		'teambuilding-golf'         => 'Teambuilding-Format mit Golfanteil',
-		'inhouse-golf'              => 'In-House Golf beim Unternehmen',
-		'familientag'               => 'Kinder- und Familientag',
+		'schnupper-team'    => 'Grundlagenkurs für Teams',
+		'platzreife-kompakt' => 'Platzreife',
+		'gruppentraining'   => 'Gruppen- und Kleingruppentraining',
+		'platztraining'     => 'Platztraining und Course Management',
+		'teambuilding-golf' => 'Firmenevent und Teambuilding',
+		'kurzplatz'         => 'Kurzplatz-Runde',
+		'trackman-range'    => 'Training an der Trackman Range',
+		'nacht-event'       => 'Flutlicht- und Nacht-Event',
+		'schlaegerbau'      => 'Schlägerbau und Fitting',
+		// Einzeltraining bleibt als Dienstleistung wählbar, ist aber kein
+		// Firmen-Event (Julius, 02.09.).
+		'einzeltraining'    => 'Einzeltraining und Coaching',
 	];
 }
 

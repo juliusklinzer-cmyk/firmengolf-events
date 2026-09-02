@@ -107,11 +107,12 @@ function fge_onboarding_manifest( string $type = '' ): array {
 			[ 'id' => 'coach-capacity', 'chapter' => 2, 'kind' => 'form', 'skip_link' => true ],
 			[ 'id' => 'avail',          'chapter' => 3, 'kind' => 'form' ],
 			[ 'id' => 'pricing',        'chapter' => 3, 'kind' => 'form' ],
-			[ 'id' => 'media',          'chapter' => 3, 'kind' => 'form' ],
-			// Portal-Zugang + weitere Ansprechpartner ans Ende (Julius, 01.09.):
-			// erst alles ausfüllen, dann Login anlegen, dann einreichen.
+			// Portal-Zugang spät (Julius, 01.09.: erst alles ausfüllen, dann Login).
+			// media MUSS nach main stehen: der Bild-Upload braucht das eingeloggte
+			// Konto, das erst hier entsteht (Julius, 02.09.).
 			[ 'id' => 'main',           'chapter' => 3, 'kind' => 'form' ],
 			[ 'id' => 'contacts',       'chapter' => 3, 'kind' => 'form', 'skippable' => true ],
+			[ 'id' => 'media',          'chapter' => 3, 'kind' => 'form' ],
 			[ 'id' => 'review',         'chapter' => 3, 'kind' => 'review', 'wide' => true ],
 		];
 	} else {
@@ -3453,20 +3454,9 @@ function fge_onboarding_render_coach_formats( int $step, int $partner_id, string
 		endforeach; ?>
 	</div>
 	<?php fge_onboarding_error( $errors, 'fge_coach_formats' );
-	// Größere Eventmodule (Julius, 28.08.): Der Golflehrer ist der Organisator und
-	// stimmt sie selbst mit der Anlage ab, die Events laufen initial über ihn.
-	$sel_pf = is_array( $v['event_formats'] ?? null ) ? $v['event_formats'] : [];
-	?>
-	<div class="ob-cat" style="margin-top:20px;">
-		<div class="ob-cat-h">Größere Eventmodule</div>
-		<span class="ob-field-hint">Formate, die du gemeinsam mit deiner Anlage anbieten kannst. Du stimmst sie mit dem Platz ab, die Anfragen laufen über dich.</span>
-		<div class="ob-cards">
-			<?php foreach ( fge_catalog_partner_formats() as $pid_f => $pl ) :
-				fge_onboarding_card( 'checkbox', 'fge_event_formats[]', (string) $pid_f, (string) $pl, in_array( $pid_f, $sel_pf, true ) );
-			endforeach; ?>
-		</div>
-	</div>
-	<?php
+	// „Größere Eventmodule" (event_formats) gestrichen (Julius, 02.09.): war eine
+	// zweite, überschneidende Kachelgruppe (26 Karten total). Die konkreten
+	// Angebote legt der Lehrer später im Portal an.
 	fge_onboarding_cards_script();
 	echo '</form>';
 }
@@ -3784,7 +3774,10 @@ function fge_onboarding_render_step_11( int $step, int $partner_id, string $toke
 		'indoor' => 'Bilder, die eure Location zeigen.',
 		'coach'  => 'Bilder, die dich und deine Kurse zeigen.',
 	];
-	fge_onboarding_render_step_header( $step, $media_titles[ fge_onboarding_current_type() ] ?? $media_titles['course'], 'Logo und Titelbild sind wichtig, aber du kannst auch ohne weitermachen, wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.' );
+	$media_lead = 'coach' === fge_onboarding_current_type()
+		? 'Profilbild und Titelbild sind wichtig, aber du kannst auch ohne weitermachen, wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.'
+		: 'Logo und Titelbild sind wichtig, aber du kannst auch ohne weitermachen, wir erinnern dich daran, sobald wir dein Profil prüfen. Die Bildrechte-Bestätigung ist Pflicht.';
+	fge_onboarding_render_step_header( $step, $media_titles[ fge_onboarding_current_type() ] ?? $media_titles['course'], $media_lead );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
 	$rights_on = ( (string) ( $v['image_rights_confirmed'] ?? '' ) === '1' );
