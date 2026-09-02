@@ -766,7 +766,17 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 		case 'coach-quali':
 			update_post_meta( $partner_id, '_fge_coach_quali', $san_group( 'fge_coach_quali', array_keys( fge_catalog_coach_quali() ) ) );
 			update_post_meta( $partner_id, '_fge_coach_quali_other', $s( 'fge_coach_quali_other' ) );
-			update_post_meta( $partner_id, '_fge_coach_health_cert', '1' === (string) ( $post['fge_coach_health_cert'] ?? '' ) ? '1' : '' );
+			$hc_on = '1' === (string) ( $post['fge_coach_health_cert'] ?? '' );
+			update_post_meta( $partner_id, '_fge_coach_health_cert', $hc_on ? '1' : '' );
+			// Gesundheitsförderung gut sichtbar + matchbar (Julius, 02.09.):
+			// zertifizierte Lehrer sollen bei Gesundheitstag-Anfragen auftauchen.
+			$hc_fmts = (array) get_post_meta( $partner_id, '_fge_event_formats', true );
+			if ( $hc_on && ! in_array( 'gesundheitstag', $hc_fmts, true ) ) {
+				$hc_fmts[] = 'gesundheitstag';
+				update_post_meta( $partner_id, '_fge_event_formats', array_values( $hc_fmts ) );
+			} elseif ( ! $hc_on && in_array( 'gesundheitstag', $hc_fmts, true ) ) {
+				update_post_meta( $partner_id, '_fge_event_formats', array_values( array_diff( $hc_fmts, [ 'gesundheitstag' ] ) ) );
+			}
 			break;
 
 		case 'coach-story':
@@ -842,6 +852,10 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 				'schlaegerbau'       => 'workshop',
 			];
 			$cf_evt = array_values( array_unique( array_filter( array_map( static fn( $f ) => $cf_map[ $f ] ?? '', $cf_sel ) ) ) );
+			if ( '1' === (string) get_post_meta( $partner_id, '_fge_coach_health_cert', true ) ) {
+				$cf_evt[] = 'gesundheitstag'; // Zertifizierte bleiben für Gesundheitstage matchbar
+				$cf_evt   = array_values( array_unique( $cf_evt ) );
+			}
 			update_post_meta( $partner_id, '_fge_event_formats', $cf_evt );
 			// Voller Pfad (Entscheidung 1): zusätzlich die Platz-Formate, damit der
 			// Pro dasselbe verkaufen darf wie ein Platzpartner.

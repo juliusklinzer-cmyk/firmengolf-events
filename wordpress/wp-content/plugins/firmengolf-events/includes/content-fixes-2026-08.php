@@ -398,3 +398,33 @@ add_action( 'init', static function () {
 	}
 	update_option( 'fge_matching_backfill_2026_09', 1, false );
 }, 25 );
+
+
+// Nachzügler zum Matching-Backfill (Julius, 02.09. abends): Gesundheits-zertifizierte
+// Golflehrer für Gesundheitstag-Anfragen matchbar machen.
+add_action( 'init', static function () {
+	if ( get_option( 'fge_health_backfill_2026_09' ) ) {
+		return;
+	}
+	$ids = get_posts( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => [ 'publish', 'draft', 'pending' ],
+		'numberposts' => -1,
+		'fields'      => 'ids',
+	] );
+	foreach ( $ids as $pid ) {
+		$pid = (int) $pid;
+		if ( ! function_exists( 'fge_partner_type' ) || 'coach' !== fge_partner_type( $pid ) ) {
+			continue;
+		}
+		if ( '1' !== (string) get_post_meta( $pid, '_fge_coach_health_cert', true ) ) {
+			continue;
+		}
+		$fmts = (array) get_post_meta( $pid, '_fge_event_formats', true );
+		if ( ! in_array( 'gesundheitstag', $fmts, true ) ) {
+			$fmts[] = 'gesundheitstag';
+			update_post_meta( $pid, '_fge_event_formats', array_values( $fmts ) );
+		}
+	}
+	update_option( 'fge_health_backfill_2026_09', 1, false );
+}, 26 );

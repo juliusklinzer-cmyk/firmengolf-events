@@ -3435,6 +3435,7 @@ function fge_portal_render_coach_profile( int $partner_id ): void {
 	$facts = [];
 	if ( $m( 'public_golfclub_name' ) ) { $facts[] = [ 'Titel', $m( 'public_golfclub_name' ) ]; }
 	if ( $quali_names )                 { $facts[] = [ 'Ausbildung', implode( ', ', $quali_names ) ]; }
+	if ( '1' === $m( 'coach_health_cert' ) ) { $facts[] = [ 'Gesundheitsförderung', 'Zertifiziert (§ 20 SGB V)' ]; }
 	if ( isset( $years_l[ $m( 'coach_years' ) ] ) ) { $facts[] = [ 'Als Golflehrer tätig', $years_l[ $m( 'coach_years' ) ] ]; }
 	if ( $lang_names )                  { $facts[] = [ 'Sprachen', implode( ', ', $lang_names ) ]; }
 	if ( $venue_name )                  { $facts[] = [ 'Heimatplatz', $venue_name ]; }

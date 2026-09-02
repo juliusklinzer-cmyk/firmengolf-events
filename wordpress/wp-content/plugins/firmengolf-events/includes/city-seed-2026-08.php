@@ -305,3 +305,73 @@ add_action( 'init', static function () {
 		}
 	}
 }, 22 );
+
+// ── Seed T3 (02.09.2026): Weihnachtsfeier in allen Städten ────────────────────
+// Neuer Saison-Typ 'weihnachtsfeier' (1.9.205). Master München, geklont über
+// dieselben Städte wie das Turnier-Trio. Recherche-Basis: Weihnachtsfeiern bei
+// 15/100 Golfanlagen und 14/50 Simulatoren belegt. Preise = Platzhalter-Logik
+// wie alle Seeds (99 netto → 119 € p.P. Kundenpreis).
+function fge_cityseed26_t3_master(): array {
+	return [
+		'post_title' => 'Weihnachtsfeier mit Golf in München',
+		'post_name'  => 'weihnachtsfeier-mit-golf-in-muenchen',
+		'meta'       => [
+			'_fge_event_type'       => 'weihnachtsfeier',
+			'_fge_event_status'     => 'freigegeben',
+			'_fge_event_location'   => 'Raum München',
+			'_fge_region'           => 'München',
+			'_fge_city'             => 'München',
+			'_fge_participants_min' => '10',
+			'_fge_participants_max' => '60',
+			'_fge_duration'         => 'Abend · ca. 4 Std.',
+			'_fge_card_description' => 'Die etwas andere Weihnachtsfeier: Glühwein-Empfang, Golf-Challenge mit Betreuung und Siegerehrung, danach das gemeinsame Weihnachtsessen. Je nach Termin und Wunsch indoor am Simulator oder auf der Anlage. Bei Buchung als Paket ist alles inklusive, anpassbar auf eure Feier.',
+			'_fge_price_mode'       => 'gesamt',
+			'_fge_price_basis'      => 'person',
+			'_fge_price_amount'     => '99',
+			'_fge_event_dayflow'    => "Glühwein-Empfang\nAnkommen in weihnachtlicher Atmosphäre, Glühwein und Punsch zur Begrüßung, kurze Vorstellung des Abends.\n\nGolf-Challenge mit Betreuung\nNearest to the Pin, Longest Drive und Team-Wertung, angeleitet und für alle Level. Im Winter an Indoor-Simulatoren mit Live-Leaderboard, Schläger werden gestellt.\n\nSiegerehrung\nAuswertung mit Preisen für die besten Teams, garantiert mit Geschichten für die Kaffeeküche.\n\nWeihnachtsessen\nGemeinsames Menü oder Buffet zum Ausklang, auf Wunsch mit Getränkepauschale.",
+			'_fge_event_includes'   => "Glühwein-Empfang\nGolf-Challenge mit Betreuung\nLeihschläger & Bälle\nTurnierwertung & Siegerehrung\nPreise für die Gewinner-Teams\nWeihnachtsmenü oder Buffet\nOrganisation & ein Ansprechpartner",
+			'_fge_event_addons'     => "Getränkepauschale\nLive-Musik oder DJ\nFotograf\nGebrandete Preise\nShuttle-Service",
+			'_fge_geo_lat'          => '48.137',
+			'_fge_geo_lng'          => '11.575',
+		],
+	];
+}
+
+add_action( 'init', static function () {
+	if ( get_option( 'fge_city_seed_2026_09_t3' ) ) {
+		return;
+	}
+	update_option( 'fge_city_seed_2026_09_t3', '1', true );
+
+	$master = fge_cityseed26_t2_ensure_master( fge_cityseed26_t3_master() );
+	if ( ! $master instanceof WP_Post ) {
+		return;
+	}
+
+	// Städte über die vorhandenen 18-Loch-Klone finden (wie Seed T2).
+	global $wpdb;
+	$clone_ids = $wpdb->get_col( $wpdb->prepare(
+		"SELECT ID FROM {$wpdb->posts}
+		 WHERE post_type = 'firmengolf_event' AND post_status = 'publish'
+		   AND post_name LIKE %s AND post_name != %s",
+		'firmen-golfturnier-in-%',
+		'firmen-golfturnier-in-muenchen'
+	) );
+	foreach ( $clone_ids as $cid ) {
+		$c18 = get_post( (int) $cid );
+		if ( ! $c18 instanceof WP_Post ) {
+			continue;
+		}
+		$city_slug = substr( $c18->post_name, strlen( 'firmen-golfturnier-in-' ) );
+		$city      = [
+			(string) get_post_meta( $c18->ID, '_fge_city', true ),
+			(string) get_post_meta( $c18->ID, '_fge_event_location', true ),
+			(string) get_post_meta( $c18->ID, '_fge_geo_lat', true ),
+			(string) get_post_meta( $c18->ID, '_fge_geo_lng', true ),
+		];
+		if ( '' === $city[0] || '' === $city[2] ) {
+			continue;
+		}
+		fge_cityseed26_clone_master( $master, $city_slug, $city );
+	}
+}, 30 );

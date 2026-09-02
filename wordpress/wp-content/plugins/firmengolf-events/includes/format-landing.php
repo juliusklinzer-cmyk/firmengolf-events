@@ -130,6 +130,24 @@ function fge_get_event_format_pages(): array {
 			],
 			'types'   => $t_turnier,
 		],
+		// Saisonformat (Julius, 02.09.): eigener Event-Typ seit 1.9.205; die Top-100-
+		// Recherche belegt Weihnachtsfeiern bei 15/100 Golfanlagen und 14/50
+		// Simulatoren. Die Seite listet beide Welten (weihnachtsfeier + indoor-golf).
+		'weihnachtsfeier' => [
+			'name'    => 'Weihnachtsfeier',
+			'eyebrow' => 'Format · Weihnachtsfeier',
+			'h1'      => 'Weihnachtsfeier mit Golf',
+			'lead'    => 'Die Firmenfeier, über die noch im Januar geredet wird: Glühwein, Golf-Challenge und gemeinsames Weihnachtsessen, indoor oder am Platz.',
+			'intro'   => 'Eine Weihnachtsfeier mit Golf verbindet das gemeinsame Essen mit einem Erlebnis, das wirklich alle mitnimmt, auch ohne Golferfahrung. Im Winter geht es in die Indoor-Simulatoren: warme Lounge, Turniermodus mit Live-Leaderboard, Glühwein an der Bar. Golfanlagen mit eigener Gastronomie richten eure Feier auch im Clubhaus aus, vom Empfang bis zum Menü. Wir stellen Location, Ablauf und Verpflegung passend zu eurer Gruppe zusammen, deutschlandweit.',
+			'faqs'    => [
+				$f_anf,
+				$faq( 'Wann sollten wir für Dezember anfragen?', 'Die beliebten Termine von Ende November bis Mitte Dezember sind früh vergeben. Frag am besten bis Oktober an, dann sichern wir euch Location und Wunschtermin.' ),
+				fge_format_price_faq( 'Was kostet eine Weihnachtsfeier mit Golf?', 'Weihnachtsfeiern', [ 'weihnachtsfeier', 'indoor-golf' ], 'Im Paket stecken das Golf-Programm mit Betreuung, Turnier und Siegerehrung sowie das gemeinsame Essen. Menü, Getränkepauschale und Extras passen wir an eure Feier an.' ),
+				$f_fast,
+				$f_bill,
+			],
+			'types'   => [ 'weihnachtsfeier', 'indoor-golf' ],
+		],
 		'platzreife' => [
 			'name'    => 'Platzreife',
 			'eyebrow' => 'Format · Platzreife',
@@ -248,6 +266,7 @@ function fge_format_occasion( string $slug ): string {
 		'kundenevent'     => 'Kundenevent',
 		'incentive'       => 'Incentive-Reise',
 		'after-work-golf' => 'After-Work Golf',
+		'weihnachtsfeier' => 'Weihnachtsfeier',
 	];
 	return $map[ $slug ] ?? '';
 }

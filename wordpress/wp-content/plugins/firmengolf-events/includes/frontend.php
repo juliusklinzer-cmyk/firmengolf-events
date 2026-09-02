@@ -672,6 +672,7 @@ function fge_event_pool_category( int $event_id ): string {
 		'workshop'           => 'workshop',
 		'nacht_event'        => 'nachtevent',
 		'indoor-golf'        => 'indoor', // Persona-Audit 02.09.: Indoor-Events bekamen Fairway-Luftbilder
+		'weihnachtsfeier'    => 'nachtevent', // Abendstimmung passt zur Feier, eigener Pool folgt bei Bedarf
 	];
 	$cat = $map[ $type ] ?? '';
 	if ( $cat === '' ) {

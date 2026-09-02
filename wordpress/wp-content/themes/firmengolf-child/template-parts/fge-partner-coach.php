@@ -46,6 +46,7 @@ foreach ( (array) get_post_meta( $pid, '_fge_coach_langs', true ) as $lid ) {
 	}
 }
 $quali_line = implode( ' · ', array_filter( [ $quali_names[0] ?? '', $years, implode( ', ', $lang_names ) ] ) );
+$health_cert = '1' === $m( 'coach_health_cert' ); // Gesundheitsfördernde Maßnahmen (§ 20 SGB V), Julius 02.09.: eigener sichtbarer Block
 
 // Die Anlage des Golflehrers: ist der Platz als Partner verknüpft, kommen Name
 // und Ort live von dort (fge_coach_venue_display); sonst legt der Coach die
@@ -198,6 +199,7 @@ get_header();
 						$coach_facts = [];
 						if ( ! empty( $quali_names ) ) { $coach_facts[] = [ 'Ausbildung', implode( ', ', $quali_names ) ]; }
 						if ( $years )                  { $coach_facts[] = [ 'Erfahrung', $years ]; }
+						if ( $health_cert )            { $coach_facts[] = [ 'Gesundheitsförderung', 'Zertifiziert (§ 20 SGB V)' ]; }
 						if ( $lang_names )             { $coach_facts[] = [ 'Sprachen', implode( ', ', $lang_names ) ]; }
 						if ( $venue_name )             { $coach_facts[] = [ 'Heimatplatz', trim( $venue_name . ( $venue_city ? ', ' . $venue_city : '' ) ) ]; }
 						if ( $more_venues )            { $coach_facts[] = [ 'Weitere Locations', implode( ', ', $more_venues ) ]; }
@@ -217,6 +219,23 @@ get_header();
 					<?php foreach ( $cf_names as $fmt ) : ?>
 						<div class="evd-poi"><div class="evd-onsite-n"><?php echo esc_html( $fmt ); ?></div></div>
 					<?php endforeach; ?>
+				</div>
+			</section>
+			<?php endif; ?>
+
+			<?php if ( $health_cert ) : /* Gesundheitsförderung prominent (Julius, 02.09.):
+				Firmen können solche Maßnahmen aus eigenen Gesundheitsbudgets bezuschussen,
+				deshalb ein eigener, gut sichtbarer Block. Sachliche Gesetzes-Fakten wie im
+				Wizard-Infotext, keine Beratung. */ ?>
+			<section class="section">
+				<div class="section-head"><div><div class="eyebrow">Gesundheitsförderung</div><h2>Golf als <em>Gesundheitsmaßnahme</em></h2></div></div>
+				<div class="panel" style="display:flex;gap:18px;align-items:flex-start;background:var(--fairway-100);border-color:var(--fairway-200);">
+					<span aria-hidden="true" style="width:48px;height:48px;border-radius:14px;background:var(--paper-50);color:var(--fairway-700);display:inline-flex;align-items:center;justify-content:center;flex:0 0 48px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></span>
+					<div>
+						<p style="margin:0 0 6px;font-weight:600;color:var(--fairway-800);"><?php echo esc_html( $first ?: $coach_name ); ?> ist zertifiziert für gesundheitsfördernde Maßnahmen.</p>
+						<p style="margin:0;font-size:14.5px;line-height:1.6;color:var(--ink-700);">Das sind anerkannte Präventionskurse nach § 20 SGB V. Arbeitgeber können solche Maßnahmen mit bis zu 600 € pro Mitarbeitenden und Jahr steuerfrei bezuschussen (§ 3 Nr. 34 EStG), damit wird der Golfkurs fürs Team auch aus dem Gesundheitsbudget finanzierbar.</p>
+						<a class="btn btn-brand btn-sm" style="margin-top:12px;" href="<?php echo esc_url( $ind_url ); ?>">Gesundheitsangebot anfragen</a>
+					</div>
 				</div>
 			</section>
 			<?php endif; ?>
