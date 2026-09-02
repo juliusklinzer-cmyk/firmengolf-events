@@ -341,3 +341,60 @@ add_action( 'init', static function () {
 	}
 	update_option( 'fge_partner_type_pages_2026_08', 1, false );
 }, 20 );
+
+// ── Matching-Backfill für Bestand (Persona-Audit 02.09.2026, Paket 2) ─────────
+// Indoor: Kapazität + Saison in die Matching-Keys spiegeln; Coach: gewählte
+// Formate auf Event-Typ-Keys mappen. Neue Anmeldungen schreiben die Spiegel
+// beim Save (onboarding.php), hier werden nur Bestandspartner nachgezogen.
+add_action( 'init', static function () {
+	if ( get_option( 'fge_matching_backfill_2026_09' ) ) {
+		return;
+	}
+	$ids = get_posts( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => [ 'publish', 'draft', 'pending' ],
+		'numberposts' => -1,
+		'fields'      => 'ids',
+	] );
+	$cf_map = [
+		'schnupper-team'     => 'teamevent',
+		'platzreife-kompakt' => 'platzreife',
+		'gruppentraining'    => 'teamevent',
+		'platztraining'      => 'teamevent',
+		'teambuilding-golf'  => 'teamevent',
+		'kurzplatz'          => 'after_work_golf',
+		'trackman-range'     => 'after_work_golf',
+		'nacht-event'        => 'nacht_event',
+		'schlaegerbau'       => 'workshop',
+	];
+	foreach ( $ids as $pid ) {
+		$pid   = (int) $pid;
+		$ptype = function_exists( 'fge_partner_type' ) ? fge_partner_type( $pid ) : 'course';
+		if ( 'indoor' === $ptype ) {
+			$sim = get_post_meta( $pid, '_fge_indoor_sim', true );
+			if ( is_array( $sim ) && absint( $sim['max_persons'] ?? 0 ) > 0 ) {
+				$cap        = (array) get_post_meta( $pid, '_fge_cap', true );
+				$cap['min'] = max( 2, absint( $sim['box_comfort'] ?? 0 ) );
+				$cap['max'] = absint( $sim['max_persons'] );
+				update_post_meta( $pid, '_fge_cap', $cap );
+			}
+			$yr = (string) get_post_meta( $pid, '_fge_indoor_year_round', true );
+			if ( '' !== $yr && '' === (string) get_post_meta( $pid, '_fge_season_from', true ) ) {
+				update_post_meta( $pid, '_fge_season_from', '0' === $yr ? min( 12, max( 1, absint( get_post_meta( $pid, '_fge_indoor_open_from', true ) ?: 1 ) ) ) : 1 );
+				update_post_meta( $pid, '_fge_season_to', '0' === $yr ? min( 12, max( 1, absint( get_post_meta( $pid, '_fge_indoor_open_to', true ) ?: 12 ) ) ) : 12 );
+			}
+		} elseif ( 'coach' === $ptype ) {
+			$existing = (array) get_post_meta( $pid, '_fge_event_formats', true );
+			if ( ! array_filter( $existing ) ) {
+				$cf_evt = array_values( array_unique( array_filter( array_map(
+					static fn( $f ) => $cf_map[ (string) $f ] ?? '',
+					(array) get_post_meta( $pid, '_fge_coach_formats', true )
+				) ) ) );
+				if ( $cf_evt ) {
+					update_post_meta( $pid, '_fge_event_formats', $cf_evt );
+				}
+			}
+		}
+	}
+	update_option( 'fge_matching_backfill_2026_09', 1, false );
+}, 25 );

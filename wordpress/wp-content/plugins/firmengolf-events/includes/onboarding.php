@@ -677,6 +677,16 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 				'staffing'       => $san_select( 'fge_indoor_staffing', array_keys( fge_catalog_indoor_staffing() ) ),
 				'max_persons'    => absint( $post['fge_indoor_max_persons'] ?? 0 ),
 			] );
+			// Kapazität in die Matching-Keys spiegeln (Persona-Audit 02.09., D2):
+			// das Eignungs-Matching filtert hart über _fge_cap[min/max] — reine
+			// Indoor-Partner schrieben die nie und fielen aus der Kapazitätslogik.
+			// NUR beim Indoor-Typ; Golfplätze pflegen _fge_cap über die capacity-Slide.
+			if ( 'indoor' === fge_partner_type( $partner_id ) ) {
+				$idc_cap        = (array) get_post_meta( $partner_id, '_fge_cap', true );
+				$idc_cap['min'] = max( 2, absint( $post['fge_indoor_box_comfort'] ?? 0 ) );
+				$idc_cap['max'] = absint( $post['fge_indoor_max_persons'] ?? 0 );
+				update_post_meta( $partner_id, '_fge_cap', $idc_cap );
+			}
 			break;
 
 		// ── Formular B: Indoor-Wizard ─────────────────────────────────────────
@@ -726,6 +736,11 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			update_post_meta( $partner_id, '_fge_indoor_after_hours', $san_select( 'fge_indoor_after_hours', [ 'ja', 'nein' ] ) );
 			// Saison-Label für alle bestehenden Anzeigen; ganzjährig ist der Normalfall.
 			update_post_meta( $partner_id, '_fge_season', '0' === $year_round ? 'Saisonal, siehe Öffnungszeiten' : 'Ganzjährig' );
+			// Saison-Monate auch in die Matching-Keys spiegeln (Persona-Audit 02.09.,
+			// D3): Saison-Score und Offseason-Badge lesen _fge_season_from/_to —
+			// die schrieb der Indoor-Wizard nie, der Ganzjahres-Vorteil war unsichtbar.
+			update_post_meta( $partner_id, '_fge_season_from', '0' === $year_round ? min( 12, max( 1, absint( $post['fge_indoor_open_from'] ?? 1 ) ) ) : 1 );
+			update_post_meta( $partner_id, '_fge_season_to', '0' === $year_round ? min( 12, max( 1, absint( $post['fge_indoor_open_to'] ?? 12 ) ) ) : 12 );
 			update_post_meta( $partner_id, '_fge_individual_availability_check', 1 );
 			break;
 
@@ -810,7 +825,24 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'coach-formats':
-			update_post_meta( $partner_id, '_fge_coach_formats', $san_group( 'fge_coach_formats', array_keys( fge_catalog_coach_formats() ) ) );
+			$cf_sel = $san_group( 'fge_coach_formats', array_keys( fge_catalog_coach_formats() ) );
+			update_post_meta( $partner_id, '_fge_coach_formats', $cf_sel );
+			// Auf die Event-Typ-Keys spiegeln (Persona-Audit 02.09., D4): der
+			// Format-Bonus im Matching und die Format-Anzeige lesen _fge_event_formats,
+			// das der Coach-Wizard seit dem Slim-Umbau nicht mehr sendete.
+			$cf_map = [
+				'schnupper-team'     => 'teamevent',
+				'platzreife-kompakt' => 'platzreife',
+				'gruppentraining'    => 'teamevent',
+				'platztraining'      => 'teamevent',
+				'teambuilding-golf'  => 'teamevent',
+				'kurzplatz'          => 'after_work_golf',
+				'trackman-range'     => 'after_work_golf',
+				'nacht-event'        => 'nacht_event',
+				'schlaegerbau'       => 'workshop',
+			];
+			$cf_evt = array_values( array_unique( array_filter( array_map( static fn( $f ) => $cf_map[ $f ] ?? '', $cf_sel ) ) ) );
+			update_post_meta( $partner_id, '_fge_event_formats', $cf_evt );
 			// Voller Pfad (Entscheidung 1): zusätzlich die Platz-Formate, damit der
 			// Pro dasselbe verkaufen darf wie ein Platzpartner.
 			if ( isset( $post['fge_event_formats'] ) ) {
@@ -1092,7 +1124,10 @@ function fge_onboarding_handle_step(): void {
 		}
 		update_post_meta( $partner_id, '_fge_onboarding_final_note', sanitize_textarea_field( wp_unslash( $_POST['fge_final_note'] ?? '' ) ) );
 		fge_onboarding_submit( $partner_id );
-		wp_redirect( add_query_arg( 'ob_submitted', '1', fge_onboarding_page_url() ) );
+		// Typ mitgeben (Persona-Audit 02.09.): Der Token ist nach dem Submit weg;
+		// ohne eingeloggte Session (anderes Gerät, abgelaufener Login) fiel die
+		// Erfolgsseite sonst auf die Golfplatz-Texte zurück.
+		wp_redirect( add_query_arg( [ 'ob_submitted' => '1', 'ob_type' => fge_partner_type( $partner_id ) ], fge_onboarding_page_url() ) );
 		exit;
 	}
 
@@ -3980,7 +4015,7 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 			} else {
 				// ── Golfplatz ──
 				$gt_label = fge_catalog_golf_types()[ (string) ( $v['golf_type'] ?? '' ) ] ?? '';
-				fge_onboarding_rev_block( 'Golfplatz', $edit( 'golftype' ), [
+				fge_onboarding_rev_block( 'Golfplatz', $edit( 'basics' ), [ // golftype-Slide ist seit 01.09. in basics gebündelt
 					[ 'Golfangebot', $gt_label ],
 					[ 'Öffentlicher Name', (string) $v['public_golfclub_name'] ],
 					[ 'Website', (string) $v['website_url'] ],
@@ -4398,9 +4433,16 @@ function fge_onboarding_summary_section( string $title, array $rows ): void { ?>
 
 function fge_onboarding_render_confirmation(): void {
 	$portal   = trailingslashit( home_url( '/partnerportal/' ) );
-	$bg       = function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'hero-fairway-wide.jpg' ) : '';
 	$done_pid = fge_onboarding_get_current_partner_id();
-	$type     = $done_pid > 0 ? fge_partner_type( $done_pid ) : 'course';
+	// Fallback-Kette (Persona-Audit 02.09.): Partner-Kontext > ob_type-Param > course.
+	$url_type = sanitize_key( $_GET['ob_type'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification
+	$type     = $done_pid > 0
+		? fge_partner_type( $done_pid )
+		: ( isset( fge_catalog_partner_types()[ $url_type ] ) ? $url_type : 'course' );
+	// Hintergrund typrichtig: Indoor bekommt die Lounge, nicht das Fairway.
+	$bg = function_exists( 'fge_get_placeholder_image_url' )
+		? fge_get_placeholder_image_url( 'indoor' === $type ? 'onboarding-indoor-lounge.jpg' : 'hero-fairway-wide.jpg' )
+		: '';
 
 	// Typspezifische Texte (Julius/Audit 28.08.: vorher überall „Golfplatz").
 	$copy = [

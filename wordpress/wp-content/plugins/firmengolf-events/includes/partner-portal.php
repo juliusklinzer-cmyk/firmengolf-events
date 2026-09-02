@@ -1988,9 +1988,14 @@ function fge_portal_render_todo_row( int $partner_id ): void {
  * nach viel Arbeit). Anlegen bleibt möglich: im Formular unter „Eventart" bzw.
  * über die „Andere"-Kachel — als Inspiration statt Pflichtprogramm.
  */
-function fge_portal_hidden_empty_types(): array {
-	// indoor-golf: leere Kachel nie im allgemeinen Grid — Anlegen läuft über den
-	// Indoor-Reiter, den nur Partner mit Indoor-Ausstattung sehen.
+function fge_portal_hidden_empty_types( int $partner_id = 0 ): array {
+	// Für reine Indoor-Partner ist Indoor Golf DIE Kernkategorie — die leere
+	// Kachel muss sichtbar sein (Persona-Audit 02.09.: Sarah fand sie nicht).
+	// Bei Golfplätzen bleibt sie versteckt, dort läuft das Anlegen über den
+	// Indoor-Reiter (nur mit Indoor-Ausstattung).
+	if ( $partner_id > 0 && function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $partner_id ) ) {
+		return [ 'gesundheitstag', 'networking', 'nacht_event' ];
+	}
 	return [ 'gesundheitstag', 'networking', 'nacht_event', 'indoor-golf' ];
 }
 
@@ -2013,7 +2018,7 @@ function fge_portal_render_cat_grid( int $partner_id, string $base, bool $compac
 			] );
 
 			if ( empty( $events ) ) :
-				if ( $compact || in_array( $type_key, fge_portal_hidden_empty_types(), true ) ) {
+				if ( $compact || in_array( $type_key, fge_portal_hidden_empty_types( $partner_id ), true ) ) {
 					continue; // Übersicht bzw. Nischen-Typ: keine leere Kachel, Anlegen geht über „Andere"/Formular
 				}
 				$new_url = esc_url( $base . '?tab=angebote&portal_action=new&preset_type=' . $type_key );
@@ -2293,9 +2298,19 @@ function fge_portal_section_angebote( int $partner_id ): void {
 			</div>
 		</div>
 
+		<?php
+		// Schluss-Satz typrichtig (Persona-Audit 02.09.): kein „Golfplatz" für
+		// Indoor-Locations und Golflehrer.
+		$ang_ptype = function_exists( 'fge_partner_type' ) ? fge_partner_type( $partner_id ) : 'course';
+		$ang_close = [
+			'course' => 'Mach deinen Golfplatz zur Event-Location für die Unternehmen deiner Region.',
+			'indoor' => 'Macht eure Location zur Event-Adresse für die Unternehmen eurer Region.',
+			'coach'  => 'Mach dein Training zum Firmenevent für die Unternehmen deiner Region.',
+		][ $ang_ptype ] ?? 'Mach deinen Golfplatz zur Event-Location für die Unternehmen deiner Region.';
+		?>
 		<div class="fgpp"><div class="ang-info">
 			<p><b>So funktioniert's:</b> Du legst dein Angebot an, Firmen aus deiner Region sehen es und fragen ein Datum bei dir an. Den Umfang stimmt ihr danach gemeinsam ab, nichts ist in Stein gemeißelt.</p>
-			<p>Brauchst du Orientierung? <a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ?: home_url( '/firmenevents/' ) ); ?>" target="_blank" rel="noopener">Schau dir die Angebote der anderen Plätze an</a>. Ansonsten sind deiner Kreativität keine Grenzen gesetzt, probieren wir aus, was bei euch am besten funktioniert. Mach deinen Golfplatz zur Event-Location für die Unternehmen deiner Region.</p>
+			<p>Brauchst du Orientierung? <a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ?: home_url( '/firmenevents/' ) ); ?>" target="_blank" rel="noopener">Schau dir die Angebote der anderen Partner an</a>. Ansonsten sind deiner Kreativität keine Grenzen gesetzt, probieren wir aus, was bei euch am besten funktioniert. <?php echo esc_html( $ang_close ); ?></p>
 		</div></div>
 
 		<?php fge_portal_render_cat_grid( $partner_id, $base ); ?>
@@ -2324,7 +2339,7 @@ function fge_portal_section_angebote( int $partner_id ): void {
 					<a style="color:#C2D4F2;font-size:13.5px;" href="<?php echo esc_url( home_url( '/embed/platz/' . get_post_field( 'post_name', $partner_id ) . '/' ) ); ?>" target="_blank" rel="noopener">Vorschau ansehen ↗</a>
 				</div>
 			<?php else : ?>
-				<p style="margin:16px 0 0;padding:12px 16px;border:1px dashed rgba(251,250,246,.3);border-radius:10px;color:rgba(251,250,246,.78);font-size:14px;">Sobald dein Platz öffentlich ist (mindestens ein freigegebenes Event), erscheint hier der fertige Einbau-Code für eure Website.</p>
+				<p style="margin:16px 0 0;padding:12px 16px;border:1px dashed rgba(251,250,246,.3);border-radius:10px;color:rgba(251,250,246,.78);font-size:14px;">Sobald dein Profil öffentlich ist (mindestens ein freigegebenes Event), erscheint hier der fertige Einbau-Code für eure Website.</p>
 			<?php endif; ?>
 		</section></div>
 	</div>
@@ -3603,7 +3618,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 	?>
 	<div class="fgpp"><div class="page-wide">
 		<div class="pe-top">
-			<a href="<?php echo $back; ?>" class="btn btn-ghost btn-sm">← Zurück zum Platz</a>
+			<a href="<?php echo $back; ?>" class="btn btn-ghost btn-sm">← <?php echo $is_coach ? 'Zurück zum Profil' : ( $is_indoor ? 'Zurück zur Anlage' : 'Zurück zum Platz' ); ?></a>
 			<nav class="pe-chips" aria-label="Bereiche">
 				<?php foreach ( $titles as $sec_id => $sec_label ) : ?>
 					<a class="pe-chip<?php echo $sec_id === $section ? ' active' : ''; ?>" href="<?php echo esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => $sec_id ], $base ) ); ?>"><?php echo esc_html( $sec_label ); ?></a>
@@ -3612,7 +3627,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 		</div>
 		<div class="section-head" style="margin-bottom:22px;">
 			<div>
-				<div class="eyebrow">Platz bearbeiten</div>
+				<div class="eyebrow"><?php echo $is_coach ? 'Profil bearbeiten' : ( $is_indoor ? 'Anlage bearbeiten' : 'Platz bearbeiten' ); ?></div>
 				<h2><?php echo esc_html( $title ); ?></h2>
 				<p><?php echo esc_html( $intros[ $section ] ?? '' ); ?></p>
 			</div>

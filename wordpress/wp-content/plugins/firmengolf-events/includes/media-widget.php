@@ -219,6 +219,11 @@ function fge_event_cover_url( int $event_id, string $size = 'large', string $pla
 			return (string) $url;
 		}
 	}
+	// Indoor-Events ohne eigenes Foto: Lounge-Platzhalter statt Fairway-Luftbild
+	// (Persona-Audit 02.09.).
+	if ( 'indoor-golf' === (string) get_post_meta( $event_id, '_fge_event_type', true ) ) {
+		$placeholder = 'onboarding-indoor-lounge.jpg';
+	}
 	return fge_get_placeholder_image_url( $placeholder, $event_id );
 }
 
