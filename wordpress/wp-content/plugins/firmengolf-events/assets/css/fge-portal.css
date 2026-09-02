@@ -170,7 +170,7 @@
   border: 1px solid var(--ink-200); background: var(--paper-50, #FBFAF6);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 600; color: var(--ink-700);
-  transition: all 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform 80ms var(--ease-out);
 }
 .fp-day input { position: absolute; opacity: 0; pointer-events: none; }
 .fp-day:hover { border-color: var(--ink-500, var(--ink-400)); }
@@ -200,7 +200,7 @@
   position: relative; display: flex; gap: 12px; align-items: flex-start;
   padding: 14px 16px; background: #fff;
   border: 1px solid var(--ink-300, var(--ink-200)); border-radius: 12px;
-  cursor: pointer; transition: all 0.15s ease;
+  cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform 80ms var(--ease-out);
 }
 .fp-rel-opt input { position: absolute; opacity: 0; pointer-events: none; }
 .fp-rel-opt:hover { border-color: var(--ink-500, var(--ink-400)); }
@@ -304,7 +304,7 @@
   border: 1.5px solid var(--ink-300, var(--ink-200));
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 11px; color: transparent;
-  transition: all 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 .fp-svc-card:has(input:checked) {
   border-color: var(--fairway-600); background: var(--fairway-50);
@@ -340,7 +340,7 @@
 .fp-price-modes .fp-price-mode {
   border: 1px solid var(--ink-300, var(--ink-200)); background: var(--paper-50); border-radius: 999px;
   padding: 8px 18px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-700); cursor: pointer;
-  transition: all 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform 80ms var(--ease-out);
 }
 .fp-price-modes .fp-price-mode:hover { border-color: var(--ink-500, var(--ink-400)); }
 .fp-price-modes .fp-price-mode.on { border-color: var(--fairway-600); box-shadow: inset 0 0 0 1px var(--fairway-600); color: var(--fairway-800); background: var(--fairway-50); }
@@ -600,13 +600,13 @@
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px;
   border: 1px solid var(--ink-200); color: var(--ink-600); background: var(--paper-50);
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform 80ms var(--ease-out);
 }
 .fgpp .minibtn:hover { border-color: var(--ink-300); }
 .fgpp .minibtn.yes.on { background: #2F6E45; border-color: #2F6E45; color: var(--paper-50); }
 .fgpp .minibtn.no.on { background: #C0584A; border-color: #C0584A; color: var(--paper-50); }
 .fgpp .minibtn.confirm { margin-left: auto; background: var(--fairway-700); border-color: var(--fairway-700); color: var(--paper-50); }
-.fgpp .minibtn.confirm:hover { background: var(--fairway-800); }
+.fgpp .minibtn.confirm:hover { background: var(--fairway-600); } /* Hover heller, nie dunkler (DESIGN.md) */
 .fgpp .wishdate-final-tag { margin-left: auto; font-size: 12px; font-weight: 600; color: #2F6E45; display: inline-flex; align-items: center; gap: 6px; }
 
 /* participants (Beteiligte) list */
@@ -826,3 +826,29 @@
 .fp-mailverify-err { color: #8C3B2F; background: #F9EDEA; border: 1px solid #E5B8B0; border-radius: 8px; padding: 8px 11px; font-size: 13.5px; margin-bottom: 10px; }
 .fgpp button.fp-linkbtn, button.fp-linkbtn { font: inherit; font-size: 13px; font-weight: 600; color: var(--fairway-700, #4279D1); background: none; border: 0; padding: 0; margin: 0; width: auto; min-height: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .fgpp button.fp-linkbtn:hover { color: var(--fairway-600, #3568BC); background: none; }
+
+/* ── Emil-Review 03.09.: Druck-Feedback + sichtbarer Tastatur-Fokus ────────────
+   Buttons müssen „zuhören" (scale 0.97 beim Drücken); Karten-Selektoren mit
+   verstecktem Input bekommen ihren Fokusring über :has(input:focus-visible),
+   sonst ist Tastatur-Navigation dort unsichtbar. */
+.fgpp .minibtn:active,
+.fgpp .hero-btn:active,
+.fgpp .pe-chip:active,
+.fgpp .cat-foot .cat-edit:last-child:active,
+.fp-price-modes .fp-price-mode:active,
+.fp-day:active,
+.fp-rel-opt:active,
+.fp-btn:active { transform: scale(0.97); }
+
+.fgpp :is(button, .btn, .nav-tab, .nav-link, .minibtn, .hero-btn, .pe-chip, .cat-edit, a.vis-teaser):focus-visible,
+.fp-btn:focus-visible {
+	outline: 2px solid var(--fairway-700);
+	outline-offset: 2px;
+}
+.fp-day:has(input:focus-visible),
+.fp-rel-opt:has(input:focus-visible),
+.fp-svc-card:has(input:focus-visible),
+.fgpp .fp-check:has(input:focus-visible) {
+	outline: 2px solid var(--fairway-700);
+	outline-offset: 2px;
+}
