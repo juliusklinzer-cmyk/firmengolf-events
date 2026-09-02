@@ -75,6 +75,7 @@ function fge_partner_columns( array $columns ): array {
 	return array_merge( $columns, [
 		'fge_partner_status'          => 'Status',
 		'fge_partner_type'            => 'Typ',
+		'fge_coach_venue'             => 'Golfplatz',
 		'fge_city'                    => 'Ort',
 		'fge_federal_state'           => 'Bundesland',
 		'fge_main_contact'            => 'Hauptansprechpartner',
@@ -107,6 +108,20 @@ function fge_partner_column_content( string $column, int $post_id ) {
 			break;
 		case 'fge_partner_type':
 			echo esc_html( fge_catalog_partner_types()[ fge_partner_type( $post_id ) ] );
+			break;
+		case 'fge_coach_venue':
+			// Nur für Golflehrer: der Unterrichts-Golfplatz, verlinkt wenn er als
+			// Partner existiert (Julius, 02.09.: Verknüpfung im Backend sichtbar).
+			if ( 'coach' !== fge_partner_type( $post_id ) ) {
+				echo '—';
+				break;
+			}
+			$cv = function_exists( 'fge_coach_venue_display' ) ? fge_coach_venue_display( $post_id ) : [ 'partner_id' => 0, 'name' => (string) get_post_meta( $post_id, '_fge_coach_venue_name', true ) ];
+			if ( (int) $cv['partner_id'] > 0 ) {
+				printf( '<a href="%s">%s</a> <span class="fge-badge fge-badge--green">verknüpft</span>', esc_url( get_edit_post_link( (int) $cv['partner_id'] ) ), esc_html( $cv['name'] ) );
+			} else {
+				echo '' !== trim( (string) $cv['name'] ) ? esc_html( $cv['name'] ) : 'k. A.';
+			}
 			break;
 		case 'fge_city':
 			echo esc_html( get_post_meta( $post_id, '_fge_city', true ) ?: 'k. A.' );

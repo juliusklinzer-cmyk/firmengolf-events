@@ -7,7 +7,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 function fge_get_event_formats(): array {
 	return [
 		'standard' => [
+			// Reihenfolge = Reihenfolge in Editor-Kacheln UND Schnellfiltern.
+			// Indoor Golf + Weihnachtsfeier direkt nach Teamevent (Julius, 02.09.,
+			// Wintersaison-Priorität nach der Top-50-Simulator-Recherche).
 			'teamevent'          => 'Teamevent',
+			// Key = fester Reiter der öffentlichen Eventliste (archive, 2026-08-27).
+			// Anlegbar im Portal nur für Partner mit Indoor in der Ausstattung.
+			'indoor-golf'        => 'Indoor Golf',
+			'weihnachtsfeier'    => 'Weihnachtsfeier',
 			'after_work_golf'    => 'After-Work Golf',
 			'platzreife'         => 'Platzreife',
 			'kundenevent'        => 'Kundenevent',
@@ -16,9 +23,6 @@ function fge_get_event_formats(): array {
 			'networking'         => 'Networking',
 			'firmen_golfturnier' => 'Firmen-Golfturnier',
 			'nacht_event'        => 'Nacht-Event',
-			// Key = fester Reiter der öffentlichen Eventliste (archive, 2026-08-27).
-			// Anlegbar im Portal nur für Partner mit Indoor in der Ausstattung.
-			'indoor-golf'        => 'Indoor Golf',
 			'andere'             => 'Andere',
 		],
 		'on_request' => [

@@ -310,16 +310,30 @@ function fge_render_mb_review( WP_Post $post ) {
 
 function fge_render_mb_angebot_neu( WP_Post $post ) {
 	$price_mode = get_post_meta( $post->ID, '_fge_price_mode', true ) ?: 'gesamt';
-	$amount     = get_post_meta( $post->ID, '_fge_price_amount', true );
 	$basis      = get_post_meta( $post->ID, '_fge_price_basis', true ) ?: 'person';
-	$items      = (array) get_post_meta( $post->ID, '_fge_line_items', true );
 	$includes   = (array) get_post_meta( $post->ID, '_fge_event_includes', true );
 	$dayflow    = (string) get_post_meta( $post->ID, '_fge_event_dayflow', true );
 	$release    = get_post_meta( $post->ID, '_fge_release_mode', true ) ?: 'us';
+	// Eingabe als Brutto (Julius, 02.09.): intern bleibt Netto. Divisor je Partner.
+	$mb_pid  = (int) get_post_meta( $post->ID, '_fge_assigned_partner_id', true );
+	$mb_div  = ( function_exists( 'fge_partner_tax_divisor' ) && $mb_pid > 0 ) ? fge_partner_tax_divisor( $mb_pid ) : 1.19;
+	$gross   = (float) get_post_meta( $post->ID, '_fge_price_gross', true );
+	if ( $gross <= 0 ) {
+		$net_meta = (float) get_post_meta( $post->ID, '_fge_price_amount', true );
+		$gross    = $net_meta > 0 ? round( $net_meta * $mb_div, 2 ) : 0.0;
+	}
+	$amount        = $gross > 0 ? rtrim( rtrim( number_format( $gross, 2, ',', '' ), '0' ), ',' ) : '';
+	$items         = (array) get_post_meta( $post->ID, '_fge_line_items_gross', true );
+	if ( ! $items ) {
+		$items = array_map( static function ( $i ) use ( $mb_div ) {
+			$i['cost'] = isset( $i['cost'] ) ? round( (float) $i['cost'] * $mb_div, 2 ) : '';
+			return $i;
+		}, (array) get_post_meta( $post->ID, '_fge_line_items', true ) );
+	}
 	$items_text = implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ) . ' | ' . ( ( $i['basis'] ?? 'pauschal' ) === 'person' ? 'person' : 'pauschal' ), $items ) );
 	$p          = fge_event_pricing( $post->ID );
 	?>
-	<p class="description">Partner hinterlegt <strong>netto</strong>; Firmengolf-Aufschlag fix <?php echo (int) FGE_MARKUP_PERCENT; ?> % oben drauf.</p>
+	<p class="description">Partner hinterlegt seinen <strong>Endkundenpreis (brutto)</strong>; intern rechnen wir auf Netto (÷ <?php echo esc_html( number_format_i18n( $mb_div, 2 ) ); ?>), darauf der Firmengolf-Aufschlag fix <?php echo (int) FGE_MARKUP_PERCENT; ?> %.</p>
 	<table class="form-table">
 		<tr>
 			<th scope="row"><label for="fge_price_mode">Preislogik</label></th>
@@ -331,7 +345,7 @@ function fge_render_mb_angebot_neu( WP_Post $post ) {
 			</td>
 		</tr>
 		<tr>
-			<th scope="row"><label for="fge_price_amount">Gesamtpreis netto (€)</label></th>
+			<th scope="row"><label for="fge_price_amount">Endkundenpreis brutto (€)</label></th>
 			<td>
 				<input type="text" id="fge_price_amount" name="fge_price_amount" value="<?php echo esc_attr( $amount ); ?>" style="width:120px;" placeholder="2400">
 				&nbsp;Basis:
@@ -344,7 +358,7 @@ function fge_render_mb_angebot_neu( WP_Post $post ) {
 			<th scope="row"><label for="fge_line_items">Einzelposten</label></th>
 			<td>
 				<textarea id="fge_line_items" name="fge_line_items" rows="4" class="large-text" placeholder="Golflehrer | 80 | person&#10;Meetingraum | 50 | pauschal"><?php echo esc_textarea( $items_text ); ?></textarea>
-				<p class="description">Pro Zeile: <code>Bezeichnung | Kosten netto | person oder pauschal</code>. Nur bei „Einzelauflistung" relevant.</p>
+				<p class="description">Pro Zeile: <code>Bezeichnung | Kosten brutto | person oder pauschal</code>. Nur bei „Einzelauflistung" relevant.</p>
 			</td>
 		</tr>
 		<tr>
@@ -481,13 +495,19 @@ function fge_save_event_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_faq_content',      sanitize_textarea_field( wp_unslash( $_POST['fge_faq_content'] ?? '' ) ) );
 
 	// ── Angebot — Preis & Inhalt (rev. 2) ──
-	$price_mode = in_array( $_POST['fge_price_mode'] ?? '', [ 'gesamt', 'einzel' ], true ) ? $_POST['fge_price_mode'] : 'gesamt';
+	// Eingabe ist Brutto → intern Netto (÷ Divisor je Partner), Brutto roh mitspeichern.
+	$mb_price_pid = (int) get_post_meta( $post_id, '_fge_assigned_partner_id', true );
+	$mb_price_div = ( function_exists( 'fge_gross_to_net' ) && $mb_price_pid > 0 );
+	$price_mode   = in_array( $_POST['fge_price_mode'] ?? '', [ 'gesamt', 'einzel' ], true ) ? $_POST['fge_price_mode'] : 'gesamt';
 	update_post_meta( $post_id, '_fge_price_mode', $price_mode );
-	$amount_raw = preg_replace( '/[^\d.,]/', '', (string) wp_unslash( $_POST['fge_price_amount'] ?? '' ) );
-	update_post_meta( $post_id, '_fge_price_amount', (float) str_replace( ',', '.', $amount_raw ) );
+	$amount_raw   = preg_replace( '/[^\d.,]/', '', (string) wp_unslash( $_POST['fge_price_amount'] ?? '' ) );
+	$amount_gross = (float) str_replace( ',', '.', $amount_raw );
+	update_post_meta( $post_id, '_fge_price_gross', $amount_gross );
+	update_post_meta( $post_id, '_fge_price_amount', $mb_price_div ? fge_gross_to_net( $amount_gross, $mb_price_pid ) : $amount_gross );
 	update_post_meta( $post_id, '_fge_price_basis', in_array( $_POST['fge_price_basis'] ?? '', [ 'person', 'pauschal' ], true ) ? $_POST['fge_price_basis'] : 'person' );
 
-	$line_items = [];
+	$line_items       = [];
+	$line_items_gross = [];
 	foreach ( preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_line_items'] ?? '' ) ) as $line ) {
 		$line = trim( $line );
 		if ( $line === '' ) {
@@ -496,13 +516,15 @@ function fge_save_event_fields( int $post_id ) {
 		// 3 Spalten: label | cost | basis (Kern-Audit K1, 2026-07-08).
 		$parts = explode( '|', $line, 3 );
 		$label = sanitize_text_field( trim( $parts[0] ?? '' ) );
-		$cost  = (float) str_replace( ',', '.', preg_replace( '/[^\d.,]/', '', $parts[1] ?? '' ) );
+		$gross = (float) str_replace( ',', '.', preg_replace( '/[^\d.,]/', '', $parts[1] ?? '' ) );
 		$basis = 'person' === trim( $parts[2] ?? '' ) ? 'person' : 'pauschal';
 		if ( $label !== '' ) {
-			$line_items[] = [ 'label' => $label, 'cost' => $cost, 'basis' => $basis ];
+			$line_items[]       = [ 'label' => $label, 'cost' => $mb_price_div ? fge_gross_to_net( $gross, $mb_price_pid ) : $gross, 'basis' => $basis ];
+			$line_items_gross[] = [ 'label' => $label, 'cost' => $gross, 'basis' => $basis ];
 		}
 	}
 	update_post_meta( $post_id, '_fge_line_items', $line_items );
+	update_post_meta( $post_id, '_fge_line_items_gross', $line_items_gross );
 
 	$includes = array_values( array_filter( array_map(
 		static fn( $l ): string => sanitize_text_field( trim( $l ) ),

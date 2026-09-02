@@ -89,6 +89,308 @@ function fge_partner_has_indoor( int $partner_id ): bool {
 }
 
 /**
+ * Umsatzsteuer-Status des Partners (Julius, 02.09.): 'regular' (Regelbesteuerung,
+ * 19 %) oder 'small' (Kleinunternehmer §19 UStG, keine USt). Default 'regular'.
+ * Migration: altes Kleinunternehmer-Kennzeichen aus der (entfernten) Billing-Slide.
+ */
+function fge_partner_tax_mode( int $partner_id ): string {
+	$mode = (string) get_post_meta( $partner_id, '_fge_tax_mode', true );
+	if ( 'regular' === $mode || 'small' === $mode ) {
+		return $mode;
+	}
+	// Migration aus dem alten Billing-Feld, falls dort mal gesetzt.
+	return '1' === (string) get_post_meta( $partner_id, '_fge_billing_small_business', true ) ? 'small' : 'regular';
+}
+
+/** Kleinunternehmer nach §19 UStG (keine Umsatzsteuer)? */
+function fge_partner_is_small_business( int $partner_id ): bool {
+	return 'small' === fge_partner_tax_mode( $partner_id );
+}
+
+/**
+ * Divisor, um vom Brutto-Endkundenpreis des Partners auf sein Netto zu kommen:
+ * 1.19 bei Regelbesteuerung, 1.0 beim Kleinunternehmer. Golfpläte/Indoor sind
+ * praktisch immer regelbesteuert, Golflehrer können Kleinunternehmer sein.
+ */
+function fge_partner_tax_divisor( int $partner_id ): float {
+	$vat = defined( 'FGE_VAT_PERCENT' ) ? FGE_VAT_PERCENT : 19;
+	return fge_partner_is_small_business( $partner_id ) ? 1.0 : ( 1 + $vat / 100 );
+}
+
+/**
+ * Brutto-Endkundenpreis des Partners → sein Netto (Speicherwert). Der interne
+ * Speicherwert (`_fge_price_amount`, line-item cost) bleibt Netto, damit der
+ * gesamte Downstream-Pfad (event-pricing, Karten, Anzeige) unverändert bleibt.
+ */
+function fge_gross_to_net( float $gross, int $partner_id ): float {
+	$d = fge_partner_tax_divisor( $partner_id );
+	return $d > 0 ? round( $gross / $d, 2 ) : $gross;
+}
+
+/** Netto (Speicherwert) → Brutto für die Anzeige im Angebotseditor. */
+function fge_net_to_gross( float $net, int $partner_id ): float {
+	return round( $net * fge_partner_tax_divisor( $partner_id ), 2 );
+}
+
+// ── Golflehrer ↔ Golfplatz-Verknüpfung (Julius, 02.09.) ──────────────────────
+// Existiert der Unterrichts-Golfplatz schon als Partner, wird verknüpft statt
+// doppelt angelegt (`_fge_coach_venue_partner_id`); sonst bleibt der Coach der
+// Ersteller der Grundlagen und kann das Clubmanagement per Mail einladen.
+// Erster Baustein der Standort-Verknüpfungs-Vision (jeder Akteur ein Account,
+// am selben Standort auto-verlinkt).
+
+/** Verknüpfter Golfplatz-Partner eines Golflehrers, validiert (0 = keiner). */
+function fge_coach_linked_venue_id( int $coach_id ): int {
+	$vid = (int) get_post_meta( $coach_id, '_fge_coach_venue_partner_id', true );
+	if ( $vid <= 0 || 'firmengolf_partner' !== get_post_type( $vid ) || 'course' !== fge_partner_type( $vid ) ) {
+		return 0;
+	}
+	return $vid;
+}
+
+/**
+ * Anzeigename + Ort des Unterrichts-Golfplatzes: bei Verknüpfung live vom
+ * Platz-Partner (bleibt automatisch aktuell), sonst die eigenen Coach-Metas.
+ */
+function fge_coach_venue_display( int $coach_id ): array {
+	$vid = fge_coach_linked_venue_id( $coach_id );
+	if ( $vid > 0 ) {
+		$name = (string) get_post_meta( $vid, '_fge_public_golfclub_name', true ) ?: get_the_title( $vid );
+		return [ 'partner_id' => $vid, 'name' => $name, 'city' => (string) get_post_meta( $vid, '_fge_city', true ) ];
+	}
+	return [ 'partner_id' => 0, 'name' => (string) get_post_meta( $coach_id, '_fge_coach_venue_name', true ), 'city' => (string) get_post_meta( $coach_id, '_fge_city', true ) ];
+}
+
+/**
+ * Snapshot bei Verknüpfung: Adresse, Geo und Anlagen-Name vom Golfplatz auf den
+ * Coach kopieren. So stimmen alle bestehenden Verbraucher (_fge_city für die
+ * Stadt-Zuordnung, Karten-Pin, Umkreissuche) ohne Umbau, der Pro gibt nichts an.
+ */
+function fge_coach_apply_venue_link( int $coach_id ): void {
+	$vid = fge_coach_linked_venue_id( $coach_id );
+	if ( $vid <= 0 ) {
+		return;
+	}
+	foreach ( [ 'street', 'house_number', 'postal_code', 'city', 'federal_state', 'latitude', 'longitude', 'google_place_id' ] as $k ) {
+		$val = get_post_meta( $vid, '_fge_' . $k, true );
+		if ( '' !== (string) $val ) {
+			update_post_meta( $coach_id, '_fge_' . $k, $val );
+		}
+	}
+	$vname = (string) get_post_meta( $vid, '_fge_public_golfclub_name', true ) ?: get_the_title( $vid );
+	if ( '' !== $vname ) {
+		update_post_meta( $coach_id, '_fge_coach_venue_name', $vname );
+	}
+}
+
+/**
+ * Bekannte Golfplatz-Partner als kleines Datenpaket für den Verknüpfungs-
+ * Vorschlag im Coach-Standort-Formular (JS-Matching auf dem Namensfeld).
+ */
+function fge_course_partner_choices(): array {
+	$ids = get_posts( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => 300,
+		'fields'      => 'ids',
+	] );
+	$out = [];
+	foreach ( $ids as $pid ) {
+		if ( 'course' !== fge_partner_type( (int) $pid ) ) {
+			continue;
+		}
+		$name = (string) get_post_meta( $pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $pid );
+		$city = (string) get_post_meta( $pid, '_fge_city', true );
+		// Ohne Namen oder Ort ist es ein leerer Onboarding-Entwurf, kein
+		// vorschlagbarer Platz (sonst matchen Karteileichen wie „Neuer
+		// Golfplatz Partner (Onboarding)").
+		if ( '' === trim( $name ) || '' === trim( $city ) ) {
+			continue;
+		}
+		$out[] = [ 'id' => (int) $pid, 'name' => $name, 'city' => $city ];
+	}
+	return $out;
+}
+
+/**
+ * Golfplatz-Partner als Entwurf aus den Coach-Grundlagen anlegen (Name +
+ * Adresse/Pin vom Coach) und den Coach damit verknüpfen. Basis für die
+ * Clubmanagement-Einladung, wenn der Platz noch kein Partner ist.
+ */
+function fge_coach_create_venue_draft( int $coach_id ): int {
+	$name = (string) get_post_meta( $coach_id, '_fge_coach_venue_name', true );
+	if ( '' === trim( $name ) ) {
+		return 0;
+	}
+	$vid = wp_insert_post( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => 'draft',
+		'post_title'  => $name,
+	] );
+	if ( ! $vid || is_wp_error( $vid ) ) {
+		return 0;
+	}
+	update_post_meta( $vid, '_fge_partner_type', 'course' );
+	update_post_meta( $vid, '_fge_public_golfclub_name', $name );
+	foreach ( [ 'street', 'house_number', 'postal_code', 'city', 'federal_state', 'latitude', 'longitude', 'google_place_id' ] as $k ) {
+		$val = get_post_meta( $coach_id, '_fge_' . $k, true );
+		if ( '' !== (string) $val ) {
+			update_post_meta( $vid, '_fge_' . $k, $val );
+		}
+	}
+	update_post_meta( $vid, '_fge_created_via_coach', $coach_id );
+	update_post_meta( $coach_id, '_fge_coach_venue_partner_id', (int) $vid );
+	return (int) $vid;
+}
+
+/** Golfplatz-/Anlagen-Namen fürs Matching normalisieren (Zwilling der JS-Norm). */
+function fge_venue_name_norm( string $name ): string {
+	$n = mb_strtolower( $name );
+	$n = (string) preg_replace( '/golfclub|golf-club|golf club|golfplatz|golfanlage|golfresort|golf resort|land- und golfclub|land-und golfclub|g\.?c\.?|e\.?\s?v\.?/u', ' ', $n );
+	$n = (string) preg_replace( '/[^a-zäöüß0-9]+/u', ' ', $n );
+	return trim( $n );
+}
+
+/** Golflehrer, die mit diesem Golfplatz-Partner verknüpft sind (Heimatplatz). */
+function fge_course_linked_coach_ids( int $course_id ): array {
+	$ids = get_posts( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => 50,
+		'fields'      => 'ids',
+		'meta_query'  => [ [ 'key' => '_fge_coach_venue_partner_id', 'value' => $course_id, 'type' => 'NUMERIC' ] ],
+	] );
+	return array_values( array_filter( array_map( 'intval', $ids ), static fn( $pid ) => 'coach' === fge_partner_type( $pid ) ) );
+}
+
+/**
+ * Noch NICHT verknüpfte Golflehrer, deren eingetragener Heimatplatz-Name zu
+ * diesem Golfplatz passt („wenn es die schon gibt, linken sie sich").
+ */
+function fge_course_coach_suggestions( int $course_id ): array {
+	$cnorm = fge_venue_name_norm( (string) get_post_meta( $course_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $course_id ) );
+	if ( mb_strlen( $cnorm ) < 4 ) {
+		return [];
+	}
+	$ids = get_posts( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => 300,
+		'fields'      => 'ids',
+	] );
+	$out = [];
+	foreach ( $ids as $pid ) {
+		$pid = (int) $pid;
+		if ( 'coach' !== fge_partner_type( $pid ) || fge_coach_linked_venue_id( $pid ) > 0 ) {
+			continue;
+		}
+		$vnorm = fge_venue_name_norm( (string) get_post_meta( $pid, '_fge_coach_venue_name', true ) );
+		if ( mb_strlen( $vnorm ) < 4 || ( false === mb_strpos( $vnorm, $cnorm ) && false === mb_strpos( $cnorm, $vnorm ) ) ) {
+			continue;
+		}
+		$cname = trim( (string) get_post_meta( $pid, '_fge_coach_first', true ) . ' ' . (string) get_post_meta( $pid, '_fge_coach_last', true ) ) ?: get_the_title( $pid );
+		$out[] = [ 'id' => $pid, 'name' => $cname, 'venue' => (string) get_post_meta( $pid, '_fge_coach_venue_name', true ) ];
+	}
+	return $out;
+}
+
+/**
+ * Golflehrer-Entwurf vom Club aus anlegen: Coach-Partner als Draft, verknüpft
+ * mit dem Platz, Adresse/Ort per Snapshot vom Platz. Rückgabe = Coach-ID.
+ */
+function fge_course_create_coach_draft( int $course_id, string $first, string $last ): int {
+	$full = trim( $first . ' ' . $last );
+	if ( '' === $full ) {
+		return 0;
+	}
+	$cid = wp_insert_post( [
+		'post_type'   => 'firmengolf_partner',
+		'post_status' => 'draft',
+		'post_title'  => $full,
+	] );
+	if ( ! $cid || is_wp_error( $cid ) ) {
+		return 0;
+	}
+	update_post_meta( $cid, '_fge_partner_type', 'coach' );
+	update_post_meta( $cid, '_fge_coach_first', $first );
+	update_post_meta( $cid, '_fge_coach_last', $last );
+	update_post_meta( $cid, '_fge_coach_venue_partner_id', $course_id );
+	update_post_meta( $cid, '_fge_created_via_course', $course_id );
+	fge_coach_apply_venue_link( (int) $cid );
+	return (int) $cid;
+}
+
+// ── Coach-Locations v2 (Julius, 02.09.) ──────────────────────────────────────
+// Strukturierte Liste WEITERER Unterrichts-Locations neben dem Heimatplatz:
+// je Zeile Name, Bild, optionale Verknüpfung mit einem Golfplatz-Partner
+// („Golfplatz 2", „Simulator München", „Indoor …"). Quelle der Wahrheit ist
+// `_fge_coach_locations`; `_fge_coach_more_venues` (alte Namens-Strings) bleibt
+// als abgeleiteter Spiegel für Wizard und Altanzeigen erhalten.
+
+/** Zusätzliche Locations eines Golflehrers, validiert; migriert Alt-Strings. */
+function fge_coach_locations( int $coach_id ): array {
+	$raw = get_post_meta( $coach_id, '_fge_coach_locations', true );
+	if ( ! is_array( $raw ) || ! $raw ) {
+		// Migration on read: alte „Weitere Golfplätze"-Strings als Zeilen ohne Bild.
+		$raw = array_map(
+			static fn( $n ) => [ 'name' => (string) $n, 'image_id' => 0, 'partner_id' => 0 ],
+			array_filter( array_map( 'strval', (array) get_post_meta( $coach_id, '_fge_coach_more_venues', true ) ) )
+		);
+	}
+	$out = [];
+	foreach ( $raw as $row ) {
+		$name = sanitize_text_field( (string) ( $row['name'] ?? '' ) );
+		if ( '' === trim( $name ) ) {
+			continue;
+		}
+		$img = absint( $row['image_id'] ?? 0 );
+		$vid = absint( $row['partner_id'] ?? 0 );
+		if ( $vid > 0 && ( 'firmengolf_partner' !== get_post_type( $vid ) || 'course' !== fge_partner_type( $vid ) ) ) {
+			$vid = 0;
+		}
+		$out[] = [ 'name' => $name, 'image_id' => $img, 'partner_id' => $vid ];
+	}
+	return $out;
+}
+
+/** Locations speichern + Namens-Spiegel (`_fge_coach_more_venues`) nachziehen. */
+function fge_coach_save_locations( int $coach_id, array $rows ): void {
+	$clean = [];
+	foreach ( $rows as $row ) {
+		$name = sanitize_text_field( (string) ( $row['name'] ?? '' ) );
+		if ( '' === trim( $name ) ) {
+			continue;
+		}
+		$vid = absint( $row['partner_id'] ?? 0 );
+		if ( $vid > 0 && ( 'firmengolf_partner' !== get_post_type( $vid ) || 'course' !== fge_partner_type( $vid ) ) ) {
+			$vid = 0;
+		}
+		$clean[] = [ 'name' => $name, 'image_id' => absint( $row['image_id'] ?? 0 ), 'partner_id' => $vid ];
+	}
+	update_post_meta( $coach_id, '_fge_coach_locations', $clean );
+	update_post_meta( $coach_id, '_fge_coach_more_venues', array_column( $clean, 'name' ) );
+}
+
+/**
+ * Sync aus dem Wizard (der nur Namen kennt): bestehende Zeilen samt Bild und
+ * Verknüpfung behalten, solange der Name bleibt; neue Namen ergänzen, entfernte
+ * Namen streichen. So zerstört der schlanke Wizard keine Portal-Pflege.
+ */
+function fge_coach_sync_locations_from_names( int $coach_id, array $names ): void {
+	$names    = array_values( array_filter( array_map( static fn( $n ) => sanitize_text_field( (string) $n ), $names ), static fn( $n ) => '' !== trim( $n ) ) );
+	$existing = fge_coach_locations( $coach_id );
+	$by_name  = [];
+	foreach ( $existing as $row ) {
+		$by_name[ mb_strtolower( trim( $row['name'] ) ) ] = $row;
+	}
+	$rows = [];
+	foreach ( $names as $n ) {
+		$rows[] = $by_name[ mb_strtolower( trim( $n ) ) ] ?? [ 'name' => $n, 'image_id' => 0, 'partner_id' => 0 ];
+	}
+	fge_coach_save_locations( $coach_id, $rows );
+}
+
+/**
  * IBAN normalisieren: Leerzeichen raus, Großbuchstaben. Speicherformat.
  */
 function fge_normalize_iban( string $iban ): string {

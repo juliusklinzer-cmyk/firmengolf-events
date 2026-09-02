@@ -152,11 +152,12 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 	$override      = (string) get_post_meta( $req, '_fge_offer_base_override', true );
 	$override_unit = (string) get_post_meta( $req, '_fge_offer_base_override_unit', true );
 
-	// Eckdaten für die Live-Summe: Eventpreis + Teilnehmerzahl.
+	// Eckdaten für die Live-Summe: Eventpreis + Teilnehmerzahl. Pauschalen werden
+	// auf die tatsächlich angefragte Personenzahl umgelegt (wie im Angebot).
 	$pax      = (int) get_post_meta( $req, '_fge_expected_participants', true );
 	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
-	$pricing  = ( $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id ) && function_exists( 'fge_event_pricing' ) )
-		? fge_event_pricing( $event_id )
+	$pricing  = ( $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id ) && function_exists( 'fge_event_pricing_for_pax' ) )
+		? fge_event_pricing_for_pax( $event_id, $pax )
 		: [ 'gross' => 0, 'unit' => '' ];
 
 	if ( $sent ) {

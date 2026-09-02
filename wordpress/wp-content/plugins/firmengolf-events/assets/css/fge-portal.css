@@ -17,14 +17,17 @@
 .fgpp .brand-context { font-size: 12px; color: var(--ink-700); font-weight: 500; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .fgpp .brand-context .pill { font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fairway-700); background: var(--fairway-100); padding: 3px 8px; border-radius: 999px; }
 .fgpp .nav-tabs { display: flex; gap: 4px; margin: 0 auto; flex-wrap: wrap; }
-.fgpp .nav-tab { padding: 8px 11px; font-size: 13.5px; font-weight: 500; color: var(--ink-500); background: transparent; border: 0; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
-.fgpp .nav-tab:hover { color: var(--ink-900); background: var(--paper-200); }
-.fgpp .nav-tab.active { color: var(--ink-900); background: var(--paper-200); }
-.fgpp .nav-tab svg { width: 15px; height: 15px; }
+/* Menüpunkte wie die Haupt-Nav (Julius, 02.09.): aktiver Eintrag bekommt den
+   Punkt davor, Hover ist reine Textfarbe, kein Button-Pill-Hintergrund. */
+.fgpp .nav-tab { padding: 8px 9px; font-size: 13.5px; font-weight: 500; color: var(--ink-500); background: transparent; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: color var(--dur-fast) var(--ease-out), transform 80ms var(--ease-out); }
+.fgpp .nav-tab:hover { color: var(--ink-900); }
+.fgpp .nav-tab:active { transform: scale(0.97); }
+.fgpp .nav-tab.active { color: var(--ink-900); }
+.fgpp .nav-tab.active::before { content: ""; width: 5px; height: 5px; border-radius: 999px; background: currentColor; flex: none; }
 .fgpp .nav-tab .badge { font-size: 11px; font-weight: 600; background: var(--fairway-700); color: var(--paper-50); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; margin-left: 2px; }
 .fgpp .nav-end { display: flex; gap: 12px; align-items: center; flex: none; }
 .fgpp .nav-link { font-size: 13px; color: var(--ink-700); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; }
-.fgpp .nav-link:hover { background: var(--paper-200); color: var(--ink-900); }
+.fgpp .nav-link:hover { color: var(--ink-900); }
 .fgpp .nav-avatar { width: 36px; height: 36px; border-radius: 999px; background: var(--fairway-700); color: var(--paper-50); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 14px; letter-spacing: -0.02em; }
 
 /* ── Footer ── */
@@ -40,9 +43,13 @@
 
 /* ── Angebote-Liste (cat grid) ── */
 .fgpp .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.fgpp .cat { background: var(--paper-50); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--ink-200); display: flex; flex-direction: column; transition: box-shadow var(--dur-base) var(--ease-out); }
-.fgpp .cat:hover { box-shadow: var(--shadow-md); }
-.fgpp .cat-photo { position: relative; aspect-ratio: 16/10; background-size: cover; background-position: center; background-color: var(--paper-300); }
+/* Angebots-Karten im Look der öffentlichen Event-Karten (.evF-*, Julius 02.09.):
+   gleiche Radien, Titelgewichte, Meta-Zeile, Fuß mit Preis + Pill-CTA, Foto-Zoom. */
+.fgpp .cat { background: var(--paper-50); border-radius: 20px; overflow: hidden; border: 1px solid var(--ink-200); display: flex; flex-direction: column; transition: box-shadow var(--dur-base) var(--ease-out); }
+.fgpp .cat:hover { box-shadow: 0 2px 4px rgba(14,19,16,.06), 0 14px 34px rgba(14,19,16,.12); }
+.fgpp .cat-photo { position: relative; aspect-ratio: 16/10; background-size: cover; background-position: center; background-color: var(--paper-300); transition: transform .6s var(--ease-out); }
+.fgpp .cat:hover .cat-photo { transform: scale(1.05); }
+@media (prefers-reduced-motion: reduce) { .fgpp .cat-photo { transition: none; } .fgpp .cat:hover .cat-photo { transform: none; } }
 .fgpp .cat-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,19,16,0) 50%, rgba(14,19,16,0.45) 100%); }
 .fgpp .cat-cat-chip { position: absolute; left: 14px; top: 14px; background: rgba(255,255,255,0.88); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--ink-900); z-index: 1; display: inline-flex; align-items: center; gap: 6px; }
 .fgpp .cat-status-pos { position: absolute; right: 14px; top: 14px; z-index: 1; }
@@ -53,16 +60,20 @@
 .fgpp .cat-status.pruefung { color: #9A6B12; } .fgpp .cat-status.pruefung .dot { background: #C8932B; }
 .fgpp .cat-status.paused { color: var(--ink-500); } .fgpp .cat-status.paused .dot { background: var(--ink-400); }
 .fgpp .cat-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-.fgpp .cat-title { font-family: var(--font-display); font-weight: 500; font-size: 20px; line-height: 1.2; letter-spacing: -0.015em; color: var(--ink-900); }
+.fgpp .cat-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; line-height: 1.22; letter-spacing: -0.02em; color: var(--ink-900); }
 .fgpp .cat-sub { font-size: 13px; color: var(--ink-500); line-height: 1.5; }
-.fgpp .cat-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
-.fgpp .cat-stats .chip { font-size: 12px; padding: 4px 10px; background: var(--paper-200); color: var(--ink-700); border-radius: 999px; }
-.fgpp .cat-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--ink-200); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.fgpp .cat-price { font-family: var(--font-display); font-weight: 500; font-size: 18px; letter-spacing: -0.015em; color: var(--ink-900); }
+.fgpp .cat-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
+.fgpp .cat-stats .chip { font-size: 12.5px; padding: 0; background: transparent; color: var(--ink-500); border-radius: 0; display: inline-flex; align-items: center; gap: 12px; }
+.fgpp .cat-stats .chip + .chip::before { content: "·"; color: var(--ink-300); }
+.fgpp .cat-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--paper-200); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fgpp .cat-price { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: -0.02em; color: var(--ink-900); font-variant-numeric: tabular-nums; }
 .fgpp .cat-price .from { font-family: var(--font-body); font-size: 11px; font-weight: 500; color: var(--ink-500); letter-spacing: 0.04em; text-transform: uppercase; margin-right: 6px; }
 .fgpp .cat-price .unit { font-family: var(--font-body); font-size: 12px; color: var(--ink-500); font-weight: 400; margin-left: 3px; }
-.fgpp .cat-edit { font-size: 13px; font-weight: 500; color: var(--ink-900); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
-.fgpp .cat-edit:hover { background: var(--paper-200); }
+.fgpp .cat-edit { font-size: 13px; font-weight: 500; color: var(--ink-600); text-decoration: underline; text-underline-offset: 3px; display: inline-flex; align-items: center; gap: 4px; padding: 6px 2px; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }
+.fgpp .cat-edit:hover { color: var(--ink-900); }
+/* Hauptaktion der Karte (Bearbeiten →) als Pill wie „Ansehen →" auf den Event-Karten. */
+.fgpp .cat-foot .cat-edit:last-child { color: var(--fairway-700); font-weight: 600; font-size: 13.5px; text-decoration: none; background: var(--fairway-50); border-radius: 999px; padding: 8px 14px; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.fgpp .cat-foot .cat-edit:last-child:hover { background: var(--fairway-100); color: var(--fairway-700); }
 .fgpp .cat.is-empty { background: transparent; border: 1.5px dashed var(--ink-300); align-items: center; justify-content: center; text-align: center; padding: 28px 24px; min-height: 280px; gap: 14px; text-decoration: none; }
 .fgpp .cat.is-empty:hover { border-color: var(--fairway-500); background: var(--fairway-100); }
 .fgpp .cat.is-empty .cat-cat-chip { position: static; background: var(--paper-200); }
@@ -96,13 +107,14 @@
 .fgpp .hero-id { display: flex; gap: 22px; align-items: flex-end; max-width: 760px; }
 .fgpp .hero-monogram { width: 96px; height: 96px; border-radius: var(--radius-lg); background: var(--paper-100); color: var(--fairway-800); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 36px; letter-spacing: -0.02em; flex: none; box-shadow: 0 8px 24px rgba(14,19,16,0.25); }
 /* Logo shown in place of the monogram; transparent bg + rounded so transparent-PNG and white-bg logos both look clean. */
-/* Wie der Übersichts-Hero: <img> füllt die Kachel satt (thumbnail = quadratischer Zuschnitt). */
+/* Wie der Übersichts-Hero: das Bild füllt die Kachel satt (thumbnail = quadratischer Zuschnitt). */
 .fgpp .hero-monogram.hero-logo { background: var(--paper-50); padding: 0; overflow: hidden; color: transparent; font-size: 0; }
 .fgpp .hero-monogram.hero-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: inherit; display: block; }
 .fgpp .hero-text { padding-bottom: 6px; }
 .fgpp .hero-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(251,250,246,0.78); }
 .fgpp .hero-name { font-family: var(--font-display); font-weight: 500; font-size: 56px; line-height: 1.0; letter-spacing: -0.03em; margin-top: 10px; color: var(--paper-100); }
-.fgpp .hero-name em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+/* Akzentwort fett statt Serif-Kursiv (Design-Linie seit 1.9.181, Julius 02.09. fürs Portal). */
+.fgpp .hero-name em { font-family: var(--font-display); font-style: normal; font-weight: 700; }
 .fgpp .hero-meta { margin-top: 14px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; color: rgba(251,250,246,0.88); }
 .fgpp .hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
 .fgpp .hero-meta .dot { opacity: 0.5; }
@@ -115,12 +127,13 @@
 .fgpp .section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; gap: 24px; }
 .fgpp .section-head .eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-500); }
 .fgpp .section-head h2 { font-family: var(--font-display); font-weight: 500; font-size: 36px; line-height: 1.05; letter-spacing: -0.025em; color: var(--ink-900); margin-top: 8px; }
-.fgpp .section-head h2 em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+.fgpp .section-head h2 em { font-family: var(--font-display); font-style: normal; font-weight: 700; color: var(--fairway-700); }
 .fgpp .section-head p { margin-top: 8px; font-size: 15px; color: var(--ink-500); max-width: 520px; }
 .fgpp .section-head .actions { display: flex; gap: 8px; flex: none; padding-bottom: 6px; }
 .fgpp .btn { font-family: var(--font-body); font-size: 14px; font-weight: 500; padding: 10px 18px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: 0; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform 80ms var(--ease-out); }
 .fgpp .btn-brand { background: var(--fairway-700); color: var(--paper-100); }
 .fgpp .btn-brand:hover { background: var(--fairway-600); }
+.fgpp .btn:active { transform: scale(0.97); }
 .fgpp .btn-ghost { color: var(--ink-900); background: transparent; border: 1px solid var(--ink-200); }
 .fgpp .btn-ghost:hover { background: var(--paper-200); }
 .fgpp .btn-sm { padding: 7px 12px; font-size: 13px; }
@@ -543,7 +556,9 @@
 .fgpp .coord-prog { font-size: 13px; color: var(--ink-600); font-weight: 500; }
 .fgpp .coord-prog b { color: var(--ink-900); }
 .fgpp .coord-bar { height: 6px; border-radius: 999px; background: var(--paper-200); overflow: hidden; margin-bottom: 20px; }
-.fgpp .coord-bar-fill { height: 100%; border-radius: 999px; background: var(--fairway-700); transition: width var(--dur-base) var(--ease-out); }
+/* Kein width-Transition (Layout-Thrash): der Balken wird serverseitig gerendert,
+   eine Animation wäre eh nie sichtbar. */
+.fgpp .coord-bar-fill { height: 100%; border-radius: 999px; background: var(--fairway-700); }
 
 /* wish-date cards */
 .fgpp .wishdates { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
@@ -754,6 +769,8 @@
    .page-wide nicht NOCHMAL einrücken — sonst sind alle Sektionen 32px schmaler
    als der Hero (Julius: „alle Container so breit wie der Hero"). */
 .fp-page-wrap .fgpp .page-wide { max-width: none; padding: 0; }
+/* Status-Hinweis (z. B. „In Prüfung") braucht Luft zum Menü (Julius, 02.09.). */
+.fp-page-wrap > .fg-portal-global-notice:first-child { margin-top: 24px; }
 .fp-page-wrap .fgpp .foot { max-width: none; padding-left: 0; padding-right: 0; }
 
 /* ── Willkommens-Panel (erstes Login nach Einladung) ───────────────────────── */
@@ -804,7 +821,8 @@
 .fgpp .ang-info a:hover { text-decoration: underline; }
 
 /* E-Mail-Verifizierung bei Kontaktadressen-Wechsel (Julius, 2026-07-06) */
-.fp-mailverify { margin: 4px 0 18px; padding: 14px 16px; border: 1px solid var(--ink-200, #E4E2DA); border-left: 3px solid var(--fairway-600, #4279D1); border-radius: 10px; background: var(--paper-50, #FBFAF6); }
+/* Akzent wie alle Info-Boxen der Design-Linie (fairway-Fläche statt Seitenbalken). */
+.fp-mailverify { margin: 4px 0 18px; padding: 14px 16px; border: 1px solid var(--fairway-200, #C7D8F2); border-radius: 12px; background: var(--fairway-100, #EAF1FB); }
 .fp-mailverify-err { color: #8C3B2F; background: #F9EDEA; border: 1px solid #E5B8B0; border-radius: 8px; padding: 8px 11px; font-size: 13.5px; margin-bottom: 10px; }
 .fgpp button.fp-linkbtn, button.fp-linkbtn { font: inherit; font-size: 13px; font-weight: 600; color: var(--fairway-700, #4279D1); background: none; border: 0; padding: 0; margin: 0; width: auto; min-height: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .fgpp button.fp-linkbtn:hover { color: var(--fairway-600, #3568BC); background: none; }

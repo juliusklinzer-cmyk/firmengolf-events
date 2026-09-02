@@ -65,8 +65,13 @@ function fge_offer_link( int $req ): string {
 /** Snapshot des Angebots aus Event-Preis + bepreisten Positionen + offenen Wünschen. */
 function fge_build_offer_snapshot( int $req, int $date_index ): array {
 	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
-	$pricing  = ( $event_id && function_exists( 'fge_event_pricing' ) ) ? fge_event_pricing( $event_id ) : [ 'gross' => 0, 'unit' => '' ];
 	$pax      = (int) get_post_meta( $req, '_fge_expected_participants', true );
+	// Pauschalen auf die TATSÄCHLICH angefragte Personenzahl umlegen (Julius,
+	// 02.09.): weniger Personen als das Maximum → höherer p.P.-Preis, sonst
+	// würde die Pauschale (z. B. Golflehrer 250 €) nur anteilig eingesammelt.
+	$pricing = ( $event_id && function_exists( 'fge_event_pricing_for_pax' ) )
+		? fge_event_pricing_for_pax( $event_id, $pax )
+		: ( ( $event_id && function_exists( 'fge_event_pricing' ) ) ? fge_event_pricing( $event_id ) : [ 'gross' => 0, 'unit' => '' ] );
 
 	$includes = $event_id ? get_post_meta( $event_id, '_fge_event_includes', true ) : [];
 	$includes = is_array( $includes ) ? $includes : array_filter( preg_split( '/\r\n|\r|\n/', (string) $includes ) );

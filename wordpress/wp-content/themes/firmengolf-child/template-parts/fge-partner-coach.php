@@ -47,11 +47,16 @@ foreach ( (array) get_post_meta( $pid, '_fge_coach_langs', true ) as $lid ) {
 }
 $quali_line = implode( ' · ', array_filter( [ $quali_names[0] ?? '', $years, implode( ', ', $lang_names ) ] ) );
 
-// Die Anlage des Golflehrers (Korrektur Julius 28.08.: er ist der Initiator und
-// legt sie selbst an; Adresse/Pin liegen als _fge_city usw. am Coach-Profil).
-$venue_name  = $m( 'coach_venue_name' );
-$venue_city  = $city;
-$more_venues = array_filter( array_map( 'strval', (array) get_post_meta( $pid, '_fge_coach_more_venues', true ) ) );
+// Die Anlage des Golflehrers: ist der Platz als Partner verknüpft, kommen Name
+// und Ort live von dort (fge_coach_venue_display); sonst legt der Coach die
+// Grundlagen selbst an (Adresse/Pin liegen als _fge_city usw. am Coach-Profil).
+$venue_disp  = function_exists( 'fge_coach_venue_display' ) ? fge_coach_venue_display( $pid ) : [ 'partner_id' => 0, 'name' => $m( 'coach_venue_name' ), 'city' => $city ];
+$venue_name  = trim( (string) $venue_disp['name'] );
+$venue_city  = '' !== (string) $venue_disp['city'] ? (string) $venue_disp['city'] : $city;
+// Locations v2: strukturierte Liste (Name, Bild, optionale Partner-Verknüpfung);
+// fällt intern auf die alten Namens-Strings zurück.
+$coach_locs  = function_exists( 'fge_coach_locations' ) ? fge_coach_locations( $pid ) : array_map( static fn( $n ) => [ 'name' => (string) $n, 'image_id' => 0, 'partner_id' => 0 ], array_filter( array_map( 'strval', (array) get_post_meta( $pid, '_fge_coach_more_venues', true ) ) ) );
+$more_venues = array_column( $coach_locs, 'name' );
 
 $ccap     = (array) get_post_meta( $pid, '_fge_coach_cap', true );
 $cap_line = ( (int) ( $ccap['min'] ?? 0 ) > 0 && (int) ( $ccap['max'] ?? 0 ) > 0 )
@@ -76,7 +81,9 @@ $cf_names = array_values( array_unique( $cf_names ) );
 $gallery   = function_exists( 'fge_partner_gallery_ids' ) ? fge_partner_gallery_ids( $pid ) : [];
 $cover_att = function_exists( 'fge_partner_cover_id' ) ? fge_partner_cover_id( $pid ) : 0;
 $cover     = $cover_att > 0 ? (string) wp_get_attachment_image_url( $cover_att, '2048x2048' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $pid );
-$portrait  = $cover_att > 0 ? (string) wp_get_attachment_image_url( $cover_att, 'medium' ) : '';
+// Portrait = Profilbild (_fge_logo_attachment_id), Hintergrund = Titelbild (Cover). Vorher zeigte beides den Cover.
+$portrait_att = (int) get_post_meta( $pid, '_fge_logo_attachment_id', true );
+$portrait     = $portrait_att > 0 ? (string) wp_get_attachment_image_url( $portrait_att, 'medium' ) : '';
 $mono      = strtoupper( mb_substr( $first ?: $coach_name, 0, 1 ) . mb_substr( $m( 'coach_last' ) ?: '', 0, 1 ) );
 
 $events           = function_exists( 'fge_partner_public_event_ids' ) ? fge_partner_public_event_ids( $pid ) : [];
@@ -192,8 +199,8 @@ get_header();
 						if ( ! empty( $quali_names ) ) { $coach_facts[] = [ 'Ausbildung', implode( ', ', $quali_names ) ]; }
 						if ( $years )                  { $coach_facts[] = [ 'Erfahrung', $years ]; }
 						if ( $lang_names )             { $coach_facts[] = [ 'Sprachen', implode( ', ', $lang_names ) ]; }
-						if ( $venue_name )             { $coach_facts[] = [ 'Hauptstandort', trim( $venue_name . ( $venue_city ? ', ' . $venue_city : '' ) ) ]; }
-						if ( $more_venues )            { $coach_facts[] = [ 'Weitere Plätze', implode( ', ', $more_venues ) ]; }
+						if ( $venue_name )             { $coach_facts[] = [ 'Heimatplatz', trim( $venue_name . ( $venue_city ? ', ' . $venue_city : '' ) ) ]; }
+						if ( $more_venues )            { $coach_facts[] = [ 'Weitere Locations', implode( ', ', $more_venues ) ]; }
 						if ( $cap_line )               { $coach_facts[] = [ 'Gruppengröße', $cap_line ]; }
 						foreach ( $coach_facts as $f ) : ?>
 							<div class="fact-row"><span class="lbl"><?php echo esc_html( $f[0] ); ?></span><span class="val"><?php echo esc_html( $f[1] ); ?></span></div>
@@ -280,11 +287,26 @@ get_header();
 					<div>
 						<p style="margin:0 0 4px;font-weight:600;"><?php echo esc_html( trim( $venue_name . ( $venue_city ? ', ' . $venue_city : '' ) ) ); ?></p>
 						<p style="margin:0;font-size:14px;color:var(--ink-600);">Kurse und Events finden direkt auf der Anlage statt.</p>
-						<?php if ( $more_venues ) : ?>
-							<p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-500);">Außerdem: <?php echo esc_html( implode( ', ', $more_venues ) ); ?></p>
-						<?php endif; ?>
 					</div>
 				</div>
+				<?php if ( $coach_locs ) : ?>
+				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;">
+					<?php foreach ( $coach_locs as $cl ) :
+						$cl_img  = $cl['image_id'] > 0 ? (string) wp_get_attachment_image_url( $cl['image_id'], 'medium' ) : '';
+						$cl_url  = ( $cl['partner_id'] > 0 && function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $cl['partner_id'] ) ) ? get_permalink( $cl['partner_id'] ) : '';
+						$cl_tag  = $cl_url ? 'a' : 'div';
+						?>
+					<<?php echo $cl_tag; // phpcs:ignore WordPress.Security.EscapeOutput ?><?php echo $cl_url ? ' href="' . esc_url( $cl_url ) . '"' : ''; ?> style="display:flex;align-items:center;gap:12px;padding:10px 16px 10px 10px;border-radius:16px;background:var(--paper-50);border:1px solid var(--ink-200);text-decoration:none;color:inherit;min-width:200px;">
+						<?php if ( $cl_img ) : ?>
+							<img src="<?php echo esc_url( $cl_img ); ?>" alt="<?php echo esc_attr( $cl['name'] ); ?>" style="width:48px;height:48px;border-radius:12px;object-fit:cover;flex:0 0 48px;">
+						<?php else : ?>
+							<span aria-hidden="true" style="width:48px;height:48px;border-radius:12px;background:var(--fairway-100);color:var(--fairway-800);display:inline-flex;align-items:center;justify-content:center;flex:0 0 48px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+						<?php endif; ?>
+						<span style="font-size:14.5px;font-weight:600;"><?php echo esc_html( $cl['name'] ); ?></span>
+					</<?php echo $cl_tag; // phpcs:ignore WordPress.Security.EscapeOutput ?>>
+					<?php endforeach; ?>
+				</div>
+				<?php endif; ?>
 			</section>
 			<?php endif; ?>
 

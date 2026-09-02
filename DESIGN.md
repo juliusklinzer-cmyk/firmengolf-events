@@ -27,6 +27,7 @@ Diese Datei ist die eine Wahrheit für das Aussehen aller Oberflächen (Website,
 
 - `.fge-page button`-Reset (Spezifität 0,1,1) entkernt nackte Ein-Klassen-Selektoren: Buttons auf Eventseiten IMMER mit Eltern-Klasse prefixen.
 - `a.fg-nav-cta` überstimmt nackte Klassen: Sichtbarkeits-Overrides ebenfalls mit `a.`-Präfix schreiben.
+- `.ob-shell a { color: inherit }` (0,1,1) entkernt Ein-Klassen-Buttonfarben im Onboarding (`.ob-done-btn-primary` stand schwarz auf blau): Link-Buttons dort immer zusätzlich als `.ob-shell a.klasse` selektieren.
 - Nach CSS-Änderungen `FGE_VERSION` bumpen (Cache-Bust).
 - Safari (iOS) färbt die Fläche hinter Status- und Adressleiste nach `theme-color` (header.php, #FBFAF6) und dem `body`-Hintergrund. Beide müssen dem Papierweiß `--paper-100` entsprechen, sonst liegt ein fremder Farbton über der Seite.
 

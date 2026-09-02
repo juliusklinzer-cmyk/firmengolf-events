@@ -894,6 +894,22 @@ function fge_send_partner_invite_email( int $partner_id, string $to = '', string
 	$public_line = ( function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) )
 		? '<p style="font-size:14px;"><a href="' . esc_url( get_permalink( $partner_id ) ) . '" style="color:#4279D1;">Eure öffentliche Platzseite ansehen</a></p>'
 		: '';
+	// Golflehrer-Einladung (z. B. vom Club aus dem Portal angelegt): eigene
+	// Formulierung, die Platz-Texte passen dort nicht (Julius, 02.09.).
+	$is_coach_invite = function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $partner_id );
+	if ( $is_coach_invite ) {
+		$subject = 'Dein Zugang zu Firmengolf: dein Golflehrer-Profil aktivieren';
+		$content = '
+			<p>' . $greeting . '</p>
+			<p>für dich wurde auf Firmengolf ein Golflehrer-Profil vorbereitet (' . esc_html( $name ) . '). Wir sind seit ' . (int) $days . ' Tagen live, Firmen suchen bei uns Golflehrer für Grundlagenkurse, Platzreife-Kurse und Teamevents.</p>
+			<p><strong>Dein Profil ist erst sichtbar, sobald du dich anmeldest und es vervollständigst.</strong> Das dauert nur ein paar Minuten.</p>
+			<p style="margin-top:28px;">
+				' . fge_email_button( $signup, 'Jetzt anmelden und Profil aktivieren' ) . '
+			</p>
+			<p><strong>Kurz zum System:</strong> Anfragen laufen gebündelt über dein Portal. Für dich ist das komplett kostenlos. Du bekommst genau den Preis, den du angibst. Die Vermittlungsprovision zahlt der Kunde obendrauf, sie geht nie zu deinen Lasten.</p>
+			<p style="font-size:13px;color:#888;">Dein Link ist persönlich und einmalig gültig. Fragen? Ruf mich an: <a href="tel:' . esc_attr( $c['phone_tel'] ) . '" style="color:#4279D1;">' . esc_html( $c['phone_display'] ) . '</a> oder antworte einfach auf diese Mail.</p>
+		';
+	} else {
 	$subject = 'Dein Zugang zu Firmengolf: ' . $name . ' aktivieren';
 	$content = '
 		<p>' . $greeting . '</p>
@@ -906,6 +922,7 @@ function fge_send_partner_invite_email( int $partner_id, string $to = '', string
 		<p><strong>Kurz zum System:</strong> Firmen suchen bei uns Plätze für Teamevents, Turniere und Afterwork. Anfragen laufen gebündelt über dein Portal. Für den Platz ist das komplett kostenlos. Du bekommst genau den Preis, den du angibst. Die Vermittlungsprovision zahlt der Kunde obendrauf, sie geht nie zu deinen Lasten.</p>
 		<p style="font-size:13px;color:#888;">Dein Link ist persönlich und einmalig gültig. Fragen? Ruf mich an: <a href="tel:' . esc_attr( $c['phone_tel'] ) . '" style="color:#4279D1;">' . esc_html( $c['phone_display'] ) . '</a> oder antworte einfach auf diese Mail.</p>
 	';
+	}
 	$sent = (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 	if ( $sent ) {
 		// Erneutes Senden setzt die Nachfass-Uhr bewusst zurück (frische Serie).

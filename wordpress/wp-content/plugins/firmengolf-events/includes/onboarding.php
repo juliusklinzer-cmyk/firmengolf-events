@@ -585,6 +585,12 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			break;
 
 		case 'gastro':
+			// Indoor-Variante (Marker-Feld): eigene Kachel-Liste in eigenem Meta,
+			// die Golfplatz-Infra bleibt unangetastet (Julius, 02.09.).
+			if ( isset( $post['fge_indoor_gastro_submitted'] ) ) {
+				update_post_meta( $partner_id, '_fge_indoor_gastro', $san_group( 'fge_indoor_gastro', array_keys( fge_catalog_indoor_gastro() ) ) );
+				break;
+			}
 			// Replace only the Gastronomie ids; keep all other infrastructure.
 			$existing = (array) get_post_meta( $partner_id, '_fge_infra', true );
 			$kept     = array_intersect( $existing, $nongastro_ids );
@@ -668,6 +674,7 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 				'box_comfort'    => absint( $post['fge_indoor_box_comfort'] ?? 0 ),
 				'box_max'        => absint( $post['fge_indoor_box_max'] ?? 0 ),
 				'lefthand'       => $san_select( 'fge_indoor_lefthand', [ 'all', 'some', 'no' ] ),
+				'staffing'       => $san_select( 'fge_indoor_staffing', array_keys( fge_catalog_indoor_staffing() ) ),
 				'max_persons'    => absint( $post['fge_indoor_max_persons'] ?? 0 ),
 			] );
 			break;
@@ -760,13 +767,37 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			// Adresse und Karten-Pin laufen über den location-Case.
 			update_post_meta( $partner_id, '_fge_coach_venue_name', $s( 'fge_coach_venue_name' ) );
 			// Ausstattungs-Liste (venue_use) gestrichen (Julius, 01.09.): Pin + Name reichen.
-			$more_v = array_values( array_filter(
-				array_map( static fn( $x ) => sanitize_text_field( wp_unslash( (string) $x ) ), (array) ( $post['fge_coach_more_venues'] ?? [] ) ),
-				static fn( $x ) => '' !== trim( $x )
-			) );
-			update_post_meta( $partner_id, '_fge_coach_more_venues', $more_v );
+			// Weitere Plätze nur schreiben, wenn das Formular sie trug (der Portal-
+			// Standorte-Editor nutzt seit Locations v2 eigene Felder) — sonst würde
+			// ein Formular ohne das Feld die gepflegte Liste leeren.
+			if ( isset( $post['fge_coach_more_venues'] ) ) {
+				$more_v = array_values( array_filter(
+					array_map( static fn( $x ) => sanitize_text_field( wp_unslash( (string) $x ) ), (array) $post['fge_coach_more_venues'] ),
+					static fn( $x ) => '' !== trim( $x )
+				) );
+				update_post_meta( $partner_id, '_fge_coach_more_venues', $more_v );
+				// Locations v2 mit den Wizard-Namen abgleichen (Bilder/Verknüpfungen
+				// bestehender Zeilen bleiben erhalten).
+				if ( function_exists( 'fge_coach_sync_locations_from_names' ) ) {
+					fge_coach_sync_locations_from_names( $partner_id, $more_v );
+				}
+			}
 			if ( isset( $post['fge_coach_gastro_involve'] ) ) {
 				update_post_meta( $partner_id, '_fge_coach_gastro_involve', $san_select( 'fge_coach_gastro_involve', [ 'ja', 'nein', 'offen' ] ) );
+			}
+			// Verknüpfung mit einem bestehenden Golfplatz-Partner (Julius, 02.09.):
+			// nur validierte Golfplatz-IDs; leeres Feld = Verknüpfung lösen. Der
+			// Snapshot läuft ZULETZT, damit die Platz-Adresse über POST-Werte gewinnt.
+			if ( isset( $post['fge_coach_venue_partner_id'] ) ) {
+				$vid_in = absint( $post['fge_coach_venue_partner_id'] );
+				if ( $vid_in > 0 && 'firmengolf_partner' === get_post_type( $vid_in ) && 'course' === fge_partner_type( $vid_in ) ) {
+					update_post_meta( $partner_id, '_fge_coach_venue_partner_id', $vid_in );
+				} else {
+					delete_post_meta( $partner_id, '_fge_coach_venue_partner_id' );
+				}
+			}
+			if ( function_exists( 'fge_coach_apply_venue_link' ) ) {
+				fge_coach_apply_venue_link( $partner_id );
 			}
 			break;
 
@@ -1234,6 +1265,9 @@ function fge_onboarding_validate_slide( string $id, array $post ): array {
 			if ( ! in_array( (string) ( $post['fge_indoor_lefthand'] ?? '' ), [ 'all', 'some', 'no' ], true ) ) {
 				$errors['fge_indoor_lefthand'] = 'Bitte gib an, ob Linkshänder spielen können.';
 			}
+			if ( ! in_array( (string) ( $post['fge_indoor_staffing'] ?? '' ), array_keys( fge_catalog_indoor_staffing() ), true ) ) {
+				$errors['fge_indoor_staffing'] = 'Bitte gib an, wie der Betrieb bei euch läuft.';
+			}
 			if ( absint( $post['fge_indoor_max_persons'] ?? 0 ) < 1 ) {
 				$errors['fge_indoor_max_persons'] = 'Maximale Personenzahl im Indoor-Bereich fehlt.';
 			}
@@ -1564,6 +1598,7 @@ function fge_onboarding_get_saved_vals( int $partner_id ): array {
 		'additional_equipment'          => (string) $m( 'additional_equipment' ),
 		'cap'                           => is_array( $m( 'cap' ) ) ? $m( 'cap' ) : [],
 		'indoor_sim'                    => is_array( $m( 'indoor_sim' ) ) ? $m( 'indoor_sim' ) : [],
+		'indoor_gastro'                 => is_array( $m( 'indoor_gastro' ) ) ? $m( 'indoor_gastro' ) : [],
 		'indoor_kind'                   => (string) $m( 'indoor_kind' ),
 		'indoor_spaces'                 => is_array( $m( 'indoor_spaces' ) ) ? $m( 'indoor_spaces' ) : [],
 		'indoor_spaces_custom'          => is_array( $m( 'indoor_spaces_custom' ) ) ? $m( 'indoor_spaces_custom' ) : [],
@@ -2000,7 +2035,7 @@ function fge_onboarding_icon_map(): array {
 		'teamevent' => 'team-challenge', 'after_work_golf' => 'afterwork', 'schnupperkurs' => 'intro-golf', 'platzreife' => 'intro-golf',
 		// Event-Typ 'workshop' (ersetzt 'offsite', 2026-08) erbt das 'meeting'-Glyph
 		// über den gleichnamigen Infrastruktur-Eintrag oben.
-		'kundenevent' => 'kunden', 'gesundheitstag' => 'health',
+		'kundenevent' => 'kunden', 'gesundheitstag' => 'health', 'weihnachtsfeier' => 'drinks',
 		'networking' => 'networking', 'firmen_golfturnier' => 'turnier-18', 'nacht_event' => 'nacht-event',
 		'andere' => 'custom', 'sommerfest' => 'sommerfest', 'tagung' => 'meeting',
 		'firmenjubilaeum' => 'sommerfest', 'kickoff' => 'offsite', 'incentive' => 'offsite',
@@ -2285,6 +2320,85 @@ function fge_onboarding_render_beschreibung( int $step, int $partner_id, string 
 	echo '</form>';
 }
 
+/**
+ * Verknüpfungs-UI für das Coach-Golfplatz-Namensfeld (Wizard UND Portal):
+ * matcht den getippten Namen gegen bestehende Golfplatz-Partner und bietet
+ * „verknüpfen" an. Bei Verknüpfung kommen Adresse und Karten-Pin vom Platz,
+ * der Pro muss nichts weiter angeben (Julius, 02.09.). Token-basierte
+ * Inline-Styles, damit die Karte in beiden Shells (ob-/fg-) gleich aussieht.
+ */
+function fge_coach_venue_link_ui( int $partner_id ): void {
+	$linked_id = function_exists( 'fge_coach_linked_venue_id' ) ? fge_coach_linked_venue_id( $partner_id ) : 0;
+	$linked    = $linked_id > 0 && function_exists( 'fge_coach_venue_display' ) ? fge_coach_venue_display( $partner_id ) : null;
+	$choices   = function_exists( 'fge_course_partner_choices' ) ? fge_course_partner_choices() : [];
+	?>
+	<input type="hidden" id="fge_coach_venue_partner_id" name="fge_coach_venue_partner_id" value="<?php echo esc_attr( (string) $linked_id ); ?>">
+	<div id="fge-venue-linked" style="<?php echo $linked ? '' : 'display:none;'; ?>margin:10px 0 0;padding:12px 14px;border-radius:12px;background:var(--fairway-100);border:1px solid var(--fairway-200);color:var(--fairway-800);font-size:14px;line-height:1.5;">
+		<strong style="display:block;">✓ Verknüpft mit <span id="fge-venue-linked-name"><?php echo esc_html( $linked ? trim( $linked['name'] . ( $linked['city'] ? ', ' . $linked['city'] : '' ) ) : '' ); ?></span></strong>
+		Adresse und Karten-Pin übernehmen wir vom Platz, du musst nichts weiter angeben.
+		<button type="button" id="fge-venue-unlink" style="display:block;margin-top:6px;padding:0;background:none;border:0;color:var(--fairway-800);text-decoration:underline;cursor:pointer;font-size:13px;">Verknüpfung lösen</button>
+	</div>
+	<div id="fge-venue-suggest" style="display:none;margin:10px 0 0;padding:12px 14px;border-radius:12px;background:var(--paper-50,#fff);border:1px solid var(--ink-200);font-size:14px;line-height:1.5;color:var(--ink-700);">
+		<strong style="display:block;color:var(--ink-900);">Diesen Platz kennen wir schon: <span id="fge-venue-suggest-name"></span></strong>
+		Verknüpfe dein Profil, dann stimmen Adresse und Karte automatisch.
+		<button type="button" id="fge-venue-link-btn" style="display:inline-block;margin-top:8px;padding:8px 16px;border-radius:999px;border:0;background:var(--fairway-700);color:#fff;font-weight:600;font-size:13.5px;cursor:pointer;">Verknüpfen</button>
+	</div>
+	<script>
+	(function () {
+		var data = <?php echo wp_json_encode( $choices ); ?>;
+		var input = document.getElementById('fge_coach_venue_name');
+		var hid = document.getElementById('fge_coach_venue_partner_id');
+		var boxL = document.getElementById('fge-venue-linked');
+		var boxS = document.getElementById('fge-venue-suggest');
+		if (!input || !hid || !boxL || !boxS || !data.length) { return; }
+		var current = null;
+		function norm(s) {
+			return String(s || '').toLowerCase()
+				.replace(/golfclub|golf-club|golf club|golfplatz|golfanlage|golfresort|golf resort|land-und golfclub|land- und golfclub|g\.?c\.?|e\.?\s?v\.?/g, ' ')
+				.replace(/[^a-zäöüß0-9]+/g, ' ').trim();
+		}
+		function findMatch(val) {
+			var n = norm(val);
+			if (n.length < 4) { return null; }
+			for (var i = 0; i < data.length; i++) {
+				var c = norm(data[i].name);
+				if (c && (c.indexOf(n) !== -1 || n.indexOf(c) !== -1)) { return data[i]; }
+			}
+			return null;
+		}
+		function refresh() {
+			if (parseInt(hid.value, 10) > 0) { boxS.style.display = 'none'; return; }
+			current = findMatch(input.value);
+			if (current) {
+				document.getElementById('fge-venue-suggest-name').textContent = current.name + (current.city ? ', ' + current.city : '');
+				boxS.style.display = '';
+			} else {
+				boxS.style.display = 'none';
+			}
+		}
+		document.getElementById('fge-venue-link-btn').addEventListener('click', function () {
+			if (!current) { return; }
+			hid.value = String(current.id);
+			document.getElementById('fge-venue-linked-name').textContent = current.name + (current.city ? ', ' + current.city : '');
+			boxL.style.display = '';
+			boxS.style.display = 'none';
+		});
+		document.getElementById('fge-venue-unlink').addEventListener('click', function () {
+			hid.value = '';
+			boxL.style.display = 'none';
+			refresh();
+		});
+		input.addEventListener('input', refresh);
+		input.addEventListener('change', refresh);
+		// Google Places setzt den Wert programmatisch (feuert kein input-Event) —
+		// kurz nachlaufend prüfen.
+		input.addEventListener('blur', function () { setTimeout(refresh, 250); });
+		refresh();
+	})();
+	</script>
+	<?php
+}
+
 function fge_onboarding_render_location( int $step, int $partner_id, string $token, array $v, array $errors ): void {
 	$loc_type  = fge_onboarding_current_type();
 	$is_indoor = 'indoor' === $loc_type;
@@ -2307,21 +2421,23 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 		// Das Namensfeld IST die Google-Suche (Julius, 28.08.): tippen, Platz
 		// wählen, Name + Adresse + Karten-Pin füllen sich automatisch
 		// (fge-onboarding-map.js bindet die Places-Suche an dieses Feld).
-		fge_onboarding_input( 'fge_coach_venue_name', 'fge_coach_venue_name', 'Deine Golfanlage', (string) ( $v['coach_venue_name'] ?? '' ), 'text', true, 'Golfplatz eintippen und auswählen …', $errors, 'Aus der Google-Suche wählen, Adresse und Karten-Pin füllen sich automatisch.', 'autocomplete="off"' );
+		fge_onboarding_input( 'fge_coach_venue_name', 'fge_coach_venue_name', 'Dein Heimatplatz', (string) ( $v['coach_venue_name'] ?? '' ), 'text', true, 'Golfplatz eintippen und auswählen …', $errors, 'Aus der Google-Suche wählen, Adresse und Karten-Pin füllen sich automatisch.', 'autocomplete="off"' );
+		// Ist der Platz schon Firmengolf-Partner? Dann verknüpfen statt neu anlegen.
+		fge_coach_venue_link_ui( $partner_id );
 		$more_venues = is_array( $v['coach_more_venues'] ?? null ) ? $v['coach_more_venues'] : [];
 		?>
 		<div class="ob-field full">
 			<div id="fge-more-venues">
 				<?php foreach ( $more_venues as $mv_name ) : ?>
 					<div class="ob-venue-row">
-						<input class="ob-input" name="fge_coach_more_venues[]" value="<?php echo esc_attr( (string) $mv_name ); ?>" placeholder="Weiterer Golfplatz">
+						<input class="ob-input" name="fge_coach_more_venues[]" value="<?php echo esc_attr( (string) $mv_name ); ?>" placeholder="Weitere Location (Golfplatz, Simulator, Indoor)">
 						<button type="button" class="ob-venue-del" data-venue-del aria-label="Golfplatz entfernen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
 					</div>
 				<?php endforeach; ?>
 			</div>
 			<button type="button" class="ob-venue-add" id="fge-more-venues-add">
 				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-				Weiteren Golfplatz hinzufügen
+				Weitere Location hinzufügen
 			</button>
 		</div>
 		<script>
@@ -2332,7 +2448,7 @@ function fge_onboarding_render_location( int $step, int $partner_id, string $tok
 			btn.addEventListener('click', function () {
 				var row = document.createElement('div');
 				row.className = 'ob-venue-row';
-				row.innerHTML = '<input class="ob-input" name="fge_coach_more_venues[]" placeholder="Weiterer Golfplatz">'
+				row.innerHTML = '<input class="ob-input" name="fge_coach_more_venues[]" placeholder="Weitere Location (Golfplatz, Simulator, Indoor)">'
 					+ '<button type="button" class="ob-venue-del" data-venue-del aria-label="Golfplatz entfernen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>';
 				list.appendChild(row);
 				row.querySelector('input').focus();
@@ -2740,6 +2856,23 @@ function fge_onboarding_render_gastro( int $step, int $partner_id, string $token
 	fge_onboarding_render_step_header( $step, 'Was bietet ihr gastronomisch an?', 'Wähl alles aus, was ihr für Firmenevents bereitstellen könnt. Du kannst die Auswahl später jederzeit anpassen.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
+	// Indoor bekommt eigene Kacheln (Top-50-Recherche, Julius 02.09.): die
+	// Golfplatz-Liste (Clubrestaurant, Halfway, BBQ) passt nicht zu Simulatoren.
+	if ( 'indoor' === fge_onboarding_current_type() ) {
+		$selected = is_array( $v['indoor_gastro'] ?? null ) ? array_map( 'strval', $v['indoor_gastro'] ) : [];
+		?>
+		<input type="hidden" name="fge_indoor_gastro_submitted" value="1">
+		<div class="ob-cards">
+			<?php foreach ( fge_catalog_indoor_gastro() as $id => $label ) :
+				fge_onboarding_card( 'checkbox', 'fge_indoor_gastro[]', (string) $id, (string) $label, in_array( $id, $selected, true ) );
+			endforeach; ?>
+		</div>
+		<?php
+		fge_onboarding_cards_script();
+		echo '</form>';
+		return;
+	}
+
 	$gastro   = fge_catalog_infra_groups()['Gastronomie'] ?? [];
 	$selected = is_array( $v['infra'] ?? null ) ? $v['infra'] : [];
 	?>
@@ -2922,6 +3055,9 @@ function fge_onboarding_render_indoor_detail( int $step, int $partner_id, string
 		'some' => 'In einzelnen Boxen',
 		'no'   => 'Nein',
 	], true, $errors );
+	// Betreuung während der Buchung (Top-50: 18 betreut, ~9 Self-Service) —
+	// für Firmenevents entscheidend, deshalb Pflicht (Julius, 02.09.).
+	fge_onboarding_select( 'fge_indoor_staffing', 'fge_indoor_staffing', 'Wie läuft der Betrieb bei euch?', (string) ( $sim['staffing'] ?? '' ), fge_catalog_indoor_staffing(), true, $errors );
 	fge_onboarding_input( 'fge_indoor_max_persons', 'fge_indoor_max_persons', 'Maximal Personen gleichzeitig bei euch', $n( 'max_persons' ), 'number', true, 'z. B. 30', $errors, '', 'min="1" max="999" inputmode="numeric"' );
 	fge_onboarding_next_btn( 'Weiter', 'fge_ob_save_exit' );
 	echo '</form>';
@@ -3361,7 +3497,7 @@ function fge_onboarding_render_coach_venue( int $step, int $partner_id, string $
 	fge_onboarding_render_step_header( $step, 'Wo unterrichtest du?', 'Du legst die Anlage an, auf der deine Kurse und Events stattfinden. Größere Eventmodule stimmst du selbst mit dem Platz ab, die Anfragen laufen über dich. Den genauen Standort setzt du im nächsten Schritt auf der Karte.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 
-	fge_onboarding_input( 'fge_coach_venue_name', 'fge_coach_venue_name', 'Name der Anlage', (string) ( $v['coach_venue_name'] ?? '' ), 'text', true, 'z. B. GC Beispielstadt', $errors );
+	fge_onboarding_input( 'fge_coach_venue_name', 'fge_coach_venue_name', 'Dein Heimatplatz', (string) ( $v['coach_venue_name'] ?? '' ), 'text', true, 'z. B. GC Beispielstadt', $errors );
 	fge_onboarding_select( 'fge_coach_venue_role', 'fge_coach_venue_role', 'Deine Rolle dort', (string) ( $v['coach_venue_role'] ?? '' ), [
 		'hauspro'      => 'Haus-Pro',
 		'angestellt'   => 'Fest angestellt',
@@ -3683,7 +3819,7 @@ function fge_onboarding_render_step_9( int $step, int $partner_id, string $token
 }
 
 function fge_onboarding_render_step_10( int $step, int $partner_id, string $token, array $v, array $errors ): void {
-	fge_onboarding_render_step_header( $step, 'Preis und Abrechnung', 'Du hinterlegst deine Netto-Preise pro Event. Firmengolf kalkuliert darauf den Verkaufspreis für das Unternehmen.' );
+	fge_onboarding_render_step_header( $step, 'Preis und Abrechnung', 'Du hinterlegst pro Event deinen gewohnten Endkundenpreis (brutto). Firmengolf kalkuliert darauf den Verkaufspreis für das Unternehmen.' );
 	fge_onboarding_form_open( $step, $partner_id, $token );
 	// Visuell neu geschnitten (Julius, 28.08.): Hero-Karte + drei nummerierte
 	// Schritte statt zwei Textboxen.
@@ -3692,8 +3828,8 @@ function fge_onboarding_render_step_10( int $step, int $partner_id, string $toke
 		<div class="ob-price-hero full">
 			<span class="ob-price-hero-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5A4.4 4.4 0 0 0 12 7a5 5 0 0 0 0 10 4.4 4.4 0 0 0 3.5-1.5"/><path d="M7.5 10.5h5M7.5 13.5h5"/></svg></span>
 			<div class="ob-price-hero-txt">
-				<div class="ob-price-hero-t">Dein Netto-Preis. Ohne Abzüge.</div>
-				<p class="ob-price-hero-s">Du hinterlegst pro Event deinen Netto-Preis. Den Firmengolf-Aufschlag kalkulieren wir oben drauf, er wird <strong>nie</strong> von deinem Anteil abgezogen. Genau deinen hinterlegten Betrag rechnest du nach dem Event ab.</p>
+				<div class="ob-price-hero-t">Dein gewohnter Preis. Ohne Abzüge.</div>
+				<p class="ob-price-hero-s">Du hinterlegst pro Event einfach deinen Endkundenpreis (brutto), so wie du ihn auch einem normalen Gast berechnest. Den Firmengolf-Aufschlag kalkulieren wir oben drauf, er wird <strong>nie</strong> von deinem Anteil abgezogen. Deinen hinterlegten Betrag bekommst du nach dem Event exakt ausgezahlt.</p>
 			</div>
 		</div>
 		<ol class="ob-price-steps full">
@@ -3701,7 +3837,7 @@ function fge_onboarding_render_step_10( int $step, int $partner_id, string $toke
 				<span class="ob-price-num" aria-hidden="true">1</span>
 				<div class="ob-price-step-txt">
 					<span class="ob-price-step-t">Du legst deine Preise fest</span>
-					<span class="ob-price-step-s">Pro Angebot hinterlegst du deinen Netto-Preis, jederzeit im Portal änderbar.</span>
+					<span class="ob-price-step-s">Pro Angebot hinterlegst du deinen Endkundenpreis (brutto), jederzeit im Portal änderbar.</span>
 				</div>
 			</li>
 			<li class="ob-price-step">
@@ -3999,7 +4135,7 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 
 		// ── Preis ──
 		fge_onboarding_rev_block( 'Preis', $edit( 'pricing' ), [
-			[ 'Netto-Preise', 'Pro Event im Portal hinterlegt' ],
+			[ 'Deine Preise', 'Endkundenpreis (brutto) pro Event im Portal hinterlegt' ],
 			[ 'Abrechnung', 'Direkt mit Firmengolf · Anfragenummer angeben' ],
 		] );
 
@@ -4092,9 +4228,10 @@ function fge_onboarding_review_blocks_indoor_extra( int $partner_id, array $v, c
 	fge_onboarding_rev_block( 'Räume & Aktivitäten', $edit( 'indoor-spaces' ), $space_rows );
 
 	// ── Gastronomie (geteilte Slide, Gastro-ids liegen in _fge_infra) ──
-	$gastro_index = fge_catalog_infra_groups()['Gastronomie'] ?? [];
+	// Indoor-Gastro-Kacheln (eigenes Meta seit der Top-50-Recherche, 02.09.).
+	$gastro_index = fge_catalog_indoor_gastro();
 	$gastro_names = [];
-	foreach ( (array) ( $v['infra'] ?? [] ) as $gid ) {
+	foreach ( (array) ( $v['indoor_gastro'] ?? [] ) as $gid ) {
 		if ( isset( $gastro_index[ (string) $gid ] ) ) {
 			$gastro_names[] = $gastro_index[ (string) $gid ];
 		}

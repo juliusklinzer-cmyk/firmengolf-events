@@ -106,6 +106,30 @@ function fge_event_pricing( int $event_id ): array {
 	$basis  = (string) get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person';
 	$items  = (array) get_post_meta( $event_id, '_fge_line_items', true );
 	$pax    = (int) get_post_meta( $event_id, '_fge_participants_max', true );
+	if ( $pax <= 0 ) {
+		// Sicherheitsnetz (Julius, 02.09., Simulator-Fund): Ohne max. Teilnehmer
+		// fiele die Pauschale bei gemischten Posten stillschweigend aus dem
+		// p.P.-Preis. Dann wenigstens auf die Mindestteilnehmer umlegen.
+		$pax = (int) get_post_meta( $event_id, '_fge_participants_min', true );
+	}
+	return fge_event_pricing_calc( $mode, $amount, $basis, $items, $pax );
+}
+
+/**
+ * Preis für eine KONKRETE Teilnehmerzahl (Angebots-/Anfragepfad, Julius 02.09.):
+ * Pauschal-Posten werden auf die tatsächlich angefragte Personenzahl umgelegt,
+ * nicht auf das Maximum. Weniger Personen → höherer p.P.-Preis; der Partner
+ * bekommt so immer sein volles Netto inklusive kompletter Pauschalen. Die
+ * öffentliche Karte zeigt weiter den günstigsten „ab"-Preis (volle Gruppe).
+ */
+function fge_event_pricing_for_pax( int $event_id, int $pax ): array {
+	if ( $pax <= 0 ) {
+		return fge_event_pricing( $event_id );
+	}
+	$mode   = (string) get_post_meta( $event_id, '_fge_price_mode', true ) ?: 'gesamt';
+	$amount = (float) get_post_meta( $event_id, '_fge_price_amount', true );
+	$basis  = (string) get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person';
+	$items  = (array) get_post_meta( $event_id, '_fge_line_items', true );
 	return fge_event_pricing_calc( $mode, $amount, $basis, $items, $pax );
 }
 

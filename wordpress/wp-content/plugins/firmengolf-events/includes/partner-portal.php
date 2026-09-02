@@ -478,14 +478,49 @@ function fge_portal_handle_profile_update(): void {
 					update_post_meta( $partner_id, '_fge_' . $k, sanitize_text_field( $P[ 'fge_' . $k ] ) );
 				}
 			}
+			// Locations v2 (Julius, 02.09.): strukturierte Zeilen (Name, Bild,
+			// optionale Partner-Verknüpfung) aus den parallelen POST-Arrays.
+			if ( isset( $P['fge_loc_name'] ) && function_exists( 'fge_coach_save_locations' ) ) {
+				$loc_rows = [];
+				foreach ( (array) $P['fge_loc_name'] as $li => $ln ) {
+					$loc_rows[] = [
+						'name'       => (string) $ln,
+						'image_id'   => absint( ( (array) ( $P['fge_loc_image_id'] ?? [] ) )[ $li ] ?? 0 ),
+						'partner_id' => absint( ( (array) ( $P['fge_loc_partner_id'] ?? [] ) )[ $li ] ?? 0 ),
+					];
+				}
+				fge_coach_save_locations( $partner_id, $loc_rows );
+			}
+			// Bei Verknüpfung gewinnt die Adresse des Golfplatz-Partners über
+			// die (ggf. veralteten) Formularfelder.
+			if ( function_exists( 'fge_coach_apply_venue_link' ) ) {
+				fge_coach_apply_venue_link( $partner_id );
+			}
+			// Clubmanagement einladen (nur ohne bestehende Verknüpfung): legt den
+			// Platz als Partner-Entwurf aus den Coach-Grundlagen an, verknüpft und
+			// schickt die Standard-Einladungsmail. Versand nur bei neuer Adresse,
+			// fge_send_partner_invite_email dedupliziert offene Einladungen selbst.
+			$mgr_mail = sanitize_email( $P['fge_venue_manager_email'] ?? '' );
+			if ( is_email( $mgr_mail )
+				&& function_exists( 'fge_coach_linked_venue_id' ) && 0 === fge_coach_linked_venue_id( $partner_id )
+				&& $mgr_mail !== (string) get_post_meta( $partner_id, '_fge_coach_venue_manager_email', true )
+				&& function_exists( 'fge_coach_create_venue_draft' ) && function_exists( 'fge_send_partner_invite_email' ) ) {
+				$venue_draft = fge_coach_create_venue_draft( $partner_id );
+				if ( $venue_draft > 0 ) {
+					fge_send_partner_invite_email( $venue_draft, $mgr_mail );
+					update_post_meta( $partner_id, '_fge_coach_venue_manager_email', $mgr_mail );
+				}
+			}
 			break;
 
 		case 'steckbrief':
 			update_post_meta( $partner_id, '_fge_public_golfclub_name',    sanitize_text_field( $P['fge_public_golfclub_name'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_public_short_description', sanitize_textarea_field( $P['fge_public_short_description'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_website_url',             esc_url_raw( $P['fge_website_url'] ?? '' ) );
-			$gt = sanitize_text_field( $P['fge_golf_type'] ?? '' );
-			update_post_meta( $partner_id, '_fge_golf_type', array_key_exists( $gt, fge_catalog_golf_types() ) ? $gt : '' );
+			if ( isset( $P['fge_golf_type'] ) ) { // Indoor-Formulare tragen das Feld nicht
+				$gt = sanitize_text_field( $P['fge_golf_type'] );
+				update_post_meta( $partner_id, '_fge_golf_type', array_key_exists( $gt, fge_catalog_golf_types() ) ? $gt : '' );
+			}
 			// Nur min/max aktualisieren — die Bereichs-Kapazitäten aus dem Onboarding erhalten.
 			$cap_in       = is_array( $P['fge_cap'] ?? null ) ? $P['fge_cap'] : [];
 			$cap_existing = (array) get_post_meta( $partner_id, '_fge_cap', true );
@@ -504,6 +539,21 @@ function fge_portal_handle_profile_update(): void {
 			update_post_meta( $partner_id, '_fge_additional_equipment', sanitize_textarea_field( $P['fge_additional_equipment'] ?? '' ) );
 			break;
 
+		case 'indoortech':
+			// Indoor-Technik in der Anlage-Bearbeitung: gleiche Validierung und
+			// Persistenz wie der (Golfplatz-)Indoor-Reiter, EIN Datenmodell.
+			$it_errors = function_exists( 'fge_onboarding_validate_slide' ) ? fge_onboarding_validate_slide( 'indoor-detail', $_POST ) : [];
+			if ( ! empty( $it_errors ) ) {
+				$it_token = wp_generate_uuid4();
+				set_transient( 'fge_form_err_' . $it_token, [ 'errors' => $it_errors, 'data' => wp_unslash( $_POST ) ], 300 );
+				wp_redirect( esc_url_raw( fge_portal_page_url() . '?tab=platz&edit=indoortech&portal_err=' . rawurlencode( $it_token ) ), 303 );
+				exit;
+			}
+			fge_onboarding_save_slide( $partner_id, 'indoor-detail', $_POST );
+			// Gastro-Kacheln (nur im Indoor-Formular enthalten, Marker-Feld).
+			fge_onboarding_save_slide( $partner_id, 'gastro', $_POST );
+			break;
+
 		case 'standort':
 			foreach ( [ 'street', 'house_number', 'postal_code', 'city', 'federal_state', 'free_region' ] as $k ) {
 				update_post_meta( $partner_id, '_fge_' . $k, sanitize_text_field( $P[ 'fge_' . $k ] ?? '' ) );
@@ -518,7 +568,32 @@ function fge_portal_handle_profile_update(): void {
 			update_post_meta( $partner_id, '_fge_arrival_estation', '' === $est ? '' : ( '1' === $est ? 1 : 0 ) );
 			break;
 
+		case 'golflehrer':
+			// Rückrichtung Club → Golflehrer (Julius, 02.09.): Vorschläge verknüpfen
+			// (Link-Meta liegt am Coach) und/oder neuen Golflehrer als Draft anlegen
+			// samt Einladungsmail mit eigenem Zugang.
+			foreach ( array_map( 'absint', (array) ( $P['fge_link_coach_ids'] ?? [] ) ) as $link_cid ) {
+				if ( $link_cid > 0 && 'firmengolf_partner' === get_post_type( $link_cid )
+					&& function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $link_cid )
+					&& 0 === fge_coach_linked_venue_id( $link_cid ) ) {
+					update_post_meta( $link_cid, '_fge_coach_venue_partner_id', $partner_id );
+					fge_coach_apply_venue_link( $link_cid );
+				}
+			}
+			$nc_first = sanitize_text_field( $P['fge_new_coach_first'] ?? '' );
+			$nc_last  = sanitize_text_field( $P['fge_new_coach_last'] ?? '' );
+			$nc_mail  = sanitize_email( $P['fge_new_coach_email'] ?? '' );
+			if ( '' !== trim( $nc_first . $nc_last ) && function_exists( 'fge_course_create_coach_draft' ) ) {
+				$new_cid = fge_course_create_coach_draft( $partner_id, $nc_first, $nc_last );
+				if ( $new_cid > 0 && is_email( $nc_mail ) && function_exists( 'fge_send_partner_invite_email' ) ) {
+					fge_send_partner_invite_email( $new_cid, $nc_mail, $nc_first );
+				}
+			}
+			break;
+
 		case 'kontakt':
+			// Steuerstatus (für die Brutto→Netto-Umrechnung im Angebotseditor).
+			update_post_meta( $partner_id, '_fge_tax_mode', 'small' === ( $P['fge_tax_mode'] ?? '' ) ? 'small' : 'regular' );
 			// Alle Felder AUSSER der Hauptkontakt-E-Mail sofort speichern.
 			update_post_meta( $partner_id, '_fge_main_contact_name',   sanitize_text_field( $P['fge_main_contact_name'] ?? '' ) );
 			update_post_meta( $partner_id, '_fge_main_contact_role',   sanitize_text_field( $P['fge_main_contact_role'] ?? '' ) );
@@ -887,11 +962,18 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	}
 
 	// ── Preismodell + Inhalt (rev. 2) ──
+	// Brutto-Eingabe (Julius, 02.09.): Partner tippt Brutto, intern Netto speichern.
+	// Divisor je Partner (regelbesteuert 1,19 / Kleinunternehmer 1,0).
+	$price_pid = fge_portal_get_partner_id();
+	if ( $price_pid <= 0 ) { $price_pid = (int) get_post_meta( $post_id, '_fge_assigned_partner_id', true ); }
 	$price_mode = in_array( $_POST['fge_price_mode'] ?? '', [ 'gesamt', 'einzel' ], true ) ? $_POST['fge_price_mode'] : 'gesamt';
 	update_post_meta( $post_id, '_fge_price_mode', $price_mode );
-	update_post_meta( $post_id, '_fge_price_amount', fge_parse_de_amount( wp_unslash( $_POST['fge_price_amount'] ?? '' ) ) );
+	$amount_gross = fge_parse_de_amount( wp_unslash( $_POST['fge_price_amount'] ?? '' ) );
+	update_post_meta( $post_id, '_fge_price_gross', $amount_gross ); // exaktes Brutto für die Editor-Anzeige
+	update_post_meta( $post_id, '_fge_price_amount', $price_pid > 0 ? fge_gross_to_net( $amount_gross, $price_pid ) : $amount_gross );
 	update_post_meta( $post_id, '_fge_price_basis', in_array( $_POST['fge_price_basis'] ?? '', [ 'person', 'pauschal' ], true ) ? $_POST['fge_price_basis'] : 'person' );
-	$pli = [];
+	$pli       = []; // Netto (Downstream)
+	$pli_gross = []; // Brutto (Editor-Rückanzeige)
 	foreach ( preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_line_items'] ?? '' ) ) as $line ) {
 		$line = trim( $line );
 		if ( $line === '' ) {
@@ -901,13 +983,15 @@ function fge_portal_save_event_meta( int $post_id ): void {
 		// JEDEN p.P.-Posten als Pauschale gerechnet (Kern-Audit K1, 2026-07-08).
 		$parts = explode( '|', $line, 3 );
 		$lbl   = sanitize_text_field( trim( $parts[0] ?? '' ) );
-		$cst   = fge_parse_de_amount( $parts[1] ?? '' );
+		$gross = fge_parse_de_amount( $parts[1] ?? '' );
 		$bas   = 'person' === trim( $parts[2] ?? '' ) ? 'person' : 'pauschal';
 		if ( $lbl !== '' ) {
-			$pli[] = [ 'label' => $lbl, 'cost' => $cst, 'basis' => $bas ];
+			$pli[]       = [ 'label' => $lbl, 'cost' => $price_pid > 0 ? fge_gross_to_net( $gross, $price_pid ) : $gross, 'basis' => $bas ];
+			$pli_gross[] = [ 'label' => $lbl, 'cost' => $gross, 'basis' => $bas ];
 		}
 	}
 	update_post_meta( $post_id, '_fge_line_items', $pli );
+	update_post_meta( $post_id, '_fge_line_items_gross', $pli_gross );
 	$pinc = array_values( array_filter( array_map(
 		static fn( $l ): string => sanitize_text_field( trim( $l ) ),
 		preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_event_includes'] ?? '' ) )
@@ -1129,28 +1213,27 @@ function fge_portal_render(): void {
 	$logo_url      = fge_get_logo_url();
 	$archive_url   = get_post_type_archive_link( 'firmengolf_event' );
 
-	$svg = static function ( string $p ): string {
-		return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $p . '</svg>';
-	};
+	// Menü ohne Icons (Julius, 02.09.): nur Text, wirkt ruhiger und aufgeräumter.
 	$tabs = [
-		'uebersicht' => [ 'Übersicht',       '<path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/>' ],
-		'angebote'   => [ 'Angebote',        '<path d="M5 22V4M5 4l13 3-13 3"/>' ],
-		'indoor'     => [ 'Indoor-Golf',     '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>' ],
-		'anfragen'   => [ 'Anfragen',        '<path d="M22 12h-5l-2 3h-6l-2-3H2"/><path d="M5 5h14l3 7v7H2v-7z"/>' ],
-		'kalender'   => [ 'Kalender',        '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>' ],
-		'platz'      => [ 'Platz',           '<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' ],
-		'team'       => [ 'Ansprechpartner', '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>' ],
+		'uebersicht' => [ 'Übersicht' ],
+		'angebote'   => [ 'Angebote' ],
+		'indoor'     => [ 'Indoor-Golf' ],
+		'anfragen'   => [ 'Anfragen' ],
+		'kalender'   => [ 'Kalender' ],
+		'platz'      => [ 'Platz' ],
+		'team'       => [ 'Ansprechpartner' ],
 	];
-	// Indoor-Reiter nur für Partner mit Indoor in der Ausstattung (Abschnitt 3b).
-	if ( ! fge_partner_has_indoor( $partner_id ) ) {
-		unset( $tabs['indoor'] );
-	}
 	// Ansicht je Partner-Typ (Julius, 28.08.): Der Coach verwaltet eine PERSON,
 	// die Indoor-Anlage eine Location, kein „Platz".
 	$portal_ptype = function_exists( 'fge_partner_type' ) ? fge_partner_type( $partner_id ) : 'course';
+	// Indoor-Reiter NUR für Golfplätze mit Indoor in der Ausstattung. Für reine
+	// Indoor-Partner wäre er ein Duplikat von „Anlage" (Julius, 02.09.) — dort
+	// lebt die Technik jetzt als eigene Bearbeitungs-Sektion.
+	if ( ! fge_partner_has_indoor( $partner_id ) || 'indoor' === $portal_ptype ) {
+		unset( $tabs['indoor'] );
+	}
 	if ( 'coach' === $portal_ptype ) {
 		$tabs['platz'][0] = 'Profil';
-		$tabs['platz'][1] = '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>';
 	} elseif ( 'indoor' === $portal_ptype ) {
 		$tabs['platz'][0] = 'Anlage';
 	}
@@ -1166,7 +1249,6 @@ function fge_portal_render(): void {
 			<div class="nav-tabs">
 				<?php foreach ( $tabs as $key => $t ) : ?>
 					<button class="nav-tab<?php echo $active_tab === $key ? ' active' : ''; ?>" data-tab="<?php echo esc_attr( $key ); ?>" type="button">
-						<?php echo $svg( $t[1] ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 						<?php echo esc_html( $t[0] ); ?>
 						<?php if ( $key === 'anfragen' && $new_requests > 0 ) : ?><span class="badge"><?php echo (int) $new_requests; ?></span><?php endif; ?>
 					</button>
@@ -1397,6 +1479,32 @@ function fge_portal_visibility_checklist( int $partner_id ): array {
 	}
 	$pois = function_exists( 'fge_partner_arrival_pois' ) ? fge_partner_arrival_pois( $partner_id ) : [];
 
+	// Golflehrer haben andere Bausteine (kein Ausstattung/Anfahrt-Edit, Bilder heißen
+	// Profil-/Titelbild statt Logo) → eigene, sinnvolle Checkliste.
+	if ( function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $partner_id ) ) {
+		return [
+			[ 'done' => '' !== trim( $m( 'public_short_description' ) ), 'label' => 'Kurzprofil ausgefüllt', 'hint' => '2 bis 3 Sätze, was dich als Golflehrer ausmacht', 'url' => $base . '?tab=platz&edit=profil' ],
+			[ 'done' => (int) $m( 'logo_attachment_id' ) > 0, 'label' => 'Dein Profilbild', 'hint' => 'ein gutes Porträt, das auf deiner Visitenkarte und den Karten erscheint', 'url' => $base . '?tab=platz&edit=medien' ],
+			[ 'done' => (int) $m( 'hero_image_attachment_id' ) > 0, 'label' => 'Titelbild deiner Golfschule oder deines Platzes', 'hint' => 'macht deine Visitenkarte hochwertig', 'url' => $base . '?tab=platz&edit=medien' ],
+			[ 'done' => count( $gallery ) >= 3, 'label' => 'Mindestens 3 Kursfotos', 'hint' => 'echte Bilder von Kursen und der Anlage bringen mehr Anfragen', 'url' => $base . '?tab=platz&edit=medien' ],
+			[ 'done' => '' !== trim( $m( 'coach_venue_name' ) ), 'label' => 'Golfplatz hinterlegt', 'hint' => 'wo du unterrichtest, mit Name und Standort', 'url' => $base . '?tab=platz&edit=standorte' ],
+			[ 'done' => count( $types ) >= 1, 'label' => 'Mindestens 1 Angebot erstellt', 'hint' => 'jedes Angebot ist ein eigener Sucheinstieg für Firmen', 'url' => $base . '?tab=angebote' ],
+		];
+	}
+
+	// Indoor-Locations: statt Golfplatz-Ausstattung zählt die Technik-Sektion.
+	if ( function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $partner_id ) ) {
+		$sim = get_post_meta( $partner_id, '_fge_indoor_sim', true );
+		return [
+			[ 'done' => '' !== trim( $m( 'public_short_description' ) ), 'label' => 'Beschreibung eurer Location', 'hint' => '2 bis 3 Sätze, was euch für Firmen besonders macht', 'url' => $base . '?tab=platz&edit=steckbrief' ],
+			[ 'done' => (int) $m( 'logo_attachment_id' ) > 0, 'label' => 'Euer Logo', 'hint' => 'erscheint auf Profil und Event-Karten', 'url' => $base . '?tab=platz&edit=medien' ],
+			[ 'done' => count( $gallery ) >= 3, 'label' => 'Mindestens 3 eigene Fotos', 'hint' => 'Boxen, Lounge, Atmosphäre: echte Fotos bringen mehr Anfragen', 'url' => $base . '?tab=platz&edit=medien' ],
+			[ 'done' => is_array( $sim ) && absint( $sim['boxes'] ?? 0 ) > 0, 'label' => 'Simulatoren & Technik ausgefüllt', 'hint' => 'damit ordnen wir Indoor-Anfragen passend zu', 'url' => $base . '?tab=platz&edit=indoortech' ],
+			[ 'done' => ! empty( $pois ), 'label' => 'Anfahrt & Parken beschrieben', 'hint' => 'nimmt Planern die häufigsten Fragen ab', 'url' => $base . '?tab=platz&edit=standort' ],
+			[ 'done' => count( $types ) >= 1, 'label' => 'Mindestens 1 Angebot erstellt', 'hint' => 'jedes Angebot ist ein eigener Sucheinstieg für Firmen', 'url' => $base . '?tab=angebote' ],
+		];
+	}
+
 	return [
 		[ 'done' => '' !== trim( $m( 'public_short_description' ) ), 'label' => 'Beschreibung deines Platzes', 'hint' => '2 bis 3 Sätze, was euch für Firmen besonders macht', 'url' => $base . '?tab=platz&edit=steckbrief' ],
 		[ 'done' => (int) $m( 'logo_attachment_id' ) > 0, 'label' => 'Euer Logo', 'hint' => 'erscheint auf Profil und Event-Karten', 'url' => $base . '?tab=platz&edit=medien' ],
@@ -1536,6 +1644,18 @@ function fge_portal_section_uebersicht( int $partner_id ): void {
 function fge_portal_render_hero( int $partner_id ): void {
 	$partner_name   = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
 	$city           = (string) get_post_meta( $partner_id, '_fge_city', true );
+	// Golflehrer: SEIN Name groß, darunter der Heimatplatz (Julius, 02.09.).
+	$is_coach   = function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $partner_id );
+	$venue_line = '';
+	if ( $is_coach ) {
+		$coach_name = trim( (string) get_post_meta( $partner_id, '_fge_coach_first', true ) . ' ' . (string) get_post_meta( $partner_id, '_fge_coach_last', true ) );
+		if ( '' !== $coach_name ) {
+			$partner_name = $coach_name;
+		}
+		$venue      = function_exists( 'fge_coach_venue_display' ) ? fge_coach_venue_display( $partner_id ) : [ 'name' => '', 'city' => $city ];
+		$venue_line = trim( (string) $venue['name'] );
+		$city       = '' !== (string) $venue['city'] ? (string) $venue['city'] : $city;
+	}
 	$partner_status = (string) get_post_meta( $partner_id, '_fge_partner_status', true );
 	$monogram       = fge_portal_make_monogram( $partner_name );
 	$base           = fge_portal_page_url();
@@ -1596,11 +1716,11 @@ function fge_portal_render_hero( int $partner_id ): void {
 						<?php endif; ?>
 					</div>
 					<div class="fp-hero-text">
-						<div class="fp-hero-eyebrow">Dein Platz auf Firmengolf</div>
+						<div class="fp-hero-eyebrow"><?php echo $is_coach ? 'Dein Golflehrer-Profil auf Firmengolf' : ( function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $partner_id ) ? 'Eure Location auf Firmengolf' : 'Dein Platz auf Firmengolf' ); ?></div>
 						<h1 class="fp-hero-name"><?php echo esc_html( $partner_name ); ?></h1>
-						<?php if ( $city !== '' ) : ?>
+						<?php if ( $venue_line !== '' || $city !== '' ) : ?>
 							<div class="fp-hero-meta">
-								<span><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( $city ); ?></span>
+								<span><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> <?php echo esc_html( trim( $venue_line . ( $venue_line && $city ? ' · ' : '' ) . ( $venue_line === $city ? '' : $city ) ) ); ?></span>
 							</div>
 						<?php endif; ?>
 					</div>
@@ -2219,12 +2339,12 @@ function fge_portal_section_angebote( int $partner_id ): void {
 // SECTION: INDOOR-GOLF (nur Partner mit Indoor in der Ausstattung, Abschnitt 3b)
 // ══════════════════════════════════════════════════════════════════════════════
 
-function fge_portal_section_indoor( int $partner_id ): void {
-	if ( ! fge_partner_has_indoor( $partner_id ) ) {
-		echo '<p class="fg-portal-error-text">Für dieses Profil ist kein Indoor-Golf in der Ausstattung hinterlegt. Ergänze es im Tab „Platz" unter Ausstattung.</p>';
-		return;
-	}
-	$base = fge_portal_page_url();
+/**
+ * Indoor-Technik-Felder (Boxen, Systeme, Features, Linkshand): gemeinsam genutzt
+ * vom Indoor-Reiter (Golfplatz MIT Indoor-Bereich) und der Anlage-Bearbeitung
+ * reiner Indoor-Partner (Julius, 02.09.: kein Duplikat-Reiter mehr).
+ */
+function fge_portal_render_indoor_tech_fields( int $partner_id ): void {
 	[ 'errors' => $errors, 'data' => $err_data ] = fge_load_form_state( 'portal_err' );
 
 	$sim = get_post_meta( $partner_id, '_fge_indoor_sim', true );
@@ -2245,48 +2365,7 @@ function fge_portal_section_indoor( int $partner_id ): void {
 	};
 	$sel_systems  = array_map( 'strval', (array) $val( 'fge_indoor_systems', 'systems', [] ) );
 	$sel_features = array_map( 'strval', (array) $val( 'fge_indoor_features', 'features', [] ) );
-
-	$indoor_events = get_posts( [
-		'post_type'   => 'firmengolf_event',
-		'post_status' => [ 'publish', 'draft' ],
-		'numberposts' => -1,
-		'meta_query'  => [
-			'relation' => 'AND',
-			[ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ],
-			[ 'key' => '_fge_event_type', 'value' => 'indoor-golf' ],
-		],
-	] );
-	$new_url  = esc_url( $base . '?tab=angebote&portal_action=new&preset_type=indoor-golf' );
-	$has_data = ! empty( $sim ) && absint( $sim['boxes'] ?? 0 ) > 0;
 	?>
-	<div class="fgpp"><div class="page-wide">
-		<div class="section-head" style="margin-bottom:22px;">
-			<div>
-				<div class="eyebrow">Indoor-Golf</div>
-				<h2>Euer Indoor-Bereich</h2>
-				<p>Indoor ist euer Winter- und Ganzjahresangebot: Firmenkunden kommen unter der Woche und tagsüber, genau dann, wenn Boxen sonst frei sind. Mit vollständigen Daten können wir euch für Indoor-Events vorschlagen.</p>
-			</div>
-			<a href="<?php echo $new_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>" class="btn btn-brand">Indoor-Angebot anlegen</a>
-		</div>
-
-		<?php if ( ! $has_data && empty( $errors ) ) : ?>
-			<div class="fg-portal-global-notice" role="status">Eure Indoor-Details fehlen noch. Einmal ausgefüllt, tauchen sie in eurem Profil auf und wir können Indoor-Anfragen passend zuordnen.</div>
-		<?php endif; ?>
-
-		<?php if ( ! empty( $indoor_events ) ) : ?>
-			<h3 style="margin:8px 0 12px;">Eure Indoor-Angebote</h3>
-			<div class="cat-grid" style="margin-bottom:28px;">
-				<?php foreach ( $indoor_events as $iidx => $iev ) {
-					fge_portal_render_cat_card( $iev, 'Indoor Golf', $base, $iidx );
-				} ?>
-			</div>
-		<?php endif; ?>
-
-		<form method="post" action="<?php echo esc_url( $base ); ?>">
-			<input type="hidden" name="fge_action" value="portal_indoor_update">
-			<?php wp_nonce_field( 'fge_portal_indoor_update', 'fge_portal_nonce' ); ?>
-			<div class="panel" style="padding:24px;">
-				<h3 style="margin-top:0;">Simulatoren und Technik</h3>
 				<div class="fg-form-row fg-form-row--2col">
 					<div>
 						<label class="fg-form-label" for="fge_indoor_boxes">Anzahl Simulator-Boxen *</label>
@@ -2343,6 +2422,85 @@ function fge_portal_section_indoor( int $partner_id ): void {
 					</select>
 					<?php echo $err_html( 'fge_indoor_lefthand' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 				</div>
+				<div class="fg-form-row">
+					<label class="fg-form-label" for="fge_indoor_staffing">Wie läuft der Betrieb bei euch? *</label>
+					<select class="fg-form-input" id="fge_indoor_staffing" name="fge_indoor_staffing">
+						<option value="">bitte wählen …</option>
+						<?php foreach ( fge_catalog_indoor_staffing() as $k => $l ) : ?>
+							<option value="<?php echo esc_attr( $k ); ?>" <?php selected( (string) $val( 'fge_indoor_staffing', 'staffing' ), $k ); ?>><?php echo esc_html( $l ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<?php echo $err_html( 'fge_indoor_staffing' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				</div>
+				<?php if ( function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $partner_id ) ) :
+					// Gastro nur beim reinen Indoor-Partner (Golfplätze pflegen ihre
+					// Gastronomie in der Ausstattung). Kacheln aus der Top-50-Recherche.
+					$ig_sel = array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_indoor_gastro', true ) );
+					?>
+				<input type="hidden" name="fge_indoor_gastro_submitted" value="1">
+				<div class="fg-form-row">
+					<label class="fg-form-label">Gastronomie</label>
+					<div class="fp-check-grid">
+						<?php foreach ( fge_catalog_indoor_gastro() as $gid => $glabel ) : ?>
+							<label class="fp-check"><input type="checkbox" name="fge_indoor_gastro[]" value="<?php echo esc_attr( $gid ); ?>" <?php checked( in_array( (string) $gid, $ig_sel, true ) ); ?>> <?php echo esc_html( $glabel ); ?></label>
+						<?php endforeach; ?>
+					</div>
+				</div>
+				<?php endif; ?>
+	<?php
+}
+
+function fge_portal_section_indoor( int $partner_id ): void {
+	if ( ! fge_partner_has_indoor( $partner_id ) ) {
+		echo '<p class="fg-portal-error-text">Für dieses Profil ist kein Indoor-Golf in der Ausstattung hinterlegt. Ergänze es im Tab „Platz" unter Ausstattung.</p>';
+		return;
+	}
+	$base = fge_portal_page_url();
+	$sim = get_post_meta( $partner_id, '_fge_indoor_sim', true );
+	$sim = is_array( $sim ) ? $sim : [];
+
+	$indoor_events = get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'meta_query'  => [
+			'relation' => 'AND',
+			[ 'key' => '_fge_assigned_partner_id', 'value' => $partner_id, 'type' => 'NUMERIC' ],
+			[ 'key' => '_fge_event_type', 'value' => 'indoor-golf' ],
+		],
+	] );
+	$new_url  = esc_url( $base . '?tab=angebote&portal_action=new&preset_type=indoor-golf' );
+	$has_data = ! empty( $sim ) && absint( $sim['boxes'] ?? 0 ) > 0;
+	?>
+	<div class="fgpp"><div class="page-wide">
+		<div class="section-head" style="margin-bottom:22px;">
+			<div>
+				<div class="eyebrow">Indoor-Golf</div>
+				<h2>Euer Indoor-Bereich</h2>
+				<p>Indoor ist euer Winter- und Ganzjahresangebot: Firmenkunden kommen unter der Woche und tagsüber, genau dann, wenn Boxen sonst frei sind. Mit vollständigen Daten können wir euch für Indoor-Events vorschlagen.</p>
+			</div>
+			<a href="<?php echo $new_url; // phpcs:ignore WordPress.Security.EscapeOutput ?>" class="btn btn-brand">Indoor-Angebot anlegen</a>
+		</div>
+
+		<?php if ( ! $has_data && ! isset( $_GET['portal_err'] ) ) : ?>
+			<div class="fg-portal-global-notice" role="status">Eure Indoor-Details fehlen noch. Einmal ausgefüllt, tauchen sie in eurem Profil auf und wir können Indoor-Anfragen passend zuordnen.</div>
+		<?php endif; ?>
+
+		<?php if ( ! empty( $indoor_events ) ) : ?>
+			<h3 style="margin:8px 0 12px;">Eure Indoor-Angebote</h3>
+			<div class="cat-grid" style="margin-bottom:28px;">
+				<?php foreach ( $indoor_events as $iidx => $iev ) {
+					fge_portal_render_cat_card( $iev, 'Indoor Golf', $base, $iidx );
+				} ?>
+			</div>
+		<?php endif; ?>
+
+		<form method="post" action="<?php echo esc_url( $base ); ?>">
+			<input type="hidden" name="fge_action" value="portal_indoor_update">
+			<?php wp_nonce_field( 'fge_portal_indoor_update', 'fge_portal_nonce' ); ?>
+			<div class="panel" style="padding:24px;">
+				<h3 style="margin-top:0;">Simulatoren und Technik</h3>
+				<?php fge_portal_render_indoor_tech_fields( $partner_id ); ?>
 				<div style="margin-top:18px;">
 					<button type="submit" class="btn btn-brand">Indoor-Daten speichern</button>
 				</div>
@@ -2928,10 +3086,14 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 	$base     = fge_portal_page_url();
 	$edit_sec = static fn( string $s ): string => esc_url( add_query_arg( [ 'tab' => 'platz', 'edit' => $s ], $base ) );
 	$edit     = $edit_sec( 'steckbrief' );
+	$is_indoor = function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $partner_id );
 
 	$name       = $m( 'public_golfclub_name' ) ?: get_the_title( $partner_id );
 	$city       = $m( 'city' );
 	$region     = $m( 'free_region' ) ?: $m( 'federal_state' );
+	if ( '' !== $region && mb_strtolower( trim( $region ) ) === mb_strtolower( trim( $city ) ) ) {
+		$region = ''; // Dopplung wie „Hamburg · hamburg" vermeiden
+	}
 	$loc        = trim( $city . ( ( $region && $region !== $city ) ? ' · ' . $region : '' ) );
 	$golf_label = ( $gt = $m( 'golf_type' ) ) ? ( fge_catalog_golf_types()[ $gt ] ?? $gt ) : '';
 	$since      = $m( 'partner_since' );
@@ -3005,7 +3167,7 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 								<div class="hero-monogram"><?php echo esc_html( $mono ); ?></div>
 							<?php endif; ?>
 							<div class="hero-text">
-								<div class="hero-eyebrow">Dein Platz auf Firmengolf</div>
+								<div class="hero-eyebrow"><?php echo function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $partner_id ) ? 'Eure Location auf Firmengolf' : 'Dein Platz auf Firmengolf'; ?></div>
 								<h1 class="hero-name"><?php echo esc_html( $name ); ?></h1>
 								<div class="hero-meta">
 									<?php if ( $loc ) : ?><span><?php echo esc_html( $loc ); ?></span><?php endif; ?>
@@ -3028,8 +3190,8 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 				<div class="section-head">
 					<div>
 						<div class="eyebrow">So sehen dich Firmen</div>
-						<h2>Über deinen <em>Platz</em></h2>
-						<p>Beschreibung und Eckdaten erscheinen auf deinem öffentlichen Firmengolf-Profil.</p>
+						<h2><?php echo $is_indoor ? 'Über eure <em>Location</em>' : 'Über deinen <em>Platz</em>'; // phpcs:ignore WordPress.Security.EscapeOutput ?></h2>
+						<p>Beschreibung und Eckdaten erscheinen auf <?php echo $is_indoor ? 'eurem' : 'deinem'; ?> öffentlichen Firmengolf-Profil.</p>
 					</div>
 					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit; ?>">Bearbeiten</a></div>
 				</div>
@@ -3054,6 +3216,47 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 				</div>
 			</section>
 
+			<?php if ( $is_indoor ) :
+				// Indoor-Location: Technik-Zusammenfassung statt Golfplatz-Ausstattung.
+				$it_sim  = get_post_meta( $partner_id, '_fge_indoor_sim', true );
+				$it_sim  = is_array( $it_sim ) ? $it_sim : [];
+				$it_sys  = [];
+				foreach ( (array) ( $it_sim['systems'] ?? [] ) as $it_sid ) {
+					$it_sys[] = fge_catalog_indoor_systems()[ $it_sid ] ?? ( 'other' === $it_sid ? ( (string) ( $it_sim['systems_other'] ?? '' ) ?: 'Anderes System' ) : (string) $it_sid );
+				}
+				$it_lh    = [ 'all' => 'Ja, in allen Boxen', 'some' => 'In einzelnen Boxen', 'no' => 'Nein' ][ (string) ( $it_sim['lefthand'] ?? '' ) ] ?? '';
+				$it_staff = function_exists( 'fge_catalog_indoor_staffing' ) ? ( fge_catalog_indoor_staffing()[ (string) ( $it_sim['staffing'] ?? '' ) ] ?? '' ) : '';
+				$it_gcat  = function_exists( 'fge_catalog_indoor_gastro' ) ? fge_catalog_indoor_gastro() : [];
+				$it_gastro = implode( ', ', array_filter( array_map( static fn( $g ) => $it_gcat[ (string) $g ] ?? '', (array) get_post_meta( $partner_id, '_fge_indoor_gastro', true ) ) ) );
+				$it_rows = array_filter( [
+					absint( $it_sim['boxes'] ?? 0 ) > 0 ? [ 'Simulator-Boxen', (string) absint( $it_sim['boxes'] ) ] : null,
+					absint( $it_sim['max_persons'] ?? 0 ) > 0 ? [ 'Max. Personen', (string) absint( $it_sim['max_persons'] ) ] : null,
+					$it_sys ? [ 'Systeme', implode( ', ', $it_sys ) ] : null,
+					absint( $it_sim['box_comfort'] ?? 0 ) > 0 ? [ 'Pro Box komfortabel', (string) absint( $it_sim['box_comfort'] ) . ' Personen' ] : null,
+					'' !== $it_lh ? [ 'Linkshänder', $it_lh ] : null,
+					'' !== $it_staff ? [ 'Betrieb', $it_staff ] : null,
+					'' !== $it_gastro ? [ 'Gastronomie', $it_gastro ] : null,
+				] );
+				?>
+			<section class="section">
+				<div class="section-head">
+					<div><div class="eyebrow">Simulatoren & Technik</div><h2>Was euch <em>erwartet</em></h2></div>
+					<div class="actions"><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'indoortech' ); ?>">Bearbeiten</a></div>
+				</div>
+				<?php if ( $it_rows ) : ?>
+					<div class="panel">
+						<?php foreach ( $it_rows as $it_row ) : ?>
+							<div class="fact-row"><span class="lbl"><?php echo esc_html( $it_row[0] ); ?></span><span class="val"><?php echo esc_html( $it_row[1] ); ?></span></div>
+						<?php endforeach; ?>
+					</div>
+				<?php else : ?>
+					<div class="panel pe-empty">
+						<p>Eure Technik-Daten fehlen noch. Einmal ausgefüllt, können wir Indoor-Anfragen passend zuordnen.</p>
+						<a class="btn btn-brand btn-sm" href="<?php echo $edit_sec( 'indoortech' ); ?>">Technik angeben</a>
+					</div>
+				<?php endif; ?>
+			</section>
+			<?php else : ?>
 			<section class="section">
 				<div class="section-head">
 					<div><div class="eyebrow">Ausstattung</div><h2>Was euch <em>erwartet</em></h2></div>
@@ -3072,10 +3275,11 @@ function fge_portal_render_platz_profile( int $partner_id ): void {
 					</div>
 				<?php endif; ?>
 			</section>
+			<?php endif; ?>
 
 			<section class="section" id="galerie">
 				<div class="section-head">
-					<div><div class="eyebrow">Bildergalerie</div><h2>Fotos deines <em>Platzes</em></h2></div>
+					<div><div class="eyebrow">Bildergalerie</div><h2><?php echo $is_indoor ? 'Fotos eurer <em>Location</em>' : 'Fotos deines <em>Platzes</em>'; // phpcs:ignore WordPress.Security.EscapeOutput ?></h2></div>
 					<div class="actions"><a class="btn btn-brand btn-sm" href="<?php echo $edit_sec( 'medien' ); ?>">Fotos verwalten</a></div>
 				</div>
 				<?php if ( $gallery ) : ?>
@@ -3169,7 +3373,9 @@ function fge_portal_render_coach_profile( int $partner_id ): void {
 	$status     = $m( 'partner_status' );
 	$cover_id   = (int) $m( 'hero_image_attachment_id' );
 	$cover      = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, '2048x2048' ) : fge_get_placeholder_image_url( 'hero-fairway-wide.jpg', $partner_id );
-	$portrait   = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'thumbnail' ) : '';
+	// Portrait = Profilbild (_fge_logo_attachment_id), NICHT das Titelbild (Bug: zeigte den Cover doppelt).
+	$logo_id    = (int) $m( 'logo_attachment_id' );
+	$portrait   = $logo_id > 0 ? (string) wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
 	$mono       = strtoupper( mb_substr( $first ?: $coach_name, 0, 1 ) . mb_substr( $m( 'coach_last' ) ?: '', 0, 1 ) );
 
 	$vis_public = function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id );
@@ -3201,7 +3407,9 @@ function fge_portal_render_coach_profile( int $partner_id ): void {
 	foreach ( (array) get_post_meta( $partner_id, '_fge_coach_langs', true ) as $lid ) {
 		if ( isset( $lang_all[ $lid ] ) ) { $lang_names[] = $lang_all[ $lid ]; }
 	}
-	$venue_name = $m( 'coach_venue_name' );
+	// Bei Verknüpfung mit einem Golfplatz-Partner kommt der Name live vom Platz.
+	$venue      = function_exists( 'fge_coach_venue_display' ) ? fge_coach_venue_display( $partner_id ) : [ 'partner_id' => 0, 'name' => $m( 'coach_venue_name' ), 'city' => $m( 'city' ) ];
+	$venue_name = trim( (string) $venue['name'] );
 	$cf_all   = fge_catalog_coach_formats();
 	$cf_names = [];
 	foreach ( (array) get_post_meta( $partner_id, '_fge_coach_formats', true ) as $fid ) {
@@ -3214,7 +3422,7 @@ function fge_portal_render_coach_profile( int $partner_id ): void {
 	if ( $quali_names )                 { $facts[] = [ 'Ausbildung', implode( ', ', $quali_names ) ]; }
 	if ( isset( $years_l[ $m( 'coach_years' ) ] ) ) { $facts[] = [ 'Als Golflehrer tätig', $years_l[ $m( 'coach_years' ) ] ]; }
 	if ( $lang_names )                  { $facts[] = [ 'Sprachen', implode( ', ', $lang_names ) ]; }
-	if ( $venue_name )                  { $facts[] = [ 'Hauptstandort', $venue_name ]; }
+	if ( $venue_name )                  { $facts[] = [ 'Heimatplatz', $venue_name ]; }
 	?>
 	<div class="fgpp">
 		<div class="page-wide">
@@ -3289,10 +3497,10 @@ function fge_portal_render_coach_profile( int $partner_id ): void {
 					</div>
 					<div class="panel">
 						<div class="panel-head"><h3 style="font-size:18px;">Wo du unterrichtest</h3><a class="btn btn-ghost btn-sm" href="<?php echo $edit_sec( 'standorte' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>">Bearbeiten</a></div>
-						<p style="font-size:14px;color:var(--ink-700);margin:0 0 6px;"><strong><?php echo esc_html( $venue_name ?: 'Noch kein Hauptstandort' ); ?></strong></p>
-						<?php $pv_more = array_filter( array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_coach_more_venues', true ) ) ); ?>
-						<?php if ( $pv_more ) : ?>
-							<p style="font-size:13.5px;color:var(--ink-500);margin:6px 0 0;">Außerdem: <?php echo esc_html( implode( ', ', $pv_more ) ); ?></p>
+						<p style="font-size:14px;color:var(--ink-700);margin:0 0 6px;"><strong><?php echo esc_html( $venue_name ?: 'Noch kein Heimatplatz' ); ?></strong></p>
+						<?php $pv_locs = function_exists( 'fge_coach_locations' ) ? fge_coach_locations( $partner_id ) : []; ?>
+						<?php if ( $pv_locs ) : ?>
+							<p style="font-size:13.5px;color:var(--ink-500);margin:6px 0 0;">Weitere Locations: <?php echo esc_html( implode( ', ', array_column( $pv_locs, 'name' ) ) ); ?></p>
 						<?php endif; ?>
 					</div>
 				</div>
@@ -3317,12 +3525,18 @@ function fge_portal_render_coach_profile( int $partner_id ): void {
 }
 
 function fge_portal_section_platz( int $partner_id ): void {
-	$is_coach = function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $partner_id );
-	$edit     = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+	$ptype     = function_exists( 'fge_partner_type' ) ? fge_partner_type( $partner_id ) : 'course';
+	$is_coach  = 'coach' === $ptype;
+	$is_indoor = 'indoor' === $ptype;
+	$edit      = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
 	if ( '1' === $edit ) { $edit = $is_coach ? 'profil' : 'steckbrief'; } // back-compat with the old single edit form
+	// Indoor: Technik statt Golfplatz-Ausstattung; kein Golflehrer-Block (die
+	// Verknüpfung zielt bisher nur auf Golfplatz-Partner).
 	$sections = $is_coach
 		? [ 'profil', 'standorte', 'medien', 'kontakt' ]
-		: [ 'steckbrief', 'ausstattung', 'standort', 'medien', 'kontakt' ];
+		: ( $is_indoor
+			? [ 'steckbrief', 'indoortech', 'standort', 'medien', 'kontakt' ]
+			: [ 'steckbrief', 'ausstattung', 'standort', 'golflehrer', 'medien', 'kontakt' ] );
 	if ( in_array( $edit, $sections, true ) ) {
 		fge_portal_render_platz_edit_section( $partner_id, $edit );
 		return;
@@ -3339,27 +3553,38 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 	$m    = static fn( string $k ): string => (string) get_post_meta( $partner_id, '_fge_' . $k, true );
 	$base = fge_portal_page_url();
 	$back = esc_url( add_query_arg( [ 'tab' => 'platz' ], $base ) );
-	$is_coach = function_exists( 'fge_partner_type' ) && 'coach' === fge_partner_type( $partner_id );
+	$ptype     = function_exists( 'fge_partner_type' ) ? fge_partner_type( $partner_id ) : 'course';
+	$is_coach  = 'coach' === $ptype;
+	$is_indoor = 'indoor' === $ptype;
 	$titles = $is_coach ? [
 		'profil'    => 'Dein Profil',
 		'standorte' => 'Wo du unterrichtest',
 		'medien'    => 'Fotos',
 		'kontakt'   => 'Kontaktdaten',
+	] : ( $is_indoor ? [
+		'steckbrief'  => 'Über eure Location',
+		'indoortech'  => 'Simulatoren & Technik',
+		'standort'    => 'Standort & Anfahrt',
+		'medien'      => 'Fotos & Logo',
+		'kontakt'     => 'Kontaktdaten',
 	] : [
 		'steckbrief'  => 'Über den Platz',
 		'ausstattung' => 'Ausstattung',
 		'standort'    => 'Standort & Anfahrt',
+		'golflehrer'  => 'Golflehrer',
 		'medien'      => 'Fotos & Logo',
 		'kontakt'     => 'Kontaktdaten',
-	];
+	] );
 	$intros = [
 		'profil'    => 'Name, Titel, Qualifikation und deine Geschichte, das Herz deiner öffentlichen Visitenkarte.',
-		'standorte' => 'Dein Hauptstandort und dein mobiles Angebot, daraus entstehen Karte und Zuordnung deiner Events.',
+		'standorte' => 'Dein Heimatplatz und dein mobiles Angebot, daraus entstehen Karte und Zuordnung deiner Events.',
 	] + [
-		'steckbrief'  => 'Name, Beschreibung und Eckdaten, der erste Eindruck deines Platzes für Firmen.',
+		'steckbrief'  => $is_indoor ? 'Name, Beschreibung und Eckdaten, der erste Eindruck eurer Location für Firmen.' : 'Name, Beschreibung und Eckdaten, der erste Eindruck deines Platzes für Firmen.',
 		'ausstattung' => 'Hake einfach an, was es bei euch gibt. Mehr Häkchen = mehr Treffer bei Firmen.',
+		'indoortech'  => 'Boxen, Systeme und Software-Features: damit ordnen wir Indoor-Anfragen passend zu.',
 		'standort'    => 'Adresse und Anfahrt, damit Firmen wissen, wie sie zu euch kommen.',
-		'medien'      => 'Gute Fotos verkaufen deinen Platz. Das erste Foto ist dein Titelbild.',
+		'golflehrer'  => 'Die Golflehrer an eurem Platz: verknüpfen, wenn es sie schon gibt, oder neu anlegen und einladen.',
+		'medien'      => $is_indoor ? 'Gute Fotos verkaufen eure Location. Das erste Foto ist euer Titelbild.' : 'Gute Fotos verkaufen deinen Platz. Das erste Foto ist dein Titelbild.',
 		'kontakt'     => 'Wen erreichen wir bei euch, und wer bekommt Terminanfragen?',
 	];
 	$helps = [
@@ -3369,6 +3594,8 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 		'steckbrief'  => [ 'Alles hier erscheint auf deiner öffentlichen Platzseite.', 'Beschreibung: 2 bis 3 Sätze reichen. Was macht euren Platz für Firmen besonders, Lage, Gastronomie, Atmosphäre?', 'Die Veranstaltungstypen entscheiden, für welche Anfragen Firmen dich finden.' ],
 		'ausstattung' => [ 'Die Ausstattung erscheint als Icon-Liste auf deiner öffentlichen Platzseite.', 'Fehlt etwas in der Liste? Trag es unten bei „Weitere Ausstattung" ein.' ],
 		'standort'    => [ 'Die Adresse setzt den Karten-Pin auf deiner Platzseite und bei deinen Events.', 'Die Anfahrts-Felder (Auto, Bahn, Parken, Shuttle) helfen Firmen bei der Planung, kurz und konkret, z. B. „100 kostenfreie Parkplätze".', 'Breiten-/Längengrad nur ändern, wenn der Pin falsch sitzt.' ],
+		'golflehrer'  => [ 'Verknüpfte Golflehrer erscheinen mit ihrem eigenen Profil, ihr müsst nichts pflegen.', 'Ein neu angelegter Golflehrer bekommt per Mail seinen eigenen Zugang und vervollständigt sein Profil selbst.', 'Golflehrer mit eigenem Firmengolf-Profil, die euren Platz als Heimatplatz angegeben haben, schlagen wir hier automatisch vor.' ],
+		'indoortech'  => [ 'Die Technik-Daten erscheinen auf eurem Profil und steuern, für welche Gruppengrößen wir euch vorschlagen.', 'Anzahl Boxen und maximale Personenzahl sind Pflicht, der Rest macht euer Profil überzeugender.', 'Neues System oder umgebaut? Einfach hier aktualisieren, die Angebote bleiben unberührt.' ],
 		'medien'      => [ 'Empfehlung: mindestens 5 Fotos im Querformat, Platz, Clubhaus, Terrasse, Gastronomie.', 'Das Titelbild ist das große Bild auf deiner Platzseite und deinen Event-Karten.', 'Fotos werden sofort hochgeladen, „Speichern" bestätigt nur die Reihenfolge.' ],
 		'kontakt'     => [ 'Der Hauptkontakt ist unsere erste Anlaufstelle und steht nur intern im Portal, nicht öffentlich.', 'Terminanfragen gehen an den Verfügbarkeits-Kontakt. Leer lassen = Hauptkontakt bekommt sie.', 'Mehrere Personen (Gastro, Head Pro, Sekretariat) für die Terminabstimmung verwaltest du im Tab „Ansprechpartner".' ],
 	];
@@ -3473,8 +3700,9 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 					?>
 					<p style="font-size:13.5px;color:var(--ink-600);margin:0 0 16px;line-height:1.55;">Du bist der Organisator: Größere Eventmodule stimmst du selbst mit deiner Anlage ab, die Anfragen laufen über dich. Die Adresse setzt Karten-Pin, Umkreissuche und Stadt-Zuordnung deiner Events.</p>
 					<div class="fg-form-row">
-						<label class="fg-form-label" for="fge_coach_venue_name">Name der Anlage</label>
+						<label class="fg-form-label" for="fge_coach_venue_name">Dein Heimatplatz</label>
 						<input class="fg-form-input" type="text" id="fge_coach_venue_name" name="fge_coach_venue_name" value="<?php echo esc_attr( $m( 'coach_venue_name' ) ); ?>" placeholder="z. B. GC Beispielstadt">
+						<?php fge_coach_venue_link_ui( $partner_id ); ?>
 					</div>
 					<div class="fg-form-row">
 						<label class="fg-form-label" for="fge_street">Straße und Hausnummer</label>
@@ -3492,23 +3720,127 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 					</div>
 					<?php /* Ausstattungs-Liste des Platzes gestrichen (Julius, 01.09.): Pin + Name reichen. */ ?>
 					<div class="fg-form-row">
-						<label class="fg-form-label">Weitere Golfplätze für deinen Unterricht?</label>
-						<?php $pv_more = array_filter( array_map( 'strval', (array) get_post_meta( $partner_id, '_fge_coach_more_venues', true ) ) ); ?>
-						<div id="fge-more-venues">
-							<?php foreach ( $pv_more as $mv_name ) : ?>
-								<input class="fg-form-input" name="fge_coach_more_venues[]" value="<?php echo esc_attr( $mv_name ); ?>" placeholder="Name des Golfplatzes" style="margin-bottom:8px;">
+						<label class="fg-form-label">Weitere Locations für deinen Unterricht</label>
+						<p class="fp-help" style="margin-top:2px;">Golfplatz, Simulator oder Indoor: je Location ein Name und optional ein Bild. Kennen wir die Location als Firmengolf-Partner, kannst du sie direkt verknüpfen.</p>
+						<?php
+						// Locations v2 (Julius, 02.09.): strukturierte Zeilen statt Namens-Strings.
+						$pv_locs    = function_exists( 'fge_coach_locations' ) ? fge_coach_locations( $partner_id ) : [];
+						$pv_choices = function_exists( 'fge_course_partner_choices' ) ? fge_course_partner_choices() : [];
+						?>
+						<div id="fge-locations"
+							data-rest="<?php echo esc_url( rest_url( 'firmengolf/v1/partner/' . $partner_id . '/location-image' ) ); ?>"
+							data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
+							<?php foreach ( $pv_locs as $loc ) :
+								$loc_thumb = $loc['image_id'] > 0 ? (string) wp_get_attachment_image_url( $loc['image_id'], 'thumbnail' ) : '';
+								$loc_link  = $loc['partner_id'] > 0 ? ( (string) get_post_meta( $loc['partner_id'], '_fge_public_golfclub_name', true ) ?: get_the_title( $loc['partner_id'] ) ) : '';
+								?>
+							<div class="fge-loc-row" style="display:flex;align-items:center;gap:10px;margin:0 0 8px;">
+								<button type="button" class="fge-loc-img" aria-label="Bild wählen" style="width:52px;height:52px;flex:0 0 52px;border-radius:12px;border:1px dashed var(--ink-200);background:<?php echo $loc_thumb ? "url('" . esc_url( $loc_thumb ) . "') center/cover" : 'var(--paper-200)'; ?>;cursor:pointer;font-size:20px;color:var(--ink-400);"><?php echo $loc_thumb ? '' : '+'; ?></button>
+								<input type="hidden" name="fge_loc_image_id[]" value="<?php echo (int) $loc['image_id']; ?>">
+								<input type="hidden" name="fge_loc_partner_id[]" value="<?php echo (int) $loc['partner_id']; ?>">
+								<div style="flex:1;min-width:0;">
+									<input class="fg-form-input" type="text" name="fge_loc_name[]" value="<?php echo esc_attr( $loc['name'] ); ?>" placeholder="z. B. Simulator München">
+									<div class="fge-loc-state" style="font-size:12.5px;margin-top:3px;<?php echo $loc_link ? 'color:var(--fairway-800);' : 'display:none;'; ?>"><?php echo $loc_link ? '✓ Verknüpft mit ' . esc_html( $loc_link ) : ''; ?></div>
+								</div>
+								<button type="button" class="fge-loc-del" aria-label="Location entfernen" style="background:none;border:0;color:var(--ink-400);font-size:18px;cursor:pointer;padding:6px;">×</button>
+							</div>
 							<?php endforeach; ?>
 						</div>
-						<button type="button" class="btn btn-ghost btn-sm" id="fge-more-venues-add">+ Golfplatz hinzufügen</button>
+						<button type="button" class="btn btn-ghost btn-sm" id="fge-loc-add">+ Location hinzufügen</button>
+						<input type="file" id="fge-loc-file" accept="image/jpeg,image/png,image/webp" style="display:none;">
 						<script>
 						(function () {
-							var b = document.getElementById('fge-more-venues-add'), l = document.getElementById('fge-more-venues');
-							if (!b || !l) { return; }
-							b.addEventListener('click', function () {
-								var i = document.createElement('input');
-								i.className = 'fg-form-input'; i.name = 'fge_coach_more_venues[]';
-								i.placeholder = 'Name des Golfplatzes'; i.style.marginBottom = '8px';
-								l.appendChild(i); i.focus();
+							var wrap = document.getElementById('fge-locations');
+							var add = document.getElementById('fge-loc-add');
+							var file = document.getElementById('fge-loc-file');
+							if (!wrap || !add || !file) { return; }
+							var choices = <?php echo wp_json_encode( $pv_choices ); ?>;
+							var pendingRow = null;
+							function norm(s) {
+								return String(s || '').toLowerCase()
+									.replace(/golfclub|golf-club|golf club|golfplatz|golfanlage|golfresort|golf resort|land- und golfclub|land-und golfclub|g\.?c\.?|e\.?\s?v\.?/g, ' ')
+									.replace(/[^a-zäöüß0-9]+/g, ' ').trim();
+							}
+							function rowRefs(row) {
+								return {
+									img: row.querySelector('.fge-loc-img'),
+									imgId: row.querySelector('[name="fge_loc_image_id[]"]'),
+									pId: row.querySelector('[name="fge_loc_partner_id[]"]'),
+									name: row.querySelector('[name="fge_loc_name[]"]'),
+									state: row.querySelector('.fge-loc-state')
+								};
+							}
+							function matchRow(row) {
+								var r = rowRefs(row);
+								if (parseInt(r.pId.value, 10) > 0) { return; }
+								var n = norm(r.name.value);
+								var hit = null;
+								if (n.length >= 4) {
+									for (var i = 0; i < choices.length; i++) {
+										var c = norm(choices[i].name);
+										if (c && (c.indexOf(n) !== -1 || n.indexOf(c) !== -1)) { hit = choices[i]; break; }
+									}
+								}
+								if (hit) {
+									r.state.style.display = '';
+									r.state.style.color = 'var(--ink-600)';
+									r.state.innerHTML = '';
+									var btn = document.createElement('button');
+									btn.type = 'button';
+									btn.textContent = 'Als Partner gefunden: ' + hit.name + ' · Verknüpfen';
+									btn.style.cssText = 'background:none;border:0;padding:0;color:var(--fairway-800);text-decoration:underline;cursor:pointer;font-size:12.5px;';
+									btn.addEventListener('click', function () {
+										r.pId.value = String(hit.id);
+										r.state.style.color = 'var(--fairway-800)';
+										r.state.textContent = '✓ Verknüpft mit ' + hit.name;
+									});
+									r.state.appendChild(btn);
+								} else {
+									r.state.style.display = 'none';
+									r.state.textContent = '';
+								}
+							}
+							function makeRow() {
+								var row = document.createElement('div');
+								row.className = 'fge-loc-row';
+								row.style.cssText = 'display:flex;align-items:center;gap:10px;margin:0 0 8px;';
+								row.innerHTML = '<button type="button" class="fge-loc-img" aria-label="Bild wählen" style="width:52px;height:52px;flex:0 0 52px;border-radius:12px;border:1px dashed var(--ink-200);background:var(--paper-200);cursor:pointer;font-size:20px;color:var(--ink-400);">+</button>'
+									+ '<input type="hidden" name="fge_loc_image_id[]" value="0"><input type="hidden" name="fge_loc_partner_id[]" value="0">'
+									+ '<div style="flex:1;min-width:0;"><input class="fg-form-input" type="text" name="fge_loc_name[]" value="" placeholder="z. B. Simulator München"><div class="fge-loc-state" style="font-size:12.5px;margin-top:3px;display:none;"></div></div>'
+									+ '<button type="button" class="fge-loc-del" aria-label="Location entfernen" style="background:none;border:0;color:var(--ink-400);font-size:18px;cursor:pointer;padding:6px;">×</button>';
+								wrap.appendChild(row);
+								return row;
+							}
+							add.addEventListener('click', function () {
+								var row = makeRow();
+								row.querySelector('[name="fge_loc_name[]"]').focus();
+							});
+							wrap.addEventListener('click', function (e) {
+								var del = e.target.closest('.fge-loc-del');
+								if (del) { del.closest('.fge-loc-row').remove(); return; }
+								var img = e.target.closest('.fge-loc-img');
+								if (img) { pendingRow = img.closest('.fge-loc-row'); file.click(); }
+							});
+							wrap.addEventListener('input', function (e) {
+								var name = e.target.closest('[name="fge_loc_name[]"]');
+								if (name) { matchRow(name.closest('.fge-loc-row')); }
+							});
+							file.addEventListener('change', function () {
+								if (!pendingRow || !file.files.length) { return; }
+								var row = pendingRow, r = rowRefs(row);
+								var fd = new FormData();
+								fd.append('file', file.files[0]);
+								r.img.textContent = '…';
+								fetch(wrap.dataset.rest, { method: 'POST', headers: { 'X-WP-Nonce': wrap.dataset.nonce }, credentials: 'same-origin', body: fd })
+									.then(function (res) { return res.json().then(function (j) { return { ok: res.ok, j: j }; }); })
+									.then(function (o) {
+										if (!o.ok || !o.j.id) { throw new Error(o.j.message || 'Upload fehlgeschlagen'); }
+										r.imgId.value = String(o.j.id);
+										r.img.textContent = '';
+										r.img.style.background = "url('" + o.j.url + "') center/cover";
+									})
+									.catch(function (err) { r.img.textContent = '+'; alert(err.message || 'Upload fehlgeschlagen'); });
+								file.value = '';
 							});
 						})();
 						</script>
@@ -3522,6 +3854,17 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 							<?php endforeach; ?>
 						</select>
 					</div>
+					<?php if ( function_exists( 'fge_coach_linked_venue_id' ) && 0 === fge_coach_linked_venue_id( $partner_id ) ) : ?>
+					<div class="pe-subhead" style="margin-top:26px;">Clubmanagement einladen</div>
+					<p class="fp-help">Dein Platz ist noch kein Firmengolf-Partner? Lade das Clubmanagement ein, dann kann der Club seine Seite selbst ausbauen (Fotos, Ausstattung, eigene Angebote) und dein Profil wird automatisch verknüpft. Kostenlos für den Platz.</p>
+					<div class="fg-form-row" style="max-width:420px;">
+						<label class="fg-form-label" for="fge_venue_manager_email">E-Mail des Clubmanagements (optional)</label>
+						<input class="fg-form-input" type="email" id="fge_venue_manager_email" name="fge_venue_manager_email" value="<?php echo esc_attr( $m( 'coach_venue_manager_email' ) ); ?>" placeholder="info@golfclub-beispiel.de">
+						<?php if ( '' !== $m( 'coach_venue_manager_email' ) ) : ?>
+							<p class="fp-help" style="margin-top:6px;">Einladung verschickt an <?php echo esc_html( $m( 'coach_venue_manager_email' ) ); ?>. Neue Adresse eintragen und speichern, um erneut einzuladen.</p>
+						<?php endif; ?>
+					</div>
+					<?php endif; ?>
 					<?php
 					break;
 
@@ -3539,6 +3882,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 						<label class="fg-form-label" for="fge_public_short_description">Öffentliche Kurzbeschreibung</label>
 						<textarea class="fg-form-textarea" id="fge_public_short_description" name="fge_public_short_description" rows="4" placeholder="2 bis 3 Sätze für dein öffentliches Profil"><?php echo esc_textarea( $m( 'public_short_description' ) ); ?></textarea>
 					</div>
+					<?php if ( ! $is_indoor ) : // Platztyp (9/18 Loch …) ergibt für Indoor-Locations keinen Sinn ?>
 					<div class="fg-form-row">
 						<label class="fg-form-label" for="fge_golf_type">Platztyp</label>
 						<select class="fg-form-input" id="fge_golf_type" name="fge_golf_type">
@@ -3548,6 +3892,7 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 							<?php endforeach; ?>
 						</select>
 					</div>
+					<?php endif; ?>
 					<?php $cap = (array) get_post_meta( $partner_id, '_fge_cap', true ); ?>
 					<div class="fg-form-row fg-form-row--2col">
 						<div>
@@ -3569,6 +3914,12 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 						</div>
 					</div>
 					<?php
+					break;
+
+				case 'indoortech':
+					// Reine Indoor-Partner pflegen ihre Technik hier statt in einem
+					// eigenen Reiter (Julius, 02.09.: Reiter war ein Duplikat).
+					fge_portal_render_indoor_tech_fields( $partner_id );
 					break;
 
 				case 'ausstattung':
@@ -3628,6 +3979,53 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 					<?php
 					break;
 
+				case 'golflehrer':
+					// Rückrichtung der Coach↔Platz-Verknüpfung (Julius, 02.09.):
+					// der Club sieht seine Golflehrer, verknüpft bestehende Profile
+					// oder legt neue an (Draft + Einladungsmail).
+					$linked_coaches = function_exists( 'fge_course_linked_coach_ids' ) ? fge_course_linked_coach_ids( $partner_id ) : [];
+					$coach_suggests = function_exists( 'fge_course_coach_suggestions' ) ? fge_course_coach_suggestions( $partner_id ) : [];
+					?>
+					<div class="pe-subhead">Golflehrer an eurem Platz</div>
+					<?php if ( $linked_coaches ) : ?>
+						<?php foreach ( $linked_coaches as $lc_id ) :
+							$lc_name = trim( (string) get_post_meta( $lc_id, '_fge_coach_first', true ) . ' ' . (string) get_post_meta( $lc_id, '_fge_coach_last', true ) ) ?: get_the_title( $lc_id );
+							$lc_pub  = function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $lc_id );
+							?>
+							<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin:0 0 8px;border-radius:12px;background:var(--fairway-100);border:1px solid var(--fairway-200);color:var(--fairway-800);font-size:14px;">
+								<strong style="flex:1;"><?php echo esc_html( $lc_name ); ?></strong>
+								<?php if ( $lc_pub ) : ?>
+									<a href="<?php echo esc_url( get_permalink( $lc_id ) ); ?>" target="_blank" rel="noopener" style="color:var(--fairway-800);text-decoration:underline;font-size:13px;">Visitenkarte ↗</a>
+								<?php else : ?>
+									<span style="font-size:12.5px;color:var(--ink-500);">Profil noch nicht vollständig</span>
+								<?php endif; ?>
+							</div>
+						<?php endforeach; ?>
+					<?php else : ?>
+						<p class="fp-help">Noch keine Golflehrer verknüpft.</p>
+					<?php endif; ?>
+
+					<?php if ( $coach_suggests ) : ?>
+					<div class="pe-subhead" style="margin-top:26px;">Diese Golflehrer geben euren Platz als Heimatplatz an</div>
+					<p class="fp-help">Verknüpft ihr sie, erscheinen sie hier und ihr Profil zeigt euren Platz.</p>
+					<?php foreach ( $coach_suggests as $cs ) : ?>
+						<label style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin:0 0 8px;border-radius:12px;background:var(--paper-50,#fff);border:1px solid var(--ink-200);font-size:14px;cursor:pointer;">
+							<input type="checkbox" name="fge_link_coach_ids[]" value="<?php echo (int) $cs['id']; ?>">
+							<span style="flex:1;"><strong><?php echo esc_html( $cs['name'] ); ?></strong> <span style="color:var(--ink-500);font-size:13px;">· eingetragen: <?php echo esc_html( $cs['venue'] ); ?></span></span>
+						</label>
+					<?php endforeach; ?>
+					<?php endif; ?>
+
+					<div class="pe-subhead" style="margin-top:26px;">Golflehrer anlegen und einladen</div>
+					<p class="fp-help">Wir legen das Profil an und schicken dem Golflehrer per Mail seinen eigenen Zugang, er vervollständigt sein Profil dann selbst. Kostenlos.</p>
+					<div class="fg-form-row fg-form-row--3col">
+						<div><label class="fg-form-label" for="fge_new_coach_first">Vorname</label><input class="fg-form-input" type="text" id="fge_new_coach_first" name="fge_new_coach_first" value=""></div>
+						<div><label class="fg-form-label" for="fge_new_coach_last">Nachname</label><input class="fg-form-input" type="text" id="fge_new_coach_last" name="fge_new_coach_last" value=""></div>
+						<div><label class="fg-form-label" for="fge_new_coach_email">E-Mail</label><input class="fg-form-input" type="email" id="fge_new_coach_email" name="fge_new_coach_email" value="" placeholder="pro@golfschule.de"></div>
+					</div>
+					<?php
+					break;
+
 				case 'kontakt':
 					// Läuft gerade eine E-Mail-Bestätigung? Dann die noch nicht übernommene
 					// (neue) Adresse im Feld zeigen und das Code-Feld einblenden.
@@ -3673,6 +4071,17 @@ function fge_portal_render_platz_edit_section( int $partner_id, string $section 
 					<div class="pe-hintbox">
 						Mehrere Personen sollen bei Terminen mitentscheiden (z. B. Gastronomie, Head Pro)?
 						<a href="<?php echo esc_url( add_query_arg( [ 'tab' => 'team' ], $base ) ); ?>">Ansprechpartner verwalten →</a>
+					</div>
+
+					<?php $tax_mode = fge_partner_tax_mode( $partner_id ); ?>
+					<div class="pe-subhead" style="margin-top:26px;">Umsatzsteuer</div>
+					<p class="fp-help">Damit wir aus deinem Brutto-Endkundenpreis das richtige Netto rechnen. Du gibst deine Preise immer brutto ein.</p>
+					<div class="fg-form-row" style="max-width:520px;">
+						<label class="fg-form-label" for="fge_tax_mode">Steuerstatus</label>
+						<select class="fg-form-input" id="fge_tax_mode" name="fge_tax_mode">
+							<option value="regular" <?php selected( $tax_mode, 'regular' ); ?>>Regelbesteuert (<?php echo (int) ( defined( 'FGE_VAT_PERCENT' ) ? FGE_VAT_PERCENT : 19 ); ?> % USt)</option>
+							<option value="small" <?php selected( $tax_mode, 'small' ); ?>>Kleinunternehmer nach §19 (keine USt)</option>
+						</select>
 					</div>
 					<?php
 					break;
@@ -3973,9 +4382,30 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<p class="fp-help">Diese Eckdaten erscheinen auf der Angebotskarte.</p>
 
 						<?php
+						// Brutto-Eingabe (Julius, 02.09.): Der Partner tippt seinen gewohnten
+						// Endkundenpreis (brutto). Intern bleibt alles Netto. Divisor je Partner
+						// (regelbesteuert 1,19 / Kleinunternehmer 1,0).
+						$editor_pid = fge_portal_get_partner_id();
+						if ( $editor_pid <= 0 && $event_id ) { $editor_pid = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true ); }
+						$tax_div = ( function_exists( 'fge_partner_tax_divisor' ) && $editor_pid > 0 )
+							? fge_partner_tax_divisor( $editor_pid )
+							: ( 1 + ( defined( 'FGE_VAT_PERCENT' ) ? FGE_VAT_PERCENT : 19 ) / 100 );
+						// Brutto-Wert für die Anzeige formatieren (Komma, ohne Trailing-Nullen).
+						$fmt_gross = static function ( float $g ): string {
+							return $g > 0 ? rtrim( rtrim( number_format( $g, 2, ',', '' ), '0' ), ',' ) : '';
+						};
 						// Nach Validierungsfehlern POST-Daten ($saved) bevorzugen, sonst DB-Stand (Audit C6).
 						$pmode   = (string) ( $saved['fge_price_mode'] ?? '' ) ?: ( $event_id ? ( get_post_meta( $event_id, '_fge_price_mode', true ) ?: 'gesamt' ) : 'gesamt' );
-						$pamount = $saved['fge_price_amount'] ?? ( $event_id ? get_post_meta( $event_id, '_fge_price_amount', true ) : '' );
+						if ( isset( $saved['fge_price_amount'] ) ) {
+							$pamount = $saved['fge_price_amount']; // roh eingegeben = brutto
+						} else {
+							$gross_meta = $event_id ? (float) get_post_meta( $event_id, '_fge_price_gross', true ) : 0.0;
+							if ( $gross_meta <= 0 && $event_id ) {
+								$net_meta   = (float) get_post_meta( $event_id, '_fge_price_amount', true );
+								$gross_meta = $net_meta > 0 ? round( $net_meta * $tax_div, 2 ) : 0.0;
+							}
+							$pamount = $fmt_gross( $gross_meta );
+						}
 						$pbasis  = (string) ( $saved['fge_price_basis'] ?? '' ) ?: ( $event_id ? ( get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person' ) : 'person' );
 						if ( isset( $saved['fge_line_items'] ) ) {
 							$pitems = [];
@@ -3986,11 +4416,19 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 								}
 							}
 						} else {
-							$pitems = $event_id ? (array) get_post_meta( $event_id, '_fge_line_items', true ) : [];
+							// Brutto der Einzelposten aus dem gespeicherten Netto zurückrechnen
+							// (Bestand ohne _fge_line_items_gross), sonst exakt gespeichertes Brutto.
+							$items_gross = $event_id ? (array) get_post_meta( $event_id, '_fge_line_items_gross', true ) : [];
+							$items_net   = $event_id ? (array) get_post_meta( $event_id, '_fge_line_items', true ) : [];
+							$pitems      = [];
+							foreach ( $items_net as $ix => $it ) {
+								$gcost = $items_gross[ $ix ]['cost'] ?? ( isset( $it['cost'] ) ? round( (float) $it['cost'] * $tax_div, 2 ) : '' );
+								$pitems[] = [ 'label' => $it['label'] ?? '', 'cost' => is_numeric( $gcost ) ? $fmt_gross( (float) $gcost ) : $gcost, 'basis' => $it['basis'] ?? 'pauschal' ];
+							}
 						}
 						$markup  = defined( 'FGE_MARKUP_PERCENT' ) ? (int) FGE_MARKUP_PERCENT : 20;
 						?>
-						<p class="fp-help">Hinterlege deinen <strong>Netto</strong>-Preis. Die Vermittlung von Firmengolf (<?php echo (int) $markup; ?> %) kommt automatisch oben drauf, der Kundenpreis wird dabei auf glatte Beträge aufgerundet. Du bekommst immer exakt deinen Preis.</p>
+						<p class="fp-help">Hinterlege deinen gewohnten <strong>Endkundenpreis (brutto)</strong>, so wie du ihn auch einem normalen Gast berechnest. Wir rechnen den Rest: dein Netto, die Vermittlung von Firmengolf (<?php echo (int) $markup; ?> %) oben drauf, und dem Firmenkunden zeigen wir netto. Du bekommst immer exakt dein Netto.</p>
 
 						<input type="hidden" name="fge_price_mode" id="fge_price_mode" value="<?php echo esc_attr( $pmode ); ?>">
 						<div class="fp-price-modes" role="tablist">
@@ -4001,7 +4439,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<div id="fp-price-gesamt" style="<?php echo 'gesamt' === $pmode ? '' : 'display:none;'; ?>">
 							<div class="fg-form-row fg-form-row--2col">
 								<div>
-									<label class="fg-form-label" for="fge_price_amount">Gesamtpreis für die Veranstaltung (netto, €)</label>
+									<label class="fg-form-label" for="fge_price_amount">Dein Endkundenpreis, brutto (€)</label>
 									<input class="fg-form-input" type="text" inputmode="decimal" id="fge_price_amount" name="fge_price_amount" value="<?php echo esc_attr( $pamount ); ?>" placeholder="2400">
 								</div>
 								<div>
@@ -4033,11 +4471,11 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 							<textarea name="fge_line_items" id="fge_line_items" hidden><?php echo esc_textarea( implode( "\n", array_map( static fn( $i ): string => ( $i['label'] ?? '' ) . ' | ' . ( $i['cost'] ?? '' ) . ' | ' . ( ( $i['basis'] ?? 'pauschal' ) === 'person' ? 'person' : 'pauschal' ), $pitems ) ) ); ?></textarea>
 						</div>
 
-						<div class="fp-price-summary" id="fp-price-summary" data-markup="<?php echo (int) $markup; ?>">
-							<div class="row"><span>Netto-Summe</span><span class="v" id="fp-sum-net">€0</span></div>
+						<div class="fp-price-summary" id="fp-price-summary" data-markup="<?php echo (int) $markup; ?>" data-divisor="<?php echo esc_attr( number_format( $tax_div, 4, '.', '' ) ); ?>">
+							<div class="row"><span>Dein Netto<?php echo $tax_div > 1 ? ' (aus Brutto ÷ ' . number_format( $tax_div, 2, ',', '' ) . ')' : ''; ?></span><span class="v" id="fp-sum-net">€0</span></div>
 							<div class="row"><span>+ Vermittlung Firmengolf (<?php echo (int) $markup; ?> %, aufgerundet)</span><span class="v" id="fp-sum-fee">€0</span></div>
-							<div class="row total"><span>Gesamtpreis für das Unternehmen</span><span class="v" id="fp-sum-total">€0</span></div>
-							<div class="row" style="font-size:12px;color:var(--ink-500);border:0;padding-top:6px;"><span>Alle Beträge netto, die gesetzliche MwSt. kommt auf der Rechnung oben drauf.</span><span></span></div>
+							<div class="row total"><span>Kundenpreis für das Unternehmen (netto)</span><span class="v" id="fp-sum-total">€0</span></div>
+							<div class="row" style="font-size:12px;color:var(--ink-500);border:0;padding-top:6px;"><span>Du gibst deinen Brutto-Endkundenpreis ein. Dem Firmenkunden zeigen wir netto, die gesetzliche MwSt. kommt auf dessen Rechnung oben drauf.</span><span></span></div>
 						</div>
 						<div class="fg-form-row fg-form-row--3col">
 							<div>
@@ -4458,8 +4896,8 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 
 					<div class="fp-rail-card fp-rail-card--tip">
 						<h4>Tipp vom Team</h4>
-						<p style="font-size:14px;line-height:1.5;color:rgba(251,250,246,0.85);margin-bottom:0;">
-							Angebote mit eigenem Foto vom Platz erhalten <strong style="color:var(--paper-100);">3× mehr Anfragen</strong> als solche ohne Foto.
+						<p style="font-size:14px;line-height:1.5;margin-bottom:0;">
+							Angebote mit eigenem Foto vom Platz erhalten <strong>3× mehr Anfragen</strong> als solche ohne Foto.
 						</p>
 					</div>
 
@@ -4515,6 +4953,8 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 				var itemsTa = byId('fge_line_items');
 				var summary = byId('fp-price-summary');
 				var markup  = summary ? parseInt(summary.dataset.markup || '20', 10) : 20;
+				// Eingabe ist Brutto (Endkundenpreis). Netto = Brutto / Divisor (1,19 regelbesteuert / 1,0 Kleinunternehmer).
+				var divisor = summary && parseFloat(summary.dataset.divisor) > 0 ? parseFloat(summary.dataset.divisor) : 1;
 
 				function parseNum(v) {
 				var s = String(v || '').replace(/[^\d.,]/g, '');
@@ -4528,7 +4968,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						items.querySelectorAll('.fp-price-item').forEach(function (row) {
 							var c = row.querySelector('[data-fp-item-cost]');
 							var b = row.querySelector('[data-fp-item-basis]');
-							var v = c ? parseNum(c.value) : 0;
+							var v = ( c ? parseNum(c.value) : 0 ) / divisor; // Brutto → Netto
 							if (b && b.value === 'person') { pp += v; } else { flat += v; }
 						});
 					}
@@ -4562,7 +5002,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						if (perPerson && su.flat > 0 && !paxMax) { netLabel += ', bitte max. Teilnehmer angeben'; }
 					} else {
 						perPerson = basisIn && basisIn.value === 'person';
-						net = amount ? parseNum(amount.value) : 0;
+						net = ( amount ? parseNum(amount.value) : 0 ) / divisor; // Brutto → Netto
 						netLabel = fmt(net) + (perPerson ? ' pro Person' : '');
 					}
 					// Kundenpreis geglättet wie in PHP (fge_price_smooth, event-pricing.php):

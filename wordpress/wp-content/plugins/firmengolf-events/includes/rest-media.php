@@ -136,6 +136,33 @@ function fge_rest_media_routes(): void {
 		'permission_callback' => $can,
 		'args'                => $id_arg,
 	] );
+
+	// Coach-Locations v2: Bild je Location hochladen. Bewusst OHNE Meta-Write,
+	// die Attachment-ID landet im Formular (hidden) und wird mit dem Speichern
+	// der Standort-Sektion in `_fge_coach_locations` übernommen.
+	register_rest_route( 'firmengolf/v1', '/partner/(?P<id>\d+)/location-image', [
+		'methods'             => 'POST',
+		'callback'            => 'fge_rest_location_image_upload',
+		'permission_callback' => $can,
+		'args'                => $id_arg,
+	] );
+}
+
+function fge_rest_location_image_upload( WP_REST_Request $req ) {
+	$pid = (int) $req['id'];
+	$lim = fge_onboarding_media_limits();
+	$err = fge_rest_validate_upload( 'file', $lim['gallery'], $lim['mimes'] );
+	if ( is_wp_error( $err ) ) {
+		return $err;
+	}
+	$att = fge_rest_handle_upload( 'file', $pid, 'Location' );
+	if ( is_wp_error( $att ) ) {
+		return $att;
+	}
+	return new WP_REST_Response( [
+		'id'  => (int) $att,
+		'url' => (string) wp_get_attachment_image_url( (int) $att, 'thumbnail' ),
+	], 201 );
 }
 
 /** GET — current ordered gallery + cover id. */

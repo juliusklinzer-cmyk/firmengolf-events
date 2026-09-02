@@ -53,16 +53,20 @@ if ( $p_lat && $p_lng ) {
 $map_embed = $map_query !== '' ? 'https://www.google.com/maps?q=' . rawurlencode( $map_query ) . '&output=embed' : '';
 
 // Price display — neues Preismodell (rev. 2) bevorzugt, sonst Altfelder.
-$pricing_new = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $post_id ) : null;
+$pricing_new    = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $post_id ) : null;
+$price_is_netto = false; // steuert den „netto, zzgl. MwSt."-Hinweis
 if ( $pricing_new && $pricing_new['gross'] > 0 ) {
-	$price_main   = number_format( $pricing_new['gross'], 0, ',', '.' ) . ' €';
-	$price_suffix = $pricing_new['unit'] === 'pro Person' ? ' p.P.' : ' gesamt';
+	$price_main     = number_format( $pricing_new['gross'], 0, ',', '.' ) . ' €';
+	$price_suffix   = $pricing_new['unit'] === 'pro Person' ? ' p.P.' : ' gesamt';
+	$price_is_netto = true;
 } elseif ( $price_label ) {
-	$price_main   = $price_label;
-	$price_suffix = '';
+	$price_main     = $price_label;
+	$price_suffix   = '';
+	$price_is_netto = true;
 } elseif ( $price_raw > 0 ) {
-	$price_main   = number_format( $price_raw, 0, ',', '.' ) . ' €';
-	$price_suffix = ' p.P.';
+	$price_main     = number_format( $price_raw, 0, ',', '.' ) . ' €';
+	$price_suffix   = ' p.P.';
+	$price_is_netto = true;
 } else {
 	$price_main   = 'Auf Anfrage';
 	$price_suffix = '';
@@ -782,7 +786,7 @@ get_header();
 							<?php echo esc_html( $price_main ); ?>
 							<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
 						</div>
-						<?php if ( $price_label ) : ?><div style="font-size:11.5px;color:var(--ink-500);margin-top:2px;">netto, zzgl. 19&nbsp;% MwSt.</div><?php endif; ?>
+						<?php if ( $price_is_netto ) : ?><div style="font-size:11.5px;color:var(--ink-500);margin-top:2px;">netto, zzgl. 19&nbsp;% MwSt.</div><?php endif; ?>
 					</div>
 
 					<div class="fg-rail-fields">

@@ -199,15 +199,17 @@ function fge_catalog_partner_formats(): array {
  * @return array<string,string> id => Label
  */
 function fge_catalog_indoor_systems(): array {
-	// Auf die vier gängigsten Anbieter reduziert (Julius, 28.08.); 'other'
-	// öffnet ein Freitextfeld. Hersteller-Logos folgen, sobald die Bild-Assets
-	// von Julius da sind.
+	// An der Top-50-Recherche ausgerichtet (Julius, 02.09.): TrackMan dominiert
+	// mit ~44/50, dazu vereinzelt Garmin R50, Uneekor, Foresight, TruGolf.
+	// Golfzon und Full Swing (0/50 Treffer) sind gestrichen; 'other' öffnet
+	// weiterhin das Freitextfeld (fängt Bestand und Exoten ab).
 	return [
-		'trackman'  => 'Trackman',
-		'foresight' => 'Foresight',
-		'golfzon'   => 'Golfzon',
-		'fullswing' => 'Full Swing',
-		'other'     => 'Anderes System',
+		'trackman'   => 'TrackMan',
+		'garmin-r50' => 'Garmin R50',
+		'uneekor'    => 'Uneekor',
+		'foresight'  => 'Foresight',
+		'trugolf'    => 'TruGolf',
+		'other'      => 'Anderes System',
 	];
 }
 
@@ -314,11 +316,44 @@ function fge_catalog_indoor_formats(): array {
 	// Bewusst kurz (Julius, 28.08.): nur Platzhalter-Formate, alles Weitere
 	// legt der Partner später selbst im Portal an.
 	return [
-		'platzreife-indoor' => 'Indoor Platzreife',
-		'sim-turnier'       => 'Simulator Firmenturnier',
-		'afterwork-indoor'  => 'After Work Indoor Golf',
-		'grundlagen-indoor' => 'Grundlagenkurs Indoor',
-		'workshop-indoor'   => 'Tagung und Workshop',
+		'platzreife-indoor'    => 'Indoor Platzreife',
+		'sim-turnier'          => 'Simulator Firmenturnier',
+		'afterwork-indoor'     => 'After Work Indoor Golf',
+		'grundlagen-indoor'    => 'Grundlagenkurs Indoor',
+		'workshop-indoor'      => 'Tagung und Workshop',
+		'weihnachtsfeier-indoor' => 'Weihnachtsfeier Indoor',
+	];
+}
+
+/**
+ * Gastronomie-Kacheln fuer Indoor-Locations (Top-50-Recherche, Julius 02.09.):
+ * die Golfplatz-Liste (Clubrestaurant, Halfway, BBQ) passte nicht zu
+ * Simulatoren. Realitaet dort: Bar 21/50, Getraenke 27, Snacks 12, warme
+ * Speisen 12, Kaffee 5, Catering-Partner 4, oft Mitbringen erlaubt.
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_indoor_gastro(): array {
+	return [
+		'bar'              => 'Bar',
+		'drinks'           => 'Getränkeauswahl',
+		'snacks'           => 'Snacks',
+		'hot-food'         => 'Warme Speisen',
+		'coffee'           => 'Kaffee',
+		'catering-partner' => 'Catering über Partner möglich',
+		'byo'              => 'Eigene Speisen und Getränke erlaubt',
+	];
+}
+
+/**
+ * Betreuung waehrend der Buchung (Top-50: 18 betreut, ~9 Self-Service/Code).
+ * Fuer Firmenevents entscheidend, deshalb Pflichtfeld bei der Technik.
+ * @return array<string,string> id => Label
+ */
+function fge_catalog_indoor_staffing(): array {
+	return [
+		'betreut' => 'Betreut, Team vor Ort',
+		'self'    => 'Self-Service mit Code-Zugang',
+		'mixed'   => 'Gemischt, je nach Uhrzeit',
 	];
 }
 
