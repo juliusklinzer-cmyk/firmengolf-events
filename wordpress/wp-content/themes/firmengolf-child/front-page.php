@@ -294,7 +294,7 @@ $home_fmt_tiles = [
 	[ 't' => 'Platzreife',       'sub' => 'Gemeinsam zur Platzreife',        'img' => 'golf-coaching-gruppe.jpg',            'url' => add_query_arg( 'format', 'platzreife', $url_events ) ],
 	[ 't' => 'Kundenevent',      'sub' => 'Golf, Dinner & echte Gespräche',  'img' => 'pool/kundenevent-handshake.jpg',      'url' => add_query_arg( 'format', 'kundenevent', $url_events ) ],
 	[ 't' => 'Incentive',        'sub' => 'Belohnung mit Erinnerungswert',   'img' => 'golfplatz-luftaufnahme-2.jpg',        'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Incentive-Reise', 'intro' => '1' ], $url_ind ) ],
-	[ 't' => 'Indoor Golf',      'sub' => 'Ganzjährig & wetterfest',         'img' => 'pool/nachtevent-flutlicht-gruen.jpg', 'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Indoor-Golf-Event', 'intro' => '1' ], $url_ind ) ],
+	[ 't' => 'Indoor Golf',      'sub' => 'Ganzjährig & wetterfest',         'img' => 'onboarding-indoor-lounge.jpg',        'url' => add_query_arg( 'format', 'indoor-golf', $url_events ) ],
 ];
 ?>
 <section class="mk-section cty-reveal" aria-label="Das passende Format">

@@ -173,6 +173,41 @@ get_header();
 	</div>
 </section>
 
+<?php if ( ! empty( $format['tiles'] ) ) :
+	/* Format-Kacheln im Homepage-Look (Julius, 03.09.): lange iv-Kacheln in zwei
+	   Reihen. Bild-Slots aus assets/imagery/tiles/ mit Lounge-Fallback, solange
+	   die Stock-Bilder noch nicht eingepflegt sind. */
+	$fmt_tile_img = static function ( string $file ): string {
+		$base = defined( 'FGE_DIR' ) ? FGE_DIR . 'assets/imagery/' : '';
+		if ( '' !== $base && file_exists( $base . $file ) ) {
+			return fge_get_placeholder_image_url( $file );
+		}
+		return fge_get_placeholder_image_url( 'onboarding-indoor-lounge.jpg' );
+	};
+	?>
+<section class="mk-section cty-reveal" aria-label="Formate für eure <?php echo esc_attr( $f_name ); ?>">
+	<div class="mk-section-head">
+		<h2 class="mk-h2"><?php echo wp_kses_post( $format['tiles_h2'] ?? 'Das passende Format für euer <em class="mk-italic">Team</em>.' ); ?></h2>
+		<?php if ( ! empty( $format['tiles_sub'] ) ) : ?><p class="mk-sub"><?php echo esc_html( $format['tiles_sub'] ); ?></p><?php endif; ?>
+	</div>
+	<div class="iv-tiles">
+		<?php foreach ( $format['tiles'] as $tile ) : ?>
+			<a class="iv-tile" href="<?php echo esc_url( $tile['url'] ); ?>">
+				<span class="iv-tile-img" style="background-image:url('<?php echo esc_url( $fmt_tile_img( $tile['img'] ) ); ?>')"></span>
+				<span class="iv-tile-scrim"></span>
+				<span class="iv-tile-label">
+					<span>
+						<span class="iv-tile-t"><?php echo esc_html( $tile['t'] ); ?></span>
+						<span class="iv-tile-sub" style="display:block;"><?php echo esc_html( $tile['sub'] ); ?></span>
+					</span>
+					<span class="iv-tile-arrow"><?php echo function_exists( 'fge_icon_arrow_right' ) ? fge_icon_arrow_right() : '→'; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				</span>
+			</a>
+		<?php endforeach; ?>
+	</div>
+</section>
+<?php endif; ?>
+
 <?php /* So könnte dein Tag ablaufen: eine Reihe, Punkte blenden gestaffelt von oben ein */ ?>
 <?php if ( ! empty( $format['flow'] ) ) : ?>
 <section class="mk-section mk-band fmt-flow5" aria-label="So läuft euer <?php echo esc_attr( $f_name ); ?>">

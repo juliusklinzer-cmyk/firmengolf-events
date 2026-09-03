@@ -147,6 +147,22 @@ function fge_get_event_format_pages(): array {
 				$f_bill,
 			],
 			'types'   => [ 'weihnachtsfeier', 'indoor-golf' ],
+			'hero_img'  => 'onboarding-indoor-lounge.jpg',
+			// Indoor-Formate im Homepage-Kachel-Look (Julius, 03.09.): im Winter
+			// spielt die Feier drinnen. Bild-Slots in assets/imagery/tiles/,
+			// Fallback = Lounge, bis die Stock-Bilder eingepflegt sind.
+			'tiles_h2'  => 'Eure Feier, euer <em class="mk-italic">Indoor-Format</em>.',
+			'tiles_sub' => 'Alles wetterfest an den Simulatoren: vom Turnier bis zur exklusiven Location.',
+			'tiles'     => [
+				[ 't' => 'Weihnachtsfeier komplett', 'sub' => 'Glühwein, Challenge & Menü',      'img' => 'tiles/indoor-weihnachtsfeier.jpg', 'url' => home_url( '/firmenevents/?format=weihnachtsfeier' ) ],
+				[ 't' => 'Simulator-Turnier',        'sub' => 'Live-Leaderboard & Siegerehrung', 'img' => 'tiles/indoor-turnier.jpg',         'url' => home_url( '/firmenevents/?format=indoor-golf' ) ],
+				[ 't' => 'Teamevent Indoor',         'sub' => 'Zusammenwachsen an den Boxen',    'img' => 'tiles/indoor-teamevent.jpg',       'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Teamevent Indoor', 'intro' => '1' ], home_url( '/individuelle-events/' ) ) ],
+				[ 't' => 'After-Work Indoor',        'sub' => 'Feierabend, warm & trocken',      'img' => 'tiles/indoor-afterwork.jpg',       'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'After-Work Indoor', 'intro' => '1' ], home_url( '/individuelle-events/' ) ) ],
+				[ 't' => 'Grundlagenkurs Indoor',    'sub' => 'Einsteigen ohne Frieren',         'img' => 'tiles/indoor-grundlagen.jpg',      'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Grundlagenkurs Indoor', 'intro' => '1' ], home_url( '/individuelle-events/' ) ) ],
+				[ 't' => 'Tagung & Workshop',        'sub' => 'Meeting, dann an die Boxen',      'img' => 'tiles/indoor-workshop.jpg',        'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Workshop Indoor', 'intro' => '1' ], home_url( '/individuelle-events/' ) ) ],
+				[ 't' => 'Kundenevent Indoor',       'sub' => 'Gastgeber sein, drinnen',         'img' => 'tiles/indoor-kundenevent.jpg',     'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Kundenevent Indoor', 'intro' => '1' ], home_url( '/individuelle-events/' ) ) ],
+				[ 't' => 'Location exklusiv',        'sub' => 'Die ganze Anlage für euch',       'img' => 'tiles/indoor-exklusiv.jpg',        'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Exklusivmiete Indoor', 'intro' => '1' ], home_url( '/individuelle-events/' ) ) ],
+			],
 		],
 		'platzreife' => [
 			'name'    => 'Platzreife',

@@ -129,7 +129,7 @@ function fge_get_event_format_legacy_map(): array {
 		'schnupperkurs'       => 'teamevent',
 		'coaching'            => 'after_work_golf',
 		'anderes_event'       => 'andere',
-		'weihnachtsfeier'     => 'andere',
+		// 'weihnachtsfeier' war Alt-Alias fuer 'andere' — seit 1.9.205 echter Typ, Mapping entfernt (03.09.).
 		'schnuppergolf'       => 'after_work_golf',
 		'team_challenge'      => 'teamevent',
 		'putting_challenge'   => 'after_work_golf',

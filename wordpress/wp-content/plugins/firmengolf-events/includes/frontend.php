@@ -623,7 +623,7 @@ function fge_placeholder_pool(): array {
 		'event' => [], 'course' => [], 'range' => [], 'clubhouse' => [], 'founder' => [], 'misc' => [], 'all' => [],
 		// Format-Gruppen (2026-07): Dateiname-Präfix bestimmt die Gruppe, z. B. pool/platzreife-*.jpg.
 		// Die Alt-Bestände tragen das teamevent-Präfix (Julius' Entscheidung: bisherige Bilder = Teamevent-Topf).
-		'teamevent' => [], 'platzreife' => [], 'turnier' => [], 'kundenevent' => [], 'afterwork' => [], 'incentive' => [], 'nachtevent' => [], 'workshop' => [], 'indoor' => [],
+		'teamevent' => [], 'platzreife' => [], 'turnier' => [], 'kundenevent' => [], 'afterwork' => [], 'incentive' => [], 'nachtevent' => [], 'workshop' => [], 'indoor' => [], 'weihnachtsfeier' => [],
 	];
 	$dir     = FGE_DIR . 'assets/imagery/pool';
 	foreach ( glob( $dir . '/*.jpg' ) ?: [] as $path ) {
@@ -632,7 +632,7 @@ function fge_placeholder_pool(): array {
 			continue;
 		}
 		$buckets['all'][] = $file;
-		if ( preg_match( '/^(teamevent|platzreife|turnier|kundenevent|afterwork|incentive|nachtevent|workshop|indoor)-/', $file, $m ) ) {
+		if ( preg_match( '/^(teamevent|platzreife|turnier|kundenevent|afterwork|incentive|nachtevent|workshop|indoor|weihnachtsfeier)-/', $file, $m ) ) {
 			$cat = $m[1];
 		} elseif ( strpos( $file, 'gruender' ) !== false ) {
 			$cat = 'founder';
@@ -672,14 +672,22 @@ function fge_event_pool_category( int $event_id ): string {
 		'workshop'           => 'workshop',
 		'nacht_event'        => 'nachtevent',
 		'indoor-golf'        => 'indoor', // Persona-Audit 02.09.: Indoor-Events bekamen Fairway-Luftbilder
-		'weihnachtsfeier'    => 'nachtevent', // Abendstimmung passt zur Feier, eigener Pool folgt bei Bedarf
+		'weihnachtsfeier'    => 'weihnachtsfeier', // eigener Pool (pool/weihnachtsfeier-*.jpg); leer → Indoor-Fallback unten
 	];
 	$cat = $map[ $type ] ?? '';
 	if ( $cat === '' ) {
 		return '';
 	}
 	$pool = fge_placeholder_pool();
-	return ! empty( $pool[ $cat ] ) ? $cat : '';
+	if ( ! empty( $pool[ $cat ] ) ) {
+		return $cat;
+	}
+	// Weihnachtsfeiern spielen im Winter drinnen (Julius, 03.09.): solange der
+	// eigene Pool leer ist, kommt die Indoor-Bildwelt statt Outdoor-Fallback.
+	if ( 'weihnachtsfeier' === $cat && ! empty( $pool['indoor'] ) ) {
+		return 'indoor';
+	}
+	return '';
 }
 
 /** Map a legacy placeholder filename to a pool category. */
