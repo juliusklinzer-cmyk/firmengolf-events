@@ -22,6 +22,15 @@ sorgt dafür, dass sich auf einer Seite nichts wiederholt.
 | `nachtevent-` | Nacht-Event | `nachtevent-flutlicht.jpg` |
 | `indoor-` | **Indoor Golf** | `indoor-simulator-gruppe.jpg` |
 | `weihnachtsfeier-` | **Weihnachtsfeier** | `weihnachtsfeier-gluehwein-boxen.jpg` |
+| `golfplatz-` | **Beimisch-Topf: echte Platz-Motive** | `golfplatz-fairway-morgen.jpg` |
+
+**Der golfplatz-Topf ist besonders:** Diese Bilder gehören keinem Event-Typ.
+Jedes Outdoor-Event bekommt in seiner Bildergalerie genau EIN Bild aus diesem
+Topf (das dritte), Cover und zweites Bild bleiben typspezifisch. So taucht in
+jedem Format ein echter Platz auf, ohne die Typ-Bildwelt zu verwässern. Indoor
+und Weihnachtsfeier bleiben komplett drinnen, dort wird nichts beigemischt.
+Zusätzlich dienen die golfplatz-Bilder weiter als Motive für Stadt- und
+Platz-Cover.
 
 WICHTIG für dich gerade: **indoor-** und **weihnachtsfeier-** sind neu und leer.
 Solange `weihnachtsfeier-` leer ist, fallen Weihnachts-Events automatisch auf die
@@ -51,6 +60,15 @@ Indoor-Kachel auf der Startseite (sag Bescheid, dann verdrahte ich es).
 
 Sprechende Namen, kein Präfix-Zwang (z. B. `hero-…`, `onboarding-…`). Diese
 Bilder verdrahte ich einzeln, schreib mir einfach dazu, wofür sie gedacht sind.
+
+## Ein Bild in mehreren Typen verwenden
+
+Einfach dieselbe Datei mehrfach ablegen, je einmal pro Präfix, z. B.
+`teamevent-range-abend.jpg` UND `afterwork-range-abend.jpg` (identischer
+Inhalt, nur anderer Name). Der Verteiler erkennt Dubletten am Bild-INHALT,
+nicht am Namen: Auf einer Seite erscheint das Motiv nie zweimal, auch wenn es
+unter fünf Namen im Pool liegt. In `docs/bildnachweise-pool.md` reicht dann
+eine Zeile mit allen Dateinamen.
 
 ## Regeln
 

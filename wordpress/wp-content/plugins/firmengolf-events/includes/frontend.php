@@ -624,6 +624,9 @@ function fge_placeholder_pool(): array {
 		// Format-Gruppen (2026-07): Dateiname-Präfix bestimmt die Gruppe, z. B. pool/platzreife-*.jpg.
 		// Die Alt-Bestände tragen das teamevent-Präfix (Julius' Entscheidung: bisherige Bilder = Teamevent-Topf).
 		'teamevent' => [], 'platzreife' => [], 'turnier' => [], 'kundenevent' => [], 'afterwork' => [], 'incentive' => [], 'nachtevent' => [], 'workshop' => [], 'indoor' => [], 'weihnachtsfeier' => [],
+		// Beimisch-Topf (Julius, 03.09.): pool/golfplatz-*.jpg = echte Platz-Motive,
+		// die jedem Outdoor-Event genau EINMAL beigemischt werden (Slot 2).
+		'golfplatz' => [],
 	];
 	$dir     = FGE_DIR . 'assets/imagery/pool';
 	foreach ( glob( $dir . '/*.jpg' ) ?: [] as $path ) {
@@ -632,7 +635,10 @@ function fge_placeholder_pool(): array {
 			continue;
 		}
 		$buckets['all'][] = $file;
-		if ( preg_match( '/^(teamevent|platzreife|turnier|kundenevent|afterwork|incentive|nachtevent|workshop|indoor|weihnachtsfeier)-/', $file, $m ) ) {
+		if ( 0 === strpos( $file, 'golfplatz-' ) ) {
+			$buckets['golfplatz'][] = $file;
+			$cat                    = 'course'; // bleibt zugleich Platz-/Stadt-Motiv
+		} elseif ( preg_match( '/^(teamevent|platzreife|turnier|kundenevent|afterwork|incentive|nachtevent|workshop|indoor|weihnachtsfeier)-/', $file, $m ) ) {
 			$cat = $m[1];
 		} elseif ( strpos( $file, 'gruender' ) !== false ) {
 			$cat = 'founder';
@@ -727,6 +733,13 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 			}
 		}
 		$pool = fge_placeholder_pool();
+		// Genau EIN echtes Platz-Bild pro Outdoor-Event (Julius, 03.09.): der zweite
+		// Galerie-Slot (Offset 2) zieht aus pool/golfplatz-*, Cover und erster Slot
+		// bleiben typspezifisch. Indoor und Weihnachtsfeier bleiben komplett drinnen.
+		if ( 2 === $offset && ! empty( $pool['golfplatz'] )
+			&& in_array( $cat, [ 'teamevent', 'platzreife', 'turnier', 'kundenevent', 'afterwork', 'incentive', 'nachtevent', 'workshop', 'event' ], true ) ) {
+			$cat = 'golfplatz';
+		}
 		// „all" ohne Off-Topic (misc: U-Bahn, Cockpit …) und Gründerfotos: der
 		// Gesamtpool ist NUR Fallback für Event-/Platz-Cover, dort haben die
 		// Marketing-Motive nichts verloren (Design-QA 2026-08-21).
