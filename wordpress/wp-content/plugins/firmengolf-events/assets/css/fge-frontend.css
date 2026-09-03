@@ -7087,3 +7087,7 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
 /* Termin-Hinweis unter den Wunschtermin-Zeilen (Vorlauf-/Duplikat-Prüfung,
    Anfrage-Wizard der Event-Seite + Airbnb-Wizard, Julius 28.08.2026). */
 .rw-date-hint, .fg-date-hint { font-size: 13px; line-height: 1.5; color: var(--danger, #B4332B); margin: 8px 0 0; }
+
+/* Stadt-Format-Story (Julius, 03.09.): mehr Luft zwischen Headline und Subtext. */
+.cty-story-copy .cty-story-intro { margin-top: 22px; }
+.cty-story-copy .cty-story-points { margin-top: 22px; }
