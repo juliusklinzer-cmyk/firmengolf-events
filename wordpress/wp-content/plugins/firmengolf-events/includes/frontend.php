@@ -628,10 +628,10 @@ function fge_placeholder_pool(): array {
 		// Die Alt-Bestände tragen das teamevent-Präfix (Julius' Entscheidung: bisherige Bilder = Teamevent-Topf).
 		'teamevent' => [], 'platzreife' => [], 'turnier' => [], 'kundenevent' => [], 'afterwork' => [], 'incentive' => [], 'nachtevent' => [], 'workshop' => [], 'indoor' => [], 'weihnachtsfeier' => [],
 		// Beimisch-Topf (Julius, 03.09.): pool/golfplatz-*.jpg = echte Platz-Motive,
-		// die jedem Outdoor-Event genau EINMAL beigemischt werden (Galerie-Slot 1).
+		// zugleich Platz-/Stadt-Motive (course); keine Beimischung in Event-Galerien.
 		'golfplatz' => [],
 		// Closeup-Topf (Julius, 04.09.): pool/closeup-*.jpg = Nahaufnahmen (Bälle,
-		// Schläger, Schuhe …), jede Event-Galerie bekommt genau EINS davon (Slot 2).
+		// Schläger, Schuhe …), wird nicht automatisch vergeben, nur gezielt gesetzt.
 		'closeup' => [],
 	];
 	$dir     = FGE_DIR . 'assets/imagery/pool';
@@ -787,16 +787,10 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 		$pool      = fge_placeholder_pool();
 		$type_cats = array_values( fge_event_type_pool_map() );
 		$is_type   = $is_event && ( in_array( $cat, $type_cats, true ) || 'event' === $cat );
-		// Galerie-Mischung je Platzhalter-Event (Julius, 04.09.): Cover = Typ-Motiv,
-		// Slot 1 = genau EIN echtes Platz-Bild (pool/golfplatz-*; Indoor und
-		// Weihnachtsfeier bleiben drinnen und ziehen hier weiter ihren Typ),
-		// Slot 2 = genau EIN Closeup (pool/closeup-*), bei allen Typen.
-		if ( $is_type && 1 === $offset && ! empty( $pool['golfplatz'] ) && ! in_array( $cat, [ 'indoor', 'weihnachtsfeier' ], true ) ) {
-			$cat = 'golfplatz';
-		}
-		if ( $is_type && 2 === $offset && ! empty( $pool['closeup'] ) ) {
-			$cat = 'closeup';
-		}
+		// Platzhalter-Events zeigen NUR Motive ihres eigenen Typ-Topfs, Cover wie
+		// Galerie-Kacheln (Julius, 04.09.; die Beimisch-Slots Golfplatz/Closeup
+		// wurden am selben Tag wieder verworfen). golfplatz-* bleibt Platz- und
+		// Stadt-Motiv, closeup-* liegt nur für gezielte Einsätze bereit.
 		// „all" ohne Off-Topic (misc: U-Bahn, Cockpit …) und Gründerfotos: der
 		// Gesamtpool ist NUR Fallback für Event-/Platz-Cover, dort haben die
 		// Marketing-Motive nichts verloren (Design-QA 2026-08-21).

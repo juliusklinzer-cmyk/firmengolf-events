@@ -22,17 +22,16 @@ sorgt dafür, dass sich auf einer Seite nichts wiederholt.
 | `nachtevent-` | Nacht-Event | `nachtevent-flutlicht.jpg` |
 | `indoor-` | **Indoor Golf** | `indoor-simulator-gruppe.jpg` |
 | `weihnachtsfeier-` | **Weihnachtsfeier** | `weihnachtsfeier-gluehwein-boxen.jpg` |
-| `golfplatz-` (oder `platz-`) | **Beimisch-Topf: echte Platz-Motive** | `golfplatz-fairway-morgen.jpg` |
-| `closeup-` | **Beimisch-Topf: Nahaufnahmen** (Bälle, Schläger, Schuhe, Scorekarte) | `closeup-ball-am-loch.jpg` |
+| `golfplatz-` (oder `platz-`) | Echte Platz-Motive für Stadt- und Platz-Cover | `golfplatz-fairway-morgen.jpg` |
+| `closeup-` | Nahaufnahmen (Bälle, Schläger, Schuhe), nur gezielt, nicht automatisch | `closeup-ball-am-loch.jpg` |
 | `pool-` | **Reserve**, wird NIE automatisch vergeben | `pool-meetingraum.jpg` |
 | `pool-hochformat-` | **Reserve Hochformat**, ebenfalls nie automatisch | `pool-hochformat-teamevent-jubel.jpg` |
 
-**Galerie-Mischung je Platzhalter-Event (Julius, 04.09.):** Cover = Typ-Motiv
-(Menschen, Situation), Galerie-Kachel 1 = genau EIN echtes Platz-Bild aus dem
-golfplatz-Topf, Galerie-Kachel 2 = genau EIN Closeup. Indoor und Weihnachtsfeier
-bleiben komplett drinnen: dort ist Kachel 1 wieder ein Indoor-Motiv, das Closeup
-kommt trotzdem. Auf einer Seite erscheint kein Motiv doppelt (Dedup über den
-Bildinhalt). Die golfplatz-Bilder dienen zusätzlich als Stadt- und Platz-Cover.
+**Platzhalter-Events zeigen nur ihren eigenen Typ** (Julius, 04.09., nach kurzem
+Test mit Beimisch-Slots wieder verworfen): Cover und beide Galerie-Kacheln kommen
+aus dem Typ-Topf, auf einer Seite nie dasselbe Motiv doppelt (Dedup über den
+Bildinhalt). golfplatz-Bilder dienen als Stadt- und Platz-Cover, closeup-Bilder
+liegen nur für gezielte Einsätze bereit und werden nicht automatisch vergeben.
 
 **Cover sind eindeutig:** Jedes Platzhalter-Event bekommt nach seinem Rang im Typ
 ein eigenes Titelbild. Erst wenn der Topf einmal durch ist (z. B. 90 Turniere
