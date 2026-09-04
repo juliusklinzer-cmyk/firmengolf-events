@@ -75,19 +75,21 @@ Dateien desselben Motivs werden auf die neue Qualität gehoben.
 ## 2. Feste Kachel-Slots → `imagery/tiles/`
 
 Diese Dateinamen sind FEST verdrahtet (Format-Kacheln auf der Weihnachtsfeier-
-Seite, Homepage-Look). Fehlt eine Datei, zeigt die Kachel das Lounge-Bild.
-Sobald du die Datei ablegst, erscheint sie automatisch. Hochformat-tauglich
+Seite und den Weihnachts-Stadt-Seiten, Homepage-Look). Fehlt eine Datei, zeigt
+die Kachel das Lounge-Bild. Seit 04.09. sind alle 8 Slots aus dem Indoor-Pool
+befüllt (auf 3:4 beschnitten, 900 × 1200 px); zum Tauschen einfach die Datei
+ersetzen, Hochformat bevorzugt. Hochformat-tauglich
 beschnitten (Kachel ist 3:4), Motiv unten hell genug für weiße Schrift meiden
 bzw. der dunkle Verlauf unten regelt das.
 
-- `tiles/indoor-weihnachtsfeier.jpg` — Feier-Stimmung an den Boxen (Glühwein, Deko)
-- `tiles/indoor-turnier.jpg` — Simulator mit Leaderboard/Turnier-Szene
-- `tiles/indoor-teamevent.jpg` — Gruppe jubelt/spielt an einer Box
-- `tiles/indoor-afterwork.jpg` — lockere Abend-Szene, Drinks an der Bar
-- `tiles/indoor-grundlagen.jpg` — Golflehrer erklärt am Simulator
-- `tiles/indoor-workshop.jpg` — Meeting-/Lounge-Bereich einer Indoor-Anlage
-- `tiles/indoor-kundenevent.jpg` — gehobene Gastgeber-Szene indoor
-- `tiles/indoor-exklusiv.jpg` — leere/edle Gesamtansicht der Location
+- `tiles/indoor-weihnachtsfeier.jpg` — Feier-Stimmung an den Boxen (Glühwein, Deko) (aktuell: indoor-bier-und-simulator)
+- `tiles/indoor-turnier.jpg` — Simulator mit Leaderboard/Turnier-Szene (aktuell: pool-hochformat-indoor-golfsimulator (Nachtschwung, Datenbildschirm))
+- `tiles/indoor-teamevent.jpg` — Gruppe jubelt/spielt an einer Box (aktuell: indoor-golf-indoor-simulator-bar-event-im-team)
+- `tiles/indoor-afterwork.jpg` — lockere Abend-Szene, Drinks an der Bar (aktuell: indoor-topgolf-oberhausen-drinks-and-drive)
+- `tiles/indoor-grundlagen.jpg` — Golflehrer erklärt am Simulator (aktuell: pool-hochformat-indoor-golfsimulator-echt-mit-gruender (kniender Trainer))
+- `tiles/indoor-workshop.jpg` — Meeting-/Lounge-Bereich einer Indoor-Anlage (aktuell: pool-hochformat-indoor-lounge)
+- `tiles/indoor-kundenevent.jpg` — gehobene Gastgeber-Szene indoor (aktuell: indoor-golf-bar-und-fun-imi-team)
+- `tiles/indoor-exklusiv.jpg` — leere/edle Gesamtansicht der Location (aktuell: indoor-eingang-golfsimulator)
 
 Optional zusätzlich: `tiles/home-indoor.jpg` als Ersatz für das Lounge-Bild der
 Indoor-Kachel auf der Startseite (sag Bescheid, dann verdrahte ich es).
