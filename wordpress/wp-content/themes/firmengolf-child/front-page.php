@@ -288,7 +288,7 @@ $why_items = [
    Indoor Golf) springen mit Begrüßung + vorgewähltem Anlass in die Schnellanfrage. */
 $home_fmt_tiles = [
 	[ 't' => 'Teamevent',        'sub' => 'Spielerisch zusammenwachsen',     'img' => 'firmenevent-afterwork-golf.jpg',      'url' => add_query_arg( 'format', 'teamevent', $url_events ) ],
-	[ 't' => 'After-Work Golf',  'sub' => 'Der Feierabend im Grünen',        'img' => 'pool/afterwork-range-abendlicht.jpg', 'url' => add_query_arg( 'format', 'after_work_golf', $url_events ) ],
+	[ 't' => 'After-Work Golf',  'sub' => 'Der Feierabend im Grünen',        'img' => 'pool/pool-hochformat-afterwork-laessiger-golfeinsteiger-macht-erste-schwuenge.jpg', 'url' => add_query_arg( 'format', 'after_work_golf', $url_events ) ],
 	[ 't' => 'Workshop & Golf',  'sub' => 'Arbeiten, wo der Kopf frei ist',  'img' => 'pool/workshop-clubhaus-aussen.jpg',   'url' => add_query_arg( 'format', 'workshop', $url_events ) ],
 	[ 't' => 'Firmenturnier',    'sub' => 'Flights, Pokale & Siegerehrung',  'img' => 'golf-gruen-fahne.jpg',                'url' => add_query_arg( 'format', 'firmen_golfturnier', $url_events ) ],
 	[ 't' => 'Platzreife',       'sub' => 'Gemeinsam zur Platzreife',        'img' => 'golf-coaching-gruppe.jpg',            'url' => add_query_arg( 'format', 'platzreife', $url_events ) ],

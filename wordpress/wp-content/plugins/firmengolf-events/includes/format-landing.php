@@ -255,7 +255,7 @@ function fge_get_event_format_pages(): array {
 			'intro'   => 'After-Work Golf ist das niedrigschwellige Format für zwischendurch: nach Feierabend gemeinsam auf die Driving Range oder den Kurzplatz, mit lockerer Anleitung durch einen Pro und entspanntem Ausklang. Kein ganzer Tag, kein großer Aufwand, und trotzdem ein echtes gemeinsames Erlebnis. Ideal als regelmäßiger Teamabend oder lockerer Einstieg ins Thema Golf.',
 			'facts' => [ $reason( 'clock', 'Nach Feierabend', 'Kompakt am Abend, ohne den Arbeitstag zu sprengen.' ), $reason( 'sun', 'Locker & ungezwungen', 'Range, Kurzspiel und ein entspannter Ausklang, Spaß statt Leistungsdruck.' ), $r_team, $r_one ],
 			'faqs'    => [ $f_anf, $faq( 'Eignet sich After-Work Golf als regelmäßiges Format?', 'Ja, gerade dafür. Viele Teams machen daraus einen wiederkehrenden Termin, wir richten Platz und Pro passend zu eurem Rhythmus ein.' ), $f_fast, $f_bill ],
-			'hero_img' => 'pool/afterwork-range-abendlicht.jpg',
+			'hero_img' => 'pool/pool-hochformat-afterwork-laessiger-golfeinsteiger-macht-erste-schwuenge.jpg',
 			'flow_h'   => 'Vom Feierabend bis zum letzten Ball.',
 			'flow'     => [
 				[ 't' => 'Ankommen nach Feierabend', 'b' => 'Direkt aus dem Büro auf die Anlage, Schläger und Bälle liegen bereit.' ],

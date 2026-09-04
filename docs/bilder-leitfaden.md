@@ -1,4 +1,4 @@
-# Bilder-Leitfaden: Ordnerstruktur zum Befüllen (Stand 03.09.2026)
+# Bilder-Leitfaden: Ordnerstruktur zum Befüllen (Stand 04.09.2026)
 
 Alles liegt unter `wordpress/wp-content/plugins/firmengolf-events/assets/imagery/`.
 Du legst NUR die `.jpg` ab, ich erzeuge die `.webp`-Zwillinge und binde alles ein.
@@ -22,19 +22,56 @@ sorgt dafür, dass sich auf einer Seite nichts wiederholt.
 | `nachtevent-` | Nacht-Event | `nachtevent-flutlicht.jpg` |
 | `indoor-` | **Indoor Golf** | `indoor-simulator-gruppe.jpg` |
 | `weihnachtsfeier-` | **Weihnachtsfeier** | `weihnachtsfeier-gluehwein-boxen.jpg` |
-| `golfplatz-` | **Beimisch-Topf: echte Platz-Motive** | `golfplatz-fairway-morgen.jpg` |
+| `golfplatz-` (oder `platz-`) | **Beimisch-Topf: echte Platz-Motive** | `golfplatz-fairway-morgen.jpg` |
+| `closeup-` | **Beimisch-Topf: Nahaufnahmen** (Bälle, Schläger, Schuhe, Scorekarte) | `closeup-ball-am-loch.jpg` |
+| `pool-` | **Reserve**, wird NIE automatisch vergeben | `pool-meetingraum.jpg` |
+| `pool-hochformat-` | **Reserve Hochformat**, ebenfalls nie automatisch | `pool-hochformat-teamevent-jubel.jpg` |
 
-**Der golfplatz-Topf ist besonders:** Diese Bilder gehören keinem Event-Typ.
-Jedes Outdoor-Event bekommt in seiner Bildergalerie genau EIN Bild aus diesem
-Topf (das dritte), Cover und zweites Bild bleiben typspezifisch. So taucht in
-jedem Format ein echter Platz auf, ohne die Typ-Bildwelt zu verwässern. Indoor
-und Weihnachtsfeier bleiben komplett drinnen, dort wird nichts beigemischt.
-Zusätzlich dienen die golfplatz-Bilder weiter als Motive für Stadt- und
-Platz-Cover.
+**Galerie-Mischung je Platzhalter-Event (Julius, 04.09.):** Cover = Typ-Motiv
+(Menschen, Situation), Galerie-Kachel 1 = genau EIN echtes Platz-Bild aus dem
+golfplatz-Topf, Galerie-Kachel 2 = genau EIN Closeup. Indoor und Weihnachtsfeier
+bleiben komplett drinnen: dort ist Kachel 1 wieder ein Indoor-Motiv, das Closeup
+kommt trotzdem. Auf einer Seite erscheint kein Motiv doppelt (Dedup über den
+Bildinhalt). Die golfplatz-Bilder dienen zusätzlich als Stadt- und Platz-Cover.
 
-WICHTIG für dich gerade: **indoor-** und **weihnachtsfeier-** sind neu und leer.
-Solange `weihnachtsfeier-` leer ist, fallen Weihnachts-Events automatisch auf die
-Indoor-Bildwelt zurück (nicht mehr auf Outdoor). 3 bis 6 Bilder pro Typ sind ideal.
+**Cover sind eindeutig:** Jedes Platzhalter-Event bekommt nach seinem Rang im Typ
+ein eigenes Titelbild. Erst wenn der Topf einmal durch ist (z. B. 90 Turniere
+bei 32 Turnier-Bildern), wiederholen sich Cover, dann gleichmäßig verteilt und
+nie mit fremden Typ-Motiven.
+
+**weihnachtsfeier- ist in indoor- aufgegangen** (dieselben Motive, Julius 04.09.):
+Weihnachts-Events ziehen die Indoor-Bildwelt. Der Präfix bleibt erlaubt, falls
+später echte Weihnachts-Motive kommen (Glühwein, Deko); sobald dort etwas liegt,
+greift wieder der eigene Topf.
+
+**Hochformat:** Karten und Galerie-Kacheln sind Querformat und beschneiden.
+Hochformat-Bilder landen beim Import daher automatisch als `pool-hochformat-…`
+in der Reserve (Original-Präfix bleibt im Namen erhalten, z. B.
+`pool-hochformat-teamevent-jubel.jpg`), damit man sie schnell findet, wenn die
+Website mal ein Hochformat braucht.
+
+## 1b. Import-Skript (`import-bilder.php` im Repo-Root)
+
+Neue Bilder einfach mit Präfix in den OneDrive-Ordner `Desktop/Bilder/` legen
+(Unterordner wie `Stadtbilder/`, `Videos/` werden ignoriert). Der Import läuft im
+WordPress-Container (GD + EXIF):
+
+```bash
+docker compose cp "/mnt/c/Users/Julius/OneDrive - VisionPunch UG/Desktop/Bilder" wordpress:/tmp/bilder
+docker compose exec -T wordpress sh -c 'cd /tmp/bilder && rm -rf Stadtbilder Videos *.MOV *.mov'
+docker compose cp import-bilder.php wordpress:/tmp/import-bilder.php
+docker compose exec -T -u 1000:1000 wordpress php -d memory_limit=-1 /tmp/import-bilder.php /tmp/bilder \
+  /var/www/html/wp-content/plugins/firmengolf-events/assets/imagery dry    # erst Trockenlauf, dann write
+```
+
+Das Skript: dreht nach EXIF, flacht PNG auf Weiß, skaliert auf max. 1920 px,
+schreibt `.jpg` + `.jpg.webp`, mappt `platz-`→`golfplatz-`,
+`weihnachtsfeier-`→`indoor-`, `office-/ki-/bunkerschlag-`→`pool-`, Hochformat→
+`pool-hochformat-`. Dubletten erkennt es am Bildinhalt: dasselbe Motiv unter
+mehreren Präfixen bekommt byteidentische Kopien (so greift der Dedup), zweimal
+dasselbe Motiv im selben Präfix wird nur einmal angelegt, und Motive, die im Pool
+schon unter dem gleichen Präfix liegen, werden übersprungen. Alte kleine Pool-
+Dateien desselben Motivs werden auf die neue Qualität gehoben.
 
 ## 2. Feste Kachel-Slots → `imagery/tiles/`
 

@@ -601,13 +601,16 @@ function fge_placeholder_blocklist(): array {
 function fge_placeholder_content_key( string $file ): string {
 	static $map = null;
 	if ( null === $map ) {
-		$map = get_transient( 'fge_placeholder_content_keys' );
+		// Versioniert: nach einem Deploy mit neuen Pool-Dateien darf kein alter
+		// Hash-Stand einen Tag lang weiterleben (Import 04.09.).
+		$cached = get_transient( 'fge_placeholder_content_keys' );
+		$map    = ( is_array( $cached ) && ( $cached['v'] ?? '' ) === FGE_VERSION ) ? $cached['map'] : null;
 		if ( ! is_array( $map ) ) {
 			$map = [];
 			foreach ( glob( FGE_DIR . 'assets/imagery/pool/*.jpg' ) ?: [] as $path ) {
 				$map[ basename( $path ) ] = (string) md5_file( $path );
 			}
-			set_transient( 'fge_placeholder_content_keys', $map, DAY_IN_SECONDS );
+			set_transient( 'fge_placeholder_content_keys', [ 'v' => FGE_VERSION, 'map' => $map ], DAY_IN_SECONDS );
 		}
 	}
 	return $map[ $file ] ?? $file;
@@ -625,8 +628,11 @@ function fge_placeholder_pool(): array {
 		// Die Alt-Bestände tragen das teamevent-Präfix (Julius' Entscheidung: bisherige Bilder = Teamevent-Topf).
 		'teamevent' => [], 'platzreife' => [], 'turnier' => [], 'kundenevent' => [], 'afterwork' => [], 'incentive' => [], 'nachtevent' => [], 'workshop' => [], 'indoor' => [], 'weihnachtsfeier' => [],
 		// Beimisch-Topf (Julius, 03.09.): pool/golfplatz-*.jpg = echte Platz-Motive,
-		// die jedem Outdoor-Event genau EINMAL beigemischt werden (Slot 2).
+		// die jedem Outdoor-Event genau EINMAL beigemischt werden (Galerie-Slot 1).
 		'golfplatz' => [],
+		// Closeup-Topf (Julius, 04.09.): pool/closeup-*.jpg = Nahaufnahmen (Bälle,
+		// Schläger, Schuhe …), jede Event-Galerie bekommt genau EINS davon (Slot 2).
+		'closeup' => [],
 	];
 	$dir     = FGE_DIR . 'assets/imagery/pool';
 	foreach ( glob( $dir . '/*.jpg' ) ?: [] as $path ) {
@@ -634,8 +640,17 @@ function fge_placeholder_pool(): array {
 		if ( isset( $blocked[ $file ] ) ) {
 			continue;
 		}
+		// Reserve (Julius, 04.09.): pool-*.jpg (inkl. pool-hochformat-*) liegt nur
+		// zum Nachschlagen bereit und wird NIE automatisch vergeben.
+		if ( 0 === strpos( $file, 'pool-' ) ) {
+			continue;
+		}
+		if ( 0 === strpos( $file, 'closeup-' ) ) {
+			$buckets['closeup'][] = $file;
+			continue; // nicht in „all": kein Schuh-Closeup als Platz- oder Stadt-Cover
+		}
 		$buckets['all'][] = $file;
-		if ( 0 === strpos( $file, 'golfplatz-' ) ) {
+		if ( 0 === strpos( $file, 'golfplatz-' ) || 0 === strpos( $file, 'platz-' ) ) {
 			$buckets['golfplatz'][] = $file;
 			$cat                    = 'course'; // bleibt zugleich Platz-/Stadt-Motiv
 		} elseif ( preg_match( '/^(teamevent|platzreife|turnier|kundenevent|afterwork|incentive|nachtevent|workshop|indoor|weihnachtsfeier)-/', $file, $m ) ) {
@@ -663,12 +678,9 @@ function fge_placeholder_pool(): array {
  * Leerstring, wenn es für den Typ (noch) keine gefüllte Gruppe gibt → Aufrufer fällt
  * auf die Namens-Kategorie zurück.
  */
-function fge_event_pool_category( int $event_id ): string {
-	$type = (string) get_post_meta( $event_id, '_fge_event_type', true );
-	if ( function_exists( 'fge_get_event_format_legacy_map' ) ) {
-		$type = fge_get_event_format_legacy_map()[ $type ] ?? $type;
-	}
-	$map = [
+/** Event-Typ (nach Legacy-Mapping) → Pool-Gruppe, ohne Rücksicht auf Füllstand. */
+function fge_event_type_pool_map(): array {
+	return [
 		'teamevent'          => 'teamevent',
 		'platzreife'         => 'platzreife',
 		'firmen_golfturnier' => 'turnier',
@@ -680,7 +692,10 @@ function fge_event_pool_category( int $event_id ): string {
 		'indoor-golf'        => 'indoor', // Persona-Audit 02.09.: Indoor-Events bekamen Fairway-Luftbilder
 		'weihnachtsfeier'    => 'weihnachtsfeier', // eigener Pool (pool/weihnachtsfeier-*.jpg); leer → Indoor-Fallback unten
 	];
-	$cat = $map[ $type ] ?? '';
+}
+
+/** Löst eine Pool-Gruppe auf den tatsächlich gefüllten Topf auf (Leerstring = keiner). */
+function fge_resolve_pool_category( string $cat ): string {
 	if ( $cat === '' ) {
 		return '';
 	}
@@ -694,6 +709,42 @@ function fge_event_pool_category( int $event_id ): string {
 		return 'indoor';
 	}
 	return '';
+}
+
+function fge_event_pool_category( int $event_id ): string {
+	$type = (string) get_post_meta( $event_id, '_fge_event_type', true );
+	if ( function_exists( 'fge_get_event_format_legacy_map' ) ) {
+		$type = fge_get_event_format_legacy_map()[ $type ] ?? $type;
+	}
+	return fge_resolve_pool_category( fge_event_type_pool_map()[ $type ] ?? '' );
+}
+
+/**
+ * Rang eines Events unter allen veröffentlichten Events (nach ID): [Rang innerhalb
+ * seiner Pool-Gruppe, Rang gesamt]. Damit bekommt jedes Platzhalter-Event ein
+ * EIGENES Cover, bis der Topf einmal durch ist, danach wiederholt es sich
+ * gleichmäßig statt „jedes zweite Event dasselbe Bild" (Julius, 04.09.).
+ * Eine Abfrage pro Request, danach statisch.
+ */
+function fge_event_placeholder_rank( int $event_id ): array {
+	static $ranks = null;
+	if ( null === $ranks ) {
+		global $wpdb;
+		$rows   = $wpdb->get_results( "SELECT p.ID, pm.meta_value AS t FROM {$wpdb->posts} p LEFT JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_fge_event_type' WHERE p.post_type = 'firmengolf_event' AND p.post_status = 'publish' ORDER BY p.ID ASC" );
+		$legacy = function_exists( 'fge_get_event_format_legacy_map' ) ? fge_get_event_format_legacy_map() : [];
+		$tmap   = fge_event_type_pool_map();
+		$ranks  = [];
+		$per    = [];
+		$all    = 0;
+		foreach ( (array) $rows as $r ) {
+			$t   = (string) $r->t;
+			$t   = $legacy[ $t ] ?? $t;
+			$cat = fge_resolve_pool_category( $tmap[ $t ] ?? '' );
+			$per[ $cat ]          = $per[ $cat ] ?? 0;
+			$ranks[ (int) $r->ID ] = [ $per[ $cat ]++, $all++ ];
+		}
+	}
+	return $ranks[ $event_id ] ?? [ abs( crc32( (string) $event_id ) ), abs( crc32( 'all|' . $event_id ) ) ];
 }
 
 /** Map a legacy placeholder filename to a pool category. */
@@ -726,19 +777,25 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 		$cat = fge_placeholder_category( $name );
 		// Events ziehen bevorzugt aus der Format-Gruppe ihres Typs (teamevent/platzreife/…),
 		// damit Platzhalter-Events pro Typ eine eigene, stimmige Bildwelt bekommen.
-		if ( get_post_type( $seed ) === 'firmengolf_event' ) {
+		$is_event = get_post_type( $seed ) === 'firmengolf_event';
+		if ( $is_event ) {
 			$type_cat = fge_event_pool_category( $seed );
 			if ( $type_cat !== '' ) {
 				$cat = $type_cat;
 			}
 		}
-		$pool = fge_placeholder_pool();
-		// Genau EIN echtes Platz-Bild pro Outdoor-Event (Julius, 03.09.): der zweite
-		// Galerie-Slot (Offset 2) zieht aus pool/golfplatz-*, Cover und erster Slot
-		// bleiben typspezifisch. Indoor und Weihnachtsfeier bleiben komplett drinnen.
-		if ( 2 === $offset && ! empty( $pool['golfplatz'] )
-			&& in_array( $cat, [ 'teamevent', 'platzreife', 'turnier', 'kundenevent', 'afterwork', 'incentive', 'nachtevent', 'workshop', 'event' ], true ) ) {
+		$pool      = fge_placeholder_pool();
+		$type_cats = array_values( fge_event_type_pool_map() );
+		$is_type   = $is_event && ( in_array( $cat, $type_cats, true ) || 'event' === $cat );
+		// Galerie-Mischung je Platzhalter-Event (Julius, 04.09.): Cover = Typ-Motiv,
+		// Slot 1 = genau EIN echtes Platz-Bild (pool/golfplatz-*; Indoor und
+		// Weihnachtsfeier bleiben drinnen und ziehen hier weiter ihren Typ),
+		// Slot 2 = genau EIN Closeup (pool/closeup-*), bei allen Typen.
+		if ( $is_type && 1 === $offset && ! empty( $pool['golfplatz'] ) && ! in_array( $cat, [ 'indoor', 'weihnachtsfeier' ], true ) ) {
 			$cat = 'golfplatz';
+		}
+		if ( $is_type && 2 === $offset && ! empty( $pool['closeup'] ) ) {
+			$cat = 'closeup';
 		}
 		// „all" ohne Off-Topic (misc: U-Bahn, Cockpit …) und Gründerfotos: der
 		// Gesamtpool ist NUR Fallback für Event-/Platz-Cover, dort haben die
@@ -770,7 +827,16 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 				$span = count( $list );
 			}
 			$count = count( $list );
-			$idx   = ( abs( crc32( $cat . '|' . $seed ) ) + $offset ) % $span;
+			// Events: Rang statt Zufallshash, damit Cover erst nach einem vollen
+			// Durchlauf des Topfs wiederkommen. Die Beimisch-Töpfe (Platz, Closeup)
+			// zählen über ALLE Events, damit sich auch dort nichts häuft.
+			if ( $is_event ) {
+				[ $rank_type, $rank_all ] = fge_event_placeholder_rank( $seed );
+				$base = in_array( $cat, [ 'golfplatz', 'closeup' ], true ) ? $rank_all : $rank_type;
+			} else {
+				$base = abs( crc32( $cat . '|' . $seed ) );
+			}
+			$idx = ( $base + $offset ) % $span;
 			// Kandidaten-Reihenfolge: zirkulär durch die Primär-Bilder, Details erst danach.
 			$order = [];
 			for ( $i = 0; $i < $span; $i++ ) {
@@ -791,10 +857,11 @@ function fge_get_placeholder_image_url( string $name = 'golfplatz-drohnenaufnahm
 					break;
 				}
 			}
-			// Format-Gruppe erschöpft (die Workshop-Gruppe hat nach Abzug der
-			// Dateidubletten nur eine Handvoll Motive): lieber ein passendes Bild
-			// aus dem Gesamtpool als dasselbe Foto zweimal auf einer Seite.
-			if ( null === $pick ) {
+			// Gruppe auf dieser Seite erschöpft: Event-Töpfe wiederholen sich dann
+			// lieber gleichmäßig (Rang), als dass ein Turnier ein Incentive-Motiv
+			// bekommt (Julius, 04.09.). Nur Platz-/Range-/Clubhaus-Kategorien
+			// dürfen weiter in den Gesamtpool ausweichen.
+			if ( null === $pick && ! $is_type && ! in_array( $cat, [ 'golfplatz', 'closeup' ], true ) ) {
 				$fallback = array_values( array_diff( $pool_cover_all, $list ) );
 				$fcount   = count( $fallback );
 				for ( $i = 0; $i < $fcount; $i++ ) {
