@@ -312,7 +312,8 @@ function fge_format_occasion( string $slug ): string {
 		'kundenevent'     => 'Kundenevent',
 		'incentive'       => 'Incentive-Reise',
 		'after-work-golf' => 'After-Work Golf',
-		'weihnachtsfeier' => 'Weihnachtsfeier',
+		'weihnachtsfeier' => 'Indoor Weihnachtsfeier', // Wizard-Kachel heißt so (07.09.)
+		'sommerfest'      => 'Sommerfest',
 	];
 	return $map[ $slug ] ?? '';
 }

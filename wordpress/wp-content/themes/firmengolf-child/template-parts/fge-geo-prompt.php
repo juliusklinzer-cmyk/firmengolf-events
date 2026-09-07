@@ -46,7 +46,12 @@ $gp_anchor = (string) ( $args['anchor'] ?? '' );  // Sprungziel nach „ohne Sta
 <script>
 (function () {
 	var prompt = document.getElementById('fge-geo-prompt');
-	if (!prompt || !navigator.geolocation) { return; }
+	if (!prompt) { return; }
+	if (!navigator.geolocation) {
+		// Ohne Geolocation: Standort-Chip weg, Trigger springt nur zum Anker.
+		var chip = document.getElementById('xmas-filter-geo'); if (chip) { chip.hidden = true; }
+		return;
+	}
 	var allow = document.getElementById('fge-geo-allow');
 	var skip  = document.getElementById('fge-geo-skip');
 	var KEY = 'fgeGeoPromptSeen', OFF = 'fgeGeoOff';
@@ -56,7 +61,7 @@ $gp_anchor = (string) ( $args['anchor'] ?? '' );  // Sprungziel nach „ohne Sta
 	function goNear(pos) {
 		window.location.href = <?php echo wp_json_encode( $gp_target ); ?>
 			+ '?lat=' + pos.coords.latitude.toFixed(5) + '&lng=' + pos.coords.longitude.toFixed(5)
-			+ '&radius=50&loc=' + encodeURIComponent('Mein Standort') + '#angebote';
+			+ '&radius=50&loc=' + encodeURIComponent('Mein Standort') + (<?php echo wp_json_encode( $gp_anchor ); ?> || '#angebote');
 	}
 	function hide() { prompt.classList.remove('is-open'); prompt.hidden = true; try { localStorage.setItem(KEY, '1'); } catch (err) {} }
 	function show() { prompt.hidden = false; requestAnimationFrame(function () { prompt.classList.add('is-open'); }); allow.focus(); }

@@ -328,6 +328,8 @@
 		function occCards() {
 			// Preset-Anlässe außerhalb der Standardliste (z. B. Sommerfest von den
 			// Themen-Kacheln) als zusätzliche, gewählte Kachel zeigen.
+			// Alt-Deeplinks (?anlass=Weihnachtsfeier) auf die Standard-Kachel mappen (Review 07.09.).
+			if (S.form.occasion === 'Weihnachtsfeier') S.form.occasion = 'Indoor Weihnachtsfeier';
 			var list = OCCASIONS.slice();
 			if (S.form.occasion && list.indexOf(S.form.occasion) < 0) list.push(S.form.occasion);
 			return '<div class="ind-cards rw-occ-cards">' + list.map(function (o) {

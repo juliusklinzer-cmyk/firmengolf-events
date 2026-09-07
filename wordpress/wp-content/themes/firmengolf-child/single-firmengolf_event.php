@@ -892,7 +892,7 @@ get_header();
 	// Fuß-Preis: Platzhalter-Events „ab 69 € pro Person" (Orientierung), Partner-
 	// Events ihr Preis; darunter die Netto-Zeile (Julius, 07.09.).
 	$mcta_has_price = 'Auf Anfrage' !== $price_main;
-	$mcta_strong    = $mcta_has_price && $is_self ? 'ab ' . $price_main : $price_main;
+	$mcta_strong    = ( $mcta_has_price && $is_self && 0 !== stripos( $price_main, 'ab ' ) ) ? 'ab ' . $price_main : $price_main;
 	$mcta_unit      = '';
 	if ( $mcta_has_price ) {
 		$mcta_unit = false !== strpos( $price_suffix, 'gesamt' ) ? 'gesamt' : 'pro Person';

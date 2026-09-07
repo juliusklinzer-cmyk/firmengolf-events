@@ -334,6 +334,12 @@ add_action( 'init', static function () {
 	$ids = get_posts( [ 'post_type' => 'firmengolf_event', 'post_status' => 'any', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_fge_event_type', 'meta_value' => 'weihnachtsfeier' ] );
 	$t   = fge_cityseed26_t3_texts();
 	foreach ( $ids as $id ) {
+		// Nur unsere Platzhalter (Seed-Slug, kein zugeordneter Partner): Partner-eigene
+		// Weihnachtsfeiern behalten ihre Texte (Review 07.09.).
+		$post = get_post( $id );
+		if ( ! $post || 0 !== strpos( $post->post_name, 'weihnachtsfeier-mit-golf-in-' ) || (int) get_post_meta( $id, '_fge_assigned_partner_id', true ) > 0 ) {
+			continue;
+		}
 		update_post_meta( $id, '_fge_card_description', $t['desc'] );
 		update_post_meta( $id, '_fge_event_dayflow', $t['dayflow'] );
 		update_post_meta( $id, '_fge_event_includes', $t['includes'] );

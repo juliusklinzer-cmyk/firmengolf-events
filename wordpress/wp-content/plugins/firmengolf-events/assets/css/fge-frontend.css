@@ -3964,7 +3964,6 @@ body.single-firmengolf_event .fg-footer { margin-top: 40px; }
 .simx-modal-loc { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px 12px; border-radius: 999px; background: #FBEBD6; color: #8A4B0A; font-size: 13px; }
 .simx-modal-loc b { font-weight: 600; }
 .simx-modal-loc svg { flex: none; }
-.xmas-events .fg-search-bar { margin: 18px 0 28px; max-width: none; z-index: 5; }
 .xmas-events-head { align-items: flex-start; }
 .xmas-events-note { font-size: 14px; color: var(--ink-600); margin: 6px 0 0; max-width: 62ch; }
 .xmas-events-more { display: flex; justify-content: center; margin-top: 28px; }
@@ -4005,16 +4004,6 @@ body.single-firmengolf_event .fg-footer { margin-top: 40px; }
   .xmas-hero .mk-hero-title { font-size: clamp(30px, 8vw, 40px); }
   /* Startseiten-Regel erzwingt mobil hero-golfer-alpen; die Weihnachts-Seite nimmt ihr 3:4-Motiv */
   .xmas-hero .mk-hero-photo { background-image: var(--xmas-hero-m) !important; }
-  /* Eventliste/Startseite blenden die Leiste mobil aus (Filter-Sheet); auf der
-     Weihnachts-Seite bleibt sie sichtbar, gestapelt wie im 900px-Block. */
-  /* Mobil als kompakte Karte: Ort-Feld volle Breite, darunter Personen und Suchen in einer Zeile */
-  .xmas-events .fg-search-bar { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 14px 0 20px; border-radius: 20px; padding: 12px; box-shadow: 0 1px 2px rgba(14,19,16,.05), 0 10px 30px rgba(44,80,54,.08); }
-  .xmas-events .fg-search-bar .fg-cell-divider { display: none; }
-  .xmas-events .fg-search-bar .fg-loc-cell { grid-column: 1 / -1; width: auto; padding: 10px 14px; border: 1px solid var(--ink-200); border-radius: 14px; background: var(--paper-50); }
-  .xmas-events .fg-search-bar .fg-pax-cell { width: auto; padding: 6px 12px; border: 1px solid var(--ink-200); border-radius: 14px; display: flex; align-items: center; gap: 10px; }
-  .xmas-events .fg-search-bar .fg-pax-cell .fg-cell-label { margin: 0; }
-  .xmas-events .fg-search-bar .fg-search-btn { min-height: 48px; padding: 0 18px; }
-  .xmas-events .fg-search-bar .fg-cell-input { font-size: 16px; }
   .iv-tiles.playx-tiles { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); padding: 0 16px 6px; scroll-padding-left: 16px; }
   .iv-tiles.playx-tiles::-webkit-scrollbar { display: none; }
   .playx-tile { flex: 0 0 76%; aspect-ratio: 4 / 5; scroll-snap-align: start; }

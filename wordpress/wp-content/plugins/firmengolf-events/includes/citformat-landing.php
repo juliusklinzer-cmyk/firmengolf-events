@@ -366,7 +366,10 @@ function fge_citformat_is_valid( string $city_slug, string $format_slug ): bool 
 	}
 	$cities  = function_exists( 'fge_get_cities' ) ? fge_get_cities() : [];
 	$formats = function_exists( 'fge_get_event_format_pages' ) ? fge_get_event_format_pages() : [];
-	return isset( $cities[ $city_slug ], $formats[ $format_slug ] );
+	// Nur Formate mit eigenem Stadt-Text (fge_citformat_format_meta): sonst entstünden
+	// dünne Seiten mit Stadt-Titel und leerer Description (Review 07.09., Sommerfest).
+	$metas = fge_citformat_format_meta();
+	return isset( $cities[ $city_slug ], $formats[ $format_slug ], $metas[ $format_slug ] );
 }
 
 /**

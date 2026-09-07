@@ -60,7 +60,7 @@ $xr_cfg = $xr_variants[ $xr_v ];
 	$xmas_min_date = ( new DateTime( '+7 days', wp_timezone() ) )->format( 'Y-m-d' );
 	$xmas_check    = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 	?>
-	<section class="xmas<?php echo ! empty( $args['band'] ) ? ' xmas--band' : ''; ?><?php echo $xr_compact ? ' xmas--compact' : ''; ?>" id="<?php echo esc_attr( $args['id'] ?? 'weihnachtsfeier' ); ?>" aria-label="Weihnachtsfeier planen">
+	<section class="xmas<?php echo ! empty( $args['band'] ) ? ' xmas--band' : ''; ?><?php echo $xr_compact ? ' xmas--compact' : ''; ?>" id="<?php echo esc_attr( $args['id'] ?? 'weihnachtsfeier' ); ?>" aria-label="<?php echo esc_attr( $xr_cfg['occasion'] . ' planen' ); ?>">
 		<div class="xmas-inner">
 			<?php if ( ! $xr_compact ) : ?>
 			<div class="xmas-text">

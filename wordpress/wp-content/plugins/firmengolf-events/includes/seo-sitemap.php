@@ -121,6 +121,10 @@ add_action( 'init', function () {
 				if ( function_exists( 'fge_citformat_enabled_cities' ) && function_exists( 'fge_get_event_format_pages' ) ) {
 					foreach ( fge_citformat_enabled_cities() as $cslug ) {
 						foreach ( array_keys( fge_get_event_format_pages() ) as $fslug ) {
+							// Nur Kombinationen, die auch rendern (Format mit Stadt-Text), sonst 404 in der Sitemap.
+							if ( function_exists( 'fge_citformat_is_valid' ) && ! fge_citformat_is_valid( $cslug, $fslug ) ) {
+								continue;
+							}
 							$list[] = [ 'loc' => home_url( '/golf-events/' . $cslug . '/' . $fslug . '/' ) ];
 						}
 					}

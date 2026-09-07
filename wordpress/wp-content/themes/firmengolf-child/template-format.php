@@ -33,14 +33,14 @@ $faqs       = $format['faqs'] ?? [];
 // Passende Events: 2 volle 4er-Reihen (Grid wie auf der Eventliste), Fallback verhindert leere Seite.
 $is_xmas       = ! empty( $format['xmas'] );
 $is_summer     = ! empty( $format['summer'] );
-$format_events = function_exists( 'fge_format_events' ) ? fge_format_events( $format, $is_xmas ? 12 : 8 ) : [];
+$format_events = ( ! $is_xmas && ! $is_summer && function_exists( 'fge_format_events' ) ) ? fge_format_events( $format, 8 ) : [];
 if ( $is_xmas && function_exists( 'fge_simulatoren_map_enqueue' ) ) {
 	fge_simulatoren_map_enqueue();
 }
 if ( $is_summer && function_exists( 'fge_golfplatz_map_all_enqueue' ) ) {
 	fge_golfplatz_map_all_enqueue();
 }
-if ( empty( $format_events ) && function_exists( 'fge_get_featured_events' ) ) {
+if ( ! $is_xmas && ! $is_summer && empty( $format_events ) && function_exists( 'fge_get_featured_events' ) ) {
 	$format_events = fge_get_featured_events( 8 );
 }
 
@@ -229,9 +229,12 @@ get_header();
 			$xl_lat    = (float) ( $xl_c[0] ?? $xl_c['lat'] ?? 0 );
 			$xl_lng    = (float) ( $xl_c[1] ?? $xl_c['lng'] ?? 0 );
 			$xl_radius = $xl_radius ?: 50;
-			$xl_loc    = $xl_loc ?: $xl_q;
+			$xl_loc    = $xl_loc ?: ( ctype_digit( $xl_q ) && ! empty( $xl_c[2] ) ? (string) $xl_c[2] : $xl_q );
+		} else {
+			$xl_unknown = $xl_q; // Ort bleibt im Feld stehen, Hinweis darunter
 		}
 	}
+	$xl_unknown = $xl_unknown ?? '';
 	$xl_geo    = $xl_lat && $xl_lng && $xl_radius > 0 && function_exists( 'fge_geo_distance' ) && function_exists( 'fge_geo_event_coords' );
 	$xl_items  = [];
 	foreach ( ( function_exists( 'fge_format_events' ) ? fge_format_events( $format, 200 ) : [] ) as $xev ) {
@@ -309,16 +312,16 @@ get_header();
 			<?php else : ?>
 			<button type="button" class="fg-chip xmas-filter-geo" id="xmas-filter-geo"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>An meinem Standort suchen</button>
 			<?php endif; ?>
-			<label class="xmas-filter-plz">
-				<span class="screen-reader-text">PLZ oder Ort</span>
-				<input class="fg-input" type="text" name="q" inputmode="text" placeholder="PLZ oder Ort" autocomplete="postal-code" value="<?php echo esc_attr( 'Mein Standort' === $xl_loc ? '' : $xl_loc ); ?>">
+			<div class="xmas-filter-plz">
+				<label class="screen-reader-text" for="xmas-filter-q">PLZ oder Ort</label>
+				<input class="fg-input" type="text" id="xmas-filter-q" name="q" inputmode="text" placeholder="PLZ oder Ort" autocomplete="postal-code" value="<?php echo esc_attr( '' !== $xl_unknown ? $xl_unknown : ( 'Mein Standort' === $xl_loc ? '' : $xl_loc ) ); ?>">
 				<button type="submit" class="fg-chip xmas-filter-go">Suchen</button>
-			</label>
+			</div>
 			<?php if ( $xl_geo && 'Mein Standort' !== $xl_loc ) : ?>
 			<a class="fg-chip" href="<?php echo esc_url( $canonical . '#angebote' ); ?>">Alle Angebote</a>
 			<?php endif; ?>
 		</div>
-		<p class="xmas-filter-hint" id="xmas-filter-hint" hidden></p>
+		<p class="xmas-filter-hint" id="xmas-filter-hint"<?php echo '' === $xl_unknown ? ' hidden' : ''; ?>><?php echo '' !== $xl_unknown ? esc_html( '„' . $xl_unknown . '" kennen wir nicht. Bitte eine deutsche PLZ oder eine größere Stadt eingeben.' ) : ''; ?></p>
 	</form>
 	<?php if ( $xl_show ) : ?>
 	<div class="fg-grid ev-grid4">
