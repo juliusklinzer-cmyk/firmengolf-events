@@ -170,12 +170,22 @@ get_header();
 					</span>
 				</button>
 			<?php endforeach; ?>
+			<?php /* Saison-Kachel (Julius, 07.09.): breite Kachel im Raster der Typen statt Formular-Band,
+				nur Indoor-Foto, „Top aktuell" und Link auf die Weihnachtsfeier-Seite. */ ?>
+			<a class="iv-tile iv-tile--wide" id="weihnachtsfeier" href="<?php echo esc_url( home_url( '/firmenevent/weihnachtsfeier/' ) ); ?>">
+				<span class="iv-tile-img" style="background-image:url('<?php echo $img( 'pool/indoor-golf-bar-und-fun-imi-team.jpg' ); ?>')"></span>
+				<span class="iv-tile-scrim"></span>
+				<span class="iv-tile-tag">Top aktuell</span>
+				<span class="iv-tile-label">
+					<span>
+						<span class="iv-tile-t">Eure Weihnachtsfeier im Indoor-Simulator</span>
+						<span class="iv-tile-sub" style="display:block;">Warm, wetterfest, mitten in der Stadt. Locations in ganz Deutschland, Golf-Challenge, Menü und Bar aus einer Hand.</span>
+					</span>
+					<span class="iv-tile-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				</span>
+			</a>
 		</div>
 	</section>
-
-	<?php /* ── Weihnachtsfeier: Kurz-Anfrage als Saison-Band zwischen Typen und Budget-Rechner
-		(Julius, 07.09.: Formular ja, aber nicht direkt über dem Rechner; Teaser war nichts). ── */ ?>
-	<?php get_template_part( 'template-parts/fge-xmas-request', null, [ 'id' => 'weihnachtsfeier', 'band' => true ] ); ?>
 
 	<?php /* ── Budget-Rechner ── */ ?>
 	<section class="bcalc-wrap" id="budget">

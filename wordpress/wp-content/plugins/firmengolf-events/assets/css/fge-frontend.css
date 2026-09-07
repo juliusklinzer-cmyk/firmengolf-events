@@ -4158,6 +4158,18 @@ a.ev-back:active, .fge-page button.fg-share-top:active, .fg-btn-ghost:active, a.
   opacity: 0; transform: translateY(4px);
   transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
 }
+/* Breite Saison-Kachel im Typen-Raster (Julius, 07.09.): Weihnachtsfeier im Indoor-Simulator. */
+.iv-tile--wide { grid-column: 1 / -1; aspect-ratio: 16 / 5; text-decoration: none; color: inherit; }
+.iv-tile--wide .iv-tile-img { background-position: 60% center; }
+.iv-tile--wide .iv-tile-t { font-size: 28px; }
+.iv-tile--wide .iv-tile-sub { font-size: 14px; max-width: 560px; }
+.iv-tile--wide .iv-tile-label { left: 24px; right: 24px; bottom: 22px; }
+.iv-tile-tag { position: absolute; top: 16px; left: 18px; z-index: 1; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fairway-800); background: var(--paper-100); border-radius: 999px; padding: 5px 11px; box-shadow: var(--shadow-sm); }
+@media (max-width: 720px) {
+  .iv-tile--wide { aspect-ratio: 4 / 3; }
+  .iv-tile--wide .iv-tile-t { font-size: 22px; }
+  .iv-tile--wide .iv-tile-sub { display: none !important; }
+}
 .iv-tile:hover .iv-tile-img { filter: brightness(1.06); }
 .iv-tile:hover .iv-tile-arrow { opacity: 1; transform: translateY(0); }
 .iv-tile:focus-visible { outline: 2px solid var(--fairway-700); outline-offset: 2px; }
