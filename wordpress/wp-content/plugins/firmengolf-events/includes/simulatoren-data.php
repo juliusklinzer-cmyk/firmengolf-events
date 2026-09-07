@@ -302,7 +302,13 @@ function fge_simulatoren_map_enqueue(): void {
 	}
 	$src = plugins_url( 'assets/js/fge-sim-map.js', FGE_DIR . 'firmengolf-events.php' );
 	wp_enqueue_script( 'fge-sim-map', $src, [], FGE_VERSION, true );
-	wp_localize_script( 'fge-sim-map', 'FGE_SIM_MAP', [ 'places' => $places, 'anfrage' => '#anfrage' ] );
+	// Standort aus der URL (nach Freigabe auf der Seite): Karte zentriert dort und
+	// zoomt so, dass mindestens fünf Simulatoren im Bild sind (Julius, 07.09.).
+	// Kein weiterer Google-Aufruf, nur die Kartenansicht.
+	$u_lat = isset( $_GET['lat'] ) ? (float) $_GET['lat'] : 0.0; // phpcs:ignore WordPress.Security.NonceVerification
+	$u_lng = isset( $_GET['lng'] ) ? (float) $_GET['lng'] : 0.0; // phpcs:ignore WordPress.Security.NonceVerification
+	$user  = ( $u_lat > 46 && $u_lat < 56 && $u_lng > 5 && $u_lng < 16 ) ? [ 'lat' => $u_lat, 'lng' => $u_lng ] : null;
+	wp_localize_script( 'fge-sim-map', 'FGE_SIM_MAP', [ 'places' => $places, 'anfrage' => '#anfrage', 'user' => $user, 'minNear' => 5 ] );
 	$maps_url = add_query_arg(
 		[ 'key' => rawurlencode( fge_gmaps_api_key() ), 'callback' => 'fgeSimMapInit', 'loading' => 'async', 'language' => 'de', 'region' => 'DE' ],
 		'https://maps.googleapis.com/maps/api/js'

@@ -72,7 +72,24 @@ window.fgeSimMapInit = function () {
 			info.open( { map: map, anchor: marker } );
 		} );
 	} );
-	if ( places.length > 1 ) {
+	if ( data.user && data.user.lat && data.user.lng ) {
+		// Standort des Besuchers: eigener Marker, Ausschnitt um die nächsten Anlagen
+		var u = { lat: Number( data.user.lat ), lng: Number( data.user.lng ) };
+		var youSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#4279D1" fill-opacity="0.18"/><circle cx="20" cy="20" r="8" fill="#4279D1" stroke="#FFFFFF" stroke-width="3"/></svg>';
+		new google.maps.Marker( {
+			position: u, map: map, title: 'Ihr seid hier', zIndex: 30,
+			icon: { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent( youSvg ), scaledSize: new google.maps.Size( 40, 40 ), anchor: new google.maps.Point( 20, 20 ) },
+		} );
+		var near = places.map( function ( p ) {
+			var dLat = ( Number( p.lat ) - u.lat ) * 111, dLng = ( Number( p.lng ) - u.lng ) * 111 * Math.cos( u.lat * Math.PI / 180 );
+			return { p: p, d: Math.sqrt( dLat * dLat + dLng * dLng ) };
+		} ).sort( function ( a, b ) { return a.d - b.d; } ).slice( 0, Math.max( 1, Number( data.minNear ) || 5 ) );
+		var nb = new google.maps.LatLngBounds();
+		nb.extend( u );
+		near.forEach( function ( n ) { nb.extend( { lat: Number( n.p.lat ), lng: Number( n.p.lng ) } ); } );
+		map.fitBounds( nb, 60 );
+		google.maps.event.addListenerOnce( map, 'idle', function () { if ( map.getZoom() > 12 ) { map.setZoom( 12 ); } } );
+	} else if ( places.length > 1 ) {
 		map.fitBounds( bounds, 40 );
 	}
 	// InfoWindow-Link → Anfrage-Dialog mit vorausgewählter Location (template-format.php)

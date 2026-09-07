@@ -372,6 +372,7 @@ arsort( $sim_by_land );
 		<span class="simx-key"><i class="simx-dot simx-dot--sim"></i>Golfsimulator</span>
 		<span class="simx-key"><i class="simx-dot simx-dot--sim simx-dot--ring"></i>Bei Firmengolf buchbar</span>
 		<span class="simx-key"><i class="simx-dot simx-dot--partner"></i>Golfanlage mit Weihnachtsfeier</span>
+		<?php if ( $xl_geo ) : ?><span class="simx-key"><i class="simx-dot simx-dot--you"></i>Euer Standort</span><?php endif; ?>
 	</div>
 	<p class="simx-note">Stand September 2026, eigene Marktanalyse. Golfanlagen erscheinen nur, wenn sie selbst eine Weihnachtsfeier anbieten. Eure Anlage fehlt? <a href="<?php echo esc_url( add_query_arg( [ 'ob_step' => 1, 'ob_type' => 'indoor' ], home_url( '/partner-onboarding/' ) ) ); ?>">Als Simulator-Partner eintragen</a>.</p>
 </section>
