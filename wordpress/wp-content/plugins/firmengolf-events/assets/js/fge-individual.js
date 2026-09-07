@@ -402,11 +402,32 @@
 		}
 
 		// Foto-Panel (Driver am Abschlag, wie im Partner-Onboarding) neben dem Einstieg.
-		function photoPanel() {
-			var src = CFG.introImg || '';
+		// Bild rechts folgt dem Anlass (Julius, 07.09.); der Kontakt-Schritt zeigt den
+		// vollen Schwung: der Ball geht raus, die Anfrage auch. Dateien aus dem Bildpool.
+		var OCC_IMGS = {
+			'Golf-Teamevent':         'teamevent-gruppe-im-cart.jpg',
+			'Indoor Weihnachtsfeier': 'indoor-bier-und-simulator.jpg',
+			'After-Work Golf':        'afterwork-anstossen.jpg',
+			'Golf & Workshop':        'teamevent-ki-generierte-sicht-aus-dem-meeting-raum-auf-den-golfplatz.jpg',
+			'Firmen-Golfturnier':     'turnier-putt-gegenlicht.jpg',
+			'Golf-Kundenevent':       'kundenevent-handshake.jpg',
+			'Indoor-Golf-Event':      'indoor-golf-bar-und-fun-imi-team.jpg',
+			'Nachtgolf-Event':        'nachtevent-flutlicht-gruen.jpg',
+			'Sommerfest':             'afterwork-anstossen.jpg',
+			'Weihnachtsfeier':        'indoor-bier-und-simulator.jpg'
+		};
+		var SEND_IMG = 'pool-hochformat-afterwork-basti-duschschwung.jpg';
+		function photoSrc(kind) {
+			var base = CFG.poolBase || '';
+			if (kind === 'send' && base) return base + SEND_IMG;
+			var f = OCC_IMGS[S.form.occasion];
+			return (f && base) ? base + f : (CFG.introImg || '');
+		}
+		function photoPanel(kind) {
+			var src = photoSrc(kind);
 			// Bewusst ohne Overlay-Karte (Julius, 2026-08-20): das Bild bleibt ruhig,
 			// der Ansprechpartner kommt gross auf dem Erfolgs-Screen.
-			return src ? '<div class="rw-photo" role="img" aria-label="Golfer am Abschlag" style="background-image:url(\'' + esc(src) + '\')"></div>' : '';
+			return src ? '<div class="rw-photo" role="img" aria-label="' + (kind === 'send' ? 'Golfer im vollen Schwung' : 'Passendes Motiv zum Anlass') + '" style="background-image:url(\'' + esc(src) + '\')"></div>' : '';
 		}
 
 		function screenIntro() {
@@ -469,7 +490,7 @@
 				+ '<div class="rw-field">' + label('Bevorzugte Kontaktart') + chips('contactPref', ['E-Mail', 'Telefon', 'Egal']) + '</div>'
 				+ '<div class="rw-field">' + label('Was habt ihr vor?') + '<textarea class="fg-input" data-field="notes" rows="2" placeholder="Ein, zwei Sätze zu Ziel, Stimmung, Wünschen.">' + esc(S.form.notes) + '</textarea></div>'
 				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '><span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label>'
-				+ '</div></div>' + photoPanel() + '</div></div>'
+				+ '</div></div>' + photoPanel('send') + '</div></div>'
 				+ '<div class="rw-foot">' + quickProgress() + '<div class="rw-nav rw-nav--quick"><button class="rw-btn-text" data-act="back">Zurück</button>'
 				+ '<button class="rw-btn-primary" data-act="submit">Anfrage senden ' + ICO_SEND + '</button></div></div>';
 		}
@@ -744,6 +765,10 @@
 					b.classList.toggle('on', on);
 					b.setAttribute('aria-pressed', on ? 'true' : 'false');
 				});
+				if (chipKey === 'occasion') {
+					var ph = overlay.querySelector('.rw-photo'), nsrc = photoSrc();
+					if (ph && nsrc) { ph.style.backgroundImage = 'url(\'' + nsrc + '\')'; }
+				}
 				t.classList.remove('just-toggled'); void t.offsetWidth; t.classList.add('just-toggled');
 				return;
 			}

@@ -388,6 +388,8 @@ add_action( 'wp_enqueue_scripts', function() {
 			'places'  => function_exists( 'fge_get_public_place_names' ) ? fge_get_public_place_names() : [],
 			// Einstiegsbild des Wizards (Driver am Abschlag, wie im Partner-Onboarding).
 			'introImg' => function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'onboarding-abschlag.jpg' ) : '',
+			// Anlass-Bilder im Wizard (Julius, 07.09.): Basis-URL des Pools, Zuordnung liegt im JS.
+			'poolBase' => function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'pool/' ) : '',
 			// Wizard-Chrome + Erfolgsscreen (Logo, Julius-Portrait, persönliche Mail, Datenschutz-Link).
 			'logo'        => function_exists( 'fge_get_logo_url' ) ? fge_get_logo_url() : '',
 			'juliusImg'   => function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'gruender-julius-klinzer.jpg' ) : '',
