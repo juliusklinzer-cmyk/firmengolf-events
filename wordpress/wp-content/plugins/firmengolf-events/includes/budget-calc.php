@@ -25,60 +25,60 @@ const FGE_BC_OPTION = 'fge_budget_calc';
 /**
  * Werkseinstellungen — Quelle der Wahrheit für Struktur + Start-Preise.
  *
- * Preise seit 07.09.2026 je Preisniveau als Staffel [€, €€, €€€] (Julius nach der
- * Naboo-Analyse, docs/analyse-naboo-budgetrechner-2026-09.md): Transport 25/35/50,
- * Catering 35/55/85, Aktivitäten 25/40/80, Meetingraum 20/50/100. Die übrigen
- * Staffeln entsprechen den alten Faktoren 0,82 / 1 / 1,45, gerundet.
+ * Preise seit 07.09.2026 je Preisniveau als Staffel [€, €€, €€€], Werte aus der
+ * Marktrecherche (mind. 5 Angebote je Leistung, netto + 20 %, Quartile):
+ * docs/budget-rechner-preisrecherche-2026-09.md. zero_label: Text in der
+ * Aufschlüsselung, wenn eine Leistung ohne Preis gewählt ist (inklusive / auf Anfrage).
  */
 function fge_bc_defaults(): array {
 	// Service-Katalog — in grober Tagesablauf-Reihenfolge.
 	// cat (Donut-Kategorie), icon, pp (€/Person je Niveau) ODER flat (Pauschale je Niveau), wiz (Anfrage-Mapping).
 	$services = [
 		// Anreise.
-		[ 'id' => 'shuttle',       'label' => 'Transport & Shuttle',                    'cat' => 'transport','icon' => 'bus',  'pp' => [ 25, 35, 50 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Shuttle / Transport' ],
-		[ 'id' => 'vip_shuttle',   'label' => 'VIP-Shuttle',                            'cat' => 'transport','icon' => 'star', 'pp' => [ 0, 0, 0 ],       'flat' => [ 1000, 1200, 1750 ], 'wiz' => 'Shuttle / Transport' ],
+		[ 'id' => 'shuttle',       'label' => 'Transport & Shuttle (Bus, Hin- und Rückfahrt)',                    'cat' => 'transport','icon' => 'bus',  'pp' => [ 0, 0, 0 ],    'flat' => [ 450, 550, 800 ],          'wiz' => 'Shuttle / Transport' ],
+		[ 'id' => 'vip_shuttle',   'label' => 'VIP-Shuttle (Limousine oder Sprinter, Halbtag)',                            'cat' => 'transport','icon' => 'star', 'pp' => [ 0, 0, 0 ],       'flat' => [ 350, 400, 750 ], 'wiz' => 'Shuttle / Transport' ],
 		// Golf-Leistung (Platznutzung/Greenfee inkludiert).
-		[ 'id' => 'golfkurs',      'label' => 'Golfkurs (inkl. Platz, Golflehrer & Leihschläger)',      'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 80, 99, 145 ],   'flat' => [ 0, 0, 0 ], 'wiz' => 'Grundlagenkurs' ],
-		[ 'id' => 'platzreife',    'label' => 'Platzreifekurs (PGA-Pro, Regeln & Prüfung)',             'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 245, 299, 435 ],  'flat' => [ 0, 0, 0 ], 'wiz' => 'Platzreifekurs' ],
+		[ 'id' => 'golfkurs',      'label' => 'Golfkurs (inkl. Platz, Golflehrer & Leihschläger)',      'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 30, 40, 50 ],   'flat' => [ 0, 0, 0 ], 'wiz' => 'Grundlagenkurs' ],
+		[ 'id' => 'platzreife',    'label' => 'Platzreifekurs (PGA-Pro, Regeln & Prüfung)',             'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 200, 250, 275 ],  'flat' => [ 0, 0, 0 ], 'wiz' => 'Platzreifekurs' ],
 		// Turnierart: Entweder-oder-Gruppe (Julius, 07.09.), nur eine Art gleichzeitig wählbar.
-		[ 'id' => 'turnier_kurz',  'label' => 'Kurzplatz-Turnier (für Nicht-Golfer)',      'cat' => 'venue', 'icon' => 'flag',   'pp' => [ 60, 75, 110 ],    'flat' => [ 0, 0, 0 ], 'wiz' => 'Kurzplatz-Turnier', 'group' => 'turnier' ],
-		[ 'id' => 'turnier_9',     'label' => '9-Loch-Turnier',                          'cat' => 'venue', 'icon' => 'trophy', 'pp' => [ 85, 105, 150 ],   'flat' => [ 0, 0, 0 ], 'wiz' => '9-Loch-Turnier',    'group' => 'turnier' ],
-		[ 'id' => 'turnier_18',    'label' => '18-Loch-Turnier',                         'cat' => 'venue', 'icon' => 'trophy', 'pp' => [ 120, 145, 210 ],  'flat' => [ 0, 0, 0 ], 'wiz' => '18-Loch-Turnier',   'group' => 'turnier' ],
-		[ 'id' => 'turnier_kombi', 'label' => 'Kombi-Turnier (Golfer und Nicht-Golfer)', 'cat' => 'venue', 'icon' => 'trophy', 'pp' => [ 110, 135, 195 ],  'flat' => [ 0, 0, 0 ], 'wiz' => '18-Loch-Turnier',   'group' => 'turnier' ],
-		[ 'id' => 'putting',       'label' => 'Putting-Turnier',                        'cat' => 'programm', 'icon' => 'target','pp' => [ 25, 40, 80 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Putting-Challenge' ],
-		[ 'id' => 'sonderwertung', 'label' => 'Sonderwertungen (Longest Drive, Nearest to Pin)', 'cat' => 'extras', 'icon' => 'target', 'pp' => [ 10, 15, 20 ], 'flat' => [ 0, 0, 0 ], 'wiz' => 'Long-Drive-Challenge' ],
-		[ 'id' => 'longest_drive', 'label' => 'Longest-Drive-Challenge',                'cat' => 'programm', 'icon' => 'target','pp' => [ 25, 40, 80 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Long-Drive-Challenge' ],
-		[ 'id' => 'nachtrunde',    'label' => 'Nacht-Runde (Kurzplatz / Range)',        'cat' => 'venue',    'icon' => 'flag', 'pp' => [ 60, 75, 110 ],   'flat' => [ 0, 0, 0 ],          'wiz' => 'Flutlicht und Nacht-Event' ],
+		[ 'id' => 'turnier_kurz',  'label' => 'Kurzplatz-Turnier (für Nicht-Golfer)',      'cat' => 'venue', 'icon' => 'flag',   'pp' => [ 40, 50, 60 ],    'flat' => [ 0, 0, 0 ], 'wiz' => 'Kurzplatz-Turnier', 'group' => 'turnier' ],
+		[ 'id' => 'turnier_9',     'label' => '9-Loch-Turnier',                          'cat' => 'venue', 'icon' => 'trophy', 'pp' => [ 40, 50, 70 ],   'flat' => [ 0, 0, 0 ], 'wiz' => '9-Loch-Turnier',    'group' => 'turnier' ],
+		[ 'id' => 'turnier_18',    'label' => '18-Loch-Turnier',                         'cat' => 'venue', 'icon' => 'trophy', 'pp' => [ 70, 95, 100 ],  'flat' => [ 0, 0, 0 ], 'wiz' => '18-Loch-Turnier',   'group' => 'turnier' ],
+		[ 'id' => 'turnier_kombi', 'label' => 'Kombi-Turnier (Golfer und Nicht-Golfer)', 'cat' => 'venue', 'icon' => 'trophy', 'pp' => [ 60, 70, 90 ],  'flat' => [ 0, 0, 0 ], 'wiz' => '18-Loch-Turnier',   'group' => 'turnier' ],
+		[ 'id' => 'putting',       'label' => 'Putting-Turnier',                        'cat' => 'programm', 'icon' => 'target','pp' => [ 15, 25, 40 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Putting-Challenge' ],
+		[ 'id' => 'sonderwertung', 'label' => 'Sonderwertungen (Longest Drive, Nearest to Pin)', 'cat' => 'extras', 'icon' => 'target', 'pp' => [ 0, 0, 0 ], 'flat' => [ 0, 0, 0 ], 'wiz' => 'Long-Drive-Challenge', 'zero_label' => 'inklusive' ],
+		[ 'id' => 'longest_drive', 'label' => 'Longest-Drive-Challenge (Radar-Modul mit Betreuung)',                'cat' => 'programm', 'icon' => 'target','pp' => [ 0, 0, 0 ],    'flat' => [ 700, 800, 950 ],          'wiz' => 'Long-Drive-Challenge' ],
+		[ 'id' => 'nachtrunde',    'label' => 'Nacht-Runde (Kurzplatz / Range)',        'cat' => 'venue',    'icon' => 'flag', 'pp' => [ 30, 35, 40 ],   'flat' => [ 0, 0, 0 ],          'wiz' => 'Flutlicht und Nacht-Event' ],
 		// Verpflegung (im Tagesverlauf).
-		[ 'id' => 'startgeschenk', 'label' => 'Startgeschenk / Goodie-Bag',             'cat' => 'extras',   'icon' => 'gift', 'pp' => [ 29, 35, 50 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Individuelle Artikel' ],
-		[ 'id' => 'welcome_drink', 'label' => 'Welcome Drink',                          'cat' => 'catering', 'icon' => 'drink','pp' => [ 10, 12, 17 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
-		[ 'id' => 'halfway',       'label' => 'Rundenverpflegung (Halfway)',            'cat' => 'catering', 'icon' => 'catering','pp' => [ 15, 20, 30 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen' ],
-		[ 'id' => 'cominghome',    'label' => 'Coming Home (Imbiss nach der Runde)',    'cat' => 'catering', 'icon' => 'catering','pp' => [ 15, 20, 30 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen' ],
-		[ 'id' => 'mittagessen',   'label' => 'Mittagessen',                            'cat' => 'catering', 'icon' => 'catering','pp' => [ 35, 55, 85 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen' ],
-		[ 'id' => 'dinner',        'label' => 'Abendveranstaltung / Dinner',            'cat' => 'catering', 'icon' => 'catering','pp' => [ 30, 50, 80 ],'flat' => [ 0, 0, 0 ],          'wiz' => 'Abendessen' ],
-		[ 'id' => 'getraenke',     'label' => 'Getränkepauschale',                      'cat' => 'catering', 'icon' => 'drink','pp' => [ 25, 30, 40 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
-		[ 'id' => 'bar',           'label' => 'Bar & Drinks',                           'cat' => 'catering', 'icon' => 'drink','pp' => [ 29, 35, 50 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
+		[ 'id' => 'startgeschenk', 'label' => 'Startgeschenk / Goodie-Bag',             'cat' => 'extras',   'icon' => 'gift', 'pp' => [ 10, 15, 25 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Individuelle Artikel' ],
+		[ 'id' => 'welcome_drink', 'label' => 'Welcome Drink',                          'cat' => 'catering', 'icon' => 'drink','pp' => [ 5, 10, 15 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
+		[ 'id' => 'halfway',       'label' => 'Rundenverpflegung (Halfway)',            'cat' => 'catering', 'icon' => 'catering','pp' => [ 5, 10, 15 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen' ],
+		[ 'id' => 'cominghome',    'label' => 'Coming Home (Imbiss nach der Runde)',    'cat' => 'catering', 'icon' => 'catering','pp' => [ 10, 15, 20 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen' ],
+		[ 'id' => 'mittagessen',   'label' => 'Mittagessen',                            'cat' => 'catering', 'icon' => 'catering','pp' => [ 20, 25, 30 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen' ],
+		[ 'id' => 'dinner',        'label' => 'Abendveranstaltung / Dinner',            'cat' => 'catering', 'icon' => 'catering','pp' => [ 35, 40, 50 ],'flat' => [ 0, 0, 0 ],          'wiz' => 'Abendessen' ],
+		[ 'id' => 'getraenke',     'label' => 'Getränkepauschale',                      'cat' => 'catering', 'icon' => 'drink','pp' => [ 30, 35, 40 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
+		[ 'id' => 'bar',           'label' => 'Bar & Drinks',                           'cat' => 'catering', 'icon' => 'drink','pp' => [ 30, 35, 45 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
 		// Unterhaltung & Technik.
-		[ 'id' => 'musik',         'label' => 'DJ oder Live-Band',                      'cat' => 'technik',  'icon' => 'music','pp' => [ 0, 0, 0 ],       'flat' => [ 500, 800, 1000 ], 'wiz' => 'Musik und DJ' ],
-		[ 'id' => 'technik',       'label' => 'Technik & Show',                         'cat' => 'technik',  'icon' => 'show', 'pp' => [ 50, 100, 250 ],  'flat' => [ 0, 0, 0 ], 'wiz' => 'Bühne mit Licht und Ton' ],
+		[ 'id' => 'musik',         'label' => 'DJ oder Live-Band',                      'cat' => 'technik',  'icon' => 'music','pp' => [ 0, 0, 0 ],       'flat' => [ 800, 1100, 3000 ], 'wiz' => 'Musik und DJ' ],
+		[ 'id' => 'technik',       'label' => 'Technik & Show (Ton, Licht, Bühne)',                         'cat' => 'technik',  'icon' => 'show', 'pp' => [ 0, 0, 0 ],  'flat' => [ 1000, 1500, 2200 ], 'wiz' => 'Bühne mit Licht und Ton' ],
 		// Turnier-Extras.
-		[ 'id' => 'siegerehrung',  'label' => 'Siegerehrung & Preise',                  'cat' => 'extras',   'icon' => 'trophy','pp' => [ 20, 50, 100 ],  'flat' => [ 0, 0, 0 ],   'wiz' => 'Pokale & Preise' ],
-		[ 'id' => 'branding',      'label' => 'Branding (Abschläge, Banner, Merch)',    'cat' => 'extras',   'icon' => 'tag',  'pp' => [ 10, 20, 30 ],   'flat' => [ 0, 0, 0 ],   'wiz' => 'Branding & Banner' ],
-		[ 'id' => 'turnierserie',  'label' => 'Turnier-Serie (mehrere Termine)',        'cat' => 'extras',   'icon' => 'calendar','pp' => [ 0, 0, 0 ],    'flat' => [ 0, 0, 0 ], 'wiz' => '9-Loch-Turnier' ],
+		[ 'id' => 'siegerehrung',  'label' => 'Siegerehrung & Preise',                  'cat' => 'extras',   'icon' => 'trophy','pp' => [ 5, 20, 55 ],  'flat' => [ 0, 0, 0 ],   'wiz' => 'Pokale & Preise' ],
+		[ 'id' => 'branding',      'label' => 'Branding (Abschläge, Banner, Merch)',    'cat' => 'extras',   'icon' => 'tag',  'pp' => [ 0, 0, 0 ],   'flat' => [ 600, 1400, 3000 ],   'wiz' => 'Branding & Banner' ],
+		[ 'id' => 'turnierserie',  'label' => 'Turnier-Serie (mehrere Termine)',        'cat' => 'extras',   'icon' => 'calendar','pp' => [ 0, 0, 0 ],    'flat' => [ 0, 0, 0 ], 'wiz' => '9-Loch-Turnier', 'zero_label' => 'auf Anfrage' ],
 		// Raum, Übernachtung, Content.
-		[ 'id' => 'meetingraum',   'label' => 'Meetingraum (2 Stunden)',                'cat' => 'programm', 'icon' => 'room', 'pp' => [ 20, 50, 100 ],   'flat' => [ 0, 0, 0 ],          'wiz' => 'Meetingraum' ],
+		[ 'id' => 'meetingraum',   'label' => 'Meetingraum (2 Stunden)',                'cat' => 'programm', 'icon' => 'room', 'pp' => [ 0, 0, 0 ],   'flat' => [ 50, 150, 300 ],          'wiz' => 'Meetingraum' ],
 		// Golfreise / Offsite (Julius, 07.09., Vorbild Retreat beim Mitbewerber): Unterkunft je Nacht,
 		// Golfkurs und Verpflegung je Tag, Verpflegung als Entweder-oder-Gruppe.
-		[ 'id' => 'uebernachtung', 'label' => 'Unterkunft (Hotel, pro Nacht)',           'cat' => 'uebernachtung','icon' => 'bed','pp' => [ 95, 140, 220 ], 'flat' => [ 0, 0, 0 ],         'wiz' => 'Übernachtung', 'per' => 'night' ],
-		[ 'id' => 'golfkurs_reise','label' => 'Golfkurs täglich (Pro, Platz, Leihschläger)', 'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 80, 99, 145 ], 'flat' => [ 0, 0, 0 ], 'wiz' => 'Grundlagenkurs', 'per' => 'day' ],
-		[ 'id' => 'fruehstueck',   'label' => 'Frühstück',                              'cat' => 'catering', 'icon' => 'catering','pp' => [ 15, 20, 30 ],  'flat' => [ 0, 0, 0 ],          'wiz' => 'Frühstück',    'per' => 'day', 'group' => 'pension' ],
-		[ 'id' => 'halbpension',   'label' => 'Halbpension',                            'cat' => 'catering', 'icon' => 'catering','pp' => [ 35, 55, 85 ],  'flat' => [ 0, 0, 0 ],          'wiz' => 'Abendessen',   'per' => 'day', 'group' => 'pension' ],
-		[ 'id' => 'vollpension',   'label' => 'Vollpension',                            'cat' => 'catering', 'icon' => 'catering','pp' => [ 55, 80, 120 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen',  'per' => 'day', 'group' => 'pension' ],
-		[ 'id' => 'transfer',      'label' => 'An- und Abreise (Transfer)',             'cat' => 'transport','icon' => 'bus',  'pp' => [ 25, 35, 50 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Shuttle / Transport' ],
-		[ 'id' => 'foto',          'label' => 'Fotograf und Videograf',                 'cat' => 'foto',     'icon' => 'cam',  'pp' => [ 0, 0, 0 ],       'flat' => [ 500, 800, 1000 ], 'wiz' => 'Fotograf' ],
+		[ 'id' => 'uebernachtung', 'label' => 'Unterkunft (Hotel, pro Nacht)',           'cat' => 'uebernachtung','icon' => 'bed','pp' => [ 70, 90, 115 ], 'flat' => [ 0, 0, 0 ],         'wiz' => 'Übernachtung', 'per' => 'night' ],
+		[ 'id' => 'golfkurs_reise','label' => 'Golfkurs täglich (Pro, Platz, Leihschläger)', 'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 80, 105, 135 ], 'flat' => [ 0, 0, 0 ], 'wiz' => 'Grundlagenkurs', 'per' => 'day' ],
+		[ 'id' => 'fruehstueck',   'label' => 'Frühstück',                              'cat' => 'catering', 'icon' => 'catering','pp' => [ 15, 20, 25 ],  'flat' => [ 0, 0, 0 ],          'wiz' => 'Frühstück',    'per' => 'day', 'group' => 'pension' ],
+		[ 'id' => 'halbpension',   'label' => 'Halbpension',                            'cat' => 'catering', 'icon' => 'catering','pp' => [ 30, 35, 40 ],  'flat' => [ 0, 0, 0 ],          'wiz' => 'Abendessen',   'per' => 'day', 'group' => 'pension' ],
+		[ 'id' => 'vollpension',   'label' => 'Vollpension',                            'cat' => 'catering', 'icon' => 'catering','pp' => [ 50, 55, 60 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen',  'per' => 'day', 'group' => 'pension' ],
+		[ 'id' => 'transfer',      'label' => 'An- und Abreise (Bus-Transfer)',             'cat' => 'transport','icon' => 'bus',  'pp' => [ 0, 0, 0 ],    'flat' => [ 450, 550, 800 ],          'wiz' => 'Shuttle / Transport' ],
+		[ 'id' => 'foto',          'label' => 'Fotograf und Videograf',                 'cat' => 'foto',     'icon' => 'cam',  'pp' => [ 0, 0, 0 ],       'flat' => [ 750, 1550, 3300 ], 'wiz' => 'Fotograf' ],
 		// Nacht.
-		[ 'id' => 'flutlicht',     'label' => 'Flutlicht / Einleuchten des Platzes',    'cat' => 'venue',    'icon' => 'bulb', 'pp' => [ 0, 0, 0 ],       'flat' => [ 2300, 2800, 4050 ], 'wiz' => 'Flutlicht und Nacht-Event' ],
-		[ 'id' => 'leuchtball',    'label' => 'Leucht-Equipment / Nacht-Bälle',         'cat' => 'programm', 'icon' => 'ball', 'pp' => [ 7, 9, 13 ],      'flat' => [ 0, 0, 0 ],          'wiz' => 'Flutlicht und Nacht-Event' ],
+		[ 'id' => 'flutlicht',     'label' => 'Flutlicht / Einleuchten des Platzes',    'cat' => 'venue',    'icon' => 'bulb', 'pp' => [ 0, 0, 0 ],       'flat' => [ 850, 1400, 2750 ], 'wiz' => 'Flutlicht und Nacht-Event' ],
+		[ 'id' => 'leuchtball',    'label' => 'Leucht-Equipment / Nacht-Bälle',         'cat' => 'programm', 'icon' => 'ball', 'pp' => [ 5, 10, 30 ],      'flat' => [ 0, 0, 0 ],          'wiz' => 'Flutlicht und Nacht-Event' ],
 	];
 
 	$all_ids = array_column( $services, 'id' );

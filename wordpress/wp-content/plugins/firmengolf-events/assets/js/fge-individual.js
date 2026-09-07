@@ -100,7 +100,7 @@
 				if (!s) return;
 				var amt = priceOf(s, idx);
 				// Ohne Preis (z. B. Turnier-Serie): steht in der Aufschlüsselung als „auf Anfrage", ohne Donut-Anteil.
-				items.push({ id: sid, label: s.label, color: svcColor(pos), amount: Math.max(0, amt), onRequest: amt <= 0 });
+				items.push({ id: sid, label: s.label, color: svcColor(pos), amount: Math.max(0, amt), onRequest: amt <= 0, zeroLabel: s.zero_label || 'auf Anfrage' });
 			});
 			var total = items.reduce(function (a, r) { return a + r.amount; }, 0);
 			return { rows: items.filter(function (r) { return r.amount > 0; }), items: items, total: total, type: type };
@@ -183,7 +183,7 @@
 			var seen = {};
 			items.forEach(function (row) {
 				var r = rowEls[row.id];
-				var amtText = row.onRequest ? 'auf Anfrage' : (fmt(row.amount) + ' €');
+				var amtText = row.onRequest ? row.zeroLabel : (fmt(row.amount) + ' €');
 				if (!r) {
 					r = el('div', 'bc-break-row' + (REDUCE ? '' : ' is-new'));
 					r.innerHTML = '<span class="bc-break-dot" style="background:' + esc(row.color) + '"></span>'
