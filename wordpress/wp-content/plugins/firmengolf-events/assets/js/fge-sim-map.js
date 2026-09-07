@@ -39,6 +39,9 @@ window.fgeSimMapInit = function () {
 	var map = new google.maps.Map( el, {
 		center: { lat: 51.1, lng: 10.4 },
 		zoom: 6,
+		// Maximal herausgezoomt = ganz Deutschland (Julius, 07.09.): kein Europa-Blick.
+		minZoom: 6,
+		restriction: { latLngBounds: { north: 55.6, south: 47.0, west: 5.5, east: 15.5 }, strictBounds: false },
 		mapTypeControl: false,
 		streetViewControl: false,
 		fullscreenControl: true,

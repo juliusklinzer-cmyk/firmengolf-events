@@ -61,6 +61,9 @@ window.fgeCityMapInit = function () {
 	var map = new google.maps.Map( el, {
 		center: { lat: Number( data.lat ), lng: Number( data.lng ) },
 		zoom: dense ? 6 : 10,
+		// Deutschlandkarte: maximal herausgezoomt = ganz Deutschland (Julius, 07.09.).
+		minZoom: dense ? 6 : undefined,
+		restriction: dense ? { latLngBounds: { north: 55.6, south: 47.0, west: 5.5, east: 15.5 }, strictBounds: false } : undefined,
 		mapTypeControl: false,
 		streetViewControl: false,
 		fullscreenControl: true,
