@@ -3862,7 +3862,8 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 /* ── 29b. STARTSEITE: INDOOR-BANNER (Julius, 07.09.) ──
    Band in Papier-200 wie die anderen Bänder, Foto links, Text rechts. Kein
    Theme-Wechsel mitten auf der Seite, ein Akzent (fairway), Pillen-Buttons. */
-.home-indoor { background: var(--paper-200); padding: 64px 24px; }
+/* Kein Band mehr (Julius, 07.09.): der dunklere Grund stieß oben an die runde Suchleiste. Seitenhintergrund, dafür Luft nach oben. */
+.home-indoor { background: transparent; padding: 80px 24px 32px; }
 .home-indoor-inner { max-width: var(--width-page); margin: 0 auto; display: grid; grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: center; }
 .home-indoor-photo { aspect-ratio: 4 / 3; border-radius: var(--radius-xl); background-size: cover; background-position: 60% center; box-shadow: 0 24px 60px rgba(44,80,54,.16); }
 .home-indoor-text { display: flex; flex-direction: column; gap: 18px; }
@@ -3873,7 +3874,7 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
   .home-indoor-inner { grid-template-columns: 1fr; gap: 28px; }
 }
 @media (max-width: 768px) {
-  .home-indoor { padding: 40px 20px; }
+  .home-indoor { padding: 48px 20px 16px; }
   .home-indoor-photo { aspect-ratio: 4 / 3; border-radius: var(--radius-lg); }
   .home-indoor-ctas .fg-btn-cta, .home-indoor-ctas .fg-btn-ghost { width: 100%; justify-content: center; box-sizing: border-box; }
 }
