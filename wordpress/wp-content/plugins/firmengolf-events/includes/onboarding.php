@@ -1701,7 +1701,9 @@ function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void 
 		<button type="button" class="ob-top-pill" data-ob-help>Noch Fragen?</button>
 		<?php if ( 'form' === $kind ) : ?>
 		<?php // Saves the current slide (via the content form) and exits, handler redirects. ?>
-		<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-top-pill ob-top-save"><span class="ob-save-full">Speichern &amp; beenden</span><span class="ob-save-short">Speichern</span></button>
+		<?php // type="button" + JS (Julius, 07.09.): als Submit-Button stand er im DOM VOR dem Formular und war damit
+		      // der Enter-Default. Enter in einem Feld löste „Speichern & beenden" statt „Weiter" aus. ?>
+		<button type="button" data-ob-save-exit class="ob-top-pill ob-top-save"><span class="ob-save-full">Speichern &amp; beenden</span><span class="ob-save-short">Speichern</span></button>
 		<?php elseif ( 'review' === $kind ) : ?>
 		<a class="ob-top-pill ob-top-save" href="<?php echo esc_url( $save_exit_url ); ?>"><span class="ob-save-full">Speichern &amp; beenden</span><span class="ob-save-short">Speichern</span></a>
 		<?php endif; ?>
@@ -1714,12 +1716,23 @@ function fge_onboarding_render_topbar( string $save_exit_url, int $step ): void 
 		<h3 class="ob-exit-h">Onboarding verlassen?</h3>
 		<p class="ob-exit-p">Speichere deinen Fortschritt, um später weiterzumachen, oder verlasse die Seite ohne zu speichern.</p>
 		<?php if ( 'form' === $kind ) : ?>
-			<button type="submit" form="ob-step-form" name="fge_ob_save_exit" value="1" class="ob-exit-btn ob-exit-primary">Speichern &amp; beenden</button>
+			<button type="button" data-ob-save-exit class="ob-exit-btn ob-exit-primary">Speichern &amp; beenden</button>
 		<?php elseif ( 'review' === $kind ) : ?>
 			<a class="ob-exit-btn ob-exit-primary" href="<?php echo esc_url( $save_exit_url ); ?>">Speichern &amp; beenden</a>
 		<?php endif; ?>
 		<a class="ob-exit-btn ob-exit-leave" href="<?php echo esc_url( home_url( '/' ) ); ?>">Ohne Speichern verlassen</a>
 		<button type="button" class="ob-exit-btn ob-exit-cancel" data-ob-exit-close>Abbrechen</button>
+		<script>
+		/* „Speichern & beenden": Formular mit Save-Flag abschicken (ohne HTML-Validierung, wie zuvor formnovalidate-frei,
+		   aber Enter im Feld bleibt „Weiter", weil kein Submit-Button mehr vor dem Formular steht). */
+		document.querySelectorAll('[data-ob-save-exit]').forEach(function (b) {
+			b.addEventListener('click', function () {
+				var f = document.getElementById('ob-step-form'); if (!f) { return; }
+				var i = document.createElement('input'); i.type = 'hidden'; i.name = 'fge_ob_save_exit'; i.value = '1'; f.appendChild(i);
+				f.submit();
+			});
+		});
+		</script>
 	</div>
 </div>
 

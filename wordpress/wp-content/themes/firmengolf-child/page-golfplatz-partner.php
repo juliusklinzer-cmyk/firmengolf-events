@@ -2,7 +2,11 @@
 /**
  * Template: Partner-Landingpage „Partner werden" (/golfplatz-partner/)
  *
- * Neu ausgerichtet am 2026-08-28 (Julius): spricht jetzt DREI Zielgruppen an,
+ * Neu gebaut am 2026-09-07 (Julius: „mach die Seite mal sexy"): Hero mit Event-Foto und
+ * Botschaft „Wir machen eure Golfanlage zur Event-Location", Fotostreifen, drei Wege als
+ * Bildkarten, Paket-Sektion, Termin-Prinzip, Julius mit Portrait, FAQ, CTA. Fakten-Boxen
+ * (Partnerzahl, Fixkosten, Werktag) bewusst entfernt.
+ * Davor (2026-08-28): spricht DREI Zielgruppen an,
  * Golfplätze, Golflehrer und Betreiber von Indoor-Golfanlagen. Kernbotschaften:
  * eigene Pakete frei schnüren (unlimitiert, einmal angelegt, immer anfragbar),
  * keine festen Termine (Anfrage-Prinzip mit Verfügbarkeitsprüfung) und kein
@@ -25,25 +29,13 @@ $c              = fge_company();
 $arrow_right    = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
 $check_svg      = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>';
 
-// Echte Zahlen statt Marketing-Behauptungen (Prozess-Audit #4: keine Fakes).
-$partner_count = (int) wp_count_posts( 'firmengolf_partner' )->publish;
-$event_ids     = get_posts( [
-	'post_type'     => 'firmengolf_event',
-	'post_status'   => 'publish',
-	'numberposts'   => -1,
-	'fields'        => 'ids',
-	'no_found_rows' => true,
-] );
-$event_count   = function_exists( 'fge_event_is_public' )
-	? count( array_filter( $event_ids, 'fge_event_is_public' ) )
-	: count( $event_ids );
-
 // ── Die drei Zielgruppen mit ihren spezifischen Argumenten ────────────────────
 $gp_groups = [
 	[
 		'ic'  => '<path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
 		't'    => 'Golfplätze',
 		'type' => 'course',
+		'img'  => 'pool/golfplatz-clubhaus-von-oben.jpg',
 		'sub' => 'Zusatzumsatz an den Tagen, an denen der Platz Luft hat.',
 		'pts' => [
 			'Firmengruppen kommen meist dienstags bis donnerstags, genau dann, wenn Startzeiten frei sind.',
@@ -55,6 +47,7 @@ $gp_groups = [
 		'ic'  => '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
 		't'    => 'Golflehrer',
 		'type' => 'coach',
+		'img'  => 'pool/afterwork-grundlagenkurs-mit-dem-team.jpg',
 		'sub' => 'Firmenkurse als planbare Aufträge, ohne eigene Akquise.',
 		'pts' => [
 			'Grundlagenkurse, Platzreifekurse und Event-Coaching für ganze Teams statt einzelner Schnupperstunden.',
@@ -66,6 +59,7 @@ $gp_groups = [
 		'ic'  => '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/><path d="M8 12l2.5-3 2 2L15 8"/>',
 		't'    => 'Indoor-Golfanlagen',
 		'type' => 'indoor',
+		'img'  => 'pool/indoor-golf-indoor-simulator-bar-event-im-team.jpg',
 		'sub' => 'Firmenkunden füllen genau die Stunden, die sonst leer laufen.',
 		'pts' => [
 			'Firmenevents finden unter der Woche und tagsüber statt, genau dann haben die meisten Simulatoren freie Kapazität.',
@@ -100,76 +94,80 @@ $faq_teaser = [
 
 <?php /* ══════════════════ 1. HERO ══════════════════ */ ?>
 <section class="mk-hero" aria-label="Partner werden">
-	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'buerodach-golfplatz.jpg' ) ); ?>')">
+	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $img( 'pool/afterwork-anstossen.jpg' ) ); ?>')">
 		<div class="mk-hero-scrim" aria-hidden="true"></div>
 		<div class="mk-hero-content">
-			<div class="mk-hero-eyebrow">Partner werden · Golfplätze, Golflehrer &amp; Indoor-Anlagen</div>
+			<div class="mk-hero-eyebrow">Für Golfplätze, Golflehrer und Indoor-Anlagen</div>
 			<h1 class="mk-hero-title">
-				<span class="mk-hero-lead">Firmenkunden für euer Golf-Angebot.</span>
-				<span class="mk-hero-lead">Ohne Vertrieb, ohne Fixkosten.</span>
+				<span class="mk-hero-lead">Wir machen eure Golfanlage</span>
+				<span class="mk-hero-lead">zur <em class="mk-italic">Event-Location</em>.</span>
 			</h1>
 			<p class="mk-hero-sub">
-				Firmengolf bringt Unternehmen zu euch: Teamevents, Turniere, Kurse, Simulator-Abende.
-				Ihr bekommt euren vollen Preis, die Provision zahlt der Kunde.
+				Teamevents, Turniere, Kurse und Weihnachtsfeiern: Firmen finden euer Angebot bei uns und fragen an.
+				Ihr legt fest, was ihr anbietet und was es kostet. Wir bauen es ein, bringen die Anfragen und stimmen alles ab.
 			</p>
 			<div class="mk-hero-ctas">
 				<a class="fg-btn-cta fg-btn-lg" href="<?php echo esc_url( $url_onboarding ); ?>">
-					Kostenlos Partner werden
+					Anlage kostenlos eintragen
 					<span class="fg-arrow"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				</a>
-				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $url_faq ); ?>">
-					Erst Fragen klären →
-				</a>
+				<a class="fg-btn-ghost-light" href="tel:<?php echo esc_attr( $c['phone_tel'] ); ?>">Ruf mich an: <?php echo esc_html( $c['phone_display'] ); ?></a>
 			</div>
 		</div>
 	</div>
 </section>
 
-<?php /* ══════════════════ 2. FAKTEN (bewusst unverändert, Julius 28.08.) ══════════════════ */ ?>
-<div class="home-facts gp-facts" aria-label="Firmengolf für Partner in Zahlen">
-	<?php
-	$facts = [
-		[ 'ic' => '<path d="M5 21V4l9 2.5L5 9"/><circle cx="17" cy="17" r="3"/>',
-		  't' => (string) $partner_count, 'b' => 'Partnerplätze von München bis Hamburg' ],
-		[ 'ic' => '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/>',
-		  't' => (string) $event_count, 'b' => 'buchbare Event-Angebote' ],
-		[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>',
-		  't' => '0 € Fixkosten', 'b' => 'Provision zahlt der Kunde' ],
-		[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-		  't' => '1 Werktag', 'b' => 'Antwort auf jede Frage' ],
-	];
-	foreach ( $facts as $f ) : ?>
-		<div class="home-fact">
-			<span class="home-fact-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><?php echo $f['ic']; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></svg></span>
-			<div class="home-fact-txt">
-				<div class="home-fact-t"><?php echo esc_html( $f['t'] ); ?></div>
-				<div class="home-fact-b"><?php echo esc_html( $f['b'] ); ?></div>
-			</div>
+<?php /* ══════════════════ 2. FOTOSTREIFEN: SO SIEHT DAS BEI EUCH AUS ══════════════════ */ ?>
+<section class="mk-section gp-strip-sec cty-reveal" aria-label="So sieht das bei euch aus">
+	<div class="mk-section-head between">
+		<div>
+			<div class="mk-eyebrow">So sieht das bei euch aus</div>
+			<h2 class="mk-h2">Vier Formate, die Firmen bei euch <em class="mk-italic">buchen</em>.</h2>
 		</div>
-	<?php endforeach; ?>
-</div>
+	</div>
+	<div class="gp-strip">
+		<?php
+		$gp_strip = [
+			[ 'pool/afterwork-grundlagenkurs-mit-dem-team.jpg', 'Teamevent', 'Grundlagenkurs mit dem Pro, danach gemeinsam auf den Platz.' ],
+			[ 'pool/kundenevent-spieler-im-turnier.jpg', 'Firmenturnier', '9 oder 18 Loch, Sonderwertungen, Siegerehrung auf der Terrasse.' ],
+			[ 'pool/afterwork-daemmerung.jpg', 'After-Work', 'Range, Kurzplatz und ein Getränk in der goldenen Stunde.' ],
+			[ 'pool/indoor-golf-bar-und-fun-imi-team.jpg', 'Weihnachtsfeier indoor', 'Simulator-Challenge, Menü und Bar, wetterfest bis in den Dezember.' ],
+		];
+		foreach ( $gp_strip as $i => $t ) : ?>
+			<figure class="gp-strip-tile gp-strip-<?php echo (int) $i + 1; ?>">
+				<div class="gp-strip-img" style="background-image:url('<?php echo esc_url( $img( $t[0] ) ); ?>')"></div>
+				<figcaption><b><?php echo esc_html( $t[1] ); ?></b><span><?php echo esc_html( $t[2] ); ?></span></figcaption>
+			</figure>
+		<?php endforeach; ?>
+	</div>
+</section>
 
-<?php /* ══════════════════ 3. DIE DREI ZIELGRUPPEN ══════════════════ */ ?>
+<?php /* ══════════════════ 3. DIE DREI WEGE ══════════════════ */ ?>
 <section class="mk-section cty-reveal" aria-label="Für wen Firmengolf gebaut ist">
 	<div class="mk-section-head">
-		<div class="mk-eyebrow">Für wen das gebaut ist</div>
+		<div class="mk-eyebrow">Drei Wege</div>
 		<h2 class="mk-h2">Drei Wege, mit Firmenkunden zu <em class="mk-italic">verdienen</em>.</h2>
 		<p class="mk-sub">Ob 18 Löcher, Trainerstunden oder Simulator-Boxen: Unternehmen suchen genau euer Angebot, sie wissen nur noch nicht, dass es euch gibt.</p>
 	</div>
-	<div class="gp-aud-grid">
-		<?php foreach ( $gp_groups as $g ) : ?>
-			<div class="gp-aud">
-				<span class="gp-aud-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><?php echo $g['ic']; // phpcs:ignore WordPress.Security.EscapeOutput ?></svg></span>
-				<h3 class="gp-aud-t"><?php echo esc_html( $g['t'] ); ?></h3>
-				<p class="gp-aud-sub"><?php echo esc_html( $g['sub'] ); ?></p>
-				<ul class="gp-aud-pts">
-					<?php foreach ( $g['pts'] as $pt ) : ?>
-						<li><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span><?php echo esc_html( $pt ); ?></span></li>
-					<?php endforeach; ?>
-				</ul>
-				<?php // Deeplink je Zielgruppe: startet den passenden Wizard ohne Typ-Wahl (Plan 8b). ?>
-			<a class="gp-aud-cta" href="<?php echo esc_url( add_query_arg( 'ob_type', $g['type'] ?? 'course', $url_onboarding ) ); ?>">Jetzt Partner werden <?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
-			</div>
+	<div class="gp-way-grid">
+		<?php foreach ( $gp_groups as $i => $g ) : ?>
+			<article class="gp-way">
+				<a class="gp-way-photo" href="<?php echo esc_url( add_query_arg( 'ob_type', $g['type'] ?? 'course', $url_onboarding ) ); ?>" aria-label="<?php echo esc_attr( $g['t'] ); ?>: jetzt Partner werden">
+					<span class="gp-way-img" style="background-image:url('<?php echo esc_url( $img( $g['img'] ) ); ?>')"></span>
+					<span class="gp-way-n">0<?php echo (int) $i + 1; ?></span>
+				</a>
+				<div class="gp-way-body">
+					<h3 class="gp-way-t"><?php echo esc_html( $g['t'] ); ?></h3>
+					<p class="gp-way-sub"><?php echo esc_html( $g['sub'] ); ?></p>
+					<ul class="gp-aud-pts">
+						<?php foreach ( $g['pts'] as $pt ) : ?>
+							<li><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span><?php echo esc_html( $pt ); ?></span></li>
+						<?php endforeach; ?>
+					</ul>
+					<?php // Deeplink je Zielgruppe: startet den passenden Wizard ohne Typ-Wahl (Plan 8b). ?>
+					<a class="gp-aud-cta" href="<?php echo esc_url( add_query_arg( 'ob_type', $g['type'] ?? 'course', $url_onboarding ) ); ?>">Jetzt Partner werden <?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
+				</div>
+			</article>
 		<?php endforeach; ?>
 	</div>
 </section>
@@ -227,10 +225,10 @@ $faq_teaser = [
 <?php /* ══════════════════ 6. ANSPRECHPARTNER ══════════════════ */ ?>
 <section class="mk-section mk-band cty-reveal" aria-label="Dein Ansprechpartner">
 	<div class="gp-contact">
-		<div class="gp-contact-portrait" role="img" aria-label="Julius Klinzer, Gründer von Firmengolf" style="background-image:url('<?php echo esc_url( $img( 'gruender-julius-klinzer.jpg' ) ); ?>')"></div>
+		<div class="gp-contact-portrait" role="img" aria-label="Julius Klinzer, Gründer von Firmengolf" style="background-image:url('<?php echo esc_url( $img( 'gruender-julius-anfrage.jpg' ) ); ?>')"></div>
 		<div class="gp-contact-body">
 			<div class="mk-eyebrow">Dein Ansprechpartner</div>
-			<h2 class="mk-h2" style="font-size:clamp(26px,3.2vw,34px);">„Ruf mich einfach an, ich zeige dir in zehn Minuten, wie es für euch aussieht."</h2>
+			<h2 class="mk-h2" style="font-size:clamp(26px,3.2vw,34px);">„Ruf mich einfach an, wenn ihr Unterstützung beim Einrichten auf unserer Plattform braucht."</h2>
 			<p class="mk-sub" style="margin-top:10px;">Julius Klinzer, Gründer von Firmengolf. Kein Callcenter, kein Vertriebsteam, du sprichst direkt mit dem, der die Plattform gebaut hat.</p>
 			<div class="gp-contact-ctas">
 				<a class="fg-btn-cta" href="tel:<?php echo esc_attr( $c['phone_tel'] ); ?>"><?php echo esc_html( $c['phone_display'] ); ?></a>
