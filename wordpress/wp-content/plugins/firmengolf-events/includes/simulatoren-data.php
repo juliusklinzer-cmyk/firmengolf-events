@@ -251,6 +251,55 @@ function fge_simulatoren_map_enqueue(): void {
 	foreach ( $featured['extra'] as $e ) {
 		$places[] = [ 'name' => $e['name'], 'ort' => $e['ort'], 'lat' => $e['lat'], 'lng' => $e['lng'], 'featured' => true, 'event' => true, 'meta' => '', 'website' => $e['website'], 'approx' => false ];
 	}
+	// Golfplätze nur, wenn sie selbst eine Weihnachtsfeier anbieten (Julius, 07.09.:
+	// ohne Angebot fallen sie raus, im Winter meist geschlossen). Blauer Pin, Link aufs Event.
+	global $wpdb;
+	$xmas_events = get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => 'publish',
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_query'  => [
+			[ 'key' => '_fge_event_type', 'value' => 'weihnachtsfeier' ],
+			[ 'key' => '_fge_assigned_partner_id', 'value' => '0', 'compare' => '>', 'type' => 'NUMERIC' ],
+			[ 'key' => '_fge_event_status', 'value' => function_exists( 'fge_public_event_statuses' ) ? fge_public_event_statuses() : [ 'freigegeben' ], 'compare' => 'IN' ],
+		],
+	] );
+	$seen_partner = [];
+	foreach ( $xmas_events as $xe ) {
+		if ( function_exists( 'fge_event_is_public' ) && ! fge_event_is_public( (int) $xe ) ) {
+			continue;
+		}
+		$pid = (int) get_post_meta( (int) $xe, '_fge_assigned_partner_id', true );
+		if ( $pid <= 0 || isset( $seen_partner[ $pid ] ) || ( function_exists( 'fge_partner_type' ) && 'course' !== fge_partner_type( $pid ) ) ) {
+			continue;
+		}
+		$seen_partner[ $pid ] = true;
+		$plat = (float) get_post_meta( $pid, '_fge_latitude', true );
+		$plng = (float) get_post_meta( $pid, '_fge_longitude', true );
+		if ( ! ( $plat && $plng ) && function_exists( 'fge_verzeichnis_table' ) ) {
+			$row = $wpdb->get_row( $wpdb->prepare( 'SELECT lat, lng FROM ' . fge_verzeichnis_table() . ' WHERE partner_id = %d LIMIT 1', $pid ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			if ( $row ) {
+				$plat = (float) $row->lat;
+				$plng = (float) $row->lng;
+			}
+		}
+		if ( ! ( $plat && $plng ) ) {
+			continue;
+		}
+		$places[] = [
+			'name'     => (string) get_post_meta( $pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $pid ),
+			'ort'      => (string) get_post_meta( $pid, '_fge_city', true ),
+			'lat'      => $plat,
+			'lng'      => $plng,
+			'featured' => false,
+			'course'   => true,
+			'event'    => true,
+			'meta'     => 'Golfanlage mit Clubhaus',
+			'website'  => (string) get_permalink( (int) $xe ),
+			'approx'   => false,
+		];
+	}
 	$src = plugins_url( 'assets/js/fge-sim-map.js', FGE_DIR . 'firmengolf-events.php' );
 	wp_enqueue_script( 'fge-sim-map', $src, [], FGE_VERSION, true );
 	wp_localize_script( 'fge-sim-map', 'FGE_SIM_MAP', [ 'places' => $places, 'anfrage' => '#anfrage' ] );

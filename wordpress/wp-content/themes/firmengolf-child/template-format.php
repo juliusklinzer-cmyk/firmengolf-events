@@ -161,11 +161,11 @@ get_header();
 	$xl_title     = $xl_geo && '' !== $xl_loc ? 'Weihnachtsfeiern rund um ' . $xl_loc : 'Beliebte Weihnachtsfeier-Angebote';
 ?>
 <section class="mk-hero xmas-hero" aria-label="<?php echo esc_attr( $format['h1'] ); ?>">
-	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $xl_hero_img ); ?>')">
+	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $xl_hero_img ); ?>'); --xmas-hero-m:url('<?php echo esc_url( fge_get_placeholder_image_url( 'tiles/indoor-kundenevent.jpg' ) ); ?>')">
 		<div class="mk-hero-scrim" aria-hidden="true"></div>
 		<div class="mk-hero-content">
 			<span class="mk-hero-tag">Top aktuell</span>
-			<h1 class="mk-hero-title"><?php echo esc_html( $format['h1'] ); ?></h1>
+			<h1 class="mk-hero-title">Deine Weihnachtsfeier mit Indoor <strong>Golf</strong></h1>
 			<p class="mk-hero-sub"><?php echo esc_html( $format['lead'] ); ?></p>
 			<div class="mk-hero-ctas">
 				<a class="fg-btn-cta fg-btn-lg" href="#angebote">Angebote ansehen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span></a>
@@ -239,7 +239,7 @@ arsort( $sim_by_land );
 <section class="mk-section simx cty-reveal" id="simulatoren" aria-label="Golfsimulatoren in Deutschland">
 	<div class="mk-section-head">
 		<h2 class="mk-h2">Golfsimulatoren in <em class="mk-italic">ganz Deutschland</em>.</h2>
-		<p class="mk-sub"><?php echo esc_html( (string) count( $sim_all ) ); ?> Indoor-Anlagen von Flensburg bis Garmisch. Tippt einen Pin an für Boxen, System und Website, oder fragt direkt hier eure Feier an.</p>
+		<p class="mk-sub"><?php echo esc_html( (string) count( $sim_all ) ); ?> Indoor-Anlagen von Flensburg bis Garmisch. Pin antippen, Boxen und Website sehen und direkt dort eure Feier anfragen. Die Anfrage geht an uns, wir organisieren sie in dieser oder einer passenden Location.</p>
 	</div>
 	<div class="gpd-map simx-map" id="fge-sim-map">
 		<div class="gpd-map-consent">
@@ -250,15 +250,9 @@ arsort( $sim_by_land );
 	<div class="simx-legend" aria-label="Legende">
 		<span class="simx-key"><i class="simx-dot simx-dot--sim"></i>Golfsimulator</span>
 		<span class="simx-key"><i class="simx-dot simx-dot--sim simx-dot--ring"></i>Bei Firmengolf buchbar</span>
-		<span class="simx-key"><i class="simx-dot simx-dot--partner"></i>Golfplatz, Partner</span>
-		<span class="simx-key"><i class="simx-dot simx-dot--course"></i>Golfplatz</span>
+		<span class="simx-key"><i class="simx-dot simx-dot--partner"></i>Golfanlage mit Weihnachtsfeier</span>
 	</div>
-	<div class="simx-lands" aria-label="Anlagen je Bundesland">
-		<?php foreach ( $sim_by_land as $land => $cnt ) : ?>
-		<span class="fg-chip simx-land"><?php echo esc_html( $land ); ?> <b><?php echo (int) $cnt; ?></b></span>
-		<?php endforeach; ?>
-	</div>
-	<p class="simx-note">Stand September 2026, eigene Marktanalyse. Eure Anlage fehlt oder ihr wollt Events über uns anbieten? <a href="<?php echo esc_url( home_url( '/indoor-partner/' ) ); ?>">Als Simulator-Partner eintragen</a>.</p>
+	<p class="simx-note">Stand September 2026, eigene Marktanalyse. Golfanlagen erscheinen nur, wenn sie selbst eine Weihnachtsfeier anbieten. Eure Anlage fehlt? <a href="<?php echo esc_url( add_query_arg( [ 'ob_step' => 1, 'ob_type' => 'indoor' ], home_url( '/partner-onboarding/' ) ) ); ?>">Als Simulator-Partner eintragen</a>.</p>
 </section>
 <?php endif; ?>
 
@@ -272,7 +266,7 @@ $play_img = static function ( string $slug, string $fallback ): string {
 };
 $play_formats = [
 	[ 'slug' => 'nearest-to-the-pin', 't' => 'Nearest to the Pin', 'b' => 'Ein Schlag, eine Fahne. Wer liegt am nächsten?', 'img' => 'pool/indoor-topgolf-abschlag.jpg' ],
-	[ 'slug' => 'longest-drive',      't' => 'Longest Drive',      'b' => 'Der weiteste Ball gewinnt, auf den Meter gemessen.', 'img' => 'pool/indoor-topgolf-abschlag-3.jpg' ],
+	[ 'slug' => 'longest-drive',      't' => 'Longest Drive',      'b' => 'Der weiteste Ball gewinnt, auf den Meter gemessen.', 'img' => 'pool/afterwork-closeup-drive.jpg' ],
 	[ 'slug' => 'angry-birds',        't' => 'Angry Birds',        'b' => 'Bälle auf Zielscheiben, Punkte wie im Spiel.', 'img' => 'pool/indoor-topgolf-oberhausen.jpg' ],
 	[ 'slug' => 'putt-bierpong',      't' => 'Putt-Bierpong',      'b' => 'Putten statt werfen, Becher statt Loch.', 'img' => 'pool/indoor-bier-und-simulator.jpg' ],
 	[ 'slug' => 'team-scramble',      't' => 'Team-Scramble',      'b' => 'Vier spielen einen Ball, jeder Schlag zählt fürs Team.', 'img' => 'pool/indoor-golf-indoor-simulator-bar-event-im-team.jpg' ],
@@ -299,6 +293,63 @@ $play_formats = [
 		<?php endforeach; ?>
 	</div>
 </section>
+
+<?php /* Anfrage-Dialog von der Karte (Julius, 07.09.): gewählte Location oben, dann dieselbe
+	Kurz-Anfrage; die Anfrage geht an Firmengolf, nicht an die Location. Vollflächig auf Mobil (DESIGN.md 8). */ ?>
+<div class="fg-modal-scrim is-hidden" id="fge-sim-modal" role="dialog" aria-modal="true" aria-label="Weihnachtsfeier anfragen">
+	<div class="fg-modal simx-modal">
+		<button class="fg-modal-close" type="button" data-sim-modal-close aria-label="Schließen">
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+		</button>
+		<div class="fg-modal-head simx-modal-head">
+			<div class="fg-detail-eyebrow">Weihnachtsfeier anfragen</div>
+			<h2 class="fg-modal-title" data-sim-modal-title>Weihnachtsfeier in eurer Wunsch-Location</h2>
+			<p class="fg-modal-sub">Die Anfrage geht an Firmengolf. Wir prüfen die Location und schicken euch ein konkretes Angebot, dort oder in einer passenden Anlage in der Nähe.</p>
+			<div class="simx-modal-loc" data-sim-modal-loc hidden>
+				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+				<span><b data-sim-modal-name></b><span data-sim-modal-ort></span></span>
+			</div>
+		</div>
+		<?php get_template_part( 'template-parts/fge-xmas-request', null, [ 'id' => 'anfrage-location', 'prefix' => 'xm', 'compact' => true ] ); ?>
+	</div>
+</div>
+<script>
+(function () {
+	var scrim = document.getElementById('fge-sim-modal');
+	if (!scrim) return;
+	var lockY = 0;
+	function setOpen(open) {
+		scrim.classList.toggle('is-hidden', !open);
+		var b = document.body.style;
+		if (open) {
+			lockY = window.scrollY || 0;
+			document.documentElement.classList.add('fg-drawer-lock');
+			b.position = 'fixed'; b.top = (-lockY) + 'px'; b.left = '0'; b.right = '0'; b.width = '100%';
+			var first = scrim.querySelector('select, input:not([type=hidden])'); if (first) setTimeout(function () { first.focus({ preventScroll: true }); }, 60);
+		} else {
+			document.documentElement.classList.remove('fg-drawer-lock');
+			b.position = ''; b.top = ''; b.left = ''; b.right = ''; b.width = '';
+			window.scrollTo(0, lockY);
+		}
+	}
+	window.fgeSimRequest = function (name, ort) {
+		var form = document.getElementById('xm-form');
+		if (form) {
+			if (form.elements.place) form.elements.place.value = name || '';
+			if (form.elements.venue) form.elements.venue.value = 'Indoor-Simulator';
+			if (form.elements.region && !form.elements.region.value) form.elements.region.value = ort || '';
+		}
+		var loc = scrim.querySelector('[data-sim-modal-loc]');
+		scrim.querySelector('[data-sim-modal-name]').textContent = name || '';
+		scrim.querySelector('[data-sim-modal-ort]').textContent = ort ? ', ' + ort : '';
+		loc.hidden = !name;
+		scrim.querySelector('[data-sim-modal-title]').textContent = name ? 'Weihnachtsfeier bei ' + name : 'Weihnachtsfeier in eurer Wunsch-Location';
+		setOpen(true);
+	};
+	scrim.addEventListener('click', function (e) { if (e.target === scrim || e.target.closest('[data-sim-modal-close]')) setOpen(false); });
+	document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !scrim.classList.contains('is-hidden')) setOpen(false); });
+})();
+</script>
 
 <section class="mk-section" aria-label="Über <?php echo esc_attr( $f_name ); ?>">
 	<div class="mk-section-head">

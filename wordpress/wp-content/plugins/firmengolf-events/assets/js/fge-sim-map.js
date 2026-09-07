@@ -45,7 +45,7 @@ window.fgeSimMapInit = function () {
 	var info   = new google.maps.InfoWindow();
 	// Farblogik (Julius, 07.09.): Simulatoren immer Orange, bei Firmengolf buchbare groß mit Ring.
 	// Golfplätze bleiben Blau (Partner) und Grün (übrige), siehe fge-city-map.js.
-	var pins   = { featured: fgeSimMakePin( '#E08A2B', 46, true ), plain: fgeSimMakePin( '#E08A2B', 28, false ) };
+	var pins   = { featured: fgeSimMakePin( '#E08A2B', 46, true ), plain: fgeSimMakePin( '#E08A2B', 28, false ), course: fgeSimMakePin( '#4279D1', 38, false ) };
 
 	places.forEach( function ( p ) {
 		var pos    = { lat: Number( p.lat ), lng: Number( p.lng ) };
@@ -53,18 +53,20 @@ window.fgeSimMapInit = function () {
 			position: pos,
 			map: map,
 			title: p.name,
-			icon: p.featured ? pins.featured : pins.plain,
-			zIndex: p.featured ? 20 : 10,
+			icon: p.course ? pins.course : ( p.featured ? pins.featured : pins.plain ),
+			zIndex: p.featured || p.course ? 20 : 10,
 		} );
 		bounds.extend( pos );
 		marker.addListener( 'click', function () {
 			var html = '<div class="fge-sim-info">'
 				+ '<strong>' + fgeSimEsc( p.name ) + '</strong>'
 				+ '<div class="fge-sim-info-meta">' + fgeSimEsc( p.ort ) + ( p.meta ? ' · ' + fgeSimEsc( p.meta ) : '' ) + ( p.approx ? ' · Lage ungefähr' : '' ) + '</div>'
-				+ ( p.featured ? '<div class="fge-sim-info-tag">Bei Firmengolf buchbar</div>' : ( p.event ? '<div class="fge-sim-info-tag fge-sim-info-tag--soft">Eventlocation</div>' : '' ) )
+				+ ( p.course ? '<div class="fge-sim-info-tag">Weihnachtsfeier buchbar</div>' : ( p.featured ? '<div class="fge-sim-info-tag">Bei Firmengolf buchbar</div>' : ( p.event ? '<div class="fge-sim-info-tag fge-sim-info-tag--soft">Eventlocation</div>' : '' ) ) )
 				+ '<div class="fge-sim-info-links">'
-				+ ( p.website ? '<a href="' + fgeSimEsc( p.website ) + '" target="_blank" rel="noopener nofollow">Website</a>' : '' )
-				+ '<a href="' + fgeSimEsc( data.anfrage || '#anfrage' ) + '">Hier feiern, anfragen</a>'
+				+ ( p.course
+					? '<a href="' + fgeSimEsc( p.website ) + '">Zum Angebot</a>'
+					: ( p.website ? '<a href="' + fgeSimEsc( p.website ) + '" target="_blank" rel="noopener nofollow">Website</a>' : '' )
+					  + '<a href="' + fgeSimEsc( data.anfrage || '#anfrage' ) + '" data-sim-request="' + fgeSimEsc( p.name ) + '" data-sim-ort="' + fgeSimEsc( p.ort ) + '">Hier feiern, anfragen</a>' )
 				+ '</div></div>';
 			info.setContent( html );
 			info.open( { map: map, anchor: marker } );
@@ -73,4 +75,12 @@ window.fgeSimMapInit = function () {
 	if ( places.length > 1 ) {
 		map.fitBounds( bounds, 40 );
 	}
+	// InfoWindow-Link → Anfrage-Dialog mit vorausgewählter Location (template-format.php)
+	el.addEventListener( 'click', function ( e ) {
+		var a = e.target.closest( '[data-sim-request]' );
+		if ( a && window.fgeSimRequest ) {
+			e.preventDefault();
+			window.fgeSimRequest( a.getAttribute( 'data-sim-request' ), a.getAttribute( 'data-sim-ort' ) );
+		}
+	} );
 };
