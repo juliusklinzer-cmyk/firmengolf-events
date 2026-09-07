@@ -32,9 +32,13 @@ $faqs       = $format['faqs'] ?? [];
 
 // Passende Events: 2 volle 4er-Reihen (Grid wie auf der Eventliste), Fallback verhindert leere Seite.
 $is_xmas       = ! empty( $format['xmas'] );
+$is_summer     = ! empty( $format['summer'] );
 $format_events = function_exists( 'fge_format_events' ) ? fge_format_events( $format, $is_xmas ? 12 : 8 ) : [];
 if ( $is_xmas && function_exists( 'fge_simulatoren_map_enqueue' ) ) {
 	fge_simulatoren_map_enqueue();
+}
+if ( $is_summer && function_exists( 'fge_golfplatz_map_all_enqueue' ) ) {
+	fge_golfplatz_map_all_enqueue();
 }
 if ( empty( $format_events ) && function_exists( 'fge_get_featured_events' ) ) {
 	$format_events = fge_get_featured_events( 8 );
@@ -113,7 +117,97 @@ get_header();
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] ); ?>
 
-<?php if ( $is_xmas ) :
+<?php if ( $is_summer ) :
+	// ── Sommerfest-Seite (Julius, 07.09.): Vorplanung 2027 im Aufbau der Weihnachts-
+	// Seite: großer Hero, Sommerfest-Formate, Kurz-Anfrage, Golfplatz-Karte; danach
+	// die Level-Sektion (für jedes Erfahrungslevel), FAQ, CTA.
+	$sf_courses = function_exists( 'fge_verzeichnis_count' ) ? fge_verzeichnis_count() : 0;
+	$sf_img     = static function ( string $slug, string $fallback ): string {
+		$base = defined( 'FGE_DIR' ) ? FGE_DIR . 'assets/imagery/' : '';
+		if ( '' !== $base && file_exists( $base . 'sommerfest/' . $slug . '.jpg' ) ) {
+			return fge_get_placeholder_image_url( 'sommerfest/' . $slug . '.jpg' );
+		}
+		return fge_get_placeholder_image_url( $fallback );
+	};
+	$sf_formats = [
+		[ 'slug' => 'firmenturnier',     't' => 'Firmenturnier',            'b' => 'Für die Golfer im Team: 9 oder 18 Löcher im Turniermodus, mit Live-Scoring.', 'img' => 'pool/turnier-abschlag-eventszene.jpg' ],
+		[ 'slug' => 'kurzplatz-turnier', 't' => 'Kurzplatz-Turnier',        'b' => 'Für alle ohne Golferfahrung: kurze Bahnen, große Löcher, echter Wettbewerb.', 'img' => 'pool/platzreife-erste-schlaege-range.jpg' ],
+		[ 'slug' => 'schnupperrunde',    't' => 'Schnupperrunde mit Pro',   'b' => 'Einführung mit dem Golflehrer, erste Schläge auf der Range, Schläger gestellt.', 'img' => 'pool/platzreife-golflehrer-erklaert.jpg' ],
+		[ 'slug' => 'putting-challenge', 't' => 'Putting-Challenge',        'b' => 'Alle wieder zusammen: Team gegen Team auf dem Übungsgrün.', 'img' => 'pool/teamevent-putting.jpg' ],
+		[ 'slug' => 'barbecue',          't' => 'Barbecue auf der Terrasse', 'b' => 'Grill, lange Tafel, Blick über den Platz, bis der Sundowner kommt.', 'img' => 'pool/pool-generiertes-grillfest.jpg' ],
+		[ 'slug' => 'siegerehrung',      't' => 'Siegerehrung & Sundowner', 'b' => 'Preise für beide Gruppen, Anstoßen auf der Clubterrasse.', 'img' => 'pool/afterwork-anstossen.jpg' ],
+	];
+?>
+<section class="mk-hero xmas-hero" aria-label="<?php echo esc_attr( $format['h1'] ); ?>">
+	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( $format['hero_img'] ) ); ?>'); --xmas-hero-m:url('<?php echo esc_url( fge_get_placeholder_image_url( 'pool/pool-hochformat-afterwork-sundowner-golf.jpg' ) ); ?>')">
+		<div class="mk-hero-scrim" aria-hidden="true"></div>
+		<div class="mk-hero-content">
+			<span class="mk-hero-tag">Für 2027 vorplanen</span>
+			<h1 class="mk-hero-title">Euer Sommerfest auf dem <strong>Golfplatz</strong></h1>
+			<p class="mk-hero-sub"><?php echo esc_html( $format['lead'] ); ?></p>
+			<div class="mk-hero-ctas">
+				<a class="fg-btn-cta fg-btn-lg" href="#anfrage">Sommerfest anfragen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span></a>
+				<a class="fg-btn-ghost-light" href="#formate">Formate ansehen →</a>
+			</div>
+			<div class="cty-hero-facts">
+				<span class="cty-hero-fact"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><b>500+</b>&nbsp;Locations in ganz Deutschland</span>
+				<span class="cty-hero-fact"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Auch ohne Golferfahrung</span>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="mk-section playx cty-reveal" id="formate" aria-label="Sommerfest-Formate">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Unsere <em class="mk-italic">Sommerfest</em>-Formate.</h2>
+		<p class="mk-sub">Turnier für die Könner, Kurzplatz und Schnupperrunde für alle anderen, am selben Tag auf derselben Anlage. Zur Putting-Challenge und zum Barbecue kommen alle wieder zusammen.</p>
+	</div>
+	<div class="iv-tiles playx-tiles">
+		<?php foreach ( $sf_formats as $sf ) : ?>
+		<article class="iv-tile playx-tile">
+			<span class="iv-tile-img" style="background-image:url('<?php echo esc_url( $sf_img( $sf['slug'], $sf['img'] ) ); ?>')" role="img" aria-label="<?php echo esc_attr( $sf['t'] ); ?>"></span>
+			<span class="iv-tile-scrim" aria-hidden="true"></span>
+			<span class="iv-tile-label">
+				<span>
+					<span class="iv-tile-t"><?php echo esc_html( $sf['t'] ); ?></span>
+					<span class="iv-tile-sub" style="display:block;"><?php echo esc_html( $sf['b'] ); ?></span>
+				</span>
+			</span>
+		</article>
+		<?php endforeach; ?>
+	</div>
+</section>
+
+<?php get_template_part( 'template-parts/fge-xmas-request', null, [ 'id' => 'anfrage', 'variant' => 'sommerfest' ] ); ?>
+
+<?php if ( function_exists( 'fge_gmaps_api_key' ) && fge_gmaps_api_key() !== '' ) : ?>
+<section class="mk-section simx cty-reveal" id="golfplaetze" aria-label="Golfplätze in Deutschland">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Golfplätze in <em class="mk-italic">ganz Deutschland</em>.</h2>
+		<p class="mk-sub"><?php echo esc_html( (string) $sf_courses ); ?> Anlagen aus dem DGV-Verzeichnis, blau markiert sind unsere Partnerplätze. Auf jeder davon planen wir Turnier, Kurzplatz-Runde und Barbecue am selben Tag, für Könner und Einsteiger.</p>
+	</div>
+	<div class="gpd-map simx-map" id="fge-city-map">
+		<div class="gpd-map-consent">
+			<p>Die Karte lädt erst nach deiner Einwilligung für Google&nbsp;Maps.</p>
+			<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
+		</div>
+	</div>
+	<div class="simx-legend" aria-label="Legende">
+		<span class="simx-key"><i class="simx-dot simx-dot--partner"></i>Firmengolf-Partnerplatz</span>
+		<span class="simx-key"><i class="simx-dot simx-dot--course"></i>Golfanlage, auf Anfrage</span>
+	</div>
+	<p class="simx-note">Ihr betreibt eine Golfanlage und wollt Sommerfeste über uns anbieten? <a href="<?php echo esc_url( add_query_arg( [ 'ob_step' => 1, 'ob_type' => 'course' ], home_url( '/partner-onboarding/' ) ) ); ?>">Als Golfplatz-Partner eintragen</a>.</p>
+</section>
+<?php endif; ?>
+
+<section class="mk-section" aria-label="Über <?php echo esc_attr( $f_name ); ?>">
+	<div class="mk-section-head">
+		<h2 class="mk-h2"><?php echo esc_html( $f_name ); ?>, gemeinsam erleben.</h2>
+		<p class="mk-sub" style="max-width:var(--width-prose);"><?php echo esc_html( $format['intro'] ); ?></p>
+	</div>
+</section>
+
+<?php elseif ( $is_xmas ) :
 	// ── Weihnachtsfeier-Seite (Julius, 07.09., Umbau): großer Hero, Angebote 4×2 mit
 	// Filterleiste + Standort-Abfrage wie auf der Eventliste, Kurz-Anfrage, Simulator-
 	// Karte, Spielformate. Facts, Stadt-Chips und Indoor-Kacheln entfallen hier.
@@ -459,7 +553,7 @@ $play_formats = [
 <?php endif; ?>
 
 <?php /* So könnte dein Tag ablaufen: eine Reihe, Punkte blenden gestaffelt von oben ein */ ?>
-<?php endif; // xmas / Standard ?>
+<?php endif; // summer / xmas / Standard ?>
 
 <?php if ( ! empty( $format['flow'] ) ) : ?>
 <section class="mk-section mk-band fmt-flow5" aria-label="So läuft euer <?php echo esc_attr( $f_name ); ?>">

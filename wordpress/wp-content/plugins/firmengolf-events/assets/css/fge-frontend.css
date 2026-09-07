@@ -3976,6 +3976,7 @@ body.single-firmengolf_event .fg-footer { margin-top: 40px; }
 .simx-dot--sim { background: #E08A2B; }
 .simx-dot--ring { box-shadow: 0 0 0 1px rgba(14,19,16,.12), 0 0 0 4px rgba(224,138,43,.35); }
 .simx-dot--partner { background: var(--fairway-700); }
+.simx-dot--course { background: #00C896; }
 .fge-sim-info-tag--soft { color: var(--ink-700); background: var(--paper-200); }
 @media (max-width: 960px) {
   .iv-tiles.playx-tiles { grid-template-columns: repeat(2, 1fr); }

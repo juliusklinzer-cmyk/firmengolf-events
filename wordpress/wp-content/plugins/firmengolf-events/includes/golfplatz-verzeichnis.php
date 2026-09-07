@@ -300,7 +300,44 @@ add_action( 'wp_enqueue_scripts', function (): void {
 	wp_enqueue_script( 'google-maps', $maps_url, [ 'fge-city-map' ], null, true );
 } );
 
-/** Gesamtzahl der Verzeichnis-Einträge (für „730 Golfplätze"-Claims). */
+/**
+ * Deutschlandkarte aller Verzeichnis-Plätze (Sommerfest-Seite, Julius 07.09.):
+ * blaue Pins = Partner, grüne = übrige Anlagen. Nutzt fge-city-map.js im
+ * INFO-Modus (kein Panel) mit Container #fge-city-map, Klaro-gegated.
+ */
+function fge_golfplatz_map_all_enqueue(): void {
+	if ( ! function_exists( 'fge_gmaps_api_key' ) || '' === fge_gmaps_api_key() ) {
+		return;
+	}
+	global $wpdb;
+	$rows   = $wpdb->get_results( 'SELECT id, name, ort, lat, lng, loecher, ist_partner FROM ' . fge_verzeichnis_table() . ' WHERE lat != 0 AND lng != 0 ORDER BY ist_partner DESC, name ASC' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$places = [];
+	foreach ( (array) $rows as $gp ) {
+		$places[] = [
+			'id'      => (int) $gp->id,
+			'name'    => $gp->name,
+			'lat'     => (float) $gp->lat,
+			'lng'     => (float) $gp->lng,
+			'partner' => 1 === (int) $gp->ist_partner,
+			'meta'    => trim( $gp->ort . ( '' !== (string) $gp->loecher ? ' · ' . $gp->loecher . ' Löcher' : '' ), ' ·' ),
+			'holes'   => (string) $gp->loecher,
+			'photo'   => '',
+		];
+	}
+	if ( ! $places ) {
+		return;
+	}
+	$src = plugins_url( 'assets/js/fge-city-map.js', FGE_DIR . 'firmengolf-events.php' );
+	wp_enqueue_script( 'fge-city-map', $src, [], FGE_VERSION, true );
+	wp_localize_script( 'fge-city-map', 'FGE_CITY_MAP', [ 'lat' => 51.1, 'lng' => 10.4, 'places' => $places, 'dense' => true ] );
+	$maps_url = add_query_arg(
+		[ 'key' => rawurlencode( fge_gmaps_api_key() ), 'callback' => 'fgeCityMapInit', 'loading' => 'async', 'language' => 'de', 'region' => 'DE' ],
+		'https://maps.googleapis.com/maps/api/js'
+	);
+	wp_enqueue_script( 'google-maps', $maps_url, [ 'fge-city-map' ], null, true );
+}
+
+/** Gesamtzahl der Verzeichnis-Einträge. */
 function fge_verzeichnis_count(): int {
 	global $wpdb;
 	$table = fge_verzeichnis_table();

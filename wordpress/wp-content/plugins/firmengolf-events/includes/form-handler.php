@@ -396,7 +396,7 @@ function fge_ajax_general_request(): void {
 	// Core / routing
 	update_post_meta( $request_id, '_fge_request_type',   'general_event_request' );
 	update_post_meta( $request_id, '_fge_request_status', 'neu' );
-	$allowed_sources = [ 'general_landingpage', 'general_anfrage_page', 'weihnachtsfeier_section' ]; // weihnachtsfeier_section: Kurz-Anfrage auf /individuelle-events/ (07.09.)
+	$allowed_sources = [ 'general_landingpage', 'general_anfrage_page', 'weihnachtsfeier_section', 'sommerfest_section' ]; // weihnachtsfeier_section: Kurz-Anfrage auf /individuelle-events/ (07.09.)
 	$req_source      = $t( 'source' );
 	update_post_meta( $request_id, '_fge_source', in_array( $req_source, $allowed_sources, true ) ? $req_source : 'general_landingpage' );
 	update_post_meta( $request_id, '_fge_ref',            $ref );

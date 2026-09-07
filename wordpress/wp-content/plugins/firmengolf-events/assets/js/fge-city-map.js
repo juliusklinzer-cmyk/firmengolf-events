@@ -36,6 +36,16 @@ function fgeGpMakePin( color, size, ring ) {
 	};
 }
 
+/* Kleiner Punkt (Deutschlandkarte): Mint mit weißem Rand, ohne Fahne. */
+function fgeGpMakeDot( color, size ) {
+	var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" fill="' + color + '" stroke="#FFFFFF" stroke-width="2"/></svg>';
+	return {
+		url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent( svg ),
+		scaledSize: new google.maps.Size( size, size ),
+		anchor: new google.maps.Point( size / 2, size / 2 ),
+	};
+}
+
 window.fgeCityMapInit = function () {
 	var el = document.getElementById( 'fge-city-map' );
 	if ( ! el || ! window.google || ! google.maps || ! window.FGE_CITY_MAP ) {
@@ -43,11 +53,14 @@ window.fgeCityMapInit = function () {
 	}
 	var data   = window.FGE_CITY_MAP;
 	var places = data.places || [];
+	// Deutschlandkarte mit allen Plätzen (Sommerfest-Seite): kleine Punkte statt
+	// Fahnen, sonst überlagern sich 700 Pins zu einem Teppich.
+	var dense  = !! data.dense;
 	el.innerHTML = ''; // Consent-Platzhalter raus
 
 	var map = new google.maps.Map( el, {
 		center: { lat: Number( data.lat ), lng: Number( data.lng ) },
-		zoom: 10,
+		zoom: dense ? 6 : 10,
 		mapTypeControl: false,
 		streetViewControl: false,
 		fullscreenControl: true,
@@ -57,9 +70,9 @@ window.fgeCityMapInit = function () {
 	var info      = panelMode ? null : new google.maps.InfoWindow();
 
 	var pins = {
-		partner:         fgeGpMakePin( '#4279D1', 40, false ),
+		partner:         fgeGpMakePin( '#4279D1', dense ? 30 : 40, false ),
 		partnerSelected: fgeGpMakePin( '#4279D1', 54, true ),
-		plain:           fgeGpMakePin( '#00C896', 26, false ),
+		plain:           dense ? fgeGpMakeDot( '#00C896', 11 ) : fgeGpMakePin( '#00C896', 26, false ),
 		plainSelected:   fgeGpMakePin( '#00C896', 44, true ),
 		// Golfsimulatoren (Weihnachts-/Indoor-Events, Julius 07.09.): warmes Orange, ausserhalb der Tokens weil SVG-Pin.
 		sim:             fgeGpMakePin( '#E08A2B', 34, false ),

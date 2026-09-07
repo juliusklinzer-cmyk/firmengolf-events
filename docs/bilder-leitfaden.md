@@ -107,6 +107,21 @@ aus dem Pool. Sobald die Datei liegt, erscheint sie automatisch.
 - `spielformate/team-scramble.jpg`
 - `spielformate/virtuelle-runde.jpg`
 
+## 2c. Sommerfest-Formate auf der Sommerfest-Seite → `imagery/sommerfest/`
+
+Sechs Kacheln „Unsere Sommerfest-Formate" (/firmenevent/sommerfest/). Dateiname =
+Slot, Querformat 4:3, mindestens 1200 px breit; fehlt eine Datei, läuft ein Pool-Motiv.
+
+- `sommerfest/firmenturnier.jpg`
+- `sommerfest/kurzplatz-turnier.jpg`
+- `sommerfest/schnupperrunde.jpg`
+- `sommerfest/putting-challenge.jpg`
+- `sommerfest/barbecue.jpg`
+- `sommerfest/siegerehrung.jpg`
+
+Hero der Sommerfest-Seite: `pool/afterwork-anstossen.jpg` (Desktop) und
+`pool/pool-hochformat-afterwork-sundowner-golf.jpg` (Mobil), beides im Template.
+
 ## 3. Seiten-/Hero-Bilder → `imagery/` (direkt)
 
 Sprechende Namen, kein Präfix-Zwang (z. B. `hero-…`, `onboarding-…`). Diese

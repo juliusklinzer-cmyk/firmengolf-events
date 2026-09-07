@@ -10,6 +10,47 @@ if ( ! defined( 'ABSPATH' ) ) {
 $xr_p       = preg_replace( '/[^a-z0-9-]/', '', (string) ( $args['prefix'] ?? 'xmas' ) ) ?: 'xmas';
 $xr_compact = ! empty( $args['compact'] ); // nur das Formular (z. B. im Dialog), ohne Textspalte
 $xr_id      = static fn( string $s ): string => $xr_p . '-' . $s;
+// Varianten (07.09.): Weihnachtsfeier (Standard) und Sommerfest teilen Aufbau, Endpunkt und JS.
+$xr_variants = [
+	'weihnachtsfeier' => [
+		'occasion'  => 'Weihnachtsfeier',
+		'source'    => 'weihnachtsfeier_section',
+		'h2'        => 'Plant jetzt eure <em class="mk-italic">Weihnachtsfeier</em> mit uns.',
+		'sub'       => 'Indoor an den Simulatoren oder im Clubhaus der Golfanlage: Golf-Challenge, Menü und Getränke aus einer Hand. Ihr nennt uns die Eckdaten, wir schicken ein konkretes Angebot aus eurer Region.',
+		'points'    => [ 'Warm und wetterfest, auch ohne Golferfahrung', 'Weihnachtsmenü und Getränkepauschale gleich mitgeplant', 'Konkretes Angebot innerhalb eines Werktags' ],
+		'step1'     => 'Eure Feier in Eckdaten',
+		'venue_l'   => 'Wo wollt ihr feiern?',
+		'venues'    => [ 'Indoor-Simulator' => 'Indoor-Simulator', 'Golfanlage mit Clubhaus' => 'Golfanlage mit Clubhaus', 'Offen, bitte beraten' => 'Offen, bitte beraten' ],
+		'cater_l'   => 'Catering',
+		'caterings' => [ 'Weihnachtsmenü' => 'Weihnachtsmenü, mehrgängig', 'Buffet' => 'Buffet', 'Fingerfood und Snacks' => 'Fingerfood und Snacks', 'ohne Catering' => 'Ohne Catering' ],
+		'drinks_l'  => 'Getränke',
+		'drinks'    => [ 'Getränkepauschale' => 'Getränkepauschale', 'nach Verbrauch' => 'Nach Verbrauch', 'später entscheiden' => 'Später entscheiden' ],
+		'date_l'    => 'Wunschdatum',
+		'note'      => 'Unverbindlich und kostenlos. Im nächsten Schritt nur noch Firma und Kontakt.',
+		'done'      => 'Wir melden uns innerhalb eines Werktags mit einem konkreten Angebot für eure Weihnachtsfeier in',
+		'lead'      => 'Weihnachtsfeier Kurz-Anfrage',
+	],
+	'sommerfest' => [
+		'occasion'  => 'Sommerfest',
+		'source'    => 'sommerfest_section',
+		'h2'        => 'Nichts Passendes dabei? Wir planen euer <em class="mk-italic">Sommerfest</em> mit euch.',
+		'sub'       => 'Turnier für Könner, Kurzplatz und Schnupperrunde für Einsteiger, danach Barbecue auf der Clubterrasse. Ihr nennt uns die Eckdaten, wir schicken ein konkretes Angebot aus eurer Region, gern schon für 2027.',
+		'points'    => [ 'Draußen auf dem Platz, auch ohne Golferfahrung', 'Barbecue, Buffet oder Menü gleich mitgeplant', 'Konkretes Angebot innerhalb eines Werktags' ],
+		'step1'     => 'Euer Sommerfest in Eckdaten',
+		'venue_l'   => 'Was soll der Tag bringen?',
+		'venues'    => [ 'Turnier und Kurzplatz gemischt' => 'Turnier für Könner, Kurzplatz für Einsteiger', 'Schnupperrunde für alle' => 'Schnupperrunde für alle, ohne Vorkenntnisse', 'Firmenturnier' => 'Firmenturnier mit Golferfahrung', 'Offen, bitte beraten' => 'Offen, bitte beraten' ],
+		'cater_l'   => 'Essen danach',
+		'caterings' => [ 'Barbecue' => 'Barbecue auf der Clubterrasse', 'Buffet' => 'Buffet', 'Menü' => 'Menü, mehrgängig', 'ohne Catering' => 'Ohne Catering' ],
+		'drinks_l'  => 'Getränke',
+		'drinks'    => [ 'Getränkepauschale' => 'Getränkepauschale', 'nach Verbrauch' => 'Nach Verbrauch', 'später entscheiden' => 'Später entscheiden' ],
+		'date_l'    => 'Wunschdatum (2027 möglich)',
+		'note'      => 'Unverbindlich und kostenlos. Im nächsten Schritt nur noch Firma und Kontakt.',
+		'done'      => 'Wir melden uns innerhalb eines Werktags mit einem konkreten Angebot für euer Sommerfest in',
+		'lead'      => 'Sommerfest Kurz-Anfrage',
+	],
+];
+$xr_v   = isset( $xr_variants[ (string) ( $args['variant'] ?? '' ) ] ) ? (string) $args['variant'] : 'weihnachtsfeier';
+$xr_cfg = $xr_variants[ $xr_v ];
 ?>
 	<?php /* ── Weihnachtsfeier: eigene Sektion mit Kurz-Anfrage (Julius, 07.09.) ──
 		Schritt 1 Eckdaten (Ort, Personen, Catering, Getränke, Wunschdatum, Region),
@@ -23,12 +64,12 @@ $xr_id      = static fn( string $s ): string => $xr_p . '-' . $s;
 		<div class="xmas-inner">
 			<?php if ( ! $xr_compact ) : ?>
 			<div class="xmas-text">
-				<h2 class="mk-h2"><?php echo ! empty( $args['h2'] ) ? wp_kses_post( $args['h2'] ) : 'Plant jetzt eure <em class="mk-italic">Weihnachtsfeier</em> mit uns.'; ?></h2>
-				<p class="mk-sub">Indoor an den Simulatoren oder im Clubhaus der Golfanlage: Golf-Challenge, Menü und Getränke aus einer Hand. Ihr nennt uns die Eckdaten, wir schicken ein konkretes Angebot aus eurer Region.</p>
+				<h2 class="mk-h2"><?php echo ! empty( $args['h2'] ) ? wp_kses_post( $args['h2'] ) : wp_kses_post( $xr_cfg['h2'] ); ?></h2>
+				<p class="mk-sub"><?php echo esc_html( $xr_cfg['sub'] ); ?></p>
 				<div class="xmas-points">
-					<div><?php echo $xmas_check; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Warm und wetterfest, auch ohne Golferfahrung</span></div>
-					<div><?php echo $xmas_check; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Weihnachtsmenü und Getränkepauschale gleich mitgeplant</span></div>
-					<div><?php echo $xmas_check; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Konkretes Angebot innerhalb eines Werktags</span></div>
+					<?php foreach ( $xr_cfg['points'] as $xr_pt ) : ?>
+					<div><?php echo $xmas_check; // phpcs:ignore WordPress.Security.EscapeOutput ?><span><?php echo esc_html( $xr_pt ); ?></span></div>
+					<?php endforeach; ?>
 				</div>
 			</div>
 			<?php endif; ?>
@@ -40,14 +81,12 @@ $xr_id      = static fn( string $s ): string => $xr_p . '-' . $s;
 				</div>
 
 				<div class="xmas-step" data-xmas-step="0">
-					<div class="xmas-step-h">Eure Feier in Eckdaten</div>
+					<div class="xmas-step-h"><?php echo esc_html( $xr_cfg['step1'] ); ?></div>
 					<div class="xmas-grid">
 						<div class="fg-field">
-							<label class="fg-field-label" for="<?php echo esc_attr( $xr_id( 'venue' ) ); ?>">Wo wollt ihr feiern?</label>
+							<label class="fg-field-label" for="<?php echo esc_attr( $xr_id( 'venue' ) ); ?>"><?php echo esc_html( $xr_cfg['venue_l'] ); ?></label>
 							<select class="fg-input" id="<?php echo esc_attr( $xr_id( 'venue' ) ); ?>" name="venue">
-								<option value="Indoor-Simulator">Indoor-Simulator</option>
-								<option value="Golfanlage mit Clubhaus">Golfanlage mit Clubhaus</option>
-								<option value="Offen, bitte beraten">Offen, bitte beraten</option>
+								<?php foreach ( $xr_cfg['venues'] as $xr_val => $xr_lab ) : ?><option value="<?php echo esc_attr( $xr_val ); ?>"><?php echo esc_html( $xr_lab ); ?></option><?php endforeach; ?>
 							</select>
 						</div>
 						<div class="fg-field">
@@ -61,24 +100,19 @@ $xr_id      = static fn( string $s ): string => $xr_p . '-' . $s;
 							</select>
 						</div>
 						<div class="fg-field">
-							<label class="fg-field-label" for="<?php echo esc_attr( $xr_id( 'catering' ) ); ?>">Catering</label>
+							<label class="fg-field-label" for="<?php echo esc_attr( $xr_id( 'catering' ) ); ?>"><?php echo esc_html( $xr_cfg['cater_l'] ); ?></label>
 							<select class="fg-input" id="<?php echo esc_attr( $xr_id( 'catering' ) ); ?>" name="catering">
-								<option value="Weihnachtsmenü">Weihnachtsmenü, mehrgängig</option>
-								<option value="Buffet">Buffet</option>
-								<option value="Fingerfood und Snacks">Fingerfood und Snacks</option>
-								<option value="ohne Catering">Ohne Catering</option>
+								<?php foreach ( $xr_cfg['caterings'] as $xr_val => $xr_lab ) : ?><option value="<?php echo esc_attr( $xr_val ); ?>"><?php echo esc_html( $xr_lab ); ?></option><?php endforeach; ?>
 							</select>
 						</div>
 						<div class="fg-field">
-							<label class="fg-field-label" for="<?php echo esc_attr( $xr_id( 'drinks' ) ); ?>">Getränke</label>
+							<label class="fg-field-label" for="<?php echo esc_attr( $xr_id( 'drinks' ) ); ?>"><?php echo esc_html( $xr_cfg['drinks_l'] ); ?></label>
 							<select class="fg-input" id="<?php echo esc_attr( $xr_id( 'drinks' ) ); ?>" name="drinks">
-								<option value="Getränkepauschale">Getränkepauschale</option>
-								<option value="nach Verbrauch">Nach Verbrauch</option>
-								<option value="später entscheiden">Später entscheiden</option>
+								<?php foreach ( $xr_cfg['drinks'] as $xr_val => $xr_lab ) : ?><option value="<?php echo esc_attr( $xr_val ); ?>"><?php echo esc_html( $xr_lab ); ?></option><?php endforeach; ?>
 							</select>
 						</div>
 						<div class="fg-field">
-							<label class="fg-field-label" for="<?php echo esc_attr( $xr_id( 'date' ) ); ?>">Wunschdatum</label>
+							<label class="fg-field-label" for="<?php echo esc_attr( $xr_id( 'date' ) ); ?>"><?php echo esc_html( $xr_cfg['date_l'] ); ?></label>
 							<input class="fg-input fg-date" type="date" id="<?php echo esc_attr( $xr_id( 'date' ) ); ?>" name="date1" min="<?php echo esc_attr( $xmas_min_date ); ?>" required>
 						</div>
 						<div class="fg-field">
@@ -88,7 +122,7 @@ $xr_id      = static fn( string $s ): string => $xr_p . '-' . $s;
 					</div>
 					<div class="xmas-err" data-xmas-err hidden role="alert"></div>
 					<button type="button" class="fg-btn-brand block xmas-cta" data-xmas-next>Jetzt anfragen</button>
-					<p class="xmas-note">Unverbindlich und kostenlos. Im nächsten Schritt nur noch Firma und Kontakt.</p>
+					<p class="xmas-note"><?php echo esc_html( $xr_cfg['note'] ); ?></p>
 				</div>
 
 				<div class="xmas-step" data-xmas-step="1" hidden>
@@ -125,13 +159,13 @@ $xr_id      = static fn( string $s ): string => $xr_p . '-' . $s;
 				<div class="xmas-step xmas-done" data-xmas-step="2" hidden aria-live="polite">
 					<span class="xmas-done-ic" aria-hidden="true"><?php echo $xmas_check; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 					<div class="xmas-step-h">Danke, <span data-xmas-name>ihr</span>. Eure Anfrage ist bei uns.</div>
-					<p>Wir melden uns innerhalb eines Werktags mit einem konkreten Angebot für eure Weihnachtsfeier in <span data-xmas-region>eurer Region</span>. Vorgangsnummer <strong data-xmas-ref></strong>.</p>
+					<p><?php echo esc_html( $xr_cfg['done'] ); ?> <span data-xmas-region>eurer Region</span>. Vorgangsnummer <strong data-xmas-ref></strong>.</p>
 				</div>
 
-				<input type="hidden" name="occasion" value="Weihnachtsfeier">
+				<input type="hidden" name="occasion" value="<?php echo esc_attr( $xr_cfg['occasion'] ); ?>">
+				<input type="hidden" name="source" value="<?php echo esc_attr( $xr_cfg['source'] ); ?>">
 				<input type="hidden" name="place" value="<?php echo esc_attr( (string) ( $args['place'] ?? '' ) ); ?>">
-				<input type="hidden" name="source" value="weihnachtsfeier_section">
-				<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'fge_general_request' ) ); ?>">
+								<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'fge_general_request' ) ); ?>">
 				<input type="text" name="fge_hp" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
 				<?php echo fge_form_trap_fields(); // phpcs:ignore WordPress.Security.EscapeOutput -- Bot-Fallen ?>
 			</form>
@@ -182,13 +216,13 @@ $xr_id      = static fn( string $s ): string => $xr_p . '-' . $s;
 			var body = new URLSearchParams({
 				action: 'fge_general_request',
 				nonce: v('nonce'), fge_ft: v('fge_ft'), fge_js: v('fge_js'), fge_hp: v('fge_hp'),
-				source: 'weihnachtsfeier_section',
-				occasion: 'Weihnachtsfeier',
+				source: v('source'),
+				occasion: v('occasion'),
 				size: v('size'), date1: v('date1'), region: v('region'), city: v('region'),
 				place: place,
-				when: 'Dezember, Wunschdatum siehe Termin',
+				when: v('occasion') === 'Sommerfest' ? 'Sommer, Wunschdatum siehe Termin' : 'Dezember, Wunschdatum siehe Termin',
 				services: services.join('||'),
-				notes: 'Weihnachtsfeier: ' + v('venue') + ', ' + v('size') + ', Catering: ' + v('catering') + ', Getränke: ' + v('drinks') + '.' + (place ? ' Wunsch-Location: ' + place + ' (Anfrage an Firmengolf, nicht an die Location).' : ''),
+				notes: v('occasion') + ': ' + v('venue') + ', ' + v('size') + ', Essen: ' + v('catering') + ', Getränke: ' + v('drinks') + '.' + (place ? ' Wunsch-Location: ' + place + ' (Anfrage an Firmengolf, nicht an die Location).' : ''),
 				company: company.value.trim(), first_name: name.value.trim(), last_name: '', email: email.value.trim(), phone: v('phone'), consent: '1'
 			});
 			fetch(<?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>, { method: 'POST', body: body, credentials: 'same-origin' })
@@ -200,7 +234,7 @@ $xr_id      = static fn( string $s ): string => $xr_p . '-' . $s;
 					form.querySelector('[data-xmas-ref]').textContent = res.data.ref || '';
 					rails.forEach(function (r) { r.classList.add('done'); });
 					showStep(2);
-					if (window.fbq && res.data && res.data.fb_event_id) { try { fbq('track', 'Lead', { content_name: 'Weihnachtsfeier Kurz-Anfrage' }, { eventID: res.data.fb_event_id }); } catch (x) {} }
+					if (window.fbq && res.data && res.data.fb_event_id) { try { fbq('track', 'Lead', { content_name: <?php echo wp_json_encode( $xr_cfg['lead'] ); ?> }, { eventID: res.data.fb_event_id }); } catch (x) {} }
 				})
 				.catch(function (x) { err(1, x.message); btn.disabled = false; btn.textContent = orig; });
 		});

@@ -173,6 +173,27 @@ function fge_get_event_format_pages(): array {
 				[ 't' => 'Location exklusiv',        'sub' => 'Die ganze Anlage für euch',       'img' => 'tiles/indoor-exklusiv.jpg',        'url' => add_query_arg( [ 'anfrage' => 'quick', 'anlass' => 'Exklusivmiete Indoor', 'intro' => '1' ], home_url( '/individuelle-events/' ) ) ],
 			],
 		],
+		'sommerfest' => [
+			'name'    => 'Sommerfest',
+			'eyebrow' => 'Format · Sommerfest',
+			'h1'      => 'Sommerfest auf dem Golfplatz',
+			'lead'    => 'Turnier für die Könner, Kurzplatz und Schnupperrunde für alle anderen, danach Barbecue auf der Clubterrasse. Ein Sommertag draußen, an dem wirklich alle mitspielen.',
+			'intro'   => 'Ein Sommerfest auf dem Golfplatz bringt alle an einen Ort, an dem der Tag von selbst läuft: Die Golfer im Team spielen ihr Firmenturnier über 9 oder 18 Löcher, alle anderen starten mit dem Golflehrer auf Range und Kurzplatz. Am Nachmittag treffen sich beide Gruppen zur Putting-Challenge, am Abend grillt das Clubhaus auf der Terrasse, mit Siegerehrung, Sundowner und Blick über den Platz. Über 500 Anlagen in ganz Deutschland kommen dafür in Frage, wir wählen mit euch die passende aus.',
+			'faqs'    => [
+				$f_anf,
+				$faq( 'Können wir schon für 2027 planen?', 'Ja, und das lohnt sich: Die Sommertermine von Juni bis September sind auf beliebten Anlagen früh vergeben. Fragt jetzt an, wir sichern euch Platz und Wunschtermin und feilen das Programm in Ruhe mit euch aus.' ),
+				$faq( 'Was machen Kolleginnen und Kollegen ohne Golferfahrung?', 'Sie haben ihr eigenes Programm: Einführung mit dem Golflehrer, erste Schläge auf der Range, dann eine Runde auf dem Kurzplatz. Zur Putting-Challenge und zum Barbecue kommen alle wieder zusammen.' ),
+				fge_format_price_faq( 'Was kostet ein Sommerfest auf dem Golfplatz?', 'Sommerfeste', [ 'sommerfest', 'firmen_golfturnier', 'teamevent' ], 'Im Paket stecken Turnier und Einsteigerprogramm mit Betreuung, Leihschläger, Putting-Challenge und das Barbecue. Getränkepauschale, Musik und Extras passen wir an euer Fest an.' ),
+				$f_fast,
+				$f_bill,
+			],
+			'types'   => [ 'sommerfest', 'firmen_golfturnier' ],
+			'hero_img' => 'pool/afterwork-anstossen.jpg',
+			'levels'  => true,
+			// Saison-Seite wie die Weihnachtsfeier (Julius, 07.09.): Vorplanung 2027,
+			// Formate-Kacheln, Kurz-Anfrage, Golfplatz-Karte; Template-Zweig 'summer'.
+			'summer'  => true,
+		],
 		'platzreife' => [
 			'name'    => 'Platzreife',
 			'eyebrow' => 'Format · Platzreife',
