@@ -812,7 +812,7 @@
 				+ '<div class="rw-field">' + (isTrip
 					? label('Reiseziel', false, 'optional') + input('region', '', 'z. B. Mallorca, Algarve oder „noch offen"')
 					: label('Wunschort', false, 'optional') + input('region', '', 'z. B. München, Alpen oder „noch offen"')) + '</div></div>'
-				+ '<div class="rw-row"><div class="rw-field">' + label('Wie viele Gäste?', true) + sizeStepper() + '</div>'
+				+ '<div class="rw-row"><div class="rw-field">' + label('Wie viele Gäste?', true) + input('size', 'type="number" min="1" max="999" inputmode="numeric" required', 'z. B. 40') + '</div>'
 				+ '<div class="rw-field">' + label('Ungefähres Budget', true, 'netto, gesamt')
 					+ '<div class="rw-money"><input class="fg-input" data-field="budgetTotal" type="number" min="0" step="50" inputmode="numeric" value="' + esc(S.form.budgetTotal || '') + '" placeholder="z. B. 15000"><span>€</span></div></div></div>'
 				+ '<div class="rw-row"><div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div>'
