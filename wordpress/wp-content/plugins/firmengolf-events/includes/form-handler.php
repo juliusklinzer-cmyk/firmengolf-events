@@ -351,7 +351,8 @@ function fge_ajax_general_request(): void {
 		$last  = $parts[1] ?? '';
 	}
 
-	if ( ! $email || ! is_email( $email ) || $first === '' || $occasion === '' ) {
+	// Vorname ist im Wizard optional (Julius, 27.08.), Nachname reicht: Vor- ODER Nachname muss da sein.
+	if ( ! $email || ! is_email( $email ) || ( $first === '' && $last === '' ) || $occasion === '' ) {
 		wp_send_json_error( [ 'message' => 'Bitte Anlass, Name und gültige E-Mail angeben.' ], 422 );
 	}
 

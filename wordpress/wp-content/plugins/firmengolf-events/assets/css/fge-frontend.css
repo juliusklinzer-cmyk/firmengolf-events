@@ -7433,3 +7433,6 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
   .iv-section { padding-top: 56px; padding-bottom: 56px; }
   .fg-grid-section { padding-top: 40px; padding-bottom: 40px; }
 }
+
+/* Verkürzte Anfrage aus dem Budget-Rechner: Zusammenfassung der Auswahl über dem Formular (Julius, 07.09.). */
+.rw-calc-sum { font-size: 13px; line-height: 1.5; color: var(--fairway-800); background: var(--fairway-50, #EEF6F1); border: 1px solid var(--fairway-200); border-radius: 12px; padding: 10px 14px; margin: 0 0 18px; }

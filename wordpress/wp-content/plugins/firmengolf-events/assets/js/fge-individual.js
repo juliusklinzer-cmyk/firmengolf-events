@@ -403,12 +403,13 @@
 			// Wizard fragt Budget pro Person: Richtwert auf den passenden Chip mappen (Review 07.09.).
 			var pp = state.participants > 0 ? res.total / state.participants : 0;
 			var ppChip = pp <= 0 ? 'Noch unklar' : (pp < 50 ? 'Bis 50 € p.P.' : (pp < 100 ? '50 bis 100 € p.P.' : (pp < 200 ? '100 bis 200 € p.P.' : (pp < 500 ? '200 bis 500 € p.P.' : 'Über 500 € p.P.'))));
-			Wizard.open('full', {
+			Wizard.open('budget', {
 				occasion: res.type.wiz || 'Golf-Teamevent',
 				size: String(state.participants),
 				services: svcWiz,
 				budget: ppChip,
 				email: state.email || '',
+				calcSummary: res.type.label + ' · ' + state.participants + ' Personen' + (typeHasDays() ? ' · ' + state.days + ' Tage' : '') + ' · ' + res.items.map(function (r) { return r.label.replace(/\s*\(.*?\)/g, ''); }).join(', ') + ' · Richtwert ca. ' + fmt(res.total) + ' € netto',
 				notes: 'Über den Budget-Rechner geschätzt: ' + res.type.label + ', ' + state.participants
 					+ ' Personen, ' + (typeHasDays() ? state.days + ' Tage, ' : '') + 'Preisniveau ' + state.range + ', Richtwert ca. ' + fmt(res.total) + ' € gesamt (' + lo.toLocaleString('de-DE') + ' bis ' + hi.toLocaleString('de-DE') + ' €).'
 			}, false, 'budget');
@@ -584,7 +585,7 @@
 		}
 
 		function topBar() {
-			var shortcut = (S.phase === 'form' && S.mode !== 'success') ?
+			var shortcut = (S.phase === 'form' && S.mode !== 'success' && S.mode !== 'budget') ?
 				'<button class="rw-shortcut" data-act="toggle-mode">'
 				+ (S.mode === 'quick' ? 'Ausführliche Anfrage' : 'Schnell-Anfrage in 30 Sek.') + '</button>' : '';
 			var logo = CFG.logo ? '<img src="' + esc(CFG.logo) + '" alt="Firmengolf" height="24">' : '';
@@ -784,6 +785,33 @@
 				+ '<span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label></div>';
 		}
 
+		/* Verkürzte Anfrage aus dem Budget-Rechner (Julius, 07.09.): Leistungen sind
+		   dort schon gewählt, hier fehlen nur noch Firma, Kontakt und je nach Typ ein
+		   Detail (Reiseziel bei der Golfreise, sonst Region). Ein Schritt, dann senden. */
+		function screenBudget() {
+			var isTrip = S.form.occasion === 'Incentive-Reise';
+			var sum = S.form.calcSummary ? '<div class="rw-calc-sum">' + esc(S.form.calcSummary) + '</div>' : '';
+			return '<div class="rw-stage"><div class="rw-screen"><div class="rw-main">'
+				+ '<div class="rw-eyebrow">Fast fertig</div>'
+				+ '<h2 class="rw-h">Wer seid ihr, und wie erreichen wir dich?</h2>'
+				+ '<p class="rw-lead">Deine Auswahl aus dem Rechner haben wir übernommen. Wir melden uns schnellstmöglich telefonisch, um alles mit dir abzustimmen.</p>'
+				+ sum
+				+ '<div class="rw-form"><div class="rw-row"><div class="rw-field">' + label('Unternehmen', true) + input('company', 'required', 'Musterfirma GmbH') + '</div>'
+				+ '<div class="rw-field">' + (isTrip
+					? label('Reiseziel', false, 'Wunschregion oder Land') + input('region', '', 'z. B. Mallorca, Algarve, Allgäu')
+					: label('Region oder Ort', false, 'Wo soll es stattfinden?') + input('region', '', 'z. B. Raum München')) + '</div></div>'
+				+ '<div class="rw-row"><div class="rw-field">' + label('Vorname') + input('firstName', '', 'Vorname') + '</div>'
+				+ '<div class="rw-field">' + label('Nachname', true) + input('lastName', 'required', 'Nachname') + '</div></div>'
+				+ '<div class="rw-row"><div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div>'
+				+ '<div class="rw-field">' + label('Telefon') + input('phone', 'type="tel"', '+49 …') + '</div></div>'
+				+ '<div class="rw-field">' + label('Bevorzugte Kontaktart') + chips('contactPref', ['E-Mail', 'Telefon', 'Egal']) + '</div>'
+				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '>'
+				+ '<span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label></div>'
+				+ '</div></div></div>'
+				+ '<div class="rw-foot"><div class="rw-nav"><button class="rw-btn-text" data-act="close">Abbrechen</button>'
+				+ '<button class="rw-btn-primary" data-act="submit">Anfrage senden ' + ICO_SEND + '</button></div></div>';
+		}
+
 		function screenFull() {
 			/* Durchgehender Fortschrittsbalken ohne Labels (Airbnb-Muster, Julius 27.08.):
 			   die Schritt-Info trägt die Eyebrow im Inhalt („Schritt 2 · Eckdaten"). */
@@ -811,14 +839,14 @@
 				+ '<div class="rw-care-n">' + esc(CONTACT.name) + '</div>'
 				+ '<div class="rw-care-r">' + esc(CONTACT.role) + ' · Firmengolf</div>'
 				+ (CFG.juliusEmail ? '<a class="rw-care-mail" href="mailto:' + esc(CFG.juliusEmail) + '">' + esc(CFG.juliusEmail) + '</a>' : '')
-				+ '<div class="rw-care-note">Wir melden uns innerhalb eines Werktags persönlich bei dir.</div></div></div>'
+				+ '<div class="rw-care-note">' + (S.mode === 'budget' ? 'Wir melden uns schnellstmöglich telefonisch bei dir, um alles abzustimmen.' : 'Wir melden uns innerhalb eines Werktags persönlich bei dir.') + '</div></div></div>'
 				+ '<div class="rw-receipt-h">Zusammenfassung deiner Anfrage</div>'
 				+ '<div class="rw-receipt">'
 				+ '<div><span>Anlass</span><span>' + esc(resp.occasion || S.form.occasion || 'k. A.') + '</span></div>'
 				+ '<div><span>Gruppe</span><span>' + esc((resp.size || S.form.size) + ' Personen') + '</span></div>'
 				+ (S.form.date1 ? '<div><span>Wunschtermin</span><span>' + esc(S.form.date1 + (S.form.date2 ? ' +' : '')) + '</span></div>' : '')
 				+ (S.form.region ? '<div><span>Region</span><span>' + esc(S.form.region) + '</span></div>' : '')
-				+ (S.mode === 'full' && S.form.budget ? '<div><span>Budget-Rahmen</span><span>' + esc(S.form.budget) + '</span></div>' : '')
+				+ (S.mode !== 'quick' && S.form.budget ? '<div><span>Budget-Rahmen</span><span>' + esc(S.form.budget) + '</span></div>' : '')
 				+ '<div><span>Unternehmen</span><span>' + esc(resp.company || S.form.company || 'k. A.') + '</span></div>'
 				+ '<div><span>Status</span><span><span class="ob-pill-status">In Bearbeitung</span></span></div>'
 				+ '<div><span>Vorgangs-Nr.</span><span class="mono">' + esc(resp.ref || '') + '</span></div></div>'
@@ -849,6 +877,7 @@
 			if (S.phase === 'success') body = topBar() + screenSuccess(successResp || {});
 			else if (S.phase === 'intro') body = topBar() + screenIntro();
 			else if (S.mode === 'quick') body = topBar() + screenQuick();
+			else if (S.mode === 'budget') body = topBar() + screenBudget();
 			else body = topBar() + screenFull();
 			overlay.innerHTML = body;
 			// Mobile-Kompaktdarstellung der Schnellanfrage (CSS-Hook, siehe fge-frontend.css)
@@ -893,6 +922,7 @@
 		}
 
 		function valid() {
+			if (S.mode === 'budget') return S.form.company && S.form.lastName && S.form.email && S.form.consent;
 			if (S.mode === 'quick') {
 				if (S.step === 0) return !!S.form.occasion;
 				return S.form.firstName && S.form.email && S.form.occasion && S.form.consent;
@@ -1030,7 +1060,12 @@
 		function missingMsg() {
 			var m = [];
 			var add = function (cond, label) { if (!cond) m.push(label); };
-			if (S.mode === 'quick') {
+			if (S.mode === 'budget') {
+				add(S.form.company, 'Firma');
+				add(S.form.lastName, 'Nachname');
+				add(S.form.email, 'E-Mail');
+				add(S.form.consent, 'Zustimmung zur Datenverarbeitung');
+			} else if (S.mode === 'quick') {
 				if (S.step === 0) {
 					add(S.form.occasion, 'Anlass auswählen');
 				} else {
