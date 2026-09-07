@@ -216,6 +216,22 @@ get_header();
 	$xl_radius = isset( $_GET['radius'] ) ? max( 0, (int) $_GET['radius'] ) : 0;  // phpcs:ignore WordPress.Security.NonceVerification
 	$xl_loc    = sanitize_text_field( wp_unslash( $_GET['loc'] ?? '' ) );         // phpcs:ignore WordPress.Security.NonceVerification
 	$xl_pax    = isset( $_GET['pax'] ) ? max( 0, (int) $_GET['pax'] ) : 0;        // phpcs:ignore WordPress.Security.NonceVerification
+	$xl_q      = sanitize_text_field( wp_unslash( $_GET['q'] ?? '' ) );            // phpcs:ignore WordPress.Security.NonceVerification
+	if ( ! ( $xl_lat && $xl_lng ) && '' !== $xl_q ) {
+		// PLZ oder Ort aus der Filterleiste (kein JS nötig): Koordinaten aus den Geo-Daten.
+		$xl_c = null;
+		if ( ctype_digit( $xl_q ) && function_exists( 'fge_geo_lookup_plz' ) ) {
+			$xl_c = fge_geo_lookup_plz( $xl_q );
+		} elseif ( function_exists( 'fge_geo_city_coords' ) ) {
+			$xl_c = fge_geo_city_coords( $xl_q );
+		}
+		if ( $xl_c ) {
+			$xl_lat    = (float) ( $xl_c[0] ?? $xl_c['lat'] ?? 0 );
+			$xl_lng    = (float) ( $xl_c[1] ?? $xl_c['lng'] ?? 0 );
+			$xl_radius = $xl_radius ?: 50;
+			$xl_loc    = $xl_loc ?: $xl_q;
+		}
+	}
 	$xl_geo    = $xl_lat && $xl_lng && $xl_radius > 0 && function_exists( 'fge_geo_distance' ) && function_exists( 'fge_geo_event_coords' );
 	$xl_items  = [];
 	foreach ( ( function_exists( 'fge_format_events' ) ? fge_format_events( $format, 200 ) : [] ) as $xev ) {
@@ -262,8 +278,9 @@ get_header();
 			<h1 class="mk-hero-title">Deine Weihnachtsfeier mit <strong>Indoor Golf</strong></h1>
 			<p class="mk-hero-sub"><?php echo esc_html( $format['lead'] ); ?></p>
 			<div class="mk-hero-ctas">
-				<a class="fg-btn-cta fg-btn-lg" href="#angebote">Angebote ansehen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span></a>
-				<a class="fg-btn-ghost-light" href="#anfrage">Wunschtermin anfragen →</a>
+				<?php /* Standortfreigabe erst hier, nicht beim Seitenaufruf (Julius, 07.09.); Wunschtermin öffnet den Dialog */ ?>
+				<a class="fg-btn-cta fg-btn-lg" href="#angebote" id="xmas-geo-trigger">Angebote ansehen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span></a>
+				<a class="fg-btn-ghost-light" href="#anfrage" onclick="if(window.fgeSimRequest){event.preventDefault();fgeSimRequest('','');}">Wunschtermin anfragen →</a>
 			</div>
 			<div class="cty-hero-facts">
 				<span class="cty-hero-fact"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><b><?php echo esc_html( (string) max( 50, $xl_sim_count ) ); ?>+</b>&nbsp;Simulatoren und Golfanlagen in ganz Deutschland</span>
@@ -284,17 +301,25 @@ get_header();
 			<?php endif; ?>
 		</div>
 	</div>
-	<?php get_template_part( 'template-parts/fge-search-bar', null, [
-		'action' => $canonical . '#angebote',
-		'prefix' => 'xs',
-		'format' => 'weihnachtsfeier',
-		'lat'    => $xl_geo ? (string) $xl_lat : '',
-		'lng'    => $xl_geo ? (string) $xl_lng : '',
-		'radius' => $xl_geo ? $xl_radius : 50,
-		'loc'    => $xl_geo ? $xl_loc : '',
-		'pax'    => $xl_pax,
-		'submit' => 'Suchen',
-	] ); ?>
+	<?php /* Filterleiste im Stil der Eventliste (Julius, 07.09.): Standort-Chip + PLZ/Ort, keine Personenzahl */ ?>
+	<form class="xmas-filter" method="get" action="<?php echo esc_url( $canonical . '#angebote' ); ?>" role="search" aria-label="Weihnachtsfeiern filtern">
+		<div class="fg-chip-row xmas-filter-row">
+			<?php if ( $xl_geo && 'Mein Standort' === $xl_loc ) : ?>
+			<a class="fg-chip active xmas-filter-geo" href="<?php echo esc_url( $canonical . '#angebote' ); ?>" title="Standortfilter entfernen"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>Mein Standort · <?php echo (int) $xl_radius; ?> km <span aria-hidden="true">✕</span></a>
+			<?php else : ?>
+			<button type="button" class="fg-chip xmas-filter-geo" id="xmas-filter-geo"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>An meinem Standort suchen</button>
+			<?php endif; ?>
+			<label class="xmas-filter-plz">
+				<span class="screen-reader-text">PLZ oder Ort</span>
+				<input class="fg-input" type="text" name="q" inputmode="text" placeholder="PLZ oder Ort" autocomplete="postal-code" value="<?php echo esc_attr( 'Mein Standort' === $xl_loc ? '' : $xl_loc ); ?>">
+				<button type="submit" class="fg-chip xmas-filter-go">Suchen</button>
+			</label>
+			<?php if ( $xl_geo && 'Mein Standort' !== $xl_loc ) : ?>
+			<a class="fg-chip" href="<?php echo esc_url( $canonical . '#angebote' ); ?>">Alle Angebote</a>
+			<?php endif; ?>
+		</div>
+		<p class="xmas-filter-hint" id="xmas-filter-hint" hidden></p>
+	</form>
 	<?php if ( $xl_show ) : ?>
 	<div class="fg-grid ev-grid4">
 		<?php foreach ( $xl_show as $xit ) : ?>
@@ -309,7 +334,9 @@ get_header();
 	</div>
 </section>
 <?php get_template_part( 'template-parts/fge-geo-prompt', null, [
-	'target' => $canonical,
+	'target'  => $canonical,
+	'trigger' => '#xmas-geo-trigger, #xmas-filter-geo',
+	'anchor'  => '#angebote',
 	'title'  => 'Weihnachtsfeiern in eurer Nähe finden?',
 	'text'   => 'Gebt kurz euren Standort frei, dann zeigen wir zuerst die Angebote, die ihr gut erreicht.',
 	'skip'   => 'Alle Angebote ansehen',

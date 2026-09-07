@@ -12,6 +12,9 @@ $gp_target = (string) ( $args['target'] ?? home_url( '/firmenevents/' ) );
 $gp_title  = (string) ( $args['title'] ?? 'Events in eurer Nähe finden?' );
 $gp_text   = (string) ( $args['text'] ?? 'Gebt kurz euren Standort frei, dann zeigen wir nur Events auf Golfplätzen, die ihr gut erreicht.' );
 $gp_skip   = (string) ( $args['skip'] ?? 'Alle Events ansehen' );
+$gp_trig   = (string) ( $args['trigger'] ?? '' ); // gesetzt = Dialog nur auf Klick, nicht beim Laden
+$gp_anchor = (string) ( $args['anchor'] ?? '' );  // Sprungziel nach „ohne Standort"
+
 ?>
 <div class="ev-geo-scrim" id="fge-geo-prompt" role="dialog" aria-modal="true" aria-labelledby="fge-geo-h" hidden>
 	<div class="ev-geo-card">
@@ -71,6 +74,26 @@ $gp_skip   = (string) ( $args['skip'] ?? 'Alle Events ansehen' );
 	skip.addEventListener('click', hide);
 	prompt.addEventListener('click', function (e) { if (e.target === prompt) { hide(); } });
 	document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !prompt.hidden) { hide(); } });
+	var trigger = <?php echo wp_json_encode( $gp_trig ); ?>, anchor = <?php echo wp_json_encode( $gp_anchor ); ?>;
+	if (trigger) {
+		// Nur auf Klick (Julius, 07.09.): erlaubt → direkt filtern, sonst Dialog; abgelehnt → nur springen.
+		document.querySelectorAll(trigger).forEach(function (t) {
+			t.addEventListener('click', function (e) {
+				e.preventDefault();
+				var jump = function () { if (anchor) { var el = document.querySelector(anchor); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
+				var ask = function () { show(); };
+				if (navigator.permissions && navigator.permissions.query) {
+					navigator.permissions.query({ name: 'geolocation' }).then(function (st) {
+						if (st.state === 'granted') { navigator.geolocation.getCurrentPosition(goNear, jump, { timeout: 15000, maximumAge: 300000 }); }
+						else if (st.state === 'denied') { jump(); var h = document.getElementById('xmas-filter-hint'); if (h) { h.textContent = 'Standort für diese Website blockiert. Gebt oben eine PLZ oder einen Ort ein.'; h.hidden = false; } }
+						else { ask(); }
+					}).catch(ask);
+				} else { ask(); }
+			});
+		});
+		skip.addEventListener('click', function () { if (anchor) { var el = document.querySelector(anchor); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
+		return;
+	}
 	if (!cleanUrl || storedOff) { return; }
 	if (navigator.permissions && navigator.permissions.query) {
 		navigator.permissions.query({ name: 'geolocation' }).then(function (st) {

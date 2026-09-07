@@ -310,7 +310,10 @@
 		// Anlass-Auswahl: Reihenfolge + Icon-Kacheln (einheitlich mit den Leistungs-Kacheln).
 		/* Golf-Bezug in allen Anlass-Namen (Julius, 2026-08-27); die Event-KATEGORIEN
 		   auf der Eventliste behalten bewusst die kurzen Namen. */
-		var OCCASIONS = ['Golf-Teamevent', 'After-Work Golf', 'Golf & Workshop', 'Firmen-Golfturnier', 'Golf-Kundenevent', 'Indoor-Golf-Event', 'Nachtgolf-Event', 'Ein anderes Golf-Event'];
+		// Saison-Reihenfolge (Julius, 07.09.): Indoor Weihnachtsfeier direkt nach dem Teamevent;
+		// „Andere Events" als letzte Kachel öffnet ein Freitextfeld.
+		var OCC_OTHER = 'Andere Events';
+		var OCCASIONS = ['Golf-Teamevent', 'Indoor Weihnachtsfeier', 'After-Work Golf', 'Golf & Workshop', 'Firmen-Golfturnier', 'Golf-Kundenevent', 'Indoor-Golf-Event', 'Nachtgolf-Event', OCC_OTHER];
 		var OCC_ICONS = {
 			'Golf-Teamevent': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
 			'After-Work Golf': '<path d="M3 18h18"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 4v3M5.2 7.2l1.6 1.6M18.8 7.2l-1.6 1.6M3 12h2M19 12h2"/>',
@@ -319,7 +322,8 @@
 			'Golf-Kundenevent': '<circle cx="12" cy="8" r="3"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/><path d="M16 4h4v4"/>',
 			'Indoor-Golf-Event': '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M8 12l2.5-3 2 2L15 8"/>',
 			'Nachtgolf-Event': '<path d="M20 13.5A8 8 0 1 1 10.5 4a6.2 6.2 0 0 0 9.5 9.5z"/>',
-			'Ein anderes Golf-Event': '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'
+			'Indoor Weihnachtsfeier': '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 3 8 4.5 9.5 8 12 8zM12 8s1.5-5 4-3.5S14.5 8 12 8z"/>',
+			'Andere Events': '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'
 		};
 		function occCards() {
 			// Preset-Anlässe außerhalb der Standardliste (z. B. Sommerfest von den
@@ -329,7 +333,7 @@
 			return '<div class="ind-cards rw-occ-cards">' + list.map(function (o) {
 				var on = S.form.occasion === o;
 				return '<button type="button" class="ind-card' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false')
-					+ '" data-chip="occasion" data-val="' + esc(o) + '"><span class="ind-card-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (OCC_ICONS[o] || OCC_ICONS['Ein anderes Golf-Event']) + '</svg></span><span class="ind-card-l">' + esc(o) + '</span></button>';
+					+ '" data-chip="occasion" data-val="' + esc(o) + '"><span class="ind-card-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (OCC_ICONS[o] || OCC_ICONS[OCC_OTHER]) + '</svg></span><span class="ind-card-l">' + esc(o) + '</span></button>';
 			}).join('') + '</div>';
 		}
 
@@ -443,6 +447,10 @@
 					+ '<p class="rw-lead rw-lead--quick">Wählt den Anlass, den Rest klären wir persönlich. Kostenlos und unverbindlich.</p>'
 					+ '<div class="rw-form">'
 					+ '<div class="rw-field">' + label('Anlass') + occCards() + '</div>'
+					+ (S.form.occasion === OCC_OTHER
+						? '<div class="rw-field">' + label('An welches Event hast du gedacht?', false, 'Ein Satz reicht')
+							+ input('goal', '', 'z. B. Sommerfest mit Barbecue, Azubi-Tag, Golf und Meeting') + '</div>'
+						: '')
 					+ '<div class="rw-field">' + label('Teilnehmerzahl') + sizeStepper() + '</div>'
 					+ '</div></div>' + photoPanel() + '</div></div>'
 					+ '<div class="rw-foot">' + quickProgress() + '<div class="rw-nav rw-nav--quick"><span class="rw-nav-spacer" aria-hidden="true"></span>'
@@ -474,10 +482,10 @@
 					+ '<div class="rw-form"><div class="rw-field">'
 					+ occCards()
 					+ '</div>'
-					/* „Was wollt ihr erreichen?" nur bei „Etwas anderes" (Julius, 2026-07-06) */
-					+ (S.form.occasion === 'Etwas anderes'
-						? '<div class="rw-field">' + label('Was wollt ihr erreichen?', false, 'Ein Satz reicht')
-							+ input('goal', '', 'z.B. Team zusammenbringen · Kunden begeistern · Mitarbeitende belohnen') + '</div>'
+					/* Freitext nur bei „Andere Events" (Julius, 07.09.; vorher hing das Feld am alten Label „Etwas anderes" und erschien nie) */
+					+ (S.form.occasion === OCC_OTHER
+						? '<div class="rw-field">' + label('An welches Event hast du gedacht?', false, 'Ein Satz reicht')
+							+ input('goal', '', 'z. B. Sommerfest mit Barbecue, Azubi-Tag, Golf und Meeting') + '</div>'
 						: '')
 					+ '</div>';
 			}
@@ -727,9 +735,9 @@
 				S.form[chipKey] = chipVal;
 				// Anti-Flacker (Julius, 2026-08-20): Auswahl direkt im DOM umschalten statt
 				// das komplette Formular neu zu bauen. Voll-Rerender NUR, wenn der Wert die
-				// Screen-Struktur aendert (Ziel-Feld bei „Etwas anderes" im Full-Schritt 1).
-				var structural = S.mode === 'full' && S.step === 0 && chipKey === 'occasion'
-					&& ( chipVal === 'Etwas anderes' || chipPrev === 'Etwas anderes' );
+				// Screen-Struktur aendert (Freitext bei „Andere Events" in Schritt 1, quick und full).
+				var structural = S.step === 0 && chipKey === 'occasion'
+					&& ( chipVal === OCC_OTHER || chipPrev === OCC_OTHER );
 				if (structural) { render(); return; }
 				overlay.querySelectorAll('[data-chip="' + chipKey + '"]').forEach(function (b) {
 					var on = b.getAttribute('data-val') === chipVal;
@@ -925,8 +933,8 @@
 	// Wizards plus die Formate der Landingpages (fge_format_occasion() in PHP).
 	var ALLOWED_OCCASIONS = [
 		'Golf-Teamevent', 'After-Work Golf', 'Golf & Workshop', 'Firmen-Golfturnier',
-		'Golf-Kundenevent', 'Nachtgolf-Event', 'Ein anderes Golf-Event',
-		'Platzreife', 'Incentive-Reise', 'Indoor-Golf-Event', 'Sommerfest'
+		'Golf-Kundenevent', 'Nachtgolf-Event', 'Andere Events', 'Indoor Weihnachtsfeier',
+		'Platzreife', 'Incentive-Reise', 'Indoor-Golf-Event', 'Sommerfest', 'Weihnachtsfeier'
 	];
 
 	ready(function () {

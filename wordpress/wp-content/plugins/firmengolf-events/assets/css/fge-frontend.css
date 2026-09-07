@@ -3959,7 +3959,7 @@ body.single-firmengolf_event .fg-footer { margin-top: 40px; }
 .xmas--compact { max-width: none; margin: 0; padding: 0; }
 .xmas--compact .xmas-inner { grid-template-columns: 1fr; gap: 0; }
 .xmas--compact .xmas-form { border: 0; box-shadow: none; padding: 0; background: transparent; }
-.simx-modal { max-width: 640px; }
+@media (min-width: 769px) { .simx-modal { max-width: 640px; } }
 .simx-modal-head { margin-bottom: 20px; }
 .simx-modal-loc { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px 12px; border-radius: 999px; background: #FBEBD6; color: #8A4B0A; font-size: 13px; }
 .simx-modal-loc b { font-weight: 600; }
@@ -3968,6 +3968,23 @@ body.single-firmengolf_event .fg-footer { margin-top: 40px; }
 .xmas-events-head { align-items: flex-start; }
 .xmas-events-note { font-size: 14px; color: var(--ink-600); margin: 6px 0 0; max-width: 62ch; }
 .xmas-events-more { display: flex; justify-content: center; margin-top: 28px; }
+/* Filterleiste (Chips wie auf der Eventliste) statt Suchleiste */
+.xmas-filter { margin: 16px 0 24px; }
+.xmas-filter-row { align-items: center; }
+.xmas-filter .fg-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; cursor: pointer; }
+.xmas-filter .fg-chip.active span { margin-left: 2px; opacity: .7; }
+.xmas-filter-plz { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--ink-200); border-radius: 999px; background: var(--paper-50); padding: 3px 3px 3px 14px; }
+.xmas-filter-plz .fg-input { border: 0; background: transparent; padding: 6px 4px; width: 150px; min-height: 0; box-shadow: none; }
+.xmas-filter-plz .fg-input:focus { box-shadow: none; }
+.xmas-filter-plz .fg-chip { background: var(--fairway-700); color: var(--paper-100); border-color: var(--fairway-700); min-height: 34px; padding: 6px 14px; }
+.xmas-filter-plz .fg-chip:hover { background: var(--fairway-600); }
+.xmas-filter-hint { font-size: 13px; color: var(--ink-600); margin: 8px 0 0; }
+@media (max-width: 768px) {
+  .xmas-filter-row { gap: 8px; flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
+  .xmas-filter .fg-chip.xmas-filter-geo { flex: 1 1 100%; justify-content: center; }
+  .xmas-filter-plz { flex: 1 1 100%; box-sizing: border-box; }
+  .xmas-filter-plz .fg-input { flex: 1; width: auto; font-size: 16px; }
+}
 .iv-tiles.playx-tiles { grid-template-columns: repeat(3, 1fr); }
 .playx-tile { aspect-ratio: 4 / 3; cursor: default; }
 .playx-tile .iv-tile-sub { color: rgba(251,250,246,.85); font-size: 14px; margin-top: 4px; }
