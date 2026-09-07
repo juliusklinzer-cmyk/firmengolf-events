@@ -158,12 +158,8 @@ if ( $partner_id ) {
 		$good_tags[] = 'Barrierearme Anlage';
 	}
 }
-if ( $guests_str ) {
-	$good_tags[] = $guests_str;
-}
-if ( $duration ) {
-	$good_tags[] = $duration;
-}
+// Gäste und Dauer stehen bereits in der Meta-Zeile unter dem Titel, nicht
+// noch einmal als „Gut zu wissen"-Kachel (Julius, 07.09.: Dubletten raus).
 
 // "Vor Ort am Platz" — Infrastruktur-Highlights des Golfplatzes mit Kapazitäten.
 $onsite = [];
@@ -354,8 +350,16 @@ get_header();
 
 	<article class="fg-detail">
 
-		<?php /* ── Back link ── */ ?>
-		<a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ); ?>" class="ev-back">← Alle Events</a>
+		<?php /* ── Zurück + Teilen in einer Zeile (Julius, 07.09.: Teilen oben rechts, bei allen Events) ── */ ?>
+		<div class="fg-detail-topbar">
+			<a href="<?php echo esc_url( get_post_type_archive_link( 'firmengolf_event' ) ); ?>" class="ev-back">← Alle Events</a>
+			<button class="fg-share-top fg-share-trigger" type="button" aria-label="Event teilen"
+			        data-share-url="<?php echo esc_url( get_permalink() ); ?>"
+			        data-share-title="<?php echo esc_attr( get_the_title() ); ?>">
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
+				<span class="fg-share-top-t">Teilen</span>
+			</button>
+		</div>
 
 		<?php /* ── Header ── */ ?>
 		<header class="fg-detail-header">
@@ -428,11 +432,6 @@ get_header();
 				<div class="fg-gal-slide" role="img" aria-label="<?php echo esc_attr( get_the_title() . ', Foto ' . ( $s_i + 1 ) ); ?>" style="background-image:url('<?php echo esc_url( $s[0] ); ?>')"><?php echo $s[1] > 0 ? $credit_overlay( $s[1] ) : ''; ?></div>
 				<?php endforeach; ?>
 			</div>
-			<button class="fg-gal-share fg-share-trigger" type="button" aria-label="Event teilen"
-			        data-share-url="<?php echo esc_url( get_permalink() ); ?>"
-			        data-share-title="<?php echo esc_attr( get_the_title() ); ?>">
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
-			</button>
 			<?php if ( count( $slides ) > 1 ) : ?>
 			<span class="fg-gal-count" aria-hidden="true"><span class="fg-gal-count-i">1</span>/<?php echo (int) count( $slides ); ?></span>
 			<?php endif; ?>
@@ -816,7 +815,7 @@ get_header();
 			<?php /* ── Price Rail ── */ ?>
 			<aside class="fg-detail-rail">
 				<div class="fg-rail-card">
-					<div>
+					<div class="fg-rail-pricebox">
 						<div class="fg-rail-live">
 							<span class="fg-live-dot" aria-hidden="true"></span>
 							<span>Angebot live seit <?php echo esc_html( get_the_date( 'F Y' ) ); ?></span>
@@ -829,7 +828,7 @@ get_header();
 					</div>
 
 					<div class="fg-rail-fields">
-						<div class="fg-rail-field">
+						<div class="fg-rail-field fg-rail-field--group">
 							<div class="fg-cell-label">Gruppe</div>
 							<div class="fg-cell-value"><?php echo esc_html( $guests_str ?: 'Nach Vereinbarung' ); ?></div>
 						</div>
@@ -839,13 +838,9 @@ get_header();
 						</div>
 					</div>
 
+					<?php /* „Wunschtermin anfragen" (Julius, 07.09.): jede Anfrage beginnt mit den Wunschterminen. Teilen sitzt oben in der Zurück-Zeile. */ ?>
 					<button class="fg-btn-brand block" id="open-modal-btn" type="button">
-						Dieses Event anfragen
-					</button>
-					<button class="fg-btn-ghost block fg-share-trigger" id="fg-share-btn" type="button"
-					        data-share-url="<?php echo esc_url( get_permalink() ); ?>"
-					        data-share-title="<?php echo esc_attr( get_the_title() ); ?>">
-						Event teilen
+						Wunschtermin anfragen
 					</button>
 
 					<div class="fg-rail-note"><?php echo esc_html( $is_self
@@ -889,12 +884,22 @@ get_header();
 	<?php get_template_part( 'template-parts/fge-footer' ); ?>
 
 	<?php /* Nur mobil: fixierter Anfrage-Fuß (Mechanik aus CLAUDE-MOBILE.md Punkt 5, --fg-vvb + safe-area) */ ?>
+	<?php
+	// Fuß-Preis: Platzhalter-Events „ab 69 € pro Person" (Orientierung), Partner-
+	// Events ihr Preis; darunter die Netto-Zeile (Julius, 07.09.).
+	$mcta_has_price = 'Auf Anfrage' !== $price_main;
+	$mcta_strong    = $mcta_has_price && $is_self ? 'ab ' . $price_main : $price_main;
+	$mcta_unit      = '';
+	if ( $mcta_has_price ) {
+		$mcta_unit = false !== strpos( $price_suffix, 'gesamt' ) ? 'gesamt' : 'pro Person';
+	}
+	?>
 	<div class="fg-mcta" id="fg-mcta">
 		<div class="fg-mcta-price">
-			<strong><?php echo esc_html( $price_main ); ?></strong>
-			<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
+			<strong><?php echo esc_html( $mcta_strong ); ?><?php if ( $mcta_unit ) : ?> <em><?php echo esc_html( $mcta_unit ); ?></em><?php endif; ?></strong>
+			<?php if ( $mcta_has_price && $price_is_netto ) : ?><span>netto, zzgl. 19&nbsp;% MwSt.</span><?php endif; ?>
 		</div>
-		<button class="fg-btn-brand fg-mcta-btn" type="button" data-open-request>Dieses Event anfragen</button>
+		<button class="fg-btn-brand fg-mcta-btn" type="button" data-open-request>Wunschtermin anfragen</button>
 	</div>
 
 </div><?php /* .fge-page */ ?>
@@ -1051,22 +1056,38 @@ get_header();
 
 			<p class="fg-wish-intro">Optionale Extras, nur wenn ihr mögt. Tippt an, was interessant klingt; alles Weitere schreibt ihr einfach unten rein. Wir stimmen es im Angebot ab.</p>
 
-			<div class="fg-wish-group-h">Beliebte Zusatzleistungen</div>
+			<?php
+			// Flache Ein-Klick-Auswahl der häufigsten Extras (kein Aufklappen). Nach Priorität,
+			// gerendert wird nur, was Platz/Firmengolf tatsächlich anbietet. data-source bleibt fürs Routing.
+			// Feste, konkrete Auswahl (Julius, 2026-08-11): die für Teamevents
+			// wichtigsten Extras, früh bis spät. Alles andere gehört ins Freifeld.
+			$wish_flat = [
+				[ 'key' => 'fruehstueck', 'label' => 'Frühstück',         'source' => 'platz',      'subs' => [] ],
+				[ 'key' => 'mittagessen', 'label' => 'Mittagessen',       'source' => 'platz',      'subs' => [] ],
+				[ 'key' => 'abendessen',  'label' => 'Abendessen',        'source' => 'platz',      'subs' => [] ],
+				[ 'key' => 'getraenke',   'label' => 'Getränkepauschale', 'source' => 'platz',      'subs' => [] ],
+				[ 'key' => 'shuttle',     'label' => 'Shuttle',           'source' => 'firmengolf', 'subs' => [] ],
+			];
+			// Die am Event hinterlegten Zusatzleistungen („Optional zubuchbar") zuerst,
+			// als eigene Gruppe anklickbar (Julius, 07.09.: waren in der Anfrage nirgends
+			// wählbar). Dubletten zur festen Liste fallen dort weg.
+			$event_addon_cats = [];
+			foreach ( (array) $addons as $ad_i => $ad_label ) {
+				$event_addon_cats[] = [ 'key' => 'event-addon-' . $ad_i, 'label' => $ad_label, 'source' => $is_self ? 'firmengolf' : 'platz', 'subs' => [] ];
+			}
+			$addon_labels_lc = array_map( static fn( $c ) => mb_strtolower( (string) $c['label'] ), $event_addon_cats );
+			$wish_flat       = array_values( array_filter( $wish_flat, static fn( $c ) => ! in_array( mb_strtolower( $c['label'] ), $addon_labels_lc, true ) ) );
+			?>
+			<?php if ( $event_addon_cats ) : ?>
+			<div class="fg-wish-group-h">Bei diesem Event zubuchbar</div>
 			<div class="fg-cat-grid">
-				<?php
-				// Flache Ein-Klick-Auswahl der häufigsten Extras (kein Aufklappen). Nach Priorität,
-				// gerendert wird nur, was Platz/Firmengolf tatsächlich anbietet. data-source bleibt fürs Routing.
-				// Feste, konkrete Auswahl (Julius, 2026-08-11): die für Teamevents
-				// wichtigsten Extras, früh bis spät. Alles andere gehört ins Freifeld.
-				$wish_flat = [
-					[ 'key' => 'fruehstueck', 'label' => 'Frühstück',         'source' => 'platz',      'subs' => [] ],
-					[ 'key' => 'mittagessen', 'label' => 'Mittagessen',       'source' => 'platz',      'subs' => [] ],
-					[ 'key' => 'abendessen',  'label' => 'Abendessen',        'source' => 'platz',      'subs' => [] ],
-					[ 'key' => 'getraenke',   'label' => 'Getränkepauschale', 'source' => 'platz',      'subs' => [] ],
-					[ 'key' => 'shuttle',     'label' => 'Shuttle',           'source' => 'firmengolf', 'subs' => [] ],
-				];
-				foreach ( $wish_flat as $c ) { $render_cat( $c ); }
-				?>
+				<?php foreach ( $event_addon_cats as $c ) { $render_cat( $c ); } ?>
+			</div>
+			<?php endif; ?>
+
+			<div class="fg-wish-group-h"<?php echo $event_addon_cats ? ' style="margin-top:18px;"' : ''; ?>>Beliebte Zusatzleistungen</div>
+			<div class="fg-cat-grid">
+				<?php foreach ( $wish_flat as $c ) { $render_cat( $c ); } ?>
 			</div>
 
 			<div class="fg-field" style="margin-top:18px;">
@@ -1474,14 +1495,11 @@ get_header();
 				return;
 			}
 			function feedback() {
-				if (shareBtn.classList.contains('fg-gal-share')) {
-					shareBtn.classList.add('is-copied');
-					setTimeout(function () { shareBtn.classList.remove('is-copied'); }, 1800);
-					return;
-				}
-				var orig = shareBtn.textContent;
-				shareBtn.textContent = 'Link kopiert ✓';
-				setTimeout(function () { shareBtn.textContent = orig; }, 1800);
+				var label = shareBtn.querySelector('.fg-share-top-t') || shareBtn;
+				var orig  = label.textContent;
+				shareBtn.classList.add('is-copied');
+				label.textContent = 'Link kopiert';
+				setTimeout(function () { label.textContent = orig; shareBtn.classList.remove('is-copied'); }, 1800);
 			}
 			if (navigator.clipboard) {
 				navigator.clipboard.writeText(url).then(feedback, function () { window.prompt('Link kopieren:', url); });

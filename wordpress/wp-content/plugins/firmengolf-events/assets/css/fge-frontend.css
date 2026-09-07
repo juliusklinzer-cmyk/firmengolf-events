@@ -3853,6 +3853,34 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 }
 
 
+/* ── 30a. EVENT DETAIL: Zurück + Teilen in einer Zeile, Politur-Pass (Emil, 07.09.) ── */
+.fg-detail-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0; }
+.fg-detail-topbar a.ev-back { margin: 0; }
+.fge-page button.fg-share-top { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--ink-200); background: var(--paper-50); color: var(--ink-700); font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform 160ms var(--ease-out); }
+.fge-page button.fg-share-top.is-copied { background: var(--fairway-100); border-color: var(--fairway-200); color: var(--fairway-800); }
+/* Druck-Feedback (scale statt Farbe, 160ms ease-out) für alle Pillen der Detailseite */
+a.ev-back { transition: background var(--dur-fast) var(--ease-out), transform 160ms var(--ease-out); }
+a.ev-back:active, .fge-page button.fg-share-top:active, .fg-btn-ghost:active, a.fg-btn-ghost:active, .fg-btn-outline:active, a.fg-btn-outline:active { transform: scale(0.97); }
+.fg-btn-ghost, a.fg-btn-ghost, .fg-btn-outline, a.fg-btn-outline { transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform 160ms var(--ease-out); }
+/* Hover nur auf hover-fähigen Geräten, sonst bleibt der Zustand nach dem Tippen kleben */
+@media (hover: hover) and (pointer: fine) {
+  .fge-page button.fg-share-top:hover { background: var(--paper-200); border-color: var(--ink-400); color: var(--ink-900); }
+}
+@media (hover: none) {
+  a.ev-back:hover { background: var(--paper-50); }
+}
+/* Anfrage-Dialog: Einstieg 220ms ease-out (Scrim-Fade, Panel aus 0.97 + Opacity), Ausstieg sofort. Kein JS nötig (@starting-style). */
+.fg-modal-scrim { transition: opacity 200ms var(--ease-out); }
+.fg-modal-scrim .fg-modal { transition: transform 220ms var(--ease-out), opacity 220ms var(--ease-out); }
+@starting-style {
+  .fg-modal-scrim:not(.is-hidden) { opacity: 0; }
+  .fg-modal-scrim:not(.is-hidden) .fg-modal { transform: scale(0.97); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  @starting-style { .fg-modal-scrim:not(.is-hidden) .fg-modal { transform: none; } }
+  a.ev-back:active, .fge-page button.fg-share-top:active, .fg-btn-ghost:active, a.fg-btn-ghost:active, .fg-btn-outline:active, a.fg-btn-outline:active { transform: none; }
+}
+
 /* ── 30b. EVENT DETAIL mobil (Julius, 07.09.): Foto-Wischreihe statt gestapelter
    Kacheln, Live-Status + Partner-Kennung unter dem Titel, Icon-Kacheln „Vor Ort",
    Platz-Button unter der Karte, fixierter Anfrage-Fuß (CLAUDE-MOBILE.md Punkt 5) ── */
@@ -3861,19 +3889,21 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 .evd-onsite-icons .evd-include { align-items: center; }
 @media (max-width: 768px) {
   .fg-detail-gallery { display: none; }
-  .fg-gal-wrap { display: block; position: relative; margin: 16px calc(50% - 50vw) 0; }
-  .fg-gal-slider { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 0 16px; scroll-padding-left: 16px; }
+  /* Weniger Luft zwischen Topnav und Zurück-Zeile (Julius, 07.09.) */
+  .fg-detail-topbar { margin: 12px 0 16px; }
+  .fg-detail-topbar a.ev-back, .fge-page button.fg-share-top { min-height: 36px; }
+  .fg-gal-wrap { display: block; position: relative; margin: 14px calc(50% - 50vw) 0; }
+  .fg-gal-slider { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 0 16px; scroll-padding-left: 16px; }
   .fg-gal-slider::-webkit-scrollbar { display: none; }
   .fg-gal-slide { flex: 0 0 calc(100vw - 32px); aspect-ratio: 4 / 3; border-radius: var(--radius-lg); background-size: cover; background-position: center; scroll-snap-align: start; position: relative; overflow: hidden; }
-  .fge-page button.fg-gal-share { position: absolute; top: 12px; right: 28px; width: 44px; height: 44px; border-radius: 999px; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(251,250,246,.92); color: var(--ink-900); box-shadow: 0 2px 10px rgba(14,19,16,.18); cursor: pointer; transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
-  .fge-page button.fg-gal-share:active { transform: scale(0.94); }
-  .fge-page button.fg-gal-share.is-copied { background: var(--fairway-700); color: #fff; }
   .fg-gal-count { position: absolute; right: 28px; bottom: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(14,19,16,.62); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .02em; pointer-events: none; }
   /* Live-Status + Partner-Kennung unter dem Titel, dafür in der Buchen-Karte weg */
   .fg-detail-mtags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 2px; }
   .fg-mtag-live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink-600); }
   .fg-mtag-partner.evd-map-partnertag { margin: 0; font-size: 11px; }
-  .fg-rail-live { display: none; }
+  /* Preis steht im Fuß, Gäste in der Meta-Zeile: beides nicht noch einmal in der Buchen-Karte */
+  .fg-rail-pricebox, .fg-rail-field--group { display: none; }
+  .fg-rail-field + .fg-rail-field { border-top: 0; }
   /* Vor Ort + Im Preis enthalten: Icon-Kacheln in Zweierreihen */
   .evd-poi-grid.evd-onsite { grid-template-columns: 1fr 1fr; gap: 8px; }
   .evd-onsite .evd-poi { padding: 12px; }
@@ -3885,7 +3915,8 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
   /* Fixierter Anfrage-Fuß: --fg-vvb hält ihn über der Safari-Leiste (fge-viewport.js) */
   .fg-mcta { position: fixed; left: 0; right: 0; bottom: var(--fg-vvb, 0px); z-index: 150; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--paper-50); border-top: 1px solid var(--ink-200); box-shadow: 0 -8px 24px rgba(14,19,16,.06); }
   .fg-mcta-price { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
-  .fg-mcta-price strong { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--ink-900); letter-spacing: -.01em; white-space: nowrap; }
+  .fg-mcta-price strong { font-family: var(--font-display); font-size: 19px; font-weight: 600; color: var(--ink-900); letter-spacing: -.01em; white-space: nowrap; }
+  .fg-mcta-price strong em { font-style: normal; font-family: var(--font-body); font-size: 12px; font-weight: 500; color: var(--ink-600); }
   .fg-mcta-price span { font-size: 11.5px; color: var(--ink-500); }
   .fg-mcta button.fg-mcta-btn { flex: none; min-height: 46px; padding: 0 20px; font-size: 15px; }
   html.fg-drawer-lock .fg-mcta { display: none; }
