@@ -212,7 +212,8 @@ $xr_cfg = $xr_variants[ $xr_v ];
 			var btn = form.querySelector('button[type=submit]'); btn.disabled = true; var orig = btn.textContent; btn.textContent = 'Wird gesendet …';
 			var v = function (n) { var el = f(n); return el ? el.value : ''; };
 			var place = v('place');
-			var services = [v('venue'), v('catering') !== 'ohne Catering' ? v('catering') : '', v('drinks') === 'Getränkepauschale' ? 'Getränkepauschale' : ''].filter(Boolean);
+			// Ortsart (venue) ist keine Leistung, sie steht in den Notizen (Review 07.09.).
+			var services = [v('catering') !== 'ohne Catering' ? v('catering') : '', v('drinks') === 'Getränkepauschale' ? 'Getränkepauschale' : ''].filter(Boolean);
 			var body = new URLSearchParams({
 				action: 'fge_general_request',
 				nonce: v('nonce'), fge_ft: v('fge_ft'), fge_js: v('fge_js'), fge_hp: v('fge_hp'),

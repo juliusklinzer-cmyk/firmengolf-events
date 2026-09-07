@@ -194,14 +194,17 @@
 				.filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; });
 			var lo = Math.max(500, Math.round(res.total * 0.85 / 500) * 500);
 			var hi = Math.max(lo + 500, Math.round(res.total * 1.15 / 500) * 500);
+			// Wizard fragt Budget pro Person: Richtwert auf den passenden Chip mappen (Review 07.09.).
+			var pp = state.participants > 0 ? res.total / state.participants : 0;
+			var ppChip = pp <= 0 ? 'Noch unklar' : (pp < 50 ? 'Bis 50 € p.P.' : (pp < 100 ? '50 bis 100 € p.P.' : (pp < 200 ? '100 bis 200 € p.P.' : (pp < 500 ? '200 bis 500 € p.P.' : 'Über 500 € p.P.'))));
 			Wizard.open('full', {
-				occasion: res.type.wiz || 'Teamevent',
+				occasion: res.type.wiz || 'Golf-Teamevent',
 				size: String(state.participants),
 				services: svcWiz,
-				budget: lo.toLocaleString('de-DE') + ' bis ' + hi.toLocaleString('de-DE') + ' €',
+				budget: ppChip,
 				notes: 'Über den Budget-Rechner geschätzt: ' + res.type.label + ', ' + state.participants
-					+ ' Personen, Preisniveau ' + state.range + ', Richtwert ca. ' + fmt(res.total) + ' €.'
-			});
+					+ ' Personen, Preisniveau ' + state.range + ', Richtwert ca. ' + fmt(res.total) + ' € gesamt (' + lo.toLocaleString('de-DE') + ' bis ' + hi.toLocaleString('de-DE') + ' €).'
+			}, false, 'budget');
 		});
 
 		applyType();

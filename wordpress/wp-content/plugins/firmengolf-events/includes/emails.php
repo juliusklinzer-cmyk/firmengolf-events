@@ -84,10 +84,15 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 		$event_line = '<p style="margin:0 0 16px;">Deine Anfrage bezieht sich auf <strong>' . esc_html( $data['event_title'] ) . '</strong>.</p>';
 	}
 
+	$ref_line = '';
+	$ref      = (string) get_post_meta( $request_id, '_fge_ref', true );
+	if ( '' !== $ref ) {
+		$ref_line = '<p style="margin:0 0 16px;color:#6C736E;font-size:13px;">Deine Vorgangsnummer: <strong>' . esc_html( $ref ) . '</strong></p>';
+	}
 	$content = '
 		<p style="margin:0 0 16px;">' . $greeting . '</p>
 		<p style="margin:0 0 16px;">vielen Dank für deine Anfrage, sie ist bei uns eingegangen und liegt bereits beim richtigen Ansprechpartner.</p>
-		' . $event_line . '
+		' . $event_line . $ref_line . '
 		<p style="margin:0 0 8px;"><strong>Wie es jetzt weitergeht</strong></p>
 		<ul style="margin:0 0 16px;padding-left:20px;">
 			<li style="margin-bottom:6px;">Wir sehen uns deine Angaben in Ruhe an und prüfen passende Optionen.</li>
@@ -150,6 +155,7 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 	$dates_text = $dates ? implode( ', ', $dates ) : ( $data['alt_period'] ?: 'k. A.' );
 
 	$rows = [
+		'Vorgang'     => esc_html( (string) get_post_meta( $request_id, '_fge_ref', true ) ?: 'k. A.' ),
 		'Anfragetyp'  => esc_html( $type_label ),
 		'Event'       => esc_html( $data['event_title'] ?: 'k. A.' ),
 		'Golfplatz'   => esc_html( $data['partner_title'] ?: 'k. A.' ),

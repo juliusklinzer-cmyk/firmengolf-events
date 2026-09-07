@@ -162,9 +162,13 @@ function fge_geo_suggest( string $q, int $limit = 8 ): array {
 	}
 
 	$seen = [];
+	// Großempfänger-PLZ (Versicherungen, Behörden, Banken) sind keine Orte (Review 07.09.).
+	$inst = '/\b(AG|GmbH|e\.\s?V\.|Versicherung|Bank|Sparkasse|Kasse|Agentur|Amt|Amtsgericht|Direktion|Verein|Post|Landes|Bundes|Zentrale|Krankenkasse|Genossenschaft|Universit|Hochschule|Klinik|Stadtwerke|Finanz|Deutsche|Allianz|Telekom|Verlag|Bausparkasse|Berufsgenossenschaft|Rentenversicherung|Ordinariat|Zentrum|Institut|Ministerium|Rathaus|Behörde|Gericht|Polizei|Werk|Stiftung|Kammer|Verband|Gesellschaft|Service|Center|Bistum|Diözese|Kirche|Klinikum|Landeshauptstadt|Referat|Stadtverwaltung|Gemeinde|Kreis|Fakult|Akademie|Schule|Gymnasium|Museum|Theater|Hotel|Flughafen|Bahnhof|Messe)\b/iu';
+	// Wortteile ohne Wortgrenze (Landgericht, Postbank, Universitätsklinikum, Berufsförderungswerk) plus Behörden-Schreibweise „-Amt-".
+	$inst_part = '/(gericht|klinik|universit|verwaltung|förderungswerk|magistrat|amt\b|krankenhaus|akademie|ministerium|zentrum|institut|stiftung|behörde|referat|kammer\b|kasse\b|bank\b|versicherung|feuerwehr|brauerei|betriebe|bibliothek|annahmestelle|einrichtung|präsidium|rundfunk|radio\b|stadthaus|werk\b|anstalt|studenten|dienst|gesellschaft|zentrale|verband|landkreis|landratsamt|geschäftsstelle|\bbkk\b|städtisch|technische\b|center\b|leipziger\b|hochschule|\bikk\b|\bdak\b|\baok\b|staatsanwalt|^stadt\b|industrie|handel|digiz| -[A-ZÄÖÜ][^-]*-)/iu';
 	foreach ( $data as $plz => $row ) {
 		$ort = $row[2];
-		if ( mb_stripos( $ort, $q ) === false ) {
+		if ( mb_stripos( $ort, $q ) === false || preg_match( $inst, $ort ) || preg_match( $inst_part, $ort ) ) {
 			continue;
 		}
 		$key = mb_strtolower( $ort );

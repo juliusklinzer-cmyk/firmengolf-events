@@ -271,7 +271,7 @@ get_header();
 	$xl_hero_post = get_page_by_path( 'weihnachtsfeier-mit-golf-in-ulm', OBJECT, 'firmengolf_event' );
 	$xl_hero_img  = ( $xl_hero_post && function_exists( 'fge_event_cover_url' ) ) ? fge_event_cover_url( $xl_hero_post->ID ) : fge_get_placeholder_image_url( $format['hero_img'] ?? 'onboarding-indoor-lounge.jpg' );
 	$xl_sim_count = function_exists( 'fge_simulatoren' ) ? count( fge_simulatoren() ) : 0;
-	$xl_title     = $xl_geo && '' !== $xl_loc ? 'Weihnachtsfeiern rund um ' . $xl_loc : 'Beliebte Weihnachtsfeier-Angebote';
+	$xl_title     = $xl_geo && '' !== $xl_loc ? ( 'Mein Standort' === $xl_loc ? 'Weihnachtsfeiern rund um euren Standort' : 'Weihnachtsfeiern rund um ' . $xl_loc ) : 'Beliebte Weihnachtsfeier-Angebote';
 ?>
 <section class="mk-hero xmas-hero" aria-label="<?php echo esc_attr( $format['h1'] ); ?>">
 	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $xl_hero_img ); ?>'); --xmas-hero-m:url('<?php echo esc_url( fge_get_placeholder_image_url( 'tiles/indoor-kundenevent.jpg' ) ); ?>')">
@@ -395,7 +395,7 @@ $play_formats = [
 	[ 'slug' => 'angry-birds',        't' => 'Angry Birds',        'b' => 'Bälle auf Zielscheiben, Punkte wie im Spiel.', 'img' => 'pool/indoor-topgolf-oberhausen.jpg' ],
 	[ 'slug' => 'putt-bierpong',      't' => 'Putt-Bierpong',      'b' => 'Putten statt werfen, Becher statt Loch.', 'img' => 'pool/indoor-bier-und-simulator.jpg' ],
 	[ 'slug' => 'team-scramble',      't' => 'Team-Scramble',      'b' => 'Vier spielen einen Ball, jeder Schlag zählt fürs Team.', 'img' => 'pool/indoor-golf-indoor-simulator-bar-event-im-team.jpg' ],
-	[ 'slug' => 'virtuelle-runde',    't' => 'Runde in St Andrews',  'b' => 'Neun Löcher auf den berühmtesten Plätzen der Welt.', 'img' => 'pool/indoor-18-in-st-andrews-the-home-of-golf.jpg' ],
+	[ 'slug' => 'virtuelle-runde',    't' => 'Runde in St. Andrews',  'b' => 'Neun Löcher auf den berühmtesten Plätzen der Welt.', 'img' => 'pool/indoor-18-in-st-andrews-the-home-of-golf.jpg' ],
 ];
 ?>
 <section class="mk-section playx cty-reveal" id="spielformate" aria-label="Spielformate für euer Team">
@@ -715,7 +715,7 @@ $play_formats = [
 <?php /* Cross-links zu anderen Formaten + CTA */ ?>
 <section class="mk-cta" aria-label="Anfrage">
 	<div class="mk-cta-inner">
-		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für euer <?php echo esc_html( $f_name ); ?>?</div>
+		<div class="mk-eyebrow" style="color:rgba(251,250,246,0.65)">Bereit für <?php echo esc_html( function_exists( 'fge_format_possessive' ) ? fge_format_possessive( $slug ) : 'euer' ); ?> <?php echo esc_html( $f_name ); ?>?</div>
 		<h2 class="mk-cta-h">Lasst uns euer Event <em class="mk-italic">planen</em>.</h2>
 		<div class="mk-cta-ctas">
 			<a class="fg-btn-ink fg-btn-lg" href="<?php echo esc_url( $anfrage_quick ); ?>" style="background:var(--paper-100);color:var(--fairway-900)">Event anfragen</a>

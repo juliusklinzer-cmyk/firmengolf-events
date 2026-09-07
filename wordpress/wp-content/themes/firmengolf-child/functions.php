@@ -564,7 +564,7 @@ add_filter( 'wp_theme_json_data_theme', function ( $theme_json ) {
 		foreach ( $data['settings']['typography']['fontFamilies']['theme'] as &$f ) {
 			$id = (string) ( ( $f['slug'] ?? '' ) . ( $f['name'] ?? '' ) );
 			if ( false !== stripos( $id, 'manrope' ) ) {
-				$f['fontFamily'] = '"Roboto", ui-sans-serif, system-ui, -apple-system, sans-serif';
+				$f['fontFamily'] = '"Roboto FG", "Roboto", ui-sans-serif, system-ui, -apple-system, sans-serif';
 				unset( $f['fontFace'] );
 			}
 		}

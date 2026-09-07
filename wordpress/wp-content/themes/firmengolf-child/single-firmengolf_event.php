@@ -262,7 +262,9 @@ $seo_city  = $location ?: $region;
 $seo_title = fge_get_event_meta( $post_id, 'seo_title' );
 if ( ! $seo_title ) {
 	$seo_base = str_replace( ' · ', ' in ', get_the_title() );
-	if ( $seo_city && stripos( $seo_base, (string) $seo_city ) === false ) {
+	// „Raum München" nur anhängen, wenn München selbst nicht schon im Titel steht (Review 07.09.).
+	$seo_city_core = trim( (string) preg_replace( '/^Raum\s+/u', '', (string) $seo_city ) );
+	if ( $seo_city_core && stripos( $seo_base, $seo_city_core ) === false ) {
 		$seo_base .= ' in ' . $seo_city;
 	}
 	$seo_title = $seo_base . ' | Firmengolf';

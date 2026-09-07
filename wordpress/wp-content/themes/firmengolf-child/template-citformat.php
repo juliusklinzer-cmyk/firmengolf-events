@@ -12,7 +12,10 @@ $city_slug   = (string) get_query_var( 'fge_city' );
 $format_slug = (string) get_query_var( 'fge_format' );
 
 $cities  = function_exists( 'fge_get_cities' ) ? fge_get_cities() : [];
+// Preis-FAQ stadtbewusst (Review 07.09.): Range-Helfer bevorzugt Events dieser Stadt.
+$GLOBALS['fge_price_range_city'] = function_exists( 'fge_get_cities' ) ? (string) ( fge_get_cities()[ (string) get_query_var( 'fge_city' ) ]['name'] ?? '' ) : '';
 $formats = function_exists( 'fge_get_event_format_pages' ) ? fge_get_event_format_pages() : [];
+$GLOBALS['fge_price_range_city'] = '';
 $city    = $cities[ $city_slug ] ?? null;
 $format  = $formats[ $format_slug ] ?? null;
 if ( ! $city || ! $format || ! fge_citformat_is_valid( $city_slug, $format_slug ) ) {
@@ -267,7 +270,7 @@ get_header();
 		<a class="evF-fill" href="<?php echo esc_url( $cf_anfrage_quick ); ?>">
 			<span class="evF-fill-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></span>
 			<span class="evF-fill-h">Nichts Passendes dabei?</span>
-			<span class="evF-fill-p">Wir stellen euer <?php echo esc_html( $format_name ); ?> in <?php echo esc_html( $city_name ); ?> nach Maß zusammen.</span>
+			<span class="evF-fill-p">Wir stellen <?php echo esc_html( function_exists( 'fge_format_possessive' ) ? fge_format_possessive( (string) get_query_var( 'fge_format' ) ) : 'euer' ); ?> <?php echo esc_html( $format_name ); ?> in <?php echo esc_html( $city_name ); ?> nach Maß zusammen.</span>
 			<span class="evF-fill-go">Event anfragen
 				<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>
 		</a>
@@ -431,7 +434,7 @@ foreach ( $sibling_cities as $sib ) {
 	$cf_cta_links .= '<a href="' . esc_url( home_url( '/golf-events/' . $sib . '/' . $format_slug . '/' ) ) . '">' . esc_html( $format_name . ' in ' . $cities[ $sib ]['name'] ) . '</a>';
 }
 get_template_part( 'template-parts/fge-putt-cta', null, [
-	'headline_html' => 'Lasst uns euer ' . esc_html( $format_name ) . ' in ' . esc_html( $city_name ) . ' <em class="mk-italic">planen</em>.',
+	'headline_html' => 'Lasst uns ' . esc_html( function_exists( 'fge_format_possessive' ) ? fge_format_possessive( (string) get_query_var( 'fge_format' ) ) : 'euer' ) . ' ' . esc_html( $format_name ) . ' in ' . esc_html( $city_name ) . ' <em class="mk-italic">planen</em>.',
 	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
 	'anfrage_url'   => $cf_anfrage_quick,
 	'links_html'    => $cf_cta_links,

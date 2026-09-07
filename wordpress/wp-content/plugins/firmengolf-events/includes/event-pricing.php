@@ -258,6 +258,39 @@ function fge_format_price_range( array $types ): ?array {
 	if ( null === $out ) {
 		return null;
 	}
+	// Stadt-×-Format-Seiten (Review 07.09.): das günstigste Event DIESER Stadt nennen,
+	// nicht das aus Köln, wenn direkt darüber das Hamburger Angebot steht.
+	$city = (string) ( $GLOBALS['fge_price_range_city'] ?? '' );
+	if ( '' !== $city ) {
+		$city_posts = get_posts( [
+			'post_type'      => 'firmengolf_event',
+			'post_status'    => 'publish',
+			'posts_per_page' => 50,
+			'fields'         => 'ids',
+			'meta_query'     => [
+				[ 'key' => '_fge_event_type', 'value' => $types, 'compare' => 'IN' ],
+				[ 'key' => '_fge_city', 'value' => $city ],
+				[ 'key' => '_fge_price_amount', 'value' => 0, 'compare' => '>', 'type' => 'NUMERIC' ],
+			],
+		] );
+		$best = null;
+		foreach ( $city_posts as $cid ) {
+			if ( function_exists( 'fge_event_is_public' ) && ! fge_event_is_public( (int) $cid ) ) {
+				continue;
+			}
+			$price = (float) get_post_meta( (int) $cid, '_fge_price_amount', true );
+			if ( function_exists( 'fge_customer_price' ) ) {
+				$price = (float) fge_customer_price( $price );
+			}
+			if ( $price > 0 && ( null === $best || $price < $best[0] ) ) {
+				$best = [ $price, (int) $cid ];
+			}
+		}
+		if ( $best ) {
+			$out['min']    = $best[0];
+			$out['min_id'] = $best[1];
+		}
+	}
 	$out['min_url']   = (string) get_permalink( $out['min_id'] );
 	$out['min_title'] = (string) get_the_title( $out['min_id'] );
 	return $out;

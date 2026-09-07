@@ -31,12 +31,12 @@ function fge_bc_defaults(): array {
 		[ 'id' => 'shuttle',       'label' => 'Shuttle-Service',                        'cat' => 'transport','icon' => 'bus',  'pp' => 38,  'flat' => 0,    'wiz' => 'Shuttle / Transport' ],
 		[ 'id' => 'vip_shuttle',   'label' => 'VIP-Shuttle',                            'cat' => 'transport','icon' => 'star', 'pp' => 0,   'flat' => 1200, 'wiz' => 'Shuttle / Transport' ],
 		// Golf-Leistung (Platznutzung/Greenfee inkludiert).
-		[ 'id' => 'schnupperkurs', 'label' => 'Schnupperkurs (inkl. Platz, Golflehrer & Leihschläger)', 'cat' => 'programm', 'icon' => 'coaching', 'pp' => 99, 'flat' => 0, 'wiz' => 'Schnupperkurs' ],
-		[ 'id' => 'platzreife',    'label' => 'Platzreifekurs (PGA-Pro, Regeln & Prüfung)',            'cat' => 'programm', 'icon' => 'coaching', 'pp' => 299, 'flat' => 0, 'wiz' => 'Platzreife' ],
-		[ 'id' => 'coaching',      'label' => 'Trainerstunde / Golftraining',           'cat' => 'programm', 'icon' => 'club', 'pp' => 48,  'flat' => 0,    'wiz' => 'Golflehrer / Coaching' ],
-		[ 'id' => 'turnier',       'label' => 'Firmenturnier (9 oder 18 Loch, inkl. Greenfee & Scoring)', 'cat' => 'venue', 'icon' => 'trophy', 'pp' => 145, 'flat' => 0, 'wiz' => 'Firmenturnier' ],
+		[ 'id' => 'schnupperkurs', 'label' => 'Schnupperkurs (inkl. Platz, Golflehrer & Leihschläger)', 'cat' => 'programm', 'icon' => 'coaching', 'pp' => 99, 'flat' => 0, 'wiz' => 'Grundlagenkurs' ],
+		[ 'id' => 'platzreife',    'label' => 'Platzreifekurs (PGA-Pro, Regeln & Prüfung)',            'cat' => 'programm', 'icon' => 'coaching', 'pp' => 299, 'flat' => 0, 'wiz' => 'Platzreifekurs' ],
+		[ 'id' => 'coaching',      'label' => 'Trainerstunde / Golftraining',           'cat' => 'programm', 'icon' => 'club', 'pp' => 48,  'flat' => 0,    'wiz' => 'Grundlagenkurs' ],
+		[ 'id' => 'turnier',       'label' => 'Firmenturnier (9 oder 18 Loch, inkl. Greenfee & Scoring)', 'cat' => 'venue', 'icon' => 'trophy', 'pp' => 145, 'flat' => 0, 'wiz' => '9-Loch-Turnier' ],
 		[ 'id' => 'putting',       'label' => 'Putting-Turnier',                        'cat' => 'programm', 'icon' => 'target','pp' => 0,   'flat' => 600,  'wiz' => 'Putting-Challenge' ],
-		[ 'id' => 'nachtrunde',    'label' => 'Nacht-Runde (Kurzplatz / Range)',        'cat' => 'venue',    'icon' => 'flag', 'pp' => 75,  'flat' => 0,    'wiz' => 'Firmenturnier' ],
+		[ 'id' => 'nachtrunde',    'label' => 'Nacht-Runde (Kurzplatz / Range)',        'cat' => 'venue',    'icon' => 'flag', 'pp' => 75,  'flat' => 0,    'wiz' => 'Flutlicht und Nacht-Event' ],
 		// Verpflegung (im Tagesverlauf).
 		[ 'id' => 'startgeschenk', 'label' => 'Startgeschenk / Goodie-Bag',             'cat' => 'extras',   'icon' => 'gift', 'pp' => 35,  'flat' => 0,    'wiz' => 'Individuelle Artikel' ],
 		[ 'id' => 'welcome_drink', 'label' => 'Welcome Drink',                          'cat' => 'catering', 'icon' => 'drink','pp' => 12,  'flat' => 0,    'wiz' => 'Bar & Drinks' ],
@@ -51,9 +51,9 @@ function fge_bc_defaults(): array {
 		[ 'id' => 'technik',       'label' => 'Bühne & Eventtechnik',                   'cat' => 'technik',  'icon' => 'show', 'pp' => 0,   'flat' => 3200, 'wiz' => 'Bühne mit Licht und Ton' ],
 		// Turnier-Extras.
 		[ 'id' => 'siegerehrung',  'label' => 'Siegerehrung & Preise',                  'cat' => 'extras',   'icon' => 'trophy','pp' => 0,  'flat' => 900,  'wiz' => 'Pokale & Preise' ],
-		[ 'id' => 'sonderwertung', 'label' => 'Sonderwertungen (Longest Drive / Nearest to Pin)', 'cat' => 'extras', 'icon' => 'target', 'pp' => 0, 'flat' => 400, 'wiz' => 'Firmenturnier' ],
+		[ 'id' => 'sonderwertung', 'label' => 'Sonderwertungen (Longest Drive / Nearest to Pin)', 'cat' => 'extras', 'icon' => 'target', 'pp' => 0, 'flat' => 400, 'wiz' => 'Long-Drive-Challenge' ],
 		[ 'id' => 'branding',      'label' => 'Branding (Abschläge, Banner, Merch)',    'cat' => 'extras',   'icon' => 'tag',  'pp' => 0,   'flat' => 700,  'wiz' => 'Branding & Banner' ],
-		[ 'id' => 'turnierserie',  'label' => 'Turnier-Serie (mehrere Termine)',        'cat' => 'extras',   'icon' => 'calendar','pp' => 0,'flat' => 2500, 'wiz' => 'Firmenturnier' ],
+		[ 'id' => 'turnierserie',  'label' => 'Turnier-Serie (mehrere Termine)',        'cat' => 'extras',   'icon' => 'calendar','pp' => 0,'flat' => 2500, 'wiz' => '9-Loch-Turnier' ],
 		// Raum, Übernachtung, Content.
 		[ 'id' => 'meetingraum',   'label' => 'Meetingraum / Tagung',                   'cat' => 'programm', 'icon' => 'room', 'pp' => 0,   'flat' => 800,  'wiz' => 'Meetingraum' ],
 		[ 'id' => 'uebernachtung', 'label' => 'Übernachtung',                           'cat' => 'uebernachtung','icon' => 'bed','pp' => 155,'flat' => 0,  'wiz' => 'Übernachtung' ],
@@ -67,7 +67,7 @@ function fge_bc_defaults(): array {
 
 	$types = [
 		[
-			'id' => 'teamevent', 'label' => 'Teamevent', 'wiz' => 'Teamevent',
+			'id' => 'teamevent', 'label' => 'Teamevent', 'wiz' => 'Golf-Teamevent',
 			'services'   => [ 'shuttle', 'schnupperkurs', 'coaching', 'putting', 'catering', 'getraenke', 'meetingraum', 'foto' ],
 			'default_on' => [ 'schnupperkurs' ],
 			'required'   => [],
@@ -79,13 +79,13 @@ function fge_bc_defaults(): array {
 			'required'   => [ 'platzreife' ],
 		],
 		[
-			'id' => 'turnier', 'label' => 'Firmenturnier', 'wiz' => 'Firmenturnier',
+			'id' => 'turnier', 'label' => 'Firmenturnier', 'wiz' => 'Firmen-Golfturnier',
 			'services'   => [ 'vip_shuttle', 'turnier', 'startgeschenk', 'welcome_drink', 'halfway', 'cominghome', 'dinner', 'siegerehrung', 'sonderwertung', 'branding', 'turnierserie', 'musik', 'technik', 'foto' ],
 			'default_on' => [ 'turnier' ],
 			'required'   => [],
 		],
 		[
-			'id' => 'kundenevent', 'label' => 'Kundenevent', 'wiz' => 'Kundenevent',
+			'id' => 'kundenevent', 'label' => 'Kundenevent', 'wiz' => 'Golf-Kundenevent',
 			'services'   => [ 'vip_shuttle', 'schnupperkurs', 'coaching', 'turnier', 'welcome_drink', 'catering', 'dinner', 'branding', 'foto' ],
 			'default_on' => [ 'schnupperkurs' ],
 			'required'   => [],
@@ -109,13 +109,13 @@ function fge_bc_defaults(): array {
 			'required'   => [],
 		],
 		[
-			'id' => 'nachtturnier', 'label' => 'Nachtturnier', 'wiz' => 'Firmenturnier',
+			'id' => 'nachtturnier', 'label' => 'Nachtturnier', 'wiz' => 'Firmen-Golfturnier',
 			'services'   => [ 'flutlicht', 'shuttle', 'nachtrunde', 'leuchtball', 'welcome_drink', 'halfway', 'cominghome', 'dinner', 'siegerehrung', 'musik', 'bar', 'technik', 'foto' ],
 			'default_on' => [ 'nachtrunde' ],
 			'required'   => [ 'flutlicht' ],
 		],
 		[
-			'id' => 'andere', 'label' => 'Andere', 'wiz' => 'Teamevent',
+			'id' => 'andere', 'label' => 'Andere', 'wiz' => 'Andere Events',
 			'services'   => $all_ids,
 			'default_on' => [],
 			'required'   => [],

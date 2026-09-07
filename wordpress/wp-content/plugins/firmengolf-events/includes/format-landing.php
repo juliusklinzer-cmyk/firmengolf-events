@@ -32,7 +32,7 @@ function fge_format_price_faq( string $question, string $plural, array $types, s
 	$min = fge_price_eur( $range['min'] );
 	if ( $range['max'] > $range['min'] ) {
 		$answer = sprintf(
-			'Das hängt von Platz, Leistungen und Verpflegung ab. Aktuell liegen unsere buchbaren %s zwischen %s und %s pro Person, netto. Am günstigsten ist gerade der %s.',
+			'Das hängt von Platz, Leistungen und Verpflegung ab. Aktuell liegen unsere buchbaren %s zwischen %s und %s pro Person, netto. Am günstigsten ist gerade: %s.',
 			$plural,
 			$min,
 			fge_price_eur( $range['max'] ),
@@ -40,7 +40,7 @@ function fge_format_price_faq( string $question, string $plural, array $types, s
 		);
 	} else {
 		$answer = sprintf(
-			'Das hängt von Platz, Leistungen und Verpflegung ab. Aktuell buchbar ist der %s für %s pro Person, netto.',
+			'Das hängt von Platz, Leistungen und Verpflegung ab. Aktuell buchbar: %s für %s pro Person, netto.',
 			$range['min_title'],
 			$min
 		);
@@ -183,7 +183,7 @@ function fge_get_event_format_pages(): array {
 				$f_anf,
 				$faq( 'Können wir schon für 2027 planen?', 'Ja, und das lohnt sich: Die Sommertermine von Juni bis September sind auf beliebten Anlagen früh vergeben. Fragt jetzt an, wir sichern euch Platz und Wunschtermin und feilen das Programm in Ruhe mit euch aus.' ),
 				$faq( 'Was machen Kolleginnen und Kollegen ohne Golferfahrung?', 'Sie haben ihr eigenes Programm: Einführung mit dem Golflehrer, erste Schläge auf der Range, dann eine Runde auf dem Kurzplatz. Zur Putting-Challenge und zum Barbecue kommen alle wieder zusammen.' ),
-				fge_format_price_faq( 'Was kostet ein Sommerfest auf dem Golfplatz?', 'Sommerfeste', [ 'sommerfest', 'firmen_golfturnier', 'teamevent' ], 'Im Paket stecken Turnier und Einsteigerprogramm mit Betreuung, Leihschläger, Putting-Challenge und das Barbecue. Getränkepauschale, Musik und Extras passen wir an euer Fest an.' ),
+				fge_format_price_faq( 'Was kostet ein Sommerfest auf dem Golfplatz?', 'Sommerfeste', [ 'sommerfest' ], 'Im Paket stecken Turnier und Einsteigerprogramm mit Betreuung, Leihschläger, Putting-Challenge und das Barbecue. Getränkepauschale, Musik und Extras passen wir an euer Fest an.' ),
 				$f_fast,
 				$f_bill,
 			],
@@ -303,6 +303,15 @@ function fge_get_event_format_pages(): array {
  * Platzreife/Incentive stehen nicht in der Standard-Anlassliste und erscheinen
  * im Wizard als zusätzliche, vorgewählte Kachel.
  */
+/**
+ * Possessiv je Format für Sätze wie „Bereit für euer Teamevent?" (Genus des
+ * Formatnamens: das Teamevent, die Weihnachtsfeier, der Workshop). Review 07.09.
+ */
+function fge_format_possessive( string $slug ): string {
+	$map = [ 'weihnachtsfeier' => 'eure', 'platzreife' => 'eure', 'workshop' => 'euren', 'incentive' => 'eure' ];
+	return $map[ $slug ] ?? 'euer';
+}
+
 function fge_format_occasion( string $slug ): string {
 	$map = [
 		'teamevent'       => 'Teamevent',

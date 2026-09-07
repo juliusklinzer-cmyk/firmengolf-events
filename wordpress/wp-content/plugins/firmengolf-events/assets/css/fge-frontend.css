@@ -5,14 +5,14 @@
    ========================================================================== */
 
 /* ---------- 1. FONTS ---------- */
-/* Redesign 2026-07: Roboto überall — self-hosted statt Google-Fonts-<link>
+/* Redesign 2026-07: Roboto überall; Familie heißt lokal "Roboto FG", weil Google Maps sonst seine eigene "Roboto" darüberlegt und die Seite reflowt (Review 07.09.). — self-hosted statt Google-Fonts-<link>
    (DSGVO: kein externer Request vor Consent). Rajdhani war kurz als Hero-Schrift
    drin, wurde am 2026-07-03 wieder verworfen (Hero = wie übrige Heros). */
-@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Italic.woff2")  format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Medium.woff2")  format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Bold.woff2")    format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "Roboto"; src: url("../fonts/Roboto-Black.woff2")   format("woff2"); font-weight: 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto FG"; src: url("../fonts/Roboto-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto FG"; src: url("../fonts/Roboto-Italic.woff2")  format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Roboto FG"; src: url("../fonts/Roboto-Medium.woff2")  format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto FG"; src: url("../fonts/Roboto-Bold.woff2")    format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto FG"; src: url("../fonts/Roboto-Black.woff2")   format("woff2"); font-weight: 900; font-style: normal; font-display: swap; }
 
 @font-face { font-family: "JetBrains Mono"; src: url("../fonts/JetBrainsMono-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 
@@ -83,10 +83,10 @@
   --border-brand:  var(--fairway-200);
 
   /* Fonts (Redesign 2026-07: Roboto überall) */
-  --font-display: "Roboto", ui-sans-serif, system-ui, sans-serif;
-  --font-body:    "Roboto", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Roboto FG", "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-body:    "Roboto FG", "Roboto", ui-sans-serif, system-ui, -apple-system, sans-serif;
   /* Serif-Kursive ist raus — Alt-Verweise (Portal/Onboarding/Termin) fallen auf Roboto zurück. */
-  --font-serif:   "Roboto", Georgia, serif;
+  --font-serif:   "Roboto FG", "Roboto", Georgia, serif;
   --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --fw-regular:  400;
@@ -3859,6 +3859,16 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 }
 
 
+/* ── Tablet-Nav 769 bis 960 px (Review 07.09.): kompakt und einzeilig statt Zweizeiler ── */
+@media (min-width: 769px) and (max-width: 960px) {
+  .fg-topnav-inner { gap: 14px; }
+  .fg-nav-items { gap: 14px; font-size: 13px; }
+  .fg-nav-items a { white-space: nowrap; }
+  .fg-nav-end { gap: 10px; }
+  .fg-nav-end .fg-nav-link { display: none; }
+  .fg-nav-end .fg-nav-cta, .fg-nav-end a.fg-nav-cta { padding: 9px 14px; font-size: 13px; white-space: nowrap; }
+}
+
 /* ── 29b. STARTSEITE: INDOOR-BANNER (Julius, 07.09.) ──
    Band in Papier-200 wie die anderen Bänder, Foto links, Text rechts. Kein
    Theme-Wechsel mitten auf der Seite, ein Akzent (fairway), Pillen-Buttons. */
@@ -7332,3 +7342,38 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
 /* Stadt-Format-Story (Julius, 03.09.): mehr Luft zwischen Headline und Subtext. */
 .cty-story-copy .cty-story-intro { margin-top: 22px; }
 .cty-story-copy .cty-story-points { margin-top: 22px; }
+
+/* ── Mobil: Touch-Targets mindestens 44 px, Sektionsabstände nach UX-Standard (Review 07.09.) ──
+   Gilt für alle Strecken über die zentralen Klassen; Schrift bleibt, nur Höhe/Padding wächst. */
+@media (max-width: 768px) {
+  .fg-btn-brand, a.fg-btn-brand, button.fg-btn-brand, .fg-btn-cta, a.fg-btn-cta, button.fg-btn-cta,
+  .fg-btn-ghost, a.fg-btn-ghost, .fg-btn-ghost-light, a.fg-btn-ghost-light, .fg-btn-outline, a.fg-btn-outline,
+  .fg-btn-ink, a.fg-btn-ink, .xmas-cta, .fge-page button.xmas-cta { min-height: 44px; }
+  .fg-chip, a.fg-chip, button.fg-chip { min-height: 44px; display: inline-flex; align-items: center; }
+  a.ev-back, .fge-page button.fg-share-top, .fg-detail-topbar a.ev-back { min-height: 44px; display: inline-flex; align-items: center; }
+  .fg-nav-burger { padding: 10px; }
+  /* button.-Varianten nötig: die 640-px-Kompaktregel (button.fg-btn-ink, button.bc-step-btn) ist spezifischer als die Klasse allein */
+  button.fg-btn-ink, button.fg-btn-brand, button.fg-btn-cta, button.fg-btn-ghost-light, button.fg-btn-ink.lg { min-height: 44px; }
+  button.fg-stepper-btn, .rw-step-btn, .rw-overlay .rw-step-btn, .bc-step-btn, button.bc-step-btn { width: 44px; height: 44px; flex: none; }
+  .bc-seg-btn, .bc-chip { min-height: 44px; }
+  .rw-shortcut, .rw-help-btn, .rw-btn-text, .rw-overlay .rw-btn-text { min-height: 44px; }
+  .fg-brand { padding: 9px 0; }
+  .fg-footer-cols a { padding: 12px 0; }
+  .fg-footer-cities-links { gap: 2px 16px; }
+  .fg-footer-cities-links a { display: inline-block; padding: 12px 0; }
+  .fg-footer-socials a, .fg-footer-socials button { width: 44px; height: 44px; }
+  .fg-footer-links a, .cty-cta-cities a { display: inline-block; padding: 12px 0; }
+  .faq-a-link, .cty-founder-mail, .ev-catsec-all, .gpx-slide-cta { display: inline-block; padding: 12px 0; }
+  .ev-filter-btn, .ev-geo-card .ev-geo-skip { min-height: 44px; }
+  /* Weihnachts-Filterleiste: Chips 44 px, Such-Chip in der Pille 38 px (Pille wird damit 44 px) */
+  .xmas-filter .fg-chip, .xmas-filter .fg-chip.xmas-filter-geo { min-height: 44px; }
+  .xmas-filter-plz .fg-chip.xmas-filter-go { min-height: 38px; }
+  /* Teilen-Button auf Event-Karten bleibt optisch 30 px, Tippfläche wächst unsichtbar auf 44 px */
+  .evF-share.evF-share { overflow: visible; }
+  .evF-share.evF-share::before { content: ""; position: absolute; inset: -7px; border-radius: 999px; }
+  select.bc-select { font-size: 16px; }
+  /* Sektionsabstand: 96 px Desktop → 56 px mobil (Ober- und Unterkante), Bänder behalten Innenabstand */
+  .mk-section { padding-top: 56px; padding-bottom: 56px; }
+  .iv-section { padding-top: 56px; padding-bottom: 56px; }
+  .fg-grid-section { padding-top: 40px; padding-bottom: 40px; }
+}

@@ -92,9 +92,9 @@ function fge_citformat_format_meta(): array {
 			'desc'  => 'Golf-Incentive in %s: Golf, Hotellerie und Rahmenprogramm zu einem Paket. Leistung belohnen mit einem Erlebnis statt einem Bonus.',
 		],
 		'weihnachtsfeier' => [
-			'h1'    => 'Weihnachtsfeier mit Indoor-Golf in %s',
+			'h1'    => 'Weihnachtsfeier mit Indoor‑Golf in %s',
 			'eyeb'  => 'Weihnachtsfeier · %s',
-			'title' => 'Weihnachtsfeier mit Indoor-Golf in %s, Firmengolf',
+			'title' => 'Weihnachtsfeier mit Indoor-Golf in %s | Firmengolf',
 			// Kurzer Hero-Sub (Julius, 03.09.): der erste Intro-Satz war zu lang.
 			'hero_sub' => 'Glühwein, Golf-Challenge und Weihnachtsmenü, warm und wetterfest im Simulator.',
 			'desc'  => 'Weihnachtsfeier in %s, die im Gedächtnis bleibt: Glühwein, Golf-Challenge mit Betreuung und gemeinsames Weihnachtsessen, indoor am Simulator oder im Clubhaus. Beliebte Dezember-Termine früh anfragen.',
