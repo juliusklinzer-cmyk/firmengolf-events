@@ -124,26 +124,41 @@
 			donut.innerHTML = '';
 			donut.appendChild(svg);
 		}
+		/* Vorherige Lage je Segment (Startwinkel), damit ein neues Segment an der Stelle
+		   aufgeht, an der es im Ring einsortiert wird, und die Nachbarn im Uhrzeigersinn
+		   weiterrücken, statt irgendwo „reinzuploppen" (Julius, 07.09.). */
+		var prevLayout = {}, prevTotalLen = 0;
 		function renderDonut(rows, total) {
 			ensureSvg();
-			var off = 0, seen = {};
-			rows.forEach(function (row) {
+			var off = 0, seen = {}, layout = {};
+			rows.forEach(function (row, i) {
 				var frac = total ? row.amount / total : 0, len = frac * CIRC;
 				var seg = segs[row.id];
 				var isNew = !seg;
 				if (isNew) {
+					// Startpunkt = alter Startwinkel des nächsten bereits vorhandenen Segments,
+					// sonst das Ende des alten Rings.
+					var initOff = prevTotalLen;
+					for (var k = i + 1; k < rows.length; k++) {
+						if (prevLayout[rows[k].id]) { initOff = prevLayout[rows[k].id].off; break; }
+					}
 					seg = document.createElementNS(NS, 'circle');
 					seg.setAttribute('cx', SIZE / 2); seg.setAttribute('cy', SIZE / 2); seg.setAttribute('r', R);
 					seg.setAttribute('fill', 'none'); seg.setAttribute('stroke-width', '20'); seg.setAttribute('stroke-linecap', 'butt');
 					seg.setAttribute('stroke-dasharray', '0 ' + CIRC);
-					seg.setAttribute('stroke-dashoffset', -off);
+					seg.setAttribute('stroke-dashoffset', -initOff);
 					segs[row.id] = seg;
 				}
+				layout[row.id] = { off: off, len: len };
 				seg.setAttribute('stroke', row.color);
 				svg.appendChild(seg); // Reihenfolge = Typ-Reihenfolge
+				// Eigene Kopie des Startwinkels: `off` läuft in der Schleife weiter, die
+				// verzögerte Anwendung hätte sonst den Endwert erwischt (alle Segmente
+				// starteten bei 12 Uhr, deshalb wirkte die Animation unlogisch).
+				var myOff = off;
 				var apply = function () {
 					seg.setAttribute('stroke-dasharray', len + ' ' + (CIRC - len));
-					seg.setAttribute('stroke-dashoffset', -off);
+					seg.setAttribute('stroke-dashoffset', -myOff);
 				};
 				if (isNew && !REDUCE) requestAnimationFrame(function () { requestAnimationFrame(apply); }); else apply();
 				seen[row.id] = true;
@@ -153,9 +168,12 @@
 				if (seen[id]) return;
 				var seg = segs[id];
 				delete segs[id];
+				// Entferntes Segment zieht sich auf seinen alten Startpunkt zusammen.
 				seg.setAttribute('stroke-dasharray', '0 ' + CIRC);
 				setTimeout(function () { if (seg.parentNode) seg.parentNode.removeChild(seg); }, REDUCE ? 0 : 520);
 			});
+			prevLayout = layout;
+			prevTotalLen = off;
 		}
 
 		/* ---- Aufschlüsselung: Zeilen je Leistung fortschreiben (neu gleitet ein,

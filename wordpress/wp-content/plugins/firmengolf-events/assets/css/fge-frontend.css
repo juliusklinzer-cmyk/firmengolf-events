@@ -4416,7 +4416,7 @@ button.bc-chip {
 }
 .bc-total-meta { font-size: 14px; color: var(--ink-500); margin-top: 10px; }
 .bc-total-cta { margin-top: 22px; width: 100%; justify-content: center; }
-.bc-total-note { font-size: 12px; color: var(--ink-400); margin-top: 12px; line-height: 1.4; }
+.bc-total-note { font-size: 12px; color: var(--ink-400); margin-top: 20px; line-height: 1.5; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 900px) {
