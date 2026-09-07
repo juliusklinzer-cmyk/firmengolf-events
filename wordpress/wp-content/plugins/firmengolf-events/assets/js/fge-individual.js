@@ -801,7 +801,7 @@
 			var tags = (S.form.calcServices || []).map(function (l) { return '<span class="rw-tag">' + esc(l) + '</span>'; }).join('');
 			var side = '<div class="rw-photo rw-photo--julius">'
 				+ (CFG.logo ? '<img class="rw-pj-logo" src="' + esc(CFG.logo) + '" alt="Firmengolf" height="26">' : '')
-				+ (CFG.juliusImg ? '<img class="rw-pj-img" src="' + esc(CFG.juliusImg) + '" alt="' + esc(CONTACT.name) + '">' : '')
+				+ ((CFG.juliusReqImg || CFG.juliusImg) ? '<img class="rw-pj-img" src="' + esc(CFG.juliusReqImg || CFG.juliusImg) + '" alt="' + esc(CONTACT.name) + '">' : '')
 				+ '<div class="rw-pj-txt"><b>' + esc(CONTACT.name) + '</b><span>' + esc(CONTACT.role) + ' · Firmengolf</span>'
 				+ '<em>„Ich rufe dich persönlich an und stimme alles mit dir ab."</em></div></div>';
 			return '<div class="rw-stage"><div class="rw-screen rw-has-photo rw-screen--budget"><div class="rw-main">'

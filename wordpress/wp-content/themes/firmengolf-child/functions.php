@@ -395,6 +395,8 @@ add_action( 'wp_enqueue_scripts', function() {
 			// Wizard-Chrome + Erfolgsscreen (Logo, Julius-Portrait, persönliche Mail, Datenschutz-Link).
 			'logo'        => function_exists( 'fge_get_logo_url' ) ? fge_get_logo_url() : '',
 			'juliusImg'   => function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'gruender-julius-klinzer.jpg' ) : '',
+			// Freigestelltes Portrait für die Kurz-Anfrage aus dem Rechner (Julius, 07.09.).
+			'juliusReqImg' => function_exists( 'fge_get_placeholder_image_url' ) ? fge_get_placeholder_image_url( 'gruender-julius-anfrage.jpg' ) : '',
 			'juliusEmail' => 'julius@firmengolf-events.de',
 			'privacyUrl'  => home_url( '/datenschutz/' ),
 			// Hilfe-Popover im Wizard-Kopf (Anruf + Mail, zentrale Daten aus fge_company()).
