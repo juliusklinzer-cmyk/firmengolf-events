@@ -37,6 +37,10 @@ function fge_bc_defaults(): array {
 		// Anreise.
 		[ 'id' => 'shuttle',       'label' => 'Transport & Shuttle (Bus, Hin- und Rückfahrt)',                    'cat' => 'transport','icon' => 'bus',  'pp' => [ 0, 0, 0 ],    'flat' => [ 450, 550, 800 ],          'wiz' => 'Shuttle / Transport' ],
 		[ 'id' => 'vip_shuttle',   'label' => 'VIP-Shuttle (Limousine oder Sprinter, Halbtag)',                            'cat' => 'transport','icon' => 'star', 'pp' => [ 0, 0, 0 ],       'flat' => [ 350, 400, 750 ], 'wiz' => 'Shuttle / Transport' ],
+		// Indoor-Weihnachtsfeier am Simulator (Julius, 07.09.): Boxen mit Betreuung, Glühwein-Empfang.
+		// Simulator-Preis ist Annahme (nicht Teil der Marktrecherche), Bays kosten 40 bis 60 € je Stunde für 4 bis 6 Personen.
+		[ 'id' => 'simulator',     'label' => 'Indoor-Golf am Simulator (Boxen, Betreuung, 3 Stunden)', 'cat' => 'venue', 'icon' => 'target', 'pp' => [ 35, 45, 60 ], 'flat' => [ 0, 0, 0 ], 'wiz' => 'Indoor-Golf am Simulator' ],
+		[ 'id' => 'gluehwein',     'label' => 'Glühwein-Empfang',                    'cat' => 'catering', 'icon' => 'drink','pp' => [ 5, 10, 15 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
 		// Golf-Leistung (Platznutzung/Greenfee inkludiert).
 		[ 'id' => 'golfkurs',      'label' => 'Golfkurs (inkl. Platz, Golflehrer & Leihschläger)',      'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 30, 40, 50 ],   'flat' => [ 0, 0, 0 ], 'wiz' => 'Grundlagenkurs' ],
 		[ 'id' => 'platzreife',    'label' => 'Platzreifekurs (PGA-Pro, Regeln & Prüfung)',             'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 200, 250, 275 ],  'flat' => [ 0, 0, 0 ], 'wiz' => 'Platzreifekurs' ],
@@ -93,6 +97,12 @@ function fge_bc_defaults(): array {
 			'id' => 'teamevent', 'label' => 'Teamevent', 'wiz' => 'Golf-Teamevent',
 			'services'   => array_merge( [ 'golfkurs', 'mittagessen', 'getraenke', 'putting', 'longest_drive' ], $team_addons ),
 			'default_on' => [ 'golfkurs', 'mittagessen', 'getraenke', 'putting', 'longest_drive' ],
+			'required'   => [],
+		],
+		[
+			'id' => 'weihnachtsfeier', 'label' => 'Weihnachtsfeier (Indoor)', 'wiz' => 'Indoor Weihnachtsfeier',
+			'services'   => [ 'simulator', 'gluehwein', 'dinner', 'getraenke', 'bar', 'sonderwertung', 'siegerehrung', 'musik', 'shuttle', 'foto' ],
+			'default_on' => [ 'simulator', 'gluehwein', 'dinner', 'getraenke' ],
 			'required'   => [],
 		],
 		[

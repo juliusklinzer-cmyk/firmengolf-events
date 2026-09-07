@@ -410,7 +410,7 @@
 				budget: ppChip,
 				email: state.email || '',
 				calcType: res.type.label,
-				calcArticle: ({ teamevent: 'einem', platzreife: 'einer', turnier: 'einem', kundenevent: 'einem', offsite: 'einer', sommerfest: 'einem', nachtturnier: 'einem', andere: 'einem besonderen' })[res.type.id] || 'einem',
+				calcArticle: ({ teamevent: 'einem', weihnachtsfeier: 'einer', platzreife: 'einer', turnier: 'einem', kundenevent: 'einem', offsite: 'einer', sommerfest: 'einem', nachtturnier: 'einem', andere: 'einem besonderen' })[res.type.id] || 'einem',
 				calcServices: res.items.map(function (r) { return r.label.replace(/\s*\(.*?\)/g, ''); }),
 				budgetTotal: String(Math.round(res.total / 50) * 50),
 				calcSummary: res.type.label + ' · ' + state.participants + ' Personen' + (typeHasDays() ? ' · ' + state.days + ' Tage' : '') + ' · ' + res.items.map(function (r) { return r.label.replace(/\s*\(.*?\)/g, ''); }).join(', ') + ' · Richtwert ca. ' + fmt(res.total) + ' € netto',
