@@ -802,8 +802,7 @@
 			var side = '<div class="rw-photo rw-photo--julius">'
 				+ (CFG.logo ? '<img class="rw-pj-logo" src="' + esc(CFG.logo) + '" alt="Firmengolf" height="26">' : '')
 				+ ((CFG.juliusReqImg || CFG.juliusImg) ? '<img class="rw-pj-img" src="' + esc(CFG.juliusReqImg || CFG.juliusImg) + '" alt="' + esc(CONTACT.name) + '">' : '')
-				+ '<div class="rw-pj-txt"><b>' + esc(CONTACT.name) + '</b><span>' + esc(CONTACT.role) + ' · Firmengolf</span>'
-				+ '<em>„Ich rufe dich persönlich an und stimme alles mit dir ab."</em></div></div>';
+				+ '</div>'; // ohne Namenskarte (Julius, 07.09.): nur Bild und Logo
 			return '<div class="rw-stage"><div class="rw-screen rw-has-photo rw-screen--budget"><div class="rw-main">'
 				+ '<div class="rw-eyebrow">Fast fertig</div>'
 				+ '<h2 class="rw-h">Toll, du bist auf der Suche nach ' + esc(art) + ' <span class="mk-italic">' + esc(typeLabel) + '</span>.</h2>'
