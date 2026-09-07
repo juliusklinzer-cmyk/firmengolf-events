@@ -40,8 +40,9 @@ window.fgeSimMapInit = function () {
 		center: { lat: 51.1, lng: 10.4 },
 		zoom: 6,
 		// Maximal herausgezoomt = ganz Deutschland (Julius, 07.09.): kein Europa-Blick.
+		// Die Restriktion kommt erst NACH dem ersten Ausschnitt (siehe fitTo), sonst
+		// klemmt Google die Mitte auf Zoom 6 in die Mitte der Begrenzung.
 		minZoom: 6,
-		restriction: { latLngBounds: { north: 55.6, south: 47.0, west: 5.5, east: 15.5 }, strictBounds: false },
 		mapTypeControl: false,
 		streetViewControl: false,
 		fullscreenControl: true,
@@ -91,6 +92,18 @@ window.fgeSimMapInit = function () {
 			info.open( { map: map, anchor: marker } );
 		} );
 	} );
+	// Ausschnitt setzen. Achtung: Steht die Karte mit Deutschland-Restriktion auf
+	// Zoom 6, klemmt Google die Mitte in die Mitte der Begrenzung (Harz) und
+	// fitBounds bekommt sie nicht mehr los (Julius, 07.09. live: München zeigte
+	// Hohenstein). Deshalb erst zoomen, dann die Restriktion setzen.
+	var RESTRICT = { latLngBounds: { north: 55.6, south: 47.0, west: 5.5, east: 15.5 }, strictBounds: false };
+	function fitTo( b, pad, maxZoom ) {
+		map.fitBounds( b, pad );
+		google.maps.event.addListenerOnce( map, 'idle', function () {
+			if ( maxZoom && map.getZoom() > maxZoom ) { map.setZoom( maxZoom ); }
+			map.setOptions( { restriction: RESTRICT } );
+		} );
+	}
 	if ( data.user && data.user.lat && data.user.lng ) {
 		// Standort des Besuchers: eigener Marker, Ausschnitt um die nächsten Anlagen
 		var u = { lat: Number( data.user.lat ), lng: Number( data.user.lng ) };
@@ -106,10 +119,11 @@ window.fgeSimMapInit = function () {
 		var nb = new google.maps.LatLngBounds();
 		nb.extend( u );
 		near.forEach( function ( n ) { nb.extend( { lat: Number( n.p.lat ), lng: Number( n.p.lng ) } ); } );
-		map.fitBounds( nb, 60 );
-		google.maps.event.addListenerOnce( map, 'idle', function () { if ( map.getZoom() > 12 ) { map.setZoom( 12 ); } } );
+		fitTo( nb, 60, 12 );
 	} else if ( places.length > 1 ) {
-		map.fitBounds( bounds, 40 );
+		fitTo( bounds, 40, 0 );
+	} else {
+		map.setOptions( { restriction: RESTRICT } );
 	}
 	// InfoWindow-Link → Anfrage-Dialog mit vorausgewählter Location (template-format.php)
 	el.addEventListener( 'click', function ( e ) {

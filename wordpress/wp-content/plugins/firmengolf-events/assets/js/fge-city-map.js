@@ -63,7 +63,6 @@ window.fgeCityMapInit = function () {
 		zoom: dense ? 6 : 10,
 		// Deutschlandkarte: maximal herausgezoomt = ganz Deutschland (Julius, 07.09.).
 		minZoom: dense ? 6 : undefined,
-		restriction: dense ? { latLngBounds: { north: 55.6, south: 47.0, west: 5.5, east: 15.5 }, strictBounds: false } : undefined,
 		mapTypeControl: false,
 		streetViewControl: false,
 		fullscreenControl: true,
@@ -137,6 +136,13 @@ window.fgeCityMapInit = function () {
 	fgeGpMap = map;
 	if ( places.length > 1 ) {
 		map.fitBounds( bounds, 40 );
+	}
+	if ( dense ) {
+		// Deutschland-Restriktion erst nach dem ersten Ausschnitt, sonst klemmt die
+		// Mitte auf Zoom 6 in der Mitte der Begrenzung (siehe fge-sim-map.js).
+		google.maps.event.addListenerOnce( map, 'idle', function () {
+			map.setOptions( { restriction: { latLngBounds: { north: 55.6, south: 47.0, west: 5.5, east: 15.5 }, strictBounds: false } } );
+		} );
 	}
 
 	// Vorauswahl (Partnerplatz) auf der Karte markieren, sobald sie da ist.

@@ -307,6 +307,21 @@ function fge_simulatoren_map_enqueue(): void {
 	// Kein weiterer Google-Aufruf, nur die Kartenansicht.
 	$u_lat = isset( $_GET['lat'] ) ? (float) $_GET['lat'] : 0.0; // phpcs:ignore WordPress.Security.NonceVerification
 	$u_lng = isset( $_GET['lng'] ) ? (float) $_GET['lng'] : 0.0; // phpcs:ignore WordPress.Security.NonceVerification
+	// Eingetippter Ort oder PLZ aus der Filterleiste (?q=…): gleiche Auflösung wie
+	// das Angebots-Grid im Template, damit die Karte dorthin springt.
+	$u_q = sanitize_text_field( wp_unslash( $_GET['q'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification
+	if ( ! ( $u_lat && $u_lng ) && '' !== $u_q ) {
+		$u_c = null;
+		if ( ctype_digit( $u_q ) && function_exists( 'fge_geo_lookup_plz' ) ) {
+			$u_c = fge_geo_lookup_plz( $u_q );
+		} elseif ( function_exists( 'fge_geo_city_coords' ) ) {
+			$u_c = fge_geo_city_coords( $u_q );
+		}
+		if ( is_array( $u_c ) ) {
+			$u_lat = (float) ( $u_c[0] ?? $u_c['lat'] ?? 0 );
+			$u_lng = (float) ( $u_c[1] ?? $u_c['lng'] ?? 0 );
+		}
+	}
 	$user  = ( $u_lat > 46 && $u_lat < 56 && $u_lng > 5 && $u_lng < 16 ) ? [ 'lat' => $u_lat, 'lng' => $u_lng ] : null;
 	wp_localize_script( 'fge-sim-map', 'FGE_SIM_MAP', [ 'places' => $places, 'anfrage' => '#anfrage', 'user' => $user, 'minNear' => 5 ] );
 	$maps_url = add_query_arg(
