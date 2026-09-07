@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<section class="xmas<?php echo ! empty( $args['band'] ) ? ' xmas--band' : ''; ?>" id="<?php echo esc_attr( $args['id'] ?? 'weihnachtsfeier' ); ?>" aria-label="Weihnachtsfeier planen">
 		<div class="xmas-inner">
 			<div class="xmas-text">
-				<h2 class="mk-h2">Plant jetzt eure <em class="mk-italic">Weihnachtsfeier</em> mit uns.</h2>
+				<h2 class="mk-h2"><?php echo ! empty( $args['h2'] ) ? wp_kses_post( $args['h2'] ) : 'Plant jetzt eure <em class="mk-italic">Weihnachtsfeier</em> mit uns.'; ?></h2>
 				<p class="mk-sub">Indoor an den Simulatoren oder im Clubhaus der Golfanlage: Golf-Challenge, Menü und Getränke aus einer Hand. Ihr nennt uns die Eckdaten, wir schicken ein konkretes Angebot aus eurer Region.</p>
 				<div class="xmas-points">
 					<div><?php echo $xmas_check; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Warm und wetterfest, auch ohne Golferfahrung</span></div>

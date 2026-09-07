@@ -3949,12 +3949,42 @@ body.single-firmengolf_event .fg-footer { margin-top: 40px; }
 .fg-gal-caption { font-size: 12.5px; color: var(--ink-500); margin: 10px 0 0; }
 @media (max-width: 768px) { .fg-gal-caption { margin: 10px 0 0; text-align: center; } }
 
-/* ── 29d. WEIHNACHTSFEIER-SEITE: Spielformate, Simulator-Karte; Teaser auf Individuelle Events (Julius, 07.09.) ── */
-.playx-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.playx-card { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-xl); overflow: hidden; display: flex; flex-direction: column; }
-.playx-photo { aspect-ratio: 4 / 3; background-size: cover; background-position: center; }
-.playx-t { font-family: var(--font-display); font-size: 20px; font-weight: 500; letter-spacing: -.015em; color: var(--ink-900); margin: 16px 18px 6px; }
-.playx-b { font-size: 14.5px; line-height: 1.55; color: var(--ink-700); margin: 0 18px 18px; }
+/* ── 29d. WEIHNACHTSFEIER-SEITE (Umbau 07.09.): Hero-Tag, Angebots-Grid mit Filterleiste,
+   Spielformat-Kacheln im iv-Tile-Look, Simulator-Karte mit Legende ── */
+.mk-hero-tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--paper-50); background: rgba(251,250,246,.16); border: 1px solid rgba(251,250,246,.35); backdrop-filter: blur(6px); border-radius: 999px; padding: 5px 11px; margin-bottom: 14px; }
+.xmas-hero .mk-hero-title { font-size: 60px; }
+.xmas-events .fg-search-bar { margin: 18px 0 28px; max-width: none; z-index: 5; }
+.xmas-events-head { align-items: flex-start; }
+.xmas-events-note { font-size: 14px; color: var(--ink-600); margin: 6px 0 0; max-width: 62ch; }
+.xmas-events-more { display: flex; justify-content: center; margin-top: 28px; }
+.iv-tiles.playx-tiles { grid-template-columns: repeat(3, 1fr); }
+.playx-tile { aspect-ratio: 4 / 3; cursor: default; }
+.playx-tile .iv-tile-sub { color: rgba(251,250,246,.85); font-size: 14px; margin-top: 4px; }
+.simx-legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 14px; font-size: 13px; color: var(--ink-700); }
+.simx-key { display: inline-flex; align-items: center; gap: 7px; }
+.simx-dot { width: 12px; height: 12px; border-radius: 999px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(14,19,16,.12); }
+.simx-dot--sim { background: #E08A2B; }
+.simx-dot--ring { box-shadow: 0 0 0 1px rgba(14,19,16,.12), 0 0 0 4px rgba(224,138,43,.35); }
+.simx-dot--partner { background: var(--fairway-700); }
+.simx-dot--course { background: var(--clay-500); }
+.fge-sim-info-tag--soft { color: var(--ink-700); background: var(--paper-200); }
+@media (max-width: 960px) {
+  .iv-tiles.playx-tiles { grid-template-columns: repeat(2, 1fr); }
+  .xmas-hero .mk-hero-title { font-size: 44px; }
+}
+@media (max-width: 768px) {
+  .xmas-hero .mk-hero-title { font-size: clamp(30px, 8vw, 40px); }
+  /* Eventliste/Startseite blenden die Leiste mobil aus (Filter-Sheet); auf der
+     Weihnachts-Seite bleibt sie sichtbar, gestapelt wie im 900px-Block. */
+  .xmas-events .fg-search-bar { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 20px; border-radius: 24px; padding: 12px; }
+  .xmas-events .fg-search-bar .fg-cell-divider { display: none; }
+  .xmas-events .fg-search-bar .fg-search-cell { flex: 1 1 100%; }
+  .xmas-events .fg-search-bar .fg-search-btn { width: 100%; justify-content: center; margin-top: 4px; }
+  .iv-tiles.playx-tiles { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); padding: 0 16px 6px; scroll-padding-left: 16px; }
+  .iv-tiles.playx-tiles::-webkit-scrollbar { display: none; }
+  .playx-tile { flex: 0 0 76%; aspect-ratio: 4 / 5; scroll-snap-align: start; }
+}
+
 .simx .simx-map { margin-top: 8px; width: 100%; max-width: none; aspect-ratio: 16 / 9; height: auto; min-height: 420px; }
 .simx-lands { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .simx-land b { font-weight: 600; color: var(--fairway-700); margin-left: 4px; }
@@ -3966,13 +3996,7 @@ body.single-firmengolf_event .fg-footer { margin-top: 40px; }
 .fge-sim-info-tag { display: inline-block; margin-top: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--fairway-800); background: var(--fairway-100); border-radius: 999px; padding: 2px 8px; }
 .fge-sim-info-links { display: flex; gap: 12px; margin-top: 8px; font-size: 13px; }
 .fge-sim-info-links a { color: var(--fairway-700); font-weight: 500; }
-@media (max-width: 960px) {
-  .playx-row { grid-template-columns: repeat(2, 1fr); }
-}
 @media (max-width: 768px) {
-  .playx-row { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); padding: 0 16px 6px; scroll-padding-left: 16px; }
-  .playx-row::-webkit-scrollbar { display: none; }
-  .playx-card { flex: 0 0 78%; scroll-snap-align: start; }
   .simx .simx-map { aspect-ratio: 4 / 5; height: auto; min-height: 0; }
 }
 

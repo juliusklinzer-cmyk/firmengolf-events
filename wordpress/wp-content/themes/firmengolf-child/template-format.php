@@ -113,6 +113,201 @@ get_header();
 
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] ); ?>
 
+<?php if ( $is_xmas ) :
+	// ── Weihnachtsfeier-Seite (Julius, 07.09., Umbau): großer Hero, Angebote 4×2 mit
+	// Filterleiste + Standort-Abfrage wie auf der Eventliste, Kurz-Anfrage, Simulator-
+	// Karte, Spielformate. Facts, Stadt-Chips und Indoor-Kacheln entfallen hier.
+	$xl_lat    = isset( $_GET['lat'] ) ? (float) $_GET['lat'] : 0.0;              // phpcs:ignore WordPress.Security.NonceVerification
+	$xl_lng    = isset( $_GET['lng'] ) ? (float) $_GET['lng'] : 0.0;              // phpcs:ignore WordPress.Security.NonceVerification
+	$xl_radius = isset( $_GET['radius'] ) ? max( 0, (int) $_GET['radius'] ) : 0;  // phpcs:ignore WordPress.Security.NonceVerification
+	$xl_loc    = sanitize_text_field( wp_unslash( $_GET['loc'] ?? '' ) );         // phpcs:ignore WordPress.Security.NonceVerification
+	$xl_pax    = isset( $_GET['pax'] ) ? max( 0, (int) $_GET['pax'] ) : 0;        // phpcs:ignore WordPress.Security.NonceVerification
+	$xl_geo    = $xl_lat && $xl_lng && $xl_radius > 0 && function_exists( 'fge_geo_distance' ) && function_exists( 'fge_geo_event_coords' );
+	$xl_items  = [];
+	foreach ( ( function_exists( 'fge_format_events' ) ? fge_format_events( $format, 200 ) : [] ) as $xev ) {
+		if ( $xl_pax > 0 && (int) get_post_meta( $xev->ID, '_fge_participants_max', true ) < $xl_pax ) {
+			continue;
+		}
+		$xd = null;
+		if ( $xl_geo ) {
+			$xc = fge_geo_event_coords( (int) $xev->ID );
+			$xd = $xc ? fge_geo_distance( $xl_lat, $xl_lng, $xc[0], $xc[1] ) : 99999.0;
+		}
+		$xl_items[] = [ 'id' => (int) $xev->ID, 'dist' => $xd ];
+	}
+	$xl_fallback = false;
+	if ( $xl_geo ) {
+		usort( $xl_items, static fn( $a, $b ) => $a['dist'] <=> $b['dist'] );
+		$xl_near = array_values( array_filter( $xl_items, static fn( $it ) => $it['dist'] <= $xl_radius ) );
+		if ( $xl_near ) {
+			$xl_items = $xl_near;
+		} else {
+			$xl_fallback = true; // nichts im Umkreis: die nächstgelegenen zeigen
+		}
+	}
+	$xl_show     = array_slice( $xl_items, 0, 8 );
+	$xl_more_url = add_query_arg( array_filter( [
+		'format' => 'weihnachtsfeier',
+		'lat'    => $xl_geo ? $xl_lat : '',
+		'lng'    => $xl_geo ? $xl_lng : '',
+		'radius' => $xl_geo ? $xl_radius : '',
+		'loc'    => $xl_geo ? $xl_loc : '',
+		'pax'    => $xl_pax ?: '',
+	], static fn( $v ) => '' !== $v && null !== $v ), $events_url );
+	// Hero-Bild = Cover des Ulm-Platzhalters (Julius, 07.09.: Golferin an der Box, Team an der Bar).
+	$xl_hero_post = get_page_by_path( 'weihnachtsfeier-mit-golf-in-ulm', OBJECT, 'firmengolf_event' );
+	$xl_hero_img  = ( $xl_hero_post && function_exists( 'fge_event_cover_url' ) ) ? fge_event_cover_url( $xl_hero_post->ID ) : fge_get_placeholder_image_url( $format['hero_img'] ?? 'onboarding-indoor-lounge.jpg' );
+	$xl_sim_count = function_exists( 'fge_simulatoren' ) ? count( fge_simulatoren() ) : 0;
+	$xl_title     = $xl_geo && '' !== $xl_loc ? 'Weihnachtsfeiern rund um ' . $xl_loc : 'Beliebte Weihnachtsfeier-Angebote';
+?>
+<section class="mk-hero xmas-hero" aria-label="<?php echo esc_attr( $format['h1'] ); ?>">
+	<div class="mk-hero-photo" style="background-image:url('<?php echo esc_url( $xl_hero_img ); ?>')">
+		<div class="mk-hero-scrim" aria-hidden="true"></div>
+		<div class="mk-hero-content">
+			<span class="mk-hero-tag">Top aktuell</span>
+			<h1 class="mk-hero-title"><?php echo esc_html( $format['h1'] ); ?></h1>
+			<p class="mk-hero-sub"><?php echo esc_html( $format['lead'] ); ?></p>
+			<div class="mk-hero-ctas">
+				<a class="fg-btn-cta fg-btn-lg" href="#angebote">Angebote ansehen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span></a>
+				<a class="fg-btn-ghost-light" href="#anfrage">Wunschtermin anfragen →</a>
+			</div>
+			<div class="cty-hero-facts">
+				<span class="cty-hero-fact"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><b><?php echo esc_html( (string) max( 50, $xl_sim_count ) ); ?>+</b>&nbsp;Simulatoren und Golfanlagen in ganz Deutschland</span>
+				<span class="cty-hero-fact"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Auch ohne Golferfahrung</span>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="fg-grid-section xmas-events" id="angebote" aria-label="Weihnachtsfeier-Angebote">
+	<div class="fg-grid-head xmas-events-head">
+		<div>
+			<h2 class="fg-grid-title"><?php echo esc_html( $xl_title ); ?></h2>
+			<?php if ( $xl_fallback ) : ?>
+			<p class="xmas-events-note">Im Umkreis von <?php echo (int) $xl_radius; ?> km ist noch nichts angelegt, hier die nächstgelegenen Angebote. Oder ihr fragt unten direkt an, wir planen in eurer Region.</p>
+			<?php elseif ( ! $xl_geo ) : ?>
+			<p class="xmas-events-note">Ort eingeben oder Standort freigeben, dann sortieren wir nach Nähe.</p>
+			<?php endif; ?>
+		</div>
+	</div>
+	<?php get_template_part( 'template-parts/fge-search-bar', null, [
+		'action' => $canonical . '#angebote',
+		'prefix' => 'xs',
+		'format' => 'weihnachtsfeier',
+		'lat'    => $xl_geo ? (string) $xl_lat : '',
+		'lng'    => $xl_geo ? (string) $xl_lng : '',
+		'radius' => $xl_geo ? $xl_radius : 50,
+		'loc'    => $xl_geo ? $xl_loc : '',
+		'pax'    => $xl_pax,
+		'submit' => 'Suchen',
+	] ); ?>
+	<?php if ( $xl_show ) : ?>
+	<div class="fg-grid ev-grid4">
+		<?php foreach ( $xl_show as $xit ) : ?>
+			<?php get_template_part( 'template-parts/fge-event-card-v2', null, [ 'id' => (int) $xit['id'] ] ); ?>
+		<?php endforeach; ?>
+	</div>
+	<?php else : ?>
+	<p class="xmas-events-note">Für diese Gruppengröße ist noch keine Weihnachtsfeier angelegt. Fragt unten direkt an, wir planen sie für euch.</p>
+	<?php endif; ?>
+	<div class="xmas-events-more">
+		<a class="fg-btn-ghost" href="<?php echo esc_url( $xl_more_url ); ?>">Alle Weihnachtsfeiern ansehen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></a>
+	</div>
+</section>
+<?php get_template_part( 'template-parts/fge-geo-prompt', null, [
+	'target' => $canonical,
+	'title'  => 'Weihnachtsfeiern in eurer Nähe finden?',
+	'text'   => 'Gebt kurz euren Standort frei, dann zeigen wir zuerst die Angebote, die ihr gut erreicht.',
+	'skip'   => 'Alle Angebote ansehen',
+] ); ?>
+
+<?php get_template_part( 'template-parts/fge-xmas-request', null, [
+	'id' => 'anfrage',
+	'h2' => 'Nichts Passendes dabei? Wir planen eure <em class="mk-italic">Weihnachtsfeier</em> mit euch.',
+] ); ?>
+
+<?php
+$sim_all = function_exists( 'fge_simulatoren' ) ? fge_simulatoren() : [];
+$sim_by_land = [];
+foreach ( $sim_all as $s ) {
+	if ( '' === $s['bundesland'] ) { continue; }
+	$sim_by_land[ $s['bundesland'] ] = ( $sim_by_land[ $s['bundesland'] ] ?? 0 ) + 1;
+}
+arsort( $sim_by_land );
+?>
+<?php if ( ! empty( $sim_all ) && function_exists( 'fge_gmaps_api_key' ) && fge_gmaps_api_key() !== '' ) : ?>
+<section class="mk-section simx cty-reveal" id="simulatoren" aria-label="Golfsimulatoren in Deutschland">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Golfsimulatoren in <em class="mk-italic">ganz Deutschland</em>.</h2>
+		<p class="mk-sub"><?php echo esc_html( (string) count( $sim_all ) ); ?> Indoor-Anlagen von Flensburg bis Garmisch. Tippt einen Pin an für Boxen, System und Website, oder fragt direkt hier eure Feier an.</p>
+	</div>
+	<div class="gpd-map simx-map" id="fge-sim-map">
+		<div class="gpd-map-consent">
+			<p>Die Karte lädt erst nach deiner Einwilligung für Google&nbsp;Maps.</p>
+			<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
+		</div>
+	</div>
+	<div class="simx-legend" aria-label="Legende">
+		<span class="simx-key"><i class="simx-dot simx-dot--sim"></i>Golfsimulator</span>
+		<span class="simx-key"><i class="simx-dot simx-dot--sim simx-dot--ring"></i>Bei Firmengolf buchbar</span>
+		<span class="simx-key"><i class="simx-dot simx-dot--partner"></i>Golfplatz, Partner</span>
+		<span class="simx-key"><i class="simx-dot simx-dot--course"></i>Golfplatz</span>
+	</div>
+	<div class="simx-lands" aria-label="Anlagen je Bundesland">
+		<?php foreach ( $sim_by_land as $land => $cnt ) : ?>
+		<span class="fg-chip simx-land"><?php echo esc_html( $land ); ?> <b><?php echo (int) $cnt; ?></b></span>
+		<?php endforeach; ?>
+	</div>
+	<p class="simx-note">Stand September 2026, eigene Marktanalyse. Eure Anlage fehlt oder ihr wollt Events über uns anbieten? <a href="<?php echo esc_url( home_url( '/indoor-partner/' ) ); ?>">Als Simulator-Partner eintragen</a>.</p>
+</section>
+<?php endif; ?>
+
+<?php
+$play_img = static function ( string $slug, string $fallback ): string {
+	$base = defined( 'FGE_DIR' ) ? FGE_DIR . 'assets/imagery/' : '';
+	if ( '' !== $base && file_exists( $base . 'spielformate/' . $slug . '.jpg' ) ) {
+		return fge_get_placeholder_image_url( 'spielformate/' . $slug . '.jpg' );
+	}
+	return fge_get_placeholder_image_url( $fallback );
+};
+$play_formats = [
+	[ 'slug' => 'nearest-to-the-pin', 't' => 'Nearest to the Pin', 'b' => 'Ein Schlag, eine Fahne. Wer liegt am nächsten?', 'img' => 'pool/indoor-topgolf-abschlag.jpg' ],
+	[ 'slug' => 'longest-drive',      't' => 'Longest Drive',      'b' => 'Der weiteste Ball gewinnt, auf den Meter gemessen.', 'img' => 'pool/indoor-topgolf-abschlag-3.jpg' ],
+	[ 'slug' => 'angry-birds',        't' => 'Angry Birds',        'b' => 'Bälle auf Zielscheiben, Punkte wie im Spiel.', 'img' => 'pool/indoor-topgolf-oberhausen.jpg' ],
+	[ 'slug' => 'putt-bierpong',      't' => 'Putt-Bierpong',      'b' => 'Putten statt werfen, Becher statt Loch.', 'img' => 'pool/indoor-bier-und-simulator.jpg' ],
+	[ 'slug' => 'team-scramble',      't' => 'Team-Scramble',      'b' => 'Vier spielen einen Ball, jeder Schlag zählt fürs Team.', 'img' => 'pool/indoor-golf-indoor-simulator-bar-event-im-team.jpg' ],
+	[ 'slug' => 'virtuelle-runde',    't' => 'Runde in St Andrews',  'b' => 'Neun Löcher auf den berühmtesten Plätzen der Welt.', 'img' => 'pool/indoor-18-in-st-andrews-the-home-of-golf.jpg' ],
+];
+?>
+<section class="mk-section playx cty-reveal" id="spielformate" aria-label="Spielformate für euer Team">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Mögliche <em class="mk-italic">Spielformate</em> für euer Team.</h2>
+		<p class="mk-sub">Bewegung, Location und Wettbewerb an einem Abend. Diese Formate spielen wir im Wechsel, mit Live-Leaderboard und Betreuung an den Boxen.</p>
+	</div>
+	<div class="iv-tiles playx-tiles">
+		<?php foreach ( $play_formats as $pf ) : ?>
+		<article class="iv-tile playx-tile">
+			<span class="iv-tile-img" style="background-image:url('<?php echo esc_url( $play_img( $pf['slug'], $pf['img'] ) ); ?>')" role="img" aria-label="<?php echo esc_attr( $pf['t'] ); ?>"></span>
+			<span class="iv-tile-scrim" aria-hidden="true"></span>
+			<span class="iv-tile-label">
+				<span>
+					<span class="iv-tile-t"><?php echo esc_html( $pf['t'] ); ?></span>
+					<span class="iv-tile-sub" style="display:block;"><?php echo esc_html( $pf['b'] ); ?></span>
+				</span>
+			</span>
+		</article>
+		<?php endforeach; ?>
+	</div>
+</section>
+
+<section class="mk-section" aria-label="Über <?php echo esc_attr( $f_name ); ?>">
+	<div class="mk-section-head">
+		<h2 class="mk-h2"><?php echo esc_html( $f_name ); ?>, gemeinsam erleben.</h2>
+		<p class="mk-sub" style="max-width:var(--width-prose);"><?php echo esc_html( $format['intro'] ); ?></p>
+	</div>
+</section>
+
+<?php else : ?>
 <?php /* Hero mit direkten CTAs: Ads-Traffic soll ohne Umweg zu den Events bzw. zur Anfrage */ ?>
 <section class="ev-hero" aria-label="<?php echo esc_attr( $format['h1'] ); ?>">
 	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( $format['hero_img'] ?? 'golfplatz-panorama.jpg' ) ); ?>')">
@@ -143,11 +338,6 @@ get_header();
 		<?php endforeach; ?>
 	</div>
 </section>
-<?php endif; ?>
-
-<?php /* Weihnachtsfeier: Kurz-Anfrage direkt nach den Facts (Julius, 07.09.) */ ?>
-<?php if ( $is_xmas ) : ?>
-	<?php get_template_part( 'template-parts/fge-xmas-request', null, [ 'id' => 'anfrage' ] ); ?>
 <?php endif; ?>
 
 <?php /* Passende Events zuerst: das schnellste Ergebnis für die Suchanfrage */ ?>
@@ -218,69 +408,7 @@ get_header();
 <?php endif; ?>
 
 <?php /* So könnte dein Tag ablaufen: eine Reihe, Punkte blenden gestaffelt von oben ein */ ?>
-<?php /* Weihnachtsfeier: Spielformate an der Box + Simulator-Karte (Julius, 07.09.).
-	Bild-Slots assets/imagery/spielformate/<slug>.jpg, bis Julius' Fotos da sind
-	Indoor-Motive aus dem Pool (siehe docs/bilder-leitfaden.md, Abschnitt 2b). */ ?>
-<?php if ( $is_xmas ) :
-	$play_img = static function ( string $slug, string $fallback ): string {
-		$base = defined( 'FGE_DIR' ) ? FGE_DIR . 'assets/imagery/' : '';
-		if ( '' !== $base && file_exists( $base . 'spielformate/' . $slug . '.jpg' ) ) {
-			return fge_get_placeholder_image_url( 'spielformate/' . $slug . '.jpg' );
-		}
-		return fge_get_placeholder_image_url( $fallback );
-	};
-	$play_formats = [
-		[ 'slug' => 'nearest-to-the-pin', 't' => 'Nearest to the Pin', 'b' => 'Ein Schlag, eine Fahne: Wer legt den Ball am nächsten ans Loch? Alle sehen es sofort auf dem Screen.', 'img' => 'pool/indoor-topgolf-abschlag.jpg' ],
-		[ 'slug' => 'longest-drive',      't' => 'Longest Drive',      'b' => 'Der weiteste Ball gewinnt, gemessen auf den Meter. Der Moment, in dem auch die Ruhigen laut werden.', 'img' => 'pool/indoor-topgolf-abschlag-3.jpg' ],
-		[ 'slug' => 'angry-birds',        't' => 'Angry Birds',        'b' => 'Bälle auf Zielscheiben, Punkte wie im Spiel. Der Klassiker an der Box, auch ohne einen einzigen Golfschwung vorher.', 'img' => 'pool/indoor-topgolf-oberhausen.jpg' ],
-		[ 'slug' => 'putt-bierpong',      't' => 'Putt-Bierpong',      'b' => 'Putten statt werfen, Becher statt Loch. Zwei Teams, ein Putting-Grün und viel Gelächter.', 'img' => 'pool/indoor-bier-und-simulator.jpg' ],
-		[ 'slug' => 'team-scramble',      't' => 'Team-Scramble',      'b' => 'Vier spielen einen Ball, jeder Schlag zählt fürs Team. Sechs virtuelle Löcher, ideal für gemischte Gruppen.', 'img' => 'pool/indoor-golf-indoor-simulator-bar-event-im-team.jpg' ],
-		[ 'slug' => 'virtuelle-runde',    't' => 'Runde in St Andrews',  'b' => 'Neun Löcher auf den berühmtesten Plätzen der Welt, ohne die Lounge zu verlassen. Mit Live-Leaderboard über alle Boxen.', 'img' => 'pool/indoor-18-in-st-andrews-the-home-of-golf.jpg' ],
-	];
-	$sim_all = function_exists( 'fge_simulatoren' ) ? fge_simulatoren() : [];
-	$sim_by_land = [];
-	foreach ( $sim_all as $s ) {
-		$sim_by_land[ $s['bundesland'] ] = ( $sim_by_land[ $s['bundesland'] ] ?? 0 ) + 1;
-	}
-	arsort( $sim_by_land );
-?>
-<section class="mk-section playx cty-reveal" id="spielformate" aria-label="Spielformate an der Box">
-	<div class="mk-section-head">
-		<h2 class="mk-h2">Bewegung, Location und <em class="mk-italic">Spielformate</em>, die alle mitnehmen.</h2>
-		<p class="mk-sub">Jede Weihnachtsfeier verbindet einen Abend an den Boxen mit einer Location, in der man gern bleibt. Diese Formate spielen wir im Wechsel, mit Live-Leaderboard und Betreuung.</p>
-	</div>
-	<div class="playx-row">
-		<?php foreach ( $play_formats as $pf ) : ?>
-		<article class="playx-card">
-			<div class="playx-photo" style="background-image:url('<?php echo esc_url( $play_img( $pf['slug'], $pf['img'] ) ); ?>')" role="img" aria-label="<?php echo esc_attr( $pf['t'] ); ?>"></div>
-			<h3 class="playx-t"><?php echo esc_html( $pf['t'] ); ?></h3>
-			<p class="playx-b"><?php echo esc_html( $pf['b'] ); ?></p>
-		</article>
-		<?php endforeach; ?>
-	</div>
-</section>
-
-<?php if ( ! empty( $sim_all ) && function_exists( 'fge_gmaps_api_key' ) && fge_gmaps_api_key() !== '' ) : ?>
-<section class="mk-section simx cty-reveal" id="simulatoren" aria-label="Golfsimulatoren in Deutschland">
-	<div class="mk-section-head">
-		<h2 class="mk-h2">Golfsimulatoren in <em class="mk-italic">ganz Deutschland</em>.</h2>
-		<p class="mk-sub"><?php echo esc_html( (string) count( $sim_all ) ); ?> Indoor-Anlagen von Hamburg bis München. Blau markiert sind eventfähige Locations mit Bar oder Lounge, tippt einen Pin an für Boxen, System und Website.</p>
-	</div>
-	<div class="gpd-map simx-map" id="fge-sim-map">
-		<div class="gpd-map-consent">
-			<p>Die Karte lädt erst nach deiner Einwilligung für Google&nbsp;Maps.</p>
-			<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
-		</div>
-	</div>
-	<div class="simx-lands" aria-label="Anlagen je Bundesland">
-		<?php foreach ( $sim_by_land as $land => $cnt ) : ?>
-		<span class="fg-chip simx-land"><?php echo esc_html( $land ); ?> <b><?php echo (int) $cnt; ?></b></span>
-		<?php endforeach; ?>
-	</div>
-	<p class="simx-note">Stand September 2026, eigene Recherche. Eure Anlage fehlt? <a href="<?php echo esc_url( home_url( '/indoor-partner/' ) ); ?>">Als Simulator-Partner eintragen</a>.</p>
-</section>
-<?php endif; ?>
-<?php endif; ?>
+<?php endif; // xmas / Standard ?>
 
 <?php if ( ! empty( $format['flow'] ) ) : ?>
 <section class="mk-section mk-band fmt-flow5" aria-label="So läuft euer <?php echo esc_attr( $f_name ); ?>">
