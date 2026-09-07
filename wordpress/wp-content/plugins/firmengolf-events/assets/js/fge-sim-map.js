@@ -6,8 +6,10 @@
  * Boxen, System und Website.
  */
 function fgeSimMakePin( color, size, ring ) {
+	// Weißer Rand plus feine dunkle Kontur: hebt den Pin auch vom hellen Kartengrün ab.
 	var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">'
-		+ ( ring ? '<circle cx="20" cy="20" r="19" fill="none" stroke="' + color + '" stroke-opacity="0.4" stroke-width="2"/>' : '' )
+		+ ( ring ? '<circle cx="20" cy="20" r="19" fill="none" stroke="' + color + '" stroke-opacity="0.45" stroke-width="2"/>' : '' )
+		+ '<circle cx="20" cy="20" r="16" fill="none" stroke="#0E1310" stroke-opacity="0.22" stroke-width="1.2"/>'
 		+ '<circle cx="20" cy="20" r="14.5" fill="' + color + '" stroke="#FFFFFF" stroke-width="2.5"/>'
 		+ '<path d="M17 27.5V12.5" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>'
 		+ '<path d="M18.2 13l7.3 2.8-7.3 2.8z" fill="#FFFFFF"/>'
@@ -43,9 +45,22 @@ window.fgeSimMapInit = function () {
 	} );
 	var bounds = new google.maps.LatLngBounds();
 	var info   = new google.maps.InfoWindow();
-	// Farblogik (Julius, 07.09.): Simulatoren immer Orange, bei Firmengolf buchbare groß mit Ring.
-	// Golfplätze bleiben Blau (Partner) und Grün (übrige), siehe fge-city-map.js.
-	var pins   = { featured: fgeSimMakePin( '#E08A2B', 46, true ), plain: fgeSimMakePin( '#E08A2B', 28, false ), course: fgeSimMakePin( '#4279D1', 38, false ) };
+	// Farblogik (Julius, 07.09.): Simulatoren immer Orange (kräftig, damit sie auf dem
+	// Kartengrün stehen), bei Firmengolf buchbare groß mit Ring. Golfplätze bleiben Blau.
+	// Pins wachsen mit dem Zoom (Julius, 07.09.: nah dran waren sie kaum zu sehen).
+	var ORANGE = '#D9731A', BLUE = '#4279D1';
+	function pinSize( zoom ) { return Math.max( 30, Math.min( 56, 30 + ( zoom - 6 ) * 4.5 ) ); }
+	function pinsFor( zoom ) {
+		var s = pinSize( zoom );
+		return { featured: fgeSimMakePin( ORANGE, s * 1.5, true ), plain: fgeSimMakePin( ORANGE, s, false ), course: fgeSimMakePin( BLUE, s * 1.25, false ) };
+	}
+	var pins    = pinsFor( map.getZoom() || 6 );
+	var markers = [];
+	function iconFor( p, set ) { return p.course ? set.course : ( p.featured ? set.featured : set.plain ); }
+	map.addListener( 'zoom_changed', function () {
+		var set = pinsFor( map.getZoom() || 6 );
+		markers.forEach( function ( e ) { e.marker.setIcon( iconFor( e.p, set ) ); } );
+	} );
 
 	places.forEach( function ( p ) {
 		var pos    = { lat: Number( p.lat ), lng: Number( p.lng ) };
@@ -53,9 +68,10 @@ window.fgeSimMapInit = function () {
 			position: pos,
 			map: map,
 			title: p.name,
-			icon: p.course ? pins.course : ( p.featured ? pins.featured : pins.plain ),
+			icon: iconFor( p, pins ),
 			zIndex: p.featured || p.course ? 20 : 10,
 		} );
+		markers.push( { marker: marker, p: p } );
 		bounds.extend( pos );
 		marker.addListener( 'click', function () {
 			var html = '<div class="fge-sim-info">'

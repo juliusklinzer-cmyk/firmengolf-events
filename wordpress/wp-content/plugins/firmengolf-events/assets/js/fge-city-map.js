@@ -75,7 +75,7 @@ window.fgeCityMapInit = function () {
 		plain:           dense ? fgeGpMakeDot( '#00C896', 11 ) : fgeGpMakePin( '#00C896', 26, false ),
 		plainSelected:   fgeGpMakePin( '#00C896', 44, true ),
 		// Golfsimulatoren (Weihnachts-/Indoor-Events, Julius 07.09.): warmes Orange, ausserhalb der Tokens weil SVG-Pin.
-		sim:             fgeGpMakePin( '#E08A2B', 34, false ),
+		sim:             fgeGpMakePin( '#D9731A', 36, false ),
 	};
 
 	places.forEach( function ( p ) {

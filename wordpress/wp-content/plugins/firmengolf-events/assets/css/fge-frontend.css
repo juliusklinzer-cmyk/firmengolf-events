@@ -3991,8 +3991,8 @@ body.single-firmengolf_event .fg-footer { margin-top: 40px; }
 .simx-legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 14px; font-size: 13px; color: var(--ink-700); }
 .simx-key { display: inline-flex; align-items: center; gap: 7px; }
 .simx-dot { width: 12px; height: 12px; border-radius: 999px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(14,19,16,.12); }
-.simx-dot--sim { background: #E08A2B; }
-.simx-dot--ring { box-shadow: 0 0 0 1px rgba(14,19,16,.12), 0 0 0 4px rgba(224,138,43,.35); }
+.simx-dot--sim { background: #D9731A; }
+.simx-dot--ring { box-shadow: 0 0 0 1px rgba(14,19,16,.12), 0 0 0 4px rgba(217,115,26,.35); }
 .simx-dot--partner { background: var(--fairway-700); }
 .simx-dot--course { background: #00C896; }
 .simx-dot--you { background: var(--fairway-700); box-shadow: 0 0 0 1px rgba(14,19,16,.12), 0 0 0 4px rgba(66,121,209,.22); }
