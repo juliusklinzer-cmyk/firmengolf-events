@@ -146,20 +146,6 @@ get_header();
 		</div>
 	</section>
 
-	<?php /* ── Weihnachtsfeier-Teaser (Julius, 07.09.): kein zweites Formular neben dem
-		Budget-Rechner, die Kurz-Anfrage lebt auf der Weihnachtsfeier-Seite. ── */ ?>
-	<section class="xmas-teaser cty-reveal" id="weihnachtsfeier" aria-label="Weihnachtsfeier planen">
-		<a class="xmas-teaser-inner" href="<?php echo esc_url( home_url( '/firmenevent/weihnachtsfeier/#anfrage' ) ); ?>">
-			<span class="xmas-teaser-photo" style="background-image:url('<?php echo $img( 'pool/indoor-bier-und-simulator.jpg' ); ?>')" aria-hidden="true"></span>
-			<span class="xmas-teaser-body">
-				<span class="xmas-teaser-tag">Saison</span>
-				<span class="xmas-teaser-h">Weihnachtsfeier im Indoor-Simulator planen?</span>
-				<span class="xmas-teaser-p">Warm, wetterfest, mitten in der Stadt. Eckdaten nennen, konkretes Angebot aus eurer Region bekommen.</span>
-				<span class="xmas-teaser-cta">Zur Weihnachtsfeier <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
-			</span>
-		</a>
-	</section>
-
 	<?php /* ── Veranstaltungstyp ── */ ?>
 	<section class="iv-section">
 		<div class="iv-head">
@@ -186,6 +172,10 @@ get_header();
 			<?php endforeach; ?>
 		</div>
 	</section>
+
+	<?php /* ── Weihnachtsfeier: Kurz-Anfrage als Saison-Band zwischen Typen und Budget-Rechner
+		(Julius, 07.09.: Formular ja, aber nicht direkt über dem Rechner; Teaser war nichts). ── */ ?>
+	<?php get_template_part( 'template-parts/fge-xmas-request', null, [ 'id' => 'weihnachtsfeier', 'band' => true ] ); ?>
 
 	<?php /* ── Budget-Rechner ── */ ?>
 	<section class="bcalc-wrap" id="budget">

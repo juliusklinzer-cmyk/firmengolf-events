@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	$xmas_min_date = ( new DateTime( '+7 days', wp_timezone() ) )->format( 'Y-m-d' );
 	$xmas_check    = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 	?>
-	<section class="xmas" id="<?php echo esc_attr( $args['id'] ?? 'weihnachtsfeier' ); ?>" aria-label="Weihnachtsfeier planen">
+	<section class="xmas<?php echo ! empty( $args['band'] ) ? ' xmas--band' : ''; ?>" id="<?php echo esc_attr( $args['id'] ?? 'weihnachtsfeier' ); ?>" aria-label="Weihnachtsfeier planen">
 		<div class="xmas-inner">
 			<div class="xmas-text">
 				<h2 class="mk-h2">Plant jetzt eure <em class="mk-italic">Weihnachtsfeier</em> mit uns.</h2>

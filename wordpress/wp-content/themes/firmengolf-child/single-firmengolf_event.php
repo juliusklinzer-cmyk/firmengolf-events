@@ -667,7 +667,7 @@ get_header();
 						<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
 					</div>
 				</div>
-				<p class="evd-map-note">Golfplätze im Raum <?php echo esc_html( $region ?: $location ); ?>, blau markiert sind Firmengolf-Partnerplätze.</p>
+				<p class="evd-map-note">Golfplätze im Raum <?php echo esc_html( $region ?: $location ); ?>, blau markiert sind Firmengolf-Partnerplätze<?php echo in_array( (string) get_post_meta( $post_id, '_fge_event_type', true ), [ 'weihnachtsfeier', 'indoor-golf' ], true ) ? ', orange die Indoor-Simulatoren' : ''; ?>.</p>
 			<?php else : ?>
 				<div class="evd-map" role="img" aria-label="Ungefähre Lage des Platzes">
 					<div class="evd-map-grid"></div>
@@ -803,7 +803,7 @@ get_header();
 		<div class="faq-shell">
 			<div class="faq-aside">
 				<div class="mk-eyebrow">Häufige Fragen</div>
-				<h2 class="mk-h2" style="margin-top:8px;font-size:36px;">Häufige Fragen zu diesem <?php echo esc_html( $format_label ); ?>.</h2>
+				<h2 class="mk-h2" style="margin-top:8px;font-size:36px;">Häufige Fragen zu diesem Event.</h2>
 				<div class="faq-cta">
 					<a class="fg-btn-ghost" href="<?php echo esc_url( $kontakt_url ); ?>">
 						Etwas anderes fragen <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>

@@ -61,6 +61,8 @@ window.fgeCityMapInit = function () {
 		partnerSelected: fgeGpMakePin( '#4279D1', 54, true ),
 		plain:           fgeGpMakePin( '#00C896', 26, false ),
 		plainSelected:   fgeGpMakePin( '#00C896', 44, true ),
+		// Golfsimulatoren (Weihnachts-/Indoor-Events, Julius 07.09.): warmes Orange, ausserhalb der Tokens weil SVG-Pin.
+		sim:             fgeGpMakePin( '#E08A2B', 34, false ),
 	};
 
 	places.forEach( function ( p ) {
@@ -69,8 +71,8 @@ window.fgeCityMapInit = function () {
 			map: map,
 			position: pos,
 			title: p.name,
-			icon: p.partner ? pins.partner : pins.plain,
-			zIndex: p.partner ? 20 : 10,
+			icon: p.partner ? pins.partner : ( p.sim ? pins.sim : pins.plain ),
+			zIndex: p.partner ? 20 : ( p.sim ? 15 : 10 ),
 		} );
 		var openInfo = function () {
 			if ( ! info ) {
@@ -86,10 +88,22 @@ window.fgeCityMapInit = function () {
 				badge.style.cssText = 'background:#DCE7F7;color:#283A6E;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:6px;vertical-align:middle';
 				box.appendChild( badge );
 			}
+			if ( p.sim ) {
+				var sbadge = document.createElement( 'span' );
+				sbadge.textContent = 'Indoor-Simulator';
+				sbadge.style.cssText = 'background:#FBEBD6;color:#8A4B0A;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:8px;vertical-align:middle';
+				box.appendChild( sbadge );
+			}
 			var meta = document.createElement( 'div' );
 			meta.textContent = p.meta || '';
 			meta.style.cssText = 'font-weight:400;color:#6C736E;font-size:12px;margin-top:2px';
 			box.appendChild( meta );
+			if ( p.sim && p.website ) {
+				var link = document.createElement( 'a' );
+				link.href = p.website; link.target = '_blank'; link.rel = 'noopener nofollow'; link.textContent = 'Website';
+				link.style.cssText = 'display:inline-block;margin-top:6px;font-weight:600;font-size:12px;color:#4279D1';
+				box.appendChild( link );
+			}
 			info.setContent( box );
 			info.open( map, m );
 		};

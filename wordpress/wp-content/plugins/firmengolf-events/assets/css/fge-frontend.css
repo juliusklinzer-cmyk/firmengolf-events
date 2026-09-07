@@ -3880,6 +3880,11 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 
 /* ── 29c. INDIVIDUELLE EVENTS: WEIHNACHTSFEIER-SEKTION mit Kurz-Anfrage (Julius, 07.09.) ── */
 .xmas { max-width: 1280px; margin: 56px auto 0; padding: 0 24px; scroll-margin-top: 24px; }
+/* Band-Variante (Individuelle Events): volle Breite in Papier-200, Inhalt auf Seitenbreite */
+.xmas--band { max-width: none; margin: 72px 0 0; padding: 72px 24px; background: var(--paper-200); }
+.xmas--band .xmas-inner { max-width: 1232px; margin: 0 auto; }
+.xmas--band .xmas-form { box-shadow: 0 18px 48px rgba(44,80,54,.06); }
+@media (max-width: 768px) { .xmas--band { margin-top: 40px; padding: 40px 16px; } }
 .xmas-inner { display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: center; }
 .xmas-text { display: flex; flex-direction: column; gap: 18px; }
 .xmas-text .mk-h2 .mk-italic { color: var(--fairway-700); }
@@ -3928,6 +3933,18 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
   .xmas-foot button.xmas-cta { width: 100%; justify-content: center; }
 }
 
+/* Ähnliche Events: weniger Luft zum Footer (Julius, 07.09.: 192 px waren zu viel) */
+.evd-related { padding-bottom: 40px; }
+body.single-firmengolf_event .fg-footer { margin-top: 40px; }
+/* FAQ auf der Detailseite mobil kleiner (Julius, 07.09.) */
+@media (max-width: 768px) {
+  .evd-related { padding-bottom: 24px; }
+  body.single-firmengolf_event .fg-footer { margin-top: 24px; }
+  .fg-detail-main .faq-aside .mk-h2 { font-size: 22px !important; }
+  .fge-page .fg-detail-main .faq-q, .fge-page .fg-detail-main .cty-faq-cards .faq-q { font-size: 16px; padding: 18px 20px; gap: 16px; }
+  .fg-detail-main .faq-a { font-size: 14.5px; padding-bottom: 20px; }
+}
+
 /* Bildunterschrift bei Platzhalter-Events (Pool-Motive, nicht der konkrete Platz) */
 .fg-gal-caption { font-size: 12.5px; color: var(--ink-500); margin: 10px 0 0; }
 @media (max-width: 768px) { .fg-gal-caption { margin: 10px 0 0; text-align: center; } }
@@ -3949,17 +3966,6 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 .fge-sim-info-tag { display: inline-block; margin-top: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--fairway-800); background: var(--fairway-100); border-radius: 999px; padding: 2px 8px; }
 .fge-sim-info-links { display: flex; gap: 12px; margin-top: 8px; font-size: 13px; }
 .fge-sim-info-links a { color: var(--fairway-700); font-weight: 500; }
-/* Teaser statt zweitem Formular auf /individuelle-events/ */
-.xmas-teaser { max-width: 1280px; margin: 40px auto 0; padding: 0 24px; scroll-margin-top: 24px; }
-.xmas-teaser-inner { display: grid; grid-template-columns: 220px 1fr; align-items: stretch; background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-xl); overflow: hidden; text-decoration: none; color: inherit; transition: border-color var(--dur-fast) var(--ease-out), transform 160ms var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
-.xmas-teaser-inner:active { transform: scale(0.995); }
-@media (hover: hover) and (pointer: fine) { .xmas-teaser-inner:hover { border-color: var(--ink-400); box-shadow: 0 12px 32px rgba(44,80,54,.08); } }
-.xmas-teaser-photo { background-size: cover; background-position: center; min-height: 160px; }
-.xmas-teaser-body { display: flex; flex-direction: column; gap: 6px; padding: 22px 26px; justify-content: center; }
-.xmas-teaser-tag { align-self: flex-start; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fairway-800); background: var(--fairway-100); border: 1px solid var(--fairway-200); border-radius: 999px; padding: 3px 9px; margin-bottom: 4px; }
-.xmas-teaser-h { font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -.02em; color: var(--ink-900); line-height: 1.15; }
-.xmas-teaser-p { font-size: 15px; line-height: 1.55; color: var(--ink-700); max-width: 60ch; }
-.xmas-teaser-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--fairway-700); }
 @media (max-width: 960px) {
   .playx-row { grid-template-columns: repeat(2, 1fr); }
 }
@@ -3968,11 +3974,6 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
   .playx-row::-webkit-scrollbar { display: none; }
   .playx-card { flex: 0 0 78%; scroll-snap-align: start; }
   .simx .simx-map { aspect-ratio: 4 / 5; height: auto; min-height: 0; }
-  .xmas-teaser { margin-top: 28px; padding: 0 16px; }
-  .xmas-teaser-inner { grid-template-columns: 1fr; }
-  .xmas-teaser-photo { aspect-ratio: 16 / 9; min-height: 0; }
-  .xmas-teaser-body { padding: 18px 18px 20px; }
-  .xmas-teaser-h { font-size: 21px; }
 }
 
 /* ── 30a. EVENT DETAIL: Zurück + Teilen in einer Zeile, Politur-Pass (Emil, 07.09.) ── */

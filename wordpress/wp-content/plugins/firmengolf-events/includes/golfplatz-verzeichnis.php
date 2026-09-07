@@ -255,6 +255,34 @@ add_action( 'wp_enqueue_scripts', function (): void {
 		];
 	}
 	}
+	// Weihnachtsfeier- und Indoor-Platzhalter (Julius, 07.09.): zusätzlich alle
+	// Golfsimulatoren im Umkreis, orange markiert (Daten: includes/simulatoren-data.php).
+	if ( ! $self_place && is_singular( 'firmengolf_event' ) && function_exists( 'fge_simulatoren' )
+		&& in_array( (string) get_post_meta( get_the_ID(), '_fge_event_type', true ), [ 'weihnachtsfeier', 'indoor-golf' ], true ) ) {
+		$sim_i = 0;
+		foreach ( fge_simulatoren() as $sim ) {
+			if ( (float) $sim['lat'] === 0.0 ) {
+				continue;
+			}
+			$dist = fge_geo_distance( $coords[0], $coords[1], (float) $sim['lat'], (float) $sim['lng'] );
+			if ( $dist > $radius + 30 ) {
+				continue;
+			}
+			$sim_i++;
+			$places[] = [
+				'id'      => 'sim-' . $sim_i,
+				'name'    => $sim['name'],
+				'lat'     => (float) $sim['lat'],
+				'lng'     => (float) $sim['lng'],
+				'partner' => false,
+				'sim'     => true,
+				'meta'    => $sim['ort'] . ' · ' . round( $dist ) . ' km' . ( '' !== $sim['bays'] ? ' · ' . $sim['bays'] . ' Boxen' : '' ),
+				'website' => (string) $sim['website'],
+				'holes'   => '',
+				'photo'   => '',
+			];
+		}
+	}
 	if ( ! $places ) {
 		return;
 	}
