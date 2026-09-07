@@ -195,7 +195,7 @@ if ( $partner_id && $p_infra && function_exists( 'fge_catalog_infra_groups' ) ) 
 			break;
 		}
 		if ( in_array( $iid, $p_infra, true ) && isset( $infra_names[ $iid ] ) ) {
-			$onsite[] = [ $infra_names[ $iid ], isset( $cap_by_infra[ $iid ] ) ? 'bis ' . $cap_by_infra[ $iid ] . ' Personen' : '' ];
+			$onsite[] = [ $infra_names[ $iid ], isset( $cap_by_infra[ $iid ] ) ? 'bis ' . $cap_by_infra[ $iid ] . ' Personen' : '', $iid ];
 		}
 	}
 }
@@ -226,6 +226,18 @@ if ( 1 === $real_count ) {
 } elseif ( 2 === $real_count ) {
 	$gal_class = ' fg-detail-gallery--duo';
 }
+// Mobil: alle Fotos als Wischreihe, ein Bild pro Ansicht (Julius, 07.09.). Echte
+// Bilder komplett, Platzhalter-Events ihre drei Pool-Motive.
+$slides = [ [ $thumb_url, $cover_is_real ? (int) fge_event_cover_id( $post_id ) : 0 ] ];
+if ( $real_count > 0 ) {
+	foreach ( $gallery_urls as $g_i => $g_url ) {
+		$slides[] = [ $g_url, (int) ( $gallery_atts[ $g_i ] ?? 0 ) ];
+	}
+} else {
+	$slides[] = [ $gallery_img_1, 0 ];
+	$slides[] = [ $gallery_img_2, 0 ];
+}
+$partner_public = $partner_id && ! $is_self && function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id );
 
 // Related events
 $related_meta = [
@@ -352,6 +364,13 @@ get_header();
 				<?php if ( $venue ) : ?> · <?php echo esc_html( $venue ); ?><?php endif; ?>
 			</div>
 			<h1 class="fg-detail-title"><?php the_title(); ?></h1>
+			<?php /* Nur mobil: Live-Status und Partner-Kennung direkt unter dem Titel (Julius, 07.09.) */ ?>
+			<div class="fg-detail-mtags">
+				<span class="fg-mtag-live"><span class="fg-live-dot" aria-hidden="true"></span>Angebot live seit <?php echo esc_html( get_the_date( 'F Y' ) ); ?></span>
+				<?php if ( $partner_public ) : ?>
+				<span class="evd-map-partnertag fg-mtag-partner"><?php echo fge_icon_map_pin(); // phpcs:ignore WordPress.Security.EscapeOutput ?> Firmengolf-Partnerplatz</span>
+				<?php endif; ?>
+			</div>
 			<div class="fg-detail-meta">
 				<?php if ( $venue ) : ?>
 					<span>
@@ -400,6 +419,22 @@ get_header();
 				</div>
 				<?php endif; ?>
 			</div>
+			<?php endif; ?>
+		</div>
+		<?php /* Mobil: Wischreihe mit allen Fotos, Teilen-Button oben rechts im Bild, Zähler unten rechts */ ?>
+		<div class="fg-gal-wrap">
+			<div class="fg-gal-slider" aria-label="<?php echo esc_attr( get_the_title() . ', Fotos' ); ?>">
+				<?php foreach ( $slides as $s_i => $s ) : ?>
+				<div class="fg-gal-slide" role="img" aria-label="<?php echo esc_attr( get_the_title() . ', Foto ' . ( $s_i + 1 ) ); ?>" style="background-image:url('<?php echo esc_url( $s[0] ); ?>')"><?php echo $s[1] > 0 ? $credit_overlay( $s[1] ) : ''; ?></div>
+				<?php endforeach; ?>
+			</div>
+			<button class="fg-gal-share fg-share-trigger" type="button" aria-label="Event teilen"
+			        data-share-url="<?php echo esc_url( get_permalink() ); ?>"
+			        data-share-title="<?php echo esc_attr( get_the_title() ); ?>">
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
+			</button>
+			<?php if ( count( $slides ) > 1 ) : ?>
+			<span class="fg-gal-count" aria-hidden="true"><span class="fg-gal-count-i">1</span>/<?php echo (int) count( $slides ); ?></span>
 			<?php endif; ?>
 		</div>
 		<?php if ( $real_count > 3 ) : ?>
@@ -547,11 +582,15 @@ get_header();
 				<?php if ( $onsite ) : ?>
 				<section>
 					<div class="fg-section-eyebrow"><?php echo esc_html( $partner_id && function_exists( 'fge_partner_type' ) && 'course' !== fge_partner_type( $partner_id ) ? 'Vor Ort' : 'Vor Ort am Platz' ); ?></div>
-					<div class="evd-poi-grid evd-onsite">
+					<?php /* Gleiche Icon-Kacheln wie „Im Preis enthalten" (Julius, 07.09.: keine lange Liste) */ ?>
+					<div class="evd-poi-grid evd-onsite evd-includes evd-onsite-icons">
 						<?php foreach ( $onsite as $o ) : ?>
-						<div class="evd-poi">
-							<div class="evd-onsite-n"><?php echo esc_html( $o[0] ); ?></div>
-							<?php if ( $o[1] !== '' ) : ?><div class="evd-onsite-c"><?php echo esc_html( $o[1] ); ?></div><?php endif; ?>
+						<div class="evd-poi evd-include">
+							<span class="evd-include-ic" aria-hidden="true"><?php echo function_exists( 'fge_infra_icon' ) ? fge_infra_icon( (string) $o[2] ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- statische SVGs ?></span>
+							<div>
+								<div class="evd-onsite-n"><?php echo esc_html( $o[0] ); ?></div>
+								<?php if ( $o[1] !== '' ) : ?><div class="evd-onsite-c"><?php echo esc_html( $o[1] ); ?></div><?php endif; ?>
+							</div>
 						</div>
 						<?php endforeach; ?>
 					</div>
@@ -582,10 +621,9 @@ get_header();
 					<div class="evd-poi"><div class="evd-poi-l">ÖPNV</div><div class="evd-poi-v">Mit Öffentlichen erreichbar</div></div>
 					<div class="evd-poi"><div class="evd-poi-l">Transfer</div><div class="evd-poi-v">Abholservice möglich</div></div>
 				</div>
-				<?php else : ?>
-				<p class="evd-location-p">
-					<?php echo $directions !== '' ? esc_html( $directions ) : 'Genaue Adresse und Anfahrtsbeschreibung schicken wir mit der Bestätigung.'; ?>
-				</p>
+				<?php elseif ( $directions !== '' ) : ?>
+				<?php /* Kein Platzhalter-Satz mehr („Adresse schicken wir mit der Bestätigung"): der Karten-Pin zeigt den Ort exakt (Julius, 07.09.) */ ?>
+				<p class="evd-location-p"><?php echo esc_html( $directions ); ?></p>
 				<?php endif; ?>
 				<?php
 				$os_note = ( $partner_id && ! $season_exempt && function_exists( 'fge_partner_offseason_note' ) ) ? fge_partner_offseason_note( $partner_id ) : '';
@@ -598,18 +636,6 @@ get_header();
 						<div class="evd-poi"><div class="evd-poi-l"><?php echo esc_html( $poi_label ); ?></div><div class="evd-poi-v"><?php echo esc_html( $poi_val ); ?></div></div>
 					<?php endforeach; ?>
 				</div>
-				<?php endif; ?>
-				<?php if ( $partner_id && function_exists( 'fge_partner_is_public' ) && fge_partner_is_public( $partner_id ) ) :
-					// Veranstalter-Wording je Partner-Typ (Julius, 28.08.: Coach und Indoor
-					// sind Veranstalter wie ein Platz, der Weg zu ihnen führt übers Event).
-					$venue_more = 'Mehr zum Golfplatz';
-					if ( function_exists( 'fge_partner_type' ) ) {
-						$venue_more = [ 'course' => 'Mehr zum Golfplatz', 'coach' => 'Mehr über', 'indoor' => 'Mehr zur Anlage' ][ fge_partner_type( $partner_id ) ] ?? $venue_more;
-					}
-					?>
-				<a class="fg-btn fg-btn-outline evd-venue-link" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>" style="margin-top:20px;">
-					<?php echo esc_html( $venue_more ); ?> <?php echo esc_html( $venue ?: get_the_title( $partner_id ) ); ?> →
-				</a>
 				<?php endif; ?>
 			</div>
 			<?php
@@ -648,6 +674,21 @@ get_header();
 						<div class="evd-map-tag-v"><?php echo esc_html( ( $region ? $region . ' · ' : '' ) . ( $venue ?: get_the_title() ) ); ?></div>
 					</div>
 				</div>
+			<?php endif; ?>
+			<?php if ( $partner_public ) :
+				// Veranstalter-Wording je Partner-Typ (Julius, 28.08.: Coach und Indoor
+				// sind Veranstalter wie ein Platz, der Weg zu ihnen führt übers Event).
+				// Button steht UNTER der Karte (Julius, 07.09.).
+				$venue_more = 'Mehr zum Golfplatz';
+				if ( function_exists( 'fge_partner_type' ) ) {
+					$venue_more = [ 'course' => 'Mehr zum Golfplatz', 'coach' => 'Mehr über', 'indoor' => 'Mehr zur Anlage' ][ fge_partner_type( $partner_id ) ] ?? $venue_more;
+				}
+				?>
+			<div class="evd-venue-more">
+				<a class="fg-btn fg-btn-outline evd-venue-link" href="<?php echo esc_url( get_permalink( $partner_id ) ); ?>">
+					<?php echo esc_html( $venue_more ); ?> <?php echo esc_html( $venue ?: get_the_title( $partner_id ) ); ?> →
+				</a>
+			</div>
 			<?php endif; ?>
 		</div>
 	</section>
@@ -801,7 +842,7 @@ get_header();
 					<button class="fg-btn-brand block" id="open-modal-btn" type="button">
 						Dieses Event anfragen
 					</button>
-					<button class="fg-btn-ghost block" id="fg-share-btn" type="button"
+					<button class="fg-btn-ghost block fg-share-trigger" id="fg-share-btn" type="button"
 					        data-share-url="<?php echo esc_url( get_permalink() ); ?>"
 					        data-share-title="<?php echo esc_attr( get_the_title() ); ?>">
 						Event teilen
@@ -846,6 +887,15 @@ get_header();
 	<?php endif; ?>
 
 	<?php get_template_part( 'template-parts/fge-footer' ); ?>
+
+	<?php /* Nur mobil: fixierter Anfrage-Fuß (Mechanik aus CLAUDE-MOBILE.md Punkt 5, --fg-vvb + safe-area) */ ?>
+	<div class="fg-mcta" id="fg-mcta">
+		<div class="fg-mcta-price">
+			<strong><?php echo esc_html( $price_main ); ?></strong>
+			<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
+		</div>
+		<button class="fg-btn-brand fg-mcta-btn" type="button" data-open-request>Dieses Event anfragen</button>
+	</div>
 
 </div><?php /* .fge-page */ ?>
 
@@ -1414,9 +1464,8 @@ get_header();
 		});
 	}
 
-	// Share button (Web Share API → clipboard fallback)
-	var shareBtn = document.getElementById('fg-share-btn');
-	if (shareBtn) {
+	// Share buttons (Web Share API → clipboard fallback): Rail-Button und mobiler Icon-Button im Bild
+	document.querySelectorAll('.fg-share-trigger').forEach(function (shareBtn) {
 		shareBtn.addEventListener('click', function () {
 			var url   = shareBtn.getAttribute('data-share-url') || window.location.href;
 			var title = shareBtn.getAttribute('data-share-title') || document.title;
@@ -1425,6 +1474,11 @@ get_header();
 				return;
 			}
 			function feedback() {
+				if (shareBtn.classList.contains('fg-gal-share')) {
+					shareBtn.classList.add('is-copied');
+					setTimeout(function () { shareBtn.classList.remove('is-copied'); }, 1800);
+					return;
+				}
 				var orig = shareBtn.textContent;
 				shareBtn.textContent = 'Link kopiert ✓';
 				setTimeout(function () { shareBtn.textContent = orig; }, 1800);
@@ -1435,6 +1489,29 @@ get_header();
 				window.prompt('Link kopieren:', url);
 			}
 		});
+	});
+
+	// Mobiler Anfrage-Fuß öffnet dasselbe Modal wie der Rail-Button
+	var mctaBtn = document.querySelector('.fg-mcta-btn'), railOpen = document.getElementById('open-modal-btn');
+	if (mctaBtn && railOpen) {
+		mctaBtn.addEventListener('click', function () { railOpen.click(); });
+	}
+
+	// Foto-Wischreihe (mobil): Zähler „n/gesamt" nach dem Scroll-Snap
+	var galSlider = document.querySelector('.fg-gal-slider'), galCount = document.querySelector('.fg-gal-count-i');
+	if (galSlider && galCount) {
+		var galTick = null;
+		galSlider.addEventListener('scroll', function () {
+			if (galTick) return;
+			galTick = requestAnimationFrame(function () {
+				galTick = null;
+				var first = galSlider.firstElementChild;
+				if (!first) return;
+				var step = first.getBoundingClientRect().width + 8;
+				var idx  = Math.round(galSlider.scrollLeft / step) + 1;
+				galCount.textContent = Math.max(1, Math.min(galSlider.children.length, idx));
+			});
+		}, { passive: true });
 	}
 
 	// FAQ-Toggle kommt aus der globalen Komponente (template-parts/fge-faq.php).

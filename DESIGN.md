@@ -21,7 +21,7 @@ Diese Datei ist die eine Wahrheit für das Aussehen aller Oberflächen (Website,
 7. **Fortschritt**: durchgehende Segmente volle Breite, 5px hoch, Füllung `fairway-700`, keine Beschriftung (Schritt-Info steht im Inhalt).
 8. **Dialoge und Formulare**: Desktop zentriert mit Blur-Scrim, rundum gleicher Radius (`overflow: hidden` nicht vergessen). Auf Mobile sind Anfrage- und Bestellformulare IMMER vollflächig (100dvh), kleine Entscheidungs-Popups bleiben zentriert. Fußzeile: Zurück ganz links, Primäraktion ganz rechts.
 9. **FAQ**: EINE Komponente für die ganze Site: `get_template_part( 'template-parts/fge-faq', null, [ 'items' => [...] ] )`. Karten-Optik (weiße Karte, 1px Rahmen, offen = Marken-Rahmen + Schatten, drehender Chevron, animierte Antwort). Nie eigene FAQ-Markups oder eigene Toggle-Scripts bauen; das Part bringt sein JS einmal pro Seite mit.
-10. **Motion**: Nur `transform`/`opacity`. Einstieg nie aus scale(0), Dauer unter 300ms außer Seitenwechseln, `prefers-reduced-motion` bekommt Fades. Kein fixed/sticky Chrome am unteren Mobile-Viewport-Rand.
+10. **Motion**: Nur `transform`/`opacity`. Einstieg nie aus scale(0), Dauer unter 300ms außer Seitenwechseln, `prefers-reduced-motion` bekommt Fades. Fixierte oder sticky Füße am unteren Mobile-Rand nur mit der Viewport-Mechanik aus CLAUDE-MOBILE.md Punkt 5 (`bottom: var(--fg-vvb, 0px)` + safe-area-Padding), sonst nie.
 
 ## Bekannte Fallen
 
