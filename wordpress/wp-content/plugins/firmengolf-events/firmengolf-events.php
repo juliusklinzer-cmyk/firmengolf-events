@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.223' );
+define( 'FGE_VERSION', '1.9.224' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -61,6 +61,7 @@ require_once FGE_DIR . 'includes/onboarding.php';
 require_once FGE_DIR . 'includes/rest-media.php';
 require_once FGE_DIR . 'includes/media-widget.php';
 require_once FGE_DIR . 'includes/golfplatz-verzeichnis.php';
+require_once FGE_DIR . 'includes/simulatoren-data.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once FGE_DIR . 'includes/cli-migrations.php';

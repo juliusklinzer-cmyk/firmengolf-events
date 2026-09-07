@@ -3867,6 +3867,7 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 .home-indoor-photo { aspect-ratio: 4 / 3; border-radius: var(--radius-xl); background-size: cover; background-position: 60% center; box-shadow: 0 24px 60px rgba(44,80,54,.16); }
 .home-indoor-text { display: flex; flex-direction: column; gap: 18px; }
 .home-indoor-text .mk-h2 .mk-italic { color: var(--fairway-700); }
+.home-indoor-tag { align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fairway-800); background: var(--fairway-100); border: 1px solid var(--fairway-200); border-radius: 999px; padding: 4px 10px; }
 .home-indoor-ctas { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
 @media (max-width: 960px) {
   .home-indoor-inner { grid-template-columns: 1fr; gap: 28px; }
@@ -3930,6 +3931,49 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 /* Bildunterschrift bei Platzhalter-Events (Pool-Motive, nicht der konkrete Platz) */
 .fg-gal-caption { font-size: 12.5px; color: var(--ink-500); margin: 10px 0 0; }
 @media (max-width: 768px) { .fg-gal-caption { margin: 10px 0 0; text-align: center; } }
+
+/* ── 29d. WEIHNACHTSFEIER-SEITE: Spielformate, Simulator-Karte; Teaser auf Individuelle Events (Julius, 07.09.) ── */
+.playx-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.playx-card { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-xl); overflow: hidden; display: flex; flex-direction: column; }
+.playx-photo { aspect-ratio: 4 / 3; background-size: cover; background-position: center; }
+.playx-t { font-family: var(--font-display); font-size: 20px; font-weight: 500; letter-spacing: -.015em; color: var(--ink-900); margin: 16px 18px 6px; }
+.playx-b { font-size: 14.5px; line-height: 1.55; color: var(--ink-700); margin: 0 18px 18px; }
+.simx .simx-map { margin-top: 8px; width: 100%; max-width: none; aspect-ratio: 16 / 9; height: auto; min-height: 420px; }
+.simx-lands { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.simx-land b { font-weight: 600; color: var(--fairway-700); margin-left: 4px; }
+.simx-note { font-size: 13px; color: var(--ink-500); margin-top: 14px; }
+.simx-note a { color: var(--fairway-700); }
+.fge-sim-info { font-family: var(--font-body); color: var(--ink-900); max-width: 240px; }
+.fge-sim-info strong { display: block; font-size: 14px; margin-bottom: 3px; }
+.fge-sim-info-meta { font-size: 12.5px; color: var(--ink-600); }
+.fge-sim-info-tag { display: inline-block; margin-top: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--fairway-800); background: var(--fairway-100); border-radius: 999px; padding: 2px 8px; }
+.fge-sim-info-links { display: flex; gap: 12px; margin-top: 8px; font-size: 13px; }
+.fge-sim-info-links a { color: var(--fairway-700); font-weight: 500; }
+/* Teaser statt zweitem Formular auf /individuelle-events/ */
+.xmas-teaser { max-width: 1280px; margin: 40px auto 0; padding: 0 24px; scroll-margin-top: 24px; }
+.xmas-teaser-inner { display: grid; grid-template-columns: 220px 1fr; align-items: stretch; background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-xl); overflow: hidden; text-decoration: none; color: inherit; transition: border-color var(--dur-fast) var(--ease-out), transform 160ms var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+.xmas-teaser-inner:active { transform: scale(0.995); }
+@media (hover: hover) and (pointer: fine) { .xmas-teaser-inner:hover { border-color: var(--ink-400); box-shadow: 0 12px 32px rgba(44,80,54,.08); } }
+.xmas-teaser-photo { background-size: cover; background-position: center; min-height: 160px; }
+.xmas-teaser-body { display: flex; flex-direction: column; gap: 6px; padding: 22px 26px; justify-content: center; }
+.xmas-teaser-tag { align-self: flex-start; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fairway-800); background: var(--fairway-100); border: 1px solid var(--fairway-200); border-radius: 999px; padding: 3px 9px; margin-bottom: 4px; }
+.xmas-teaser-h { font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -.02em; color: var(--ink-900); line-height: 1.15; }
+.xmas-teaser-p { font-size: 15px; line-height: 1.55; color: var(--ink-700); max-width: 60ch; }
+.xmas-teaser-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--fairway-700); }
+@media (max-width: 960px) {
+  .playx-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .playx-row { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); padding: 0 16px 6px; scroll-padding-left: 16px; }
+  .playx-row::-webkit-scrollbar { display: none; }
+  .playx-card { flex: 0 0 78%; scroll-snap-align: start; }
+  .simx .simx-map { aspect-ratio: 4 / 5; height: auto; min-height: 0; }
+  .xmas-teaser { margin-top: 28px; padding: 0 16px; }
+  .xmas-teaser-inner { grid-template-columns: 1fr; }
+  .xmas-teaser-photo { aspect-ratio: 16 / 9; min-height: 0; }
+  .xmas-teaser-body { padding: 18px 18px 20px; }
+  .xmas-teaser-h { font-size: 21px; }
+}
 
 /* ── 30a. EVENT DETAIL: Zurück + Teilen in einer Zeile, Politur-Pass (Emil, 07.09.) ── */
 .fg-detail-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0; }

@@ -94,6 +94,19 @@ bzw. der dunkle Verlauf unten regelt das.
 Optional zusätzlich: `tiles/home-indoor.jpg` als Ersatz für das Lounge-Bild der
 Indoor-Kachel auf der Startseite (sag Bescheid, dann verdrahte ich es).
 
+## 2b. Spielformate auf der Weihnachtsfeier-Seite → `imagery/spielformate/`
+
+Sechs Karten „Bewegung, Location und Spielformate". Dateiname = Slot, Querformat
+4:3, mindestens 1200 px breit. Fehlt eine Datei, zeigt die Karte ein Indoor-Motiv
+aus dem Pool. Sobald die Datei liegt, erscheint sie automatisch.
+
+- `spielformate/nearest-to-the-pin.jpg`
+- `spielformate/longest-drive.jpg`
+- `spielformate/angry-birds.jpg`
+- `spielformate/putt-bierpong.jpg`
+- `spielformate/team-scramble.jpg`
+- `spielformate/virtuelle-runde.jpg`
+
 ## 3. Seiten-/Hero-Bilder → `imagery/` (direkt)
 
 Sprechende Namen, kein Präfix-Zwang (z. B. `hero-…`, `onboarding-…`). Diese

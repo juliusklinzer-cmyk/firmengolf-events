@@ -201,14 +201,15 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] );
 	<div class="home-indoor-inner">
 		<div class="home-indoor-photo" role="img" aria-label="Golferin schlägt im Indoor-Simulator ab, im Hintergrund das Team an der Bar" style="background-image:url('<?php echo esc_url( $img( 'pool/indoor-golf-bar-und-fun-imi-team.jpg' ) ); ?>')"></div>
 		<div class="home-indoor-text">
-			<h2 class="mk-h2">Firmenevents im <em class="mk-italic">Indoor-Simulator</em>.</h2>
-			<p class="mk-sub">Warm, wetterfest und mitten in der Stadt: Turnier mit Live-Leaderboard, Teamevent an den Boxen oder die Weihnachtsfeier mit Glühwein an der Bar.</p>
+			<span class="home-indoor-tag">Top aktuell</span>
+			<h2 class="mk-h2">Eure Weihnachtsfeier im <em class="mk-italic">Indoor-Simulator</em>.</h2>
+			<p class="mk-sub">Warm, wetterfest und mitten in der Stadt. Spannende Locations in ganz Deutschland, Golf-Challenge, Menü und Bar aus einer Hand.</p>
 			<div class="home-indoor-ctas">
-				<a class="fg-btn-cta" href="<?php echo esc_url( $url_ind . '#weihnachtsfeier' ); ?>">
+				<a class="fg-btn-cta" href="<?php echo esc_url( home_url( '/firmenevent/weihnachtsfeier/' ) ); ?>">
 					Weihnachtsfeier planen
 					<span class="fg-arrow"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 				</a>
-				<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/firmenevent/weihnachtsfeier/' ) ); ?>">Alle Indoor-Formate</a>
+				<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/firmenevent/weihnachtsfeier/#simulatoren' ) ); ?>">Simulatoren in ganz Deutschland</a>
 			</div>
 		</div>
 	</div>

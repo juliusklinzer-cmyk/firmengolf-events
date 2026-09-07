@@ -311,6 +311,35 @@ add_action( 'init', static function () {
 // dieselben Städte wie das Turnier-Trio. Recherche-Basis: Weihnachtsfeiern bei
 // 15/100 Golfanlagen und 14/50 Simulatoren belegt. Preise = Platzhalter-Logik
 // wie alle Seeds (99 netto → 119 € p.P. Kundenpreis).
+/**
+ * Weihnachtsfeier-Texte (v2, Julius 07.09.): jede Platzhalter-Feier verbindet
+ * Bewegung, Eventlocation und Spielformate (Nearest to the Pin, Longest Drive,
+ * Angry Birds, Putt-Bierpong, Team-Scramble). Zentral, damit Master und die
+ * 30 Stadt-Klone denselben Stand haben (Migration unten).
+ */
+function fge_cityseed26_t3_texts(): array {
+	return [
+		'desc'     => 'Bewegung, Location und Feier an einem Abend: Golf-Challenge mit Spielformaten wie Nearest to the Pin, Angry Birds und Putt-Bierpong, warm an den Simulatoren oder im Clubhaus, danach das gemeinsame Weihnachtsessen. Als Paket alles inklusive, anpassbar auf eure Feier.',
+		'dayflow'  => "Ankommen in der Location\nGlühwein oder Punsch zur Begrüßung in der Indoor-Lounge oder im Clubhaus, kurze Einweisung an den Boxen, die Teams werden gelost.\n\nWarm werden an der Box\nErste Schläge mit Betreuung, Schläger werden gestellt. Wer noch nie gespielt hat, trifft nach zehn Minuten den Screen.\n\nSpielformate im Team\nNearest to the Pin, Longest Drive, Angry Birds und Putt-Bierpong im Wechsel, mit Live-Leaderboard über alle Boxen.\n\nSiegerehrung\nAuswertung mit Preisen für die besten Teams, garantiert mit Geschichten für die Kaffeeküche.\n\nWeihnachtsessen\nGemeinsames Menü oder Buffet zum Ausklang, auf Wunsch mit Getränkepauschale und Bar bis zum Schluss.",
+		'includes' => "Glühwein-Empfang\nBetreuung an den Boxen\nLeihschläger & Bälle\nSpielformate mit Live-Leaderboard\nSiegerehrung & Preise\nWeihnachtsmenü oder Buffet\nOrganisation & ein Ansprechpartner",
+	];
+}
+
+// Migration (07.09.): bestehende Weihnachtsfeiern (Master + Klone) auf die v2-Texte heben.
+add_action( 'init', static function () {
+	if ( get_option( 'fge_city_seed_2026_09_t3_v2' ) ) {
+		return;
+	}
+	update_option( 'fge_city_seed_2026_09_t3_v2', '1', true );
+	$ids = get_posts( [ 'post_type' => 'firmengolf_event', 'post_status' => 'any', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_fge_event_type', 'meta_value' => 'weihnachtsfeier' ] );
+	$t   = fge_cityseed26_t3_texts();
+	foreach ( $ids as $id ) {
+		update_post_meta( $id, '_fge_card_description', $t['desc'] );
+		update_post_meta( $id, '_fge_event_dayflow', $t['dayflow'] );
+		update_post_meta( $id, '_fge_event_includes', $t['includes'] );
+	}
+}, 23 );
+
 function fge_cityseed26_t3_master(): array {
 	return [
 		'post_title' => 'Weihnachtsfeier mit Golf in München',
@@ -324,12 +353,12 @@ function fge_cityseed26_t3_master(): array {
 			'_fge_participants_min' => '10',
 			'_fge_participants_max' => '60',
 			'_fge_duration'         => 'Abend · ca. 4 Std.',
-			'_fge_card_description' => 'Die etwas andere Weihnachtsfeier: Glühwein-Empfang, Golf-Challenge mit Betreuung und Siegerehrung, danach das gemeinsame Weihnachtsessen. Je nach Termin und Wunsch indoor am Simulator oder auf der Anlage. Bei Buchung als Paket ist alles inklusive, anpassbar auf eure Feier.',
+			'_fge_card_description' => fge_cityseed26_t3_texts()['desc'],
 			'_fge_price_mode'       => 'gesamt',
 			'_fge_price_basis'      => 'person',
 			'_fge_price_amount'     => '99',
-			'_fge_event_dayflow'    => "Glühwein-Empfang\nAnkommen in weihnachtlicher Atmosphäre, Glühwein und Punsch zur Begrüßung, kurze Vorstellung des Abends.\n\nGolf-Challenge mit Betreuung\nNearest to the Pin, Longest Drive und Team-Wertung, angeleitet und für alle Level. Im Winter an Indoor-Simulatoren mit Live-Leaderboard, Schläger werden gestellt.\n\nSiegerehrung\nAuswertung mit Preisen für die besten Teams, garantiert mit Geschichten für die Kaffeeküche.\n\nWeihnachtsessen\nGemeinsames Menü oder Buffet zum Ausklang, auf Wunsch mit Getränkepauschale.",
-			'_fge_event_includes'   => "Glühwein-Empfang\nGolf-Challenge mit Betreuung\nLeihschläger & Bälle\nTurnierwertung & Siegerehrung\nPreise für die Gewinner-Teams\nWeihnachtsmenü oder Buffet\nOrganisation & ein Ansprechpartner",
+			'_fge_event_dayflow'    => fge_cityseed26_t3_texts()['dayflow'],
+			'_fge_event_includes'   => fge_cityseed26_t3_texts()['includes'],
 			'_fge_event_addons'     => "Getränkepauschale\nLive-Musik oder DJ\nFotograf\nGebrandete Preise\nShuttle-Service",
 			'_fge_geo_lat'          => '48.137',
 			'_fge_geo_lng'          => '11.575',

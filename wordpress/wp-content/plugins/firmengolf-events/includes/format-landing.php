@@ -148,6 +148,15 @@ function fge_get_event_format_pages(): array {
 			],
 			'types'   => [ 'weihnachtsfeier', 'indoor-golf' ],
 			'hero_img'  => 'onboarding-indoor-lounge.jpg',
+			// Saison-Seite (Julius, 07.09.): Kurz-Anfrage, Spielformate und Simulator-
+			// Karte werden im Template nur für dieses Format gerendert.
+			'xmas'      => true,
+			'facts'     => [
+				$reason( 'sun',       'Warm und wetterfest',      'Indoor an den Simulatoren oder im Clubhaus der Golfanlage: kein Frieren, kein Ausfall bei Schmuddelwetter.' ),
+				$reason( 'users',     'Alle spielen mit',         'Betreuung an den Boxen, Schläger werden gestellt. Wer noch nie gespielt hat, trifft nach zehn Minuten den Screen.' ),
+				$reason( 'gift',      'Menü und Getränke dabei',  'Glühwein-Empfang, Weihnachtsmenü oder Buffet und auf Wunsch die Getränkepauschale, alles aus einer Hand.' ),
+				$reason( 'flag',      'In ganz Deutschland',      'Über 50 Simulator-Anlagen von Hamburg bis München plus Golfanlagen mit Clubhaus in 30 Städten.' ),
+			],
 			// Indoor-Formate im Homepage-Kachel-Look (Julius, 03.09.): im Winter
 			// spielt die Feier drinnen. Bild-Slots in assets/imagery/tiles/,
 			// Fallback = Lounge, bis die Stock-Bilder eingepflegt sind.

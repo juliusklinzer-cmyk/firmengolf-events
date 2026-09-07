@@ -31,7 +31,11 @@ $anfrage_quick = add_query_arg( $anfrage_args, $ind_url );
 $faqs       = $format['faqs'] ?? [];
 
 // Passende Events: 2 volle 4er-Reihen (Grid wie auf der Eventliste), Fallback verhindert leere Seite.
-$format_events = function_exists( 'fge_format_events' ) ? fge_format_events( $format, 8 ) : [];
+$is_xmas       = ! empty( $format['xmas'] );
+$format_events = function_exists( 'fge_format_events' ) ? fge_format_events( $format, $is_xmas ? 12 : 8 ) : [];
+if ( $is_xmas && function_exists( 'fge_simulatoren_map_enqueue' ) ) {
+	fge_simulatoren_map_enqueue();
+}
 if ( empty( $format_events ) && function_exists( 'fge_get_featured_events' ) ) {
 	$format_events = fge_get_featured_events( 8 );
 }
@@ -141,6 +145,11 @@ get_header();
 </section>
 <?php endif; ?>
 
+<?php /* Weihnachtsfeier: Kurz-Anfrage direkt nach den Facts (Julius, 07.09.) */ ?>
+<?php if ( $is_xmas ) : ?>
+	<?php get_template_part( 'template-parts/fge-xmas-request', null, [ 'id' => 'anfrage' ] ); ?>
+<?php endif; ?>
+
 <?php /* Passende Events zuerst: das schnellste Ergebnis für die Suchanfrage */ ?>
 <?php if ( ! empty( $format_events ) ) : ?>
 <section class="fg-grid-section" id="angebote" aria-label="<?php echo esc_attr( $f_name ); ?>-Angebote">
@@ -209,6 +218,70 @@ get_header();
 <?php endif; ?>
 
 <?php /* So könnte dein Tag ablaufen: eine Reihe, Punkte blenden gestaffelt von oben ein */ ?>
+<?php /* Weihnachtsfeier: Spielformate an der Box + Simulator-Karte (Julius, 07.09.).
+	Bild-Slots assets/imagery/spielformate/<slug>.jpg, bis Julius' Fotos da sind
+	Indoor-Motive aus dem Pool (siehe docs/bilder-leitfaden.md, Abschnitt 2b). */ ?>
+<?php if ( $is_xmas ) :
+	$play_img = static function ( string $slug, string $fallback ): string {
+		$base = defined( 'FGE_DIR' ) ? FGE_DIR . 'assets/imagery/' : '';
+		if ( '' !== $base && file_exists( $base . 'spielformate/' . $slug . '.jpg' ) ) {
+			return fge_get_placeholder_image_url( 'spielformate/' . $slug . '.jpg' );
+		}
+		return fge_get_placeholder_image_url( $fallback );
+	};
+	$play_formats = [
+		[ 'slug' => 'nearest-to-the-pin', 't' => 'Nearest to the Pin', 'b' => 'Ein Schlag, eine Fahne: Wer legt den Ball am nächsten ans Loch? Alle sehen es sofort auf dem Screen.', 'img' => 'pool/indoor-topgolf-abschlag.jpg' ],
+		[ 'slug' => 'longest-drive',      't' => 'Longest Drive',      'b' => 'Der weiteste Ball gewinnt, gemessen auf den Meter. Der Moment, in dem auch die Ruhigen laut werden.', 'img' => 'pool/indoor-topgolf-abschlag-3.jpg' ],
+		[ 'slug' => 'angry-birds',        't' => 'Angry Birds',        'b' => 'Bälle auf Zielscheiben, Punkte wie im Spiel. Der Klassiker an der Box, auch ohne einen einzigen Golfschwung vorher.', 'img' => 'pool/indoor-topgolf-oberhausen.jpg' ],
+		[ 'slug' => 'putt-bierpong',      't' => 'Putt-Bierpong',      'b' => 'Putten statt werfen, Becher statt Loch. Zwei Teams, ein Putting-Grün und viel Gelächter.', 'img' => 'pool/indoor-bier-und-simulator.jpg' ],
+		[ 'slug' => 'team-scramble',      't' => 'Team-Scramble',      'b' => 'Vier spielen einen Ball, jeder Schlag zählt fürs Team. Sechs virtuelle Löcher, ideal für gemischte Gruppen.', 'img' => 'pool/indoor-golf-indoor-simulator-bar-event-im-team.jpg' ],
+		[ 'slug' => 'virtuelle-runde',    't' => 'Runde in St Andrews',  'b' => 'Neun Löcher auf den berühmtesten Plätzen der Welt, ohne die Lounge zu verlassen. Mit Live-Leaderboard über alle Boxen.', 'img' => 'pool/indoor-18-in-st-andrews-the-home-of-golf.jpg' ],
+	];
+	$sim_all = function_exists( 'fge_simulatoren' ) ? fge_simulatoren() : [];
+	$sim_by_land = [];
+	foreach ( $sim_all as $s ) {
+		$sim_by_land[ $s['bundesland'] ] = ( $sim_by_land[ $s['bundesland'] ] ?? 0 ) + 1;
+	}
+	arsort( $sim_by_land );
+?>
+<section class="mk-section playx cty-reveal" id="spielformate" aria-label="Spielformate an der Box">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Bewegung, Location und <em class="mk-italic">Spielformate</em>, die alle mitnehmen.</h2>
+		<p class="mk-sub">Jede Weihnachtsfeier verbindet einen Abend an den Boxen mit einer Location, in der man gern bleibt. Diese Formate spielen wir im Wechsel, mit Live-Leaderboard und Betreuung.</p>
+	</div>
+	<div class="playx-row">
+		<?php foreach ( $play_formats as $pf ) : ?>
+		<article class="playx-card">
+			<div class="playx-photo" style="background-image:url('<?php echo esc_url( $play_img( $pf['slug'], $pf['img'] ) ); ?>')" role="img" aria-label="<?php echo esc_attr( $pf['t'] ); ?>"></div>
+			<h3 class="playx-t"><?php echo esc_html( $pf['t'] ); ?></h3>
+			<p class="playx-b"><?php echo esc_html( $pf['b'] ); ?></p>
+		</article>
+		<?php endforeach; ?>
+	</div>
+</section>
+
+<?php if ( ! empty( $sim_all ) && function_exists( 'fge_gmaps_api_key' ) && fge_gmaps_api_key() !== '' ) : ?>
+<section class="mk-section simx cty-reveal" id="simulatoren" aria-label="Golfsimulatoren in Deutschland">
+	<div class="mk-section-head">
+		<h2 class="mk-h2">Golfsimulatoren in <em class="mk-italic">ganz Deutschland</em>.</h2>
+		<p class="mk-sub"><?php echo esc_html( (string) count( $sim_all ) ); ?> Indoor-Anlagen von Hamburg bis München. Blau markiert sind eventfähige Locations mit Bar oder Lounge, tippt einen Pin an für Boxen, System und Website.</p>
+	</div>
+	<div class="gpd-map simx-map" id="fge-sim-map">
+		<div class="gpd-map-consent">
+			<p>Die Karte lädt erst nach deiner Einwilligung für Google&nbsp;Maps.</p>
+			<button type="button" class="fg-btn-brand" onclick="if(window.klaro){window.klaro.show()}">Karte aktivieren</button>
+		</div>
+	</div>
+	<div class="simx-lands" aria-label="Anlagen je Bundesland">
+		<?php foreach ( $sim_by_land as $land => $cnt ) : ?>
+		<span class="fg-chip simx-land"><?php echo esc_html( $land ); ?> <b><?php echo (int) $cnt; ?></b></span>
+		<?php endforeach; ?>
+	</div>
+	<p class="simx-note">Stand September 2026, eigene Recherche. Eure Anlage fehlt? <a href="<?php echo esc_url( home_url( '/indoor-partner/' ) ); ?>">Als Simulator-Partner eintragen</a>.</p>
+</section>
+<?php endif; ?>
+<?php endif; ?>
+
 <?php if ( ! empty( $format['flow'] ) ) : ?>
 <section class="mk-section mk-band fmt-flow5" aria-label="So läuft euer <?php echo esc_attr( $f_name ); ?>">
 	<div class="mk-section-head">
