@@ -22,6 +22,7 @@ Diese Datei ist die eine Wahrheit für das Aussehen aller Oberflächen (Website,
 8. **Dialoge und Formulare**: Desktop zentriert mit Blur-Scrim, rundum gleicher Radius (`overflow: hidden` nicht vergessen). Auf Mobile sind Anfrage- und Bestellformulare IMMER vollflächig (100dvh), kleine Entscheidungs-Popups bleiben zentriert. Fußzeile: Zurück ganz links, Primäraktion ganz rechts.
 9. **FAQ**: EINE Komponente für die ganze Site: `get_template_part( 'template-parts/fge-faq', null, [ 'items' => [...] ] )`. Karten-Optik (weiße Karte, 1px Rahmen, offen = Marken-Rahmen + Schatten, drehender Chevron, animierte Antwort). Nie eigene FAQ-Markups oder eigene Toggle-Scripts bauen; das Part bringt sein JS einmal pro Seite mit.
 10. **Motion**: Nur `transform`/`opacity`. Einstieg nie aus scale(0), Dauer unter 300ms außer Seitenwechseln, `prefers-reduced-motion` bekommt Fades. Fixierte oder sticky Füße am unteren Mobile-Rand nur mit der Viewport-Mechanik aus CLAUDE-MOBILE.md Punkt 5 (`bottom: var(--fg-vvb, 0px)` + safe-area-Padding), sonst nie.
+11. **Schalter**: `.fg-switch-row` (Text links, Schalter rechts, 1px `ink-200`-Rahmen, Radius 12px) mit `.fg-switch` (46×26, Knopf weiß, an = `fairway-700`). Für Ja/Nein-Fragen wie „Rückruf heute?", nie als Checkbox-Ersatz für Zustimmungen.
 
 ## Bekannte Fallen
 

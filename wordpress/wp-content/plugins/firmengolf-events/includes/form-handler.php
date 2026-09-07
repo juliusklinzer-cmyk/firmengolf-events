@@ -352,7 +352,9 @@ function fge_ajax_general_request(): void {
 	}
 
 	// Vorname ist im Wizard optional (Julius, 27.08.), Nachname reicht: Vor- ODER Nachname muss da sein.
-	if ( ! $email || ! is_email( $email ) || ( $first === '' && $last === '' ) || $occasion === '' ) {
+	// Kurz-Anfrage aus dem Budget-Rechner (Quelle budget, 07.09.) fragt gar keinen Namen ab.
+	$is_budget = 'budget' === $t( 'source' );
+	if ( ! $email || ! is_email( $email ) || ( $first === '' && $last === '' && ! $is_budget ) || $occasion === '' ) {
 		wp_send_json_error( [ 'message' => 'Bitte Anlass, Name und gültige E-Mail angeben.' ], 422 );
 	}
 
@@ -388,7 +390,7 @@ function fge_ajax_general_request(): void {
 	$request_id = wp_insert_post( [
 		'post_type'   => 'firmengolf_request',
 		'post_status' => 'publish',
-		'post_title'  => $ref . ' · ' . trim( $first . ' ' . $last ),
+		'post_title'  => $ref . ' · ' . ( trim( $first . ' ' . $last ) !== '' ? trim( $first . ' ' . $last ) : ( $company !== '' ? $company : $email ) ),
 	] );
 	if ( is_wp_error( $request_id ) || ! $request_id ) {
 		wp_send_json_error( [ 'message' => 'Anfrage konnte nicht gespeichert werden.' ], 500 );

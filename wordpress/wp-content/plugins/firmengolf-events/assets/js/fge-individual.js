@@ -409,6 +409,10 @@
 				services: svcWiz,
 				budget: ppChip,
 				email: state.email || '',
+				calcType: res.type.label,
+				calcArticle: ({ teamevent: 'einem', platzreife: 'einer', turnier: 'einem', kundenevent: 'einem', offsite: 'einer', sommerfest: 'einem', nachtturnier: 'einem', andere: 'einem besonderen' })[res.type.id] || 'einem',
+				calcServices: res.items.map(function (r) { return r.label.replace(/\s*\(.*?\)/g, ''); }),
+				budgetTotal: String(Math.round(res.total / 50) * 50),
 				calcSummary: res.type.label + ' · ' + state.participants + ' Personen' + (typeHasDays() ? ' · ' + state.days + ' Tage' : '') + ' · ' + res.items.map(function (r) { return r.label.replace(/\s*\(.*?\)/g, ''); }).join(', ') + ' · Richtwert ca. ' + fmt(res.total) + ' € netto',
 				notes: 'Über den Budget-Rechner geschätzt: ' + res.type.label + ', ' + state.participants
 					+ ' Personen, ' + (typeHasDays() ? state.days + ' Tage, ' : '') + 'Preisniveau ' + state.range + ', Richtwert ca. ' + fmt(res.total) + ' € gesamt (' + lo.toLocaleString('de-DE') + ' bis ' + hi.toLocaleString('de-DE') + ' €).'
@@ -479,6 +483,7 @@
 				/* services OHNE Default: der Quick-Modus zeigt keinen Leistungs-Schritt und
 				   hat sonst nie gewählte Wünsche mitgesendet (Kern-Audit H1, 2026-07-08). */
 				date1: '', date2: '', date3: '', services: [],
+				callback: false, budgetTotal: '', calcType: '', calcArticle: '', calcServices: [], calcSummary: '',
 				company: '', city: '', firstName: '', lastName: '', email: '', phone: '',
 				contactPref: 'E-Mail', diet: '', notes: '', consent: false
 			};
@@ -785,29 +790,38 @@
 				+ '<span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label></div>';
 		}
 
-		/* Verkürzte Anfrage aus dem Budget-Rechner (Julius, 07.09.): Leistungen sind
-		   dort schon gewählt, hier fehlen nur noch Firma, Kontakt und je nach Typ ein
-		   Detail (Reiseziel bei der Golfreise, sonst Region). Ein Schritt, dann senden. */
+		/* Verkürzte Anfrage aus dem Budget-Rechner (Julius, 07.09., Vorbild Naboo-Lead-Formular):
+		   Leistungen sind gewählt und stehen als Tags, Gäste und Budget sind vorbefüllt,
+		   dazu Termin, Wunschort, Mail, Telefon und ein Rückruf-Schalter. Rechts Logo
+		   und Julius, damit klar ist, wer sich meldet. Ein Schritt, dann senden. */
 		function screenBudget() {
 			var isTrip = S.form.occasion === 'Incentive-Reise';
-			var sum = S.form.calcSummary ? '<div class="rw-calc-sum">' + esc(S.form.calcSummary) + '</div>' : '';
-			return '<div class="rw-stage"><div class="rw-screen"><div class="rw-main">'
+			var typeLabel = S.form.calcType || S.form.occasion || 'Event';
+			var art = S.form.calcArticle || 'einem';
+			var tags = (S.form.calcServices || []).map(function (l) { return '<span class="rw-tag">' + esc(l) + '</span>'; }).join('');
+			var side = '<div class="rw-photo rw-photo--julius">'
+				+ (CFG.logo ? '<img class="rw-pj-logo" src="' + esc(CFG.logo) + '" alt="Firmengolf" height="26">' : '')
+				+ (CFG.juliusImg ? '<img class="rw-pj-img" src="' + esc(CFG.juliusImg) + '" alt="' + esc(CONTACT.name) + '">' : '')
+				+ '<div class="rw-pj-txt"><b>' + esc(CONTACT.name) + '</b><span>' + esc(CONTACT.role) + ' · Firmengolf</span>'
+				+ '<em>„Ich rufe dich persönlich an und stimme alles mit dir ab."</em></div></div>';
+			return '<div class="rw-stage"><div class="rw-screen rw-has-photo rw-screen--budget"><div class="rw-main">'
 				+ '<div class="rw-eyebrow">Fast fertig</div>'
-				+ '<h2 class="rw-h">Wer seid ihr, und wie erreichen wir dich?</h2>'
-				+ '<p class="rw-lead">Deine Auswahl aus dem Rechner haben wir übernommen. Wir melden uns schnellstmöglich telefonisch, um alles mit dir abzustimmen.</p>'
-				+ sum
-				+ '<div class="rw-form"><div class="rw-row"><div class="rw-field">' + label('Unternehmen', true) + input('company', 'required', 'Musterfirma GmbH') + '</div>'
+				+ '<h2 class="rw-h">Toll, du bist auf der Suche nach ' + esc(art) + ' <span class="mk-italic">' + esc(typeLabel) + '</span>.</h2>'
+				+ (tags ? '<div class="rw-tags" aria-label="Angefragte Leistungen">' + tags + '</div>' : '')
+				+ '<div class="rw-form">'
+				+ '<div class="rw-row"><div class="rw-field">' + label('Wann soll es stattfinden?', true) + input('date1', 'type="date" min="' + MIN_DATE + '"', '') + '</div>'
 				+ '<div class="rw-field">' + (isTrip
-					? label('Reiseziel', false, 'Wunschregion oder Land') + input('region', '', 'z. B. Mallorca, Algarve, Allgäu')
-					: label('Region oder Ort', false, 'Wo soll es stattfinden?') + input('region', '', 'z. B. Raum München')) + '</div></div>'
-				+ '<div class="rw-row"><div class="rw-field">' + label('Vorname') + input('firstName', '', 'Vorname') + '</div>'
-				+ '<div class="rw-field">' + label('Nachname', true) + input('lastName', 'required', 'Nachname') + '</div></div>'
+					? label('Reiseziel', false, 'optional') + input('region', '', 'z. B. Mallorca, Algarve oder „noch offen"')
+					: label('Wunschort', false, 'optional') + input('region', '', 'z. B. München, Alpen oder „noch offen"')) + '</div></div>'
+				+ '<div class="rw-row"><div class="rw-field">' + label('Wie viele Gäste?', true) + sizeStepper() + '</div>'
+				+ '<div class="rw-field">' + label('Ungefähres Budget', true, 'netto, gesamt')
+					+ '<div class="rw-money"><input class="fg-input" data-field="budgetTotal" type="number" min="0" step="50" inputmode="numeric" value="' + esc(S.form.budgetTotal || '') + '" placeholder="z. B. 15000"><span>€</span></div></div></div>'
 				+ '<div class="rw-row"><div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div>'
-				+ '<div class="rw-field">' + label('Telefon') + input('phone', 'type="tel"', '+49 …') + '</div></div>'
-				+ '<div class="rw-field">' + label('Bevorzugte Kontaktart') + chips('contactPref', ['E-Mail', 'Telefon', 'Egal']) + '</div>'
-				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '>'
-				+ '<span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label></div>'
-				+ '</div></div></div>'
+				+ '<div class="rw-field">' + label('Telefon', false, 'optional') + input('phone', 'type="tel"', '+49 170 1234567') + '</div></div>'
+				+ '<label class="fg-switch-row"><span class="fg-switch-txt"><b>Rückruf heute?</b><span>Ja, bitte anrufen</span></span>'
+				+ '<span class="fg-switch"><input type="checkbox" role="switch" data-field="callback"' + (S.form.callback ? ' checked' : '') + '><i></i></span></label>'
+				+ '<p class="rw-budget-note">Kostenfrei und datenschutzkonform gemäß DSGVO. Mit dem Absenden stimmst du der Verarbeitung deiner Angaben zur Bearbeitung der Anfrage zu. <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutz</a></p>'
+				+ '</div></div>' + side + '</div></div>'
 				+ '<div class="rw-foot"><div class="rw-nav"><button class="rw-btn-text" data-act="close">Abbrechen</button>'
 				+ '<button class="rw-btn-primary" data-act="submit">Anfrage senden ' + ICO_SEND + '</button></div></div>';
 		}
@@ -922,7 +936,7 @@
 		}
 
 		function valid() {
-			if (S.mode === 'budget') return S.form.company && S.form.lastName && S.form.email && S.form.consent;
+			if (S.mode === 'budget') return checkDates() && !!S.form.date1 && parseInt(S.form.size, 10) > 0 && !!S.form.email;
 			if (S.mode === 'quick') {
 				if (S.step === 0) return !!S.form.occasion;
 				return S.form.firstName && S.form.email && S.form.occasion && S.form.consent;
@@ -940,6 +954,13 @@
 			S.sending = true;
 			if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
 			var f = S.form;
+			if (S.mode === 'budget') {
+				// Kurz-Anfrage: Budget aus dem Zahlenfeld, Rückruf-Schalter als Kontaktwunsch, Zustimmung über den Hinweistext.
+				var bt = parseInt(f.budgetTotal, 10);
+				if (bt > 0) f.budget = 'ca. ' + bt.toLocaleString('de-DE') + ' € gesamt (netto, aus dem Rechner)';
+				if (f.callback) { f.contactPref = 'Telefon'; f.notes = 'Rückruf heute gewünscht.\n\n' + (f.notes || ''); }
+				f.consent = true;
+			}
 			var body = new URLSearchParams();
 			body.set('action', 'fge_general_request');
 			body.set('nonce', CFG.nonce || '');
@@ -1061,10 +1082,9 @@
 			var m = [];
 			var add = function (cond, label) { if (!cond) m.push(label); };
 			if (S.mode === 'budget') {
-				add(S.form.company, 'Firma');
-				add(S.form.lastName, 'Nachname');
+				add(S.form.date1, 'Wunschtermin');
+				add(parseInt(S.form.size, 10) > 0, 'Gästezahl');
 				add(S.form.email, 'E-Mail');
-				add(S.form.consent, 'Zustimmung zur Datenverarbeitung');
 			} else if (S.mode === 'quick') {
 				if (S.step === 0) {
 					add(S.form.occasion, 'Anlass auswählen');
