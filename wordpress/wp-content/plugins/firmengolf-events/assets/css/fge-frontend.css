@@ -3853,6 +3853,74 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
 }
 
 
+/* ── 29b. STARTSEITE: INDOOR-BANNER (Julius, 07.09.) ──
+   Band in Papier-200 wie die anderen Bänder, Foto links, Text rechts. Kein
+   Theme-Wechsel mitten auf der Seite, ein Akzent (fairway), Pillen-Buttons. */
+.home-indoor { background: var(--paper-200); padding: 64px 24px; }
+.home-indoor-inner { max-width: var(--width-page); margin: 0 auto; display: grid; grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: center; }
+.home-indoor-photo { aspect-ratio: 4 / 3; border-radius: var(--radius-xl); background-size: cover; background-position: 60% center; box-shadow: 0 24px 60px rgba(44,80,54,.16); }
+.home-indoor-text { display: flex; flex-direction: column; gap: 18px; }
+.home-indoor-text .mk-h2 .mk-italic { color: var(--fairway-700); }
+.home-indoor-ctas { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+@media (max-width: 960px) {
+  .home-indoor-inner { grid-template-columns: 1fr; gap: 28px; }
+}
+@media (max-width: 768px) {
+  .home-indoor { padding: 40px 20px; }
+  .home-indoor-photo { aspect-ratio: 4 / 3; border-radius: var(--radius-lg); }
+  .home-indoor-ctas .fg-btn-cta, .home-indoor-ctas .fg-btn-ghost { width: 100%; justify-content: center; box-sizing: border-box; }
+}
+
+/* ── 29c. INDIVIDUELLE EVENTS: WEIHNACHTSFEIER-SEKTION mit Kurz-Anfrage (Julius, 07.09.) ── */
+.xmas { max-width: 1280px; margin: 56px auto 0; padding: 0 24px; scroll-margin-top: 24px; }
+.xmas-inner { display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: center; }
+.xmas-text { display: flex; flex-direction: column; gap: 18px; }
+.xmas-text .mk-h2 .mk-italic { color: var(--fairway-700); }
+.xmas-points { display: flex; flex-direction: column; gap: 10px; }
+.xmas-points > div { display: flex; align-items: center; gap: 12px; color: var(--ink-800); font-size: 15px; }
+.xmas-points svg { color: var(--fairway-700); flex: none; }
+.xmas-form { background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: var(--radius-xl); padding: 28px; box-shadow: 0 18px 48px rgba(44,80,54,.08); position: relative; }
+.xmas-form .fg-step-rail { margin: 0 0 22px; }
+.xmas-form .fg-step { height: 5px; }
+.xmas-step-h { font-family: var(--font-display); font-size: 22px; font-weight: 500; letter-spacing: -.02em; color: var(--ink-900); margin: 0 0 16px; line-height: 1.2; }
+.xmas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.xmas-form select.fg-input { appearance: none; -webkit-appearance: none; padding-right: 38px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
+.xmas-form .fg-input { width: 100%; box-sizing: border-box; }
+.xmas-form button.xmas-cta { margin-top: 20px; }
+.xmas-form button.xmas-cta.block { width: 100%; justify-content: center; }
+.xmas-note { font-size: 13px; color: var(--ink-500); text-align: center; margin: 12px 0 0; }
+.xmas-consent { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 13px; line-height: 1.45; color: var(--ink-700); cursor: pointer; }
+.xmas-consent input { margin-top: 3px; flex: 0 0 auto; width: 16px; height: 16px; accent-color: var(--fairway-700); }
+.xmas-consent a { color: var(--fairway-700); }
+.xmas-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.xmas-foot button.xmas-cta { margin-top: 0; }
+/* Text-Button (DESIGN.md 2): unterstrichen, kein Hintergrund */
+.fge-page button.xmas-back { background: none; border: 0; padding: 8px 0; min-height: 44px; font-family: var(--font-body); font-size: 14px; font-weight: 500; color: var(--ink-600); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; transition: color var(--dur-fast) var(--ease-out); }
+.fge-page button.xmas-back:hover { color: var(--ink-900); }
+.xmas-err { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #FBEAE8; color: #8A2A22; font-size: 13px; line-height: 1.45; }
+/* Schrittwechsel: Crossfade 200ms ease-out, keine Höhen-Animation */
+.xmas-step { opacity: 0; transform: translateY(6px); transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
+.xmas-step.is-in { opacity: 1; transform: none; }
+.xmas-step[hidden] { display: none; }
+.xmas-done { text-align: center; padding: 12px 8px 4px; }
+.xmas-done p { font-size: 15px; line-height: 1.6; color: var(--ink-700); margin: 0; }
+.xmas-done-ic { display: inline-flex; width: 44px; height: 44px; border-radius: 999px; background: var(--fairway-100); color: var(--fairway-700); align-items: center; justify-content: center; margin-bottom: 14px; }
+.xmas-done-ic svg { width: 22px; height: 22px; }
+@media (prefers-reduced-motion: reduce) {
+  .xmas-step { transform: none; transition: opacity 200ms var(--ease-out); }
+}
+@media (max-width: 960px) {
+  .xmas-inner { grid-template-columns: 1fr; gap: 28px; }
+}
+@media (max-width: 768px) {
+  .xmas { margin-top: 36px; padding: 0 16px; }
+  .xmas-form { padding: 20px 16px; border-radius: var(--radius-lg); }
+  .xmas-grid { grid-template-columns: 1fr; gap: 12px; }
+  .xmas-form .fg-input { font-size: 16px; }
+  .xmas-foot { flex-direction: column-reverse; align-items: stretch; }
+  .xmas-foot button.xmas-cta { width: 100%; justify-content: center; }
+}
+
 /* ── 30a. EVENT DETAIL: Zurück + Teilen in einer Zeile, Politur-Pass (Emil, 07.09.) ── */
 .fg-detail-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0; }
 .fg-detail-topbar a.ev-back { margin: 0; }

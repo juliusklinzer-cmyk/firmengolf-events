@@ -193,6 +193,27 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] );
 	</form>
 </section>
 
+<?php /* ══════════════════ 2a. INDOOR-BANNER (Saison-Werbung, Julius 07.09.) ══════════════════
+	Großer Banner direkt unter dem Hero: Firmenevents im Simulator, Einstieg in die
+	Weihnachtsfeier-Sektion auf /individuelle-events/. Bild: Golferin an der Box,
+	Team an der Bar (pool/indoor-golf-bar-und-fun-imi-team.jpg). */ ?>
+<section class="home-indoor cty-reveal" aria-label="Firmenevents im Indoor-Simulator">
+	<div class="home-indoor-inner">
+		<div class="home-indoor-photo" role="img" aria-label="Golferin schlägt im Indoor-Simulator ab, im Hintergrund das Team an der Bar" style="background-image:url('<?php echo esc_url( $img( 'pool/indoor-golf-bar-und-fun-imi-team.jpg' ) ); ?>')"></div>
+		<div class="home-indoor-text">
+			<h2 class="mk-h2">Firmenevents im <em class="mk-italic">Indoor-Simulator</em>.</h2>
+			<p class="mk-sub">Warm, wetterfest und mitten in der Stadt: Turnier mit Live-Leaderboard, Teamevent an den Boxen oder die Weihnachtsfeier mit Glühwein an der Bar.</p>
+			<div class="home-indoor-ctas">
+				<a class="fg-btn-cta" href="<?php echo esc_url( $url_ind . '#weihnachtsfeier' ); ?>">
+					Weihnachtsfeier planen
+					<span class="fg-arrow"><?php echo $arrow_right; // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
+				</a>
+				<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/firmenevent/weihnachtsfeier/' ) ); ?>">Alle Indoor-Formate</a>
+			</div>
+		</div>
+	</div>
+</section>
+
 <?php /* ══════════════════ 2b. WARUM GOLFPLATZ (interaktiver Showcase) ══════════════════ */
 /* Rote Linie 2026-08-20: Die These der Marke, bildgefuehrt. Vier Argumente als
    Liste, das grosse Bild wechselt beim Antippen mit Crossfade und ruhigem Zoom. */
