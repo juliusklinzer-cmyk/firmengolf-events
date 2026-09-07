@@ -11,8 +11,8 @@
  * Platzkosten/Greenfee stecken in der jeweiligen Golf-Leistung (z. B. „18-Loch-
  * Turnier inkl. Greenfee"), es gibt keine separate Greenfee-Position.
  *
- * Editierbar im Admin: Typ-Labels, Service-Labels + Preise (€/Person ODER
- * Pauschale), Preisniveau-Faktoren (€/€€/€€€), Rundung.
+ * Editierbar im Admin: Typ-Labels, Service-Labels + Preisstaffeln (€/Person ODER
+ * Pauschale, je Niveau €/€€/€€€), Rundung.
  * Fix (aus Defaults): IDs, Typ→Service-Zuordnung (services/default_on/required),
  * Kategorie-Zuordnung, Icons, Kategorie-Farben, Wizard-Mapping (wiz).
  */
@@ -22,90 +22,108 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 const FGE_BC_OPTION = 'fge_budget_calc';
 
-/** Werkseinstellungen — Quelle der Wahrheit für Struktur + Start-Preise. */
+/**
+ * Werkseinstellungen — Quelle der Wahrheit für Struktur + Start-Preise.
+ *
+ * Preise seit 07.09.2026 je Preisniveau als Staffel [€, €€, €€€] (Julius nach der
+ * Naboo-Analyse, docs/analyse-naboo-budgetrechner-2026-09.md): Transport 25/35/50,
+ * Catering 35/55/85, Aktivitäten 25/40/80, Meetingraum 20/50/100. Die übrigen
+ * Staffeln entsprechen den alten Faktoren 0,82 / 1 / 1,45, gerundet.
+ */
 function fge_bc_defaults(): array {
-	// Service-Katalog (konsolidiert) — in grober Tagesablauf-Reihenfolge.
-	// cat (Donut-Kategorie), icon, pp (€/Person) ODER flat (Pauschale), wiz (Anfrage-Mapping).
+	// Service-Katalog — in grober Tagesablauf-Reihenfolge.
+	// cat (Donut-Kategorie), icon, pp (€/Person je Niveau) ODER flat (Pauschale je Niveau), wiz (Anfrage-Mapping).
 	$services = [
 		// Anreise.
-		[ 'id' => 'shuttle',       'label' => 'Shuttle-Service',                        'cat' => 'transport','icon' => 'bus',  'pp' => 38,  'flat' => 0,    'wiz' => 'Shuttle / Transport' ],
-		[ 'id' => 'vip_shuttle',   'label' => 'VIP-Shuttle',                            'cat' => 'transport','icon' => 'star', 'pp' => 0,   'flat' => 1200, 'wiz' => 'Shuttle / Transport' ],
+		[ 'id' => 'shuttle',       'label' => 'Transport & Shuttle',                    'cat' => 'transport','icon' => 'bus',  'pp' => [ 25, 35, 50 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Shuttle / Transport' ],
+		[ 'id' => 'vip_shuttle',   'label' => 'VIP-Shuttle',                            'cat' => 'transport','icon' => 'star', 'pp' => [ 0, 0, 0 ],       'flat' => [ 1000, 1200, 1750 ], 'wiz' => 'Shuttle / Transport' ],
 		// Golf-Leistung (Platznutzung/Greenfee inkludiert).
-		[ 'id' => 'schnupperkurs', 'label' => 'Schnupperkurs (inkl. Platz, Golflehrer & Leihschläger)', 'cat' => 'programm', 'icon' => 'coaching', 'pp' => 99, 'flat' => 0, 'wiz' => 'Grundlagenkurs' ],
-		[ 'id' => 'platzreife',    'label' => 'Platzreifekurs (PGA-Pro, Regeln & Prüfung)',            'cat' => 'programm', 'icon' => 'coaching', 'pp' => 299, 'flat' => 0, 'wiz' => 'Platzreifekurs' ],
-		[ 'id' => 'coaching',      'label' => 'Trainerstunde / Golftraining',           'cat' => 'programm', 'icon' => 'club', 'pp' => 48,  'flat' => 0,    'wiz' => 'Grundlagenkurs' ],
-		[ 'id' => 'turnier',       'label' => 'Firmenturnier (9 oder 18 Loch, inkl. Greenfee & Scoring)', 'cat' => 'venue', 'icon' => 'trophy', 'pp' => 145, 'flat' => 0, 'wiz' => '9-Loch-Turnier' ],
-		[ 'id' => 'putting',       'label' => 'Putting-Turnier',                        'cat' => 'programm', 'icon' => 'target','pp' => 0,   'flat' => 600,  'wiz' => 'Putting-Challenge' ],
-		[ 'id' => 'nachtrunde',    'label' => 'Nacht-Runde (Kurzplatz / Range)',        'cat' => 'venue',    'icon' => 'flag', 'pp' => 75,  'flat' => 0,    'wiz' => 'Flutlicht und Nacht-Event' ],
+		[ 'id' => 'golfkurs',      'label' => 'Golfkurs (inkl. Platz, Golflehrer & Leihschläger)',      'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 80, 99, 145 ],   'flat' => [ 0, 0, 0 ], 'wiz' => 'Grundlagenkurs' ],
+		[ 'id' => 'platzreife',    'label' => 'Platzreifekurs (PGA-Pro, Regeln & Prüfung)',             'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 245, 299, 435 ],  'flat' => [ 0, 0, 0 ], 'wiz' => 'Platzreifekurs' ],
+		// Turnierart: Entweder-oder-Gruppe (Julius, 07.09.), nur eine Art gleichzeitig wählbar.
+		[ 'id' => 'turnier_kurz',  'label' => 'Kurzplatz-Turnier (für Nicht-Golfer)',      'cat' => 'venue', 'icon' => 'flag',   'pp' => [ 60, 75, 110 ],    'flat' => [ 0, 0, 0 ], 'wiz' => 'Kurzplatz-Turnier', 'group' => 'turnier' ],
+		[ 'id' => 'turnier_9',     'label' => '9-Loch-Turnier',                          'cat' => 'venue', 'icon' => 'trophy', 'pp' => [ 85, 105, 150 ],   'flat' => [ 0, 0, 0 ], 'wiz' => '9-Loch-Turnier',    'group' => 'turnier' ],
+		[ 'id' => 'turnier_18',    'label' => '18-Loch-Turnier',                         'cat' => 'venue', 'icon' => 'trophy', 'pp' => [ 120, 145, 210 ],  'flat' => [ 0, 0, 0 ], 'wiz' => '18-Loch-Turnier',   'group' => 'turnier' ],
+		[ 'id' => 'turnier_kombi', 'label' => 'Kombi-Turnier (Golfer und Nicht-Golfer)', 'cat' => 'venue', 'icon' => 'trophy', 'pp' => [ 110, 135, 195 ],  'flat' => [ 0, 0, 0 ], 'wiz' => '18-Loch-Turnier',   'group' => 'turnier' ],
+		[ 'id' => 'putting',       'label' => 'Putting-Turnier',                        'cat' => 'programm', 'icon' => 'target','pp' => [ 25, 40, 80 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Putting-Challenge' ],
+		[ 'id' => 'sonderwertung', 'label' => 'Sonderwertungen (Longest Drive, Nearest to Pin)', 'cat' => 'extras', 'icon' => 'target', 'pp' => [ 10, 15, 20 ], 'flat' => [ 0, 0, 0 ], 'wiz' => 'Long-Drive-Challenge' ],
+		[ 'id' => 'longest_drive', 'label' => 'Longest-Drive-Challenge',                'cat' => 'programm', 'icon' => 'target','pp' => [ 25, 40, 80 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Long-Drive-Challenge' ],
+		[ 'id' => 'nachtrunde',    'label' => 'Nacht-Runde (Kurzplatz / Range)',        'cat' => 'venue',    'icon' => 'flag', 'pp' => [ 60, 75, 110 ],   'flat' => [ 0, 0, 0 ],          'wiz' => 'Flutlicht und Nacht-Event' ],
 		// Verpflegung (im Tagesverlauf).
-		[ 'id' => 'startgeschenk', 'label' => 'Startgeschenk / Goodie-Bag',             'cat' => 'extras',   'icon' => 'gift', 'pp' => 35,  'flat' => 0,    'wiz' => 'Individuelle Artikel' ],
-		[ 'id' => 'welcome_drink', 'label' => 'Welcome Drink',                          'cat' => 'catering', 'icon' => 'drink','pp' => 12,  'flat' => 0,    'wiz' => 'Bar & Drinks' ],
-		[ 'id' => 'halfway',       'label' => 'Half-Way-Verpflegung (auf der Runde)',   'cat' => 'catering', 'icon' => 'catering','pp' => 18, 'flat' => 0, 'wiz' => 'Mittagessen' ],
-		[ 'id' => 'cominghome',    'label' => 'Coming Home (Imbiss nach der Runde)',    'cat' => 'catering', 'icon' => 'catering','pp' => 16, 'flat' => 0, 'wiz' => 'Mittagessen' ],
-		[ 'id' => 'catering',      'label' => 'Bewirtung / Catering',                   'cat' => 'catering', 'icon' => 'catering','pp' => 62, 'flat' => 0, 'wiz' => 'Mittagessen' ],
-		[ 'id' => 'dinner',        'label' => 'Dinner / Abendveranstaltung',            'cat' => 'catering', 'icon' => 'catering','pp' => 78, 'flat' => 0, 'wiz' => 'Abendessen' ],
-		[ 'id' => 'getraenke',     'label' => 'Getränkepauschale',                      'cat' => 'catering', 'icon' => 'drink','pp' => 28,  'flat' => 0,    'wiz' => 'Bar & Drinks' ],
-		[ 'id' => 'bar',           'label' => 'Bar & Drinks',                           'cat' => 'catering', 'icon' => 'drink','pp' => 35,  'flat' => 0,    'wiz' => 'Bar & Drinks' ],
+		[ 'id' => 'startgeschenk', 'label' => 'Startgeschenk / Goodie-Bag',             'cat' => 'extras',   'icon' => 'gift', 'pp' => [ 29, 35, 50 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Individuelle Artikel' ],
+		[ 'id' => 'welcome_drink', 'label' => 'Welcome Drink',                          'cat' => 'catering', 'icon' => 'drink','pp' => [ 10, 12, 17 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
+		[ 'id' => 'halfway',       'label' => 'Rundenverpflegung (Halfway)',            'cat' => 'catering', 'icon' => 'catering','pp' => [ 15, 20, 30 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen' ],
+		[ 'id' => 'cominghome',    'label' => 'Coming Home (Imbiss nach der Runde)',    'cat' => 'catering', 'icon' => 'catering','pp' => [ 15, 20, 30 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen' ],
+		[ 'id' => 'mittagessen',   'label' => 'Mittagessen',                            'cat' => 'catering', 'icon' => 'catering','pp' => [ 35, 55, 85 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen' ],
+		[ 'id' => 'dinner',        'label' => 'Abendveranstaltung / Dinner',            'cat' => 'catering', 'icon' => 'catering','pp' => [ 30, 50, 80 ],'flat' => [ 0, 0, 0 ],          'wiz' => 'Abendessen' ],
+		[ 'id' => 'getraenke',     'label' => 'Getränkepauschale',                      'cat' => 'catering', 'icon' => 'drink','pp' => [ 25, 30, 40 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
+		[ 'id' => 'bar',           'label' => 'Bar & Drinks',                           'cat' => 'catering', 'icon' => 'drink','pp' => [ 29, 35, 50 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Bar & Drinks' ],
 		// Unterhaltung & Technik.
-		[ 'id' => 'musik',         'label' => 'DJ oder Live-Band',                      'cat' => 'technik',  'icon' => 'music','pp' => 0,   'flat' => 1600, 'wiz' => 'Musik und DJ' ],
-		[ 'id' => 'technik',       'label' => 'Bühne & Eventtechnik',                   'cat' => 'technik',  'icon' => 'show', 'pp' => 0,   'flat' => 3200, 'wiz' => 'Bühne mit Licht und Ton' ],
+		[ 'id' => 'musik',         'label' => 'DJ oder Live-Band',                      'cat' => 'technik',  'icon' => 'music','pp' => [ 0, 0, 0 ],       'flat' => [ 500, 800, 1000 ], 'wiz' => 'Musik und DJ' ],
+		[ 'id' => 'technik',       'label' => 'Technik & Show',                         'cat' => 'technik',  'icon' => 'show', 'pp' => [ 50, 100, 250 ],  'flat' => [ 0, 0, 0 ], 'wiz' => 'Bühne mit Licht und Ton' ],
 		// Turnier-Extras.
-		[ 'id' => 'siegerehrung',  'label' => 'Siegerehrung & Preise',                  'cat' => 'extras',   'icon' => 'trophy','pp' => 0,  'flat' => 900,  'wiz' => 'Pokale & Preise' ],
-		[ 'id' => 'sonderwertung', 'label' => 'Sonderwertungen (Longest Drive / Nearest to Pin)', 'cat' => 'extras', 'icon' => 'target', 'pp' => 0, 'flat' => 400, 'wiz' => 'Long-Drive-Challenge' ],
-		[ 'id' => 'branding',      'label' => 'Branding (Abschläge, Banner, Merch)',    'cat' => 'extras',   'icon' => 'tag',  'pp' => 0,   'flat' => 700,  'wiz' => 'Branding & Banner' ],
-		[ 'id' => 'turnierserie',  'label' => 'Turnier-Serie (mehrere Termine)',        'cat' => 'extras',   'icon' => 'calendar','pp' => 0,'flat' => 2500, 'wiz' => '9-Loch-Turnier' ],
+		[ 'id' => 'siegerehrung',  'label' => 'Siegerehrung & Preise',                  'cat' => 'extras',   'icon' => 'trophy','pp' => [ 20, 50, 100 ],  'flat' => [ 0, 0, 0 ],   'wiz' => 'Pokale & Preise' ],
+		[ 'id' => 'branding',      'label' => 'Branding (Abschläge, Banner, Merch)',    'cat' => 'extras',   'icon' => 'tag',  'pp' => [ 10, 20, 30 ],   'flat' => [ 0, 0, 0 ],   'wiz' => 'Branding & Banner' ],
+		[ 'id' => 'turnierserie',  'label' => 'Turnier-Serie (mehrere Termine)',        'cat' => 'extras',   'icon' => 'calendar','pp' => [ 0, 0, 0 ],    'flat' => [ 0, 0, 0 ], 'wiz' => '9-Loch-Turnier' ],
 		// Raum, Übernachtung, Content.
-		[ 'id' => 'meetingraum',   'label' => 'Meetingraum / Tagung',                   'cat' => 'programm', 'icon' => 'room', 'pp' => 0,   'flat' => 800,  'wiz' => 'Meetingraum' ],
-		[ 'id' => 'uebernachtung', 'label' => 'Übernachtung',                           'cat' => 'uebernachtung','icon' => 'bed','pp' => 155,'flat' => 0,  'wiz' => 'Übernachtung' ],
-		[ 'id' => 'foto',          'label' => 'Fotograf / Content',                     'cat' => 'foto',     'icon' => 'cam',  'pp' => 0,   'flat' => 1400, 'wiz' => 'Fotograf' ],
+		[ 'id' => 'meetingraum',   'label' => 'Meetingraum (2 Stunden)',                'cat' => 'programm', 'icon' => 'room', 'pp' => [ 20, 50, 100 ],   'flat' => [ 0, 0, 0 ],          'wiz' => 'Meetingraum' ],
+		// Golfreise / Offsite (Julius, 07.09., Vorbild Retreat beim Mitbewerber): Unterkunft je Nacht,
+		// Golfkurs und Verpflegung je Tag, Verpflegung als Entweder-oder-Gruppe.
+		[ 'id' => 'uebernachtung', 'label' => 'Unterkunft (Hotel, pro Nacht)',           'cat' => 'uebernachtung','icon' => 'bed','pp' => [ 95, 140, 220 ], 'flat' => [ 0, 0, 0 ],         'wiz' => 'Übernachtung', 'per' => 'night' ],
+		[ 'id' => 'golfkurs_reise','label' => 'Golfkurs täglich (Pro, Platz, Leihschläger)', 'cat' => 'programm', 'icon' => 'coaching', 'pp' => [ 80, 99, 145 ], 'flat' => [ 0, 0, 0 ], 'wiz' => 'Grundlagenkurs', 'per' => 'day' ],
+		[ 'id' => 'fruehstueck',   'label' => 'Frühstück',                              'cat' => 'catering', 'icon' => 'catering','pp' => [ 15, 20, 30 ],  'flat' => [ 0, 0, 0 ],          'wiz' => 'Frühstück',    'per' => 'day', 'group' => 'pension' ],
+		[ 'id' => 'halbpension',   'label' => 'Halbpension',                            'cat' => 'catering', 'icon' => 'catering','pp' => [ 35, 55, 85 ],  'flat' => [ 0, 0, 0 ],          'wiz' => 'Abendessen',   'per' => 'day', 'group' => 'pension' ],
+		[ 'id' => 'vollpension',   'label' => 'Vollpension',                            'cat' => 'catering', 'icon' => 'catering','pp' => [ 55, 80, 120 ], 'flat' => [ 0, 0, 0 ],          'wiz' => 'Mittagessen',  'per' => 'day', 'group' => 'pension' ],
+		[ 'id' => 'transfer',      'label' => 'An- und Abreise (Transfer)',             'cat' => 'transport','icon' => 'bus',  'pp' => [ 25, 35, 50 ],    'flat' => [ 0, 0, 0 ],          'wiz' => 'Shuttle / Transport' ],
+		[ 'id' => 'foto',          'label' => 'Fotograf und Videograf',                 'cat' => 'foto',     'icon' => 'cam',  'pp' => [ 0, 0, 0 ],       'flat' => [ 500, 800, 1000 ], 'wiz' => 'Fotograf' ],
 		// Nacht.
-		[ 'id' => 'flutlicht',     'label' => 'Flutlicht / Einleuchten des Platzes',    'cat' => 'venue',    'icon' => 'bulb', 'pp' => 0,   'flat' => 2800, 'wiz' => 'Flutlicht und Nacht-Event' ],
-		[ 'id' => 'leuchtball',    'label' => 'Leucht-Equipment / Nacht-Bälle',         'cat' => 'programm', 'icon' => 'ball', 'pp' => 9,   'flat' => 0,    'wiz' => 'Flutlicht und Nacht-Event' ],
+		[ 'id' => 'flutlicht',     'label' => 'Flutlicht / Einleuchten des Platzes',    'cat' => 'venue',    'icon' => 'bulb', 'pp' => [ 0, 0, 0 ],       'flat' => [ 2300, 2800, 4050 ], 'wiz' => 'Flutlicht und Nacht-Event' ],
+		[ 'id' => 'leuchtball',    'label' => 'Leucht-Equipment / Nacht-Bälle',         'cat' => 'programm', 'icon' => 'ball', 'pp' => [ 7, 9, 13 ],      'flat' => [ 0, 0, 0 ],          'wiz' => 'Flutlicht und Nacht-Event' ],
 	];
 
 	$all_ids = array_column( $services, 'id' );
 
+	// Zusatzleistungen, die bei Teamevent und Platzreife anklickbar sind (Julius, 07.09.).
+	$team_addons = [ 'shuttle', 'meetingraum', 'foto' ];
+	// Firmenturnier und Kundenevent (Julius, 07.09.): Turnierart zuerst, dann die Turnier-Extras, exakt gleich.
+	$turnier_set = [ 'turnier_kurz', 'turnier_9', 'turnier_18', 'turnier_kombi', 'halfway', 'cominghome', 'dinner', 'musik', 'technik', 'siegerehrung', 'sonderwertung', 'branding', 'turnierserie', 'foto' ];
+
 	$types = [
 		[
 			'id' => 'teamevent', 'label' => 'Teamevent', 'wiz' => 'Golf-Teamevent',
-			'services'   => [ 'shuttle', 'schnupperkurs', 'coaching', 'putting', 'catering', 'getraenke', 'meetingraum', 'foto' ],
-			'default_on' => [ 'schnupperkurs' ],
+			'services'   => array_merge( [ 'golfkurs', 'mittagessen', 'getraenke', 'putting', 'longest_drive' ], $team_addons ),
+			'default_on' => [ 'golfkurs', 'mittagessen', 'getraenke', 'putting', 'longest_drive' ],
 			'required'   => [],
 		],
 		[
 			'id' => 'platzreife', 'label' => 'Platzreife', 'wiz' => 'Platzreife',
-			'services'   => [ 'shuttle', 'platzreife', 'catering', 'getraenke', 'meetingraum', 'foto' ],
+			'services'   => array_merge( [ 'platzreife', 'mittagessen', 'getraenke', 'putting', 'longest_drive' ], $team_addons ),
 			'default_on' => [ 'platzreife' ],
 			'required'   => [ 'platzreife' ],
 		],
 		[
 			'id' => 'turnier', 'label' => 'Firmenturnier', 'wiz' => 'Firmen-Golfturnier',
-			'services'   => [ 'vip_shuttle', 'turnier', 'startgeschenk', 'welcome_drink', 'halfway', 'cominghome', 'dinner', 'siegerehrung', 'sonderwertung', 'branding', 'turnierserie', 'musik', 'technik', 'foto' ],
-			'default_on' => [ 'turnier' ],
+			'services'   => $turnier_set,
+			'default_on' => [ 'turnier_18' ],
 			'required'   => [],
 		],
 		[
 			'id' => 'kundenevent', 'label' => 'Kundenevent', 'wiz' => 'Golf-Kundenevent',
-			'services'   => [ 'vip_shuttle', 'schnupperkurs', 'coaching', 'turnier', 'welcome_drink', 'catering', 'dinner', 'branding', 'foto' ],
-			'default_on' => [ 'schnupperkurs' ],
+			'services'   => array_merge( [ 'vip_shuttle', 'golfkurs' ], $turnier_set ),
+			'default_on' => [ 'turnier_18' ],
 			'required'   => [],
 		],
 		[
-			'id' => 'offsite', 'label' => 'Offsite & Incentive', 'wiz' => 'Incentive-Reise',
-			'services'   => [ 'shuttle', 'uebernachtung', 'meetingraum', 'coaching', 'turnier', 'halfway', 'dinner', 'foto' ],
-			'default_on' => [ 'uebernachtung' ],
+			'id' => 'offsite', 'label' => 'Golfreise & Offsite', 'wiz' => 'Incentive-Reise', 'days' => true, 'start_days' => 3,
+			'services'   => [ 'transfer', 'uebernachtung', 'golfkurs_reise', 'fruehstueck', 'halbpension', 'vollpension', 'meetingraum', 'turnier_18', 'foto' ],
+			'default_on' => [ 'uebernachtung', 'golfkurs_reise', 'halbpension' ],
 			'required'   => [],
 		],
 		[
-			'id' => 'sommerfest', 'label' => 'Sommerfest & Dinner', 'wiz' => 'Sommerfest',
-			'services'   => [ 'shuttle', 'schnupperkurs', 'putting', 'catering', 'dinner', 'getraenke', 'bar', 'musik', 'technik', 'foto' ],
-			'default_on' => [ 'catering' ],
-			'required'   => [],
-		],
-		[
-			'id' => 'gesundheit', 'label' => 'Gesundheitstag', 'wiz' => 'Gesundheitstag',
-			'services'   => [ 'shuttle', 'coaching', 'schnupperkurs', 'meetingraum', 'catering', 'getraenke', 'foto' ],
-			'default_on' => [ 'coaching' ],
+			'id' => 'sommerfest', 'label' => 'Sommerfest', 'wiz' => 'Sommerfest',
+			// Wie Firmenturnier (Turnierarten + Extras), Golfkurs als Option dazu (Julius, 07.09.).
+			'services'   => array_merge( [ 'golfkurs' ], $turnier_set ),
+			'default_on' => [ 'turnier_18' ],
 			'required'   => [],
 		],
 		[
@@ -123,12 +141,14 @@ function fge_bc_defaults(): array {
 	];
 
 	return [
+		'v'        => 2,
 		'types'    => $types,
 		'services' => $services,
+		// Preisniveau: Index in die Staffeln pp/flat (kein Faktor mehr).
 		'ranges'   => [
-			[ 'id' => '€',   'mult' => 0.82 ],
-			[ 'id' => '€€',  'mult' => 1.0 ],
-			[ 'id' => '€€€', 'mult' => 1.45 ],
+			[ 'id' => '€',   'idx' => 0, 'label' => 'Günstig' ],
+			[ 'id' => '€€',  'idx' => 1, 'label' => 'Standard' ],
+			[ 'id' => '€€€', 'idx' => 2, 'label' => 'Premium' ],
 		],
 		'cats' => [
 			'venue'         => [ 'label' => 'Golfplatz & Greenfee', 'color' => '#4279D1' ],
@@ -145,16 +165,31 @@ function fge_bc_defaults(): array {
 	];
 }
 
+/** Drei Staffelwerte aus beliebiger Eingabe (Array oder Skalar) normalisieren. */
+function fge_bc_tiers( $raw, array $fallback ): array {
+	if ( ! is_array( $raw ) ) {
+		return $fallback;
+	}
+	$out = $fallback;
+	for ( $i = 0; $i < 3; $i++ ) {
+		if ( isset( $raw[ $i ] ) && '' !== $raw[ $i ] && is_numeric( $raw[ $i ] ) ) {
+			$out[ $i ] = max( 0, (float) $raw[ $i ] );
+		}
+	}
+	return $out;
+}
+
 /**
  * Aktive Konfiguration: gespeicherte Preise auf die feste Default-Struktur
  * gelegt. Struktur (IDs, services/default_on/required, cat, icon, color, wiz)
- * stammt immer aus den Defaults, nur die editierbaren Felder (Labels, pp, flat,
- * mult, round) werden aus der Option übernommen.
+ * stammt immer aus den Defaults, nur die editierbaren Felder (Labels, Staffeln,
+ * Rundung) werden aus der Option übernommen. Alte Optionen (v1, Skalarpreis +
+ * Faktor) werden ignoriert, damit die neuen Staffeln greifen.
  */
 function fge_bc_config(): array {
 	$def   = fge_bc_defaults();
 	$saved = get_option( FGE_BC_OPTION, [] );
-	if ( ! is_array( $saved ) ) {
+	if ( ! is_array( $saved ) || (int) ( $saved['v'] ?? 1 ) !== (int) $def['v'] ) {
 		$saved = [];
 	}
 
@@ -183,27 +218,10 @@ function fge_bc_config(): array {
 		if ( isset( $s['label'] ) && $s['label'] !== '' ) {
 			$sv['label'] = (string) $s['label'];
 		}
-		if ( isset( $s['pp'] ) ) {
-			$sv['pp'] = max( 0, (float) $s['pp'] );
-		}
-		if ( isset( $s['flat'] ) ) {
-			$sv['flat'] = max( 0, (float) $s['flat'] );
-		}
+		$sv['pp']   = fge_bc_tiers( $s['pp'] ?? null, $sv['pp'] );
+		$sv['flat'] = fge_bc_tiers( $s['flat'] ?? null, $sv['flat'] );
 	}
 	unset( $sv );
-
-	$saved_rng = [];
-	foreach ( $saved['ranges'] ?? [] as $r ) {
-		if ( isset( $r['id'] ) ) {
-			$saved_rng[ $r['id'] ] = $r;
-		}
-	}
-	foreach ( $def['ranges'] as &$rg ) {
-		if ( isset( $saved_rng[ $rg['id'] ]['mult'] ) ) {
-			$rg['mult'] = max( 0, (float) $saved_rng[ $rg['id'] ]['mult'] );
-		}
-	}
-	unset( $rg );
 
 	if ( isset( $saved['round_to'] ) ) {
 		$def['round_to'] = max( 1, (int) $saved['round_to'] );
@@ -227,46 +245,40 @@ function fge_bc_register_menu(): void {
 
 /** Speichern der geposteten Preise. */
 function fge_bc_handle_save(): void {
-	if ( ! isset( $_POST['fge_bc_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['fge_bc_nonce'] ), 'fge_bc_save' ) ) {
-		return;
-	}
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
-
-	$num = static function ( $v ): float {
-		return max( 0.0, (float) str_replace( ',', '.', (string) wp_unslash( $v ) ) );
-	};
-
-	$def = fge_bc_defaults();
-	$out = [ 'types' => [], 'services' => [], 'ranges' => [] ];
-
-	foreach ( $def['types'] as $t ) {
-		$id = $t['id'];
-		$out['types'][] = [
-			'id'    => $id,
-			'label' => sanitize_text_field( wp_unslash( $_POST['type_label'][ $id ] ?? $t['label'] ) ),
-		];
+	if ( ! isset( $_POST['fge_bc_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['fge_bc_nonce'] ) ), 'fge_bc_save' ) ) {
+		return;
 	}
+	$def = fge_bc_defaults();
+
+	$types = [];
+	foreach ( $def['types'] as $t ) {
+		$types[] = [ 'id' => $t['id'], 'label' => sanitize_text_field( wp_unslash( $_POST['type_label'][ $t['id'] ] ?? $t['label'] ) ) ];
+	}
+	$services = [];
 	foreach ( $def['services'] as $s ) {
-		$id = $s['id'];
-		$out['services'][] = [
+		$id  = $s['id'];
+		$pp  = [];
+		$fl  = [];
+		for ( $i = 0; $i < 3; $i++ ) {
+			$pp[ $i ] = max( 0, (float) ( $_POST['svc_pp'][ $id ][ $i ] ?? 0 ) );
+			$fl[ $i ] = max( 0, (float) ( $_POST['svc_flat'][ $id ][ $i ] ?? 0 ) );
+		}
+		$services[] = [
 			'id'    => $id,
 			'label' => sanitize_text_field( wp_unslash( $_POST['svc_label'][ $id ] ?? $s['label'] ) ),
-			'pp'    => $num( $_POST['svc_pp'][ $id ] ?? $s['pp'] ),
-			'flat'  => $num( $_POST['svc_flat'][ $id ] ?? $s['flat'] ),
+			'pp'    => $pp,
+			'flat'  => $fl,
 		];
 	}
-	foreach ( $def['ranges'] as $r ) {
-		$id = $r['id'];
-		$out['ranges'][] = [
-			'id'   => $id,
-			'mult' => $num( $_POST['range_mult'][ $id ] ?? $r['mult'] ),
-		];
-	}
-	$out['round_to'] = max( 1, (int) ( $_POST['round_to'] ?? $def['round_to'] ) );
-
-	update_option( FGE_BC_OPTION, $out );
+	update_option( FGE_BC_OPTION, [
+		'v'        => $def['v'],
+		'types'    => $types,
+		'services' => $services,
+		'round_to' => max( 1, (int) ( $_POST['round_to'] ?? 50 ) ),
+	] );
 	add_settings_error( 'fge_bc', 'saved', 'Preise gespeichert.', 'updated' );
 }
 
@@ -291,11 +303,11 @@ function fge_bc_render_settings_page(): void {
 		<h1>Budget-Rechner, Preise</h1>
 		<p class="description" style="max-width:680px;">
 			Diese Preise speisen den Budget-Rechner auf der Seite <em>Individuelle Events</em>.
-			Ein Event-Typ hat <strong>keinen Grundpreis</strong> mehr, er bündelt nur die passenden
+			Ein Event-Typ hat <strong>keinen Grundpreis</strong>, er bündelt nur die passenden
 			Dienstleistungen. Jede Dienstleistung kostet entweder <strong>pro Person</strong>
-			<em>oder</em> eine <strong>Pauschale</strong> (Pauschale &gt; 0 hat Vorrang). Die
-			Platzkosten/Greenfee stecken in der jeweiligen Golf-Leistung (z.&nbsp;B. „18-Loch-Turnier
-			inkl. Greenfee"). Das Preisniveau (€/€€/€€€) multipliziert die Gesamtsumme.
+			<em>oder</em> eine <strong>Pauschale</strong> (Pauschale &gt; 0 hat Vorrang), jeweils
+			als Staffel für die drei Preisniveaus € / €€ / €€€. Die Platzkosten/Greenfee stecken in der
+			jeweiligen Golf-Leistung (z.&nbsp;B. „Firmenturnier inkl. Greenfee").
 			Welche Services bei welchem Typ erscheinen, ist im Code festgelegt (siehe Übersicht unten).
 		</p>
 		<form method="post">
@@ -313,29 +325,20 @@ function fge_bc_render_settings_page(): void {
 				</tbody>
 			</table>
 
-			<h2 style="margin-top:28px;">Services, Preise</h2>
-			<p class="description">Trage entweder einen Preis <strong>pro Person</strong> <em>oder</em> eine <strong>Pauschale</strong> ein. Ist eine Pauschale &gt; 0 gesetzt, gilt diese (pro Person wird ignoriert).</p>
-			<table class="widefat striped" style="max-width:760px;">
-				<thead><tr><th>Service (Anzeige)</th><th style="width:150px;">€ / Person</th><th style="width:150px;">Pauschale €</th></tr></thead>
+			<h2 style="margin-top:28px;">Services, Preise je Niveau</h2>
+			<p class="description">Je Service drei Werte für € / €€ / €€€. Entweder <strong>pro Person</strong> <em>oder</em> eine <strong>Pauschale</strong>; ist eine Pauschale &gt; 0 gesetzt, gilt diese.</p>
+			<table class="widefat striped" style="max-width:1100px;">
+				<thead><tr><th>Service (Anzeige)</th><th style="width:100px;">€/P. bei €</th><th style="width:100px;">€/P. bei €€</th><th style="width:100px;">€/P. bei €€€</th><th style="width:110px;">Pauschale €</th><th style="width:110px;">Pauschale €€</th><th style="width:110px;">Pauschale €€€</th></tr></thead>
 				<tbody>
 				<?php foreach ( $cfg['services'] as $s ) : ?>
 					<tr>
 						<td><input type="text" class="regular-text" name="svc_label[<?php echo esc_attr( $s['id'] ); ?>]" value="<?php echo esc_attr( $s['label'] ); ?>"></td>
-						<td><input type="number" step="0.01" min="0" name="svc_pp[<?php echo esc_attr( $s['id'] ); ?>]" value="<?php echo esc_attr( (string) $s['pp'] ); ?>"></td>
-						<td><input type="number" step="0.01" min="0" name="svc_flat[<?php echo esc_attr( $s['id'] ); ?>]" value="<?php echo esc_attr( (string) $s['flat'] ); ?>"></td>
-					</tr>
-				<?php endforeach; ?>
-				</tbody>
-			</table>
-
-			<h2 style="margin-top:28px;">Preisniveau-Faktoren</h2>
-			<table class="widefat striped" style="max-width:420px;">
-				<thead><tr><th>Stufe</th><th style="width:160px;">Faktor</th></tr></thead>
-				<tbody>
-				<?php foreach ( $cfg['ranges'] as $r ) : ?>
-					<tr>
-						<td><strong><?php echo esc_html( $r['id'] ); ?></strong></td>
-						<td><input type="number" step="0.01" min="0" name="range_mult[<?php echo esc_attr( $r['id'] ); ?>]" value="<?php echo esc_attr( (string) $r['mult'] ); ?>"></td>
+						<?php for ( $i = 0; $i < 3; $i++ ) : ?>
+							<td><input type="number" step="0.01" min="0" style="width:90px;" name="svc_pp[<?php echo esc_attr( $s['id'] ); ?>][<?php echo (int) $i; ?>]" value="<?php echo esc_attr( (string) $s['pp'][ $i ] ); ?>"></td>
+						<?php endfor; ?>
+						<?php for ( $i = 0; $i < 3; $i++ ) : ?>
+							<td><input type="number" step="0.01" min="0" style="width:100px;" name="svc_flat[<?php echo esc_attr( $s['id'] ); ?>][<?php echo (int) $i; ?>]" value="<?php echo esc_attr( (string) $s['flat'][ $i ] ); ?>"></td>
+						<?php endfor; ?>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>

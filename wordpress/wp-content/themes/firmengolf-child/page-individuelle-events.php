@@ -200,6 +200,18 @@ get_header();
 						</button>
 					</div>
 				</div>
+				<div class="bc-field bc-field-days" id="bc-days-field" hidden>
+					<span class="bc-flabel">Tage</span>
+					<div class="bc-stepper">
+						<button type="button" class="bc-step-btn" data-bc-day="-1" aria-label="Weniger Tage">
+							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+						</button>
+						<span class="bc-step-val" id="bc-days" aria-live="polite" aria-label="Tage">3</span>
+						<button type="button" class="bc-step-btn" data-bc-day="1" aria-label="Mehr Tage">
+							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+						</button>
+					</div>
+				</div>
 				<div class="bc-field">
 					<span class="bc-flabel">Veranstaltungstyp</span>
 					<select class="bc-select" id="bc-type">
@@ -226,13 +238,34 @@ get_header();
 					$on     = $locked || in_array( $s['id'], $start_don, true );
 					$cls    = 'bc-chip' . ( $on ? ' on' : '' ) . ( $locked ? ' is-locked' : '' );
 				?>
-					<button type="button" class="<?php echo esc_attr( $cls ); ?>" data-id="<?php echo esc_attr( $s['id'] ); ?>" data-cat="<?php echo esc_attr( $s['cat'] ); ?>"<?php echo $show ? '' : ' style="display:none;"'; ?>>
+					<button type="button" class="<?php echo esc_attr( $cls ); ?>" data-id="<?php echo esc_attr( $s['id'] ); ?>" data-cat="<?php echo esc_attr( $s['cat'] ); ?>"<?php echo ! empty( $s['group'] ) ? ' data-group="' . esc_attr( $s['group'] ) . '"' : ''; ?><?php echo $show ? '' : ' style="display:none;"'; ?>>
 						<span class="bc-chip-ic"><?php echo $bc_svg( $s['icon'] ); // phpcs:ignore WordPress.Security.EscapeOutput ?></span><?php echo esc_html( $s['label'] ); ?>
 					</button>
 				<?php endforeach; ?>
 			</div>
 
 			<div class="bc-result">
+			<?php /* Gate (Julius, 07.09.): Ergebnis bleibt geblurrt, bis eine E-Mail-Adresse
+				eingetragen ist. Die Zahlen laufen dahinter live mit, das erzeugt den Reiz.
+				Freischaltung merkt sich das Gerät 30 Tage, der Lead landet im Backend. */ ?>
+			<div class="bc-gate" id="bc-gate">
+				<form class="bc-gate-card" id="bc-gate-form" novalidate>
+					<span class="bc-gate-ic" aria-hidden="true">
+						<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5 12 13l8.5-5.5"/></svg>
+					</span>
+					<div class="bc-gate-h">Richtwert freischalten</div>
+					<p class="bc-gate-p">Trag deine E-Mail-Adresse ein, dann siehst du Aufschlüsselung und Gesamtbudget sofort. Kein Newsletter, wir melden uns nur, wenn du anfragst.</p>
+					<label class="screen-reader-text" for="bc-gate-email">E-Mail-Adresse</label>
+					<div class="bc-gate-row">
+						<input type="email" class="fg-input" id="bc-gate-email" name="email" placeholder="name@firma.de" autocomplete="email" inputmode="email" required>
+						<button type="submit" class="fg-btn-brand">Anzeigen</button>
+					</div>
+					<p class="bc-gate-err" id="bc-gate-err" role="alert" hidden></p>
+					<p class="bc-gate-note">Mit dem Absenden stimmst du zu, dass wir deine Adresse für die Kontaktaufnahme zu deinem Event speichern. <a href="<?php echo esc_url( function_exists( 'get_privacy_policy_url' ) && get_privacy_policy_url() ? get_privacy_policy_url() : home_url( '/datenschutz/' ) ); ?>">Datenschutz</a></p>
+					<?php echo function_exists( 'fge_form_trap_fields' ) ? fge_form_trap_fields() : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				</form>
+			</div>
+			<div class="bc-result-body is-locked" aria-live="polite">
 				<div class="bc-break">
 					<div class="bc-break-h">Kostenaufschlüsselung</div>
 					<div class="bc-break-list" id="bc-break-list"></div>
@@ -247,6 +280,7 @@ get_header();
 					</button>
 					<p class="bc-total-note">Unverbindlicher Schätzwert. Das finale Angebot stellen wir nach kurzer Rücksprache zusammen, transparent, mit allen Posten.</p>
 				</div>
+			</div>
 			</div>
 			<?php else : ?>
 				<p class="mk-sub" style="text-align:center;">Der Budget-Rechner ist gerade nicht verfügbar.</p>

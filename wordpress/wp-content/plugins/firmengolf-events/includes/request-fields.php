@@ -59,6 +59,7 @@ function fge_render_rmb_basis( WP_Post $post ) {
 	$request_types = [
 		'specific_event'         => 'Konkretes Event',
 		'general_event_request'  => 'Allgemeine Eventanfrage',
+		'budget_lead'            => 'Budget-Rechner (Lead, noch keine Anfrage)',
 	];
 	$statuses = fge_get_statuses( 'request' );
 	$ref      = function_exists( 'fge_request_number' ) ? fge_request_number( $post->ID ) : (string) get_post_meta( $post->ID, '_fge_ref', true );
@@ -674,7 +675,7 @@ function fge_save_request_fields( int $post_id ) {
 	}
 
 	// Allowed values.
-	$allowed_request_types      = [ 'specific_event', 'general_event_request' ];
+	$allowed_request_types      = [ 'specific_event', 'general_event_request', 'budget_lead' ];
 	$allowed_request_statuses   = fge_get_statuses( 'request' );
 	$allowed_contact_methods    = [ 'phone', 'email', 'any' ];
 	$allowed_event_goals        = array_keys( fge_get_event_formats_flat( true ) );

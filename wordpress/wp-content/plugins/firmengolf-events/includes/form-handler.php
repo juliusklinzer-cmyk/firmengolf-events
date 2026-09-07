@@ -493,3 +493,78 @@ function fge_ajax_general_request(): void {
 		'fb_event_id' => fge_meta_event_id( $request_id ),
 	] );
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// BUDGET-RECHNER GATE — E-Mail schaltet den Richtwert frei (Julius, 07.09.2026)
+// Lead als Anfrage-Vorstufe (Typ budget_lead, Quelle budget), interne Mail, keine
+// Kundenmail. Nachfass-Automatik greift hier nicht (nur specific/general).
+// ═════════════════════════════════════════════════════════════════════════════
+
+add_action( 'wp_ajax_fge_budget_unlock',        'fge_ajax_budget_unlock' );
+add_action( 'wp_ajax_nopriv_fge_budget_unlock', 'fge_ajax_budget_unlock' );
+
+function fge_ajax_budget_unlock(): void {
+	check_ajax_referer( 'fge_budget_unlock', 'nonce' );
+	fge_form_spam_gate();
+
+	$t     = static fn( $k ) => sanitize_text_field( wp_unslash( $_POST[ $k ] ?? '' ) );
+	$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+	if ( ! $email || ! is_email( $email ) ) {
+		wp_send_json_error( [ 'message' => 'Bitte eine gültige E-Mail-Adresse eintragen.' ], 422 );
+	}
+	$type         = $t( 'type' );
+	$participants = absint( $_POST['participants'] ?? 0 );
+	$days         = absint( $_POST['days'] ?? 0 );
+	$range        = $t( 'range' );
+	$services     = $t( 'services' );
+	$total        = absint( $_POST['total'] ?? 0 );
+
+	$ref        = function_exists( 'fge_generate_request_ref' ) ? fge_generate_request_ref() : '';
+	$request_id = wp_insert_post( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => 'publish',
+		'post_title'  => trim( $ref . ' · Budget-Rechner · ' . $email, ' ·' ),
+	] );
+	if ( is_wp_error( $request_id ) || ! $request_id ) {
+		wp_send_json_error( [ 'message' => 'Das hat gerade nicht geklappt. Bitte versuch es gleich noch einmal.' ], 500 );
+	}
+	$now     = current_datetime()->format( 'Y-m-d H:i:s' );
+	$summary = sprintf( 'Budget-Rechner: %s, %d Personen%s, Preisniveau %s, Richtwert ca. %s € netto. Leistungen: %s', $type, $participants, $days > 0 ? ', ' . $days . ' Tage' : '', $range, number_format_i18n( $total ), $services ?: 'keine' );
+	update_post_meta( $request_id, '_fge_request_type',      'budget_lead' );
+	update_post_meta( $request_id, '_fge_request_status',    'neu' );
+	update_post_meta( $request_id, '_fge_source',            'budget' );
+	update_post_meta( $request_id, '_fge_ref',               $ref );
+	update_post_meta( $request_id, '_fge_occasion',          $type );
+	update_post_meta( $request_id, '_fge_contact_email',     $email );
+	update_post_meta( $request_id, '_fge_expected_participants', $participants );
+	update_post_meta( $request_id, '_fge_budget_range',      $total > 0 ? 'ca. ' . number_format_i18n( $total ) . ' € gesamt (Rechner)' : '' );
+	update_post_meta( $request_id, '_fge_additional_wishes', $services );
+	update_post_meta( $request_id, '_fge_message',           $summary );
+	update_post_meta( $request_id, '_fge_budget_calc',       [ 'type' => $type, 'participants' => $participants, 'days' => $days, 'range' => $range, 'services' => $services, 'total' => $total ] );
+	add_post_meta( $request_id, '_fge_request_date',      $now, true );
+	add_post_meta( $request_id, '_fge_consent_timestamp', $now, true );
+
+	// Interne Mail, kurz: wer, was gerechnet, Link in den Backend-Datensatz.
+	if ( function_exists( 'fge_email_wrap' ) && function_exists( 'fge_company_internal_email' ) ) {
+		$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+		$subject = 'Budget-Rechner: neuer Lead ' . $email;
+		$rows    = [
+			'Vorgang'      => $ref ?: 'k. A.',
+			'E-Mail'       => $email,
+			'Eventtyp'     => $type ?: 'k. A.',
+			'Teilnehmende' => (string) $participants . ( $days > 0 ? ' · ' . $days . ' Tage' : '' ),
+			'Preisniveau'  => $range ?: 'k. A.',
+			'Leistungen'   => $services ?: 'keine',
+			'Richtwert'    => $total > 0 ? number_format_i18n( $total ) . ' € netto' : 'k. A.',
+		];
+		$html = '<p>Jemand hat den Richtwert im Budget-Rechner freigeschaltet. Noch keine Anfrage, aber eine warme Adresse.</p><table style="border-collapse:collapse;font-size:14px;">';
+		foreach ( $rows as $k => $v ) {
+			$html .= '<tr><td style="padding:4px 12px 4px 0;color:#666;">' . esc_html( $k ) . '</td><td style="padding:4px 0;"><strong>' . esc_html( $v ) . '</strong></td></tr>';
+		}
+		$html .= '</table><p style="margin-top:16px;"><a href="' . esc_url( admin_url( 'post.php?post=' . $request_id . '&action=edit' ) ) . '">Datensatz im Backend öffnen</a></p>';
+		$sent = (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $html ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+		update_post_meta( $request_id, '_fge_internal_email_sent', $sent ? 1 : 0 );
+	}
+
+	wp_send_json_success( [ 'ref' => $ref ] );
+}

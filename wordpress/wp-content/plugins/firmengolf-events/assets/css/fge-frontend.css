@@ -4249,9 +4249,10 @@ a.ev-back:active, .fge-page button.fg-share-top:active, .fg-btn-ghost:active, a.
   box-shadow: var(--shadow-sm);
   padding: 10px;
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto auto 1fr auto;
   align-items: stretch; gap: 4px;
 }
+.bc-field-days[hidden] { display: none; }
 .bc-field { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .bc-field + .bc-field { border-left: 1px solid var(--ink-200); }
 .bc-flabel {
@@ -4331,21 +4332,68 @@ button.bc-chip {
 
 /* result card */
 .bc-result {
+  position: relative;
   margin-top: 18px;
   background: var(--paper-50);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-md);
   padding: 34px 38px;
+  overflow: hidden;
+}
+.bc-result-body {
   display: grid;
   grid-template-columns: 1.05fr auto 0.95fr;
   gap: 36px; align-items: center;
+  transition: filter 500ms var(--ease-out), opacity 500ms var(--ease-out);
 }
+/* Gate (Julius, 07.09.): Ergebnis geblurrt, bis eine E-Mail eingetragen ist. */
+.bc-result-body.is-locked { filter: blur(7px); opacity: 0.9; pointer-events: none; user-select: none; }
+.bc-gate {
+  position: absolute; inset: 0; z-index: 2;
+  display: grid; place-items: center; padding: 20px;
+  background: rgba(251,250,246,0.35);
+  transition: opacity 400ms var(--ease-out);
+}
+.bc-gate.is-off { opacity: 0; pointer-events: none; }
+.bc-gate-card {
+  width: 100%; max-width: 440px; text-align: center;
+  background: var(--paper-50); border: 1px solid var(--ink-100);
+  border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);
+  padding: 26px 26px 20px;
+}
+.bc-gate-ic {
+  width: 48px; height: 48px; border-radius: 999px; margin: 0 auto 12px;
+  display: grid; place-items: center; background: var(--fairway-100); color: var(--fairway-700);
+}
+.bc-gate-h { font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: -0.01em; color: var(--ink-900); }
+.bc-gate-p { font-size: 14px; line-height: 1.5; color: var(--ink-600); margin: 8px 0 0; }
+.bc-gate-row { display: flex; gap: 8px; margin-top: 16px; }
+.bc-gate-row .fg-input { flex: 1; min-width: 0; }
+.bc-gate-row .fg-btn-brand { flex: none; }
+.bc-gate-err { font-size: 13px; color: var(--danger, #B4332B); margin: 10px 0 0; }
+.bc-gate-note { font-size: 12px; line-height: 1.45; color: var(--ink-400); margin: 12px 0 0; }
+.bc-gate-note a { color: var(--ink-600); }
+.fg-btn-brand.is-busy { opacity: 0.7; }
 .bc-break-h, .bc-total-h {
   font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
   text-transform: uppercase; color: var(--ink-500); margin-bottom: 18px;
 }
 .bc-break-list { display: flex; flex-direction: column; gap: 13px; }
-.bc-break-row { display: flex; align-items: center; gap: 12px; }
+.bc-break-row { display: flex; align-items: center; gap: 12px; transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
+/* Änderungs-Animationen (Julius, 07.09.): neue Zeile gleitet ein, entfernte blendet aus,
+   geänderter Betrag blitzt kurz auf, Donut-Segmente gleiten (siehe fge-individual.js). */
+.bc-break-row.is-new { animation: bcRowIn 240ms var(--ease-out) both; }
+.bc-break-row.is-out { opacity: 0; transform: translateY(-4px); }
+@keyframes bcRowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.bc-break-amt { padding: 1px 6px; margin-right: -6px; border-radius: 6px; }
+.bc-break-amt.is-changed { animation: bcFlash 600ms var(--ease-out) both; }
+@keyframes bcFlash { 0% { background: var(--fairway-100); } 100% { background: transparent; } }
+.bc-donut circle { transition: stroke-dasharray 500ms var(--ease-out), stroke-dashoffset 500ms var(--ease-out), stroke 300ms; }
+.bc-chip:active, .bc-seg-btn:active { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .bc-result-body, .bc-gate, .bc-break-row, .bc-donut circle { transition: none; }
+  .bc-break-row.is-new, .bc-break-amt.is-changed { animation: none; }
+}
 .bc-break-dot { width: 9px; height: 9px; border-radius: 999px; flex: none; }
 .bc-break-name { font-size: 15px; color: var(--ink-700); flex: 1; }
 .bc-break-amt { font-size: 15px; font-weight: 600; color: var(--ink-900); font-variant-numeric: tabular-nums; }
@@ -4373,8 +4421,11 @@ button.bc-chip {
   .bc-controls { grid-template-columns: 1fr 1fr; }
   .bc-field + .bc-field { border-left: 0; }
   .bc-field:nth-child(odd) { border-right: 1px solid var(--ink-200); }
-  .bc-result { grid-template-columns: 1fr; gap: 26px; text-align: left; }
+  .bc-result-body { grid-template-columns: 1fr; gap: 26px; text-align: left; }
   .bc-donut { order: -1; }
+  .bc-gate { align-items: start; padding-top: 28px; }
+  .bc-gate-row { flex-direction: column; }
+  .bc-gate-row .fg-btn-brand { width: 100%; justify-content: center; }
 }
 @media (max-width: 720px) {
   .iv-section { padding: 60px 20px; }
@@ -4386,8 +4437,9 @@ button.bc-chip {
   .bc-controls { grid-template-columns: 1fr 1fr; gap: 0; }
   .bc-field { padding: 13px 16px; }
   .bc-field:nth-child(1) { grid-column: 1; grid-row: 1; border: 0; border-right: 1px solid var(--ink-200); }
-  .bc-field:nth-child(2) { grid-column: 1 / -1; grid-row: 2; border: 0; border-top: 1px solid var(--ink-200); }
-  .bc-field:nth-child(3) { grid-column: 2; grid-row: 1; border: 0; }
+  .bc-field-days { grid-column: 1 / -1; grid-row: 3; border: 0; border-top: 1px solid var(--ink-200); }
+  .bc-field:nth-child(3) { grid-column: 1 / -1; grid-row: 2; border: 0; border-top: 1px solid var(--ink-200); }
+  .bc-field:nth-child(4) { grid-column: 2; grid-row: 1; border: 0; }
   .bc-stepper { justify-content: space-between; }
   .bc-seg { display: flex; width: 100%; }
   .bc-seg-btn { flex: 1; text-align: center; padding: 8px 6px; }

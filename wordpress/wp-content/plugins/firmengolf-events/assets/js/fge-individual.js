@@ -50,26 +50,46 @@
 		var root = document.getElementById('bcalc');
 		if (!root || !BC.types) return;
 
+		var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		var start = BC.start || {};
 		var state = {
 			participants: start.participants || 30,
 			type: start.type || (BC.types[0] && BC.types[0].id),
 			range: start.range || '€€',
-			services: [] // wird je nach Typ von applyType() gesetzt
+			services: [], // wird je nach Typ von applyType() gesetzt
+			days: 3,      // nur bei Typen mit days (Golfreise): Nächte = Tage − 1
+			email: ''
 		};
 
 		var stepVal   = root.querySelector('#bc-participants');
+		var dayVal    = root.querySelector('#bc-days');
+		var dayField  = root.querySelector('#bc-days-field');
 		var typeSel   = root.querySelector('#bc-type');
 		var breakList = root.querySelector('#bc-break-list');
 		var donut     = root.querySelector('#bc-donut');
 		var totalNum  = root.querySelector('#bc-total');
 		var totalMeta = root.querySelector('#bc-total-meta');
 		var ctaBtn    = root.querySelector('#bc-request');
+		var body      = root.querySelector('.bc-result-body');
+		var gate      = root.querySelector('#bc-gate');
 
+		function rangeIdx() {
+			var rng = find(BC.ranges, state.range);
+			return rng && typeof rng.idx === 'number' ? rng.idx : 1;
+		}
+		function typeHasDays() { var t = find(BC.types, state.type); return !!(t && t.days); }
+		function priceOf(s, idx) {
+			var flat = (s.flat && s.flat[idx]) ? Number(s.flat[idx]) : 0;
+			var pp   = (s.pp && s.pp[idx]) ? Number(s.pp[idx]) : 0;
+			var base = flat > 0 ? flat : state.participants * pp;
+			if (!typeHasDays()) return base;
+			if (s.per === 'day') return base * state.days;
+			if (s.per === 'night') return base * Math.max(1, state.days - 1);
+			return base;
+		}
 		function compute() {
 			var type = find(BC.types, state.type) || BC.types[0];
-			var rng  = find(BC.ranges, state.range);
-			var mult = rng ? rng.mult : 1;
+			var idx  = rangeIdx();
 			// Ein Posten je gewählter Leistung, eigene Farbe — in Tagesablauf-Reihenfolge des Typs.
 			// Donut UND Aufschlüsselung nutzen dieselben Posten (1:1, gut unterscheidbar).
 			var items = [];
@@ -78,63 +98,136 @@
 				if (state.services.indexOf(sid) < 0) return;
 				var s = find(BC.services, sid);
 				if (!s) return;
-				var base = (s.flat > 0) ? s.flat : state.participants * s.pp;
-				var amt = base * mult;
-				if (amt <= 0) return;
-				items.push({ label: s.label, color: svcColor(pos), amount: amt });
+				var amt = priceOf(s, idx);
+				// Ohne Preis (z. B. Turnier-Serie): steht in der Aufschlüsselung als „auf Anfrage", ohne Donut-Anteil.
+				items.push({ id: sid, label: s.label, color: svcColor(pos), amount: Math.max(0, amt), onRequest: amt <= 0 });
 			});
 			var total = items.reduce(function (a, r) { return a + r.amount; }, 0);
-			return { rows: items, items: items, total: total, type: type };
+			return { rows: items.filter(function (r) { return r.amount > 0; }), items: items, total: total, type: type };
 		}
 
-		function renderDonut(rows, total) {
-			var size = 168, r = (size - 22) / 2, C = 2 * Math.PI * r, off = 0;
-			var ns = 'http://www.w3.org/2000/svg';
-			var svg = document.createElementNS(ns, 'svg');
-			svg.setAttribute('width', size); svg.setAttribute('height', size);
-			svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
-			var track = document.createElementNS(ns, 'circle');
+		/* ---- Donut: SVG einmal bauen, Segmente je Leistung fortschreiben, damit
+		   Änderungen gleiten statt springen (CSS-Transition auf dasharray/offset). ---- */
+		var SIZE = 168, R = (SIZE - 22) / 2, CIRC = 2 * Math.PI * R;
+		var NS = 'http://www.w3.org/2000/svg';
+		var svg = null, segs = {};
+		function ensureSvg() {
+			if (svg) return;
+			svg = document.createElementNS(NS, 'svg');
+			svg.setAttribute('width', SIZE); svg.setAttribute('height', SIZE);
+			svg.setAttribute('viewBox', '0 0 ' + SIZE + ' ' + SIZE);
+			var track = document.createElementNS(NS, 'circle');
 			track.setAttribute('class', 'bc-donut-track');
-			track.setAttribute('cx', size / 2); track.setAttribute('cy', size / 2);
-			track.setAttribute('r', r); track.setAttribute('fill', 'none'); track.setAttribute('stroke-width', '20');
+			track.setAttribute('cx', SIZE / 2); track.setAttribute('cy', SIZE / 2);
+			track.setAttribute('r', R); track.setAttribute('fill', 'none'); track.setAttribute('stroke-width', '20');
 			svg.appendChild(track);
-			rows.forEach(function (row) {
-				var frac = total ? row.amount / total : 0, len = frac * C;
-				var seg = document.createElementNS(ns, 'circle');
-				seg.setAttribute('cx', size / 2); seg.setAttribute('cy', size / 2); seg.setAttribute('r', r);
-				seg.setAttribute('fill', 'none'); seg.setAttribute('stroke', row.color);
-				seg.setAttribute('stroke-width', '20'); seg.setAttribute('stroke-linecap', 'butt');
-				seg.setAttribute('stroke-dasharray', len + ' ' + (C - len));
-				seg.setAttribute('stroke-dashoffset', -off);
-				svg.appendChild(seg);
-				off += len;
-			});
 			donut.innerHTML = '';
 			donut.appendChild(svg);
 		}
+		function renderDonut(rows, total) {
+			ensureSvg();
+			var off = 0, seen = {};
+			rows.forEach(function (row) {
+				var frac = total ? row.amount / total : 0, len = frac * CIRC;
+				var seg = segs[row.id];
+				var isNew = !seg;
+				if (isNew) {
+					seg = document.createElementNS(NS, 'circle');
+					seg.setAttribute('cx', SIZE / 2); seg.setAttribute('cy', SIZE / 2); seg.setAttribute('r', R);
+					seg.setAttribute('fill', 'none'); seg.setAttribute('stroke-width', '20'); seg.setAttribute('stroke-linecap', 'butt');
+					seg.setAttribute('stroke-dasharray', '0 ' + CIRC);
+					seg.setAttribute('stroke-dashoffset', -off);
+					segs[row.id] = seg;
+				}
+				seg.setAttribute('stroke', row.color);
+				svg.appendChild(seg); // Reihenfolge = Typ-Reihenfolge
+				var apply = function () {
+					seg.setAttribute('stroke-dasharray', len + ' ' + (CIRC - len));
+					seg.setAttribute('stroke-dashoffset', -off);
+				};
+				if (isNew && !REDUCE) requestAnimationFrame(function () { requestAnimationFrame(apply); }); else apply();
+				seen[row.id] = true;
+				off += len;
+			});
+			Object.keys(segs).forEach(function (id) {
+				if (seen[id]) return;
+				var seg = segs[id];
+				delete segs[id];
+				seg.setAttribute('stroke-dasharray', '0 ' + CIRC);
+				setTimeout(function () { if (seg.parentNode) seg.parentNode.removeChild(seg); }, REDUCE ? 0 : 520);
+			});
+		}
 
+		/* ---- Aufschlüsselung: Zeilen je Leistung fortschreiben (neu gleitet ein,
+		   geänderter Betrag blitzt kurz auf, entfernte blendet aus). ---- */
+		var rowEls = {};
+		function renderRows(items) {
+			var seen = {};
+			items.forEach(function (row) {
+				var r = rowEls[row.id];
+				var amtText = row.onRequest ? 'auf Anfrage' : (fmt(row.amount) + ' €');
+				if (!r) {
+					r = el('div', 'bc-break-row' + (REDUCE ? '' : ' is-new'));
+					r.innerHTML = '<span class="bc-break-dot" style="background:' + esc(row.color) + '"></span>'
+						+ '<span class="bc-break-name">' + esc(row.label) + '</span>'
+						+ '<span class="bc-break-amt">' + amtText + '</span>';
+					rowEls[row.id] = r;
+					setTimeout(function () { r.classList.remove('is-new'); }, 300);
+				} else {
+					var amt = r.querySelector('.bc-break-amt');
+					if (amt.textContent !== amtText) {
+						amt.textContent = amtText;
+						if (!REDUCE) { amt.classList.remove('is-changed'); void amt.offsetWidth; amt.classList.add('is-changed'); }
+					}
+					r.querySelector('.bc-break-dot').style.background = row.color;
+				}
+				breakList.appendChild(r);
+				seen[row.id] = true;
+			});
+			Object.keys(rowEls).forEach(function (id) {
+				if (seen[id]) return;
+				var r = rowEls[id];
+				delete rowEls[id];
+				if (REDUCE) { if (r.parentNode) r.parentNode.removeChild(r); return; }
+				r.classList.add('is-out');
+				setTimeout(function () { if (r.parentNode) r.parentNode.removeChild(r); }, 220);
+			});
+		}
+
+		/* ---- Gesamtsumme zählt von alt nach neu (400 ms, Ease-out). ---- */
+		var shownTotal = 0, tweenRaf = 0;
+		function showTotal(target, instant) {
+			if (tweenRaf) cancelAnimationFrame(tweenRaf);
+			if (instant || REDUCE) { shownTotal = target; totalNum.textContent = fmt(target) + ' €'; return; }
+			var from = shownTotal, t0 = performance.now(), dur = 420;
+			var step = function (now) {
+				var p = Math.min(1, (now - t0) / dur);
+				var e = 1 - Math.pow(1 - p, 3);
+				var v = from + (target - from) * e;
+				totalNum.textContent = fmt(v) + ' €';
+				if (p < 1) tweenRaf = requestAnimationFrame(step); else { shownTotal = target; tweenRaf = 0; }
+			};
+			tweenRaf = requestAnimationFrame(step);
+		}
+
+		var firstRender = true;
 		function render() {
 			var res = compute();
 			if (stepVal) stepVal.textContent = state.participants;
-			// breakdown — eine Zeile je gewählter Leistung (matcht die Chips)
-			breakList.innerHTML = '';
-			res.items.forEach(function (row) {
-				var r = el('div', 'bc-break-row');
-				r.innerHTML = '<span class="bc-break-dot" style="background:' + esc(row.color) + '"></span>'
-					+ '<span class="bc-break-name">' + esc(row.label) + '</span>'
-					+ '<span class="bc-break-amt">' + fmt(row.amount) + ' €</span>';
-				breakList.appendChild(r);
-			});
+			if (dayVal) dayVal.textContent = state.days;
+			if (dayField) dayField.hidden = !typeHasDays();
+			renderRows(res.items);
 			renderDonut(res.rows, res.total);
 			if (donut) {
 				donut.setAttribute('role', 'img');
 				donut.setAttribute('aria-label', 'Budget-Aufteilung · Gesamt ca. ' + fmt(res.total) + ' €');
 			}
-			var empty = res.total <= 0;
-			totalNum.textContent = fmt(res.total) + ' €';
+			var empty = res.total <= 0 && !res.items.length;
+			showTotal(res.total, firstRender);
+			firstRender = false;
 			totalMeta.textContent = empty
 				? 'Wähle mindestens eine Leistung'
-				: ('Für ' + state.participants + ' Personen · ' + res.type.label);
+				: ('Für ' + state.participants + ' Personen · ' + (typeHasDays() ? state.days + ' Tage · ' : '') + res.type.label);
 			if (ctaBtn) {
 				ctaBtn.disabled = empty;
 				ctaBtn.style.opacity = empty ? '.5' : '';
@@ -146,14 +239,23 @@
 		function applyType() {
 			var t = find(BC.types, state.type) || BC.types[0];
 			var vis = t.services || [], don = t.default_on || [], req = t.required || [];
+			if (t.days && t.start_days) state.days = t.start_days;
 			state.services = don.slice();
 			req.forEach(function (id) { if (state.services.indexOf(id) < 0) state.services.push(id); });
+			var chipWrap = root.querySelector('.bc-services');
 			root.querySelectorAll('.bc-chip').forEach(function (btn) {
 				var id = btn.getAttribute('data-id');
 				btn.style.display = (vis.indexOf(id) >= 0) ? '' : 'none';
 				btn.classList.toggle('is-locked', req.indexOf(id) >= 0);
 				btn.classList.toggle('on', state.services.indexOf(id) >= 0);
 			});
+			// Chips in der Reihenfolge des Typs (Julius, 07.09.: „als erstes …"), nicht in Katalog-Reihenfolge.
+			if (chipWrap) {
+				vis.forEach(function (id) {
+					var btn = chipWrap.querySelector('.bc-chip[data-id="' + id + '"]');
+					if (btn) chipWrap.appendChild(btn);
+				});
+			}
 			render();
 		}
 
@@ -162,6 +264,13 @@
 			btn.addEventListener('click', function () {
 				var d = parseInt(btn.getAttribute('data-bc-step'), 10) || 0;
 				state.participants = Math.max(6, Math.min(250, state.participants + d));
+				render();
+			});
+		});
+		root.querySelectorAll('[data-bc-day]').forEach(function (btn) {
+			btn.addEventListener('click', function () {
+				var d = parseInt(btn.getAttribute('data-bc-day'), 10) || 0;
+				state.days = Math.max(1, Math.min(14, state.days + d));
 				render();
 			});
 		});
@@ -183,9 +292,88 @@
 				var i = state.services.indexOf(id);
 				if (i >= 0) state.services.splice(i, 1); else state.services.push(id);
 				btn.classList.toggle('on');
+				// Entweder-oder-Gruppe (Turnierart, Julius 07.09.): eine neue Wahl löst die andere ab.
+				var grp = btn.getAttribute('data-group');
+				if (grp && i < 0) {
+					root.querySelectorAll('.bc-chip[data-group="' + grp + '"]').forEach(function (o) {
+						if (o === btn) return;
+						var oid = o.getAttribute('data-id'), oi = state.services.indexOf(oid);
+						if (oi >= 0) { state.services.splice(oi, 1); o.classList.remove('on'); }
+					});
+				}
 				render();
 			});
 		});
+
+		/* ---- Gate (Julius, 07.09., nach Naboo-Vorbild): Ergebnis bleibt geblurrt,
+		   bis eine E-Mail-Adresse eingetragen ist. Freischaltung 30 Tage im Gerät
+		   gemerkt, der Lead landet als Anfrage-Vorstufe im Backend. ---- */
+		var UNLOCK_KEY = 'fgeBudgetUnlock', UNLOCK_DAYS = 30;
+		function readUnlock() {
+			try {
+				var raw = localStorage.getItem(UNLOCK_KEY);
+				if (!raw) return null;
+				var d = JSON.parse(raw);
+				if (!d || !d.email || !d.ts || (Date.now() - d.ts) > UNLOCK_DAYS * 864e5) return null;
+				return d;
+			} catch (e) { return null; }
+		}
+		function unlock(animated) {
+			if (body) body.classList.remove('is-locked');
+			if (gate) {
+				gate.classList.add('is-off');
+				gate.setAttribute('aria-hidden', 'true');
+				setTimeout(function () { gate.hidden = true; }, animated && !REDUCE ? 450 : 0);
+			}
+			if (animated) {
+				// Zahl zählt nach dem Freischalten einmal sichtbar hoch.
+				var target = shownTotal; shownTotal = 0; showTotal(target, false);
+			}
+		}
+		if (gate) {
+			var saved = readUnlock();
+			if (saved) { state.email = saved.email; unlock(false); }
+			var form = gate.querySelector('form') || gate;
+			var emailIn = gate.querySelector('input[type="email"]');
+			var errEl = gate.querySelector('#bc-gate-err');
+			var sendBtn = gate.querySelector('button[type="submit"]');
+			var showErr = function (msg) { if (errEl) { errEl.textContent = msg; errEl.hidden = !msg; } };
+			form.addEventListener('submit', function (e) {
+				e.preventDefault();
+				var email = (emailIn && emailIn.value || '').trim();
+				if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { showErr('Bitte eine gültige E-Mail-Adresse eintragen.'); if (emailIn) emailIn.focus(); return; }
+				showErr('');
+				var res = compute();
+				var fd = new FormData();
+				fd.append('action', 'fge_budget_unlock');
+				fd.append('nonce', CFG.bcNonce || '');
+				fd.append('email', email);
+				fd.append('type', res.type.label);
+				fd.append('participants', String(state.participants));
+				fd.append('days', typeHasDays() ? String(state.days) : '');
+				fd.append('range', state.range);
+				fd.append('services', res.items.map(function (r) { return r.label; }).join(', '));
+				fd.append('total', String(Math.round(res.total)));
+				var ft = form.querySelector('input[name="fge_ft"]'), js = form.querySelector('input[name="fge_js"]');
+				if (ft) fd.append('fge_ft', ft.value);
+				if (js) fd.append('fge_js', js.value || (ft ? ft.value.split('').reverse().join('') : ''));
+				if (sendBtn) { sendBtn.disabled = true; sendBtn.classList.add('is-busy'); }
+				fetch(CFG.ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+					.then(function (r) { return r.json().catch(function () { return { success: false }; }); })
+					.then(function (r) {
+						if (sendBtn) { sendBtn.disabled = false; sendBtn.classList.remove('is-busy'); }
+						if (!r || !r.success) { showErr((r && r.data && r.data.message) || 'Das hat gerade nicht geklappt. Bitte versuch es gleich noch einmal.'); return; }
+						state.email = email;
+						try { localStorage.setItem(UNLOCK_KEY, JSON.stringify({ email: email, ts: Date.now() })); } catch (err) {}
+						unlock(true);
+					})
+					.catch(function () {
+						if (sendBtn) { sendBtn.disabled = false; sendBtn.classList.remove('is-busy'); }
+						showErr('Keine Verbindung. Bitte versuch es gleich noch einmal.');
+					});
+			});
+		}
+
 		// CTA → open wizard prefilled
 		var cta = root.querySelector('#bc-request');
 		if (cta) cta.addEventListener('click', function () {
@@ -202,8 +390,9 @@
 				size: String(state.participants),
 				services: svcWiz,
 				budget: ppChip,
+				email: state.email || '',
 				notes: 'Über den Budget-Rechner geschätzt: ' + res.type.label + ', ' + state.participants
-					+ ' Personen, Preisniveau ' + state.range + ', Richtwert ca. ' + fmt(res.total) + ' € gesamt (' + lo.toLocaleString('de-DE') + ' bis ' + hi.toLocaleString('de-DE') + ' €).'
+					+ ' Personen, ' + (typeHasDays() ? state.days + ' Tage, ' : '') + 'Preisniveau ' + state.range + ', Richtwert ca. ' + fmt(res.total) + ' € gesamt (' + lo.toLocaleString('de-DE') + ' bis ' + hi.toLocaleString('de-DE') + ' €).'
 			}, false, 'budget');
 		});
 

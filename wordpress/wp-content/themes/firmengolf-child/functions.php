@@ -379,6 +379,8 @@ add_action( 'wp_enqueue_scripts', function() {
 		wp_localize_script( 'fge-individual', 'FGE_IND', [
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'fge_general_request' ),
+			// Budget-Rechner-Gate (E-Mail schaltet den Richtwert frei, Julius 07.09.).
+			'bcNonce' => wp_create_nonce( 'fge_budget_unlock' ),
 			'ft'      => function_exists( 'fge_form_trap_token' ) ? fge_form_trap_token() : '',
 			// Google-Ads-Conversion (send_to) für den Anfrage-Success; leer = kein Call.
 			'adsConv' => function_exists( 'fge_gads_send_to' ) ? fge_gads_send_to() : '',
