@@ -187,8 +187,10 @@ get_header();
 			</div>
 
 			<?php if ( $bc ) : ?>
+			<?php /* Ein Container für Eckdaten und Services (Julius, 07.09.), nicht zwei Karten. */ ?>
+			<div class="bc-panel">
 			<div class="bc-controls">
-				<div class="bc-field">
+				<div class="bc-field bc-field-parts">
 					<span class="bc-flabel">Teilnehmende</span>
 					<div class="bc-stepper">
 						<button type="button" class="bc-step-btn" data-bc-step="-2" aria-label="Weniger">
@@ -212,7 +214,7 @@ get_header();
 						</button>
 					</div>
 				</div>
-				<div class="bc-field">
+				<div class="bc-field bc-field-type">
 					<span class="bc-flabel">Veranstaltungstyp</span>
 					<select class="bc-select" id="bc-type">
 						<?php foreach ( $bc['types'] as $t ) : ?>
@@ -220,7 +222,7 @@ get_header();
 						<?php endforeach; ?>
 					</select>
 				</div>
-				<div class="bc-field">
+				<div class="bc-field bc-field-range">
 					<span class="bc-flabel">Preisniveau</span>
 					<div class="bc-seg">
 						<?php foreach ( $bc['ranges'] as $r ) : ?>
@@ -243,6 +245,7 @@ get_header();
 					</button>
 				<?php endforeach; ?>
 			</div>
+			</div>
 
 			<div class="bc-result">
 			<?php /* Gate (Julius, 07.09.): Ergebnis bleibt geblurrt, bis eine E-Mail-Adresse
@@ -254,7 +257,7 @@ get_header();
 						<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5 12 13l8.5-5.5"/></svg>
 					</span>
 					<div class="bc-gate-h">Richtwert freischalten</div>
-					<p class="bc-gate-p">Trag deine E-Mail-Adresse ein, dann siehst du Aufschlüsselung und Gesamtbudget sofort. Kein Newsletter, wir melden uns nur, wenn du anfragst.</p>
+					<p class="bc-gate-p">E-Mail eintragen, dann siehst du Aufschlüsselung und Gesamtbudget. Kein Newsletter.</p>
 					<label class="screen-reader-text" for="bc-gate-email">E-Mail-Adresse</label>
 					<div class="bc-gate-row">
 						<input type="email" class="fg-input" id="bc-gate-email" name="email" placeholder="name@firma.de" autocomplete="email" inputmode="email" required>

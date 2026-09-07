@@ -4243,17 +4243,20 @@ a.ev-back:active, .fge-page button.fg-share-top:active, .fg-btn-ghost:active, a.
 }
 
 /* controls bar */
-.bc-controls {
+/* Ein Container für Eckdaten + Services (Julius, 07.09.). Eckdaten als Flex-Zeile:
+   Typ nimmt den Rest, Preisniveau bleibt schmal (war zuvor auf volle Breite gerutscht). */
+.bc-panel {
   background: var(--paper-50);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  padding: 10px;
-  display: grid;
-  grid-template-columns: auto auto 1fr auto;
-  align-items: stretch; gap: 4px;
+  padding: 6px 10px 10px;
+}
+.bc-controls {
+  display: flex; align-items: stretch; gap: 4px;
 }
 .bc-field-days[hidden] { display: none; }
-.bc-field { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.bc-field { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: none; }
+.bc-field-type { flex: 1 1 220px; }
 .bc-field + .bc-field { border-left: 1px solid var(--ink-200); }
 .bc-flabel {
   font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
@@ -4301,16 +4304,14 @@ button.bc-step-btn {
   font-family: var(--font-display); letter-spacing: 0.02em;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-.bc-seg-btn.on { background: var(--fairway-700); color: var(--paper-100); }
+.bc-seg-btn.on { background: var(--paper-50); color: var(--fairway-800); box-shadow: var(--shadow-sm); }
 
 /* services chips (full-width row under the bar) */
 .bc-services {
-  margin-top: 12px;
-  background: var(--paper-50);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  padding: 16px 18px;
-  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  margin: 4px 8px 0;
+  border-top: 1px solid var(--ink-200);
+  padding: 16px 10px 8px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
 }
 .bc-services-l {
   font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
@@ -4326,7 +4327,9 @@ button.bc-chip {
   transition: all var(--dur-fast) var(--ease-out);
 }
 .bc-chip:hover { border-color: var(--ink-300); }
-.bc-chip.on { background: var(--fairway-700); color: var(--paper-100); border-color: var(--fairway-700); }
+/* An = dezent nach DESIGN.md Auswahl-Chip (fairway-100 / fairway-200 / fairway-800), kein blauer Klotz (Julius, 07.09.). */
+.bc-chip.on { background: var(--fairway-100); color: var(--fairway-800); border-color: var(--fairway-200); font-weight: 600; animation: ind-card-pop 180ms var(--ease-out); }
+.bc-chip.on .bc-chip-ic { color: var(--fairway-700); }
 .bc-chip.is-locked { cursor: default; }
 .bc-chip-ic { width: 18px; height: 18px; display: grid; place-items: center; opacity: 0.9; }
 
@@ -4356,22 +4359,23 @@ button.bc-chip {
 }
 .bc-gate.is-off { opacity: 0; pointer-events: none; }
 .bc-gate-card {
-  width: 100%; max-width: 440px; text-align: center;
+  width: 100%; max-width: 360px; text-align: center;
   background: var(--paper-50); border: 1px solid var(--ink-100);
-  border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);
-  padding: 26px 26px 20px;
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  padding: 16px 18px 12px;
 }
 .bc-gate-ic {
-  width: 48px; height: 48px; border-radius: 999px; margin: 0 auto 12px;
+  width: 34px; height: 34px; border-radius: 999px; margin: 0 auto 8px;
   display: grid; place-items: center; background: var(--fairway-100); color: var(--fairway-700);
 }
-.bc-gate-h { font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: -0.01em; color: var(--ink-900); }
-.bc-gate-p { font-size: 14px; line-height: 1.5; color: var(--ink-600); margin: 8px 0 0; }
-.bc-gate-row { display: flex; gap: 8px; margin-top: 16px; }
-.bc-gate-row .fg-input { flex: 1; min-width: 0; }
-.bc-gate-row .fg-btn-brand { flex: none; }
-.bc-gate-err { font-size: 13px; color: var(--danger, #B4332B); margin: 10px 0 0; }
-.bc-gate-note { font-size: 12px; line-height: 1.45; color: var(--ink-400); margin: 12px 0 0; }
+.bc-gate-ic svg { width: 17px; height: 17px; }
+.bc-gate-h { font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: -0.01em; color: var(--ink-900); }
+.bc-gate-p { font-size: 13px; line-height: 1.45; color: var(--ink-600); margin: 4px 0 0; }
+.bc-gate-row { display: flex; gap: 6px; margin-top: 10px; }
+.bc-gate-row .fg-input { flex: 1; min-width: 0; min-height: 40px; padding-top: 8px; padding-bottom: 8px; font-size: 14px; }
+.bc-gate-row .fg-btn-brand { flex: none; min-height: 40px; padding: 8px 16px; font-size: 14px; }
+.bc-gate-err { font-size: 12px; color: var(--danger, #B4332B); margin: 8px 0 0; }
+.bc-gate-note { font-size: 11px; line-height: 1.4; color: var(--ink-400); margin: 8px 0 0; }
 .bc-gate-note a { color: var(--ink-600); }
 .fg-btn-brand.is-busy { opacity: 0.7; }
 .bc-break-h, .bc-total-h {
@@ -4418,9 +4422,9 @@ button.bc-chip {
 @media (max-width: 900px) {
   .iv-tiles { grid-template-columns: repeat(2, 1fr); }
   .iv-exp-grid { grid-template-columns: 1fr; }
-  .bc-controls { grid-template-columns: 1fr 1fr; }
-  .bc-field + .bc-field { border-left: 0; }
-  .bc-field:nth-child(odd) { border-right: 1px solid var(--ink-200); }
+  .bc-controls { flex-wrap: wrap; }
+  .bc-field { flex: 1 1 45%; }
+  .bc-field-type { flex-basis: 100%; }
   .bc-result-body { grid-template-columns: 1fr; gap: 26px; text-align: left; }
   .bc-donut { order: -1; }
   .bc-gate { align-items: start; padding-top: 28px; }
@@ -4433,19 +4437,19 @@ button.bc-chip {
   .iv-head .mk-h2 { font-size: 32px; }
   .bcalc-head .mk-h2 { font-size: 32px; }
 
-  /* Controls: Reihe 1 = Teilnehmende | Preisniveau (50/50), Reihe 2 = Veranstaltungstyp (voll) */
-  .bc-controls { grid-template-columns: 1fr 1fr; gap: 0; }
-  .bc-field { padding: 13px 16px; }
-  .bc-field:nth-child(1) { grid-column: 1; grid-row: 1; border: 0; border-right: 1px solid var(--ink-200); }
-  .bc-field-days { grid-column: 1 / -1; grid-row: 3; border: 0; border-top: 1px solid var(--ink-200); }
-  .bc-field:nth-child(3) { grid-column: 1 / -1; grid-row: 2; border: 0; border-top: 1px solid var(--ink-200); }
-  .bc-field:nth-child(4) { grid-column: 2; grid-row: 1; border: 0; }
+  /* Controls: Reihe 1 = Teilnehmende | Preisniveau (50/50), Reihe 2 = Veranstaltungstyp (voll), Reihe 3 = Tage */
+  .bc-controls { flex-wrap: wrap; gap: 0; }
+  .bc-field { padding: 13px 16px; border: 0 !important; }
+  .bc-field-parts { flex: 1 1 50%; order: 1; border-right: 1px solid var(--ink-200) !important; }
+  .bc-field-range { flex: 1 1 50%; order: 2; }
+  .bc-field-type { flex-basis: 100%; order: 3; border-top: 1px solid var(--ink-200) !important; }
+  .bc-field-days { flex-basis: 100%; order: 4; border-top: 1px solid var(--ink-200) !important; }
   .bc-stepper { justify-content: space-between; }
   .bc-seg { display: flex; width: 100%; }
   .bc-seg-btn { flex: 1; text-align: center; padding: 8px 6px; }
 
   /* Gewünschte Services kompakter */
-  .bc-services { padding: 14px; gap: 8px; }
+  .bc-services { padding: 12px 6px 6px; margin: 0 6px; gap: 8px; }
   .bc-services-l { flex-basis: 100%; margin: 0 0 2px; }
   button.bc-chip { font-size: 13px; padding: 7px 11px 7px 9px; gap: 6px; }
   .bc-chip-ic { width: 15px; height: 15px; }
