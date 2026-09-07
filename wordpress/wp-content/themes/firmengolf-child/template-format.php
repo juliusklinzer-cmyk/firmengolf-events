@@ -259,7 +259,7 @@ get_header();
 		<div class="mk-hero-scrim" aria-hidden="true"></div>
 		<div class="mk-hero-content">
 			<span class="mk-hero-tag">Top aktuell</span>
-			<h1 class="mk-hero-title">Deine Weihnachtsfeier mit Indoor <strong>Golf</strong></h1>
+			<h1 class="mk-hero-title">Deine Weihnachtsfeier mit <strong>Indoor Golf</strong></h1>
 			<p class="mk-hero-sub"><?php echo esc_html( $format['lead'] ); ?></p>
 			<div class="mk-hero-ctas">
 				<a class="fg-btn-cta fg-btn-lg" href="#angebote">Angebote ansehen <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span></a>
