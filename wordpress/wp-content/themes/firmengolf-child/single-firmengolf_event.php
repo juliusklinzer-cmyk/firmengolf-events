@@ -436,6 +436,10 @@ get_header();
 			<span class="fg-gal-count" aria-hidden="true"><span class="fg-gal-count-i">1</span>/<?php echo (int) count( $slides ); ?></span>
 			<?php endif; ?>
 		</div>
+		<?php if ( 0 === $real_count ) : ?>
+		<?php /* Platzhalter-Events: Bilder sind Pool-Motive, nicht der konkrete Platz (Julius, 07.09.) */ ?>
+		<p class="fg-gal-caption">Beispielbilder von verschiedenen Locations in Deutschland.</p>
+		<?php endif; ?>
 		<?php if ( $real_count > 3 ) : ?>
 		<?php /* Alle Fotos als Popup statt Inline-Grid (Julius, 2026-07-06): auf der Seite bleiben immer nur die 3 Galerie-Kacheln. */ ?>
 		<div class="fg-gallery-modal" id="fg-gallery-all" hidden role="dialog" aria-modal="true" aria-label="Alle Fotos">
@@ -509,7 +513,7 @@ get_header();
 				}
 				?>
 				<?php if ( $dayflow_parts || $description ) : ?>
-				<section>
+				<section class="fg-sec-dayflow">
 					<div class="fg-section-eyebrow">So läuft der Tag</div>
 					<?php if ( $dayflow_parts ) : ?>
 						<ol class="fg-dayflow">

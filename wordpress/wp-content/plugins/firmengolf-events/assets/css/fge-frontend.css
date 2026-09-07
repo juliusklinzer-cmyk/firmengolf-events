@@ -898,6 +898,12 @@ button.fg-btn-cta, button.fg-btn-brand { background: var(--fairway-700); color: 
   .fg-grid                 { grid-template-columns: repeat(2, 1fr); }
   .fg-similar-grid         { grid-template-columns: repeat(2, 1fr); }
   .fg-detail-body          { grid-template-columns: 1fr; gap: 32px; }
+  /* Gestapelte Reihenfolge (Julius, 07.09.): Bilder, „So läuft der Tag", dann die
+     Buchen-Karte, dann der Rest. Die Hauptspalte löst sich per display:contents
+     auf, damit Tages-Sektion und Karte per order sortierbar sind. */
+  .fg-detail-body          { display: flex; flex-direction: column; gap: 28px; }
+  .fg-detail-main          { display: contents; }
+  .fg-detail-main > .fg-sec-dayflow { order: -2; }
   /* Buchen-Karte beim Stapeln nach oben (vor Beschreibung + FAQ) statt ans Ende */
   .fg-detail-rail          { position: static; order: -1; }
   .fg-rail-card            { position: static; }
@@ -3920,6 +3926,10 @@ button.fg-cat-head { display: flex; align-items: center; gap: 10px; width: 100%;
   .xmas-foot { flex-direction: column-reverse; align-items: stretch; }
   .xmas-foot button.xmas-cta { width: 100%; justify-content: center; }
 }
+
+/* Bildunterschrift bei Platzhalter-Events (Pool-Motive, nicht der konkrete Platz) */
+.fg-gal-caption { font-size: 12.5px; color: var(--ink-500); margin: 10px 0 0; }
+@media (max-width: 768px) { .fg-gal-caption { margin: 10px 0 0; text-align: center; } }
 
 /* ── 30a. EVENT DETAIL: Zurück + Teilen in einer Zeile, Politur-Pass (Emil, 07.09.) ── */
 .fg-detail-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0; }
