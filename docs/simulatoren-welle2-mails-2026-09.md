@@ -11,7 +11,7 @@ Erstellt per Microsoft-365-Connector direkt im Entwürfe-Ordner, Text wie Welle 
 ## Varianten
 
 - **Selbstversorger-Studios** (Eagleswing, Golf in a Box): Gelernt aus der Tap-Inn-Antwort. Statt „begleiteter Abend" steht: „Das muss kein betreutes Event sein: Viele Firmen wollen einfach die Box für einen Abend, bringen Essen und Getränke selbst mit und bekommen von euch den Zugang."
-- **Eröffnung steht bevor** (Tee It Up Oktober, GO! Dresden November): „mit Hinweis auf die Eröffnung im …, Firmen planen ihre Weihnachtsfeier jetzt, ihr könntet also direkt mit den ersten Dezember-Terminen starten" und Schluss „schon vor der Eröffnung die ersten Anfragen zu sammeln".
+- **Eröffnung steht bevor** (Tee It Up Oktober, GO! Dresden November): „mit Hinweis auf die Eröffnung im …, Firmen planen ihre Weihnachtsfeier jetzt, ihr könnt eure Eventformate also schon vor der Eröffnung einstellen, damit sie direkt angefragt werden können" und Schluss „schon vor der Eröffnung die ersten Anfragen zu sammeln".
 - **Training/Fitting im Vordergrund** (chigolf, GOLF LIFE, X-Flex, Golf At Your Best, Nate Danner): „Bei euch steht das Training im Vordergrund, und genau das ist für Firmen spannend: ein Abend mit kurzer Einweisung für alle, kleiner Challenge und Getränken."
 - **Eigenes Eventangebot** (Team Spieckerhoff, Tee It Up): „Ich habe gesehen, dass ihr Firmenevents schon anbietet, genau das könnt ihr bei uns eins zu eins einstellen."
 - **Gastro im Haus** (Kim Screen Golf, Golfersworld): „danach gemeinsam essen".

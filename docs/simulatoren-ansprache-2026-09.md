@@ -46,7 +46,7 @@ Was ihr davon habt:
 
 - Anfragen von Firmen aus eurer Region, gebündelt in einem Portal.
 - Kostenlos für euch. Ihr gebt euren Preis an und bekommt ihn exakt ausgezahlt, die Vermittlung zahlt der Kunde.
-- In 10 Minuten online. Dezember-Termine werden jetzt angefragt.
+- In 10 Minuten online. Ihr stellt Eventformate ohne festen Termin ein, Firmen fragen den Termin an. Weihnachtsfeiern werden jetzt geplant.
 
 [Button: Indoor Golf jetzt eintragen] → https://firmengolf-events.de/partner-onboarding/?ob_type=indoor
 
