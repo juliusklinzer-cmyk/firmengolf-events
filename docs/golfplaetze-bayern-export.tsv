@@ -1,0 +1,166 @@
+id	dgv_id	name	plz	ort	strasse	lat	lng	loecher	website	telefon	schnupperkurse	platzreifekurse	driving_range	restaurant	partner_id
+20	8912	Bavaria Golf Anthal				47.991723	12.799409	9	https://www.golf-anthal.de	08684888	1	1	1	1	0
+218	8916	Golf-Club Neumarkt e.V.				49.301792	11.395081	18	https://www.golfclub-neumarkt.de	09188 3979	1	1	1	1	0
+265	8825	Golfanlage Puschendorf				49.528846	10.823747	9	https://www.golfanlage-puschendorf.de	0 91 01 / 7552	1	1	1	1	0
+386	8744	Golfclub Hellengerst - Hanusel Hof				47.659004	10.198620	18	https://www.golf-allgaeu.de	08378/9200-14	1	1	0	1	0
+564	8882	Golfclub zu Gut Ludwigsberg e.V.				48.073283	10.644153	18/9	https://www.golfclub-tuerkheim.de	(0 82 45) 33 22	1	1	1	0	0
+701	8863	St. Eurach Land u. Golfclub e.V.				47.786981	11.343040	18	https://www.eurach.de	08801 915 830	1	0	1	0	360
+275	8801	Golfclub Abenberg e.V.	91183	Abenberg	Am Golfplatz 19	49.252591	10.965720	27/6	https://www.golfclubabenberg.de	09178 98960	1	1	1	1	0
+73	8905	Golf Club Berchtesgadener Land e.V.	83404	Ainring	Weng 12	47.843964	12.904895	18	https://www.gcbgl.de	08654 69020	1	1	1	1	0
+355	8914	Golfclub Gäuboden e.V.	94330	Aiterhofen	Fruhstorf 6	48.869043	12.660912	18	https://www.golfclub-gaeuboden.de	09421 72804	1	1	1	0	0
+626	8889	Golfzentrum München-Aschheim	85609	Aschheim	Fasanenallee 10	48.178646	11.699231	18	https://www.gcaschheim.de	089 9902420	1	1	1	1	0
+629	8708	GREEN HILL Der Golf & Eventpark München-Ost	85609	Aschheim	Am Mühlbach 99	48.183327	11.701450	9-Loch Kurzplatz	https://www.greenhill-golf.de	089 99981687-0	1	1	1	0	0
+571	8935	GolfPark Augsburg	86199	Augsburg	Lindauer Straße 56	48.326698	10.863827	9	https://www.golfpark-augsburg.de	0821 906500	1	1	1	1	0
+83	8707	Golf Club Gersthofen e.V.	86169	Augsburg / Bay	Unterer Auweg 6	48.425530	10.895150	9	https://www.golfclub-gersthofen.de	0821 2413799	1	1	1	1	0
+294	8908	Golfclub Bad Abbach-Deutenhof e.V.	93077	Bad Abbach	Deutenhof 2	48.911847	12.000646	18/9	https://www.golf-badabbach.de	09405 9532-0	1	1	1	0	0
+22	8978	Bella Vista Golfpark Bad Birnbach	84364	Bad Birnbach / Rottal	Bella Vista Allee 1	48.446366	13.075644	18 (+ 9 Kurzplatz)	https://www.bellavista-golfpark.de	08563977400	1	1	1	1	0
+705	8950	Thermen Golf Bad Füssing-Kirchham e.V.	94072	Bad Füssing	Thierham 3	48.338897	13.287128	18	https://www.thermengolf.de	08537 91990	1	1	1	1	0
+664	8959	MARC AUREL Spa & Golf Resort	93333	Bad Gögging	Heiligenstädter Str. 34-36	48.816646	11.787328	9	https://www.marcaurel.de	(0 94 45) 95 8-0	0	0	1	0	0
+247	8878	Golf-Resort Bad Griesbach e.V.	94086	Bad Griesbach	Holzhäuser 8	48.471274	13.172361	129 (5*18/3*9/2*6)	http://www.quellness-golf.com	0 85 32 - 79 00	1	1	1	1	0
+490	8805	Golfclub Sagmühle e.V.	94086	Bad Griesbach	Golfplatz Sagmühle 1	48.416445	13.174388	18	https://www.sagmuehle.de	+498532  2038	1	1	1	1	0
+173	8806	Golf-Club Bad Kissingen e.V.	97688	Bad Kissingen	Euerdorfer Straße 11	50.177226	10.071186	18	https://www.golfclubbadkissingen.de/	0971 3608	1	1	1	0	0
+529	8871	Golfclub Stiftland e.V.	95698	Bad Neualbenreuth	Ottengrün 50	49.970849	12.426622	18/9	https://www.gc-stiftland.de	09638 1271	1	1	1	1	356
+400	8861	Golfclub Isarwinkel e.V.	83646	Bad Tölz	Am Golfplatz 65	47.755773	11.580841	9	https://www.gc-isarwinkel.de	(0 80 41) 77 8 77	1	1	1	1	0
+703	8808	Tegernseer Golf-Club Bad Wiessee e.V.	83707	Bad Wiessee	Rohbognerhof	47.726423	11.717119	18	https://www.tegernseer-golf-club.de	08022 271130	0	0	1	1	0
+469	8888	Golfclub Reichsstadt Bad Windsheim e.V.	91438	Bad Windsheim	Otmar-Schaller-Allee 1	49.510701	10.392413	18/6	https://www.golf-bw.de	09841 5027	1	1	1	1	0
+381	8903	Golfclub Hauptsmoorwald Bamberg e.V.	96050	Bamberg	Walnussweg 81	49.912697	10.936868	9	https://www.gc-hauptsmoorwald.de	0951 9684331	1	1	0	0	0
+178	8911	Golf-Club Bayreuth e.V.	95448	Bayreuth	Rodersberg 43	49.956117	11.628899	18/9	https://www.golfclub-bayreuth.de	0921 970704	1	1	1	1	0
+8	8968	Altmühlgolf Beilngries GmbH	92339	Beilngries	Ottmaringer Tal 1	49.044120	11.497386	9	https://www.altmuehlgolf.de	08461 6063333	1	1	1	1	0
+304	8811	Golfclub Berchtesgaden e.V.	83471	Berchtesgaden	Salzbergstraße 33	47.634200	13.035360	9	https://www.golfclub-berchtesgaden.de	+4986522100	0	0	1	0	0
+610	8924	Golfplatz Stenz	86975	Bernbeuren	Stenz 1	47.744285	10.792045	9	https://www.golfplatz-stenz.de	08860 582	1	1	1	1	0
+293	8804	Golfclub Augsburg e.V.	86399	Bobingen-Burgwalden	Engelshofer Straße 2	48.283402	10.756627	18 + 6 Loch Kurzplat	http://www.golfclub-augsburg.de	08234 5621	1	1	1	1	0
+254	8732	Golfanlage Gut Leimershof	96149	Breitengüßbach	Leimershof 9	49.986310	10.963836	18 Loch	http://www.leimershof-golfanlage.de	095478709939	1	1	0	1	0
+591	8703	Golfpark Rothenburg-Schönbronn	91592	Buch am Wald	Schönbronn1	49.325461	10.278727		https://www.gp-rbg.de	09868 959530	1	1	0	1	0
+432	8904	Golfclub Memmingen Gut Westerhart e.V.	87740	Buxheim	Westerhart 1b	47.965444	10.119916	18/9	https://www.golfclub-memmingen.de	0833171016	1	1	1	1	0
+183	8814	Golf-Club Chieming e.V.	83339	Chieming-Hart	Kötzing 1	47.935581	12.552977	18/9	http://www.golfchieming.de/	08669 87330	0	0	1	0	344
+85	8937	Golf Club Gut Ising e.V.	83339	Chieming/ Ising	Kirchberg 3	47.923200	12.507548	9	https://www.gut-ising.de	(0 86 67) 7 93 58	0	1	1	1	0
+291	8802	Golfclub Ansbach e.V.	91598	Colmberg	Rothenburger Straße 35	49.358662	10.402141	18	https://www.golf-ansbach.de	09803600	1	1	1	1	0
+75	8816	Golf Club Dachau e.V.	85221	Dachau	An der Flosslände 3	48.274103	11.456075	9	https://www.gcdachau.de	08131 10879	1	0	1	0	0
+326	8979	Golfclub Dillingen Nusser-Alm GmbH	89407	Dillingen	Holzheimerstr. 2	48.541810	10.506138	9	https://www.gc-dillingen.de	09071 705958	1	1	0	1	0
+327	8988	Golfclub Dinkelsbühl e. V.	91550	Dinkelsbühl	Seidelsdorf 65	49.077222	10.294044	9-Loch	https://www.golfclub-dinkelsbühl.de	09851582259	0	0	1	0	0
+575	8929	Golfpark Donauwörth	86609	Donauwörth	Lederstatt 1	48.740355	10.800967	18/4	https://www.golfpark-donauwoerth.de/	0906 4044	1	1	1	1	0
+379	8952	Golfclub Hassberge e.V.	97500	Ebelsbach (OT. Steinbach)	Hainach-Neue Laube 1	49.994552	10.649926	18	https://www.golfclub-hassberge.de	09522 7085500	1	1	1	1	0
+351	8819	Golfclub Fränkische Schweiz e.V.	91320	Ebermannstadt	Kanndorf 8	49.776957	11.248598	18	https://www.gc-fs.de	091944827	1	1	1	1	0
+273	8986	Golfanlagen Erlangen Besitz GmbH & Co. KG	90542	Eckental	Orchideenstr. 18	49.597741	11.185146	18	https://www.gc-erlangen.de	09 11 - 37 36 37 6	0	0	0	0	0
+440	8844	Golfclub München-Riedhof e.V.	82544	Egling	Riedhof 16	47.923768	11.465167	18	https://www.riedhof.de	08171 21950	1	1	1	1	0
+494	8705	Golfclub Schloss Egmating	85658	Egmating	Schloßstr. 15	48.002275	11.795964		https://www.gc-egmating.de	08095 90860	1	1	0	1	0
+438	8820	Golfclub München Eichenried	85452	Eichenried	Münchner Straße 57	48.275604	11.775103	27	https://www.gc-eichenried.de	08123 93080	1	1	1	1	0
+683	8706	OPEN.9 Golf Eichenried	85452	Eichenried	Schönstraße 45	48.270886	11.755874	9	https://www.open9.de	08123 989280	1	1	1	1	361
+21	8971	Bavarian Golfclub München-Eicherloh e.V.	85464	Eicherloh	Vordere Moosstr. 19	48.233809	11.769308	9	https://www.bavariangc.de	08123 1064	1	1	1	1	0
+563	8932	Golfclub Zollmühle e.V.	91792	Ellingen	Zollmühle 1	49.081305	10.966506	18/9	https://www.golfanlage-zollmuehle.de	(0 91 41) 39 76	1	1	1	1	0
+341	8821	Golfclub Erding-Grünbach e.V.	85461	Erding	Am Kellerberg 13	48.331034	12.008564	18	https://www.golf-erding.de	08122 49650	0	0	1	1	345
+606	8991	Golfplatz Leonhardshaun	84061	Ergoldsbach	Martinshaun 230	48.668930	12.224414	9	https://www.golfplatz-leonhardshaun.de	08771 4096380	1	1	1	1	0
+345	8823	Golfclub Eschenried e.V.	85232	Eschenried	Am Kurfürstenweg 10	48.349217	11.422080	69 (18+18+18+9+6)	https://www.muenchner-golf-eschenried.de	0813156740	1	1	1	1	0
+307	8812	Golfclub Beuerberg e.V.	82547	Eurasburg	Gut Sterz 3	47.822791	11.425340	18	https://www.golfclub-beuerberg.de	08179 617	1	0	1	1	0
+188	8824	Golf-Club Feldafing e.V.	82340	Feldafing	Tutzinger Strasse 15	47.944405	11.298108	18	https://www.golfclub-feldafing.de	08157 9334-0	1	1	1	1	0
+423	8841	Golfclub Mangfalltal e.V.	83620	Feldkirchen-Westerham	Oed 1	47.918020	11.846322	18	https://www.gc-mangfalltal.de	(0 80 63) 63 00	1	1	1	1	352
+686	8985	Panorama Golf Passau	94081	Fürstenzell	Bromberg 1	48.542065	13.348093	18 Loch Anlage	https://www.panorama-golf.info	08502917160	1	1	1	1	0
+1	8899	1. Golf Club Fürth e.V.	90768	Fürth	Am Golfplatz 10	49.504029	10.960814	18+9	https://www.golfclub-fuerth.de	0911 757522	1	1	1	1	0
+413	8890	Golfclub Landshut e.V.	84095	Furth	Oberlippach 2	48.595677	12.076800	18	https://www.golf-landshut.de	08704 8378	1	1	1	1	0
+190	8826	Golf-Club Furth im Wald e.V.	93437	Furth im Wald	Voithenberg 3	49.328479	12.807346	18	https://www.gc-furth.de	09973 2089	1	1	1	1	0
+656	8828	Land- und Golf-Club Werdenfels e.V.	82467	Garmisch-Partenkirchen	Werdenfelser Str. 2	47.513489	11.097594	9/3	https://www.golfclub-werdenfels.de	08821-945670	1	1	1	1	0
+392	8834	Golfclub Hof e.V.	95185	Gattendorf	Am Golfplatz 1	50.344683	11.960529	18	https://www.gc-hof.de	09281 470155	1	1	1	1	0
+527	8895	Golfclub Steigerwald in Geiselwind e.V.	96160	Geiselwind	Friedrichstraße 12	49.778643	10.471198	18 + 6 (Kurzplatz)	https://www.golfclub-steigerwald.de	(0 95 56) 14 84	1	1	1	1	0
+618	8975	GolfRange München-Germering Süd	82110	Germering	Starnberger Weg 56	48.114549	11.350545	18	https://www.golfrange.de	08915001120	1	1	1	1	0
+577	8917	GolfPark Gerolsbach	85302	Gerolsbach	Hof 1	48.474697	11.384132	18	http://www.golfpark-gerolsbach.de	08445 799	1	1	1	1	0
+227	8831	Golf-Club Schloss Elkofen e.V.	85567	Grafing	Hochreiterweg 14	48.026060	11.958252	18	https://www.gcschlosselkofen.de	08092 7494	1	1	1	1	0
+35	8716	Das Achental	83224	Grassau	Mietenkamerstraße 65	47.785622	12.465509	18	https://www.das-achental.com	08641 401-717	1	1	1	1	0
+277	8833	Golfclub Altötting-Burghausen e.V.	84533	Haiming	Piesing 4	48.207038	12.861600	18/9	https://www.gc-altoetting-burghausen.de	08678 986903	1	0	1	1	0
+257	8957	Golfanlage Harthausen	85630	Harthausen	Am Golfplatz 1	48.052388	11.766381	18	https://www.golfanlage-harthausen.de	08106 35440	1	1	1	1	0
+695	8860	Rottaler Golf- und Country-Club e.V.	84332	Hebertsfelden	Fischgartl 2	48.416218	12.865204	18	https://www.rottaler-gc.de	0 85 61  59 69	1	1	1	1	0
+199	8881	Golf-Club Herzogenaurach e.V.	91074	Herzogenaurach	Burgstall 1	49.552740	10.879158	18	https://www.golfclub-herzogenaurach.de	09132 40586	1	1	1	1	0
+204	8859	Golf-Club Höslwang im Chiemgau e.V.	83129	Höslwang	Kronberg 4	47.965837	12.335045	18	https://www.golfclub-hoeslwang.de	08075 714	1	1	1	1	0
+397	8877	Golfclub Iffeldorf e.V.	82393	Iffeldorf	Gut Rettenberg	47.770427	11.346121	18	https://www.golfplatz-iffeldorf.de	08856 92550	1	1	1	1	0
+499	8835	Golfclub Schloss Igling e.V.	86859	Igling	Schloß Igling 3	48.067264	10.807390	9	https://www.golfclub-igling.de	08248 1893	1	1	1	1	354
+205	8836	Golf-Club Ingolstadt e.V.	85049	Ingolstadt	Krumenauerstraße 1	48.763422	11.375404	18	https://www.golf-ingolstadt.de	+49 (841) 85778	1	1	1	1	0
+150	8855	Golf- und Land-Club Regensburg e.V.	93093	Jagdschloss  Thiergarten	Thiergartenstraße 10	49.038624	12.253002	18	https://www.golfclub-regensburg.de	0 94 03  5 05	1	1	1	1	0
+156	8870	Golf- und Landclub Bayerwald e.V.	94118	Jandelsbrunn	Poppenreut 11	48.743714	13.666249	18/9	https://www.gc-bayerwald.de	(08581)1040	1	1	1	0	343
+107	8832	Golf Club Schloß Klingenburg e.V.	89343	Jettingen-Scheppach	Schloss Klingenburg	48.355221	10.409290	18	https://www.golf-klingenburg.de	08225 3030	1	1	1	1	0
+593	8966	Golfpark Schloßgut Lenzfried	87437	Kempten / Allgäu	Friedensweg 4	47.726240	10.340235	9	https://www.golfparklenzfried.de	08315129550	1	1	1	0	0
+233	8891	Golf-Club Straubing Stadt und  Land e.V.	94356	Kirchroth	Bachhof 9	48.942725	12.557760	18/9	https://www.golfclub-straubing.de	094287169	0	0	1	0	0
+617	8933	GolfRange München-Brunnthal	85649	Kirchstockach	Am Golfplatz 1	48.027645	11.675812	9	https://www.golfrange.de	08102 74740	1	1	1	1	0
+96	8874	Golf Club Kitzingen e.V.	97318	Kitzingen	Lailachweg 1	49.728353	10.137058	18	https://www.golfclub-kitzingen.de	09321 4956	1	1	1	1	0
+343	8822	Golfclub Erlangen e.V.	91077	Kleinsendelbach	Am Schleinhof 1	49.597741	11.185146	18	https://www.gc-erlangen.de/	09126 5004	1	1	1	1	0
+407	8886	Golfclub Königsbrunn e.V.	86343	Königsbrunn	Benzstraße 23	48.242505	10.894004	9	https://www.gc-koenigsbrunn.de	08231 918690	1	1	1	1	0
+416	8837	Golfclub Lechfeld e.V.	86343	Königsbrunn	Föllstraße 32 a	48.291905	10.878568	9	https://www.gclechfeld.de	08231 32637	1	1	1	1	0
+472	8857	Golfclub Reit im Winkl e.V.	6345	Kössen	Moserbergweg 60	47.671482	12.439617	18	https://www.gcreit.de	+498640798250	1	1	1	0	0
+496	8921	Golfclub Schloss Guttenburg e.V.	84559	Kraiburg am Inn	Guttenburg 3	48.194979	12.472521	18	https://www.golfclub-guttenburg.de	(0 86 38) 88 74 88	1	1	1	1	0
+210	8894	Golf-Club Kronach e.V.	96328	Küps	Kümmelbergstr. 24	50.191212	11.242302	18	https://www.gc-kronach.de	09264 8812	0	0	1	0	0
+523	8984	Golfclub Sonnenhof	93462	Lam	Himmelreich 13	49.202085	13.058493	9-Loch-Anlage	https://www.sonnenhof-lam.de	09943 37143	0	0	1	0	0
+412	8938	Golfclub Landau/Isar e.V.	94405	Landau/Isar	Rappach 2	48.660517	12.733642	9	https://www.golfpark-landau.de	09951 599111	1	1	1	1	0
+415	8845	Golfclub Lauterhofen e.V.	92283	Lauterhofen	Ruppertslohe 18	49.382248	11.576852	18 und 6 Loch Kurzpl	https://www.gc-lauterhofen.de	09186 1574	1	1	1	1	0
+292	8944	Golfclub Auf der Gsteig Lechbruck am See e.V.	86983	Lechbruck	Gsteig 1	47.705758	10.787257	18/3	https://www.gsteig.de	08862 987750	1	1	1	1	0
+419	8838	Golfclub Lichtenau-Weickershof e.V.	91586	Lichtenau	Weickershof 1	49.265050	10.669991	18	https://www.gclichtenau.de	09827 92040	1	1	1	1	0
+213	8839	Golf-Club Lindau-Bad Schachen e.V.	88131	Lindau	Am Schönbühl 5	47.573816	9.702356	18	https://www.golfclub-lindau.de	08382 9617-0	1	1	1	1	0
+587	8893	Golfpark Oberzwieselau e.V.	94227	Lindberg	Golfpark 1	49.017688	13.274807	18	https://www.golfpark-oberzwieselau.de	09922.2367	0	0	1	0	0
+109	8920	Golf Club Schweinfurt e.V.	97453	Löffelsterz	Ebertshäuser Str. 17	50.095136	10.362750	18+6	https://www.golfclub-schweinfurt.de/	09727 5889	1	1	1	1	0
+516	8892	Golfclub Schwanhof e.V.	92706	Luhe-Wildenau	Klaus-Conrad-Allee 1	49.589077	12.117646	18	https://www.golfclub-schwanhof.de	09607 9202-0	1	1	1	1	0
+501	8840	Golfclub Schloß Mainsondheim e.V.	97337	Mainsondheim	Schlossweg 3	49.796202	10.168654	18	https://www.golf-mainsondheim.de	09324 4656	1	1	1	0	0
+579	8746	Golfpark Gut Häusern GmbH & Co. KG	85229	Markt Indersdorf	Gut Häusern 2	48.349217	11.422080			08139/93280	0	0	0	0	0
+422	8885	Golfclub Main-Spessart, Marktheidenfeld-Eichenfürst e.V.	97828	Marktheidenfeld	Eichenfürst 9	49.838146	9.569015	18/5	https://www.gc-msp.de	09391 8435	1	1	1	1	0
+502	8842	Golfclub Schloss Maxlrain e.V.	83104	Maxlrain	Freiung 14	47.900610	11.992433	18/9	https://www.golfclub-maxlrain.de	08061  1403	1	1	1	1	353
+537	8945	Golfclub Tegernbach e.V.	82293	Mittelstetten	Kapellenweg 1	48.270282	11.077359	18/6	https://www.gc-tegernbach.de	(0 82 02) 90 57 00	1	1	1	1	0
+441	8953	Golfclub München-Riem e.V.	81929	München	Graf-Lehndorff-Str. 36	48.145423	11.674144	9/3		089 94500800	1	0	1	0	0
+427	8915	Golfclub Maria Bildhausen e.V.	97702	Münnerstadt	Rindhof 1	50.275093	10.304140	18/6	https://www.maria-bildhausen.de	09766 1601	1	1	1	1	0
+619	8967	GolfRange Nürnberg	91189	Nemsdorf	Am Golfplatz 1	49.377922	10.981141	9	https://www.golfrange.de	09119880680	1	1	1	1	0
+250	8702	Golfanlage Alpenseehof	87484	Nesselwang	Attlesee 14	47.636639	10.538515	9 Loch	https://www.golf-alpenseehof.de	08361 925834	1	1	1	1	0
+675	8946	New GolfClub Neu-Ulm	89233	Neu-Ulm	Kammer-Krummen-Strasse 100	48.411242	10.020684	9	https://www.newgolfclub.de	0731 70533315	1	1	1	0	0
+719	8858	Wittelsbacher Golfclub Rohrenfeld-Neuburg e.V.	86633	Neuburg a.d.Donau	Rohrenfeld	48.721554	11.263768	18	https://www.wbgc.de	08431 908590	1	1	1	0	0
+720	8981	Zieglers Golfplatz GmbH & Co. KG	86633	Neuburg Heinrichsheim	Matthias-Bauer-Str.108	48.721844	11.231832	9	https://www.zieglersgolfplatz.de	08431 5387844	1	1	1	1	0
+160	8846	Golf- und Landclub Oberpfälzer Wald e.V.	92431	Neunburg vorm Wald	Ödengrub 1	49.360124	12.272619	18	https://www.golf-oberpfalz.de	09439 466	1	1	1	1	0
+289	8847	Golfclub am Reichswald e.V.	90427	Nürnberg	Schiestlstr. 100	49.506121	11.081017	18		0911 305730	1	1	1	1	0
+354	8827	Golfclub Garmisch-Partenkirchen e.V.	82496	Oberau	Gut Buchwies	47.554721	11.149252	18	https://www.golfclub-gap.de	08824 8344	1	1	1	1	0
+337	8936	Golfclub Eggelstetten	86698	Oberndorf	Hauptstrasse 4	48.677944	10.847066	9	https://golfclub-eggelstetten.de	+49909090250	0	0	1	0	0
+451	8848	Golfclub Oberstaufen-Steibis e.V.	87534	Oberstaufen	In der Au 5	47.522540	10.025989	18	https://www.golf-oberstaufen.de	08386 8529	0	0	1	0	0
+627	8955	Golfzentrum Oberstaufen	87534	Oberstaufen	Buflings 1 a	47.571102	10.022101	18/9		08386 939250	0	0	1	0	0
+452	8849	Golfclub Oberstdorf e.V.	87561	Oberstdorf	Gebrgoibe 2	47.382006	10.293381	9	https://www.golfclub-oberstdorf.de	(0 83 22) 28 95	1	1	1	0	0
+37	8954	Der Golf Club am Obinger See	83119	Obing-Kleinornach	Kirchreitbergstr. 2	48.005469	12.436595		https://www.dergolfclub.de	08624 875623	1	1	0	0	0
+442	8850	Golfclub München-West Odelzhausen e.V.	85235	Odelzhausen	Todtenried 3	48.293984	11.202592	18/5	https://www.golfclub-muenchen-west.de	08134 99880	1	1	1	0	0
+522	8865	Golfclub Sonnenalp - Oberallgäu e.V.	87527	Ofterschwang	Muderbolz 10	47.490125	10.257852	18	https://www.golf-sonnenalp.de	08321 272912	1	1	1	1	0
+454	8851	Golfclub Olching e.V.	82140	Olching	Feursstraße 89	48.217741	11.347003	18	https://www.golfclubolching.de	0 81 42  48 290	1	1	1	1	0
+7	8852	Allgäuer Golf- und Landclub e.V.	87724	Ottobeuren	Boschach 3	47.918140	10.323358	18/6	https://www.aglc.de	08332 9251-0	1	0	1	0	0
+92	8853	Golf Club Hohenpähl e.V.	82396	Pähl	Am Hochschloss	47.913130	11.182857	18	https://www.gchp.de	08808 92020	1	1	1	1	0
+461	8720	Golfclub Pfaffing Wasserburger Land e.V.	83539	Pfaffing	Köckmühle 132	48.046698	12.107976	27 Loch	https://www.gcpwl.de	08076 8891870	1	1	1	1	0
+647	8902	Jura Golf e.V. Hilzhofen	92367	Pilsach	Hilzhofen 23	49.300488	11.613648	18/9	https://www.juragolf.de	09182 9319140	0	0	1	0	0
+464	8923	Golfclub Pleiskirchen e.V.	84568	Pleiskirchen	Am Golfplatz 1	48.296707	12.611886	18	https://www.golfclub-pleiskirchen.de	08635 708903	1	1	1	1	0
+103	8918	Golf Club Pottenstein Weidenloh e.V.	91278	Pottenstein	Weidenloh 40	49.752371	11.406557	18	https://www.gc-pottenstein.de	09243929220	1	1	1	1	0
+32	8854	Chiemsee Golf-Club Prien e.V.	83209	Prien	Bauernberg 5	47.831930	12.323788	18  (seit 2009)	https://www.cgc-prien.de	08051 62215	1	1	1	1	0
+672	8727	München GolfCity GmbH	82178	Puchheim	Am Golfplatz 1	48.167678	11.357065		https://www.golfcity.de	04139 6970615	1	0	0	0	0
+506	8856	Golfclub Schloss Reichertshausen e.V.	85293	Reichertshausen	Holzhof 2	48.458184	11.492616	18/5	https://www.gcr.de	08137 5084	1	1	1	0	0
+511	8818	Golfclub Schloßberg e.V.	94419	Reisbach	Grünbach 8	48.603674	12.656974	18	https://www.golfclub-schlossberg.de	08734 7035	1	1	1	1	0
+301	8809	Golfclub Bad Wörishofen e.V.	87668	Rieden	Schlingener Str. 27	47.953569	10.645563	18	https://www.gc-bw.de	08346 777	1	1	1	1	0
+692	8970	Reversible Golf Patting	83083	Riedering	Patting 1	47.820815	12.231532	2 x 9 >Loch	https://www.golf-patting.de	08032 1030	1	1	1	1	0
+485	8927	Golfclub Rottbach e.V.	82216	Rottbach	Weiherhaus 5	48.247725	11.260067	27 + 3-Loch Kurzplat	https://www.golfanlage-rottbach.de	0813593290	1	1	1	1	0
+69	8723	Golf Club am Eixendorfer See	92444	Rötz	Hillstett 69	49.343303	12.487083		https://www.golf-eixendorfer-see.de	09976 2017247	1	1	0	0	0
+260	8983	Golfanlage Holledau - Golf und Freizeitanlagen GmbH	84104	Rudelzhausen	Weihern 3	48.571119	11.812407	36	https://www.golfclubholledau.de	08756 - 96010-32	1	1	1	1	349
+488	8896	Golfclub Ruhpolding e.V.	83324	Ruhpolding	Rauschbergstraße 1a	47.753168	12.663542	18	https://www.golfclub-ruhpolding.de	0 86 63  24 61	1	1	1	0	0
+359	8701	Golfclub Goldachtal e.V.	84427	Sankt Wolfgang	Chiemseering 1	48.194979	12.472521		https://www.golfclub-goldachtal.de	08085 939102	0	0	0	0	0
+36	8817	Deggendorfer Golfclub e.V.	94571	Schaufling	Rusel 111	48.877137	13.082642	18	https://www.deggendorfer-golfclub.de	09920 8911	1	1	1	1	0
+609	8713	Golfplatz Scheidegg	88175	Scheidegg	Am großen Baum 7	47.571716	10.022696			08381 8899380	0	0	0	0	0
+162	8864	Golf- und Landclub Schmidmühlen e.V.	92287	Schmidmühlen	Theilberg 1a	49.266518	11.929564	18	https://www.golf-schmidmuehlen.de	09474 701	1	1	1	1	0
+66	8982	Golf & Yachtclub Gut Minoritenhof	93161	Sinzing	Minoritenhof 1	48.975453	12.028995		https://www.golfsinzing.de	0941 3786100	1	1	0	1	0
+288	8969	Golfclub am Nationalpark Bayerischer Wald e.V.	94568	St. Oswald	Haslach 43	48.879575	13.445760	18-Loch-Golfplatz	https://www.gcanp.de	08558 974980	1	1	1	1	0
+417	8880	Golfclub Leitershofen e.V.	86391	Stadtbergen	Deuringer Str. 20	48.364763	10.829046	9	https://www.golfclub-leitershofen.de	0821 437242	0	1	1	1	0
+526	8866	Golfclub Starnberg e.V.	82319	Starnberg	Uneringer Strasse 1	48.016278	11.280782	18	https://www.gcstarnberg.de	08151 12157	1	0	1	0	0
+636	8960	Gut Rieden Sport und Freizeit GmbH	82319	Starnberg	Rieden 1	48.024317	11.348620	18	https://www.gut-rieden.de	08151 9077-0	0	0	1	0	0
+77	8883	Golf Club Ebersberg e.V.	85643	Steinhöring	Zaißing 6	48.111219	12.023241	18/9	https://www.gc-ebersberg.de	08094 8106	1	1	1	1	0
+612	8922	Golfplatz Thailing GmbH & Co. KG	85643	Steinhöring	Thailing 4	48.112126	12.000866	24	https://www.golfplatz-thailing.de	08094 90550-0	1	1	1	1	0
+673	8843	Münchener Golf-Club e.V.	82064	Straßlach-Dingharting	Tölzer Str. 95	47.986197	11.506890	36	https://www.mgc-golf.de	08170929180	1	1	1	1	0
+221	8879	Golf-Club Oberfranken e.V.	95349	Thurnau	Petershof 1	50.031807	11.379251	18	https://www.gc-oberfranken.de	09228 319	1	1	1	1	0
+137	8717	Golf Resort Anetseder	94136	Thyrnau	Raßbach 8	48.608454	13.551591	18/6	https://www.golf-passau.de	08501 91313	1	1	1	1	0
+349	8897	Golfclub Fahrenbach	95709	Tröstau	Fahrenbach 1	50.005895	11.957821	18	https://www.golfclub-fahrenbach.de	09232 882250	0	0	1	0	0
+236	8869	Golf-Club Tutzing e.V.	82327	Tutzing	Gut Deixlfurt 7	47.929080	11.250297	18	https://www.golfclub-tutzing.de	0 81 58  36 00	1	1	1	1	0
+439	8875	Golfclub München Valley e.V.	83626	Valley	Am Golfplatz 1	47.869282	11.726520		https://www.golfvalley.de/	08024 902790	1	1	1	1	0
+70	8958	Golf Club Am Habsberg e.V.	92355	Velburg-Unterwiesenacker	Zum Golfplatz 1	49.300488	11.613648	18	https://www.juragolf.de	09182 931910	1	1	1	1	0
+251	8994	Golfanlage Gerhelm	91235	Velden	Gerhelm 1	49.616815	11.456561	18	http://www.gerhelm.de	09152 398	0	0	1	0	0
+547	8925	Golfclub Vilsbiburg e.V.	84137	Vilsbiburg-Trauterfing	Trauterfing 31	48.412323	12.332928	9	https://www.gc-vilsbiburg.de	08741 968680	1	1	1	1	0
+611	8730	Golfplatz Tegernsee	83666	Waakirchen	Sachsenkamer Str. 2a	47.813495	11.654484	18 + 6	http://www.golfplatz-waakirchen-tegernsee.de	+49 8021 5520	1	1	1	1	0
+52	8830	GAT Golf am Tegernsee - Margarethenhof	83666	Waakirchen/Marienstein	Gut Steinberg 2	47.748858	11.692457	18	https://www.margarethenhof.com	08022 75060	1	1	1	1	0
+707	8807	Tölzer Golfclub e.V.	83646	Wackersberg	Straß 128	47.759011	11.525282	9	https://www.toelzer-golfclub.de	080418084944	1	1	1	1	0
+144	8901	Golf- &  Landclub Karwendel e.V.	82499	Wallgau	Risser Straße 14	47.526634	11.294642	9	https://www.golfclub-karwendel.de	0 88 25 - 21 83	1	1	1	1	0
+272	8976	Golfanlage Weiherhof	86459	Weiherhof	Weiherhof 4	48.293079	10.706449	9	https://www.golfanlage-weiherhof.de	+498238965119	1	1	1	0	0
+185	8815	Golf-Club Coburg e.V. Schloss Tambach	96479	Weitramsdorf	Schlossallee 8	50.233940	10.863454	18	https://www.gc-coburg.de	09567 981158-0	1	1	1	1	0
+549	8872	Golfclub Waldegg-Wiggensbach e.V.	87487	Wiggensbach	Waldegg 3	47.747984	10.197064	27	https://www.golf-wiggensbach.com	0837093073	1	1	1	0	357
+305	8745	Golfclub Bergkramerhof GmbH & Co KG	82515	Wolfratshausen	Bergkramerhof 1	47.906684	11.402108		https://www.bergkramerhof.com	08171 4191-0	0	0	0	0	336
+562	8873	Golfclub Wörthsee e.V.	82237	Wörthsee	Gut Schluifeld 1	48.081901	11.219572	18/6		08153 93477-0	0	0	1	1	0
+125	8898	Golf Club Würzburg e.V.	97084	Würzburg	Am Golfplatz 2	49.745085	9.938286	18	https://www.golfclub-wuerzburg.de	0931 67890	1	1	1	1	0
