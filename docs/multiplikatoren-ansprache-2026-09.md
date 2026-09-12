@@ -4,9 +4,9 @@ Quelle: GPT-Output vom 03.09.2026, 49 priorisierte Verbände, Betreiber, Plattfo
 
 ## Ziel und Ton
 
-Ziel jeder Mail ist ein Termin (15 bis 30 Minuten, Video oder vor Ort), kein Abschluss. Beide Projekte in einer Mail: Firmengolf Events (live, Firmenevents auf Golfplätzen und Simulatoren, 22 Partnerplätze, erste Indoor-Partner) und Firmengolf Benefit (Golf als Mitarbeiterbenefit über den Arbeitgeber, firmengolf.app, Start mit den ersten Unternehmen rund um die Partnerplätze). Welches Projekt vorne steht, hängt vom Empfänger ab. Jede Mail hat einen eigenen Aufhänger aus dem Set (Vorschlag und nächster Schritt), keine Serienmail. Sie-Form bei Verbänden, Messen und Software, Du nur, wo die Organisation selbst so kommuniziert (Creator, GolfPunk). Terminvorschlag über den HubSpot-Link, bei Rückmeldung konkrete Slots aus Julius' Kalender.
+Ziel jeder Mail ist ein Termin (15 bis 30 Minuten, Video oder vor Ort), kein Abschluss. Beide Projekte in einer Mail: Firmengolf Events (live, Firmenevents auf Golfplätzen und Simulatoren, 22 Partnerplätze, erste Indoor-Partner) und Firmengolf Benefit (Golf als Mitarbeiterbenefit über den Arbeitgeber, startet 2027, über 23 Partnerplätze in Bayern und Hamburg in Kooperation, Julius 12.09.). Welches Projekt vorne steht, hängt vom Empfänger ab. Jede Mail hat einen eigenen Aufhänger aus dem Set (Vorschlag und nächster Schritt), keine Serienmail. Sie-Form bei Verbänden, Messen und Software, Du nur, wo die Organisation selbst so kommuniziert (Creator, GolfPunk). Terminvorschlag über den HubSpot-Link, bei Rückmeldung konkrete Slots aus Julius' Kalender.
 
-## Vorschlag Welle M1 (13 Mails, Termin als Ziel)
+## Welle M1 (12 Mails, Termin als Ziel, Entwürfe angelegt 12.09.2026)
 
 | Nr | Organisation | Ansprechpartner | Projekt vorne | Aufhänger |
 |---|---|---|---|---|
@@ -22,7 +22,7 @@ Ziel jeder Mail ist ein Termin (15 bis 30 Minuten, Video oder vor Ort), kein Abs
 | 40 | VDVO | Katja Helmreich | Events | Showcase bei Planern, Referral |
 | 46 | MEET GERMANY | Nhung Nguyen | Events | Demostop bei regionalen Summits |
 | 49 | Zukunft Personal | Dalma Paimann | Benefit | Live-Teamchallenge als HR-Aktivierung |
-| 10 | PC CADDIE | Marc Spangenberger | beide | No-Code-Pilot: Webinar, Formular, Referral |
+
 
 ## Welle M2 (nach den ersten Rückmeldungen)
 
@@ -30,11 +30,13 @@ DGS/golf.de (4), Albatros (11), CLUB IN ONE (12), Sommerfeld (14), forma.golf (1
 
 ## Zurückgestellt
 
+PC CADDIE (10): Julius kennt das Team persönlich, sie würden eine API geben, suchen aber keine Kooperationen (12.09.).
+
 DGV (5, erst nach DGS), Topgolf Oberhausen (25, Wettbewerber im Indoor-Segment), GOLF absolute (9, eigener Eventvertrieb, erst Kundenschutz klären), Garmin (24, nur über Formular), Langer Sport Marketing (18), U.COM Player (17), Titleist (23), Golfamore (15), GOLF MAGAZIN, GolfPunk, GOLF TIME, GOLF'N'STYLE (27 bis 30, bezahlte Reichweite), Messe Stuttgart (34), Köllen (35), VDR (45), EVENT PARTNER (41).
 
 ## Ablauf
 
-1. Julius bestätigt oder ändert die M1-Liste.
+1. M1-Liste bestätigt (12.09.), PC CADDIE raus.
 2. 13 individuelle Outlook-Entwürfe mit Signatur, jeweils 150 bis 200 Wörter, ein Aufhänger, ein Terminvorschlag.
 3. Versand durch Julius, Status in der TSV.
 4. Bei Rückmeldung: Slots aus dem Kalender vorschlagen, Termin eintragen.
