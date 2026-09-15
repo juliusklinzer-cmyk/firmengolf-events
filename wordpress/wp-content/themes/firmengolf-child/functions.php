@@ -94,16 +94,45 @@ add_action( 'template_redirect', function () {
 
 // Marken-Entität: Organization auf allen Seiten, WebSite auf der Startseite (für Google Knowledge + KI).
 add_action( 'wp_head', function () {
+	// KI-Sichtbarkeit (15.09.2026): Eigenname „Firmengolf Events" (nicht nur „Firmengolf",
+	// das mehrere Clubs als Programmname nutzen), plus Adresse, Telefon, Gründer,
+	// Leistungsgebiet und Themen, damit Modelle die Entität sauber zuordnen können.
+	$c   = function_exists( 'fge_company' ) ? fge_company() : [];
 	$org = [
-		'@context'    => 'https://schema.org',
-		'@type'       => 'Organization',
-		'name'        => 'Firmengolf',
-		'url'         => home_url( '/' ),
-		'description' => 'Firmenevents auf Golfplätzen in ganz Deutschland: Teamevents, Firmenturniere, Platzreife und Workshops. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
-		'sameAs'      => [
+		'@context'      => 'https://schema.org',
+		'@type'         => 'Organization',
+		'@id'           => home_url( '/#organization' ),
+		'name'          => 'Firmengolf Events',
+		'alternateName' => [ 'Firmengolf', 'Firmengolf-Events' ],
+		'legalName'     => $c['legal_name'] ?? 'Visionpunch UG (haftungsbeschränkt)',
+		'url'           => home_url( '/' ),
+		'description'   => 'Firmengolf Events vermittelt Firmenevents auf Golfplätzen und in Golfsimulatoren in ganz Deutschland: Teamevents, Firmenturniere, After-Work-Golf, Platzreife, Workshops und Weihnachtsfeiern, auch für Teams ohne Golferfahrung. Eine Anfrage, ein Ansprechpartner, eine Rechnung.',
+		'foundingDate'  => '2026',
+		'founder'       => [ '@type' => 'Person', 'name' => $c['managing_director'] ?? 'Julius Klinzer', 'jobTitle' => 'Gründer und Geschäftsführer' ],
+		'address'       => [
+			'@type'           => 'PostalAddress',
+			'streetAddress'   => $c['hq_street'] ?? 'Heerstr. 37',
+			'postalCode'      => $c['hq_zip'] ?? '81247',
+			'addressLocality' => $c['hq_city'] ?? 'München',
+			'addressCountry'  => 'DE',
+		],
+		'telephone'     => $c['phone_tel'] ?? '+498912251010',
+		'email'         => $c['email_general'] ?? 'hallo@firmengolf-events.de',
+		'areaServed'    => [ '@type' => 'Country', 'name' => 'Deutschland' ],
+		'knowsAbout'    => [ 'Firmenevents', 'Golf-Teamevents', 'Firmen-Golfturniere', 'After-Work-Golf', 'Platzreife für Firmen', 'Weihnachtsfeier am Golfsimulator', 'Teamevent-Alternative', 'Golf als Mitarbeiterbenefit' ],
+		'contactPoint'  => [
+			'@type'             => 'ContactPoint',
+			'contactType'       => 'sales',
+			'telephone'         => $c['phone_tel'] ?? '+498912251010',
+			'email'             => $c['email_events'] ?? 'events@firmengolf-events.de',
+			'availableLanguage' => 'de',
+			'areaServed'        => 'DE',
+		],
+		'sameAs'        => [
 			'https://www.instagram.com/firmengolf/',
 			'https://www.facebook.com/Firmengolf',
 			'https://www.linkedin.com/company/firmengolf/',
+			'https://firmengolf.app/',
 		],
 	];
 	$logo = function_exists( 'get_site_icon_url' ) ? get_site_icon_url( 512 ) : '';
@@ -112,10 +141,13 @@ add_action( 'wp_head', function () {
 
 	if ( is_front_page() ) {
 		$site = [
-			'@context' => 'https://schema.org',
-			'@type'    => 'WebSite',
-			'name'     => 'Firmengolf',
-			'url'      => home_url( '/' ),
+			'@context'      => 'https://schema.org',
+			'@type'         => 'WebSite',
+			'name'          => 'Firmengolf Events',
+			'alternateName' => 'Firmengolf',
+			'url'           => home_url( '/' ),
+			'publisher'     => [ '@id' => home_url( '/#organization' ) ],
+			'inLanguage'    => 'de',
 		];
 		echo '<script type="application/ld+json">' . wp_json_encode( $site ) . '</script>' . "\n";
 	}

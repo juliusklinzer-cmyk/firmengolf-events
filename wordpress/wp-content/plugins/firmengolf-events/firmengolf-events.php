@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.255' );
+define( 'FGE_VERSION', '1.9.256' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -43,6 +43,7 @@ require_once FGE_DIR . 'includes/frontend.php';
 require_once FGE_DIR . 'includes/city-landing.php';
 require_once FGE_DIR . 'includes/format-landing.php';
 require_once FGE_DIR . 'includes/pillar-alternative.php';
+require_once FGE_DIR . 'includes/ai-visibility.php';
 require_once FGE_DIR . 'includes/citformat-landing.php';
 require_once FGE_DIR . 'includes/seo-sitemap.php';
 require_once FGE_DIR . 'includes/scheduling.php';
