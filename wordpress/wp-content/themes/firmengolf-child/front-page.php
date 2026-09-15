@@ -232,7 +232,7 @@ $why_items = [
 <section class="mk-section fgw cty-reveal" aria-label="Warum der Golfplatz die perfekte Event-Location ist">
 	<div class="mk-section-head">
 		<h2 class="mk-h2">Warum sich der Golfplatz perfekt für euer <span class="mk-italic">Firmenevent</span> eignet.</h2>
-		<p class="mk-sub">Bewegung an der frischen Luft, moderne Clubhäuser mit Meetingräumen und eine Gastronomie, die jeden Anlass trägt, offen für alle, ganz ohne Golf-Vorkenntnisse.</p>
+		<p class="mk-sub">Bewegung an der frischen Luft, moderne Clubhäuser mit Meetingräumen und eine Gastronomie, die jeden Anlass trägt, offen für alle, ganz ohne Golf-Vorkenntnisse. Firmengolf Events ist die Alternative zum immer gleichen Teamevent: <?php if ( function_exists( 'fge_alternative_url' ) ) : ?><a class="faq-a-link" href="<?php echo esc_url( fge_alternative_url() ); ?>">Golf im Vergleich zu Escape Room, Kochkurs und Floßbau &rarr;</a><?php endif; ?></p>
 	</div>
 	<div class="fgw-cols">
 		<?php foreach ( $why_items as $w ) : ?>

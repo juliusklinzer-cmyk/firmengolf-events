@@ -722,6 +722,9 @@ $play_formats = [
 			<?php foreach ( $formats as $fslug => $f ) : if ( $fslug === $slug ) continue; ?>
 				<a class="mk-cta-mail" href="<?php echo esc_url( home_url( '/firmenevent/' . $fslug . '/' ) ); ?>"><?php echo esc_html( $f['name'] ); ?> →</a>
 			<?php endforeach; ?>
+			<?php if ( function_exists( 'fge_alternative_url' ) ) : ?>
+				<a class="mk-cta-mail" href="<?php echo esc_url( fge_alternative_url() ); ?>">Teamevent-Alternative im Vergleich →</a>
+			<?php endif; ?>
 		</div>
 	</div>
 </section>

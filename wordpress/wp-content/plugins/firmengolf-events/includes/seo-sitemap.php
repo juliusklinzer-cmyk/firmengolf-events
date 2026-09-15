@@ -117,6 +117,11 @@ add_action( 'init', function () {
 					}
 				}
 
+				// Pillar-Seite Teamevent-Alternative (KI-Sichtbarkeit, 15.09.2026).
+				if ( function_exists( 'fge_alternative_url' ) ) {
+					$list[] = [ 'loc' => fge_alternative_url() ];
+				}
+
 				// Format×Stadt-Landingpages (nur scharf geschaltete Städte).
 				if ( function_exists( 'fge_citformat_enabled_cities' ) && function_exists( 'fge_get_event_format_pages' ) ) {
 					foreach ( fge_citformat_enabled_cities() as $cslug ) {
