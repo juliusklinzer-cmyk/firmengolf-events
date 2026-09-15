@@ -2,7 +2,9 @@
 
 Erstellt per Microsoft-365-Connector direkt im Entwürfe-Ordner, Text wie Welle 1 nach Julius' Korrekturen. Neu gegenüber Welle 1: Firmengolf-Signatur (Textversion, ohne Bild) steht schon im Entwurf, und ein Satz mit Social Proof am Ende: „Die erste Anlage ist schon dabei, RUFF Golf in Dreieich" mit Link auf `/firmenevents/weihnachtsfeier-im-ruff/`.
 
-**Absender:** Die Entwürfe hängen am Postfach julius@visionpunch.de, der Connector kann kein Von-Feld setzen. Vor dem Senden in Outlook „Von" auf julius@firmengolf-events.de umstellen (bei Welle 1 hat das für 20 von 21 Mails geklappt, nur Tap Inn ging von visionpunch raus). Wenn Outlook beim Öffnen die Bild-Signatur zusätzlich einfügt, die Textsignatur im Entwurf löschen, sonst steht sie doppelt.
+**Änderung 15.09. (alle offenen Entwürfe, Wunsch von Julius):** Links stehen nicht mehr ausgeschrieben, sondern als Linktext mit hinterlegter URL: „Onboarding“ (Partner-Onboarding), „Weihnachtsfeier“ (Formatseite), „Weihnachtsfeier im RUFF“ (RUFF-Event). Die Textsignatur ist aus allen Entwürfen entfernt, weil Outlook beim Öffnen Julius’ eigene Signatur (mit „Sportliche Grüße“) einfügt und die Textversion sonst doppelt stand. Neue Entwürfe künftig ohne Signatur und mit Linktext anlegen.
+
+**Absender:** Die Entwürfe hängen am Postfach julius@visionpunch.de, der Connector kann kein Von-Feld setzen. Vor dem Senden in Outlook „Von" auf julius@firmengolf-events.de umstellen (bei Welle 1 hat das für 20 von 21 Mails geklappt, nur Tap Inn ging von visionpunch raus). Signatur kommt beim Öffnen automatisch aus Outlook (seit 15.09. keine Textsignatur mehr im Entwurf).
 
 **Empfänger (25 Mails für 27 Anlagen):** Indoor Golf Mannheim 77, Indoor Golf Rottal (Sie-Form, Herr Lamprecht), TOUR GREEN Oberhaid, chigolf Hohenbrunn, Golftempel Berlin, Kim Screen Golf Berlin, Nate Danner Golf (eine Mail für Schöneberg und Reinickendorf, Du-Form, „Hallo Nate"), Eagleswing Hamburg, Golf in a Box (eine Mail für Rotherbaum und Niendorf), Green Grid Golf Club Hamburg, Tee It Up Hamburg, Indoor Golf & Lounge Kronberg, The Golf Loft Bensheim, GOLF LIFE Langenfeld, Next Golf Münster, Team Spieckerhoff Langenfeld, VYBE Saarbrücken, GO! Indoor Golfclub Dresden, Golf At Your Best Leipzig, Birdie Box Hamburg, Eisen Sieben Glinde, X-Flex Kaltenkirchen, Indoor Golf Erfurt, Indoor Golf Oberhof, Golfersworld Moosinning.
 
@@ -34,17 +36,15 @@ Kurz die Eckdaten:
 
 - Kostet euch nichts. Ihr hinterlegt euren Preis, unseren Aufschlag zahlt der Kunde.
 - Ihr sagt bei jeder Anfrage selbst ja oder nein, nichts wird über euren Kopf hinweg gebucht.
-- Anlegen dauert etwa zehn Minuten: firmengolf-events.de/partner-onboarding/?ob_type=indoor
+- Anlegen dauert etwa zehn Minuten: Onboarding (Link auf /partner-onboarding/?ob_type=indoor)
 - Die angelegten Events könnt ihr per Code-Snippet auch auf eurer eigenen Seite anzeigen lassen.
 
 Wenn ihr Lust habt, euer Angebot ein bisschen zu erweitern, probiert es einfach aus. Wenn nicht, auch gut. Und wenn ihr Hilfe beim Einrichten braucht oder Fragen habt, ruft mich einfach an, dann gehen wir das in zehn Minuten gemeinsam durch.
 
-So sieht die Seite aus, auf der Firmen euch finden: firmengolf-events.de/firmenevent/weihnachtsfeier
-Die erste Anlage ist schon dabei, RUFF Golf in Dreieich: firmengolf-events.de/firmenevents/weihnachtsfeier-im-ruff
+So sieht die Seite aus, auf der Firmen euch finden: Weihnachtsfeier (Link auf /firmenevent/weihnachtsfeier/)
+Die erste Anlage ist schon dabei, RUFF Golf in Dreieich: Weihnachtsfeier im RUFF (Link auf /firmenevents/weihnachtsfeier-im-ruff/)
 
-Sportliche Grüße
-Julius Klinzer
-Gründer & Betriebswirt, Firmengolf-Events; Visionpunch UG (haftungsbeschränkt), Termin buchen (HubSpot-Link), Mobil, Büro, Heerstr. 37, 81247 München, julius@firmengolf-events.de, www.firmengolf-events.de
+(keine Signatur im Entwurf, Outlook fügt Julius’ Signatur beim Öffnen ein)
 
 ## Antwort an Tap Inn (Entwurf, im Thread)
 

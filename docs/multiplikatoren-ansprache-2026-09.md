@@ -37,7 +37,7 @@ DGV (5, erst nach DGS), Topgolf Oberhausen (25, Wettbewerber im Indoor-Segment),
 ## Ablauf
 
 1. M1-Liste bestätigt (12.09.), PC CADDIE raus.
-2. 13 individuelle Outlook-Entwürfe mit Signatur, jeweils 150 bis 200 Wörter, ein Aufhänger, ein Terminvorschlag.
+2. 12 individuelle Outlook-Entwürfe, jeweils 150 bis 200 Wörter, ein Aufhänger, ein Terminvorschlag. Seit 15.09. ohne Textsignatur (Outlook fügt Julius’ Signatur beim Öffnen ein), der HubSpot-Terminlink bleibt im Fließtext.
 3. Versand durch Julius, Status in der TSV.
 4. Bei Rückmeldung: Slots aus dem Kalender vorschlagen, Termin eintragen.
 5. Nachfass nach 7 Tagen, einmal.

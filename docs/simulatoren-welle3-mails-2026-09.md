@@ -2,7 +2,9 @@
 
 Erstellt per Microsoft-365-Connector direkt im Entwürfe-Ordner, jede Mail einzeln formuliert (Anrede, Ort, Einzugsgebiet, Angebotssatz je Typ). Signatur als Textversion im Entwurf, Social-Proof-Satz mit RUFF Golf Dreieich am Ende, wie Welle 2.
 
-**Absender:** Vor dem Senden in Outlook „Von" auf julius@firmengolf-events.de umstellen (Connector kann kein Von-Feld setzen). Falls Outlook die Bild-Signatur zusätzlich einfügt, die Textsignatur im Entwurf löschen.
+**Änderung 15.09. (alle offenen Entwürfe, Wunsch von Julius):** Links stehen nicht mehr ausgeschrieben, sondern als Linktext mit hinterlegter URL: „Onboarding“ (Partner-Onboarding), „Weihnachtsfeier“ (Formatseite), „Weihnachtsfeier im RUFF“ (RUFF-Event). Die Textsignatur ist aus allen Entwürfen entfernt, weil Outlook beim Öffnen Julius’ eigene Signatur (mit „Sportliche Grüße“) einfügt und die Textversion sonst doppelt stand. Neue Entwürfe künftig ohne Signatur und mit Linktext anlegen.
+
+**Absender:** Vor dem Senden in Outlook „Von" auf julius@firmengolf-events.de umstellen (Connector kann kein Von-Feld setzen). Signatur kommt beim Öffnen automatisch aus Outlook (seit 15.09. keine Textsignatur mehr im Entwurf).
 
 **Umfang:** 102 Zeilen in Welle 3, daraus 100 Mails. Übersprungen: GO! Golf-Offensive Maritim Hotel Dresden (gleicher Betreiber wie GO! Waldschlösschen, hat den Welle-2-Entwurf), HohmannGolf Indoorgolf Berlin (in der Mail an Golf Studio Berlin enthalten, dort mit Bitte um Klärung, welcher Standort aktuell ist).
 
