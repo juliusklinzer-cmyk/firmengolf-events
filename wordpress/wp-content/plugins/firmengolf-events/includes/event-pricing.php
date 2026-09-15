@@ -303,6 +303,36 @@ function fge_format_price_from_label( array $types ): string {
 }
 
 /**
+ * Preisübersicht je Format-Hub für Startseite und llms.txt (KI-Sichtbarkeit, 15.09.2026):
+ * Zeilen [ label, from, to|null, url ] nur für Hubs mit aktuell buchbarem Pro-Person-Angebot.
+ *
+ * @return array<int,array{label:string,from:float,to:float,url:string,min_url:string}>
+ */
+function fge_price_overview_rows(): array {
+	if ( ! function_exists( 'fge_get_event_format_pages' ) ) {
+		return [];
+	}
+	$rows = [];
+	foreach ( fge_get_event_format_pages() as $slug => $f ) {
+		if ( empty( $f['types'] ) ) {
+			continue;
+		}
+		$r = fge_format_price_range( (array) $f['types'] );
+		if ( ! $r ) {
+			continue;
+		}
+		$rows[] = [
+			'label'   => (string) $f['name'],
+			'from'    => (float) $r['min'],
+			'to'      => (float) $r['max'],
+			'url'     => home_url( '/firmenevent/' . $slug . '/' ),
+			'min_url' => (string) $r['min_url'],
+		];
+	}
+	return $rows;
+}
+
+/**
  * Aufzählung „Teamevents ab 20 €, Workshops ab 230 €" für Preis-FAQs.
  * Formate ohne aktuelles Angebot fallen still raus, statt eine Zahl zu erfinden.
  *

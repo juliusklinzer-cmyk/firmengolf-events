@@ -7553,3 +7553,11 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
   .alt-lp .ev-hero .ev-hero-sub { font-size: 15px; max-width: 34ch; }
   .alt-lp .alt-lead-more { display: none; }
 }
+/* Preiszeile unter dem Hero der Format-Hubs und Preisblock auf der Startseite (15.09.2026) */
+.fmt-pricebar { max-width: var(--width-page); margin: 18px auto 0; padding: 0 24px; }
+.fmt-pricebar-in { margin: 0; padding: 14px 18px; border: 1px solid var(--ink-200); border-radius: 12px; background: var(--paper-50); font-size: 15px; line-height: 1.5; color: var(--ink-700); }
+.fmt-pricebar-in strong { color: var(--ink-900); }
+.home-prices-table tbody th a { color: inherit; text-decoration: none; }
+.home-prices-table tbody th a:hover { text-decoration: underline; }
+.home-prices .fg-compare-note a { margin-right: 6px; }
+@media (max-width: 720px) { .fmt-pricebar { padding: 0 16px; } }

@@ -341,6 +341,35 @@ $home_fmt_tiles = [
 	</div>
 </section>
 
+<?php /* ══════════════════ 5b. PREISE (KI-Sichtbarkeit 15.09.2026): Zahlen aus den Live-Events ══════════════════ */
+$home_prices = function_exists( 'fge_price_overview_rows' ) ? fge_price_overview_rows() : [];
+if ( $home_prices ) : ?>
+<section class="mk-section home-prices cty-reveal" id="preise" aria-label="Was kostet ein Firmenevent auf dem Golfplatz">
+	<div class="mk-section-head">
+		<div class="mk-eyebrow">Preise</div>
+		<h2 class="mk-h2">Was kostet ein Firmenevent auf dem <em class="mk-italic">Golfplatz</em>?</h2>
+		<p class="mk-sub">Pro Person, netto, aus unseren aktuell buchbaren Events. Der reine Grundlagenkurs mit eigener Anreise ist immer die günstigste Variante, Verpflegung, Turnier und Rahmenprogramm kommen nach Wunsch dazu.</p>
+	</div>
+	<div class="fg-compare-wrap">
+		<table class="fg-compare fg-compare--keyval home-prices-table">
+			<tbody>
+			<?php foreach ( $home_prices as $row ) : ?>
+				<tr>
+					<th scope="row"><a href="<?php echo esc_url( $row['url'] ); ?>"><?php echo esc_html( $row['label'] ); ?></a></th>
+					<td><?php
+						echo esc_html( $row['to'] > $row['from']
+							? fge_price_eur( $row['from'] ) . ' bis ' . fge_price_eur( $row['to'] ) . ' pro Person'
+							: 'ab ' . fge_price_eur( $row['from'] ) . ' pro Person' );
+					?> <a class="faq-a-link" href="<?php echo esc_url( $row['min_url'] ); ?>">Günstigstes Angebot &rarr;</a></td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+	<p class="fg-compare-note">Stand heute, die Spannen ändern sich mit dem Angebot der Plätze. Mehr dazu: <a class="faq-a-link" href="<?php echo esc_url( home_url( '/was-kostet-ein-firmen-golfevent/' ) ); ?>">Was kostet ein Firmen-Golfevent &rarr;</a> und <a class="faq-a-link" href="<?php echo esc_url( home_url( '/teamevent-alternative/' ) ); ?>">Golf im Vergleich zu anderen Teamevents &rarr;</a></p>
+</section>
+<?php endif; ?>
+
 <?php /* ══════════════════ 6. INDIVIDUAL TEASER ══════════════════ */ ?>
 <section class="mk-section home-individual cty-reveal" aria-label="Individuelle Events">
 	<div class="home-individual-grid">

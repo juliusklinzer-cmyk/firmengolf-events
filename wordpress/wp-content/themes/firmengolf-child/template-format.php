@@ -500,6 +500,18 @@ $play_formats = [
 	</div>
 </section>
 
+<?php /* Preiszeile unter dem Hero (KI-Sichtbarkeit 15.09.2026): sichtbare Spanne aus den Live-Events */
+$fmt_range = ( ! empty( $format['types'] ) && function_exists( 'fge_format_price_range' ) ) ? fge_format_price_range( (array) $format['types'] ) : null;
+if ( $fmt_range ) : ?>
+<section class="fmt-pricebar" aria-label="Preis pro Person">
+	<p class="fmt-pricebar-in"><strong>Preis pro Person:</strong> <?php
+		echo esc_html( $fmt_range['max'] > $fmt_range['min']
+			? fge_price_eur( $fmt_range['min'] ) . ' bis ' . fge_price_eur( $fmt_range['max'] )
+			: 'ab ' . fge_price_eur( $fmt_range['min'] ) );
+	?>, netto, aus den aktuell buchbaren <?php echo esc_html( $f_name ); ?>-Angeboten. <a class="faq-a-link" href="<?php echo esc_url( $fmt_range['min_url'] ); ?>">Günstigstes Angebot ansehen &rarr;</a></p>
+</section>
+<?php endif; ?>
+
 <?php /* Icon-Facts direkt unter dem Hero: die Antworten, die Ads-Besucher zuerst suchen
 	(Kachel-Design, volle Container-Breite, vereint Facts + frühere Gründe-Sektion) */ ?>
 <?php if ( ! empty( $format['facts'] ) ) : ?>
