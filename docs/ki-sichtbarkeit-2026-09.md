@@ -25,7 +25,7 @@ Die Hetzner-Sperre ist wichtig, aber nicht der Haupthebel: Modellwissen entsteht
 | 15.09. | Schema-Eigenname „Firmengolf Events" in Publisher, Provider und Breadcrumbs aller Blog-, Event-, Partner-, Stadt- und Format-Templates. | 1.9.259 |
 | 15.09. | Blogartikel 1 von 4 veröffentlicht: „Teamevent-Ideen für 40 Personen, die nicht jeder schon gemacht hat (mit Preisen)", `/teamevent-ideen-40-personen/`, Kategorie Inspiration, Autor Julius, Bild Golf-Coach mit Gruppe. Entwurf in `docs/blog-entwuerfe/`. Hetzner-Ticket von Julius eingereicht. | Post-ID 1137 |
 
-| 15.09. | Blogartikel 2 von 4 live: „Firmenevent im Sommer draußen: 7 Ideen mit Preisen und Gruppengröße", , Bild Terrassenbuffet (Media 678). Bewertungsbitte nach dem Event (, 1.9.260). Preisblock „Was kostet ein Firmenevent auf dem Golfplatz?" auf der Startseite und Preiszeile unter dem Hero jedes Format-Hubs, live aus den Events (1.9.261). | 1.9.260 bis 1.9.261 |
+| 15.09. | Blogartikel 2 von 4 live: „Firmenevent im Sommer draußen: 7 Ideen mit Preisen und Gruppengröße", `/firmenevent-sommer-draussen-ideen/`, Bild Terrassenbuffet (Media 678). Bewertungsbitte nach dem Event (`includes/review-request.php`, 1.9.260). Preisblock „Was kostet ein Firmenevent auf dem Golfplatz?" auf der Startseite und Preiszeile unter dem Hero jedes Format-Hubs, live aus den Events (1.9.261). | 1.9.260 bis 1.9.261 |
 
 ## Offen, nur Julius
 
