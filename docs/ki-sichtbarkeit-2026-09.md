@@ -23,6 +23,9 @@ Die Hetzner-Sperre ist wichtig, aber nicht der Haupthebel: Modellwissen entsteht
 | 15.09. | `/llms.txt`: Was Firmengolf Events ist, Abgrenzung des Eigennamens, Ablauf, Formate mit Links, Live-Preisspannen, Städte, Anbieter-Seiten, Blog, Kontakt. | 1.9.256 |
 | 15.09. | Organization-Schema: Name „Firmengolf Events", alternateName, legalName, Adresse, Telefon, E-Mail, Gründer, Gründungsjahr, areaServed, knowsAbout, contactPoint, sameAs inkl. firmengolf.app. WebSite-Schema mit publisher. | 1.9.256 |
 
+| 15.09. | Schema-Eigenname „Firmengolf Events" in Publisher, Provider und Breadcrumbs aller Blog-, Event-, Partner-, Stadt- und Format-Templates. | 1.9.259 |
+| 15.09. | Blogartikel 1 von 4 veröffentlicht: „Teamevent-Ideen für 40 Personen, die nicht jeder schon gemacht hat (mit Preisen)", `/teamevent-ideen-40-personen/`, Kategorie Inspiration, Autor Julius, Bild Golf-Coach mit Gruppe. Entwurf in `docs/blog-entwuerfe/`. Hetzner-Ticket von Julius eingereicht. | Post-ID 1137 |
+
 ## Offen, nur Julius
 
 1. **Hetzner-Ticket** (Text unten) für GPTBot, ClaudeBot, meta-externalagent, beide Domains. Erfolg prüfen: `curl -s -o /dev/null -w "%{http_code}" -A "Mozilla/5.0 (compatible; GPTBot/1.0)" https://firmengolf-events.de/` muss 200 liefern.
