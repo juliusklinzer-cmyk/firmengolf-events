@@ -7544,3 +7544,12 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
   .fg-compare--keyval tbody tr:last-child { border-radius: 0 0 20px 20px; }
   .fg-compare--keyval tbody th { width: auto; padding-bottom: 2px; border-bottom: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-500); font-family: var(--font-body); }
 }
+/* Hero der Pillar-Seite: mehr Bild, weniger Text (Julius, 15.09.2026). Desktop höher,
+   auf Mobile fast bildschirmfüllend, der zweite Satz des Leads fällt dort weg. */
+.alt-hero-photo { aspect-ratio: 16/8; min-height: 460px; background-position: center 42%; }
+@media (max-width: 768px) {
+  .alt-lp .ev-hero .alt-hero-photo { min-height: 72vh; min-height: 72dvh; background-position: 55% 40%; }
+  .alt-lp .ev-hero .ev-hero-title { font-size: clamp(27px, 7vw, 34px); }
+  .alt-lp .ev-hero .ev-hero-sub { font-size: 15px; max-width: 34ch; }
+  .alt-lp .alt-lead-more { display: none; }
+}

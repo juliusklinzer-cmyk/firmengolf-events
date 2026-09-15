@@ -89,7 +89,7 @@ function fge_llms_txt_content(): string {
 	$lines[] = '';
 	$lines[] = '## Preise';
 	$lines[] = '';
-	$lines[] = 'Alle Preise pro Person, netto, abhängig von Platz, Verpflegung und Programm. ' . ( $price_summary ? 'Aktuell buchbar: ' . $price_summary . '.' : 'Konkrete Preise stehen auf jeder Eventseite.' ) . ' Der reine Grundlagenkurs mit eigener Anreise ist die günstigste Variante. Richtwert für ein volles Teamevent mit Kurs, Challenge und Essen: 80 bis 200 Euro pro Person. Gruppengröße ideal 6 bis 12 Personen, mit mehreren Golflehrern bis etwa 80.';
+	$lines[] = 'Alle Preise pro Person, netto, abhängig von Platz, Verpflegung und Programm. ' . ( $price_summary ? 'Aktuell buchbar: ' . $price_summary . '.' : 'Konkrete Preise stehen auf jeder Eventseite.' ) . ' Der reine Grundlagenkurs mit eigener Anreise ist die günstigste Variante. Richtwert für ein volles Teamevent mit Kurs, Challenge und Essen: 80 bis 200 Euro pro Person. Gruppengröße ideal 6 bis 12 Personen, mit mehreren Golflehrern bis etwa 80, als Firmenturnier über den ganzen Tag bis rund 200, im Extremfall auf Anlagen mit mehreren Plätzen bis 300.';
 	$lines[] = '';
 	$lines[] = '## Städte';
 	$lines[] = '';

@@ -41,7 +41,7 @@ function fge_alternative_page_data(): array {
 	$partner_tx = 'über 20 Partnerplätzen'; // Stand 15.09.2026: 22 aktive Plätze (docs/partner-uebersicht.csv)
 
 	$definition = sprintf(
-		'Ein Golf-Teamevent ist eine Alternative zu Escape Room, Kochkurs und Floßbau: ein Firmenevent auf dem Golfplatz für Teams ohne Golferfahrung. Ein Golflehrer führt an, Schläger und Bälle werden gestellt, danach spielt das Team eine kleine Challenge gegeneinander. Dauer drei bis sechs Stunden, ideal für 6 bis 12 Personen, mit mehreren Golflehrern bis etwa 80, %s pro Person netto, je nach Verpflegung und Programm. Buchbar auf fast jedem Golfplatz in Deutschland, oft mit dem Nahverkehr erreichbar, im Winter auch indoor am Simulator.',
+		'Ein Golf-Teamevent ist eine Alternative zu Escape Room, Kochkurs und Floßbau: ein Firmenevent auf dem Golfplatz für Teams ohne Golferfahrung. Ein Golflehrer führt an, Schläger und Bälle werden gestellt, danach spielt das Team eine kleine Challenge gegeneinander. Dauer drei bis sechs Stunden, ideal für 6 bis 12 Personen, mit mehreren Golflehrern bis etwa 80, als Firmenturnier über den ganzen Tag bis rund 200, %s pro Person netto, je nach Verpflegung und Programm. Buchbar auf fast jedem Golfplatz in Deutschland, oft mit dem Nahverkehr erreichbar, im Winter auch indoor am Simulator.',
 		$golf_price
 	);
 
@@ -62,7 +62,7 @@ function fge_alternative_page_data(): array {
 	$compare = [
 		'cols' => [ 'Format', 'Dauer', 'Gruppengröße', 'Vorkenntnisse', 'Ort und Wetter', 'Preis pro Person', 'Was bleibt' ],
 		'rows' => [
-			[ 'Golf-Teamevent', '3 bis 6 Std.', 'ideal 6 bis 12, mit mehreren Golflehrern bis 80', 'keine', 'draußen, auch bei Regen; im Winter indoor am Simulator', $golf_price . ' netto', 'ein Sport, der bleibt: Nach dem Schnupperkurs buchen viele einen Platzreifekurs nach', true ],
+			[ 'Golf-Teamevent', '3 bis 6 Std.', 'ideal 6 bis 12, mit mehreren Golflehrern bis 80, als Turnier über den Tag bis 200', 'keine', 'draußen, auch bei Regen; im Winter indoor am Simulator', $golf_price . ' netto', 'ein Sport, der bleibt: Nach dem Schnupperkurs buchen viele einen Platzreifekurs nach', true ],
 			[ 'Escape Room', '60 bis 90 Min.', '2 bis 8 pro Raum, große Gruppen parallel', 'keine', 'indoor', 'ca. 25 bis 40 €', 'kurz und intensiv, fast jedes Team kennt es schon', false ],
 			[ 'Kochkurs', '3 bis 4 Std.', '8 bis 30', 'keine', 'indoor', 'ca. 90 bis 150 €', 'gemeinsames Essen, wenig Bewegung', false ],
 			[ 'Floßbau', 'halber Tag', '10 bis 100', 'keine', 'draußen am See, stark wetterabhängig', 'ca. 60 bis 120 €', 'einmaliges Erlebnis, im Winter nicht möglich', false ],
@@ -86,7 +86,7 @@ function fge_alternative_page_data(): array {
 		[ 'q' => 'Was kostet ein Golf-Teamevent im Vergleich zu anderen Teamevents?', 'a' => sprintf( 'Unsere buchbaren Golf-Teamevents liegen aktuell bei %s pro Person netto. Zum Vergleich: Escape Room etwa 25 bis 40 Euro, Kochkurs 90 bis 150 Euro, Floßbau 60 bis 120 Euro. Der reine Grundlagenkurs ist die günstigste Golf-Variante, Verpflegung und Turnier kommen nach Wunsch dazu.', $golf_price ) ],
 		[ 'q' => 'Muss jemand aus dem Team Golf spielen können?', 'a' => 'Nein. Das Format ist für Teams ohne Vorerfahrung gebaut. Ein Golflehrer holt die Gruppe ab, stattet sie mit Leihschlägern aus und erklärt die Grundlagen auf der Übungsanlage. Bei jeder Eventseite steht, ob ein Golflehrer dabei ist und wie der Tag abläuft.' ],
 		[ 'q' => 'Was ist, wenn im Team Golfer und Nichtgolfer gemischt sind?', 'a' => 'Das ist der Normalfall und funktioniert gut. Im Grundlagenkurs erklärt der Golflehrer der Einsteigergruppe die Basics, während erfahrene Spieler an ihrem Schwung arbeiten. Bei größeren Gruppen teilen wir: Die Golfer spielen eine Runde auf dem 9-Loch-Platz, die anderen haben zwei Stunden Grundlagenkurs. Oder beide spielen ein Firmenturnier, die Einsteiger nach kurzer Einführung auf dem Kurzplatz, die Golfer auf der großen Anlage, am Ende wird gemeinsam ausgewertet. Und oft zeigt sich: Es kommt auf Technik an, nicht auf Kraft.' ],
-		[ 'q' => 'Wie viele Personen passen zu einem Golf-Teamevent?', 'a' => 'Ideal sind 6 bis 12 Personen, das deckt ein Golflehrer ab, bis 20 sind es zwei. Auf Anlagen mit mehreren Golflehrern gehen auch 40 bis 80 Personen, dann wird in Gruppen rotiert: Grundlagenkurs, Kurzplatz, Putting-Challenge.' ],
+		[ 'q' => 'Wie viele Personen passen zu einem Golf-Teamevent?', 'a' => 'Ideal sind 6 bis 12 Personen, das deckt ein Golflehrer ab, bis 20 sind es zwei. Auf Anlagen mit mehreren Golflehrern gehen auch 40 bis 80 Personen, dann wird in Gruppen rotiert: Grundlagenkurs, Kurzplatz, Putting-Challenge. Als Firmenturnier über den ganzen Tag, mit Kurzplatz für Einsteiger, 18-Loch-Platz für Golfer und Abendveranstaltung, sind rund 200 Personen möglich, etwa 120 Golfer und 80 Einsteiger. Anlagen mit zwei 18-Loch-Plätzen und einem 9-Loch-Platz nebeneinander, wie der Golfclub Eschenried bei München, schaffen mit parallelen Turnieren im Extremfall bis zu 300. Das ist die Obergrenze.' ],
 		[ 'q' => 'Wie kurzfristig kann eine Firma buchen?', 'a' => 'Ein Schnupperkurs oder Grundlagenkurs steht innerhalb von fünf Tagen, wenn Golflehrer und Platz in der Region frei sind. Mit Verpflegung, Turnier und größerer Gruppe planen wir zwei bis vier Wochen Vorlauf. Passende Plätze gibt es fast überall in Deutschland, in München zum Beispiel am Stadtrand mit S-Bahn-Anschluss.' ],
 		[ 'q' => 'Ist Golf nicht elitär?', 'a' => 'Das Bild ist veraltet. Jede Region hat ihre exklusiven Clubs, aber Golf ist in Deutschland längst ein Breitensport, den Menschen aus jeder Branche spielen. Für ein Teamevent braucht niemand Ausrüstung, Mitgliedschaft oder Vorkenntnisse. Und es ist günstiger, als die meisten denken: Der Grundlagenkurs kostet weniger als ein Kochkurs.' ],
 		[ 'q' => 'Wie laufen Essen und Getränke?', 'a' => 'Jedes Event wird individuell geplant, Essen und Getränke buchen wir beim Gastronomen des Platzes dazu. Meistens vereinbaren wir einen Fixpreis für die Verpflegung, etwa Barbecue oder Menü auf der Terrasse. Alkoholische Getränke laufen als Pauschale oder auf eigene Rechnung der Teilnehmer, je nachdem, was die Firma möchte.' ],
@@ -100,7 +100,8 @@ function fge_alternative_page_data(): array {
 		'h1'         => 'Teamevent-Alternative: Golf statt Escape Room, Kochkurs und Floßbau',
 		'title'      => 'Teamevent-Alternative: Golf statt Escape Room und Kochkurs | Firmengolf Events',
 		'desc'       => sprintf( 'Alternative zum klassischen Teamevent: Golf-Teamevent ohne Vorkenntnisse, 6 bis 80 Personen, %s. Vergleich mit Escape Room, Kochkurs, Floßbau und Bowling, mit Preisen.', $golf_from ),
-		'lead'       => sprintf( 'Draußen, ohne Vorkenntnisse, für 6 bis 80 Personen, %s. Hier steht, wie Golf im Vergleich zu den üblichen Teamevents abschneidet.', $golf_from ),
+		'lead'       => sprintf( 'Draußen, ohne Vorkenntnisse, %s.', $golf_from ),
+		'lead_more'  => 'Hier steht, wie Golf im Vergleich zu den üblichen Teamevents abschneidet.',
 		'definition' => $definition,
 		'compare'    => $compare,
 		'when'       => $when,
@@ -109,7 +110,7 @@ function fge_alternative_page_data(): array {
 		'faqs'       => $faqs,
 		'golf_from'  => $golf_from,
 		'range'      => $range,
-		'hero_img'   => 'pool/afterwork-grundlagenkurs-mit-dem-team.jpg',
+		'hero_img'   => 'pool/afterwork-team-auf-dem-platz.jpg', // Team ohne Golferfahrung mit Pro auf dem Grün (Julius, 15.09.: mehr Bild, weniger Text)
 	];
 }
 

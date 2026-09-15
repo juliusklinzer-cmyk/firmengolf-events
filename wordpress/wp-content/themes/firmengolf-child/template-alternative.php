@@ -94,12 +94,12 @@ get_header();
 <?php get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => 'events' ] ); ?>
 
 <section class="ev-hero" aria-label="<?php echo esc_attr( $page['h1'] ); ?>">
-	<div class="ev-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( $page['hero_img'] ) ); ?>')">
+	<div class="ev-hero-photo alt-hero-photo" style="background-image:url('<?php echo esc_url( fge_get_placeholder_image_url( $page['hero_img'] ) ); ?>')">
 		<div class="ev-hero-scrim" aria-hidden="true"></div>
 		<div class="ev-hero-content">
 			<div class="ev-hero-eyebrow"><?php echo esc_html( $page['eyebrow'] ); ?></div>
 			<h1 class="ev-hero-title"><?php echo esc_html( $page['h1'] ); ?></h1>
-			<p class="ev-hero-sub"><?php echo esc_html( $page['lead'] ); ?></p>
+			<p class="ev-hero-sub"><?php echo esc_html( $page['lead'] ); ?><?php if ( ! empty( $page['lead_more'] ) ) : ?> <span class="alt-lead-more"><?php echo esc_html( $page['lead_more'] ); ?></span><?php endif; ?></p>
 			<div class="ev-hero-ctas">
 				<a class="fg-btn-brand" href="#vergleich">Zum Vergleich</a>
 				<a class="fg-btn-ghost-light" href="<?php echo esc_url( $anfrage ); ?>">Unverbindlich anfragen</a>
