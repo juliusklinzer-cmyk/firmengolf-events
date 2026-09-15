@@ -7535,3 +7535,12 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
   .fg-compare tbody td:last-child { border-bottom: 0; }
   .fg-compare-note { padding: 0 16px; }
 }
+/* Schlüssel-Wert-Variante der Vergleichstabelle (Musterplanung auf /teamevent-alternative/) */
+.fg-compare--keyval { min-width: 0; }
+.fg-compare--keyval tbody th { width: 160px; }
+@media (max-width: 720px) {
+  .fg-compare--keyval tbody tr { margin-bottom: 0; border-radius: 0; border-top: 0; }
+  .fg-compare--keyval tbody tr:first-child { border-top: 1px solid var(--ink-200); border-radius: 20px 20px 0 0; }
+  .fg-compare--keyval tbody tr:last-child { border-radius: 0 0 20px 20px; }
+  .fg-compare--keyval tbody th { width: auto; padding-bottom: 2px; border-bottom: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-500); font-family: var(--font-body); }
+}

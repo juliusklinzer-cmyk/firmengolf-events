@@ -166,6 +166,29 @@ get_header();
 	</div>
 </section>
 
+<?php /* Musterplanung mit Zahlen, als Beispiel gekennzeichnet */ ?>
+<?php if ( ! empty( $page['example'] ) ) : ?>
+<section class="mk-section alt-example" aria-label="Beispiel für ein Golf-Teamevent">
+	<div class="mk-section-head">
+		<div class="mk-eyebrow">Beispiel</div>
+		<h2 class="mk-h2"><?php echo esc_html( $page['example']['title'] ); ?></h2>
+		<p class="mk-sub" style="max-width:var(--width-prose);"><?php echo esc_html( $page['example']['intro'] ); ?></p>
+	</div>
+	<div class="fg-compare-wrap">
+		<table class="fg-compare fg-compare--keyval">
+			<tbody>
+				<?php foreach ( $page['example']['rows'] as $row ) : ?>
+				<tr>
+					<th scope="row"><?php echo esc_html( $row[0] ); ?></th>
+					<td><?php echo esc_html( $row[1] ); ?></td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
+</section>
+<?php endif; ?>
+
 <?php /* Ablauf (aus der Teamevent-Konfiguration, damit beide Seiten dasselbe erzählen) */ ?>
 <?php if ( ! empty( $page['flow'] ) ) : ?>
 <section class="mk-section mk-band fmt-flow5" aria-label="So läuft ein Golf-Teamevent">
