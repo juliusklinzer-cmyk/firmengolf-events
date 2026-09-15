@@ -7509,7 +7509,7 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
 /* ── Vergleichstabelle (zentrale Komponente, 15.09.2026, Pillar-Seite /teamevent-alternative/):
    weiße Karte, 1px ink-200-Rahmen, Radius 20, Golf-Zeile auf fairway-100. Mobile stapelt die Zeilen zu Karten. ── */
 .fg-compare-wrap { max-width: var(--width-page); margin: 0 auto; padding: 0 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.fg-compare { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 0; background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: 20px; overflow: hidden; font-size: 14px; line-height: 1.45; }
+.fg-compare { width: 100%; min-width: 720px; border-collapse: separate; border-spacing: 0; background: var(--paper-50); border: 1px solid var(--ink-200); border-radius: 20px; overflow: hidden; font-size: 14px; line-height: 1.45; }
 .fg-compare th, .fg-compare td { padding: 14px 16px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--ink-200); }
 .fg-compare thead th { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-500); background: var(--paper-100); }
 .fg-compare tbody th { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--ink-900); white-space: nowrap; }
