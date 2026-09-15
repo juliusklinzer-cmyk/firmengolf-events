@@ -71,7 +71,16 @@ function fge_get_request_email_data( int $request_id ): array {
 		'message'       => $m( 'message' ),
 		'source'        => $m( 'source' ),
 		'request_date'  => $m( 'request_date' ),
+		// Kontaktwunsch aus dem Formular (E-Mail / Telefon / Egal), fehlte bisher in
+		// der internen Mail (Julius, 15.09.2026).
+		'contact_pref'  => fge_preferred_contact_label( $m( 'preferred_contact_method' ) ),
 	];
+}
+
+/** Lesbares Label für den gespeicherten Kontaktwunsch (email / phone / any). */
+function fge_preferred_contact_label( string $method ): string {
+	$labels = [ 'email' => 'E-Mail', 'phone' => 'Telefon', 'any' => 'Egal' ];
+	return $labels[ $method ] ?? '';
 }
 
 function fge_send_customer_confirmation_email( int $request_id, array $data ): bool {
@@ -163,6 +172,7 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 		'Kontakt'     => esc_html( trim( $data['first_name'] . ' ' . $data['last_name'] ) ?: 'k. A.' ),
 		'E-Mail'      => '<a href="mailto:' . esc_attr( $data['contact_email'] ) . '" style="color:#4279D1;">' . esc_html( $data['contact_email'] ) . '</a>',
 		'Telefon'     => esc_html( $data['phone'] ?: 'k. A.' ),
+		'Kontaktwunsch' => esc_html( $data['contact_pref'] ?: 'k. A.' ),
 		'Teilnehmer'  => esc_html( $data['participants'] ?: 'k. A.' ),
 		'Budget'      => esc_html( $data['budget'] ?: 'k. A.' ),
 		'Termine'     => esc_html( $dates_text ),
