@@ -29,8 +29,8 @@ Die Hetzner-Sperre ist wichtig, aber nicht der Haupthebel: Modellwissen entsteht
 ## Offen, nur Julius
 
 1. **Hetzner-Ticket** (Text unten) für GPTBot, ClaudeBot, meta-externalagent, beide Domains. Erfolg prüfen: `curl -s -o /dev/null -w "%{http_code}" -A "Mozilla/5.0 (compatible; GPTBot/1.0)" https://firmengolf-events.de/` muss 200 liefern.
-2. **Bing Webmaster Tools** für beide Domains anlegen (bing.com/webmasters, Import aus der Search Console mit einem Klick), Sitemaps einreichen. ChatGPT Search läuft über Bing.
-3. **Google-Unternehmensprofil** für Firmengolf Events (Adresse Heerstr. 37, Kategorie Eventagentur), danach nach jedem Event um eine Bewertung bitten.
+2. Bing Webmaster Tools: erledigt 15.09., beide Domains aus der Search Console importiert, Aktivierung dauert bis 48 Stunden. Danach prüfen, ob beide Sitemaps unter „Sitemaps" stehen.
+3. Google-Unternehmensprofil: bestand schon, am 15.09. aktualisiert. Entscheidung: EIN Profil mit Namen „Firmengolf" (Dachmarke, Richtlinien erlauben keine Zusätze), Website bis zum Benefits-Start firmengolf-events.de, Kategorie Eventagentur, Beschreibung mit beiden Geschäften. Offen: Bewertungslink in die Abschlussmail nach jedem Event.
 
 ## Offen, nächste Schritte
 
