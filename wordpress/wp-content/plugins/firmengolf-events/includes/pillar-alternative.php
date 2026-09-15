@@ -49,7 +49,7 @@ function fge_alternative_page_data(): array {
 	$compare = [
 		'cols' => [ 'Format', 'Dauer', 'Gruppengröße', 'Vorkenntnisse', 'Ort und Wetter', 'Preis pro Person', 'Was bleibt' ],
 		'rows' => [
-			[ 'Golf-Teamevent', '3 bis 6 Std.', '6 bis 80', 'keine', 'draußen, im Winter indoor am Simulator', $golf_price . ' netto', 'ein neuer Sport, viele buchen den Schnupperkurs privat nach', true ],
+			[ 'Golf-Teamevent', '3 bis 6 Std.', '6 bis 80', 'keine', 'draußen, im Winter indoor am Simulator', $golf_price . ' netto', 'ein Sport, der bleibt: Nach dem Schnupperkurs buchen viele einen Platzreifekurs nach', true ],
 			[ 'Escape Room', '60 bis 90 Min.', '2 bis 8 pro Raum, große Gruppen parallel', 'keine', 'indoor', 'ca. 25 bis 40 €', 'kurz und intensiv, fast jedes Team kennt es schon', false ],
 			[ 'Kochkurs', '3 bis 4 Std.', '8 bis 30', 'keine', 'indoor', 'ca. 90 bis 150 €', 'gemeinsames Essen, wenig Bewegung', false ],
 			[ 'Floßbau', 'halber Tag', '10 bis 100', 'keine', 'draußen am See, stark wetterabhängig', 'ca. 60 bis 120 €', 'einmaliges Erlebnis, im Winter nicht möglich', false ],
@@ -73,7 +73,7 @@ function fge_alternative_page_data(): array {
 		[ 'q' => 'Was kostet ein Golf-Teamevent im Vergleich zu anderen Teamevents?', 'a' => sprintf( 'Unsere buchbaren Golf-Teamevents liegen aktuell bei %s pro Person netto. Zum Vergleich: Escape Room etwa 25 bis 40 Euro, Kochkurs 90 bis 150 Euro, Floßbau 60 bis 120 Euro. Der reine Grundlagenkurs ist die günstigste Golf-Variante, Verpflegung und Turnier kommen nach Wunsch dazu.', $golf_price ) ],
 		[ 'q' => 'Muss jemand aus dem Team Golf spielen können?', 'a' => 'Nein. Das Format ist für Teams ohne Vorerfahrung gebaut. Ein Golflehrer erklärt die Grundlagen, Schläger und Bälle werden gestellt. Wer schon spielt, bekommt in der Challenge keine Vorteile, weil wir Formate wie Longest Drive und Putt-Turnier nutzen.' ],
 		[ 'q' => 'Wie viele Personen passen zu einem Golf-Teamevent?', 'a' => 'Von 6 bis rund 80 Personen. Kleine Teams bekommen eine Gruppe mit einem Golflehrer, große Teams werden auf mehrere Stationen verteilt. Für Gruppen über 80 planen wir das Event individuell.' ],
-		[ 'q' => 'Was passiert bei Regen?', 'a' => 'Bei leichtem Regen läuft das Programm auf der überdachten Driving Range weiter. Bei Unwetter weichen wir auf einen Indoor-Simulator aus oder verschieben den Termin, ohne Kosten für euch. Im Winter findet das Teamevent von vornherein indoor statt.' ],
+		[ 'q' => 'Was passiert bei Regen?', 'a' => 'Bei Regen wird trotzdem Golf gespielt, Golf ist kein Schönwettersport. Mit Regenkleidung wird der Nachmittag eher zum Abenteuer, und die meisten Plätze haben überdachte Abschläge auf der Driving Range, dort läuft der Grundlagenkurs weiter. Kurze Schauer wartet die Gruppe im Clubhaus ab. Nur bei Gewitter oder Platzsperre wird ein neuer Termin gesucht oder der Betrag erlassen.', 'link' => [ 'url' => home_url( '/golfevent-bei-schlechtem-wetter/' ), 'label' => 'Mehr zum Golfevent bei schlechtem Wetter' ] ],
 		[ 'q' => 'Wie schnell bekommen wir ein Angebot?', 'a' => 'Innerhalb eines Werktags meldet sich ein persönlicher Ansprechpartner mit Vorschlägen für Platz, Format und Termin. Ihr fragt unverbindlich an und entscheidet mit dem Angebot in der Hand.' ],
 	];
 

@@ -194,7 +194,13 @@ get_header();
 			<h2 class="mk-h2" style="margin-top:8px;">Teamevent-Alternative, kurz beantwortet.</h2>
 		</div>
 		<?php get_template_part( 'template-parts/fge-faq', null, [
-			'items' => array_map( static fn( $f ) => [ 'q' => $f['q'], 'a' => $f['a'] ], $faqs ),
+			'items' => array_map( static function ( $f ) {
+				$html = esc_html( $f['a'] );
+				if ( ! empty( $f['link']['url'] ) ) {
+					$html .= ' <a class="faq-a-link" href="' . esc_url( $f['link']['url'] ) . '">' . esc_html( $f['link']['label'] ) . ' &rarr;</a>';
+				}
+				return [ 'q' => $f['q'], 'a_html' => $html ];
+			}, $faqs ),
 		] ); ?>
 	</div>
 </section>
