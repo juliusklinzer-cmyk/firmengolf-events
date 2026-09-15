@@ -139,7 +139,7 @@ add_action( 'wp_head', function () use ( $p_seo_title, $p_seo_desc, $pid, $cover
 		'@context'        => 'https://schema.org',
 		'@type'           => 'BreadcrumbList',
 		'itemListElement' => [
-			[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf', 'item' => home_url( '/' ) ],
+			[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf Events', 'item' => home_url( '/' ) ],
 			[ '@type' => 'ListItem', 'position' => 2, 'name' => $name ],
 		],
 	];

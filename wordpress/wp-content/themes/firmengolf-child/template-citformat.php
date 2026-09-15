@@ -186,7 +186,7 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 			'serviceType' => $h1,
 			'name'        => $h1,
 			'areaServed'  => [ '@type' => 'City', 'name' => $city_name ],
-			'provider'    => [ '@type' => 'Organization', 'name' => 'Firmengolf', 'url' => home_url( '/' ) ],
+			'provider'    => [ '@type' => 'Organization', 'name' => 'Firmengolf Events', 'url' => home_url( '/' ) ],
 			'url'         => $canonical,
 		],
 		[
@@ -204,7 +204,7 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 			'@context'        => 'https://schema.org',
 			'@type'           => 'BreadcrumbList',
 			'itemListElement' => [
-				[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf', 'item' => home_url( '/' ) ],
+				[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf Events', 'item' => home_url( '/' ) ],
 				[ '@type' => 'ListItem', 'position' => 2, 'name' => 'Firmenevents ' . $city_name, 'item' => $city_url ],
 				[ '@type' => 'ListItem', 'position' => 3, 'name' => $h1 ],
 			],

@@ -73,7 +73,7 @@ add_action( 'wp_head', function () use ( $post_seo_title, $post_seo_desc, $post_
 		'datePublished'    => get_the_date( 'c', $post_id ),
 		'dateModified'     => get_the_modified_date( 'c', $post_id ),
 		'author'           => [ '@type' => 'Person', 'name' => $author ],
-		'publisher'        => [ '@type' => 'Organization', 'name' => 'Firmengolf', 'url' => home_url( '/' ) ],
+		'publisher'        => [ '@type' => 'Organization', 'name' => 'Firmengolf Events', 'url' => home_url( '/' ) ],
 		'mainEntityOfPage' => [ '@type' => 'WebPage', '@id' => get_permalink( $post_id ) ],
 	];
 	if ( $post_seo_desc !== '' ) {
@@ -88,7 +88,7 @@ add_action( 'wp_head', function () use ( $post_seo_title, $post_seo_desc, $post_
 		'@context'        => 'https://schema.org',
 		'@type'           => 'BreadcrumbList',
 		'itemListElement' => [
-			[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf', 'item' => home_url( '/' ) ],
+			[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf Events', 'item' => home_url( '/' ) ],
 			[ '@type' => 'ListItem', 'position' => 2, 'name' => 'Blog', 'item' => home_url( '/blog/' ) ],
 			[ '@type' => 'ListItem', 'position' => 3, 'name' => $title ],
 		],

@@ -332,7 +332,7 @@ add_action( 'wp_head', function () use ( $seo_title, $seo_desc, $post_id, $thumb
 		'@context'        => 'https://schema.org',
 		'@type'           => 'BreadcrumbList',
 		'itemListElement' => [
-			[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf', 'item' => home_url( '/' ) ],
+			[ '@type' => 'ListItem', 'position' => 1, 'name' => 'Firmengolf Events', 'item' => home_url( '/' ) ],
 			[ '@type' => 'ListItem', 'position' => 2, 'name' => 'Firmenevents', 'item' => get_post_type_archive_link( 'firmengolf_event' ) ],
 			[ '@type' => 'ListItem', 'position' => 3, 'name' => get_the_title( $post_id ) ],
 		],
