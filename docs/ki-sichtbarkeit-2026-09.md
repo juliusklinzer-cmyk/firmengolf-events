@@ -25,6 +25,8 @@ Die Hetzner-Sperre ist wichtig, aber nicht der Haupthebel: Modellwissen entsteht
 | 15.09. | Schema-Eigenname „Firmengolf Events" in Publisher, Provider und Breadcrumbs aller Blog-, Event-, Partner-, Stadt- und Format-Templates. | 1.9.259 |
 | 15.09. | Blogartikel 1 von 4 veröffentlicht: „Teamevent-Ideen für 40 Personen, die nicht jeder schon gemacht hat (mit Preisen)", `/teamevent-ideen-40-personen/`, Kategorie Inspiration, Autor Julius, Bild Golf-Coach mit Gruppe. Entwurf in `docs/blog-entwuerfe/`. Hetzner-Ticket von Julius eingereicht. | Post-ID 1137 |
 
+| 15.09. | Blogartikel 2 von 4 live: „Firmenevent im Sommer draußen: 7 Ideen mit Preisen und Gruppengröße", , Bild Terrassenbuffet (Media 678). Bewertungsbitte nach dem Event (, 1.9.260). Preisblock „Was kostet ein Firmenevent auf dem Golfplatz?" auf der Startseite und Preiszeile unter dem Hero jedes Format-Hubs, live aus den Events (1.9.261). | 1.9.260 bis 1.9.261 |
+
 ## Offen, nur Julius
 
 1. **Hetzner-Ticket** (Text unten) für GPTBot, ClaudeBot, meta-externalagent, beide Domains. Erfolg prüfen: `curl -s -o /dev/null -w "%{http_code}" -A "Mozilla/5.0 (compatible; GPTBot/1.0)" https://firmengolf-events.de/` muss 200 liefern.
@@ -33,7 +35,7 @@ Die Hetzner-Sperre ist wichtig, aber nicht der Haupthebel: Modellwissen entsteht
 
 ## Offen, nächste Schritte
 
-- Phase 1: drei bis vier Vergleichsartikel im Blog („Teamevent-Ideen für 40 Personen", „Firmenevent im Sommer draußen: 7 Ideen mit Preisen", „Escape Room Alternative für Firmen", „Teambuilding für gemischte Teams"). Preisblock auf der Startseite und Preisspanne auf jedem Hub.
+- Phase 1: drei bis vier Vergleichsartikel im Blog („Teamevent-Ideen für 40 Personen", „Firmenevent im Sommer draußen: 7 Ideen mit Preisen", „Escape Room Alternative für Firmen", „Teambuilding für gemischte Teams"). Preisblock und Hub-Preiszeile erledigt (1.9.261).
 - Phase 2: Listicle-Portale anschreiben (lebegeil.de, hirschfeld.de, meyer-events.de, bernstein-agentur.de, gokonfetti.com), Wikidata-Eintrag, LinkedIn-Artikel, Fachmedien.
 - Phase 3: drei kurze YouTube-Videos, Case Studies mit Zahlen, Partnerplatz-Links.
 - firmengolf.app: Artikel „Golf als Mitarbeiter-Benefit: Was steuerlich geht (Sachbezug 50 Euro)", vorher Steuerberater.
