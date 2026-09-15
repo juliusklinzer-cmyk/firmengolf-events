@@ -29,7 +29,7 @@ Die Hetzner-Sperre ist wichtig, aber nicht der Haupthebel: Modellwissen entsteht
 
 1. **Hetzner-Ticket** (Text unten) für GPTBot, ClaudeBot, meta-externalagent, beide Domains. Erfolg prüfen: `curl -s -o /dev/null -w "%{http_code}" -A "Mozilla/5.0 (compatible; GPTBot/1.0)" https://firmengolf-events.de/` muss 200 liefern.
 2. Bing Webmaster Tools: erledigt 15.09., beide Domains aus der Search Console importiert, Aktivierung dauert bis 48 Stunden. Danach prüfen, ob beide Sitemaps unter „Sitemaps" stehen.
-3. Google-Unternehmensprofil: bestand schon, am 15.09. aktualisiert. Entscheidung: EIN Profil mit Namen „Firmengolf" (Dachmarke, Richtlinien erlauben keine Zusätze), Website bis zum Benefits-Start firmengolf-events.de, Kategorie Eventagentur, Beschreibung mit beiden Geschäften. Offen: Bewertungslink in die Abschlussmail nach jedem Event.
+3. Google-Unternehmensprofil: bestand schon, am 15.09. aktualisiert. Entscheidung: EIN Profil mit Namen „Firmengolf" (Dachmarke, Richtlinien erlauben keine Zusätze), Website bis zum Benefits-Start firmengolf-events.de, Kategorie Eventagentur, Beschreibung mit beiden Geschäften. Bewertungslink (g.page/r/CVIA4CTsS9mtEBk/review) seit 1.9.260 in der automatischen Danke-Mail: geht einmalig an den Kunden, sobald die Anfrage im Admin auf „Event durchgeführt" oder „Abgeschlossen" gestellt wird (includes/review-request.php).
 
 ## Offen, nächste Schritte
 
