@@ -1,10 +1,10 @@
 # KI-Sichtbarkeit Firmengolf Events: Befund, Roadmap, Stand
 
-Stand 15.09.2026. Befund von Julius aus einem separaten Chat, hier gegengeprüft und als Arbeitsstand geführt.
+Stand 16.09.2026. Befund von Julius aus einem separaten Chat, hier gegengeprüft und als Arbeitsstand geführt.
 
 ## Befund (geprüft am 15.09.)
 
-- **Trainings-Crawler gesperrt:** GPTBot, ClaudeBot und meta-externalagent bekommen auf firmengolf-events.de und firmengolf.app ein 403 vom Hetzner-Proxy (openresty-Seite, trifft auch die Sitemap). Die Live-.htaccess hat keine User-Agent-Regel, die Sperre liegt also bei Hetzner. Suche-Crawler (OAI-SearchBot, Claude-SearchBot, PerplexityBot, Googlebot, bingbot, Applebot-Extended) kommen durch.
+- **Trainings-Crawler gesperrt (behoben 16.09., siehe unten):** GPTBot, ClaudeBot und meta-externalagent bekommen auf firmengolf-events.de und firmengolf.app ein 403 vom Hetzner-Proxy (openresty-Seite, trifft auch die Sitemap). Die Live-.htaccess hat keine User-Agent-Regel, die Sperre liegt also bei Hetzner. Suche-Crawler (OAI-SearchBot, Claude-SearchBot, PerplexityBot, Googlebot, bingbot, Applebot-Extended) kommen durch.
 - **Modellwissen leer:** Ohne Websuche nennt kein Modell Firmengolf, bei Golf-Suchbegriffen taucht die Seite über die Livesuche auf (Platz 1 bis 5), bei „Alternative zum Teamevent" gar nicht.
 - **Marke:** „Firmengolf" wird von mehreren Clubs als Programmname genutzt, firmengolf.de gehört einem Firmenlauf. Eigenname daher konsequent „Firmengolf Events" und „Firmengolf Benefits".
 - **On-Page:** technisch solide (318 Event-Seiten, 238 Landingpages, Schema auf Hubs und Blog), aber ohne llms.txt, ohne „Alternative"-Inhalt, ohne Preise auf Startseite und Hubs, ohne Bewertungen, Organization-Schema ohne Adresse und Gründer.
@@ -29,7 +29,7 @@ Die Hetzner-Sperre ist wichtig, aber nicht der Haupthebel: Modellwissen entsteht
 
 ## Offen, nur Julius
 
-1. **Hetzner-Ticket** (Text unten) für GPTBot, ClaudeBot, meta-externalagent, beide Domains. Erfolg prüfen: `curl -s -o /dev/null -w "%{http_code}" -A "Mozilla/5.0 (compatible; GPTBot/1.0)" https://firmengolf-events.de/` muss 200 liefern.
+1. **Hetzner-Ticket: erledigt.** Freigabe am 16.09. bestätigt, geprüft per curl: GPTBot, ClaudeBot, meta-externalagent und PerplexityBot bekommen auf firmengolf-events.de (Startseite, wp-sitemap.xml, llms.txt) und firmengolf.app jeweils 200. Ab jetzt zählt nur noch, was robots.txt erlaubt (`includes/ai-visibility.php`).
 2. Bing Webmaster Tools: erledigt 15.09., beide Domains aus der Search Console importiert, Aktivierung dauert bis 48 Stunden. Danach prüfen, ob beide Sitemaps unter „Sitemaps" stehen.
 3. Google-Unternehmensprofil: bestand schon, am 15.09. aktualisiert. Entscheidung: EIN Profil mit Namen „Firmengolf" (Dachmarke, Richtlinien erlauben keine Zusätze), Website bis zum Benefits-Start firmengolf-events.de, Kategorie Eventagentur, Beschreibung mit beiden Geschäften. Bewertungslink (g.page/r/CVIA4CTsS9mtEBk/review) seit 1.9.260 in der automatischen Danke-Mail: geht einmalig an den Kunden, sobald die Anfrage im Admin auf „Event durchgeführt" oder „Abgeschlossen" gestellt wird (includes/review-request.php).
 
@@ -41,7 +41,7 @@ Die Hetzner-Sperre ist wichtig, aber nicht der Haupthebel: Modellwissen entsteht
 - firmengolf.app: Artikel „Golf als Mitarbeiter-Benefit: Was steuerlich geht (Sachbezug 50 Euro)", vorher Steuerberater.
 - Monitoring: 15 Prompts alle vier Wochen in ChatGPT, Claude, Perplexity, Google AI Mode (Liste im Befund), GA4-Referrer chatgpt.com, perplexity.ai, claude.ai, copilot.microsoft.com.
 
-## Hetzner-Ticket (Entwurf)
+## Hetzner-Ticket (eingereicht 15.09., Freigabe 16.09.)
 
 Betreff: Freigabe von KI-Crawlern (403 durch Proxy) für firmengolf-events.de und firmengolf.app
 
