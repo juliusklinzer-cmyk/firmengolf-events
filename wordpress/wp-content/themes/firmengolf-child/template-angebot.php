@@ -2,7 +2,8 @@
 /**
  * Kunden-Seite: Angebot ansehen, annehmen oder ablehnen, plus read-only Status.
  * Aufruf: /angebot/<customer-token>/  (siehe includes/offers.php).
- * Standalone im .tl-*-Design (kein Theme-Chrome).
+ * Seit 17.09.2026 als klassisches Angebotsdokument (includes/offer-document.php):
+ * gleiche Vorlage wie PDF und Angebotsmail, Mail-Optik statt Website-Look.
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -21,14 +22,55 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 	<meta name="robots" content="noindex, nofollow">
 	<meta name="referrer" content="no-referrer">
 	<?php wp_head(); ?>
+	<style>
+	<?php echo function_exists( 'fge_offer_document_css' ) ? fge_offer_document_css() : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+	body.tl-page.od-page { background: #f4f4f2; }
+	.od-wrap { max-width: 780px; margin: 0 auto; padding: 28px 16px 60px; }
+	.od-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; font-size: 13px; color: #6C736E; }
+	.od-top strong { color: #1a1a1a; }
+	.od-pdf { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #20294D; background: #fff; border: 1px solid #d8d8d2; border-radius: 999px; padding: 8px 14px; }
+	.od-pdf:hover { border-color: #20294D; }
+	.od-sheet { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(32,41,77,.08); }
+	.od-sheet .od-head td { padding: 20px 32px; }
+	.od-sheet .od-body { padding: 30px 32px 24px; }
+	.od-actions { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06); margin-top: 18px; padding: 22px 32px; }
+	.od-actions h2 { font-size: 16px; margin: 0 0 12px; }
+	.od-deadline { font-size: 14px; line-height: 1.5; color: #7A5A12; background: #FBF3E0; border: 1px solid #E2C36B; border-radius: 6px; padding: 10px 14px; margin: 0 0 16px; }
+	.od-agb { display: flex; gap: 9px; align-items: flex-start; margin: 0 0 14px; font-size: 13px; line-height: 1.45; }
+	.od-agb a { color: #4279D1; text-decoration: underline; }
+	.od-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+	.od-btn { font: inherit; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; }
+	.od-btn.yes { background: #4279D1; color: #fff; border-bottom: 3px solid #2C55A0; }
+	.od-btn.yes:disabled { opacity: .5; cursor: default; }
+	.od-btn.no { background: #fff; color: #333; border-color: #d8d8d2; }
+	.od-btn.q { background: #ECECE6; color: #333; }
+	.od-q { display: none; margin-top: 12px; }
+	.od-q textarea { width: 100%; padding: 10px 12px; border: 1px solid #d8d8d2; border-radius: 8px; font: inherit; box-sizing: border-box; }
+	.od-hint { font-size: 13px; color: #6C736E; margin: 12px 0 0; line-height: 1.5; }
+	.od-err { font-size: 13px; color: #B4332B; margin: 0 0 10px; }
+	@media (max-width: 640px) {
+		.od-wrap { padding: 16px 10px 40px; }
+		.od-sheet .od-head td { padding: 16px 18px; }
+		.od-sheet .od-body, .od-actions { padding: 20px 18px; }
+		.od-meta td { display: block; width: auto !important; padding-right: 0 !important; }
+		.od-facts { margin-top: 14px; }
+		/* Positionstabelle gestapelt: Leistung volle Breite, Beträge als Zeilen mit Label. */
+		.od-pos thead { display: none; }
+		.od-pos, .od-pos tbody, .od-pos tfoot { display: block; width: 100%; }
+		.od-pos tbody tr { display: block; padding: 12px 0; border-bottom: 1px solid #e4e4e0; }
+		.od-pos tbody td { display: block; border: 0; padding: 0; width: auto !important; }
+		.od-pos tbody td.c-pos { display: none; }
+		.od-pos tbody td.r { display: flex; justify-content: space-between; gap: 12px; text-align: right; white-space: normal; padding: 3px 0 0; }
+		.od-pos tbody td.r::before { content: attr(data-label); color: #6C736E; text-align: left; }
+		.od-pos tbody td.c-qty { margin-top: 8px; }
+		.od-pos tfoot tr { display: flex; justify-content: space-between; gap: 12px; }
+		.od-pos tfoot td { display: block; width: auto !important; }
+		.od-pos tfoot tr.od-total td { border-top: 2px solid #20294D; }
+	}
+	</style>
 </head>
-<body class="tl-page">
-	<header class="tl-bar">
-		<span style="font-family:var(--font-display);font-weight:600;font-size:18px;letter-spacing:-0.02em;color:var(--ink-900);">Firmengolf</span>
-		<span class="ctx">Euer Angebot</span>
-	</header>
-
-	<div class="tl-wrap">
+<body class="tl-page od-page">
+	<div class="od-wrap">
 	<?php if ( $req <= 0 ) : ?>
 		<div class="tl-eyebrow">Angebot</div>
 		<h1 class="tl-h">Dieser Link ist <em>ungültig</em> oder abgelaufen.</h1>
@@ -41,6 +83,9 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 		$snap         = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
 		$nonce        = wp_create_nonce( 'fge_offer_' . $token );
 		$deadline     = (int) get_post_meta( $req, '_fge_offer_deadline', true );
+		$has_pdf      = function_exists( 'fge_pdf_available' ) && fge_pdf_available() && ! empty( $snap );
+		$pdf_link     = $has_pdf && function_exists( 'fge_offer_pdf_link' ) ? fge_offer_pdf_link( $req ) : '';
+		$document     = function_exists( 'fge_offer_document_html' ) ? fge_offer_document_html( $req, 'web' ) : '';
 
 		// Read-only Statusmeldung für den Kunden (wenn noch kein offenes Angebot vorliegt).
 		$status_msg = static function ( string $s ): string {
@@ -72,6 +117,10 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 			}
 		};
 
+		$pdf_button = '' !== $pdf_link
+			? '<a class="od-pdf" href="' . esc_url( $pdf_link ) . '"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Angebot als PDF</a>'
+			: '';
+
 		// 1) Frisch bestätigt/abgelehnt/Rückfrage → Bestätigung.
 		if ( 'expired' === $done_val ) : ?>
 			<div class="tl-done">
@@ -92,170 +141,98 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 			</div>
 
 		<?php elseif ( $done && in_array( $offer_status, [ 'accepted', 'declined' ], true ) ) : ?>
-			<div class="tl-done">
+			<div class="tl-done" style="padding-bottom:30px;">
 				<div class="tl-done-ic">
 					<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
 				</div>
 				<?php if ( 'accepted' === $offer_status ) : ?>
 					<h2>Gebucht, <?php echo esc_html( $first ?: 'super' ); ?>!</h2>
 					<p>Euer Event <strong><?php echo esc_html( (string) ( $snap['event_title'] ?? '' ) ); ?></strong> am <strong><?php echo esc_html( (string) ( $snap['date'] ?? '' ) ); ?></strong> ist verbindlich gebucht. Wir kümmern uns um die letzten Details und melden uns.</p>
-					<?php
-					// Mitgebuchte Zusatzleistungen bestätigen (nur die vom Kunden gewählten).
-					$tl_sel    = array_map( 'intval', (array) get_post_meta( $req, '_fge_offer_extras_selected', true ) );
-					$tl_booked = array_filter( (array) ( $snap['extras'] ?? [] ), static fn( $x ) => in_array( (int) ( $x['src'] ?? -1 ), $tl_sel, true ) );
-					if ( ! empty( $tl_booked ) ) : ?>
-					<p style="margin-top:10px;">Mitgebucht: <strong><?php echo esc_html( implode( ', ', array_map( static fn( $x ) => (string) $x['label'], $tl_booked ) ) ); ?></strong></p>
-					<?php endif; ?>
 				<?php else : ?>
 					<h2>Schade, <?php echo esc_html( $first ?: '' ); ?>.</h2>
 					<p>Ihr habt das Angebot abgelehnt. Wenn ihr mögt, finden wir gern eine Alternative, antwortet einfach auf die Angebots-Mail oder schreibt uns, wir passen es gern an.</p>
 				<?php endif; ?>
 			</div>
+			<?php if ( 'accepted' === $offer_status && '' !== $document ) : ?>
+			<div class="od-top"><span>Eure Buchung im Überblick</span><?php echo $pdf_button; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+			<div class="od-sheet"><?php echo $document; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+			<?php endif; ?>
 
 		<?php // 2) Offenes Angebot → annehmen/ablehnen.
 		elseif ( 'pending' === $offer_status && ! empty( $snap ) ) : ?>
-			<div class="tl-eyebrow">Angebot <?php echo esc_html( $ref ); ?></div>
-			<h1 class="tl-h">Hallo <?php echo esc_html( $first ?: '' ); ?>, hier ist <em>euer Angebot</em>.</h1>
-			<p class="tl-lead">Der Termin steht. Schaut es euch an und nehmt es mit einem Klick an.</p>
-			<?php if ( $deadline > time() ) : ?>
-			<div class="tl-deadline">Wir halten den Termin bis <strong><?php echo esc_html( wp_date( 'D, d.m.Y', $deadline ) ); ?></strong> für euch. Sagt ihr bis dahin zu, ist er verbindlich gebucht.</div>
-			<?php elseif ( $deadline > 0 ) : ?>
-			<div class="tl-deadline">Die Reservierungsfrist ist abgelaufen, der Termin ist nicht mehr garantiert. Ihr könnt trotzdem zusagen: wir prüfen dann sofort, ob er noch frei ist, und melden uns umgehend.</div>
-			<?php endif; ?>
-
-			<?php
-			$tl_extras  = array_values( (array) ( $snap['extras'] ?? [] ) );
-			$tl_vatp    = (int) ( $snap['vat_percent'] ?? 19 );
-			$tl_pax     = (int) ( $snap['participants'] ?? 0 );
-			$tl_is_pp   = 'pro Person' === (string) ( $snap['price_unit'] ?? '' );
-			// Netto-Basis des Events (ohne Extras) — gleiche Logik wie fge_offer_totals.
-			$tl_base    = $tl_is_pp ? ( $tl_pax > 0 ? (float) ( $snap['price_total'] ?? 0 ) : 0.0 ) : (float) ( $snap['price_gross'] ?? 0 );
-			// Startzustand: alle Extras gewählt; JS rechnet bei Abwahl live nach.
-			$tl_totals  = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap ) : [ 'net' => $tl_base, 'ca' => $tl_is_pp && $tl_base > 0 ];
-			$tl_net     = (float) $tl_totals['net'];
-			$tl_ca      = $tl_totals['ca'] ? 'ca. ' : ''; // p.P.-Summen hängen an der Teilnehmerzahl (Kern-Audit M6)
-			?>
-			<div class="tl-summary">
-				<div class="tl-sum-co"><?php echo esc_html( (string) ( $snap['event_title'] ?? '' ) ); ?></div>
-				<div class="tl-sum-grid">
-					<div class="tl-sum-item"><div class="k">Termin</div><div class="v"><?php echo esc_html( (string) ( $snap['date'] ?? '' ) ); ?></div></div>
-					<?php if ( '' !== (string) ( $snap['location'] ?? '' ) ) : ?><div class="tl-sum-item"><div class="k">Ort</div><div class="v"><?php echo esc_html( (string) $snap['location'] ); ?></div></div><?php endif; ?>
-					<?php if ( $tl_pax > 0 ) : ?><div class="tl-sum-item"><div class="k">Teilnehmer</div><div class="v"><?php echo (int) $tl_pax; ?> Personen</div></div><?php endif; ?>
-					<?php if ( (float) ( $snap['price_gross'] ?? 0 ) > 0 || empty( $tl_extras ) ) : ?>
-					<div class="tl-sum-item"><div class="k"><?php echo empty( $tl_extras ) ? 'Preis (netto)' : 'Eventpreis (netto)'; ?></div><div class="v"><?php
-						echo esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' );
-					?></div></div>
-					<?php endif; ?>
-					<?php if ( $tl_net > 0 ) : ?>
-					<?php if ( ! empty( $tl_extras ) ) : ?>
-					<div class="tl-sum-item"><div class="k">Summe (netto)</div><div class="v"><span id="tl-x-net"><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net ), 0 ) ); ?> €</span></div></div>
-					<?php endif; ?>
-					<div class="tl-sum-item"><div class="k">zzgl. <?php echo (int) $tl_vatp; ?> % MwSt.</div><div class="v"><span id="tl-x-vat"><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net * $tl_vatp / 100 ), 0 ) ); ?> €</span></div></div>
-					<div class="tl-sum-item"><div class="k">Endpreis inkl. MwSt.</div><div class="v"><strong><span id="tl-x-total"><?php echo esc_html( $tl_ca . number_format_i18n( round( $tl_net * ( 1 + $tl_vatp / 100 ) ), 0 ) ); ?> €</span></strong></div></div>
-					<?php endif; ?>
-				</div>
+			<div class="od-top">
+				<span>Angebot <strong><?php echo esc_html( $ref ); ?></strong><?php echo '' !== $first ? ' für ' . esc_html( $first ) : ''; ?></span>
+				<?php echo $pdf_button; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 			</div>
-
-			<?php if ( ! empty( $snap['includes'] ) ) : ?>
-			<div class="tl-section-label">Das ist dabei</div>
-			<ul class="tl-list"><?php foreach ( (array) $snap['includes'] as $i ) : ?><li><?php echo esc_html( $i ); ?></li><?php endforeach; ?></ul>
-			<?php endif; ?>
-
-			<form method="post" action="<?php echo esc_url( fge_offer_link( $req ) ); ?>" class="tl-offer-actions" id="tl-offer-form">
+			<form method="post" action="<?php echo esc_url( fge_offer_link( $req ) ); ?>" id="tl-offer-form">
 				<input type="hidden" name="fge_offer_token" value="<?php echo esc_attr( $token ); ?>">
 				<input type="hidden" name="fge_offer_nonce" value="<?php echo esc_attr( $nonce ); ?>">
 
-				<?php if ( ! empty( $tl_extras ) ) : ?>
-				<div class="tl-section-label">Eure Zusatzleistungen</div>
-				<p class="tl-note" style="margin:0 0 8px;">In der Summe oben enthalten. Was ihr nicht braucht, wählt ihr einfach ab, der Preis passt sich sofort an.</p>
-				<ul class="tl-list" style="list-style:none;padding-left:0;">
-					<?php foreach ( $tl_extras as $x ) :
-						$x_pp  = 'person' === (string) ( $x['basis'] ?? '' );
-						$x_add = $x_pp ? ( $tl_pax > 0 ? (float) $x['price'] * $tl_pax : 0.0 ) : (float) $x['price'];
-						?>
-					<li style="margin-bottom:8px;">
-						<label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;">
-							<input type="checkbox" class="tl-x-pick" name="fge_offer_extras[]" value="<?php echo (int) ( $x['src'] ?? 0 ); ?>" checked
-							       data-add="<?php echo esc_attr( (string) $x_add ); ?>" data-pp="<?php echo $x_pp && $tl_pax > 0 ? '1' : '0'; ?>" style="margin-top:3px;flex:0 0 auto;">
-							<span><?php echo esc_html( (string) ( $x['label'] ?? '' ) ); ?>
-								<strong style="white-space:nowrap;"><?php echo esc_html( function_exists( 'fge_offer_extra_price_text' ) ? fge_offer_extra_price_text( $x ) : '' ); ?></strong>
-								<?php if ( $x_pp && $tl_pax > 0 ) : ?><span class="tl-src">ca. <?php echo esc_html( number_format_i18n( round( $x_add ), 0 ) ); ?> € bei <?php echo (int) $tl_pax; ?> Personen</span><?php endif; ?>
-							</span>
-						</label>
-					</li>
-					<?php endforeach; ?>
-				</ul>
-				<?php endif; ?>
+				<div class="od-sheet"><?php echo $document; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 
-				<?php if ( ! empty( $snap['wishes_platz'] ) || ! empty( $snap['wishes_firmengolf'] ) ) : ?>
-				<div class="tl-section-label">Eure Zusatzwünsche</div>
-				<p class="tl-note" style="margin:0 0 8px;">Auf Wunsch organisiert, wird separat ausgewiesen und ist noch nicht im oben genannten Preis enthalten.</p>
-				<ul class="tl-list">
-					<?php foreach ( (array) ( $snap['wishes_platz'] ?? [] ) as $i ) : ?><li><?php echo esc_html( $i ); ?> <span class="tl-src">am Platz</span></li><?php endforeach; ?>
-					<?php foreach ( (array) ( $snap['wishes_firmengolf'] ?? [] ) as $i ) : ?><li><?php echo esc_html( $i ); ?> <span class="tl-src">durch Firmengolf</span></li><?php endforeach; ?>
-				</ul>
-				<?php endif; ?>
-
-				<?php if ( isset( $_GET['agb'] ) ) : ?>
-				<p class="tl-note" style="color:#B4332B;margin:0 0 10px;">Bitte bestätige die AGB, um verbindlich zu buchen.</p>
-				<?php endif; ?>
-				<?php if ( isset( $_GET['session'] ) ) : ?>
-				<p class="tl-note" style="color:#B4332B;margin:0 0 10px;">Die Sitzung war abgelaufen. Bitte bestätige deine Auswahl noch einmal.</p>
-				<?php endif; ?>
-				<p class="tl-note" style="margin:0 0 14px;">Alle Preise verstehen sich zzgl. der gesetzlichen Umsatzsteuer. Es gelten unsere <a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>
-				<label style="display:flex;gap:9px;align-items:flex-start;margin:0 0 14px;font-size:13px;line-height:1.45;">
-					<input type="checkbox" id="tl-agb" name="fge_offer_agb" value="1" style="margin-top:3px;flex:0 0 auto;">
-					<span>Ich akzeptiere die <a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a> und buche mit „Angebot annehmen" verbindlich.</span>
-				</label>
-				<div style="display:flex;gap:10px;flex-wrap:wrap;">
-					<button type="submit" name="fge_offer_action" value="accept" id="tl-accept" class="tl-btn yes" style="padding:13px 26px;opacity:.5;" disabled>Angebot annehmen</button>
-					<button type="submit" name="fge_offer_action" value="decline" class="tl-btn no" style="padding:13px 26px;" onclick="return confirm('Angebot wirklich absagen? Der reservierte Termin wird dann freigegeben.');">Leider absagen</button>
-					<button type="button" id="tl-toggle-q" class="tl-btn" style="padding:13px 26px;background:#ECECE6;color:#333;border:none;border-radius:999px;cursor:pointer;">Rückfrage / Änderung</button>
-				</div>
-				<div id="tl-q-wrap" style="display:none;margin-top:12px;">
-					<textarea name="fge_offer_message" rows="3" placeholder="Was möchtet ihr ändern oder wissen?" style="width:100%;padding:10px 12px;border:1px solid #d8d8d2;border-radius:8px;font:inherit;box-sizing:border-box;"></textarea>
-					<button type="submit" name="fge_offer_action" value="request" class="tl-btn" style="margin-top:8px;padding:11px 22px;background:#4279D1;color:#fff;border:none;border-radius:999px;cursor:pointer;">Rückfrage senden</button>
+				<div class="od-actions">
+					<h2>Angebot annehmen</h2>
+					<?php if ( $deadline > time() ) : ?>
+					<div class="od-deadline">Wir halten den Termin bis <strong><?php echo esc_html( wp_date( 'D, d.m.Y', $deadline ) ); ?></strong> für euch. Sagt ihr bis dahin zu, ist er verbindlich gebucht.</div>
+					<?php elseif ( $deadline > 0 ) : ?>
+					<div class="od-deadline">Die Reservierungsfrist ist abgelaufen, der Termin ist nicht mehr garantiert. Ihr könnt trotzdem zusagen: wir prüfen dann sofort, ob er noch frei ist, und melden uns umgehend.</div>
+					<?php endif; ?>
+					<?php if ( isset( $_GET['agb'] ) ) : ?>
+					<p class="od-err">Bitte bestätige die AGB, um verbindlich zu buchen.</p>
+					<?php endif; ?>
+					<?php if ( isset( $_GET['session'] ) ) : ?>
+					<p class="od-err">Die Sitzung war abgelaufen. Bitte bestätige deine Auswahl noch einmal.</p>
+					<?php endif; ?>
+					<label class="od-agb">
+						<input type="checkbox" id="tl-agb" name="fge_offer_agb" value="1" style="margin-top:3px;flex:0 0 auto;">
+						<span>Ich akzeptiere die <a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a> und buche mit „Angebot annehmen" verbindlich.</span>
+					</label>
+					<div class="od-btns">
+						<button type="submit" name="fge_offer_action" value="accept" id="tl-accept" class="od-btn yes" disabled>Angebot annehmen</button>
+						<button type="button" id="tl-toggle-q" class="od-btn q">Rückfrage / Änderung</button>
+						<button type="submit" name="fge_offer_action" value="decline" class="od-btn no" onclick="return confirm('Angebot wirklich absagen? Der reservierte Termin wird dann freigegeben.');">Leider absagen</button>
+					</div>
+					<div id="tl-q-wrap" class="od-q">
+						<textarea name="fge_offer_message" rows="3" placeholder="Was möchtet ihr ändern oder wissen?"></textarea>
+						<button type="submit" name="fge_offer_action" value="request" class="od-btn yes" style="margin-top:8px;">Rückfrage senden</button>
+					</div>
+					<p class="od-hint">Mit „Angebot annehmen" bucht ihr verbindlich. Lieber erst etwas klären? Nutzt „Rückfrage / Änderung", euer Termin bleibt reserviert.</p>
 				</div>
 			</form>
-			<p class="tl-note">Mit „Angebot annehmen" bucht ihr verbindlich. Lieber erst etwas klären? Nutzt „Rückfrage / Änderung", euer Termin bleibt reserviert.</p>
-
-			<?php if ( '' !== (string) ( $snap['contact_phone'] ?? '' ) || '' !== (string) ( $snap['contact_email'] ?? '' ) ) : ?>
-			<div class="tl-contact" style="margin-top:22px;padding-top:16px;border-top:1px solid #ece9e2;font-size:13px;color:#555;">
-				Euer Ansprechpartner: <strong><?php echo esc_html( (string) ( $snap['contact_name'] ?? 'Firmengolf' ) ); ?></strong><?php
-				if ( '' !== (string) ( $snap['contact_phone'] ?? '' ) ) {
-					echo ' · <a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', (string) $snap['contact_phone'] ) ) . '" style="color:#4279D1;">' . esc_html( (string) $snap['contact_phone'] ) . '</a>';
+			<?php
+			$tl_pos  = function_exists( 'fge_offer_positions' ) ? fge_offer_positions( $snap ) : [ 'rows' => [], 'vat_percent' => 19 ];
+			$tl_base = 0.0;
+			foreach ( (array) $tl_pos['rows'] as $tl_row ) {
+				if ( 'event' === $tl_row['kind'] ) {
+					$tl_base = (float) $tl_row['total'];
 				}
-				if ( '' !== (string) ( $snap['contact_email'] ?? '' ) ) {
-					echo ' · <a href="mailto:' . esc_attr( (string) $snap['contact_email'] ) . '" style="color:#4279D1;">' . esc_html( (string) $snap['contact_email'] ) . '</a>';
-				}
-				?>
-			</div>
-			<?php endif; ?>
+			}
+			?>
 			<script>
 			(function(){
 				var agb = document.getElementById('tl-agb'), acc = document.getElementById('tl-accept');
-				if (agb && acc) { agb.addEventListener('change', function(){ acc.disabled = !agb.checked; acc.style.opacity = agb.checked ? '1' : '.5'; }); }
+				if (agb && acc) { agb.addEventListener('change', function(){ acc.disabled = !agb.checked; }); }
 				var tq = document.getElementById('tl-toggle-q'), qw = document.getElementById('tl-q-wrap');
-				if (tq && qw) { tq.addEventListener('click', function(){ qw.style.display = (qw.style.display === 'none' ? 'block' : 'none'); }); }
+				if (tq && qw) { tq.addEventListener('click', function(){ qw.style.display = (qw.style.display === 'block' ? 'none' : 'block'); }); }
 
-				// Zusatzleistungen abwählbar: Summe, MwSt. und Endpreis live nachrechnen.
+				// Zusatzleistungen abwählbar: Zwischensumme, USt. und Gesamtbetrag exakt nachrechnen.
 				var base = <?php echo wp_json_encode( round( $tl_base, 2 ) ); ?>,
-				    baseCa = <?php echo $tl_is_pp && $tl_base > 0 ? 'true' : 'false'; ?>,
-				    vat = <?php echo (int) $tl_vatp; ?>,
+				    vat = <?php echo (int) $tl_pos['vat_percent']; ?>,
 				    picks = document.querySelectorAll('.tl-x-pick');
-				function fmt(n){ return Math.round(n).toLocaleString('de-DE') + ' €'; }
+				function fmt(n){ return n.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €'; }
 				function recalc(){
-					var net = base, ca = baseCa;
+					var net = base;
 					picks.forEach(function(p){
-						if (!p.checked) return;
-						net += parseFloat(p.dataset.add || '0') || 0;
-						if (p.dataset.pp === '1') ca = true;
+						var tr = p.closest('tr');
+						if (tr) { tr.classList.toggle('od-off', !p.checked); }
+						if (p.checked && tr) { net += parseFloat(tr.dataset.total || '0') || 0; }
 					});
-					var pre = ca ? 'ca. ' : '';
-					var elN = document.getElementById('tl-x-net'), elV = document.getElementById('tl-x-vat'), elT = document.getElementById('tl-x-total');
-					if (elN) elN.textContent = pre + fmt(net);
-					if (elV) elV.textContent = pre + fmt(net * vat / 100);
-					if (elT) elT.textContent = pre + fmt(net * (1 + vat / 100));
+					net = Math.round(net * 100) / 100;
+					var v = Math.round(net * vat) / 100;
+					var elN = document.getElementById('od-net'), elV = document.getElementById('od-vat'), elT = document.getElementById('od-total');
+					if (elN) elN.textContent = fmt(net);
+					if (elV) elV.textContent = fmt(v);
+					if (elT) elT.textContent = fmt(Math.round((net + v) * 100) / 100);
 				}
 				picks.forEach(function(p){ p.addEventListener('change', recalc); });
 			})();
@@ -266,20 +243,9 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 			<div class="tl-eyebrow">Anfrage <?php echo esc_html( $ref ); ?></div>
 			<h1 class="tl-h">Hallo <?php echo esc_html( $first ?: '' ); ?>, hier ist <em>euer aktueller Stand</em>.</h1>
 			<div class="tl-status-card"><?php echo esc_html( $status_msg( $status ) ); ?></div>
-			<?php if ( 'accepted' === $offer_status && ! empty( $snap ) ) :
-				$tl_sel    = array_map( 'intval', (array) get_post_meta( $req, '_fge_offer_extras_selected', true ) );
-				$tl_booked = array_filter( (array) ( $snap['extras'] ?? [] ), static fn( $x ) => in_array( (int) ( $x['src'] ?? -1 ), $tl_sel, true ) );
-				?>
-			<div class="tl-summary" style="margin-top:18px;">
-				<div class="tl-sum-co"><?php echo esc_html( (string) ( $snap['event_title'] ?? '' ) ); ?></div>
-				<div class="tl-sum-grid">
-					<div class="tl-sum-item"><div class="k">Termin</div><div class="v"><?php echo esc_html( (string) ( $snap['date'] ?? '' ) ); ?></div></div>
-					<div class="tl-sum-item"><div class="k">Status</div><div class="v">Gebucht</div></div>
-					<?php if ( ! empty( $tl_booked ) ) : ?>
-					<div class="tl-sum-item"><div class="k">Zusatzleistungen</div><div class="v"><?php echo esc_html( implode( ', ', array_map( static fn( $x ) => (string) $x['label'], $tl_booked ) ) ); ?></div></div>
-					<?php endif; ?>
-				</div>
-			</div>
+			<?php if ( in_array( $offer_status, [ 'accepted', 'declined' ], true ) && '' !== $document ) : ?>
+			<div class="od-top" style="margin-top:22px;"><span><?php echo 'accepted' === $offer_status ? 'Eure Buchung im Überblick' : 'Das Angebot'; ?></span><?php echo $pdf_button; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
+			<div class="od-sheet"><?php echo $document; // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<?php endif; ?>
 		<?php endif; ?>
 	<?php endif; ?>
@@ -292,7 +258,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 		<a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a>
 	</footer>
 	<style>
-	.tl-legal { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; margin: 32px auto 40px; font-size: 12.5px; }
+	.tl-legal { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; margin: 12px auto 40px; font-size: 12.5px; }
 	.tl-legal a { color: #5C6660; text-decoration: none; }
 	.tl-legal a:hover, .tl-legal a:focus-visible { color: #4279D1; text-decoration: underline; text-underline-offset: 2px; }
 	</style>

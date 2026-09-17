@@ -447,38 +447,17 @@ function fge_send_offer_email( int $request_id ): bool {
 	if ( $data['contact_email'] === '' ) {
 		return false;
 	}
-	$snap  = (array) get_post_meta( $request_id, '_fge_offer_snapshot', true );
-	$ref   = fge_request_number( $request_id );
-	$link  = function_exists( 'fge_offer_link' ) ? fge_offer_link( $request_id ) : home_url();
-	$greet = $data['first_name'] !== '' ? 'Hallo ' . esc_html( $data['first_name'] ) . ',' : 'Hallo,';
+	$snap     = (array) get_post_meta( $request_id, '_fge_offer_snapshot', true );
+	$ref      = fge_request_number( $request_id );
+	$link     = function_exists( 'fge_offer_link' ) ? fge_offer_link( $request_id ) : home_url();
+	$greet    = $data['first_name'] !== '' ? 'Hallo ' . esc_html( $data['first_name'] ) . ',' : 'Hallo,';
+	$deadline = (int) get_post_meta( $request_id, '_fge_offer_deadline', true );
 
-	// Netto-Summe fürs Ausweisen von MwSt. + Endpreis (Julius, 2026-07-06):
-	// Eventpreis plus bepreiste Zusatzleistungen, p.P.-Anteile über alle Teilnehmer.
-	$vatp   = (int) ( $snap['vat_percent'] ?? 19 );
+	// Angebot als Positionstabelle wie im Dokument (Julius, 17.09.2026): exakte
+	// Beträge, USt. nur einmal im Summenblock, das PDF hängt an der Mail.
+	$table  = function_exists( 'fge_offer_mail_table_html' ) ? fge_offer_mail_table_html( $request_id ) : '';
 	$extras = array_values( (array) ( $snap['extras'] ?? [] ) );
-	$totals = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap ) : [ 'net' => 0.0, 'ca' => false ];
-	$net    = (float) $totals['net'];
-	$ca     = $totals['ca'] ? 'ca. ' : ''; // p.P.-Summen hängen an der Teilnehmerzahl (Kern-Audit M6)
-	$pax    = (int) ( $snap['participants'] ?? 0 );
-
-	$row  = static function ( $k, $v ) { return '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $v . '</td></tr>'; };
-	$rows = $row( 'Event', esc_html( (string) ( $snap['event_title'] ?? '' ) ) )
-		. $row( 'Termin', esc_html( (string) ( $snap['date'] ?? '' ) ) )
-		. ( '' !== (string) ( $snap['location'] ?? '' ) ? $row( 'Ort', esc_html( (string) $snap['location'] ) ) : '' )
-		. ( $pax > 0 ? $row( 'Teilnehmer', $pax . ' Personen' ) : '' );
-	if ( (float) ( $snap['price_gross'] ?? 0 ) > 0 || empty( $extras ) ) {
-		$rows .= $row( empty( $extras ) ? 'Preis (netto)' : 'Eventpreis (netto)', esc_html( function_exists( 'fge_offer_price_text' ) ? fge_offer_price_text( $snap ) : '' ) );
-	}
-	foreach ( $extras as $x ) {
-		$rows .= $row( (string) ( $x['label'] ?? '' ), esc_html( function_exists( 'fge_offer_extra_price_text' ) ? fge_offer_extra_price_text( $x ) : '' ) );
-	}
-	if ( $net > 0 ) {
-		if ( ! empty( $extras ) ) {
-			$rows .= $row( 'Summe (netto)', $ca . number_format_i18n( round( $net ), 0 ) . ' €' );
-		}
-		$rows .= $row( 'zzgl. ' . $vatp . ' % MwSt.', $ca . number_format_i18n( round( $net * $vatp / 100 ), 0 ) . ' €' )
-			. $row( 'Endpreis inkl. MwSt.', '<strong>' . $ca . number_format_i18n( round( $net * ( 1 + $vatp / 100 ) ), 0 ) . ' €</strong>' );
-	}
+	$pdf    = function_exists( 'fge_offer_pdf_tempfile' ) ? fge_offer_pdf_tempfile( $request_id ) : '';
 
 	$cname         = (string) ( $snap['contact_name'] ?? '' );
 	$cphone        = (string) ( $snap['contact_phone'] ?? '' );
@@ -490,26 +469,24 @@ function fge_send_offer_email( int $request_id ): bool {
 			. '</p>'
 		: '';
 
-	$incl = '';
-	foreach ( (array) ( $snap['includes'] ?? [] ) as $i ) { $incl .= '<li style="margin-bottom:3px;">' . esc_html( $i ) . '</li>'; }
-	$wish = '';
-	foreach ( (array) ( $snap['wishes_platz'] ?? [] ) as $i ) { $wish .= '<li style="margin-bottom:3px;">' . esc_html( $i ) . ' <span style="color:#6C736E;">(am Platz)</span></li>'; }
-	foreach ( (array) ( $snap['wishes_firmengolf'] ?? [] ) as $i ) { $wish .= '<li style="margin-bottom:3px;">' . esc_html( $i ) . ' <span style="color:#6C736E;">(durch Firmengolf)</span></li>'; }
+	$wishes = array_merge( (array) ( $snap['wishes_platz'] ?? [] ), (array) ( $snap['wishes_firmengolf'] ?? [] ) );
 
-	$subject = 'Euer Angebot für ' . ( (string) ( $snap['event_title'] ?? 'euer Event' ) ) . ' (' . $ref . ')';
+	$subject = 'Euer Angebot ' . $ref . ': ' . ( (string) ( $snap['event_title'] ?? 'euer Event' ) );
 	$content = '
 		<p style="margin:0 0 16px;">' . $greet . '</p>
-		<p style="margin:0 0 16px;">der Termin steht. Hier ist euer Angebot, ihr könnt es mit einem Klick annehmen.</p>
-		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
-		' . ( $incl !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Das ist dabei</p><ul style="margin:0 0 14px;padding-left:20px;">' . $incl . '</ul>' : '' ) . '
-		' . ( ! empty( $extras ) ? '<p style="margin:0 0 14px;color:#6C736E;font-size:13px;">Die Zusatzleistungen sind in der Summe enthalten. Was ihr nicht braucht, könnt ihr auf der Angebotsseite einzeln abwählen, der Preis passt sich an.</p>' : '' ) . '
-		' . ( $wish !== '' ? '<p style="margin:0 0 4px;font-weight:600;">Eure Zusatzwünsche</p><p style="margin:0 0 6px;color:#6C736E;font-size:13px;">Auf Wunsch organisiert, wird separat ausgewiesen, noch nicht im oben genannten Preis enthalten.</p><ul style="margin:0 0 14px;padding-left:20px;">' . $wish . '</ul>' : '' ) . '
-		<p style="margin:0 0 14px;color:#6C736E;font-size:13px;">Alle Preise zzgl. gesetzl. USt. Es gelten unsere <a href="' . esc_url( home_url( '/agb/' ) ) . '" style="color:#4279D1;">AGB</a> inkl. Storno- und Zahlungsbedingungen.</p>
-		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Angebot ansehen & bestätigen' ) . '</p>
+		<p style="margin:0 0 18px;">der Termin steht. Hier ist euer Angebot <strong>' . esc_html( $ref ) . '</strong>, ihr könnt es online mit einem Klick annehmen.' . ( '' !== $pdf ? ' Als PDF findet ihr es auch im Anhang.' : '' ) . '</p>
+		' . $table . '
+		' . ( ! empty( $extras ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Zusatzleistungen könnt ihr auf der Angebotsseite einzeln abwählen, die Summe passt sich an.</p>' : '' ) . '
+		' . ( ! empty( $wishes ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Auf Wunsch zusätzlich organisierbar, wird separat angeboten: ' . esc_html( implode( ', ', array_map( 'strval', $wishes ) ) ) . '.</p>' : '' ) . '
+		<p style="margin:0 0 18px;color:#555;font-size:12px;">' . ( $deadline > 0 ? 'Das Angebot ist gültig bis ' . esc_html( wp_date( 'd.m.Y', $deadline ) ) . ', bis dahin halten wir den Termin für euch. ' : '' ) . 'Es gelten unsere <a href="' . esc_url( home_url( '/agb/' ) ) . '" style="color:#4279D1;">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>
+		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Angebot ansehen & annehmen' ) . '</p>
 		' . $contact_block . '
-		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '. Bei Fragen einfach auf diese Mail antworten.</p>
+		<p style="margin:0;color:#6C736E;font-size:13px;">Angebotsnummer ' . esc_html( $ref ) . '. Bei Fragen einfach auf diese Mail antworten.</p>
 	';
-	$sent = wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	$sent = wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ], '' !== $pdf ? [ $pdf ] : [] );
+	if ( function_exists( 'fge_offer_pdf_cleanup' ) ) {
+		fge_offer_pdf_cleanup( $pdf );
+	}
 	update_post_meta( $request_id, '_fge_offer_email_sent', $sent ? 1 : 0 );
 	return (bool) $sent;
 }
@@ -567,7 +544,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 			$tot      = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap, $sel ) : [ 'net' => 0.0, 'ca' => false ];
 			$xs_block = '<p style="margin:0 0 6px;font-weight:600;">Abrechnungsübersicht Zusatzleistungen (intern)</p>'
 				. '<table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.5;margin:0 0 8px;">' . $trs . '</table>'
-				. ( (float) $tot['net'] > 0 ? '<p style="margin:0 0 6px;"><strong>Rechnungsbetrag an den Kunden (netto, inkl. Event und gebuchter Zusatzleistungen):</strong> ' . esc_html( ( $tot['ca'] ? 'ca. ' : '' ) . number_format_i18n( round( (float) $tot['net'] ), 0 ) . ' €' ) . '</p>' : '' )
+				. ( (float) $tot['net'] > 0 ? '<p style="margin:0 0 6px;"><strong>Rechnungsbetrag an den Kunden (netto, inkl. Event und gebuchter Zusatzleistungen):</strong> ' . esc_html( number_format_i18n( (float) $tot['net'], 2 ) . ' €' . ( $tot['ca'] ? ' bei ' . (int) ( $snap['participants'] ?? 0 ) . ' Teilnehmern, Abrechnung nach tatsächlicher Zahl' : '' ) ) . '</p>' : '' )
 				. '<p style="margin:0 0 16px;color:#6C736E;font-size:13px;">Dienstleister mit hinterlegter Mail wurden automatisch beauftragt bzw. bei Abwahl abgesagt.</p>';
 		}
 	}

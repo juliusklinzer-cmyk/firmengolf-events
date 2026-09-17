@@ -112,11 +112,23 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 	if ( '' === $location ) {
 		$location = (string) get_post_meta( $req, '_fge_company_city', true );
 	}
+	// Angebotstext je Anfrage (Julius, 17.09.2026): Veranstaltungsort, Ablauf und
+	// Leistungsliste aus „Schritt 2" übersteuern die generischen Event-Angaben, damit
+	// bei Platzhalter-Events der echte Platz und das vereinbarte Programm im Angebot stehen.
+	$loc_override = trim( (string) get_post_meta( $req, '_fge_offer_location', true ) );
+	if ( '' !== $loc_override ) {
+		$location = $loc_override;
+	}
+	$inc_override = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) get_post_meta( $req, '_fge_offer_includes', true ) ) ) ) );
+	if ( ! empty( $inc_override ) ) {
+		$includes = $inc_override;
+	}
 
 	return [
 		'event_title'       => $event_id ? get_the_title( $event_id ) : ( (string) get_post_meta( $req, '_fge_event_type', true ) ?: 'Firmen-Event' ),
 		'date'              => (string) get_post_meta( $req, '_fge_preferred_date_' . $date_index, true ),
 		'location'          => $location,
+		'schedule'          => trim( (string) get_post_meta( $req, '_fge_offer_schedule', true ) ),
 		'participants'      => $pax,
 		'price_gross'       => $gross,
 		'price_unit'        => $unit,
@@ -139,19 +151,18 @@ function fge_offer_price_text( array $snap ): string {
 		return 'Auf Anfrage';
 	}
 	$unit = (string) ( $snap['price_unit'] ?? '' );
-	$s    = number_format_i18n( $gross, 0 ) . ' €' . ( 'pro Person' === $unit ? ' p.P.' : ' gesamt' );
+	// Exakte Beträge mit zwei Nachkommastellen, kein „ca." (Julius, 17.09.2026).
+	$s = number_format_i18n( $gross, 2 ) . ' €' . ( 'pro Person' === $unit ? ' p.P.' : ' gesamt' );
 	if ( 'pro Person' === $unit && (int) ( $snap['participants'] ?? 0 ) > 0 ) {
-		$s .= ' · ca. ' . number_format_i18n( (float) $snap['price_total'], 0 ) . ' € bei ' . (int) $snap['participants'] . ' Personen';
+		$s .= ' · ' . number_format_i18n( (float) $snap['price_total'], 2 ) . ' € bei ' . (int) $snap['participants'] . ' Personen';
 	}
-	// Kein „zzgl. X % USt ergibt ca. Y" am Preis (Julius, 2026-07-04) — USt-Hinweis steht einmal im Kleingedruckten.
 	return $s;
 }
 
-/** Preistext einer Extra-Position (Verkauf netto), z. B. "540 € pauschal" / "45 € p.P.". */
+/** Preistext einer Extra-Position (Verkauf netto), z. B. "540,00 € pauschal" / "45,00 € p.P.". */
 function fge_offer_extra_price_text( array $extra ): string {
 	$p = (float) ( $extra['price'] ?? 0 );
-	$n = ( floor( $p ) === $p ) ? number_format_i18n( $p, 0 ) : number_format_i18n( $p, 2 );
-	return $n . ' €' . ( 'person' === (string) ( $extra['basis'] ?? '' ) ? ' p.P.' : ' pauschal' );
+	return number_format_i18n( $p, 2 ) . ' €' . ( 'person' === (string) ( $extra['basis'] ?? '' ) ? ' p.P.' : ' pauschal' );
 }
 
 /**
@@ -195,7 +206,7 @@ function fge_offer_gross_incl_vat_text( array $snap ): string {
 	if ( $base <= 0 ) {
 		return '';
 	}
-	return 'ca. ' . number_format_i18n( $base * ( 1 + $vat / 100 ), 0 ) . ' € inkl. MwSt.';
+	return number_format_i18n( round( $base * ( 1 + $vat / 100 ), 2 ), 2 ) . ' € inkl. USt.';
 }
 
 // ── Auslöser: Termin bestätigt → Angebot erzeugen + senden ────────────────────

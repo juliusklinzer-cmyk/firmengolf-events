@@ -241,6 +241,35 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 		</select>
 	</p>
 
+	<?php
+	// Angebotstext für Position 1 (Julius, 17.09.2026): Ort, Ablauf und Leistungen
+	// stehen im Angebot zusammen unter dem Event. Leer = Angaben des zugeordneten Events.
+	$ov_loc  = (string) get_post_meta( $req, '_fge_offer_location', true );
+	$ov_sch  = (string) get_post_meta( $req, '_fge_offer_schedule', true );
+	$ov_inc  = (string) get_post_meta( $req, '_fge_offer_includes', true );
+	$ev_loc  = $event_id > 0 ? (string) get_post_meta( $event_id, '_fge_event_location', true ) : '';
+	$ev_inc  = $event_id > 0 ? get_post_meta( $event_id, '_fge_event_includes', true ) : [];
+	$ev_inc  = is_array( $ev_inc ) ? $ev_inc : array_filter( preg_split( '/\r\n|\r|\n/', (string) $ev_inc ) );
+	$ev_inc  = implode( "\n", array_map( 'strval', (array) $ev_inc ) );
+	?>
+	<p style="margin:16px 0 4px;"><strong>Angebotstext zu Position 1 (optional)</strong></p>
+	<p class="description" style="margin:0 0 6px;">Steht im Angebot, in der Angebotsmail und im PDF direkt unter dem Event: Ort, Ablauf und Leistungen zusammen. Leer gelassen gelten Ort und Leistungsliste des zugeordneten Events.</p>
+	<table class="form-table" style="margin:0;">
+		<tr>
+			<th scope="row" style="padding:6px 10px 6px 0;width:160px;"><label for="fge-offer-location">Veranstaltungsort</label></th>
+			<td style="padding:6px 0;"><input type="text" id="fge-offer-location" name="fge_offer_location" value="<?php echo esc_attr( $ov_loc ); ?>" class="regular-text" placeholder="<?php echo esc_attr( '' !== $ev_loc ? 'Standard: ' . $ev_loc : 'z. B. Golfpark Weidenhof, Pinneberg' ); ?>"></td>
+		</tr>
+		<tr>
+			<th scope="row" style="padding:6px 10px 6px 0;"><label for="fge-offer-schedule">Ablauf und Zeiten</label></th>
+			<td style="padding:6px 0;"><textarea id="fge-offer-schedule" name="fge_offer_schedule" rows="3" class="large-text" placeholder="z. B. Start 12:00 Uhr, 3 Stunden Schnupperkurs, danach 6-Loch-Spiel auf dem Kurzplatz in zwei 3er-Flights"><?php echo esc_textarea( $ov_sch ); ?></textarea></td>
+		</tr>
+		<tr>
+			<th scope="row" style="padding:6px 10px 6px 0;"><label for="fge-offer-includes">Leistungen</label></th>
+			<td style="padding:6px 0;"><textarea id="fge-offer-includes" name="fge_offer_includes" rows="5" class="large-text" placeholder="<?php echo esc_attr( '' !== $ev_inc ? "Standard vom Event:\n" . $ev_inc : 'Eine Leistung je Zeile' ); ?>"><?php echo esc_textarea( $ov_inc ); ?></textarea>
+			<p class="description" style="margin:4px 0 0;">Eine Leistung je Zeile. Ersetzt die Liste des Events komplett.</p></td>
+		</tr>
+	</table>
+
 	<div style="margin:14px 0 0;padding:10px 12px;background:#F0F4FA;border-radius:6px;font-size:13px;line-height:1.7;" id="fge-xs-sums">
 		<strong>Angebotssumme (Vorschau, netto)</strong><br>
 		Eventpreis: <span id="fge-xs-sum-base"></span> · Positionen: <span id="fge-xs-sum-pos"></span> · <strong>Gesamt: <span id="fge-xs-sum-total"></span></strong>
@@ -363,5 +392,17 @@ function fge_save_extra_services( int $post_id ) {
 	} else {
 		delete_post_meta( $post_id, '_fge_offer_base_override' );
 		delete_post_meta( $post_id, '_fge_offer_base_override_unit' );
+	}
+
+	// Angebotstext zu Position 1 (Ort, Ablauf, Leistungen), leer = Event-Angaben.
+	$ov_loc = sanitize_text_field( wp_unslash( $_POST['fge_offer_location'] ?? '' ) );
+	$ov_sch = sanitize_textarea_field( wp_unslash( $_POST['fge_offer_schedule'] ?? '' ) );
+	$ov_inc = sanitize_textarea_field( wp_unslash( $_POST['fge_offer_includes'] ?? '' ) );
+	foreach ( [ '_fge_offer_location' => $ov_loc, '_fge_offer_schedule' => $ov_sch, '_fge_offer_includes' => $ov_inc ] as $k => $v ) {
+		if ( '' !== trim( $v ) ) {
+			update_post_meta( $post_id, $k, trim( $v ) );
+		} else {
+			delete_post_meta( $post_id, $k );
+		}
 	}
 }
