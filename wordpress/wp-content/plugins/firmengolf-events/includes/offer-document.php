@@ -91,12 +91,11 @@ function fge_offer_positions( array $snap, ?array $selected = null ): array {
 }
 
 /**
- * Hinweis zur Teilnehmerzahl bei Pro-Kopf-Preisen. Die gebuchte Zahl ist verbindlich,
- * der Platz rechnet mit ihr ab (Julius, 17.09.2026). Änderungsfrist passt zu § 4 und
- * § 7 der AGB (unter 7 Tagen bzw. Nichterscheinen = 90 % Storno).
+ * Hinweis zur Teilnehmerzahl bei Pro-Kopf-Preisen: freundlich formuliert (Julius,
+ * 17.09.2026), die verbindliche Regel (Storno, Fristen) steht in den AGB.
  */
 function fge_offer_pax_note( int $pax ): string {
-	return 'Berechnungsbasis ' . $pax . ' Teilnehmer. Die gebuchte Teilnehmerzahl ist verbindlich. Änderungen sind bis 7 Tage vor dem Termin möglich, danach wird die gebuchte Zahl berechnet.';
+	return 'Berechnungsbasis ' . $pax . ' Teilnehmer. Falls sich an der Teilnehmerzahl etwas ändert, gebt uns bitte frühzeitig Bescheid, dann passen wir das Angebot an.';
 }
 
 /** Gemeinsames CSS für Seite und PDF (Klassen .od-*). Mail bekommt Inline-Styles. */
