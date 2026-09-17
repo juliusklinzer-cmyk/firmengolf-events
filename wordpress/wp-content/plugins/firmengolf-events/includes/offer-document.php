@@ -90,6 +90,15 @@ function fge_offer_positions( array $snap, ?array $selected = null ): array {
 	];
 }
 
+/**
+ * Hinweis zur Teilnehmerzahl bei Pro-Kopf-Preisen. Die gebuchte Zahl ist verbindlich,
+ * der Platz rechnet mit ihr ab (Julius, 17.09.2026). Änderungsfrist passt zu § 4 und
+ * § 7 der AGB (unter 7 Tagen bzw. Nichterscheinen = 90 % Storno).
+ */
+function fge_offer_pax_note( int $pax ): string {
+	return 'Berechnungsbasis ' . $pax . ' Teilnehmer. Die gebuchte Teilnehmerzahl ist verbindlich. Änderungen sind bis 7 Tage vor dem Termin möglich, danach wird die gebuchte Zahl berechnet.';
+}
+
 /** Gemeinsames CSS für Seite und PDF (Klassen .od-*). Mail bekommt Inline-Styles. */
 function fge_offer_document_css(): string {
 	return '
@@ -279,7 +288,7 @@ function fge_offer_document_html( int $req, string $mode = 'web' ): string {
 
 	// ── Hinweise ──
 	if ( $pos['pp'] && $pos['pax'] > 0 ) {
-		$h .= '<p class="od-note">Berechnungsbasis ' . (int) $pos['pax'] . ' Teilnehmer. Abgerechnet wird nach der tatsächlichen Teilnehmerzahl.</p>';
+		$h .= '<p class="od-note">' . fge_offer_pax_note( (int) $pos['pax'] ) . '</p>';
 	}
 	if ( $pick && count( $pos['rows'] ) > 1 ) {
 		$h .= '<p class="od-note">Zusatzleistungen könnt ihr abwählen, die Summe passt sich sofort an.</p>';
@@ -364,7 +373,7 @@ function fge_offer_mail_table_html( int $req ): string {
 	}
 	$h .= '</table>';
 	if ( $pos['pp'] && $pos['pax'] > 0 ) {
-		$h .= '<p style="margin:0 0 6px;color:#555;font-size:12px;">Berechnungsbasis ' . (int) $pos['pax'] . ' Teilnehmer. Abgerechnet wird nach der tatsächlichen Teilnehmerzahl.</p>';
+		$h .= '<p style="margin:0 0 6px;color:#555;font-size:12px;">' . fge_offer_pax_note( (int) $pos['pax'] ) . '</p>';
 	}
 	return $h;
 }

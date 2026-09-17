@@ -544,7 +544,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 			$tot      = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap, $sel ) : [ 'net' => 0.0, 'ca' => false ];
 			$xs_block = '<p style="margin:0 0 6px;font-weight:600;">Abrechnungsübersicht Zusatzleistungen (intern)</p>'
 				. '<table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.5;margin:0 0 8px;">' . $trs . '</table>'
-				. ( (float) $tot['net'] > 0 ? '<p style="margin:0 0 6px;"><strong>Rechnungsbetrag an den Kunden (netto, inkl. Event und gebuchter Zusatzleistungen):</strong> ' . esc_html( number_format_i18n( (float) $tot['net'], 2 ) . ' €' . ( $tot['ca'] ? ' bei ' . (int) ( $snap['participants'] ?? 0 ) . ' Teilnehmern, Abrechnung nach tatsächlicher Zahl' : '' ) ) . '</p>' : '' )
+				. ( (float) $tot['net'] > 0 ? '<p style="margin:0 0 6px;"><strong>Rechnungsbetrag an den Kunden (netto, inkl. Event und gebuchter Zusatzleistungen):</strong> ' . esc_html( number_format_i18n( (float) $tot['net'], 2 ) . ' €' . ( $tot['ca'] ? ' bei ' . (int) ( $snap['participants'] ?? 0 ) . ' gebuchten Teilnehmern' : '' ) ) . '</p>' : '' )
 				. '<p style="margin:0 0 16px;color:#6C736E;font-size:13px;">Dienstleister mit hinterlegter Mail wurden automatisch beauftragt bzw. bei Abwahl abgesagt.</p>';
 		}
 	}
