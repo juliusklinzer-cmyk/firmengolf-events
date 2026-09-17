@@ -557,7 +557,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: 'k. A.' ) . '<br>
 		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: 'k. A.' ) . '</p>
 		' . $xs_block . '
-		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen.</p>
+		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen. Für die automatische Vortags-Info in der Anfrage unter „Schritt 4: Event-Tag" Startzeit, Treffpunkt und Ansprechpartner vor Ort eintragen.</p>
 		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
 	wp_mail( $to, 'Auftrag steht: ' . $ref, fge_email_wrap( 'Auftrag steht: ' . $ref, $ic ), [ 'Content-Type: text/html; charset=UTF-8' ] );
