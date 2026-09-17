@@ -93,7 +93,7 @@ function fge_handle_admin_confirm_offer(): void {
 	}
 	check_admin_referer( 'fge_admin_confirm_offer_' . $req );
 
-	$idx   = absint( $_POST['date_index'] ?? 0 );
+	$idx   = absint( $_POST['fge_confirm_date_index'] ?? $_POST['date_index'] ?? 0 );
 	$label = trim( (string) get_post_meta( $req, '_fge_preferred_date_' . $idx, true ) );
 
 	// Kein Event mehr nötig: Individual-Anfragen werden über Angebots-Positionen
@@ -259,19 +259,17 @@ function fge_render_mb_scheduling( WP_Post $post ): void {
 		</tbody>
 	</table>
 
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:0;">
-		<?php wp_nonce_field( 'fge_take_over_' . $req ); ?>
-		<input type="hidden" name="action" value="fge_take_over">
-		<input type="hidden" name="request_id" value="<?php echo (int) $req; ?>">
-		<?php if ( $taken_over ) : ?>
-			<input type="hidden" name="mode" value="off">
-			<button type="submit" class="button">Übernahme zurücknehmen</button>
-		<?php else : ?>
-			<input type="hidden" name="mode" value="on">
-			<button type="submit" class="button button-primary">Koordination übernehmen</button>
-			<span class="description" style="margin-left:8px;">Firmengolf koordiniert dann direkt mit der Firma.</span>
-		<?php endif; ?>
-	</form>
+	<p style="margin:0;">
+		<?php
+		// Kein <form> in der Metabox (verschachtelt im WP-Formular, siehe fge_admin_post_button).
+		if ( $taken_over ) {
+			fge_admin_post_button( 'fge_take_over', [ 'request_id' => $req, 'mode' => 'off' ], 'Übernahme zurücknehmen', [ 'nonce_action' => 'fge_take_over_' . $req ] );
+		} else {
+			fge_admin_post_button( 'fge_take_over', [ 'request_id' => $req, 'mode' => 'on' ], 'Koordination übernehmen', [ 'class' => 'button button-primary', 'nonce_action' => 'fge_take_over_' . $req ] );
+			echo '<span class="description" style="margin-left:8px;">Firmengolf koordiniert dann direkt mit der Firma.</span>';
+		}
+		?>
+	</p>
 	<?php
 }
 
@@ -319,19 +317,29 @@ function fge_render_manual_offer_panel( int $req, array $wish, int $event_id, bo
 	}
 
 	?>
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:10px 0 0;">
-		<?php wp_nonce_field( 'fge_admin_confirm_offer_' . $req ); ?>
-		<input type="hidden" name="action" value="fge_admin_confirm_offer">
-		<input type="hidden" name="request_id" value="<?php echo (int) $req; ?>">
+	<div style="margin:10px 0 0;">
+		<?php // Kein <form> in der Metabox (verschachtelt im WP-Formular, siehe fge_admin_post_button). ?>
 		<p style="margin:0 0 8px;"><strong>Termin bestätigen:</strong></p>
 		<?php $first = true; foreach ( $wish as $idx => $label ) : ?>
 			<label style="display:block;margin:0 0 6px;">
-				<input type="radio" name="date_index" value="<?php echo (int) $idx; ?>" <?php checked( $first ); ?>>
+				<input type="radio" name="fge_confirm_date_index" value="<?php echo (int) $idx; ?>" <?php checked( $first ); ?>>
 				<?php echo esc_html( $label ); ?>
 			</label>
 		<?php $first = false; endforeach; ?>
 		<p style="margin:12px 0 0;">
-			<button type="submit" class="button button-primary"><?php echo $needs_review ? 'Termin bestätigen (Angebot folgt nach Feinplanung)' : 'Termin bestätigen &amp; Angebot senden'; ?></button>
+			<?php
+			fge_admin_post_button(
+				'fge_admin_confirm_offer',
+				[ 'request_id' => $req ],
+				$needs_review ? 'Termin bestätigen (Angebot folgt nach Feinplanung)' : 'Termin bestätigen & Angebot senden',
+				[
+					'class'        => 'button button-primary',
+					'radio'        => 'fge_confirm_date_index',
+					'confirm'      => $needs_review ? 'Termin bestätigen? Der Kunde bekommt eine Termin-Bestätigung per Mail.' : 'Termin bestätigen und das Angebot jetzt per Mail an den Kunden senden?',
+					'nonce_action' => 'fge_admin_confirm_offer_' . $req,
+				]
+			);
+			?>
 			<span class="description" style="margin-left:8px;"><?php
 			if ( $needs_review ) {
 				echo 'Der Kunde bekommt eine Termin-Bestätigung per Mail.';
@@ -340,6 +348,6 @@ function fge_render_manual_offer_panel( int $req, array $wish, int $event_id, bo
 			}
 			?></span>
 		</p>
-	</form>
+	</div>
 	<?php
 }

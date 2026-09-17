@@ -95,7 +95,7 @@ function fge_offer_positions( array $snap, ?array $selected = null ): array {
  * 17.09.2026), die verbindliche Regel (Storno, Fristen) steht in den AGB.
  */
 function fge_offer_pax_note( int $pax ): string {
-	return 'Berechnungsbasis ' . $pax . ' Teilnehmer. Falls sich an der Teilnehmerzahl etwas ändert, gebt uns bitte frühzeitig Bescheid, dann passen wir das Angebot an.';
+	return 'Berechnungsbasis ' . $pax . ' Teilnehmer. Falls sich an der Teilnehmerzahl etwas ändert, gebt uns bitte frühzeitig Bescheid.';
 }
 
 /** Gemeinsames CSS für Seite und PDF (Klassen .od-*). Mail bekommt Inline-Styles. */

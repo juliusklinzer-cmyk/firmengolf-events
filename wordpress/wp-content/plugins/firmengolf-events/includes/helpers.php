@@ -551,3 +551,59 @@ function fge_get_posts_select_options( string $post_type ): array {
 	}
 	return $options;
 }
+
+/**
+ * Admin-Aktions-Button für Metaboxen im Beitrags-Editor (Julius, 17.09.2026).
+ *
+ * Hintergrund: Metaboxen liegen im WordPress-Formular #post. Ein eigenes <form>
+ * darin wird vom Browser verworfen, die versteckten Felder (action, request_id,
+ * Nonce) landen im Hauptformular und überschreiben dessen action=editpost. Folge:
+ * „Aktualisieren" leitet auf die Beitragsliste um und speichert nichts, die
+ * Aktions-Buttons selbst greifen ebenfalls nicht. Dieser Button baut beim Klick
+ * per JS ein eigenes Formular außerhalb von #post und schickt es an admin-post.php.
+ *
+ * @param string $action  admin_post_-Aktion.
+ * @param array  $fields  Versteckte Felder (inkl. request_id); Nonce wird ergänzt.
+ * @param string $label   Button-Text.
+ * @param array  $opts    class (Button-Klassen), confirm (Sicherheitsfrage),
+ *                        radio (Name einer Radio-Gruppe, deren Wert mitgeschickt wird).
+ */
+function fge_admin_post_button( string $action, array $fields, string $label, array $opts = [] ): void {
+	static $script_done = false;
+	$fields['action']   = $action;
+	$fields['_wpnonce'] = wp_create_nonce( (string) ( $opts['nonce_action'] ?? $action ) );
+	echo '<button type="button" class="' . esc_attr( (string) ( $opts['class'] ?? 'button' ) ) . '"'
+		. ' data-fge-post-action="' . esc_attr( wp_json_encode( $fields ) ) . '"'
+		. ( ! empty( $opts['radio'] ) ? ' data-fge-radio="' . esc_attr( (string) $opts['radio'] ) . '"' : '' )
+		. ( ! empty( $opts['confirm'] ) ? ' data-fge-confirm="' . esc_attr( (string) $opts['confirm'] ) . '"' : '' )
+		. '>' . esc_html( $label ) . '</button>';
+	if ( $script_done ) {
+		return;
+	}
+	$script_done = true;
+	?>
+	<script>
+	document.addEventListener('click', function (e) {
+		var b = e.target.closest ? e.target.closest('[data-fge-post-action]') : null;
+		if (!b) { return; }
+		e.preventDefault();
+		if (b.dataset.fgeConfirm && !window.confirm(b.dataset.fgeConfirm)) { return; }
+		var fields = {};
+		try { fields = JSON.parse(b.dataset.fgePostAction || '{}'); } catch (err) { return; }
+		if (b.dataset.fgeRadio) {
+			var r = document.querySelector('input[name="' + b.dataset.fgeRadio + '"]:checked');
+			if (r) { fields[b.dataset.fgeRadio] = r.value; }
+		}
+		var f = document.createElement('form');
+		f.method = 'post';
+		f.action = <?php echo wp_json_encode( admin_url( 'admin-post.php' ) ); ?>;
+		Object.keys(fields).forEach(function (k) {
+			var i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = fields[k]; f.appendChild(i);
+		});
+		document.body.appendChild(f);
+		b.disabled = true;
+		f.submit();
+	});
+	</script>
+	<?php
+}

@@ -427,12 +427,16 @@ function fge_render_rmb_angebot( WP_Post $post ) {
 		echo '<p style="margin:4px 0;color:#6C736E;">Der Kunde hat eine Termin-Bestätigung erhalten und wartet auf das Angebot.</p>';
 	}
 	?>
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
-		<input type="hidden" name="action" value="fge_send_held_offer">
-		<input type="hidden" name="request_id" value="<?php echo (int) $req; ?>">
-		<?php wp_nonce_field( 'fge_send_held_offer_' . $req ); ?>
-		<button type="submit" class="button button-primary" onclick="return confirm('Angebot jetzt an den Kunden senden?');">Angebot jetzt senden</button>
-	</form>
+	<p style="margin-top:8px;">
+	<?php
+	// Kein <form> in der Metabox (verschachtelt im WP-Formular, siehe fge_admin_post_button).
+	fge_admin_post_button( 'fge_send_held_offer', [ 'request_id' => $req ], 'Angebot jetzt senden', [
+		'class'        => 'button button-primary',
+		'confirm'      => 'Angebot jetzt an den Kunden senden?',
+		'nonce_action' => 'fge_send_held_offer_' . $req,
+	] );
+	?>
+	</p>
 	<?php
 }
 
