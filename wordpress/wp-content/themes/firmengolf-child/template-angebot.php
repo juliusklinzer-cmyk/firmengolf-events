@@ -199,7 +199,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 						<textarea name="fge_offer_message" rows="3" placeholder="Was möchtet ihr ändern oder wissen?"></textarea>
 						<button type="submit" name="fge_offer_action" value="request" class="od-btn yes" style="margin-top:8px;">Rückfrage senden</button>
 					</div>
-					<p class="od-hint">Mit „Angebot annehmen" bucht ihr verbindlich. Lieber erst etwas klären? Nutzt „Rückfrage / Änderung", euer Termin bleibt reserviert.</p>
+					<p class="od-hint">Mit „Angebot annehmen" bucht ihr verbindlich, damit kommt der Vertrag zustande. Ihr bekommt die Bestätigung mit dem Angebot als PDF per E-Mail; wir speichern den Vertragstext, und ihr könnt ihn jederzeit über diesen Link abrufen. Eure Auswahl könnt ihr bis zum Klick über die Häkchen ändern. Vertragssprache ist Deutsch. Lieber erst etwas klären? Nutzt „Rückfrage / Änderung", euer Termin bleibt reserviert.</p>
 				</div>
 			</form>
 			<?php

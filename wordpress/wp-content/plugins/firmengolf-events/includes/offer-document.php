@@ -98,6 +98,18 @@ function fge_offer_pax_note( int $pax ): string {
 	return 'Berechnungsbasis ' . $pax . ' Teilnehmer. Falls sich an der Teilnehmerzahl etwas ändert, gebt uns bitte frühzeitig Bescheid.';
 }
 
+/**
+ * Zahlungsbedingungen im Angebot, passend zu § 5 der AGB (Julius, 18.09.2026):
+ * Schlussrechnung 14 Tage nach dem Event ohne Abzug, über 5.000 € netto Anzahlung möglich.
+ */
+function fge_offer_payment_note( float $net ): string {
+	$s = 'Zahlung: Rechnung nach dem Event, zahlbar innerhalb von 14 Tagen ohne Abzug.';
+	if ( $net > 5000 ) {
+		$s .= ' Bei Buchung können wir eine Anzahlung von bis zu 50 % verlangen.';
+	}
+	return $s;
+}
+
 /** Gemeinsames CSS für Seite und PDF (Klassen .od-*). Mail bekommt Inline-Styles. */
 function fge_offer_document_css(): string {
 	return '
@@ -300,6 +312,7 @@ function fge_offer_document_html( int $req, string $mode = 'web' ): string {
 	$valid = ( $d['deadline'] > 0 && 'pending' === $d['status'] )
 		? 'Dieses Angebot ist gültig bis ' . $e( wp_date( 'd.m.Y', $d['deadline'] ) ) . ', bis dahin halten wir den Termin für euch. '
 		: '';
+	$h .= '<p class="od-note">' . $e( fge_offer_payment_note( (float) $pos['net'] ) ) . '</p>';
 	$h .= '<p class="od-note">' . $valid . 'Es gelten unsere <a href="' . esc_url( $d['agb_url'] ) . '">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>';
 
 	// ── Fußzeile (Pflichtangaben) ──
@@ -377,6 +390,7 @@ function fge_offer_mail_table_html( int $req ): string {
 	if ( $pos['pp'] && $pos['pax'] > 0 ) {
 		$h .= '<p style="margin:0 0 6px;color:#555;font-size:12px;">' . fge_offer_pax_note( (int) $pos['pax'] ) . '</p>';
 	}
+	$h .= '<p style="margin:0 0 6px;color:#555;font-size:12px;">' . esc_html( fge_offer_payment_note( (float) $pos['net'] ) ) . '</p>';
 	return $h;
 }
 
