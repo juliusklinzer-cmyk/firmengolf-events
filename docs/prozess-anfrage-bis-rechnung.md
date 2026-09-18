@@ -95,10 +95,10 @@ Kein Systemschritt. Julius ist telefonisch erreichbar (Nummer steht in beiden Vo
 | Eingang 15.09. über die Eventseite „Golf-Schnupperkurs für Teams in Hamburg" | erledigt, Bestätigung und interne Mail raus |
 | Preis beim Weidenhof geholt (49 € brutto p.P.), Kundin telefonisch 52 € netto p.P. zugesagt | erledigt |
 | Schritt 2: 52,00 € netto p.P., Ort Golfpark Weidenhof, Ablauf, Leistungen; Adresse der Kanzlei | erledigt 17./18.09. |
-| Schritt 1: „Mi, 30.09.2026" bestätigen, Angebot geht mit PDF an Frau Bolten | offen, wartet auf Julius' Freigabe |
-| Weidenhof zuordnen | danach |
+| Schritt 1: „Mi, 30.09.2026" bestätigen, Angebot geht mit PDF an Frau Bolten | erledigt 18.09., 13:09 Uhr, BCC an Julius, Frist bis 25.09. |
+| Weidenhof zuordnen | erledigt 18.09. |
 | Annahme durch die Kundin (bis 25.09.) | offen |
-| Schritt 4: Startzeit 12:00 Uhr, Treffpunkt, Ansprechpartner Weidenhof, Pro | nach der Annahme |
+| Schritt 4: Startzeit 12:00 Uhr und Treffpunkt eingetragen; Ansprechpartner vor Ort (Weidenhof, Tel. 04101 511830) und Pro nach der Annahme ergänzen | teilweise |
 | Vortags-Info 29.09. um 07:00 | automatisch |
 | Event 30.09. mittags, 3 Stunden, 6 Personen | |
 | Status „Event durchgeführt", Bewertungsbitte, Rechnung 371,28 € brutto, Eingangsrechnung 294 € brutto, abschließen | danach |

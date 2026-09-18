@@ -28,7 +28,7 @@ Box „Schritt 4: Event-Tag (Vortags-Info)" in der Anfrage: Startzeit, Treffpunk
 ## Ablauf FG-26-165 (Stand 17.09.)
 
 1. Schritt 2 gefüllt: 52 € netto p.P., Ort „Golfpark Weidenhof, Pinneberg", Ablauf, Leistungen (17.09.).
-2. Offen: Schritt 1 „Mi, 30.09.2026" bestätigen, Angebot geht mit PDF an Frau Bolten (Frist 7 Tage, Erinnerung nach 3 Tagen).
-3. Danach Golfpark Weidenhof zuordnen (erst nach der Bestätigung, sonst Cron-Erinnerungen an die Weidenhof-Kontakte).
+2. Erledigt 18.09.: Termin „Mi, 30.09.2026" bestätigt, Angebot mit PDF an Frau Bolten (BCC Julius), Frist 25.09., Erinnerung nach 3 Tagen.
+3. Erledigt 18.09.: Golfpark Weidenhof zugeordnet (nach der Bestätigung).
 4. Nach Annahme: Schritt 4 ausfüllen (Treffpunkt, Ansprechpartner vor Ort), Vortags-Info läuft am 29.09. um 07:00 automatisch.
 5. Nach dem Event: Status „event_durchgefuehrt" (Bewertungsbitte), Rechnung in Lexoffice (312 € netto, 371,28 € brutto), Weidenhof stellt 294 € brutto in Rechnung.
