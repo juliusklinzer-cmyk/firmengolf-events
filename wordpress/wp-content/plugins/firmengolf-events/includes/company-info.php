@@ -29,6 +29,8 @@ function fge_company(): array {
 		'email_press'      => 'presse@firmengolf-events.de',
 		'email_jobs'       => 'jobs@firmengolf-events.de',
 		'email_privacy'    => 'datenschutz@firmengolf-events.de',
+		// Julius persönlich: Kopie (BCC) der Angebotsmail an den Kunden (Julius, 18.09.2026).
+		'email_owner'      => 'julius@firmengolf-events.de',
 		// Google-Unternehmensprofil „Firmengolf" (Julius, 15.09.2026): Link für Bewertungsbitten.
 		'google_review_url' => 'https://g.page/r/CVIA4CTsS9mtEBk/review',
 

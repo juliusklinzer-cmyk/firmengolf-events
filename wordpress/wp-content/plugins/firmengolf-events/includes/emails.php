@@ -492,7 +492,14 @@ function fge_send_offer_email( int $request_id ): bool {
 		' . $contact_block . '
 		<p style="margin:0;color:#6C736E;font-size:13px;">Angebotsnummer ' . esc_html( $ref ) . '. Bei Fragen einfach auf diese Mail antworten.</p>
 	';
-	$sent = wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ], '' !== $pdf ? [ $pdf ] : [] );
+	// Kopie an Julius (BCC), damit das Angebot genau so im eigenen Postfach liegt, wie der Kunde es sieht.
+	$headers = [ 'Content-Type: text/html; charset=UTF-8' ];
+	$bcc     = (string) apply_filters( 'fge_offer_bcc', (string) ( ( function_exists( 'fge_company' ) ? fge_company() : [] )['email_owner'] ?? '' ) );
+	$is_demo = function_exists( 'fge_is_demo_request' ) && fge_is_demo_request( $request_id );
+	if ( is_email( $bcc ) && ! $is_demo ) {
+		$headers[] = 'Bcc: ' . $bcc;
+	}
+	$sent = wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), $headers, '' !== $pdf ? [ $pdf ] : [] );
 	if ( function_exists( 'fge_offer_pdf_cleanup' ) ) {
 		fge_offer_pdf_cleanup( $pdf );
 	}
