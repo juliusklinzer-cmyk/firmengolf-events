@@ -167,7 +167,7 @@ function fge_offer_document_data( int $req ): array {
 			'first'   => $m( 'contact_first_name' ),
 			'last'    => $m( 'contact_last_name' ),
 			'street'  => $m( 'company_street' ),
-			'zip'     => $m( 'company_zip' ),
+			'zip'     => $m( 'company_postal_code' ),
 			'city'    => $m( 'company_city' ),
 		],
 		'company'   => $co,
