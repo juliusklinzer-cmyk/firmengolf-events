@@ -274,3 +274,46 @@ function fge_user_column_content( string $output, string $column, int $user_id )
 	return $output;
 }
 add_filter( 'manage_users_custom_column', 'fge_user_column_content', 10, 3 );
+
+// ── Anfrage-Liste: Nummer vorne, Status-Filter (Audit 18.09.2026) ─────────────
+
+add_filter( 'manage_firmengolf_request_posts_columns', static function ( array $columns ): array {
+	$out = [];
+	foreach ( $columns as $key => $label ) {
+		$out[ $key ] = $label;
+		if ( 'title' === $key ) {
+			$out['fge_ref'] = 'Nummer';
+		}
+	}
+	return $out;
+}, 20 );
+
+add_action( 'manage_firmengolf_request_posts_custom_column', static function ( string $column, int $post_id ): void {
+	if ( 'fge_ref' === $column ) {
+		echo '<strong>' . esc_html( function_exists( 'fge_request_number' ) ? fge_request_number( $post_id ) : 'FG-' . $post_id ) . '</strong>';
+	}
+}, 10, 2 );
+
+add_action( 'restrict_manage_posts', static function ( string $post_type ): void {
+	if ( 'firmengolf_request' !== $post_type ) {
+		return;
+	}
+	$current = sanitize_key( $_GET['fge_status'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	echo '<select name="fge_status"><option value="">Alle Status</option>';
+	foreach ( fge_get_statuses( 'request' ) as $s ) {
+		echo '<option value="' . esc_attr( $s ) . '"' . selected( $current, $s, false ) . '>' . esc_html( $s ) . '</option>';
+	}
+	echo '</select>';
+} );
+
+add_action( 'pre_get_posts', static function ( WP_Query $q ): void {
+	if ( ! is_admin() || ! $q->is_main_query() || 'firmengolf_request' !== $q->get( 'post_type' ) ) {
+		return;
+	}
+	$status = sanitize_key( $_GET['fge_status'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( '' !== $status && in_array( $status, fge_get_statuses( 'request' ), true ) ) {
+		$mq   = (array) $q->get( 'meta_query' );
+		$mq[] = [ 'key' => '_fge_request_status', 'value' => $status ];
+		$q->set( 'meta_query', $mq );
+	}
+} );

@@ -218,6 +218,11 @@ function fge_offer_gross_incl_vat_text( array $snap ): string {
  * Nach der Feinplanung setzt der Admin-Button _fge_offer_review_done → Angebot geht raus.
  */
 function fge_offer_needs_review( int $req ): bool {
+	// Ohne bepreisbaren Inhalt nie ein Auto-Angebot: „Auf Anfrage" wäre sonst verbindlich
+	// buchbar (Audit A6). Gilt auch nach „Feinplanung erledigt" (Audit 18.09.2026).
+	if ( ! fge_offer_is_priced( $req ) ) {
+		return (bool) apply_filters( 'fge_offer_needs_review', true, $req );
+	}
 	if ( '1' === (string) get_post_meta( $req, '_fge_offer_review_done', true ) ) {
 		return false;
 	}
@@ -226,19 +231,37 @@ function fge_offer_needs_review( int $req ): bool {
 		? fge_xs_uncovered_wishes( $req )
 		: ( function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ] );
 	$needs = ! empty( $g['platz'] ) || ! empty( $g['firmengolf'] );
-	if ( ! $needs ) {
-		// Ohne bepreisbaren Inhalt kein Auto-Angebot: „Auf Anfrage" wäre sonst verbindlich
-		// buchbar (Audit A6). Bepreisbar sind Event-Preis, Preis-Override (Platzhalter-Events,
-		// telefonisch vereinbart) oder bepreiste Positionen.
-		$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
-		$pricing  = ( $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id ) && function_exists( 'fge_event_pricing' ) )
-			? fge_event_pricing( $event_id )
-			: [ 'gross' => 0 ];
-		$base  = max( (float) ( $pricing['gross'] ?? 0 ), (float) get_post_meta( $req, '_fge_offer_base_override', true ) );
-		$xs    = function_exists( 'fge_xs_priced' ) ? fge_xs_priced( $req ) : [];
-		$needs = $base <= 0 && empty( $xs );
-	}
 	return (bool) apply_filters( 'fge_offer_needs_review', $needs, $req );
+}
+
+/** Vom Kunden gewählte Zusatzleistungen (src-Indizes); leer = keine (kein „[0]" aus leerem Meta). */
+function fge_offer_selected_extras( int $req ): array {
+	$raw = get_post_meta( $req, '_fge_offer_extras_selected', true );
+	return is_array( $raw ) ? array_values( array_map( 'intval', $raw ) ) : [];
+}
+
+/**
+ * Ist die Anfrage bepreist (Eventpreis, Preis-Override oder bepreiste Positionen)?
+ * Ohne Preis darf kein Angebot raus, sonst wäre „Auf Anfrage" verbindlich buchbar
+ * (Audit 18.09.2026: „Angebot jetzt senden" umging das Gate).
+ */
+function fge_offer_is_priced( int $req ): bool {
+	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+	$pricing  = ( $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id ) && function_exists( 'fge_event_pricing' ) )
+		? fge_event_pricing( $event_id )
+		: [ 'gross' => 0 ];
+	$base = max( (float) ( $pricing['gross'] ?? 0 ), (float) get_post_meta( $req, '_fge_offer_base_override', true ) );
+	if ( $base > 0 ) {
+		// Pro-Kopf-Preis ohne Teilnehmerzahl ergibt keine Summe → nicht bepreist.
+		$override = (float) get_post_meta( $req, '_fge_offer_base_override', true );
+		$is_pp    = $override > 0
+			? 'person' === (string) get_post_meta( $req, '_fge_offer_base_override_unit', true )
+			: 'pro Person' === (string) ( $pricing['unit'] ?? '' );
+		if ( ! $is_pp || (int) get_post_meta( $req, '_fge_expected_participants', true ) > 0 ) {
+			return true;
+		}
+	}
+	return function_exists( 'fge_xs_priced' ) && ! empty( fge_xs_priced( $req ) );
 }
 
 add_action( 'fge_request_date_confirmed', 'fge_offer_on_date_confirmed', 20, 2 );
@@ -350,6 +373,12 @@ function fge_offer_handle_post(): void {
 				wp_safe_redirect( fge_offer_link( $req ) . '?agb=1' );
 				exit;
 			}
+			// Atomarer Guard: zwei gleichzeitige Klicks lösten die Buchungsmails doppelt aus (Audit 18.09.).
+			$deadline_chk = (int) get_post_meta( $req, '_fge_offer_deadline', true );
+			if ( ( $deadline_chk <= 0 || time() <= $deadline_chk ) && ! add_post_meta( $req, '_fge_offer_decided', 1, true ) ) {
+				wp_safe_redirect( fge_offer_link( $req ) . '?done=1' );
+				exit;
+			}
 			// Nach Fristablauf ist der Slot nicht mehr garantiert: keine Auto-Buchung,
 			// sondern Rückfrage an Firmengolf — Termin prüfen, dann manuell bestätigen (Audit B2).
 			$deadline = (int) get_post_meta( $req, '_fge_offer_deadline', true );
@@ -377,15 +406,24 @@ function fge_offer_handle_post(): void {
 			fge_request_set_status( $req, 'angebot_angenommen' );
 			do_action( 'fge_offer_accepted', $req );
 		} elseif ( 'decline' === $action ) {
+			if ( ! add_post_meta( $req, '_fge_offer_decided', 1, true ) ) {
+				wp_safe_redirect( fge_offer_link( $req ) . '?done=1' );
+				exit;
+			}
 			update_post_meta( $req, '_fge_offer_status', 'declined' );
 			fge_request_set_status( $req, 'angebot_abgelehnt' );
 			do_action( 'fge_offer_declined', $req );
 		} elseif ( 'request' === $action ) {
 			// Rückfrage / Änderungswunsch — Angebot bleibt offen (pending), kein Dead-End.
-			$msg = sanitize_textarea_field( wp_unslash( $_POST['fge_offer_message'] ?? '' ) );
+			$msg = mb_substr( sanitize_textarea_field( wp_unslash( $_POST['fge_offer_message'] ?? '' ) ), 0, 2000 );
 			if ( '' === trim( $msg ) ) {
-				// Leere Rückfragen feuern keine interne Mail (Kern-Audit M5).
-				wp_safe_redirect( fge_offer_link( $req ) );
+				// Leere Rückfragen feuern keine interne Mail (Kern-Audit M5), Kunde bekommt einen Hinweis.
+				wp_safe_redirect( fge_offer_link( $req ) . '?err=empty' );
+				exit;
+			}
+			// Höchstens 3 Rückfragen je 10 Minuten (Sicherheits-Audit 18.09.: jede Rückfrage ist eine interne Mail).
+			if ( function_exists( 'fge_form_rate_limited' ) && fge_form_rate_limited( 3, 600, 'offer_query_' . $req ) ) {
+				wp_safe_redirect( fge_offer_link( $req ) . '?done=query' );
 				exit;
 			}
 			update_post_meta( $req, '_fge_offer_query', $msg );

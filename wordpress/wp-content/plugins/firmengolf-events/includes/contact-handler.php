@@ -152,11 +152,12 @@ function fge_handle_kontakt_submit() {
 	$label = $company !== '' ? $company : $name;
 	fge_kontakt_set_title( $request_id, 'Kontakt: ' . $label . ' · ' . $date );
 
-	// Kundenbestätigung + Admin-Mail (kein Partner-Mail, da kein specific_event).
-	do_action( 'fge_request_created', $request_id );
-
+	// Vorgangsnummer VOR den Mails (Audit 18.09.: Bestätigung ging ohne Nummer raus).
 	$ref = function_exists( 'fge_generate_request_ref' ) ? fge_generate_request_ref() : sprintf( 'FG-%06d', $request_id );
 	update_post_meta( $request_id, '_fge_ref', $ref );
+
+	// Kundenbestätigung + Admin-Mail (kein Partner-Mail, da kein specific_event).
+	do_action( 'fge_request_created', $request_id );
 	wp_redirect( esc_url_raw( $base . '?kontakt=danke&fgref=' . rawurlencode( $ref ) . '#kontaktformular' ), 303 );
 	exit;
 }

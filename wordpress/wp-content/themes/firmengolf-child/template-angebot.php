@@ -28,7 +28,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 	.od-wrap { max-width: 780px; margin: 0 auto; padding: 28px 16px 60px; }
 	.od-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; font-size: 13px; color: #6C736E; }
 	.od-top strong { color: #1a1a1a; }
-	.od-pdf { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #20294D; background: #fff; border: 1px solid #d8d8d2; border-radius: 999px; padding: 8px 14px; }
+	.od-pdf { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 13px; font-weight: 600; color: #20294D; background: #fff; border: 1px solid #d8d8d2; border-radius: 999px; padding: 8px 16px; }
 	.od-pdf:hover { border-color: #20294D; }
 	.od-sheet { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(32,41,77,.08); }
 	.od-sheet .od-head td { padding: 20px 32px; }
@@ -74,7 +74,7 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 	<?php if ( $req <= 0 ) : ?>
 		<div class="tl-eyebrow">Angebot</div>
 		<h1 class="tl-h">Dieser Link ist <em>ungültig</em> oder abgelaufen.</h1>
-		<p class="tl-lead">Bitte wende dich an deinen Firmengolf-Ansprechpartner.</p>
+		<p class="tl-lead">Bitte wendet euch an euren Ansprechpartner bei Firmengolf.</p>
 	<?php else :
 		$ref          = function_exists( 'fge_request_number' ) ? fge_request_number( $req ) : 'FG-' . $req;
 		$first        = (string) get_post_meta( $req, '_fge_contact_first_name', true );
@@ -178,10 +178,13 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 					<div class="od-deadline">Die Reservierungsfrist ist abgelaufen, der Termin ist nicht mehr garantiert. Ihr könnt trotzdem zusagen: wir prüfen dann sofort, ob er noch frei ist, und melden uns umgehend.</div>
 					<?php endif; ?>
 					<?php if ( isset( $_GET['agb'] ) ) : ?>
-					<p class="od-err">Bitte bestätige die AGB, um verbindlich zu buchen.</p>
+					<p class="od-err">Bitte bestätigt die AGB, um verbindlich zu buchen.</p>
 					<?php endif; ?>
 					<?php if ( isset( $_GET['session'] ) ) : ?>
-					<p class="od-err">Die Sitzung war abgelaufen. Bitte bestätige deine Auswahl noch einmal.</p>
+					<p class="od-err">Die Sitzung war abgelaufen. Bitte bestätigt eure Auswahl noch einmal.</p>
+					<?php endif; ?>
+					<?php if ( isset( $_GET['err'] ) && 'empty' === sanitize_key( $_GET['err'] ) ) : ?>
+					<p class="od-err">Bitte schreibt uns kurz, worum es geht, dann können wir antworten.</p>
 					<?php endif; ?>
 					<label class="od-agb">
 						<input type="checkbox" id="tl-agb" name="fge_offer_agb" value="1" style="margin-top:3px;flex:0 0 auto;">
@@ -258,8 +261,8 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 		<a href="<?php echo esc_url( home_url( '/agb/' ) ); ?>" target="_blank" rel="noopener">AGB</a>
 	</footer>
 	<style>
-	.tl-legal { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; margin: 12px auto 40px; font-size: 12.5px; }
-	.tl-legal a { color: #5C6660; text-decoration: none; }
+	.tl-legal { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 12px auto 40px; font-size: 12.5px; }
+	.tl-legal a { color: #5C6660; text-decoration: none; padding: 12px 8px; }
 	.tl-legal a:hover, .tl-legal a:focus-visible { color: #4279D1; text-decoration: underline; text-underline-offset: 2px; }
 	</style>
 	<?php wp_footer(); ?>

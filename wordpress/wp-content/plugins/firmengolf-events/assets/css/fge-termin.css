@@ -53,6 +53,11 @@
   .tl-date-top { flex-direction: column; align-items: flex-start; }
   .tl-h { font-size: 30px; }
 }
+@media (max-width: 768px) {
+  /* Touch-Ziele 44px und kein iOS-Zoom (Audit 18.09.2026) */
+  .tl-btn { min-height: 44px; }
+  .tl-alt textarea, .tl-alt input { font-size: 16px; }
+}
 
 /* No-JS radio selection (per Wunschtermin Ja/Nein als Radios in .tl-btn-Labels) */
 .tl-btn { position: relative; }

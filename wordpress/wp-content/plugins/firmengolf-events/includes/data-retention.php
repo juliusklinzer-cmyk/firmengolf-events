@@ -74,3 +74,11 @@ add_action( 'init', static function (): void {
 		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'fge_daily_retention' );
 	}
 } );
+
+// Cron beim Deaktivieren entfernen (Audit 18.09.2026).
+register_deactivation_hook( FGE_DIR . 'firmengolf-events.php', static function (): void {
+	$ts = wp_next_scheduled( 'fge_daily_retention' );
+	if ( $ts ) {
+		wp_unschedule_event( $ts, 'fge_daily_retention' );
+	}
+} );

@@ -668,6 +668,11 @@ add_action( 'wp_head', function () {
 // Consent Mode v2 IMMER ungated; was gemessen bzw. gespeichert wird, steuern
 // ausschließlich die Consent-Signale (Default denied, siehe Prio-0-Block).
 add_action( 'wp_head', function () {
+	// Keine Tracker auf Magic-Link-Seiten (Angebot, Termin, Einladung, Onboarding-Token):
+	// die URL enthält das Token und würde als page_location an Google gehen (Sicherheits-Audit 18.09.2026).
+	if ( function_exists( 'fge_is_private_token_page' ) && fge_is_private_token_page() ) {
+		return;
+	}
 	$ga  = defined( 'FGE_GA4_ID' ) ? FGE_GA4_ID : (string) get_option( 'fge_ga4_id', '' );
 	$ids = array_values( array_filter( [ $ga, fge_gads_id() ] ) );
 	if ( ! $ids ) {
@@ -693,6 +698,9 @@ add_action( 'wp_head', function () {
 // derselbe Auslöser wie die Google-Ads-Conversion) mit serverseitiger event_id
 // aus fge_meta_event_id() für die spätere Conversions-API-Deduplizierung.
 add_action( 'wp_head', function () {
+	if ( function_exists( 'fge_is_private_token_page' ) && fge_is_private_token_page() ) {
+		return; // siehe Google Tag: keine Tracker auf Token-Seiten
+	}
 	$px = fge_meta_pixel_id();
 	if ( ! $px ) {
 		return;

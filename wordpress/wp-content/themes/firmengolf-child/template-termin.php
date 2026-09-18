@@ -77,7 +77,7 @@ $done_locked = ( sanitize_key( wp_unslash( $_GET['done'] ?? '' ) ) === 'locked' 
 			<h2>Die Abstimmung ist geschlossen.</h2>
 			<p>Der Termin für diese Anfrage ist bereits fix, deine Änderung wurde nicht gespeichert. Falls sich bei euch etwas geändert hat, melde dich bitte direkt bei Firmengolf.</p>
 			<?php else : ?>
-			<h2>Danke, <?php echo esc_html( $first ?: 'dir' ); ?>, gespeichert.</h2>
+			<h2><?php echo $first ? 'Danke, ' . esc_html( $first ) . ', gespeichert.' : 'Danke, gespeichert.'; ?></h2>
 			<p>Deine Rückmeldung ist da. Sobald alle Beteiligten reagiert haben und ein Termin bestätigt ist, kümmert sich Firmengolf um Angebot und Buchung.</p>
 			<?php endif; ?>
 			<?php if ( $m_total > 0 && null !== $lead_idx ) : $ld = $matrix['dates'][ $lead_idx ]; ?>
@@ -95,7 +95,7 @@ $done_locked = ( sanitize_key( wp_unslash( $_GET['done'] ?? '' ) ) === 'locked' 
 		</div>
 		<?php else : ?>
 		<div class="tl-eyebrow">Anfrage <?php echo esc_html( $ref ); ?></div>
-		<h1 class="tl-h">Hallo <?php echo esc_html( $first ?: '' ); ?>, passt <em>einer dieser Termine</em>?</h1>
+		<h1 class="tl-h"><?php echo $first ? 'Hallo ' . esc_html( $first ) . ', passt' : 'Hallo, passt'; ?> <em>einer dieser Termine</em>?</h1>
 		<p class="tl-lead">Eine Firmenanfrage wartet auf eure Rückmeldung. Sag einfach zu jedem Wunschtermin kurz zu oder ab, dauert keine Minute. Ihr seht direkt, wie die anderen schon abgestimmt haben.</p>
 		<?php if ( $deadline_ts && ! $final_idx ) : ?>
 		<div class="tl-deadline">Bitte möglichst <strong>bis <?php echo esc_html( wp_date( 'D, d.m.Y', $deadline_ts ) ); ?></strong> zurückmelden, damit der Termin rechtzeitig steht.</div>

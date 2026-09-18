@@ -155,7 +155,11 @@ function fge_wishes_email_html( int $request_id ): string {
 
 function fge_send_internal_request_email( int $request_id, array $data ): bool {
 	$company = $data['company_name'] !== '' ? $data['company_name'] : 'Unbekannt';
-	$subject = 'Neue Firmengolf Event Anfrage: ' . $company;
+	$subject = 'Neue Event-Anfrage: ' . $company;
+	// Platz ohne Abstimmungskontakt und ohne Mailadresse: niemand beim Platz erfährt
+	// von der Anfrage (Audit 18.09.), deshalb deutlicher Hinweis in der internen Mail.
+	$no_partner_contact = 'specific_event' === $data['request_type'] && (int) $data['partner_id'] > 0 && '' === $data['partner_email']
+		&& function_exists( 'fge_rr_responders' ) && empty( fge_rr_responders( $request_id ) );
 	$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 
 	$type_label = $data['request_type'] === 'specific_event' ? 'Konkretes Event' : 'Allgemeine Anfrage';
@@ -167,7 +171,7 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 		'Vorgang'     => esc_html( (string) get_post_meta( $request_id, '_fge_ref', true ) ?: 'k. A.' ),
 		'Anfragetyp'  => esc_html( $type_label ),
 		'Event'       => esc_html( $data['event_title'] ?: 'k. A.' ),
-		'Golfplatz'   => esc_html( $data['partner_title'] ?: 'k. A.' ),
+		'Golfplatz'   => esc_html( $data['partner_title'] ?: 'k. A.' ) . ( $no_partner_contact ? ' <strong style="color:#B4332B;">Kein Ansprechpartner mit E-Mail hinterlegt, der Platz wurde nicht informiert. Bitte manuell übernehmen.</strong>' : '' ),
 		'Unternehmen' => esc_html( $company ),
 		'Kontakt'     => esc_html( trim( $data['first_name'] . ' ' . $data['last_name'] ) ?: 'k. A.' ),
 		'E-Mail'      => '<a href="mailto:' . esc_attr( $data['contact_email'] ) . '" style="color:#4279D1;">' . esc_html( $data['contact_email'] ) . '</a>',
@@ -220,7 +224,7 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 }
 
 function fge_send_partner_availability_email( int $request_id, array $data ): bool {
-	$subject = 'Neue Verfügbarkeitsanfrage für ein Firmengolf Event';
+	$subject = 'Neue Verfügbarkeitsanfrage: ' . ( $data['company_name'] ?: 'Firmenevent' );
 
 	$dates = array_filter( [ $data['date_1'], $data['date_2'], $data['date_3'] ] );
 	$dates_html = '';
@@ -242,7 +246,7 @@ function fge_send_partner_availability_email( int $request_id, array $data ): bo
 		' . $dates_html . '
 		' . ( fge_wishes_email_html( $request_id ) !== '' ? '<div style="margin:0 0 12px;">' . fge_wishes_email_html( $request_id ) . '</div>' : '' ) . '
 		<p>Bitte gebt uns kurz Bescheid, ob ihr an den genannten Terminen verfügbar seid. Wir kümmern uns um die weitere Abstimmung mit dem Kunden.</p>
-		<p>Vielen Dank,<br>Euer Firmengolf Team</p>
+		<p>Vielen Dank,<br>dein Firmengolf-Team</p>
 	';
 
 	$sent = wp_mail(
@@ -389,7 +393,9 @@ function fge_notify_date_confirmed( int $request_id, int $date_index ): void {
 	// Mit unbepreisten Zusatzleistungen geht das Angebot NICHT automatisch raus — Firmengolf muss handeln.
 	$needs_review = function_exists( 'fge_offer_needs_review' ) && fge_offer_needs_review( $request_id );
 	if ( $needs_review ) {
-		$g      = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $request_id ) : [ 'platz' => [], 'firmengolf' => [] ];
+		// Nur die noch unbepreisten Wünsche nennen (Audit 18.09.), nicht alle.
+		$g      = function_exists( 'fge_xs_uncovered_wishes' ) ? fge_xs_uncovered_wishes( $request_id )
+			: ( function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $request_id ) : [ 'platz' => [], 'firmengolf' => [] ] );
 		$wishes = implode( ', ', array_merge( (array) $g['platz'], (array) $g['firmengolf'] ) );
 		$reason = '' !== $wishes
 			? 'Der Kunde hat Zusatzleistungen angefragt (' . esc_html( $wishes ) . '), die noch keinen Preis haben.'
@@ -399,8 +405,11 @@ function fge_notify_date_confirmed( int $request_id, int $date_index ): void {
 		$next = '<p style="margin:0 0 16px;">Das Angebot geht automatisch an den Kunden. Sobald er annimmt, steht der Auftrag und ihr werdet informiert.</p>';
 	}
 
+	// „Alle Beteiligten haben zugestimmt" nur, wenn es eine Abstimmung mit Zusagen gab (Audit 18.09.).
+	$m_conf   = function_exists( 'fge_rr_matrix' ) ? fge_rr_matrix( $request_id ) : [];
+	$all_yes  = ! empty( $m_conf['responders'] ) && ! empty( $m_conf['all_responded'] );
 	$content = '
-		<p style="margin:0 0 16px;">Für die Anfrage <strong>' . esc_html( $ref ) . '</strong> wurde ein Termin bestätigt, alle Beteiligten haben zugestimmt.</p>
+		<p style="margin:0 0 16px;">Für die Anfrage <strong>' . esc_html( $ref ) . '</strong> wurde ein Termin bestätigt' . ( $all_yes ? ', alle Beteiligten haben zugestimmt.' : ( '' !== $data['partner_title'] ? '.' : ' (Selbstplaner-Event ohne Platz-Abstimmung).' ) ) . '</p>
 		<p style="margin:0 0 16px;"><strong>Termin:</strong> ' . esc_html( $date ?: 'k. A.' ) . '<br>
 		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: 'k. A.' ) . '<br>
 		<strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: 'k. A.' ) . '<br>
@@ -428,10 +437,10 @@ function fge_send_date_confirmation_email( int $request_id, int $date_index ): b
 	foreach ( array_merge( (array) $g['platz'], (array) $g['firmengolf'] ) as $i ) {
 		$wish .= '<li style="margin-bottom:3px;">' . esc_html( $i ) . '</li>';
 	}
-	$subject = 'Euer Termin steht: ' . ( $data['event_title'] ?: 'euer Event' ) . ' am ' . $date;
+	$subject = 'Euer Termin steht: ' . ( $data['event_title'] ?: 'Firmen-Event' ) . ' am ' . $date;
 	$content = '
 		<p style="margin:0 0 16px;">' . $greet . '</p>
-		<p style="margin:0 0 16px;">gute Nachrichten: euer Wunschtermin <strong>' . esc_html( $date ) . '</strong> ist beim Platz bestätigt, wir halten ihn für euch fest.</p>
+		<p style="margin:0 0 16px;">gute Nachrichten: euer Wunschtermin <strong>' . esc_html( $date ) . '</strong> ist ' . ( '' !== $data['partner_title'] ? 'beim Platz ' : '' ) . 'bestätigt, wir halten ihn für euch fest.</p>
 		' . ( $wish !== '' ? '<p style="margin:0 0 6px;">Ihr habt Zusatzleistungen angefragt:</p><ul style="margin:0 0 16px;padding-left:20px;">' . $wish . '</ul>' : '' ) . '
 		<p style="margin:0 0 16px;">Wir stellen gerade euer komplettes Angebot mit allen Leistungen und Preisen zusammen und melden uns kurzfristig. Ihr müsst nichts weiter tun.</p>
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '. Bei Fragen einfach auf diese Mail antworten.</p>
@@ -488,6 +497,13 @@ function fge_send_offer_email( int $request_id ): bool {
 		fge_offer_pdf_cleanup( $pdf );
 	}
 	update_post_meta( $request_id, '_fge_offer_email_sent', $sent ? 1 : 0 );
+	if ( ! $sent ) {
+		// Angebot gilt als versendet, kam aber nicht raus: intern warnen (Audit 18.09.).
+		$to_i = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+		$ci   = '<p style="margin:0 0 16px;">Die Angebotsmail zu <strong>' . esc_html( $ref ) . '</strong> an ' . esc_html( $data['contact_email'] ) . ' konnte nicht versendet werden. Bitte den Kunden manuell informieren, der Angebots-Link steht in der Anfrage.</p>'
+			. '<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>';
+		wp_mail( $to_i, 'Angebot nicht zugestellt: ' . $ref, fge_email_wrap( 'Angebot nicht zugestellt: ' . $ref, $ci ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	}
 	return (bool) $sent;
 }
 
@@ -525,7 +541,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 	if ( function_exists( 'fge_xs_priced' ) ) {
 		$priced = fge_xs_priced( $request_id );
 		if ( ! empty( $priced ) ) {
-			$sel = array_map( 'intval', (array) get_post_meta( $request_id, '_fge_offer_extras_selected', true ) );
+			$sel = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $request_id ) : [];
 			$th  = static function ( $t ) { return '<td style="padding:4px 10px 4px 0;color:#6C736E;font-size:12px;">' . $t . '</td>'; };
 			$td  = static function ( $t ) { return '<td style="padding:4px 10px 4px 0;">' . $t . '</td>'; };
 			$trs = '<tr>' . $th( 'Leistung' ) . $th( 'Status' ) . $th( 'Kunde zahlt (netto)' ) . $th( 'Einkauf (netto)' ) . $th( 'Dienstleister' ) . '</tr>';
@@ -571,11 +587,18 @@ function fge_notify_offer_accepted( int $request_id ): void {
 	}
 
 	if ( $data['contact_email'] !== '' ) {
-		$cc = '
+		$pdf_c = function_exists( 'fge_offer_pdf_tempfile' ) ? fge_offer_pdf_tempfile( $request_id ) : '';
+		$cc    = '
 			<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ', danke für die Zusage.</p>
-			<p style="margin:0;">Euer Event <strong>' . esc_html( $data['event_title'] ?: '' ) . '</strong> am <strong>' . esc_html( $date ?: '' ) . '</strong> ist gebucht. Wir kümmern uns um die letzten Details und melden uns.</p>
+			<p style="margin:0 0 16px;">Euer Event <strong>' . esc_html( $data['event_title'] ?: '' ) . '</strong> am <strong>' . esc_html( $date ?: '' ) . '</strong> ist gebucht. Wir kümmern uns um die letzten Details und melden uns.</p>
+			' . ( $pdf_c !== '' ? '<p style="margin:0 0 16px;">Die Buchungsbestätigung mit allen Leistungen und Preisen findet ihr als PDF im Anhang.</p>' : '' ) . '
+			<p style="margin:0;">' . ( function_exists( 'fge_offer_link' ) ? fge_email_button( fge_offer_link( $request_id ), 'Buchung ansehen' ) : '' ) . '</p>
 		';
-		wp_mail( $data['contact_email'], 'Buchung bestätigt: ' . $ref, fge_email_wrap( 'Buchung bestätigt: ' . $ref, $cc ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+		// Beleg für den Kunden: Link plus PDF (Audit 18.09.: vorher ohne Beleg im Postfach).
+		wp_mail( $data['contact_email'], 'Buchung bestätigt: ' . $ref, fge_email_wrap( 'Buchung bestätigt: ' . $ref, $cc ), [ 'Content-Type: text/html; charset=UTF-8' ], '' !== $pdf_c ? [ $pdf_c ] : [] );
+		if ( function_exists( 'fge_offer_pdf_cleanup' ) ) {
+			fge_offer_pdf_cleanup( $pdf_c );
+		}
 	}
 }
 
@@ -613,7 +636,7 @@ function fge_xs_mail_facts( int $req ): array {
 function fge_xs_cost_text( array $item, int $pax ): string {
 	$s = number_format_i18n( (float) $item['cost'], 2 ) . ' € netto ' . ( 'person' === $item['basis'] ? 'p.P.' : 'pauschal' );
 	if ( 'person' === $item['basis'] && $pax > 0 ) {
-		$s .= ' bei ca. ' . $pax . ' Personen';
+		$s .= ' bei ' . $pax . ' Personen';
 	}
 	return $s;
 }
@@ -627,7 +650,7 @@ function fge_xs_provider_confirmation( int $req, array $item ): bool {
 	$rows  = $row( 'Leistung', esc_html( $item['label'] ) )
 		. ( '' !== $f['date'] ? $row( 'Termin', esc_html( $f['date'] ) ) : '' )
 		. ( '' !== $f['location'] ? $row( 'Ort', esc_html( $f['location'] ) ) : '' )
-		. ( $f['pax'] > 0 ? $row( 'Teilnehmer', 'ca. ' . (int) $f['pax'] . ' Personen' ) : '' )
+		. ( $f['pax'] > 0 ? $row( 'Teilnehmer', (int) $f['pax'] . ' Personen' ) : '' )
 		. $row( 'Vereinbarter Preis', esc_html( fge_xs_cost_text( $item, $f['pax'] ) ) )
 		. $row( 'Referenz', esc_html( $f['ref'] ) );
 
@@ -662,7 +685,7 @@ function fge_xs_notify_providers_on_accept( int $req ): void {
 	if ( ! function_exists( 'fge_xs_priced' ) || ! add_post_meta( $req, '_fge_xs_providers_notified', 1, true ) ) {
 		return;
 	}
-	$sel = array_map( 'intval', (array) get_post_meta( $req, '_fge_offer_extras_selected', true ) );
+	$sel = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
 	foreach ( fge_xs_priced( $req ) as $src => $item ) {
 		if ( ! is_email( $item['provider_email'] ) ) {
 			continue;

@@ -89,11 +89,14 @@ function fge_render_rmb_eventtag( WP_Post $post ): void {
 
 	echo '<table class="form-table" style="margin:0;">';
 	foreach ( fge_day_fields() as $k => [ $label, $type, $ph ] ) {
+		// Gespeicherter Wert im Feld, Vorbelegung aus dem Partnerprofil nur als Platzhalter (gilt beim Versand, wenn leer).
+		$raw  = trim( (string) get_post_meta( $req, '_fge_' . $k, true ) );
+		$hint = ( '' === $raw && '' !== $v[ $k ] ) ? 'Vorbelegt: ' . $v[ $k ] : $ph;
 		echo '<tr><th scope="row" style="padding:6px 10px 6px 0;width:190px;"><label for="fge-' . esc_attr( $k ) . '">' . esc_html( $label ) . '</label></th><td style="padding:6px 0;">';
 		if ( 'textarea' === $type ) {
-			echo '<textarea id="fge-' . esc_attr( $k ) . '" name="fge_' . esc_attr( $k ) . '" rows="3" class="large-text" placeholder="' . esc_attr( $ph ) . '">' . esc_textarea( $v[ $k ] ) . '</textarea>';
+			echo '<textarea id="fge-' . esc_attr( $k ) . '" name="fge_' . esc_attr( $k ) . '" rows="3" class="large-text" placeholder="' . esc_attr( $hint ) . '">' . esc_textarea( $raw ) . '</textarea>';
 		} else {
-			echo '<input type="text" id="fge-' . esc_attr( $k ) . '" name="fge_' . esc_attr( $k ) . '" value="' . esc_attr( $v[ $k ] ) . '" class="regular-text" placeholder="' . esc_attr( $ph ) . '">';
+			echo '<input type="text" id="fge-' . esc_attr( $k ) . '" name="fge_' . esc_attr( $k ) . '" value="' . esc_attr( $raw ) . '" class="regular-text" placeholder="' . esc_attr( $hint ) . '">';
 		}
 		echo '</td></tr>';
 	}
@@ -254,7 +257,7 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 
 	// Gebuchte Leistungen: Leistungsliste plus gewählte Zusatzleistungen.
 	$booked = array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) );
-	$sel    = array_map( 'intval', (array) get_post_meta( $req, '_fge_offer_extras_selected', true ) );
+	$sel    = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
 	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
 		if ( in_array( (int) ( $x['src'] ?? -1 ), $sel, true ) ) {
 			$booked[] = (string) ( $x['label'] ?? '' );
@@ -276,6 +279,8 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 	$sched  = '' !== (string) ( $snap['schedule'] ?? '' ) ? nl2br( esc_html( (string) $snap['schedule'] ) ) : '';
 
 	$results = [];
+	// Nachholer: Platz- und interne Mail gingen schon raus, nur die Kundenmail ist offen (Audit 18.09.).
+	$others_done = '1' === (string) get_post_meta( $req, '_fge_day_info_others_sent', true );
 
 	// 1) Kunde
 	$rows = $row( 'Event', esc_html( $title ) )
@@ -302,7 +307,7 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 
 	// 2) Golfplatz
 	$results['platz'] = null;
-	if ( '' !== $data['partner_email'] ) {
+	if ( '' !== $data['partner_email'] && ! $others_done ) {
 		$company = $data['company_name'] ?: 'unserem Kunden';
 		$rows_p  = $row( 'Event', esc_html( $title ) )
 			. $row( 'Termin', esc_html( $date ) )
@@ -354,8 +359,17 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 		' . ( '' !== $booked_html ? '<p style="margin:0 0 4px;font-weight:600;">Gebucht und bestätigt</p><ul style="margin:0 0 16px;padding-left:20px;">' . $booked_html . '</ul>' : '' ) . '
 		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $req ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
-	wp_mail( apply_filters( 'fge_internal_email', fge_company_internal_email() ), $subject_i, fge_email_wrap( $subject_i, $content_i ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	if ( ! $others_done ) {
+		wp_mail( apply_filters( 'fge_internal_email', fge_company_internal_email() ), $subject_i, fge_email_wrap( $subject_i, $content_i ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+		update_post_meta( $req, '_fge_day_info_others_sent', 1 );
+	}
 
-	update_post_meta( $req, '_fge_day_info_sent', time() );
+	if ( $results['kunde'] ) {
+		update_post_meta( $req, '_fge_day_info_sent', time() );
+		delete_post_meta( $req, '_fge_day_info_customer_failed' );
+	} else {
+		// Gate bleibt offen, der Cron versucht die Kundenmail am nächsten Lauf erneut (nur diese).
+		update_post_meta( $req, '_fge_day_info_customer_failed', 1 );
+	}
 	return $results['kunde'];
 }

@@ -150,9 +150,7 @@ function fge_offer_document_data( int $req ): array {
 	$co     = function_exists( 'fge_company' ) ? fge_company() : [];
 	$m      = static fn( string $k ): string => (string) get_post_meta( $req, '_fge_' . $k, true );
 	$status = (string) get_post_meta( $req, '_fge_offer_status', true );
-	$sel    = 'accepted' === $status
-		? array_map( 'intval', (array) get_post_meta( $req, '_fge_offer_extras_selected', true ) )
-		: null;
+	$sel    = 'accepted' === $status ? fge_offer_selected_extras( $req ) : null;
 	$sent   = (int) get_post_meta( $req, '_fge_offer_sent_at', true );
 	return [
 		'snap'      => $snap,
@@ -243,7 +241,7 @@ function fge_offer_document_html( int $req, string $mode = 'web' ): string {
 		if ( $pick && ! $is_event ) {
 			$h .= '<label><input type="checkbox" class="od-pick tl-x-pick" name="fge_offer_extras[]" value="' . (int) $row['src'] . '"' . ( $row['selected'] ? ' checked' : '' ) . '><strong>' . $e( $row['title'] ) . '</strong></label>';
 		} else {
-			$h .= '<strong>' . $e( $row['title'] ) . '</strong>';
+			$h .= '<strong>' . $e( $row['title'] ) . '</strong>' . ( $row['selected'] ? '' : ' <span class="od-desc">(abgewählt)</span>' );
 		}
 		if ( $is_event ) {
 			$desc  = '';
@@ -266,12 +264,15 @@ function fge_offer_document_html( int $req, string $mode = 'web' ): string {
 			}
 		}
 		$h .= '</td>';
-		if ( $row['unit_price'] > 0 ) {
+		if ( $row['unit_price'] > 0 && ( $row['selected'] || $pick ) ) {
 			$h .= '<td class="r c-qty" data-label="Menge">' . (int) $row['qty'] . ' ' . $e( $row['unit_label'] ) . '</td>'
 				. '<td class="r c-unit" data-label="Einzelpreis netto">' . $e( fge_money( (float) $row['unit_price'] ) ) . '</td>'
 				. '<td class="r c-sum" data-label="Gesamt netto">' . $e( fge_money( (float) $row['total'] ) ) . '</td>';
+		} elseif ( $row['unit_price'] > 0 ) {
+			$h .= '<td class="r c-qty"></td><td class="r c-unit"></td><td class="r c-sum"></td>';
 		} else {
-			$h .= '<td class="r c-qty"></td><td class="r c-unit"></td><td class="r c-sum" data-label="Gesamt netto">auf Anfrage</td>';
+			// Event ohne eigenen Preis: „auf Anfrage" nur, wenn es sonst keine bepreiste Zeile gibt (Audit 18.09.).
+			$h .= '<td class="r c-qty"></td><td class="r c-unit"></td><td class="r c-sum" data-label="Gesamt netto">' . ( $pos['net'] > 0 ? '' : 'auf Anfrage' ) . '</td>';
 		}
 		$h .= '</tr>';
 	}
@@ -335,7 +336,7 @@ function fge_offer_mail_table_html( int $req ): string {
 	foreach ( $pos['rows'] as $row ) {
 		$n++;
 		$grey = $row['selected'] ? '' : 'color:#9a9a94;';
-		$h   .= '<tr><td style="' . $td . $grey . 'color:#6C736E;">' . $n . '</td><td style="' . $td . $grey . '"><strong>' . $e( $row['title'] ) . '</strong>';
+		$h   .= '<tr><td style="' . $td . $grey . 'color:#6C736E;">' . $n . '</td><td style="' . $td . $grey . '"><strong>' . $e( $row['title'] ) . '</strong>' . ( $row['selected'] ? '' : ' (abgewählt)' );
 		if ( 'event' === $row['kind'] ) {
 			$desc  = '';
 			$desc .= '' !== (string) ( $snap['date'] ?? '' ) ? '<span style="color:#6C736E;">Termin:</span> ' . $e( (string) $snap['date'] ) . '<br>' : '';
@@ -355,12 +356,14 @@ function fge_offer_mail_table_html( int $req ): string {
 			}
 		}
 		$h .= '</td>';
-		if ( $row['unit_price'] > 0 ) {
-			$h .= '<td style="' . $td . $r . $grey . '">' . (int) $row['qty'] . ' ' . $e( $row['unit_label'] ) . '</td>'
-				. '<td style="' . $td . $r . $grey . '">' . $e( fge_money( (float) $row['unit_price'] ) ) . '</td>'
-				. '<td style="' . $td . $r . $grey . '">' . $e( fge_money( (float) $row['total'] ) ) . '</td>';
+		if ( $row['unit_price'] > 0 && $row['selected'] ) {
+			$h .= '<td style="' . $td . $r . '">' . (int) $row['qty'] . ' ' . $e( $row['unit_label'] ) . '</td>'
+				. '<td style="' . $td . $r . '">' . $e( fge_money( (float) $row['unit_price'] ) ) . '</td>'
+				. '<td style="' . $td . $r . '">' . $e( fge_money( (float) $row['total'] ) ) . '</td>';
+		} elseif ( $row['unit_price'] > 0 ) {
+			$h .= '<td style="' . $td . '"></td><td style="' . $td . '"></td><td style="' . $td . '"></td>';
 		} else {
-			$h .= '<td style="' . $td . '"></td><td style="' . $td . '"></td><td style="' . $td . $r . '">auf Anfrage</td>';
+			$h .= '<td style="' . $td . '"></td><td style="' . $td . '"></td><td style="' . $td . $r . '">' . ( $pos['net'] > 0 ? '' : 'auf Anfrage' ) . '</td>';
 		}
 		$h .= '</tr>';
 	}

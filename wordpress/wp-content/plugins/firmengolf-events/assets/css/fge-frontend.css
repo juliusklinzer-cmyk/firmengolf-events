@@ -5727,7 +5727,7 @@ a.iv-tile { text-decoration: none; }
 .ct-topic, .ct-pref {
   font-family: var(--font-body);
   font-size: 14px; font-weight: 500;
-  padding: 9px 16px; min-height: 40px;
+  padding: 9px 16px; min-height: 44px;
   white-space: nowrap;
   border-radius: var(--radius-pill);
   border: 1px solid var(--ink-200);

@@ -29,13 +29,20 @@ function fge_request_run_followups(): array {
 		'post_status' => [ 'publish', 'draft' ],
 		'numberposts' => -1,
 		'fields'      => 'ids',
+		// Nur die letzten 90 Tage (Audit 18.09.: jeder Lauf rechnete alle Alt-Anfragen durch).
+		'date_query'  => [ [ 'after' => '90 days ago' ] ],
 	] );
 
 	$reminder_days = (int) apply_filters( 'fge_request_reminder_days', 2 );
+	$terminal      = [ 'verloren', 'nicht_verfuegbar', 'angebot_abgelehnt', 'angebot_angenommen', 'abgeschlossen', 'event_durchgefuehrt', 'rechnung_in_lexoffice_erstellt' ];
 
 	foreach ( $requests as $req ) {
 		// Musterumgebung: Demo-Anfragen lösen nie Mails aus.
 		if ( function_exists( 'fge_is_demo_request' ) && fge_is_demo_request( $req ) ) {
+			continue;
+		}
+		// Abgeschlossene oder verlorene Anfragen bekommen keine Erinnerungen mehr (Audit 18.09.).
+		if ( in_array( (string) get_post_meta( $req, '_fge_request_status', true ), $terminal, true ) ) {
 			continue;
 		}
 		// Erledigt / übernommen → nichts tun.
@@ -75,13 +82,13 @@ function fge_request_run_followups(): array {
 			continue;
 		}
 
-		$created     = strtotime( (string) get_post_field( 'post_date', $req ) ?: 'now' );
+		// Frist läuft ab der Einladung der Kontakte (bei späterer Partner-Zuordnung im Admin), sonst ab Eingang.
+		$created     = (int) get_post_meta( $req, '_fge_termin_invited_at', true ) ?: strtotime( (string) get_post_field( 'post_date', $req ) ?: 'now' );
 		$reminder_at = $created + $reminder_days * DAY_IN_SECONDS;
 
 		// ── B6: Erinnerungen an Nicht-Responder (einmal je Person) ──
 		if ( time() >= $reminder_at ) {
-			$sent = (array) get_post_meta( $req, '_fge_reminders_sent', true );
-			$sent = array_map( 'intval', $sent );
+			$sent = array_values( array_filter( array_map( 'intval', (array) get_post_meta( $req, '_fge_reminders_sent', true ) ) ) );
 			foreach ( $m['responders'] as $c ) {
 				$cid = (int) $c['id'];
 				if ( in_array( $cid, $sent, true ) ) {
@@ -197,8 +204,9 @@ function fge_offer_run_followups(): array {
 		$sent_at = (int) get_post_meta( $req, '_fge_offer_sent_at', true )
 			?: strtotime( (string) get_post_meta( $req, '_fge_last_status_change', true ) ?: get_post_field( 'post_date', $req ) ?: 'now' );
 
-		// Einmalige Erinnerung an den Kunden.
-		if ( time() >= $sent_at + $reminder_days * DAY_IN_SECONDS && '1' !== (string) get_post_meta( $req, '_fge_offer_reminded', true ) ) {
+		// Einmalige Erinnerung an den Kunden, nur solange die Frist läuft (Audit 18.09.).
+		$deadline_r = (int) get_post_meta( $req, '_fge_offer_deadline', true );
+		if ( time() >= $sent_at + $reminder_days * DAY_IN_SECONDS && ( $deadline_r <= 0 || time() < $deadline_r ) && '1' !== (string) get_post_meta( $req, '_fge_offer_reminded', true ) ) {
 			if ( function_exists( 'fge_send_offer_reminder' ) && fge_send_offer_reminder( $req ) ) {
 				update_post_meta( $req, '_fge_offer_reminded', 1 );
 				$stats['offer_reminded']++;

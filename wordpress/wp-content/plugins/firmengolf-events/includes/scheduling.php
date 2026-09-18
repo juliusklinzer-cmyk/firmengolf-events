@@ -77,6 +77,9 @@ function fge_handle_take_over(): void {
 	update_post_meta( $req, '_fge_taken_over', $on ? 1 : 0 );
 	if ( $on ) {
 		fge_request_set_status( $req, 'in_uebernahme' );
+	} elseif ( 'in_uebernahme' === (string) get_post_meta( $req, '_fge_request_status', true ) ) {
+		// Übernahme zurückgenommen: zurück in die Abstimmung (Audit 18.09., Status blieb hängen).
+		fge_request_set_status( $req, 'verfuegbarkeit_wird_geprueft' );
 	}
 	wp_safe_redirect( get_edit_post_link( $req, 'raw' ) );
 	exit;
@@ -104,6 +107,9 @@ function fge_handle_admin_confirm_offer(): void {
 		$err = 'no_date';
 	} elseif ( '1' === (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
 		$err = 'already_sent';
+	} elseif ( ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 ) || '1' === (string) get_post_meta( $req, '_fge_offer_hold', true ) ) {
+		// Audit 18.09.: zweiter Klick setzte den Termin neu und schickte die Bestätigungen erneut.
+		$err = 'already_final';
 	}
 
 	if ( '' === $err ) {
@@ -136,6 +142,9 @@ function fge_handle_send_held_offer(): void {
 		$err = 'no_date';
 	} elseif ( '1' === (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
 		$err = 'already_sent';
+	} elseif ( function_exists( 'fge_offer_is_priced' ) && ! fge_offer_is_priced( $req ) ) {
+		// Audit 18.09.: ohne Preis ging „Auf Anfrage" verbindlich buchbar raus.
+		$err = 'no_price';
 	}
 
 	if ( '' === $err ) {
@@ -164,9 +173,11 @@ add_action( 'admin_notices', static function () {
 		}
 	} elseif ( isset( $_GET['fge_offer_err'] ) ) {
 		$map = [
-			'no_event'     => 'Bitte zuerst ein Event zuordnen und die Anfrage speichern.',
-			'no_date'      => 'Bitte einen gültigen Wunschtermin wählen.',
-			'already_sent' => 'Für diese Anfrage wurde bereits ein Angebot versendet.',
+			'no_event'      => 'Bitte zuerst ein Event zuordnen und die Anfrage speichern.',
+			'no_price'      => 'Noch kein Preis hinterlegt. Bitte in „Schritt 2" den Eventpreis überschreiben oder Positionen bepreisen, speichern und dann senden.',
+			'no_date'       => 'Bitte einen gültigen Wunschtermin wählen.',
+			'already_sent'  => 'Für diese Anfrage wurde bereits ein Angebot versendet.',
+			'already_final' => 'Der Termin ist bereits bestätigt. Das Angebot geht über „Schritt 3: Angebot jetzt senden" raus.',
 		];
 		$k = sanitize_key( wp_unslash( $_GET['fge_offer_err'] ) );
 		echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $map[ $k ] ?? 'Angebot konnte nicht erstellt werden.' ) . '</p></div>';

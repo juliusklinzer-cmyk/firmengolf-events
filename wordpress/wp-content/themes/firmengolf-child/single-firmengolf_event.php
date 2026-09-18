@@ -1212,6 +1212,8 @@ get_header();
 
 		function show(n) {
 			steps.forEach(function (el, i) { if (el) el.style.display = (i === n ? '' : 'none'); });
+			// Beim Schrittwechsel nach oben (Audit 18.09.: Titel des neuen Schritts war auf Mobile abgeschnitten).
+			var sc = modal.querySelector('.fg-modal'); if (sc) { sc.scrollTop = 0; }
 			if (n < 3) {
 				head.style.display = '';
 				title.textContent = COPY[n].t;

@@ -333,10 +333,13 @@ function fge_render_rmb_termine( WP_Post $post ) {
 	];
 	// Sobald Abstimmungen existieren, kleben die Zu-/Absagen am Termin-INDEX — ein
 	// nachträglich geändertes Label würde die Votes stillschweigend umdeuten (Audit C13).
-	$has_votes = function_exists( 'fge_rr_get' ) && ! empty( fge_rr_get( $post->ID ) );
-	$ro        = $has_votes ? ' readonly style="background:#f6f7f7;"' : '';
+	$has_votes  = function_exists( 'fge_rr_get' ) && ! empty( fge_rr_get( $post->ID ) );
+	$offer_sent = '1' === (string) get_post_meta( $post->ID, '_fge_offer_sent', true );
+	$ro         = ( $has_votes || $offer_sent ) ? ' readonly style="background:#f6f7f7;"' : '';
 	?>
-	<?php if ( $has_votes ) : ?>
+	<?php if ( $offer_sent ) : ?>
+		<p style="color:#9A6B12;"><strong>⚠ Angebot bereits versendet</strong>, die Wunschtermine sind gesperrt. Der Termin im Angebot und in der Vortags-Info kommt aus dem Angebots-Snapshot.</p>
+	<?php elseif ( $has_votes ) : ?>
 		<p style="color:#9A6B12;"><strong>⚠ Terminabstimmung läuft bereits</strong>, die Wunschtermine sind gesperrt, weil vorhandene Zu-/Absagen sonst für ein anderes Datum gelten würden.</p>
 	<?php endif; ?>
 	<table class="form-table">
@@ -430,11 +433,16 @@ function fge_render_rmb_angebot( WP_Post $post ) {
 	<p style="margin-top:8px;">
 	<?php
 	// Kein <form> in der Metabox (verschachtelt im WP-Formular, siehe fge_admin_post_button).
-	fge_admin_post_button( 'fge_send_held_offer', [ 'request_id' => $req ], 'Angebot jetzt senden', [
-		'class'        => 'button button-primary',
-		'confirm'      => 'Angebot jetzt an den Kunden senden?',
-		'nonce_action' => 'fge_send_held_offer_' . $req,
-	] );
+	// Button nur mit Preis (Audit 18.09.: sonst ging „Auf Anfrage" verbindlich buchbar raus).
+	if ( function_exists( 'fge_offer_is_priced' ) && ! fge_offer_is_priced( $req ) ) {
+		echo '<span style="color:#9A6B12;">Senden erst möglich, sobald ein Preis hinterlegt ist (Schritt 2, dann „Aktualisieren").</span>';
+	} else {
+		fge_admin_post_button( 'fge_send_held_offer', [ 'request_id' => $req ], 'Angebot jetzt senden', [
+			'class'        => 'button button-primary',
+			'confirm'      => 'Angebot jetzt an den Kunden senden?',
+			'nonce_action' => 'fge_send_held_offer_' . $req,
+		] );
+	}
 	?>
 	</p>
 	<?php
@@ -702,7 +710,22 @@ function fge_save_request_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_assigned_event_id', ( $raw_event_id > 0 && get_post_type( $raw_event_id ) === 'firmengolf_event' ) ? $raw_event_id : 0 );
 
 	$raw_partner_id = absint( $_POST['fge_assigned_partner_id'] ?? 0 );
-	update_post_meta( $post_id, '_fge_assigned_partner_id', ( $raw_partner_id > 0 && get_post_type( $raw_partner_id ) === 'firmengolf_partner' ) ? $raw_partner_id : 0 );
+	$old_partner_id = (int) get_post_meta( $post_id, '_fge_assigned_partner_id', true );
+	$new_partner_id = ( $raw_partner_id > 0 && get_post_type( $raw_partner_id ) === 'firmengolf_partner' ) ? $raw_partner_id : 0;
+	update_post_meta( $post_id, '_fge_assigned_partner_id', $new_partner_id );
+	// Platz nachträglich zugeordnet, Abstimmung noch offen: Kontakte jetzt einladen
+	// (Audit 18.09.: vorher kam als erste Mail eine „Erinnerung" ohne Einladung).
+	if ( $new_partner_id > 0 && $new_partner_id !== $old_partner_id
+		&& '1' !== (string) get_post_meta( $post_id, '_fge_offer_sent', true )
+		&& ! ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $post_id ) > 0 )
+		&& ( ! function_exists( 'fge_rr_get' ) || empty( fge_rr_get( $post_id ) ) )
+		&& function_exists( 'fge_send_contact_termin_emails' ) && function_exists( 'fge_get_request_email_data' ) ) {
+		$invited = fge_send_contact_termin_emails( $post_id, fge_get_request_email_data( $post_id ) );
+		if ( $invited > 0 ) {
+			update_post_meta( $post_id, '_fge_termin_invited_at', time() );
+			delete_post_meta( $post_id, '_fge_reminders_sent' );
+		}
+	}
 
 	// Status über die zentrale Funktion (validiert, Zeitstempel, Hook) — leerer/ungültiger
 	// Wert überschreibt den Bestand NICHT mehr (Audit A5).
@@ -777,6 +800,11 @@ function fge_save_request_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_lexoffice_offer_created',   isset( $_POST['fge_lexoffice_offer_created'] ) ? 1 : 0 );
 	update_post_meta( $post_id, '_fge_lexoffice_offer_number',    sanitize_text_field( wp_unslash( $_POST['fge_lexoffice_offer_number'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_lexoffice_invoice_created', isset( $_POST['fge_lexoffice_invoice_created'] ) ? 1 : 0 );
+	// Häkchen „Rechnung erstellt" zieht den Status nach, solange kein späterer Status gewählt ist (Audit 18.09.).
+	if ( isset( $_POST['fge_lexoffice_invoice_created'] ) && function_exists( 'fge_request_set_status' )
+		&& ! in_array( (string) get_post_meta( $post_id, '_fge_request_status', true ), [ 'rechnung_in_lexoffice_erstellt', 'abgeschlossen', 'verloren' ], true ) ) {
+		fge_request_set_status( $post_id, 'rechnung_in_lexoffice_erstellt' );
+	}
 	update_post_meta( $post_id, '_fge_lexoffice_invoice_number',  sanitize_text_field( wp_unslash( $_POST['fge_lexoffice_invoice_number'] ?? '' ) ) );
 	update_post_meta( $post_id, '_fge_lexoffice_note',            sanitize_textarea_field( wp_unslash( $_POST['fge_lexoffice_note'] ?? '' ) ) );
 
@@ -820,24 +848,19 @@ function fge_auto_title_request( int $post_id ) {
 		return;
 	}
 
+	// Titel = „FG-26-165 · Name" wie beim Eingang (Audit 18.09.: vorher wurde bei jedem
+	// Speichern „Anfrage <Firma> <Speicherdatum>" gesetzt und die Nummer verschwand).
 	$company_name = sanitize_text_field( wp_unslash( $_POST['fge_company_name'] ?? '' ) );
+	$first_name   = sanitize_text_field( wp_unslash( $_POST['fge_contact_first_name'] ?? '' ) );
 	$last_name    = sanitize_text_field( wp_unslash( $_POST['fge_contact_last_name'] ?? '' ) );
-	$date         = current_datetime()->format( 'Y-m-d' );
-
-	if ( $company_name !== '' ) {
-		$title = 'Anfrage ' . $company_name . ' ' . $date;
-	} elseif ( $last_name !== '' ) {
-		$title = 'Anfrage ' . $last_name . ' ' . $date;
-	} else {
-		$title = 'Event Anfrage ' . $post_id . ' ' . $date;
+	$label        = trim( $first_name . ' ' . $last_name ) ?: ( $company_name ?: '#' . $post_id );
+	$title        = ( function_exists( 'fge_request_number' ) ? fge_request_number( $post_id ) : 'FG-' . $post_id ) . ' · ' . $label;
+	if ( $post->post_title === $title ) {
+		return;
 	}
-
-	remove_action( 'save_post', 'fge_auto_title_request', 20 );
-	wp_update_post( [
-		'ID'         => $post_id,
-		'post_title' => $title,
-		'post_name'  => sanitize_title( $title ),
-	] );
-	add_action( 'save_post', 'fge_auto_title_request', 20 );
+	// Direkt in die Tabelle, ohne zweiten save_post-Durchlauf und ohne den Slug anzufassen.
+	global $wpdb;
+	$wpdb->update( $wpdb->posts, [ 'post_title' => $title ], [ 'ID' => $post_id ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	clean_post_cache( $post_id );
 }
 add_action( 'save_post', 'fge_auto_title_request', 20 );

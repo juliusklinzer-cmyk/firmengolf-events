@@ -536,8 +536,8 @@ function fge_rr_handle_landing_post(): void {
 
 	// Once everyone has fully responded, notify the partner manager (once).
 	$matrix = fge_rr_matrix( $req );
-	if ( ! empty( $matrix['all_responded'] ) && '1' !== (string) get_post_meta( $req, '_fge_allresponded_notified', true ) ) {
-		update_post_meta( $req, '_fge_allresponded_notified', 1 );
+	// Atomar (add_post_meta unique): bei gleichzeitiger Abgabe ging die Mail doppelt raus (Audit 18.09.).
+	if ( ! empty( $matrix['all_responded'] ) && add_post_meta( $req, '_fge_allresponded_notified', 1, true ) ) {
 		do_action( 'fge_request_all_responded', $req );
 	}
 
