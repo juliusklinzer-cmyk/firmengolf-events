@@ -65,6 +65,9 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 		.od-pos tbody td.c-qty { margin-top: 8px; }
 		.od-pos tfoot tr { display: flex; justify-content: space-between; gap: 12px; }
 		.od-pos tfoot td { display: block; width: auto !important; }
+		/* Rabattzeile: langer Text (Code + Inhaber) darf umbrechen, Betrag bleibt einzeilig. */
+		.od-pos tfoot tr.od-disc td:first-child { flex: 1 1 auto; min-width: 0; white-space: normal; text-align: left; }
+		.od-pos tfoot tr.od-disc td:last-child { flex: 0 0 auto; white-space: nowrap; }
 		.od-pos tfoot tr.od-total td { border-top: 2px solid #20294D; }
 	}
 	</style>
@@ -221,19 +224,24 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 				// Zusatzleistungen abwählbar: Zwischensumme, USt. und Gesamtbetrag exakt nachrechnen.
 				var base = <?php echo wp_json_encode( round( $tl_base, 2 ) ); ?>,
 				    vat = <?php echo (int) $tl_pos['vat_percent']; ?>,
+				    discPct = <?php echo wp_json_encode( (float) ( $snap['discount']['percent'] ?? 0 ) ); ?>,
 				    picks = document.querySelectorAll('.tl-x-pick');
 				function fmt(n){ return n.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €'; }
 				function recalc(){
-					var net = base;
+					var sub = base;
 					picks.forEach(function(p){
 						var tr = p.closest('tr');
 						if (tr) { tr.classList.toggle('od-off', !p.checked); }
-						if (p.checked && tr) { net += parseFloat(tr.dataset.total || '0') || 0; }
+						if (p.checked && tr) { sub += parseFloat(tr.dataset.total || '0') || 0; }
 					});
-					net = Math.round(net * 100) / 100;
+					sub = Math.round(sub * 100) / 100;
+					// Partnercode-Rabatt auf die gewählte Zwischensumme, USt. auf den Rest (wie fge_offer_positions).
+					var disc = discPct > 0 ? Math.round(sub * discPct) / 100 : 0;
+					var net = Math.round((sub - disc) * 100) / 100;
 					var v = Math.round(net * vat) / 100;
-					var elN = document.getElementById('od-net'), elV = document.getElementById('od-vat'), elT = document.getElementById('od-total');
-					if (elN) elN.textContent = fmt(net);
+					var elN = document.getElementById('od-net'), elD = document.getElementById('od-disc'), elV = document.getElementById('od-vat'), elT = document.getElementById('od-total');
+					if (elN) elN.textContent = fmt(sub);
+					if (elD) elD.textContent = fmt(disc);
 					if (elV) elV.textContent = fmt(v);
 					if (elT) elT.textContent = fmt(Math.round((net + v) * 100) / 100);
 				}

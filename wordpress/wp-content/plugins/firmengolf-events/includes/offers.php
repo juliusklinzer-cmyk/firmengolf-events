@@ -124,7 +124,18 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 		$includes = $inc_override;
 	}
 
-	return [
+	// Partnercode-Rabatt (Multiplikator): Prozent auf die Netto-Zwischensumme aus Event und
+	// allen Extras, beim Versand eingefroren. Schlüssel fehlt bei Anfragen ohne Code.
+	$discount = function_exists( 'fge_pc_snapshot_block' ) ? fge_pc_snapshot_block( $req ) : null;
+	if ( null !== $discount ) {
+		$net_all = $total;
+		foreach ( $extras as $x ) {
+			$net_all += 'person' === $x['basis'] ? $x['price'] * max( 1, $pax ) : $x['price'];
+		}
+		$discount['amount'] = round( $net_all * $discount['percent'] / 100, 2 );
+	}
+
+	$snap = [
 		'event_title'       => $event_id ? get_the_title( $event_id ) : ( (string) get_post_meta( $req, '_fge_event_type', true ) ?: 'Firmen-Event' ),
 		'date'              => (string) get_post_meta( $req, '_fge_preferred_date_' . $date_index, true ),
 		'location'          => $location,
@@ -142,6 +153,10 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 		'contact_phone'     => (string) ( $co['phone_display'] ?? '' ),
 		'contact_email'     => (string) ( $co['email_events'] ?? '' ),
 	];
+	if ( null !== $discount ) {
+		$snap['discount'] = $discount;
+	}
+	return $snap;
 }
 
 /** Preis als Text fürs Angebot. */
@@ -193,7 +208,13 @@ function fge_offer_totals( array $snap, ?array $selected = null ): array {
 			$net += $p;
 		}
 	}
-	return [ 'net' => $net, 'ca' => $ca ];
+	// Partnercode-Rabatt auf die gewählte Zwischensumme.
+	$disc = 0.0;
+	if ( ! empty( $snap['discount']['percent'] ) && $net > 0 ) {
+		$disc = round( $net * (float) $snap['discount']['percent'] / 100, 2 );
+		$net  = round( $net - $disc, 2 );
+	}
+	return [ 'net' => $net, 'ca' => $ca, 'discount' => $disc ];
 }
 
 /** Brutto-Gesamtbetrag inkl. USt als Text, oder '' wenn kein konkreter Gesamtpreis vorliegt. */

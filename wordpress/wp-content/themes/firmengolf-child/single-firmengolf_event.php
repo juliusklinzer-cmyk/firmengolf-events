@@ -1148,6 +1148,11 @@ get_header();
 						<option>Egal</option>
 					</select>
 				</div>
+				<div class="fg-field">
+					<label class="fg-field-label" for="fg-partnercode">Partnercode (optional)</label>
+					<input class="fg-input fg-pc-input" id="fg-partnercode" maxlength="12" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="z. B. DGV2026">
+					<p class="fg-pc-hint" id="fg-pc-hint" hidden></p>
+				</div>
 			</div>
 			<label class="fg-consent" style="display:flex;gap:9px;align-items:flex-start;margin-top:14px;font-size:13px;line-height:1.45;color:var(--ink-700,#4a4a44);">
 				<input type="checkbox" id="fg-consent" style="margin-top:3px;flex:0 0 auto;">
@@ -1184,6 +1189,7 @@ get_header();
 				<div><span>Platz</span><span><?php echo esc_html( $venue ?: get_the_title() ); ?></span></div>
 				<div><span>Datum</span><span id="fg-receipt-date">k. A.</span></div>
 				<div><span>Gruppe</span><span id="fg-receipt-group">k. A.</span></div>
+				<div id="fg-receipt-pc-row" hidden><span>Partnercode</span><span id="fg-receipt-pc">k. A.</span></div>
 			</div>
 			<div class="fg-modal-foot single">
 				<button class="fg-btn-brand" id="fg-modal-done" type="button">Schließen</button>
@@ -1261,6 +1267,12 @@ get_header();
 			fgLastFocus = document.activeElement;
 			fgLockPage();
 			modal.classList.remove('is-hidden'); show(0);
+			// Partnercode aus dem Link (?pc=) vorbefüllen und live prüfen.
+			var pcIn = document.getElementById('fg-partnercode');
+			if (pcIn && window.FGEPartnercode) {
+				if (!pcIn.value) { pcIn.value = FGEPartnercode.get(); }
+				FGEPartnercode.wire(pcIn, document.getElementById('fg-pc-hint'));
+			}
 			document.addEventListener('keydown', fgTrapKey);
 			var f = fgVisibleFocusable();
 			if (f.length) { f[0].focus(); }
@@ -1439,6 +1451,7 @@ get_header();
 				starttime:  val('fg-starttime'),
 				diet:       val('fg-diet'),
 				contact_pref: val('fg-contact-pref'),
+				partnercode: val('fg-partnercode'),
 				consent:    consentEl && consentEl.checked ? '1' : ''
 			});
 
@@ -1478,6 +1491,12 @@ get_header();
 					setText('fg-receipt-date',  fmtDate(val('fg-date-1')) || 'k. A.');
 					setText('fg-receipt-group', val('fg-group-size') || 'k. A.');
 					setText('fg-receipt-ref',   (data.data && data.data.ref) || 'k. A.');
+					var pcRes = data.data && data.data.partnercode, pcRow = document.getElementById('fg-receipt-pc-row');
+					if (pcRow) {
+						if (pcRes && pcRes.ok) { pcRow.hidden = false; setText('fg-receipt-pc', pcRes.code + ' (' + pcRes.percent + ' % Rabatt)'); }
+						else if (pcRes && pcRes.invalid) { pcRow.hidden = false; setText('fg-receipt-pc', 'nicht gültig, nicht übernommen'); }
+						else { pcRow.hidden = true; }
+					}
 					show(3);
 				} else {
 					alert((data.data && data.data.message) || 'Es ist ein Fehler aufgetreten. Bitte versuche es erneut.');

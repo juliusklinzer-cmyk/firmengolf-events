@@ -32,3 +32,15 @@ Box „Schritt 4: Event-Tag (Vortags-Info)" in der Anfrage: Startzeit, Treffpunk
 3. Erledigt 18.09.: Golfpark Weidenhof zugeordnet (nach der Bestätigung).
 4. Nach Annahme: Schritt 4 ausfüllen (Treffpunkt, Ansprechpartner vor Ort), Vortags-Info läuft am 29.09. um 07:00 automatisch.
 5. Nach dem Event: Status „event_durchgefuehrt" (Bewertungsbitte), Rechnung in Lexoffice (312 € netto, 371,28 € brutto), Weidenhof stellt 294 € brutto in Rechnung.
+
+## Partnercodes für Multiplikatoren (1.9.266, 19.09.2026)
+
+Entscheidung Julius 18.09.: Codes nur für Multiplikatoren (Content Creator, DGV Jugendförderung, GMVD, Agenturen), keine Golfplätze. Ein Code je Partner, angelegt nur im Backend (Menü „Partnercodes"). Rabatt je Code einstellbar (Standard 5 % auf die Netto-Zwischensumme), Provision fester Eurobetrag je angenommenem Angebot. Beides geht zulasten der Firmengolf-Marge, `FGE_MARKUP_PERCENT` bleibt bei 20.
+
+- Eingabe: Feld „Partnercode (optional)" im Event-Dialog (Schritt 2) und im Wizard (Schnell-, Voll- und Budgetmodus), Livecheck mit grünem/rotem Hinweis und „Entfernen". Link `?pc=CODE` merkt den Code 90 Tage im Browser (localStorage, kein Cookie). Weihnachts-Kurzformular übergibt den gemerkten Code unsichtbar.
+- Angebot: Zeile „Partnercode CODE (Inhaber), 5 % Rabatt" im Summenblock (Web, PDF, Mail), Neuberechnung beim Abwählen von Extras. Auf dem Handy bricht die Rabattzeile um, der Betrag bleibt rechts.
+- Mails: Zeile in „Neue Event-Anfrage", Satz in der Kundenbestätigung, Rabattzeile und Hinweis „Der Rabatt über euren Partnercode ist bereits abgezogen." in der Angebotsmail, Block „Partnercode (intern)" in „Auftrag steht".
+- Provision: bei `fge_offer_accepted` einmalig „offen", bei `angebot_abgelehnt` / `verloren` / `nicht_verfuegbar` storniert, Abrechnung per Button am Code (einzeln oder alle offenen).
+- Sicherheit: AJAX-Check mit Nonce und Rate-Limit (20 pro 10 Minuten), jede Fehlerart liefert dieselbe generische Meldung, die Partner-Mailadresse kommt nie ins Frontend.
+- Testlauf lokal: Code DGVTEST (5 %, 50 €), Anfrage mit Extra 120 € netto: Zwischensumme 432,00 €, Rabatt 21,60 €, USt. 77,98 €, Gesamt 488,38 €; ohne Extra 312,00 / 15,60 / 56,32 / 352,72 €. Provision offen, nach Absage storniert, nach Abrechnen „abgerechnet".
+- Offen: Provisionsgutschrift läuft außerhalb des Systems (Lexoffice), Codes auf Live noch keine angelegt.

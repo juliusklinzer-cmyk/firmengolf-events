@@ -7561,3 +7561,11 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
 .home-prices-table tbody th a:hover { text-decoration: underline; }
 .home-prices .fg-compare-note a { margin-right: 6px; }
 @media (max-width: 720px) { .fmt-pricebar { padding: 0 16px; } }
+
+/* ── Partnercode-Feld (Anfrage-Dialog und Wizard), 19.09.2026 ─────────────── */
+.fg-pc-input { text-transform: uppercase; letter-spacing: .06em; }
+.fg-pc-hint { font-size: 13px; line-height: 1.45; color: var(--ink-500); margin: 8px 0 0; }
+.fg-pc-hint.is-ok { color: var(--fairway-800); }
+.fg-pc-hint.is-err { color: #B4332B; }
+.fg-pc-hint .fg-pc-clear { font: inherit; font-size: 13px; background: none; border: 0; padding: 0; margin-left: 4px; color: var(--ink-600); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.fg-pc-hint .fg-pc-clear:hover, .fg-pc-hint .fg-pc-clear:focus-visible { color: var(--ink-900); }

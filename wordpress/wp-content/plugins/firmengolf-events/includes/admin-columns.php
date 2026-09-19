@@ -166,6 +166,7 @@ function fge_request_columns( array $columns ): array {
 		'fge_participants'        => 'Teilnehmer',
 		'fge_preferred_date_1'    => 'Wunschtermin 1',
 		'fge_request_source'      => 'Quelle',
+		'fge_partnercode'         => 'Partnercode',
 		'fge_request_date'        => 'Anfrage Datum',
 	] );
 }
@@ -202,6 +203,11 @@ function fge_request_column_content( string $column, int $post_id ) {
 		case 'fge_request_source':
 			$src = (string) get_post_meta( $post_id, '_fge_source', true );
 			echo esc_html( $src ? ( fge_request_source_options()[ $src ] ?? $src ) : 'k. A.' );
+			break;
+		case 'fge_partnercode':
+			$pc_code = (string) get_post_meta( $post_id, '_fge_partnercode', true );
+			$pc_id   = (int) get_post_meta( $post_id, '_fge_partnercode_id', true );
+			echo '' !== $pc_code ? '<a href="' . esc_url( get_edit_post_link( $pc_id ) ) . '">' . esc_html( $pc_code ) . '</a>' : '<span style="color:#6C736E;">k. A.</span>';
 			break;
 		case 'fge_request_date':
 			echo esc_html( get_post_meta( $post_id, '_fge_request_date', true ) ?: 'k. A.' );

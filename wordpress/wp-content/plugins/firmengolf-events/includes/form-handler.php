@@ -313,6 +313,11 @@ function fge_ajax_modal_anfrage(): void {
 	update_post_meta( $request_id, '_fge_wishes_platz',      array_values( array_unique( $wish_platz ) ) );
 	update_post_meta( $request_id, '_fge_wishes_firmengolf', array_values( array_unique( $wish_fg ) ) );
 
+	// Partnercode (Multiplikator): zuordnen, ungültiger Code blockiert nichts.
+	$pc = function_exists( 'fge_pc_attach_to_request' )
+		? fge_pc_attach_to_request( $request_id, (string) wp_unslash( $_POST['partnercode'] ?? '' ) )
+		: [ 'ok' => false, 'invalid' => false ];
+
 	// Tracking + downstream (emails, status) via the shared hook
 	$current_count = (int) get_post_meta( $event_id, '_fge_requests_count', true );
 	update_post_meta( $event_id, '_fge_requests_count', $current_count + 1 );
@@ -325,6 +330,7 @@ function fge_ajax_modal_anfrage(): void {
 		'date_1'      => (string) get_post_meta( $request_id, '_fge_preferred_date_1', true ),
 		'group_size'  => $group,
 		'fb_event_id' => fge_meta_event_id( $request_id ),
+		'partnercode' => $pc,
 	] );
 }
 
@@ -484,6 +490,11 @@ function fge_ajax_general_request(): void {
 		. ( $notes !== ''    ? "\n\n" . $notes : '' );
 	update_post_meta( $request_id, '_fge_message', trim( $message ) );
 
+	// Partnercode (Multiplikator): zuordnen, ungültiger Code blockiert nichts.
+	$pc = function_exists( 'fge_pc_attach_to_request' )
+		? fge_pc_attach_to_request( $request_id, (string) wp_unslash( $_POST['partnercode'] ?? '' ) )
+		: [ 'ok' => false, 'invalid' => false ];
+
 	// Downstream: Mails + Status über den gemeinsamen Hook.
 	do_action( 'fge_request_created', $request_id );
 
@@ -494,6 +505,7 @@ function fge_ajax_general_request(): void {
 		'company'     => $company,
 		'email'       => $email,
 		'fb_event_id' => fge_meta_event_id( $request_id ),
+		'partnercode' => $pc,
 	] );
 }
 

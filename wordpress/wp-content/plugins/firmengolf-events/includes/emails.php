@@ -98,6 +98,15 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 	if ( '' !== $ref ) {
 		$ref_line = '<p style="margin:0 0 16px;color:#6C736E;font-size:13px;">Deine Vorgangsnummer: <strong>' . esc_html( $ref ) . '</strong></p>';
 	}
+	// Partnercode (Multiplikator): erkannt oder nicht gültig, die Anfrage ist in beiden Fällen drin.
+	if ( function_exists( 'fge_pc_request_summary' ) ) {
+		$pc = fge_pc_request_summary( $request_id );
+		if ( '' !== $pc['code'] ) {
+			$ref_line .= '<p style="margin:0 0 16px;">Partnercode <strong>' . esc_html( $pc['code'] ) . '</strong> erkannt, ' . (int) $pc['percent'] . ' % Rabatt im Angebot.</p>';
+		} elseif ( '' !== $pc['invalid'] ) {
+			$ref_line .= '<p style="margin:0 0 16px;">Der eingegebene Partnercode war nicht gültig, deine Anfrage ist trotzdem eingegangen.</p>';
+		}
+	}
 	$content = '
 		<p style="margin:0 0 16px;">' . $greeting . '</p>
 		<p style="margin:0 0 16px;">vielen Dank für deine Anfrage, sie ist bei uns eingegangen und liegt bereits beim richtigen Ansprechpartner.</p>
@@ -153,6 +162,22 @@ function fge_wishes_email_html( int $request_id ): string {
 	return $out;
 }
 
+/** Partnercode-Zelle für interne Mails: gültig mit Inhaber und Rabatt, ungültig rot, sonst k. A. */
+function fge_pc_mail_cell( int $request_id ): string {
+	if ( ! function_exists( 'fge_pc_request_summary' ) ) {
+		return 'k. A.';
+	}
+	$pc = fge_pc_request_summary( $request_id );
+	if ( '' !== $pc['code'] ) {
+		$label = esc_html( $pc['code'] . ( '' !== $pc['holder'] ? ' (' . $pc['holder'] . ', ' . $pc['percent'] . ' % Rabatt)' : '' ) );
+		return $pc['code_id'] > 0 ? '<a href="' . esc_url( get_edit_post_link( $pc['code_id'], 'raw' ) ) . '" style="color:#4279D1;">' . $label . '</a>' : $label;
+	}
+	if ( '' !== $pc['invalid'] ) {
+		return '<span style="color:#B4332B;">„' . esc_html( $pc['invalid'] ) . '" eingegeben, nicht gültig, nicht übernommen</span>';
+	}
+	return 'k. A.';
+}
+
 function fge_send_internal_request_email( int $request_id, array $data ): bool {
 	$company = $data['company_name'] !== '' ? $data['company_name'] : 'Unbekannt';
 	$subject = 'Neue Event-Anfrage: ' . $company;
@@ -181,6 +206,7 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 		'Budget'      => esc_html( $data['budget'] ?: 'k. A.' ),
 		'Termine'     => esc_html( $dates_text ),
 		'Quelle'      => esc_html( $data['source'] ),
+		'Partnercode' => fge_pc_mail_cell( $request_id ),
 		'Eingegangen' => esc_html( $data['request_date'] ),
 	];
 
@@ -486,6 +512,7 @@ function fge_send_offer_email( int $request_id ): bool {
 		<p style="margin:0 0 18px;">der Termin steht. Hier ist euer Angebot <strong>' . esc_html( $ref ) . '</strong>, ihr könnt es online mit einem Klick annehmen.' . ( '' !== $pdf ? ' Als PDF findet ihr es auch im Anhang.' : '' ) . '</p>
 		' . $table . '
 		' . ( ! empty( $extras ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Zusatzleistungen könnt ihr auf der Angebotsseite einzeln abwählen, die Summe passt sich an.</p>' : '' ) . '
+		' . ( ! empty( $snap['discount']['percent'] ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Der Rabatt über euren Partnercode ist bereits abgezogen.</p>' : '' ) . '
 		' . ( ! empty( $wishes ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Auf Wunsch zusätzlich organisierbar, wird separat angeboten: ' . esc_html( implode( ', ', array_map( 'strval', $wishes ) ) ) . '.</p>' : '' ) . '
 		<p style="margin:0 0 18px;color:#555;font-size:12px;">' . ( $deadline > 0 ? 'Das Angebot ist gültig bis ' . esc_html( wp_date( 'd.m.Y', $deadline ) ) . ', bis dahin halten wir den Termin für euch. ' : '' ) . 'Es gelten unsere <a href="' . esc_url( home_url( '/agb/' ) ) . '" style="color:#4279D1;">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Angebot ansehen & annehmen' ) . '</p>
@@ -572,6 +599,24 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		}
 	}
 
+	// Partnercode: Rabatt und Provision, nur intern (Multiplikator-Kontakt nie beim Kunden).
+	$pc_block = '';
+	if ( function_exists( 'fge_pc_request_summary' ) ) {
+		$pc = fge_pc_request_summary( $request_id );
+		if ( $pc['code_id'] > 0 ) {
+			$sel_pc   = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $request_id ) : [];
+			$pos_pc   = function_exists( 'fge_offer_positions' ) ? fge_offer_positions( $snap, $sel_pc ) : [ 'discount' => null ];
+			$disc_amt = (float) ( $pos_pc['discount']['amount'] ?? 0 );
+			$pc_block = '<p style="margin:0 0 6px;font-weight:600;">Partnercode (intern)</p>'
+				. '<p style="margin:0 0 16px;">Code <strong>' . esc_html( $pc['code'] ) . '</strong>, ' . esc_html( $pc['holder'] )
+				. ( '' !== (string) get_post_meta( $pc['code_id'], '_fge_pc_contact_name', true ) ? ', ' . esc_html( (string) get_post_meta( $pc['code_id'], '_fge_pc_contact_name', true ) ) : '' )
+				. ( '' !== (string) get_post_meta( $pc['code_id'], '_fge_pc_contact_email', true ) ? ' (' . esc_html( (string) get_post_meta( $pc['code_id'], '_fge_pc_contact_email', true ) ) . ')' : '' ) . '<br>'
+				. 'Rabatt für den Kunden: ' . esc_html( number_format_i18n( $disc_amt, 2 ) ) . ' € netto<br>'
+				. 'Provision: ' . esc_html( number_format_i18n( $pc['commission_amount'], 2 ) ) . ' € (' . esc_html( $pc['commission_status'] ?: 'offen' ) . ')<br>'
+				. '<span style="color:#6C736E;font-size:13px;">Rabatt und Provision gehen zulasten der Firmengolf-Marge, der Platz erhält sein volles Netto. Abrechnen im Menü Partnercodes.</span></p>';
+		}
+	}
+
 	$to = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 	$ic = '
 		<p style="margin:0 0 16px;">Der Kunde hat das Angebot <strong>' . esc_html( $ref ) . '</strong> angenommen. Der Auftrag steht.</p>
@@ -579,7 +624,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		<strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: 'k. A.' ) . '<br>
 		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: 'k. A.' ) . '<br>
 		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: 'k. A.' ) . '</p>
-		' . $xs_block . '
+		' . $xs_block . $pc_block . '
 		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen. Für die automatische Vortags-Info in der Anfrage unter „Schritt 4: Event-Tag" Startzeit, Treffpunkt und Ansprechpartner vor Ort eintragen.</p>
 		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';

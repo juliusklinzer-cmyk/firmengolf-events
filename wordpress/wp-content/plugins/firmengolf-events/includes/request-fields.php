@@ -624,6 +624,25 @@ function fge_render_rmb_tracking( WP_Post $post ) {
 	$sources = fge_request_source_options();
 	?>
 	<table class="form-table">
+		<?php if ( function_exists( 'fge_pc_request_summary' ) ) :
+			$pc = fge_pc_request_summary( $post->ID ); ?>
+		<tr>
+			<th scope="row">Partnercode</th>
+			<td><?php
+			if ( '' !== $pc['code'] ) {
+				echo '<a href="' . esc_url( get_edit_post_link( $pc['code_id'] ) ) . '"><strong>' . esc_html( $pc['code'] ) . '</strong></a> ' . esc_html( $pc['holder'] . ( $pc['percent'] > 0 ? ', ' . $pc['percent'] . ' % Rabatt' : '' ) );
+			} elseif ( '' !== $pc['invalid'] ) {
+				echo '<span style="color:#B4332B;">„' . esc_html( $pc['invalid'] ) . '" eingegeben, nicht gültig, nicht übernommen</span>';
+			} else {
+				echo '<span style="color:#6C736E;">k. A.</span>';
+			}
+			?></td>
+		</tr>
+		<tr>
+			<th scope="row">Provision Multiplikator</th>
+			<td><?php echo '' !== $pc['commission_status'] ? esc_html( number_format_i18n( $pc['commission_amount'], 2 ) . ' € (' . $pc['commission_status'] . ')' ) : '<span style="color:#6C736E;">k. A.</span>'; ?></td>
+		</tr>
+		<?php endif; ?>
 		<tr>
 			<th scope="row"><label for="fge_request_source">Quelle</label></th>
 			<td>

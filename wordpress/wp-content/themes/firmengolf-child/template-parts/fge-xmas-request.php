@@ -164,6 +164,7 @@ $xr_cfg = $xr_variants[ $xr_v ];
 
 				<input type="hidden" name="occasion" value="<?php echo esc_attr( $xr_cfg['occasion'] ); ?>">
 				<input type="hidden" name="source" value="<?php echo esc_attr( $xr_cfg['source'] ); ?>">
+				<input type="hidden" name="partnercode" value="" data-pc-hidden>
 				<input type="hidden" name="place" value="<?php echo esc_attr( (string) ( $args['place'] ?? '' ) ); ?>">
 								<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'fge_general_request' ) ); ?>">
 				<input type="text" name="fge_hp" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
@@ -218,6 +219,7 @@ $xr_cfg = $xr_variants[ $xr_v ];
 				action: 'fge_general_request',
 				nonce: v('nonce'), fge_ft: v('fge_ft'), fge_js: v('fge_js'), fge_hp: v('fge_hp'),
 				source: v('source'),
+				partnercode: v('partnercode'),
 				occasion: v('occasion'),
 				size: v('size'), date1: v('date1'), region: v('region'), city: v('region'),
 				place: place,

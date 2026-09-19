@@ -76,11 +76,28 @@ function fge_offer_positions( array $snap, ?array $selected = null ): array {
 		}
 	}
 
-	$vatp  = (int) ( $snap['vat_percent'] ?? ( defined( 'FGE_VAT_PERCENT' ) ? FGE_VAT_PERCENT : 19 ) );
-	$net   = round( $net, 2 );
-	$vat   = round( $net * $vatp / 100, 2 );
+	$vatp     = (int) ( $snap['vat_percent'] ?? ( defined( 'FGE_VAT_PERCENT' ) ? FGE_VAT_PERCENT : 19 ) );
+	$subtotal = round( $net, 2 );
+	// Partnercode-Rabatt (Multiplikator) auf die gewählte Zwischensumme; USt. auf den Rest.
+	$discount = null;
+	if ( ! empty( $snap['discount']['percent'] ) && $subtotal > 0 ) {
+		$pct      = (float) $snap['discount']['percent'];
+		$disc_amt = round( $subtotal * $pct / 100, 2 );
+		$discount = [
+			'code'    => (string) ( $snap['discount']['code'] ?? '' ),
+			'holder'  => (string) ( $snap['discount']['holder'] ?? '' ),
+			'percent' => $pct,
+			'amount'  => $disc_amt,
+		];
+		$net = round( $subtotal - $disc_amt, 2 );
+	} else {
+		$net = $subtotal;
+	}
+	$vat = round( $net * $vatp / 100, 2 );
 	return [
 		'rows'        => $rows,
+		'subtotal'    => $subtotal,
+		'discount'    => $discount,
 		'net'         => $net,
 		'vat'         => $vat,
 		'vat_percent' => $vatp,
@@ -99,15 +116,12 @@ function fge_offer_pax_note( int $pax ): string {
 }
 
 /**
- * Zahlungsbedingungen im Angebot, passend zu § 5 der AGB (Julius, 18.09.2026):
- * Schlussrechnung 14 Tage nach dem Event ohne Abzug, über 5.000 € netto Anzahlung möglich.
+ * Zahlungsbedingungen im Angebot, passend zu § 5 der AGB: Schlussrechnung 14 Tage
+ * nach dem Event ohne Abzug. Die Anzahlungsregel bleibt bewusst nur in den AGB
+ * (Julius, 18.09.2026: im Angebot nur das Nötigste).
  */
 function fge_offer_payment_note( float $net ): string {
-	$s = 'Zahlung: Rechnung nach dem Event, zahlbar innerhalb von 14 Tagen ohne Abzug.';
-	if ( $net > 5000 ) {
-		$s .= ' Bei Buchung können wir eine Anzahlung von bis zu 50 % verlangen.';
-	}
-	return $s;
+	return 'Zahlung: Rechnung nach dem Event, zahlbar innerhalb von 14 Tagen ohne Abzug.';
 }
 
 /** Gemeinsames CSS für Seite und PDF (Klassen .od-*). Mail bekommt Inline-Styles. */
@@ -142,6 +156,7 @@ function fge_offer_document_css(): string {
 .od-pos .c-sum { width: 15%; }
 .od-pos tfoot td { border-bottom: 0; padding: 5px 8px; }
 .od-pos tfoot tr.od-total td { font-weight: bold; font-size: 14px; border-top: 2px solid #20294D; padding-top: 9px; }
+.od-pos tfoot tr.od-disc td { color: #2F6E45; }
 .od-pos tr.od-off td { color: #9a9a94; }
 .od-desc { margin: 6px 0 0; color: #444; font-size: 12px; line-height: 1.55; }
 .od-desc .k { color: #6C736E; }
@@ -289,9 +304,11 @@ function fge_offer_document_html( int $req, string $mode = 'web' ): string {
 		$h .= '</tr>';
 	}
 	$h .= '</tbody>';
-	if ( $pos['net'] > 0 ) {
+	if ( $pos['subtotal'] > 0 ) {
+		$dc = $pos['discount'];
 		$h .= '<tfoot>'
-			. '<tr><td colspan="4" class="r">Zwischensumme netto</td><td class="r"><span id="od-net">' . $e( fge_money( $pos['net'] ) ) . '</span></td></tr>'
+			. '<tr><td colspan="4" class="r">Zwischensumme netto</td><td class="r"><span id="od-net">' . $e( fge_money( $pos['subtotal'] ) ) . '</span></td></tr>'
+			. ( $dc ? '<tr class="od-disc"><td colspan="4" class="r">Partnercode ' . $e( $dc['code'] ) . ( '' !== $dc['holder'] ? ' (' . $e( $dc['holder'] ) . ')' : '' ) . ', ' . $e( rtrim( rtrim( number_format_i18n( $dc['percent'], 2 ), '0' ), ',' ) ) . ' % Rabatt</td><td class="r">-<span id="od-disc">' . $e( fge_money( $dc['amount'] ) ) . '</span></td></tr>' : '' )
 			. '<tr><td colspan="4" class="r">zzgl. ' . (int) $pos['vat_percent'] . ' % USt.</td><td class="r"><span id="od-vat">' . $e( fge_money( $pos['vat'] ) ) . '</span></td></tr>'
 			. '<tr class="od-total"><td colspan="4" class="r">Gesamtbetrag</td><td class="r"><span id="od-total">' . $e( fge_money( $pos['total'] ) ) . '</span></td></tr>'
 			. '</tfoot>';
@@ -380,9 +397,11 @@ function fge_offer_mail_table_html( int $req ): string {
 		}
 		$h .= '</tr>';
 	}
-	if ( $pos['net'] > 0 ) {
+	if ( $pos['subtotal'] > 0 ) {
 		$tf = 'padding:5px 8px;font-size:14px;' . $r;
-		$h .= '<tr><td colspan="4" style="' . $tf . '">Zwischensumme netto</td><td style="' . $tf . '">' . $e( fge_money( $pos['net'] ) ) . '</td></tr>'
+		$dc = $pos['discount'];
+		$h .= '<tr><td colspan="4" style="' . $tf . '">Zwischensumme netto</td><td style="' . $tf . '">' . $e( fge_money( $pos['subtotal'] ) ) . '</td></tr>'
+			. ( $dc ? '<tr><td colspan="4" style="' . $tf . 'color:#2F6E45;">Partnercode ' . $e( $dc['code'] ) . ( '' !== $dc['holder'] ? ' (' . $e( $dc['holder'] ) . ')' : '' ) . ', ' . $e( rtrim( rtrim( number_format_i18n( $dc['percent'], 2 ), '0' ), ',' ) ) . ' % Rabatt</td><td style="' . $tf . 'color:#2F6E45;">-' . $e( fge_money( $dc['amount'] ) ) . '</td></tr>' : '' )
 			. '<tr><td colspan="4" style="' . $tf . '">zzgl. ' . (int) $pos['vat_percent'] . ' % USt.</td><td style="' . $tf . '">' . $e( fge_money( $pos['vat'] ) ) . '</td></tr>'
 			. '<tr><td colspan="4" style="' . $tf . 'font-weight:bold;font-size:15px;border-top:2px solid #20294D;padding-top:9px;">Gesamtbetrag</td><td style="' . $tf . 'font-weight:bold;font-size:15px;border-top:2px solid #20294D;padding-top:9px;">' . $e( fge_money( $pos['total'] ) ) . '</td></tr>';
 	}

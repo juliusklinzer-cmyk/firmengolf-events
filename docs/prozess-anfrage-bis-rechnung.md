@@ -27,6 +27,8 @@ Stand 18.09.2026, Plugin 1.9.265. Was das System automatisch macht und was Juliu
 
 **Julius:** Bei Platzhalter-Events („Golf-Schnupperkurs für Teams in Hamburg", „Von Firmengolf organisiert") gibt es keinen Platz. Julius sucht den Platz, holt den Preis und macht weiter mit Phase 2b.
 
+**Partnercode (seit 1.9.266):** Der Kunde kann im Event-Dialog, im Wizard oder über einen Link `?pc=CODE` einen Partnercode angeben (Codes von Multiplikatoren wie Content Creatorn, DGV, GMVD; keine Golfplätze). Der Code wird im Browser gemerkt und vorausgefüllt, live geprüft und mit der Anfrage gespeichert. Ein ungültiger Code blockiert die Anfrage nicht. Die interne Mail zeigt die Zeile „Partnercode" (mit Link zum Code), die Kundenbestätigung den Satz „Partnercode X erkannt, 5 % Rabatt im Angebot." bzw. den Hinweis, dass der Code nicht gültig war. In der Anfrage steht der Code in der Box „Quelle und Tracking", in der Anfrageliste in der Spalte „Partnercode".
+
 ## Phase 2: Termin
 
 **2a Partner-Weg (Event mit Platz):** Kontakte sagen je Wunschtermin zu oder ab. Nach 2 Tagen Erinnerung an alle, die nicht reagiert haben; nach Ablauf der Frist Eskalation an events@. Haben alle reagiert, bekommt der Hauptkontakt „Alle Rückmeldungen da" und bestätigt im Portal den Termin. Julius kann jederzeit „Koordination übernehmen" (Status `in_uebernahme`) und dann selbst bestätigen.
@@ -46,6 +48,7 @@ Stand 18.09.2026, Plugin 1.9.265. Was das System automatisch macht und was Juliu
 
 **Mails:**
 - Kunde: „Euer Angebot FG-…: <Event>" mit Positionstabelle, Summen netto / USt. / gesamt, Gültigkeit, Button, PDF im Anhang. Angebotsseite mit Annehmen (AGB-Häkchen), Rückfrage, Absagen, PDF-Download.
+- Mit gültigem Partnercode: eigene Zeile im Summenblock „Partnercode CODE (Inhaber), 5 % Rabatt  -21,60 €" zwischen Zwischensumme netto und USt. (Web, PDF, Mail). Der Rabatt gilt auf die Netto-Zwischensumme inklusive gewählter Zusatzleistungen und rechnet beim Abwählen mit. Prozentsatz wird beim Angebotsversand eingefroren; wird der Code später pausiert, bleibt das Angebot wie versendet.
 - Kunde nach 3 Tagen ohne Reaktion: „Erinnerung: euer Angebot" (nur solange die Frist läuft).
 - events@ nach Fristablauf: „Angebot überfällig", bei Rückfrage des Kunden „Rückfrage zum Angebot" (nach 2 Tagen unbeantwortet erneut intern).
 - events@ falls die Angebotsmail nicht zugestellt werden konnte: „Angebot nicht zugestellt".
@@ -57,7 +60,7 @@ Stand 18.09.2026, Plugin 1.9.265. Was das System automatisch macht und was Juliu
 **Kunde** klickt mit AGB-Häkchen „Angebot annehmen", wählt Zusatzleistungen ab oder an. Status `angebot_angenommen`. Nach Fristablauf wird eine Annahme zur Rückfrage (Termin nicht mehr garantiert), Julius prüft und bestätigt manuell.
 
 **Mails:**
-- events@: „Auftrag steht: FG-…" mit Termin, Firma, Event, Platz, Abrechnungsübersicht der Zusatzleistungen (Einkauf, Marge, Dienstleister, nur intern), Hinweis auf Schritt 4.
+- events@: „Auftrag steht: FG-…" mit Termin, Firma, Event, Platz, Abrechnungsübersicht der Zusatzleistungen (Einkauf, Marge, Dienstleister, nur intern), Hinweis auf Schritt 4. Mit Partnercode zusätzlich der Block „Partnercode (intern)": Code, Inhaber, Kontakt, Rabatt in Euro, Provision in Euro (offen). Rabatt und Provision gehen zulasten der Firmengolf-Marge, der Platz bekommt sein volles Netto.
 - Platz: „Event gebucht: FG-…" (ohne Preise).
 - Kunde: „Buchung bestätigt: FG-…" mit Link zur Buchungsübersicht und PDF.
 - Dienstleister je Position: Auftrag oder Absage mit dem vereinbarten Einkaufspreis.
@@ -85,6 +88,7 @@ Kein Systemschritt. Julius ist telefonisch erreichbar (Nummer steht in beiden Vo
 2. **Rechnung in Lexoffice** schreiben: Positionen wie im Angebot, netto plus 19 % USt. (Beispiel: 6 × 52,00 € = 312,00 € netto, 59,28 € USt., 371,28 € brutto). Zahlungsziel nach AGB. Lexoffice-Box in der Anfrage: „Rechnung erstellt" ankreuzen, Rechnungsnummer eintragen; der Status springt automatisch auf `rechnung_in_lexoffice_erstellt`.
 3. **Eingangsrechnung des Platzes** (Beispiel Weidenhof: 6 × 49 € = 294 € brutto) prüfen und bezahlen. Dienstleister-Rechnungen ebenso.
 4. **Zahlungseingang** des Kunden prüfen, dann Status `abgeschlossen`. Damit ist die Anfrage fertig; Erinnerungen und Cron-Mails greifen nicht mehr.
+5. **Provision Multiplikator** (nur bei Anfragen mit Partnercode): Die Provision entsteht bei Annahme des Angebots als „offen" (fester Betrag je Code) und wird bei Absage, `verloren` oder `nicht_verfuegbar` automatisch storniert. Auszahlen von Hand (Überweisung, Gutschrift in Lexoffice), dann im Menü „Partnercodes" beim Code „Als abgerechnet markieren" (einzeln je Anfrage oder alle offenen auf einmal). Die Statistik-Box zeigt Anfragen, Buchungen, Provision offen/abgerechnet/storniert und den Link zum Weitergeben.
 
 **Sonderfälle:** Kunde sagt ab → Status `angebot_abgelehnt`, interne Mail, Dienstleister bekommen Absagen. Kein Termin möglich → `nicht_verfuegbar`. Anfrage versandet → `verloren` (von Hand).
 

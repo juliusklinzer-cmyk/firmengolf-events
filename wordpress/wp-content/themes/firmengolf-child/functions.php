@@ -334,6 +334,18 @@ add_action( 'wp_enqueue_scripts', function() {
 		defined( 'FGE_VERSION' ) ? FGE_VERSION : '1',
 		false
 	);
+	// Partnercode (Multiplikatoren): ?pc=CODE merken, Livecheck, Feldlogik für beide Anfrage-Dialoge.
+	wp_enqueue_script(
+		'fge-partnercode',
+		plugins_url( 'assets/js/fge-partnercode.js', WP_PLUGIN_DIR . '/firmengolf-events/firmengolf-events.php' ),
+		[],
+		defined( 'FGE_VERSION' ) ? FGE_VERSION : '1',
+		true
+	);
+	wp_localize_script( 'fge-partnercode', 'FGE_PC', [
+		'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+		'nonce'   => wp_create_nonce( 'fge_pc_check' ),
+	] );
 	// Type-System (Redesign 2026-07): global, bewusst NACH fge-frontend geladen —
 	// gewinnt bei gleicher Spezifität (Headline-/Highlight-Regeln).
 	wp_enqueue_style(

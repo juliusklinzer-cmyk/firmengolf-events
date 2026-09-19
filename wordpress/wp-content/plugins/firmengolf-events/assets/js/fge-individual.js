@@ -485,7 +485,9 @@
 				date1: '', date2: '', date3: '', services: [],
 				callback: false, budgetTotal: '', calcType: '', calcArticle: '', calcServices: [], calcSummary: '',
 				company: '', city: '', firstName: '', lastName: '', email: '', phone: '',
-				contactPref: 'E-Mail', diet: '', notes: '', consent: false
+				contactPref: 'E-Mail', diet: '', notes: '', consent: false,
+				/* Partnercode (Multiplikator): aus dem Link (?pc=) vorbefüllt, optional. */
+				partnercode: (window.FGEPartnercode ? window.FGEPartnercode.get() : '')
 			};
 			if (preset) for (var k in preset) if (preset.hasOwnProperty(k)) f[k] = preset[k];
 			return f;
@@ -577,6 +579,21 @@
 			return '<span class="ind-flabel">' + esc(txt)
 				+ (req ? '<span class="ind-required">*</span>' : '')
 				+ (hint ? '<span class="ind-flabel-hint">' + esc(hint) + '</span>' : '') + '</span>';
+		}
+		/* Partnercode-Feld (Multiplikator), Zustand liegt in S.form.partnercode und S.pc,
+		   weil der Wizard jeden Schritt neu rendert. Livecheck im Input-Listener. */
+		function pcField() {
+			var res = S.pc, v = S.form.partnercode || '', hint;
+			if (res && res.ok) {
+				hint = '<p class="fg-pc-hint is-ok" data-pc-hint>Code von ' + esc(res.holder) + ' erkannt: ' + esc(String(res.percent)) + ' % Rabatt auf euer Angebot. <button type="button" class="fg-pc-clear" data-act="pc-clear">Entfernen</button></p>';
+			} else if (res && v) {
+				hint = '<p class="fg-pc-hint' + (res.soft ? '' : ' is-err') + '" data-pc-hint>' + esc(res.message || 'Dieser Partnercode ist nicht gültig.') + '</p>';
+			} else {
+				hint = '<p class="fg-pc-hint" data-pc-hint hidden></p>';
+			}
+			return '<div class="rw-field rw-field--pc">' + label('Partnercode', false, 'optional')
+				+ '<input class="fg-input fg-pc-input" data-field="partnercode" value="' + esc(v) + '" maxlength="12" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="z. B. DGV2026">'
+				+ hint + '</div>';
 		}
 		// Konkreter Platzwunsch: Suchfeld mit Autocomplete über ALLE deutschen Plätze
 		// (Datalist; die Namen kommen aus dem DGV-Verzeichnis). Julius, 2026-07-06.
@@ -707,6 +724,7 @@
 				+ '<div class="rw-field">' + label('Telefon') + input('phone', 'type="tel"', '+49 …') + '</div></div>'
 				+ '<div class="rw-field">' + label('Bevorzugte Kontaktart') + chips('contactPref', ['E-Mail', 'Telefon', 'Egal']) + '</div>'
 				+ '<div class="rw-field">' + label('Was habt ihr vor?') + '<textarea class="fg-input" data-field="notes" rows="2" placeholder="Ein, zwei Sätze zu Ziel, Stimmung, Wünschen.">' + esc(S.form.notes) + '</textarea></div>'
+				+ pcField()
 				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '><span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label>'
 				+ '</div></div>' + photoPanel('send') + '</div></div>'
 				+ '<div class="rw-foot">' + quickProgress() + '<div class="rw-nav rw-nav--quick"><button class="rw-btn-text" data-act="back">Zurück</button>'
@@ -786,6 +804,7 @@
 				+ '<div class="rw-row"><div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div>'
 				+ '<div class="rw-field">' + label('Telefon') + input('phone', 'type="tel"', '+49 …') + '</div></div>'
 				+ '<div class="rw-field">' + label('Bevorzugte Kontaktart') + chips('contactPref', ['E-Mail', 'Telefon', 'Egal']) + '</div>'
+				+ pcField()
 				+ '<label class="ind-consent"><input type="checkbox" data-field="consent"' + (S.form.consent ? ' checked' : '') + '>'
 				+ '<span>Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutzerklärung</a> zu.</span></label></div>';
 		}
@@ -817,6 +836,7 @@
 					+ '<div class="rw-money"><input class="fg-input" data-field="budgetTotal" type="number" min="0" step="50" inputmode="numeric" value="' + esc(S.form.budgetTotal || '') + '" placeholder="z. B. 15000"><span>€</span></div></div></div>'
 				+ '<div class="rw-row"><div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div>'
 				+ '<div class="rw-field">' + label('Telefon', false, 'optional') + input('phone', 'type="tel"', '+49 170 1234567') + '</div></div>'
+				+ pcField()
 				+ '<label class="fg-switch-row"><span class="fg-switch-txt"><b>Rückruf heute?</b><span>Ja, bitte anrufen</span></span>'
 				+ '<span class="fg-switch"><input type="checkbox" role="switch" data-field="callback"' + (S.form.callback ? ' checked' : '') + '><i></i></span></label>'
 				+ '<p class="rw-budget-note">Kostenfrei und datenschutzkonform gemäß DSGVO. Mit dem Absenden stimmst du der Verarbeitung deiner Angaben zur Bearbeitung der Anfrage zu. <a href="' + esc(CFG.privacyUrl || '/datenschutz/') + '" target="_blank" rel="noopener">Datenschutz</a></p>'
@@ -861,6 +881,8 @@
 				+ (S.form.region ? '<div><span>Region</span><span>' + esc(S.form.region) + '</span></div>' : '')
 				+ (S.mode !== 'quick' && S.form.budget ? '<div><span>Budget-Rahmen</span><span>' + esc(S.form.budget) + '</span></div>' : '')
 				+ '<div><span>Unternehmen</span><span>' + esc(resp.company || S.form.company || 'k. A.') + '</span></div>'
+				+ (resp.partnercode && resp.partnercode.ok ? '<div><span>Partnercode</span><span>' + esc(resp.partnercode.code + ' (' + resp.partnercode.percent + ' % Rabatt)') + '</span></div>' : '')
+				+ (resp.partnercode && resp.partnercode.invalid ? '<div><span>Partnercode</span><span>nicht gültig, nicht übernommen</span></div>' : '')
 				+ '<div><span>Status</span><span><span class="ob-pill-status">In Bearbeitung</span></span></div>'
 				+ '<div><span>Vorgangs-Nr.</span><span class="mono">' + esc(resp.ref || '') + '</span></div></div>'
 				+ '<div class="rw-success-ctas"><button class="rw-btn-primary" data-act="close">Schließen</button></div>'
@@ -975,6 +997,7 @@
 			body.set('contact_pref', f.contactPref); body.set('diet', f.diet); body.set('notes', f.notes);
 			body.set('consent', f.consent ? '1' : '');
 			body.set('services', (f.services || []).join('||'));
+			body.set('partnercode', f.partnercode || '');
 			if (S.source) body.set('source', S.source);
 
 			fetch(CFG.ajaxUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
@@ -1051,6 +1074,15 @@
 				return;
 			}
 			if (act === 'close') { close(); return; }
+			if (act === 'pc-clear') {
+				collect();
+				S.form.partnercode = ''; S.pc = null;
+				if (window.FGEPartnercode) { FGEPartnercode.clear(); }
+				var pcInp = overlay.querySelector('input[data-field="partnercode"]'), pcHint = overlay.querySelector('[data-pc-hint]');
+				if (pcInp) { pcInp.value = ''; }
+				if (pcHint && window.FGEPartnercode) { FGEPartnercode.renderHint(pcHint, null); }
+				return;
+			}
 			if (act === 'toggle-mode') { collect(); S.mode = (S.mode === 'quick' ? 'full' : 'quick'); S.step = 0; render(); return; }
 			if (act === 'to-full') { collect(); S.mode = 'full'; S.step = 0; render(); return; }
 			if (act === 'intro-start') { S.phase = 'form'; render(); return; }
@@ -1158,6 +1190,24 @@
 			});
 			/* Ort-Autovervollständigung (Kontakt-Schritt) über die eigene Orts-Datenbank
 			   (fge_geo_suggest), consentfrei ohne Drittanbieter (Julius, 2026-08-27). */
+			/* Partnercode: normalisieren, mit Debounce prüfen, Hinweis in place aktualisieren. */
+			var pcT = null;
+			overlay.addEventListener('input', function (e) {
+				if (!e.target.matches('input[data-field="partnercode"]') || !window.FGEPartnercode) { return; }
+				var inp = e.target;
+				inp.value = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+				S.form.partnercode = inp.value;
+				clearTimeout(pcT);
+				pcT = setTimeout(function () {
+					var hint = overlay.querySelector('[data-pc-hint]');
+					if (!inp.value) { S.pc = null; FGEPartnercode.clear(); FGEPartnercode.renderHint(hint, null); return; }
+					FGEPartnercode.check(inp.value, function (res) {
+						S.pc = res;
+						if (res.ok) { FGEPartnercode.set(res.code); }
+						FGEPartnercode.renderHint(hint, res);
+					});
+				}, 350);
+			});
 			var cityT = null;
 			overlay.addEventListener('input', function (e) {
 				if (!e.target.matches('input[data-field="city"]')) { return; }
@@ -1184,6 +1234,14 @@
 			   erlaubt: Formate ohne fertige Events landen so persönlich begrüßt im Quick-Flow
 			   (Julius, 2026-08-27). */
 			S = { mode: mode || 'full', phase: intro ? 'intro' : 'form', step: 0, sending: false, source: source || '', form: blank(preset) };
+			// Gemerkten Partnercode einmal prüfen, damit der Hinweis sofort stimmt.
+			if (S.form.partnercode && window.FGEPartnercode) {
+				FGEPartnercode.check(S.form.partnercode, function (res) {
+					S.pc = res;
+					var h = overlay ? overlay.querySelector('[data-pc-hint]') : null;
+					if (h) { FGEPartnercode.renderHint(h, res); }
+				});
+			}
 			/* Positionsfeste Sperre wie beim Event-Modal: die Klassen-Sperre
 			   (overflow hidden) überrollt iOS beim Input-Fokus und scrollt die
 			   Seite hinter dem Wizard — der Wizard hing dann als Band mitten im
