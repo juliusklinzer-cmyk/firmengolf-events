@@ -767,3 +767,60 @@ button.cc-btn { font: inherit; cursor: pointer; }
 	.cc-cal-time { display: none; }
 	.cc-cal-date { min-width: 0; }
 }
+
+/* ── Kacheln (Geld) ────────────────────────────────────────────────────── */
+
+.cc-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 14px;
+	margin-bottom: 18px;
+}
+.cc-tile {
+	background: var(--cc-card);
+	border: 1px solid var(--cc-line);
+	border-radius: var(--cc-radius);
+	padding: 15px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.cc-tile-label {
+	font-size: 10.5px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--cc-muted);
+}
+.cc-tile-value {
+	font-size: 25px;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.15;
+}
+.cc-tile .cc-muted { font-size: 12.5px; }
+
+/* ── Aufgabenliste ─────────────────────────────────────────────────────── */
+
+.cc-tasklist { list-style: none; margin: 0; padding: 0; }
+.cc-tasklist li { border-bottom: 1px solid var(--cc-line-soft); }
+.cc-tasklist li:last-child { border-bottom: 0; }
+.cc-tasklist a {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	padding: 9px 0;
+	text-decoration: none;
+	color: inherit;
+	flex-wrap: wrap;
+	font-size: 13.5px;
+}
+.cc-tasklist .cc-ref { min-width: 92px; color: var(--cc-accent); }
+.cc-task-text { flex: 1 1 260px; }
+
+.cc-td-bad { color: var(--cc-bad); font-weight: 500; }
+
+@media (max-width: 720px) {
+	.cc-tile-value { font-size: 21px; }
+	.cc-tasklist .cc-ref { min-width: 0; }
+}

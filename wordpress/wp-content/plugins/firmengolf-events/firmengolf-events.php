@@ -81,6 +81,7 @@ require_once FGE_DIR . 'includes/cc-core.php';
 require_once FGE_DIR . 'includes/cc-venues-ui.php';
 require_once FGE_DIR . 'includes/cc-directories.php';
 require_once FGE_DIR . 'includes/cc-calendar.php';
+require_once FGE_DIR . 'includes/cc-views.php';
 require_once FGE_DIR . 'includes/cc-actions.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {

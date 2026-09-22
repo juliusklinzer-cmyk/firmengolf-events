@@ -139,6 +139,18 @@ function fge_cc_render( string $page ): void {
 			case 'kalender':
 				fge_cc_page_calendar();
 				break;
+			case 'angebote':
+				fge_cc_page_offers();
+				break;
+			case 'aufgaben':
+				fge_cc_page_tasks();
+				break;
+			case 'geld':
+				fge_cc_page_money();
+				break;
+			case 'postausgang':
+				fge_cc_page_outbox();
+				break;
 			default:
 				fge_cc_page_stub( $title );
 		}
