@@ -876,3 +876,63 @@ body.cc--plain { background: var(--cc-bg); }
 	background: var(--cc-card);
 	color: var(--cc-ink);
 }
+
+/* ── Mobil: Punkt 2 und 4 aus CLAUDE-MOBILE.md ─────────────────────────── */
+/*
+ * Unter 16px zoomt iOS Safari beim Fokus in die Seite, und Touch-Ziele unter
+ * 44 Pixel trifft man am Eventtag nicht zuverlässig. Deshalb wird das Control
+ * Center auf dem Telefon luftiger, statt die Schreibtisch-Dichte zu behalten.
+ * Breakpoint wie im Projekt üblich bei 768px.
+ */
+@media (max-width: 768px) {
+	.cc input,
+	.cc select,
+	.cc textarea,
+	.cc-search input,
+	.cc-field input,
+	.cc-field select,
+	.cc-field textarea,
+	.cc-item input[type="text"],
+	.cc-item select,
+	.cc-taskform input[type="text"],
+	.cc-noteform textarea,
+	.cc-venue-add select,
+	.cc-copyfield {
+		font-size: 16px;
+	}
+
+	.cc-btn,
+	button.cc-btn,
+	.cc-chip,
+	.cc-tab {
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding-inline: 16px;
+	}
+	.cc-btn--tiny {
+		min-height: 36px;
+		padding-inline: 12px;
+	}
+	.cc-nav-item {
+		min-height: 44px;
+		padding-block: 10px;
+	}
+	.cc-venue-actions,
+	.cc-actions--end,
+	.cc-filters {
+		gap: 10px;
+	}
+	.cc-contact-links a,
+	.cc-tasklist a,
+	.cc-cal-list a {
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+	}
+	.cc-contact-links { gap: 0; }
+	/* Kalenderzellen bleiben klein, sind aber keine Ziele: die Tagesliste
+	   darunter übernimmt das Antippen. */
+	.cc-cal-item { min-height: 0; }
+}
