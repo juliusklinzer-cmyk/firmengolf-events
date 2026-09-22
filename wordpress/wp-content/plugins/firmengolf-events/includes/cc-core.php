@@ -659,11 +659,59 @@ function fge_cc_phase_early( int $req ): void {
 	echo '</dl>';
 
 	if ( $partner_id <= 0 ) {
-		echo '<p class="cc-hint">Es ist kein Platz zugeordnet. Die Platz-Pipeline mit mehreren Anfragen je Vorgang kommt als Nächstes; bis dahin den Platz im WordPress-Backend unter „Anfrage Basis" zuordnen.</p>';
-	} else {
-		echo '<p class="cc-hint">Der Platz ist angefragt. Sobald ein Termin bestätigt ist, kann das Angebot raus.</p>';
+		echo '<p class="cc-hint">Es ist noch kein Platz zugeordnet. Nimm oben Plätze in die Liste auf, frag sie an und wähle einen.</p>';
 	}
-	echo '<p><a class="cc-btn" href="' . esc_url( get_edit_post_link( $req, 'raw' ) ) . '">Terminabstimmung im WordPress</a></p>';
+
+	fge_cc_confirm_date_form( $req, $wishes );
+}
+
+/**
+ * Termin bestätigen, ohne den Umweg über das WordPress-Backend.
+ *
+ * Dieselben Sperren wie dort: nur einmal, nicht nach dem Angebotsversand.
+ * Zusätzlich das Feld für einen telefonisch vereinbarten Termin, weil in der
+ * Praxis oft keiner der drei Wunschtermine passt.
+ */
+function fge_cc_confirm_date_form( int $req, array $wishes ): void {
+	$responses = function_exists( 'fge_rr_matrix' ) ? fge_rr_matrix( $req ) : [];
+	$free_slot = function_exists( 'fge_cc_free_date_slot' ) ? fge_cc_free_date_slot( $req ) : 0;
+
+	echo '<form class="cc-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+	echo '<input type="hidden" name="action" value="fge_cc_confirm_date">';
+	echo '<input type="hidden" name="request_id" value="' . (int) $req . '">';
+	wp_nonce_field( 'fge_cc_confirm_date_' . $req );
+
+	echo '<p class="cc-kicker">Termin bestätigen</p>';
+	if ( $wishes ) {
+		echo '<div class="cc-datelist">';
+		$first = true;
+		foreach ( $wishes as $i => $label ) {
+			echo '<label class="cc-inline"><input type="radio" name="date_index" value="' . (int) $i . '"' . ( $first ? ' checked' : '' ) . '> '
+				. esc_html( (string) $label ) . '</label>';
+			$first = false;
+		}
+		echo '</div>';
+	} else {
+		echo '<p class="cc-muted">Es sind keine Wunschtermine hinterlegt.</p>';
+	}
+
+	if ( $free_slot > 0 ) {
+		echo '<label class="cc-field cc-field--wide"><span>Oder ein telefonisch vereinbarter Termin</span>';
+		echo '<input type="text" name="free_date" placeholder="z. B. Mi, 30.09.2026"></label>';
+	} else {
+		echo '<p class="cc-muted">Alle drei Wunschtermin-Felder sind belegt. Ein abweichender Termin muss im WordPress-Backend eingetragen werden.</p>';
+	}
+
+	echo '<p><button type="submit" class="cc-btn cc-btn--primary" '
+		. 'onclick="return confirm(\'Termin bestätigen? Der Kunde bekommt daraufhin das Angebot oder eine Termin-Bestätigung.\')">Termin bestätigen</button></p>';
+	echo '</form>';
+
+	fge_cc_action_preview( 'date_confirm', $req );
+
+	if ( $responses ) {
+		echo '<p class="cc-muted">Die Rückmeldungen der Platz-Kontakte stehen weiterhin im WordPress-Backend: '
+			. '<a href="' . esc_url( get_edit_post_link( $req, 'raw' ) ) . '">Abstimmungsmatrix öffnen</a></p>';
+	}
 }
 
 /** Termin steht, Angebot kann raus. */

@@ -443,7 +443,9 @@ function fge_notify_date_confirmed( int $request_id, int $date_index ): void {
 		' . $next . '
 		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
+	fge_mail_log_context( $request_id, 'date_confirmed_internal' );
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	fge_mail_log_context_clear();
 }
 
 /**
@@ -471,7 +473,10 @@ function fge_send_date_confirmation_email( int $request_id, int $date_index ): b
 		<p style="margin:0 0 16px;">Wir stellen gerade euer komplettes Angebot mit allen Leistungen und Preisen zusammen und melden uns kurzfristig. Ihr müsst nichts weiter tun.</p>
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '. Bei Fragen einfach auf diese Mail antworten.</p>
 	';
-	return (bool) wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	fge_mail_log_context( $request_id, 'date_confirmed_customer' );
+	$ok = (bool) wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	fge_mail_log_context_clear();
+	return $ok;
 }
 
 // ── Angebots-Mail an den Kunden ───────────────────────────────────────────────
@@ -529,7 +534,11 @@ function fge_send_offer_email( int $request_id ): bool {
 	if ( is_email( $bcc ) && ! $is_demo ) {
 		$headers[] = 'Bcc: ' . $bcc;
 	}
+	// Kennung hier statt beim Aufrufer: die Angebotsmail geht über mehrere Wege
+	// raus (Automatik, Cockpit, Neuauflage) und soll überall gleich heißen.
+	fge_mail_log_context( $request_id, 'offer_customer' );
 	$sent = wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), $headers, '' !== $pdf ? [ $pdf ] : [] );
+	fge_mail_log_context_clear();
 	if ( function_exists( 'fge_offer_pdf_cleanup' ) ) {
 		fge_offer_pdf_cleanup( $pdf );
 	}

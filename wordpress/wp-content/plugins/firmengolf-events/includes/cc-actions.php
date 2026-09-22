@@ -44,6 +44,9 @@ function fge_cc_messages(): array {
 		'relaunched'     => [ 'ok', 'Neues Angebot ist raus. Die alte Fassung liegt im Archiv.' ],
 		'catalog_sent'   => [ 'ok', 'Vorschlag ist beim Platz. Er kann direkt aus der Mail antworten.' ],
 		'catalog_failed' => [ 'err', 'Der Vorschlag konnte nicht verschickt werden.' ],
+		'date_offer'     => [ 'ok', 'Termin bestätigt, das Angebot ist beim Kunden.' ],
+		'date_hold'      => [ 'ok', 'Termin bestätigt. Das Angebot wird zurückgehalten, bis die Positionen bepreist sind. Der Kunde hat eine Termin-Bestätigung bekommen.' ],
+		'already_final'  => [ 'err', 'Für diese Anfrage ist bereits ein Termin bestätigt.' ],
 		'task_added'     => [ 'ok', 'Aufgabe notiert.' ],
 		'task_done'      => [ 'ok', 'Aufgabe abgehakt.' ],
 		'relaunch_failed' => [ 'err', 'Das Angebot konnte nicht neu aufgelegt werden.' ],
@@ -83,16 +86,75 @@ add_action( 'admin_post_fge_cc_offer_send', static function (): void {
 	}
 
 	update_post_meta( $req, '_fge_offer_review_done', 1 );
+	// Die Kennungen fürs Protokoll setzen die Mailfunktionen selbst, damit die
+	// Angebotsmail überall gleich heißt, egal von wo sie ausgelöst wird.
 	if ( function_exists( 'fge_offer_on_date_confirmed' ) ) {
-		fge_mail_log_context( $req, 'offer_customer' );
 		fge_offer_on_date_confirmed( $req, $idx );
-		fge_mail_log_context_clear();
 	}
 	if ( '1' !== (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
 		fge_cc_redirect( $req, 'no_event' );
 	}
 	fge_activity_add( $req, 'offer', 'Angebot aus dem Control Center gesendet' );
 	fge_cc_redirect( $req, 'offer_sent' );
+} );
+
+// ── Termin bestätigen ────────────────────────────────────────────────────────
+
+/**
+ * Freier Wunschtermin-Platz, 0 wenn alle drei belegt sind.
+ * Julius verhandelt Termine oft telefonisch, dann passt keiner der drei.
+ */
+function fge_cc_free_date_slot( int $req ): int {
+	for ( $i = 1; $i <= 3; $i++ ) {
+		if ( '' === trim( (string) get_post_meta( $req, '_fge_preferred_date_' . $i, true ) ) ) {
+			return $i;
+		}
+	}
+	return 0;
+}
+
+add_action( 'admin_post_fge_cc_confirm_date', static function (): void {
+	$req  = fge_cc_guard( 'fge_cc_confirm_date' );
+	$idx  = absint( $_POST['date_index'] ?? 0 );
+	$free = sanitize_text_field( wp_unslash( $_POST['free_date'] ?? '' ) );
+
+	// Anderer Termin: in einen freien Wunschtermin-Platz schreiben, damit
+	// Angebot, Snapshot und Vortags-Info denselben Weg gehen wie sonst.
+	if ( '' !== trim( $free ) ) {
+		$slot = fge_cc_free_date_slot( $req );
+		if ( $slot < 1 ) {
+			set_transient( 'fge_cc_err_' . $req, 'Alle drei Wunschtermin-Felder sind belegt. Einen davon im WordPress-Backend überschreiben.', 60 );
+			fge_cc_redirect( $req, 'no_date' );
+		}
+		update_post_meta( $req, '_fge_preferred_date_' . $slot, trim( $free ) );
+		$idx = $slot;
+	}
+
+	if ( $idx < 1 || '' === trim( (string) get_post_meta( $req, '_fge_preferred_date_' . $idx, true ) ) ) {
+		fge_cc_redirect( $req, 'no_date' );
+	}
+	if ( '1' === (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
+		fge_cc_redirect( $req, 'already_sent' );
+	}
+	// Zweiter Klick darf den Termin nicht neu setzen und die Bestätigungen
+	// nicht erneut schicken (gleiche Sperre wie im WordPress-Backend).
+	if ( ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 )
+		|| '1' === (string) get_post_meta( $req, '_fge_offer_hold', true ) ) {
+		fge_cc_redirect( $req, 'already_final' );
+	}
+
+	if ( function_exists( 'fge_rr_set_final' ) ) {
+		fge_rr_set_final( $req, $idx );
+	}
+	do_action( 'fge_request_date_confirmed', $req, $idx );
+
+	$sent = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
+	fge_activity_add( $req, 'offer', sprintf(
+		'Termin bestätigt: %s%s',
+		(string) get_post_meta( $req, '_fge_preferred_date_' . $idx, true ),
+		$sent ? ', Angebot ist raus' : ', Angebot zurückgehalten'
+	) );
+	fge_cc_redirect( $req, $sent ? 'date_offer' : 'date_hold' );
 } );
 
 // ── Katalog-Vorschlag an den Platz ───────────────────────────────────────────

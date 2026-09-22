@@ -936,3 +936,5 @@ body.cc--plain { background: var(--cc-bg); }
 	   darunter übernimmt das Antippen. */
 	.cc-cal-item { min-height: 0; }
 }
+
+.cc-datelist { display: flex; flex-direction: column; gap: 7px; margin: 0 0 12px; }

@@ -98,13 +98,9 @@ function fge_offer_relaunch( int $req ): string {
 	$idx = fge_rr_final_index( $req );
 	update_post_meta( $req, '_fge_offer_review_done', 1 );
 
-	if ( function_exists( 'fge_mail_log_context' ) ) {
-		fge_mail_log_context( $req, 'offer_customer' );
-	}
+	// Derselbe Weg wie beim ersten Mal; die Kennung fürs Protokoll setzt
+	// fge_send_offer_email() selbst.
 	fge_offer_on_date_confirmed( $req, $idx );
-	if ( function_exists( 'fge_mail_log_context_clear' ) ) {
-		fge_mail_log_context_clear();
-	}
 
 	if ( '1' !== (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
 		return 'Das neue Angebot konnte nicht erstellt werden. Bitte im WordPress-Backend nachsehen.';
