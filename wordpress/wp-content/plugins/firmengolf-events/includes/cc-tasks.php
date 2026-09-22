@@ -137,7 +137,9 @@ function fge_cc_tasks( int $req ): array {
 	// ── Vor dem Angebot ───────────────────────────────────────────────────
 	if ( ! $sent ) {
 		if ( $partner_id <= 0 ) {
-			$add( 'find_venue', 'Passende Plätze finden und anfragen', 'me', 'now', 'venues' );
+			// Frische Anfrage ist dringend, eine zwei Monate alte ist es nicht mehr.
+			// Sonst steht alles auf Rot und Rot bedeutet nichts mehr.
+			$add( 'find_venue', 'Passende Plätze finden und anfragen', 'me', $age <= 10 ? 'now' : 'soon', 'venues' );
 		} elseif ( 0 === $final ) {
 			$add( 'await_venue', sprintf( 'Platz antwortet seit %d %s nicht', $age, 1 === $age ? 'Tag' : 'Tagen' ),
 				'them', $age >= 3 ? 'now' : 'wait' );
@@ -172,10 +174,20 @@ function fge_cc_tasks( int $req ): array {
 		if ( $partner_id > 0 && '' === fge_cc_partner_email( $partner_id ) ) {
 			$add( 'partner_no_mail', 'Der Platz hat keine Kontaktmail, Buchungs- und Vortagsinfo gehen nicht raus', 'me', 'now' );
 		}
-		if ( '' === $start || '' === $meeting ) {
-			$add( 'fill_day', 'Eventtag ausfüllen: Startzeit und Treffpunkt', 'me', 'now', 'day' );
-		} elseif ( '1' !== (string) get_post_meta( $req, '_fge_day_plan_sent', true ) ) {
-			$add( 'send_day_plan', 'Ablauf an den Kunden schicken', 'me', 'soon', 'day_plan' );
+		// Alles rund um den Eventtag nur, solange der Tag noch bevorsteht.
+		$upcoming = ( $date <= 0 || $date >= strtotime( 'today' ) )
+			&& ! in_array( $status, [ 'event_durchgefuehrt', 'rechnung_in_lexoffice_erstellt' ], true );
+
+		// Eine Woche vor dem Event wird das Ausfüllen dringend, vorher ist es Vorarbeit.
+		$near = $date > 0 && $date <= strtotime( '+7 days' );
+
+		if ( $upcoming ) {
+			if ( '' === $start || '' === $meeting ) {
+				$add( 'fill_day', 'Eventtag ausfüllen: Startzeit und Treffpunkt', 'me', $near ? 'now' : 'soon', 'day' );
+			} elseif ( '' === (string) get_post_meta( $req, '_fge_day_plan_sent', true ) ) {
+				// Gate hält einen Zeitstempel, nicht "1".
+				$add( 'send_day_plan', 'Ablauf an den Kunden schicken', 'me', 'soon', 'day_plan' );
+			}
 		}
 		if ( $date > 0 && $date < strtotime( 'today' ) && 'event_durchgefuehrt' !== $status
 			&& 'rechnung_in_lexoffice_erstellt' !== $status ) {
@@ -186,7 +198,10 @@ function fge_cc_tasks( int $req ): array {
 	// ── Nachlauf ──────────────────────────────────────────────────────────
 	if ( 'event_durchgefuehrt' === $status
 		&& '1' !== (string) get_post_meta( $req, '_fge_lexoffice_invoice_created', true ) ) {
-		$add( 'write_invoice', 'Rechnung in Lexoffice schreiben', 'me', 'now' );
+		// Erst nach ein paar Tagen dringend, direkt nach dem Event darf es liegen.
+		$done_since = fge_cc_event_date( $req );
+		$overdue    = $done_since > 0 && $done_since < strtotime( '-3 days' );
+		$add( 'write_invoice', 'Rechnung in Lexoffice schreiben', 'me', $overdue ? 'now' : 'soon' );
 	}
 	if ( 'rechnung_in_lexoffice_erstellt' === $status ) {
 		$add( 'check_payment', 'Zahlungseingang prüfen, dann abschließen', 'me', 'soon', 'close' );
@@ -199,6 +214,11 @@ function fge_cc_tasks( int $req ): array {
 			$add( 'own_' . $i, $text, 'me', 'soon' );
 		}
 	}
+
+	// Dringendstes zuerst, damit Listen, die nur eine Zeile zeigen, die
+	// richtige zeigen. Eigene Reihenfolge innerhalb einer Stufe bleibt erhalten.
+	$rank = [ 'now' => 0, 'soon' => 1, 'wait' => 2 ];
+	usort( $tasks, static fn( $a, $b ) => $rank[ $a['urgency'] ] <=> $rank[ $b['urgency'] ] );
 
 	return $tasks;
 }
@@ -221,10 +241,26 @@ function fge_cc_tasks_mine( int $req ): array {
 }
 
 /**
+ * Ab wann gilt ein Vorgang als verstaubt.
+ *
+ * Ohne diese Grenze flutet jede alte Anfrage ohne Platz die Arbeitsliste mit
+ * „Passende Plätze finden", obwohl niemand mehr daran arbeitet. Verstaubte
+ * Vorgänge verschwinden nicht, sie wandern in einen eigenen Eimer.
+ */
+function fge_cc_cold_days(): int {
+	return (int) apply_filters( 'fge_cc_cold_days', 45 );
+}
+
+/**
  * Alle offenen Anfragen mit ihren Aufgaben, sortiert nach Dringlichkeit.
- * Basis für Dashboard und Tagesmail.
+ * Basis für Dashboard und Tagesmail. Innerhalb eines Aufrufs gecacht, weil
+ * Seitenleiste und Inhalt dieselbe Liste brauchen.
  */
 function fge_cc_worklist(): array {
+	static $cache = null;
+	if ( null !== $cache ) {
+		return $cache;
+	}
 	$requests = get_posts( [
 		'post_type'   => 'firmengolf_request',
 		'post_status' => [ 'publish', 'draft' ],
@@ -249,6 +285,10 @@ function fge_cc_worklist(): array {
 			}
 		}
 		$phase  = fge_cc_phase( $req );
+		$age    = fge_cc_age_days( $req );
+		$date   = fge_cc_event_date( $req );
+		// Verstaubt: lange kein Fortschritt und kein Termin in der Zukunft.
+		$cold   = $age >= fge_cc_cold_days() && ( $date <= 0 || $date < strtotime( 'today' ) );
 		$rows[] = [
 			'req'     => $req,
 			'ref'     => function_exists( 'fge_request_number' ) ? fge_request_number( $req ) : (string) $req,
@@ -258,21 +298,34 @@ function fge_cc_worklist(): array {
 			'tasks'   => $tasks,
 			'mine'    => (bool) $mine,
 			'urgency' => $urgency,
-			'age'     => fge_cc_age_days( $req ),
-			'date'    => fge_cc_event_date( $req ),
+			'age'     => $age,
+			'date'    => $date,
+			'cold'    => $cold,
 			'snoozed' => fge_cc_is_snoozed( $req ),
 		];
 	}
 
 	usort( $rows, static function ( $a, $b ) use ( $rank ) {
+		// Verstaubtes immer nach hinten, dann was auf mich wartet, dann Dringlichkeit.
+		if ( $a['cold'] !== $b['cold'] ) {
+			return $a['cold'] ? 1 : -1;
+		}
 		if ( $a['mine'] !== $b['mine'] ) {
 			return $a['mine'] ? -1 : 1;
 		}
 		if ( $a['urgency'] !== $b['urgency'] ) {
 			return $rank[ $a['urgency'] ] <=> $rank[ $b['urgency'] ];
 		}
+		// Bei gleicher Dringlichkeit zuerst, was einen nahen Termin hat.
+		if ( ( $a['date'] > 0 ) !== ( $b['date'] > 0 ) ) {
+			return $a['date'] > 0 ? -1 : 1;
+		}
+		if ( $a['date'] > 0 && $b['date'] > 0 && $a['date'] !== $b['date'] ) {
+			return $a['date'] <=> $b['date'];
+		}
 		return $b['age'] <=> $a['age'];
 	} );
 
+	$cache = $rows;
 	return $rows;
 }

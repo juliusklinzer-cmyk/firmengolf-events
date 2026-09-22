@@ -75,6 +75,7 @@ require_once FGE_DIR . 'includes/mail-log.php';
 require_once FGE_DIR . 'includes/mail-registry.php';
 require_once FGE_DIR . 'includes/activity.php';
 require_once FGE_DIR . 'includes/cc-tasks.php';
+require_once FGE_DIR . 'includes/cc-core.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once FGE_DIR . 'includes/cli-migrations.php';
