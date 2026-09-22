@@ -233,6 +233,16 @@ function fge_mail_registry(): array {
 			'content' => [ 'Zusammenfassung', 'fehlende Angaben in Rot' ],
 		],
 
+		// ── Control Center ────────────────────────────────────────────────
+		'daily_digest' => [
+			'label'   => 'Tagesmail',
+			'party'   => 'intern',
+			'subject' => 'Heute bei Firmengolf',
+			'auto'    => true,
+			'trigger' => 'Cron 07:00, nur wenn es etwas zu melden gibt',
+			'content' => [ 'fällige Aufgaben mit Vorgangsnummer', 'Termine heute und morgen', 'Link ins Control Center' ],
+		],
+
 		// ── Phase 7: Nachlauf ─────────────────────────────────────────────
 		'review_customer' => [
 			'label'   => 'Bewertungsbitte',

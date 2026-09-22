@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const FGE_CC_REWRITE_VERSION = '1.0.0';
+const FGE_CC_REWRITE_VERSION = '1.1.0';
 
 /** Seiten des Control Centers: slug => [Label, Gruppe]. */
 function fge_cc_pages(): array {
@@ -135,6 +135,9 @@ function fge_cc_render( string $page ): void {
 				break;
 			case 'kunden':
 				fge_cc_page_customers();
+				break;
+			case 'kalender':
+				fge_cc_page_calendar();
 				break;
 			default:
 				fge_cc_page_stub( $title );
@@ -255,7 +258,7 @@ function fge_cc_page_dashboard(): void {
 			continue;
 		}
 		$d = $r['date'];
-		if ( $d > 0 && $d >= strtotime( 'today' ) && $d <= strtotime( 'tomorrow 23:59' ) ) {
+		if ( $d > 0 && $d >= fge_cc_today() && $d <= ( fge_cc_today() + 2 * DAY_IN_SECONDS - 1 ) ) {
 			$soon[] = $r;
 		}
 		if ( $r['cold'] ) {
@@ -727,7 +730,7 @@ function fge_cc_phase_booked( int $req ): void {
 
 	// Nachlauf-Knöpfe, sobald der Termin vorbei ist.
 	$date = fge_cc_event_date( $req );
-	if ( $date > 0 && $date < strtotime( 'today' ) ) {
+	if ( $date > 0 && $date < fge_cc_today() ) {
 		echo '<div class="cc-actions cc-actions--end">';
 		foreach ( fge_cc_status_actions() as $slug => $slabel ) {
 			fge_cc_button( 'fge_cc_status', $req, $slabel, [

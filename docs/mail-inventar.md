@@ -87,6 +87,12 @@ angefragten Platz, nicht zur Anfrage als Ganzes (`per_venue` in der Registry).
 | 29 | Kurze Rückfragen zu deinem Golfplatz-Profil / Dein Golfplatz-Profil bei Firmengolf | Partner-Status → Rückfrage bzw. abgelehnt | Partner | Was fehlt bzw. Absage |
 | 30 | Kontakt-E-Mail eures Firmengolf-Portals geändert | Kontaktmail-Wechsel per Code verifiziert | alte Adresse | Sicherheitsinfo „warst du das nicht, melde dich" |
 
+## E2 · Control Center (seit 1.9.269)
+
+| # | Betreff | Auslöser | An wen | Inhalt |
+|---|---------|----------|--------|--------|
+| 30a | Heute bei Firmengolf: {n} Aufgaben, {m} Termine | Cron täglich 07:00 Uhr Site-Zeit (`fge_cc_daily_digest`), nur wenn es etwas zu melden gibt | intern | Fällige Aufgaben mit Vorgangsnummer und Firma, Termine heute und morgen aus dem abgeleiteten Kalender, Link ins Control Center. Fängt ab, dass Outlook abonnierte Kalender nur träge aktualisiert |
+
 ## F · System
 
 | # | Betreff | Auslöser | An wen | Inhalt |

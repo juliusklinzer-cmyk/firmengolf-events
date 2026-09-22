@@ -678,3 +678,92 @@ button.cc-btn { font: inherit; cursor: pointer; }
 	font-size: 11px;
 }
 .cc-msg a { color: inherit; }
+
+/* ── Kalender ──────────────────────────────────────────────────────────── */
+
+.cc-cal-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.cc-cal-top h2 { margin: 0; font-size: 18px; font-weight: 600; }
+
+.cc-cal {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 1px;
+	background: var(--cc-line);
+	border: 1px solid var(--cc-line);
+	border-radius: var(--cc-radius);
+	overflow: hidden;
+	margin-bottom: 20px;
+}
+.cc-cal-wd {
+	background: var(--cc-bg);
+	padding: 7px 9px;
+	font-size: 10.5px;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var(--cc-muted);
+}
+.cc-cal-cell {
+	background: var(--cc-card);
+	min-height: 92px;
+	padding: 6px 7px;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.cc-cal-cell.is-empty { background: var(--cc-bg); min-height: 0; }
+.cc-cal-cell.is-today { background: rgba(59, 111, 212, 0.05); }
+.cc-cal-cell.is-clash { box-shadow: inset 0 0 0 2px rgba(180, 51, 43, 0.35); }
+.cc-cal-n { font-size: 12px; color: var(--cc-muted); font-variant-numeric: tabular-nums; }
+.cc-cal-cell.is-today .cc-cal-n { color: var(--cc-accent); font-weight: 700; }
+.cc-cal-item {
+	display: block;
+	font-size: 11.5px;
+	line-height: 1.35;
+	padding: 3px 5px;
+	border-radius: 4px;
+	text-decoration: none;
+	color: var(--cc-ink);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.cc-cal-item--good { background: rgba(44, 122, 61, 0.12); color: var(--cc-good); }
+.cc-cal-item--warn { background: rgba(154, 107, 18, 0.13); color: var(--cc-warn); }
+.cc-cal-item--bad { background: rgba(180, 51, 43, 0.1); color: var(--cc-bad); }
+.cc-cal-item--info { background: rgba(59, 111, 212, 0.1); color: var(--cc-info); }
+.cc-cal-item--neutral { background: var(--cc-line-soft); color: var(--cc-ink-2); }
+.cc-cal-time { font-variant-numeric: tabular-nums; opacity: 0.75; }
+
+.cc-cal-list { list-style: none; margin: 0; padding: 0; }
+.cc-cal-list li { border-bottom: 1px solid var(--cc-line-soft); }
+.cc-cal-list li:last-child { border-bottom: 0; }
+.cc-cal-list a {
+	display: flex;
+	align-items: center;
+	gap: 11px;
+	padding: 9px 0;
+	text-decoration: none;
+	color: inherit;
+	flex-wrap: wrap;
+	font-size: 13.5px;
+}
+.cc-cal-date { font-variant-numeric: tabular-nums; color: var(--cc-muted); min-width: 92px; }
+
+.cc-copyfield {
+	font: inherit;
+	font-size: 12.5px;
+	width: 100%;
+	padding: 9px 11px;
+	border: 1px solid var(--cc-line);
+	border-radius: 6px;
+	background: var(--cc-bg);
+	color: var(--cc-ink-2);
+}
+
+@media (max-width: 720px) {
+	.cc-cal { font-size: 11px; }
+	.cc-cal-cell { min-height: 64px; padding: 4px; }
+	.cc-cal-item { font-size: 0; padding: 0; height: 5px; border-radius: 3px; }
+	.cc-cal-time { display: none; }
+	.cc-cal-date { min-width: 0; }
+}

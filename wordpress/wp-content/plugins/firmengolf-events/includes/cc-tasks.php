@@ -73,7 +73,24 @@ function fge_cc_phase( int $req ): array {
 	return [ 2, 'Termin' ];
 }
 
-/** Eventdatum als Zeitstempel, 0 wenn keines feststeht. */
+/**
+ * Mitternacht heute in der Zeitzone der Site.
+ *
+ * strtotime('today') rechnet in der Serverzeit, und die ist unter WordPress
+ * UTC. Alle Vergleiche und Zeitstempel im Control Center laufen deshalb über
+ * diesen Helfer, sonst liegen Kalendereinträge zwei Stunden daneben.
+ */
+function fge_cc_today(): int {
+	return current_datetime()->setTime( 0, 0 )->getTimestamp();
+}
+
+/** Ein Datum (Y-m-d) als Zeitstempel in der Zeitzone der Site. */
+function fge_cc_local_ts( string $ymd ): int {
+	$dt = date_create_immutable( $ymd . ' 00:00:00', wp_timezone() );
+	return $dt ? $dt->getTimestamp() : 0;
+}
+
+/** Eventdatum als Zeitstempel (lokale Mitternacht), 0 wenn keines feststeht. */
 function fge_cc_event_date( int $req ): int {
 	if ( function_exists( 'fge_day_event_date' ) ) {
 		$d = fge_day_event_date( $req );
@@ -81,12 +98,18 @@ function fge_cc_event_date( int $req ): int {
 			return (int) $d;
 		}
 		if ( is_string( $d ) && '' !== $d ) {
-			return (int) strtotime( $d );
+			return fge_cc_local_ts( $d );
 		}
 	}
 	$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
 	$date = (string) ( $snap['date'] ?? '' );
-	return '' !== $date ? (int) strtotime( $date ) : 0;
+	if ( '' === $date ) {
+		return 0;
+	}
+	// Der Snapshot hält das Datum als Text („Mi, 30.09.2026"), deshalb erst
+	// normalisieren, dann in der Zeitzone der Site verankern.
+	$ts = strtotime( $date );
+	return $ts > 0 ? fge_cc_local_ts( gmdate( 'Y-m-d', $ts ) ) : 0;
 }
 
 /** Alter in Tagen seit dem letzten Statuswechsel. */
@@ -185,7 +208,7 @@ function fge_cc_tasks( int $req ): array {
 			$add( 'partner_no_mail', 'Der Platz hat keine Kontaktmail, Buchungs- und Vortagsinfo gehen nicht raus', 'me', 'now' );
 		}
 		// Alles rund um den Eventtag nur, solange der Tag noch bevorsteht.
-		$upcoming = ( $date <= 0 || $date >= strtotime( 'today' ) )
+		$upcoming = ( $date <= 0 || $date >= fge_cc_today() )
 			&& ! in_array( $status, [ 'event_durchgefuehrt', 'rechnung_in_lexoffice_erstellt' ], true );
 
 		// Eine Woche vor dem Event wird das Ausfüllen dringend, vorher ist es Vorarbeit.
@@ -199,7 +222,7 @@ function fge_cc_tasks( int $req ): array {
 				$add( 'send_day_plan', 'Ablauf an den Kunden schicken', 'me', 'soon', 'day_plan' );
 			}
 		}
-		if ( $date > 0 && $date < strtotime( 'today' ) && 'event_durchgefuehrt' !== $status
+		if ( $date > 0 && $date < fge_cc_today() && 'event_durchgefuehrt' !== $status
 			&& 'rechnung_in_lexoffice_erstellt' !== $status ) {
 			$add( 'mark_done', 'Event ist vorbei, Status auf „Event durchgeführt" setzen', 'me', 'now', 'done' );
 		}
@@ -302,7 +325,7 @@ function fge_cc_worklist(): array {
 		$age    = fge_cc_age_days( $req );
 		$date   = fge_cc_event_date( $req );
 		// Verstaubt: lange kein Fortschritt und kein Termin in der Zukunft.
-		$cold   = $age >= fge_cc_cold_days() && ( $date <= 0 || $date < strtotime( 'today' ) );
+		$cold   = $age >= fge_cc_cold_days() && ( $date <= 0 || $date < fge_cc_today() );
 		$rows[] = [
 			'req'     => $req,
 			'ref'     => function_exists( 'fge_request_number' ) ? fge_request_number( $req ) : (string) $req,
