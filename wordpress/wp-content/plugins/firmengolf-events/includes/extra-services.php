@@ -377,14 +377,27 @@ function fge_save_extra_services( int $post_id ) {
 		return;
 	}
 
-	$labels  = array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['fge_xs_label'] ) );
-	$costs   = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_POST['fge_xs_cost'] ?? [] ) ) );
-	$basis   = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_POST['fge_xs_basis'] ?? [] ) ) );
-	$margins = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_POST['fge_xs_margin'] ?? [] ) ) );
-	$pnames  = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_POST['fge_xs_pname'] ?? [] ) ) );
-	$pmails  = array_map( 'sanitize_email', wp_unslash( (array) ( $_POST['fge_xs_pmail'] ?? [] ) ) );
-	$partners = array_map( 'absint', wp_unslash( (array) ( $_POST['fge_xs_partner'] ?? [] ) ) );
-	$wishes  = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_POST['fge_xs_wish'] ?? [] ) ) );
+	$items = fge_xs_items_from_post( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	update_post_meta( $post_id, '_fge_extra_services', $items );
+	fge_save_extra_services_rest( $post_id );
+}
+
+/**
+ * Positionen aus abgeschickten Formularfeldern bauen.
+ *
+ * Herausgelöst, damit die WordPress-Maske und das Control Center dieselbe
+ * Logik benutzen und nicht auseinanderlaufen. Die Rechteprüfung bleibt beim
+ * Aufrufer, diese Funktion formt nur.
+ */
+function fge_xs_items_from_post( array $src ): array {
+	$labels  = array_map( 'sanitize_text_field', wp_unslash( (array) ( $src['fge_xs_label'] ?? [] ) ) );
+	$costs   = array_map( 'sanitize_text_field', wp_unslash( (array) ( $src['fge_xs_cost'] ?? [] ) ) );
+	$basis   = array_map( 'sanitize_text_field', wp_unslash( (array) ( $src['fge_xs_basis'] ?? [] ) ) );
+	$margins = array_map( 'sanitize_text_field', wp_unslash( (array) ( $src['fge_xs_margin'] ?? [] ) ) );
+	$pnames  = array_map( 'sanitize_text_field', wp_unslash( (array) ( $src['fge_xs_pname'] ?? [] ) ) );
+	$pmails  = array_map( 'sanitize_email', wp_unslash( (array) ( $src['fge_xs_pmail'] ?? [] ) ) );
+	$partners = array_map( 'absint', wp_unslash( (array) ( $src['fge_xs_partner'] ?? [] ) ) );
+	$wishes  = array_map( 'sanitize_text_field', wp_unslash( (array) ( $src['fge_xs_wish'] ?? [] ) ) );
 
 	$items = [];
 	foreach ( $labels as $i => $label ) {
@@ -418,7 +431,11 @@ function fge_save_extra_services( int $post_id ) {
 			'wish'           => trim( $wishes[ $i ] ?? '' ),
 		];
 	}
-	update_post_meta( $post_id, '_fge_extra_services', $items );
+	return $items;
+}
+
+/** Eventpreis, Angebotstext und Einkauf beim Platz, aus denselben Feldnamen. */
+function fge_save_extra_services_rest( int $post_id ): void {
 
 	$ov = fge_xs_parse_num( sanitize_text_field( wp_unslash( $_POST['fge_offer_base_override'] ?? '' ) ) );
 	if ( $ov > 0 ) {

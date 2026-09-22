@@ -634,6 +634,13 @@ function fge_cc_request_phase_panel( int $req ): void {
 
 	echo '<section class="cc-card cc-phase"><h2>Phase ' . (int) $num . ': ' . esc_html( $label ) . '</h2>';
 
+	// Positionen bleiben bis zur Buchung erreichbar: bepreist wird oft erst,
+	// wenn der Platz seinen Preis genannt hat, also mitten in Phase 2.
+	if ( 'accepted' !== $offer && function_exists( 'fge_cc_positions_panel' ) ) {
+		fge_cc_positions_panel( $req );
+		fge_cc_provider_datalist();
+	}
+
 	if ( 'accepted' === $offer ) {
 		fge_cc_phase_booked( $req );
 	} elseif ( $sent ) {
