@@ -44,6 +44,8 @@ function fge_cc_messages(): array {
 		'relaunched'     => [ 'ok', 'Neues Angebot ist raus. Die alte Fassung liegt im Archiv.' ],
 		'catalog_sent'   => [ 'ok', 'Vorschlag ist beim Platz. Er kann direkt aus der Mail antworten.' ],
 		'catalog_failed' => [ 'err', 'Der Vorschlag konnte nicht verschickt werden.' ],
+		'task_added'     => [ 'ok', 'Aufgabe notiert.' ],
+		'task_done'      => [ 'ok', 'Aufgabe abgehakt.' ],
 		'relaunch_failed' => [ 'err', 'Das Angebot konnte nicht neu aufgelegt werden.' ],
 	];
 }
@@ -188,6 +190,28 @@ add_action( 'admin_post_fge_cc_note', static function (): void {
 	}
 	fge_activity_add( $req, $type, $text );
 	fge_cc_redirect( $req, 'note' );
+} );
+
+// ── Eigene Aufgaben ──────────────────────────────────────────────────────────
+
+add_action( 'admin_post_fge_cc_task_add', static function (): void {
+	$req  = fge_cc_guard( 'fge_cc_task_add' );
+	$text = sanitize_text_field( wp_unslash( $_POST['task'] ?? '' ) );
+	if ( '' === trim( $text ) ) {
+		fge_cc_redirect( $req, 'nothing' );
+	}
+	fge_cc_own_task_add( $req, $text, isset( $_POST['urgent'] ) );
+	fge_cc_redirect( $req, 'task_added' );
+} );
+
+add_action( 'admin_post_fge_cc_task_done', static function (): void {
+	$req = fge_cc_guard( 'fge_cc_task_done' );
+	$id  = sanitize_text_field( wp_unslash( $_POST['task_id'] ?? '' ) );
+	if ( '' === $id ) {
+		fge_cc_redirect( $req, 'nothing' );
+	}
+	fge_cc_own_task_remove( $req, $id );
+	fge_cc_redirect( $req, 'task_done' );
 } );
 
 // ── Schlummern ───────────────────────────────────────────────────────────────

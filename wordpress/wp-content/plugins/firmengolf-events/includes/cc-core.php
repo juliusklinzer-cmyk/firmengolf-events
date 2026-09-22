@@ -566,7 +566,7 @@ function fge_cc_page_request( int $req ): void {
 		return;
 	}
 	echo '<p class="cc-back"><a href="' . esc_url( fge_cc_url( 'anfragen' ) ) . '">Zurück zur Liste</a></p>';
-	fge_cc_message();
+	fge_cc_message( $req );
 	fge_cc_request_header( $req );
 	fge_cc_request_steps( $req );
 	echo '<div class="cc-cols">';
@@ -588,14 +588,26 @@ function fge_cc_page_request( int $req ): void {
 	echo '</div></div>';
 }
 
-/** Meldung nach einer Aktion. */
-function fge_cc_message(): void {
+/**
+ * Meldung nach einer Aktion.
+ *
+ * Aktionen, die einen genauen Grund kennen (Angebot neu auflegen, Katalog-
+ * Vorschlag), legen ihn zusätzlich als Transient ab. Ohne diese Ausgabe wäre
+ * er geschrieben worden und nie jemandem begegnet.
+ */
+function fge_cc_message( int $req = 0 ): void {
 	$key = sanitize_key( wp_unslash( $_GET['msg'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$all = function_exists( 'fge_cc_messages' ) ? fge_cc_messages() : [];
 	if ( '' === $key || ! isset( $all[ $key ] ) ) {
 		return;
 	}
 	[ $tone, $text ] = $all[ $key ];
+
+	$detail = $req > 0 ? (string) get_transient( 'fge_cc_err_' . $req ) : '';
+	if ( '' !== $detail ) {
+		delete_transient( 'fge_cc_err_' . $req );
+		$text .= ' ' . $detail;
+	}
 	echo '<p class="cc-msg cc-msg--' . esc_attr( $tone ) . '">' . esc_html( $text ) . '</p>';
 }
 
@@ -970,19 +982,42 @@ function fge_cc_contact_links( string $phone, string $email ): void {
 
 function fge_cc_request_tasks( int $req ): void {
 	$tasks = fge_cc_tasks( $req );
+	$own   = function_exists( 'fge_cc_own_tasks' ) ? fge_cc_own_tasks( $req ) : [];
+	$own_ids = array_column( $own, 'id' );
+
 	echo '<section class="cc-card"><h2>Offen</h2>';
 	if ( ! $tasks ) {
 		fge_cc_empty( 'Nichts offen.' );
-		echo '</section>';
-		return;
+	} else {
+		echo '<ul class="cc-tasks">';
+		foreach ( $tasks as $t ) {
+			// Eigene Aufgaben bekommen einen Haken, abgeleitete verschwinden von
+			// selbst, sobald der Zustand stimmt.
+			$id = str_starts_with( (string) $t['key'], 'own_' ) ? substr( (string) $t['key'], 4 ) : '';
+			echo '<li class="cc-task cc-task--' . esc_attr( $t['urgency'] ) . '">'
+				. '<span class="cc-task-who">' . ( 'me' === $t['who'] ? 'ich' : 'andere' ) . '</span>'
+				. '<span>' . esc_html( $t['text'] ) . '</span>';
+			if ( '' !== $id && in_array( $id, $own_ids, true ) ) {
+				fge_cc_button( 'fge_cc_task_done', $req, 'Erledigt', [
+					'class'  => 'cc-btn cc-btn--tiny',
+					'fields' => [ 'task_id' => $id ],
+				] );
+			}
+			echo '</li>';
+		}
+		echo '</ul>';
 	}
-	echo '<ul class="cc-tasks">';
-	foreach ( $tasks as $t ) {
-		echo '<li class="cc-task cc-task--' . esc_attr( $t['urgency'] ) . '">'
-			. '<span class="cc-task-who">' . ( 'me' === $t['who'] ? 'ich' : 'andere' ) . '</span>'
-			. esc_html( $t['text'] ) . '</li>';
-	}
-	echo '</ul></section>';
+
+	// Eigene Aufgabe notieren.
+	echo '<form class="cc-form cc-taskform" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+	echo '<input type="hidden" name="action" value="fge_cc_task_add">';
+	echo '<input type="hidden" name="request_id" value="' . (int) $req . '">';
+	wp_nonce_field( 'fge_cc_task_add_' . $req );
+	echo '<input type="text" name="task" placeholder="Eigene Aufgabe, z. B. Pro anrufen" aria-label="Eigene Aufgabe">';
+	echo '<label class="cc-inline"><input type="checkbox" name="urgent" value="1"> dringend</label>';
+	echo '<button type="submit" class="cc-btn">Notieren</button>';
+	echo '</form>';
+	echo '</section>';
 }
 
 function fge_cc_request_mails( int $req ): void {

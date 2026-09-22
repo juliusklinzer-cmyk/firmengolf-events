@@ -241,11 +241,8 @@ function fge_cc_tasks( int $req ): array {
 	}
 
 	// ── Eigene Aufgaben ───────────────────────────────────────────────────
-	foreach ( (array) get_post_meta( $req, '_fge_cc_tasks', true ) as $i => $own ) {
-		$text = is_array( $own ) ? (string) ( $own['text'] ?? '' ) : (string) $own;
-		if ( '' !== trim( $text ) ) {
-			$add( 'own_' . $i, $text, 'me', 'soon' );
-		}
+	foreach ( fge_cc_own_tasks( $req ) as $own ) {
+		$add( 'own_' . $own['id'], (string) $own['text'], 'me', (string) ( $own['urgency'] ?? 'soon' ) );
 	}
 
 	// Dringendstes zuerst, damit Listen, die nur eine Zeile zeigen, die
@@ -254,6 +251,62 @@ function fge_cc_tasks( int $req ): array {
 	usort( $tasks, static fn( $a, $b ) => $rank[ $a['urgency'] ] <=> $rank[ $b['urgency'] ] );
 
 	return $tasks;
+}
+
+/**
+ * Eigene Aufgaben einer Anfrage.
+ *
+ * Alles andere wird abgeleitet, das hier ist der Platz für das, was nur Julius
+ * weiß: „Pro anrufen", „Rechnungsadresse klären". Jede Zeile hat eine eigene
+ * Kennung, damit das Abhaken nicht die falsche trifft, wenn dazwischen etwas
+ * gelöscht wurde.
+ */
+function fge_cc_own_tasks( int $req ): array {
+	$raw = get_post_meta( $req, '_fge_cc_tasks', true );
+	if ( ! is_array( $raw ) ) {
+		return [];
+	}
+	$out = [];
+	foreach ( $raw as $i => $row ) {
+		$text = is_array( $row ) ? (string) ( $row['text'] ?? '' ) : (string) $row;
+		if ( '' === trim( $text ) ) {
+			continue;
+		}
+		$out[] = [
+			'id'      => (string) ( is_array( $row ) ? ( $row['id'] ?? $i ) : $i ),
+			'text'    => trim( $text ),
+			'urgency' => is_array( $row ) && 'now' === ( $row['urgency'] ?? '' ) ? 'now' : 'soon',
+		];
+	}
+	return $out;
+}
+
+/** Eigene Aufgabe anlegen. */
+function fge_cc_own_task_add( int $req, string $text, bool $urgent = false ): void {
+	$text = trim( $text );
+	if ( '' === $text ) {
+		return;
+	}
+	$tasks   = fge_cc_own_tasks( $req );
+	$tasks[] = [
+		'id'      => uniqid( '', false ),
+		'text'    => mb_substr( $text, 0, 200 ),
+		'urgency' => $urgent ? 'now' : 'soon',
+	];
+	update_post_meta( $req, '_fge_cc_tasks', $tasks );
+}
+
+/** Eigene Aufgabe abhaken. */
+function fge_cc_own_task_remove( int $req, string $id ): void {
+	$tasks = array_values( array_filter(
+		fge_cc_own_tasks( $req ),
+		static fn( $t ) => (string) $t['id'] !== $id
+	) );
+	if ( $tasks ) {
+		update_post_meta( $req, '_fge_cc_tasks', $tasks );
+	} else {
+		delete_post_meta( $req, '_fge_cc_tasks' );
+	}
 }
 
 /** Kontaktmail eines Platzes, leer wenn keine hinterlegt ist. */
