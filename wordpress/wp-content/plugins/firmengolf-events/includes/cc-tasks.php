@@ -136,6 +136,16 @@ function fge_cc_tasks( int $req ): array {
 
 	// ── Vor dem Angebot ───────────────────────────────────────────────────
 	if ( ! $sent ) {
+		// Plätze, die in der Liste stehen, aber nie angefragt wurden, gehen
+		// sonst im Kopf verloren.
+		$idle = function_exists( 'fge_venues_idle_counts' ) ? ( fge_venues_idle_counts()[ $req ] ?? 0 ) : 0;
+		if ( $idle > 0 ) {
+			$add( 'ask_venues', sprintf(
+				'%d %s in der Liste noch nicht angefragt',
+				$idle,
+				1 === $idle ? 'Platz' : 'Plätze'
+			), 'me', 'now', 'venues' );
+		}
 		if ( $partner_id <= 0 ) {
 			// Frische Anfrage ist dringend, eine zwei Monate alte ist es nicht mehr.
 			// Sonst steht alles auf Rot und Rot bedeutet nichts mehr.

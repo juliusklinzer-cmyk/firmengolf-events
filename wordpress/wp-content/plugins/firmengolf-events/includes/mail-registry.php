@@ -64,6 +64,29 @@ function fge_mail_registry(): array {
 			'content' => [ 'Bitte um Prüfung der Verfügbarkeit' ],
 		],
 
+		// ── Platz-Pipeline ────────────────────────────────────────────────
+		// Diese beiden gehören zu einem einzelnen angefragten Platz, nicht zur
+		// Anfrage als Ganzes. Die Empfänger löst die Pipeline selbst auf
+		// (per_venue), deshalb liefert fge_mail_recipients() hier nichts.
+		'venue_request' => [
+			'label'     => 'Anfrage an einen Platz',
+			'party'     => 'platz',
+			'per_venue' => true,
+			'subject'   => 'Passt das bei euch? Firmenanfrage',
+			'auto'      => false,
+			'trigger'   => 'Knopf in der Platz-Pipeline',
+			'content'   => [ 'Wunschtermine', 'Gruppe mit Personenzahl und Niveau', 'Liste der Positionen mit Preisfrage', 'bei uns notierte Vorpreise' ],
+		],
+		'venue_decline' => [
+			'label'     => 'Absage an einen nicht gewählten Platz',
+			'party'     => 'platz',
+			'per_venue' => true,
+			'subject'   => 'Doch woanders: Firmenanfrage',
+			'auto'      => false,
+			'trigger'   => 'Knopf nach der Platzwahl',
+			'content'   => [ 'persönliche Absage', 'ehrlicher Grund', 'Einladung für die nächste Anfrage' ],
+		],
+
 		// ── Phase 2: Termin ───────────────────────────────────────────────
 		'date_reminder' => [
 			'label'   => 'Erinnerung an die Platz-Kontakte',
@@ -244,7 +267,9 @@ function fge_mail_label( string $key ): string {
  */
 function fge_mail_recipients( string $key, int $req ): array {
 	$meta = fge_mail_meta( $key );
-	if ( ! $meta ) {
+	if ( ! $meta || ! empty( $meta['per_venue'] ) ) {
+		// Mails an einen einzelnen Platz der Pipeline lösen ihre Empfänger dort
+		// auf, nicht über den zugeordneten Platz der Anfrage.
 		return [];
 	}
 	$data = function_exists( 'fge_get_request_email_data' ) ? fge_get_request_email_data( $req ) : [];

@@ -25,6 +25,16 @@ Keine Gedankenstriche, Preise im Format „XX € p.P./Gesamt netto".
 | 3 | Eine Firmenanfrage wartet auf deine Rückmeldung ({FG-Nr}) | Anfrage mit Wunschterminen bei zugeordnetem Platz | Partner-Terminkontakte | Wunschtermine + „Jetzt Termine bestätigen"-Button (Freigabe-Link) |
 | 4 | Neue Verfügbarkeitsanfrage für ein Firmengolf Event | wie 3, aber Partner ohne Terminkontakte | Partner (Hauptkontakt) | Bitte Verfügbarkeit prüfen |
 
+## A2 · Platz-Pipeline (Control Center, seit 1.9.268)
+
+Mehrere Plätze je Anfrage. Diese beiden Mails gehören zu einem einzelnen
+angefragten Platz, nicht zur Anfrage als Ganzes (`per_venue` in der Registry).
+
+| # | Betreff | Auslöser | An wen | Inhalt |
+|---|---------|----------|--------|--------|
+| 4a | Passt das bei euch? Firmenanfrage für {Datum} ({FG-Nr}) | Knopf „Per Mail anfragen" in der Platz-Pipeline (`fge_venue_send_request`) | Kontaktmail des Platzes, BCC Julius | Wunschtermine, Gruppe mit Ort, Personenzahl und Niveau, Anlass, Liste aller vom Kunden gewünschten Positionen mit der Bitte um je einen Preis, dazu der bei uns notierte Vorpreis je Position. Antwort per Mailantwort, kein Login |
+| 4b | Doch woanders: Firmenanfrage am {Datum} ({FG-Nr}) | Knopf „Absagen" je Platz oder „Allen übrigen absagen" nach der Platzwahl (`fge_venue_send_decline`) | Kontaktmail des Platzes | Persönliche Absage mit dem ehrlichen Grund, ausdrückliche Einladung zur nächsten Anfrage, Bitte um feste Gruppenpreise fürs nächste Mal |
+
 ## B · Terminfindung (Cron täglich + Statuswechsel)
 
 | # | Betreff | Auslöser | An wen | Inhalt |

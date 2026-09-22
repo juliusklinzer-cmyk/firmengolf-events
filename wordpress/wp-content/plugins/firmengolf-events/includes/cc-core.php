@@ -537,6 +537,13 @@ function fge_cc_page_request( int $req ): void {
 	echo '<div class="cc-cols">';
 	echo '<div class="cc-col-main">';
 	fge_cc_request_contacts( $req );
+	// Die Platz-Pipeline steht vor der Phasenkarte, solange noch kein Angebot
+	// raus ist: dort wird in dieser Zeit tatsächlich gearbeitet. Danach bleibt
+	// sie sichtbar, solange Plätze in der Liste stehen.
+	if ( function_exists( 'fge_cc_venues_panel' )
+		&& ( '1' !== (string) get_post_meta( $req, '_fge_offer_sent', true ) || fge_venues_get( $req ) ) ) {
+		fge_cc_venues_panel( $req );
+	}
 	fge_cc_request_phase_panel( $req );
 	fge_cc_request_timeline( $req );
 	echo '</div><div class="cc-col-side">';

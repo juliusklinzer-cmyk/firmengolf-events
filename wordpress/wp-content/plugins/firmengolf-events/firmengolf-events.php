@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.267' );
+define( 'FGE_VERSION', '1.9.268' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -75,7 +75,10 @@ require_once FGE_DIR . 'includes/mail-log.php';
 require_once FGE_DIR . 'includes/mail-registry.php';
 require_once FGE_DIR . 'includes/activity.php';
 require_once FGE_DIR . 'includes/cc-tasks.php';
+require_once FGE_DIR . 'includes/cc-venues.php';
+require_once FGE_DIR . 'includes/cc-venue-mails.php';
 require_once FGE_DIR . 'includes/cc-core.php';
+require_once FGE_DIR . 'includes/cc-venues-ui.php';
 require_once FGE_DIR . 'includes/cc-actions.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {

@@ -580,3 +580,71 @@ button.cc-btn { font: inherit; cursor: pointer; }
 	.cc-steps { gap: 4px; }
 	.cc-step { padding: 5px 10px 5px 6px; font-size: 11.5px; }
 }
+
+/* ── Platz-Pipeline ────────────────────────────────────────────────────── */
+
+.cc-venue {
+	border: 1px solid var(--cc-line);
+	border-radius: var(--cc-radius);
+	padding: 13px 15px;
+	margin-bottom: 12px;
+}
+.cc-venue.is-gewaehlt { border-color: rgba(44, 122, 61, 0.4); background: rgba(44, 122, 61, 0.03); }
+.cc-venue.is-abgesagt { opacity: 0.62; }
+.cc-venue-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cc-venue-name { font-weight: 600; font-size: 15px; }
+.cc-venue-price { font-variant-numeric: tabular-nums; font-weight: 600; }
+.cc-venue-reason { margin: 8px 0 0; font-size: 13px; color: var(--cc-ink-2); }
+.cc-venue-items { margin: 10px 0 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 3px; }
+.cc-venue-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.cc-venue-reply { margin-top: 12px; }
+.cc-venue-reply summary { font-size: 13px; color: var(--cc-accent); }
+
+.cc-venue-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+.cc-venue-add select {
+	font: inherit;
+	font-size: 14px;
+	padding: 8px 11px;
+	border: 1px solid var(--cc-line);
+	border-radius: 6px;
+	background: var(--cc-card);
+	color: var(--cc-ink);
+	max-width: 100%;
+	flex: 1 1 260px;
+	min-width: 0;
+}
+
+.cc-radios { display: flex; gap: 16px; margin: 0 0 12px; }
+.cc-itemgrid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.cc-item {
+	display: grid;
+	grid-template-columns: minmax(0, 1.6fr) 110px 100px 110px;
+	gap: 8px;
+	align-items: center;
+}
+.cc-item input[type="text"],
+.cc-item select,
+.cc-field select {
+	font: inherit;
+	font-size: 13.5px;
+	padding: 7px 9px;
+	border: 1px solid var(--cc-line);
+	border-radius: 6px;
+	background: var(--cc-card);
+	color: var(--cc-ink);
+	width: 100%;
+	min-width: 0;
+}
+
+.cc-decline-all {
+	margin-top: 16px;
+	padding-top: 14px;
+	border-top: 1px solid var(--cc-line-soft);
+}
+.cc-decline-all p { margin: 0 0 8px; font-size: 13.5px; }
+.cc-decline-all .cc-muted { margin-top: 8px; font-size: 12.5px; }
+
+@media (max-width: 720px) {
+	.cc-item { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+	.cc-item .cc-inline { grid-column: 1 / -1; }
+}

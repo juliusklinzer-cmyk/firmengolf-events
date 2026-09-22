@@ -33,6 +33,14 @@ function fge_cc_messages(): array {
 		'no_event'     => [ 'err', 'Das Angebot konnte nicht erstellt werden, bitte im WordPress-Backend nachsehen.' ],
 		'mail_failed'  => [ 'err', 'Die Mail konnte nicht verschickt werden. Adresse prüfen.' ],
 		'nothing'      => [ 'err', 'Nichts zu tun.' ],
+		'venue_added'    => [ 'ok', 'Platz in die Liste aufgenommen.' ],
+		'venue_asked'    => [ 'ok', 'Platz ist angefragt.' ],
+		'venue_reply'    => [ 'ok', 'Antwort des Platzes festgehalten.' ],
+		'venue_chosen'   => [ 'ok', 'Platz gewählt und der Anfrage zugeordnet.' ],
+		'venue_declined' => [ 'ok', 'Absage ist raus.' ],
+		'venue_removed'  => [ 'ok', 'Platz aus der Liste entfernt.' ],
+		'venue_dupe'     => [ 'err', 'Dieser Platz steht schon in der Liste.' ],
+		'venue_nomail'   => [ 'err', 'Dieser Platz hat keine Kontaktmail. Bitte telefonisch und hier festhalten.' ],
 	];
 }
 
@@ -234,3 +242,112 @@ function fge_cc_action_preview( string $action, int $req ): void {
 	}
 	echo '</div>';
 }
+
+// ── Platz-Pipeline ───────────────────────────────────────────────────────────
+
+/** Die Pipeline-Zeile aus dem POST, geprüft gegen die Anfrage. */
+function fge_cc_venue_from_post( int $req ): array {
+	$venue = fge_venue_get( absint( $_POST['venue_id'] ?? 0 ) );
+	if ( ! $venue || (int) $venue['request_id'] !== $req ) {
+		fge_cc_redirect( $req, 'nothing' );
+	}
+	return $venue;
+}
+
+add_action( 'admin_post_fge_cc_venue_add', static function (): void {
+	$req     = fge_cc_guard( 'fge_cc_venue_add' );
+	$partner = absint( $_POST['partner_id'] ?? 0 );
+	if ( $partner <= 0 || 'firmengolf_partner' !== get_post_type( $partner ) ) {
+		fge_cc_redirect( $req, 'nothing' );
+	}
+	fge_cc_redirect( $req, fge_venue_add( $req, $partner ) > 0 ? 'venue_added' : 'venue_dupe' );
+} );
+
+add_action( 'admin_post_fge_cc_venue_ask', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_ask' );
+	$venue = fge_cc_venue_from_post( $req );
+	$how   = sanitize_key( wp_unslash( $_POST['how'] ?? 'mail' ) );
+
+	if ( 'telefon' === $how ) {
+		// Telefonisch angefragt: kein Mailversand, aber festhalten, damit das
+		// Nachfassen nicht im Kopf hängen bleibt.
+		fge_venue_update( (int) $venue['id'], [
+			'status'   => 'angefragt',
+			'channel'  => 'telefon',
+			'asked_at' => current_time( 'mysql' ),
+		] );
+		fge_activity_add( $req, 'venue', sprintf( '%s telefonisch angefragt', get_the_title( (int) $venue['partner_id'] ) ) );
+		fge_cc_redirect( $req, 'venue_asked' );
+	}
+
+	fge_cc_redirect( $req, fge_venue_send_request( $req, (int) $venue['id'] ) ? 'venue_asked' : 'venue_nomail' );
+} );
+
+add_action( 'admin_post_fge_cc_venue_reply', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_reply' );
+	$venue = fge_cc_venue_from_post( $req );
+	$yes   = 'zusagt' === sanitize_key( wp_unslash( $_POST['answer'] ?? '' ) );
+
+	$data = [
+		'status'     => $yes ? 'zugesagt' : 'abgesagt',
+		'replied_at' => current_time( 'mysql' ),
+		'reason'     => sanitize_textarea_field( wp_unslash( $_POST['reason'] ?? '' ) ),
+		'note'       => sanitize_textarea_field( wp_unslash( $_POST['note'] ?? '' ) ),
+	];
+	if ( $yes ) {
+		$data['price']       = fge_xs_parse_num( sanitize_text_field( wp_unslash( $_POST['price'] ?? '' ) ) );
+		$data['price_basis'] = 'pauschal' === sanitize_key( wp_unslash( $_POST['price_basis'] ?? '' ) ) ? 'pauschal' : 'person';
+		$data['price_gross'] = '0' === (string) ( $_POST['price_gross'] ?? '1' ) ? 0 : 1;
+	}
+	fge_venue_update( (int) $venue['id'], $data );
+
+	// Preise je Position mitschreiben, damit die Angebote vergleichbar werden.
+	foreach ( (array) ( $_POST['item_price'] ?? [] ) as $key => $raw ) {
+		$key = sanitize_key( (string) $key );
+		fge_venue_item_set( (int) $venue['id'], $key, [
+			'price'       => fge_xs_parse_num( sanitize_text_field( wp_unslash( (string) $raw ) ) ),
+			'available'   => isset( $_POST['item_available'][ $key ] ) ? 1 : 0,
+			'price_basis' => 'pauschal' === sanitize_key( wp_unslash( $_POST['item_basis'][ $key ] ?? '' ) ) ? 'pauschal' : 'person',
+			'price_gross' => '0' === (string) ( $_POST['item_gross'][ $key ] ?? '1' ) ? 0 : 1,
+		] );
+	}
+
+	fge_activity_add( $req, 'venue', sprintf(
+		'%s hat %s%s',
+		get_the_title( (int) $venue['partner_id'] ),
+		$yes ? 'zugesagt' : 'abgesagt',
+		'' !== $data['reason'] ? ': ' . $data['reason'] : ''
+	) );
+	fge_cc_redirect( $req, 'venue_reply' );
+} );
+
+add_action( 'admin_post_fge_cc_venue_choose', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_choose' );
+	$venue = fge_cc_venue_from_post( $req );
+	fge_cc_redirect( $req, fge_venue_choose( $req, (int) $venue['id'] ) ? 'venue_chosen' : 'nothing' );
+} );
+
+add_action( 'admin_post_fge_cc_venue_decline', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_decline' );
+	$venue = fge_cc_venue_from_post( $req );
+	$reason = sanitize_textarea_field( wp_unslash( $_POST['reason'] ?? '' ) );
+	fge_cc_redirect( $req, fge_venue_send_decline( $req, (int) $venue['id'], $reason ) ? 'venue_declined' : 'venue_nomail' );
+} );
+
+add_action( 'admin_post_fge_cc_venue_decline_all', static function (): void {
+	$req  = fge_cc_guard( 'fge_cc_venue_decline_all' );
+	$sent = 0;
+	foreach ( fge_venues_to_decline( $req ) as $v ) {
+		if ( fge_venue_send_decline( $req, (int) $v['id'], 'Der Termin passte diesmal bei einem anderen Platz besser.' ) ) {
+			$sent++;
+		}
+	}
+	fge_cc_redirect( $req, $sent > 0 ? 'venue_declined' : 'venue_nomail' );
+} );
+
+add_action( 'admin_post_fge_cc_venue_remove', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_remove' );
+	$venue = fge_cc_venue_from_post( $req );
+	fge_venue_delete( (int) $venue['id'] );
+	fge_cc_redirect( $req, 'venue_removed' );
+} );
