@@ -15,6 +15,31 @@ Stand 22.09.2026, Plugin 1.9.267. Was das System automatisch macht und was Juliu
 | 6 Event | Eventtag | nichts | Erreichbarkeit |
 | 7 Nachlauf | Status „Event durchgeführt" | Bewertungsbitte mit Google-Link | Rechnung in Lexoffice, Status setzen, Eingangsrechnung des Platzes prüfen, abschließen |
 
+## Das Control Center (seit 1.9.267, noch nicht deployt)
+
+Bedient wird dieser Prozess ab jetzt unter `/control/`, nicht mehr über die verstreuten Metaboxen. Das WordPress-Backend bleibt als Werkstatt für Sonderfälle bestehen, das Control Center führt. Zugriff nur mit `manage_options`, sonst 404.
+
+| Bereich | Wofür |
+|---|---|
+| Dashboard | Wartet auf mich, wartet auf andere, heute und morgen, Ereignisse seit gestern, Monatstrichter |
+| Anfragen | Liste mit Phasenfiltern, dahinter das Anfrage-Cockpit mit Kontakten, Phasenleiste, Aktionen, Zeitleiste und Postausgang |
+| Angebote | Laufend, überfällig, angenommen, abgelehnt, mit Beträgen |
+| Kalender | Monatsraster, Warnung bei Doppelbelegung, Outlook-Abo über einen geheimen ICS-Link |
+| Aufgaben | Alles über alle Vorgänge, abgeleitet plus eigene |
+| Plätze, Kunden, Dienstleister | Verzeichnisse mit Kontakten, Preisen und Datenqualität |
+| Geld | Offene Angebote, gebuchter Umsatz, Marge, Eingangsrechnungen, Provisionen |
+| Postausgang | Jede verschickte Mail mit Zustellstatus |
+
+**Zwei Grundsätze:** Aufgaben werden aus dem Zustand abgeleitet, nicht gepflegt. Und kein Knopf ohne sichtbare Folge: unter jedem Knopf steht mit echten Namen, wer gleich welche Mail bekommt, und fehlt ein Empfänger, steht das vorher in Rot.
+
+**Neu im Prozess durch das Control Center:**
+- **Platz-Pipeline** (Phase 2): mehrere Plätze je Anfrage anfragen, Preise je Position vergleichen, einen wählen, den übrigen persönlich absagen. Jeder erfasste Preis steht bei der nächsten Anfrage an denselben Platz als Vorschlag bereit.
+- **Angebot neu auflegen** (Phase 3): zurückziehen und als Fassung 2 senden, ohne eine neue Anfrage. Angenommene Angebote nie.
+- **Katalog-Event** (Phase 7): den Platz fragen, ob er das durchgeführte Event dauerhaft anbieten will. Bei Ja entsteht ein Entwurf im Status `zur_pruefung`, den du freigibst.
+- **Tagesmail** um 07:00 mit allem, was heute ansteht.
+
+Testanleitung: `docs/control-center-test.md`.
+
 ## Phase 1: Eingang
 
 **Wege ins System:** Anfrage-Dialog auf einer Eventseite (Wunschtermine, Teilnehmer, Startzeit, Zusatzwünsche, Kontaktwunsch), allgemeiner Anfrage-Wizard, Kontaktformular, Rückruf-Widget. Budget-Rechner erzeugt nur einen Lead.
