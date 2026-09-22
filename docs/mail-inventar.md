@@ -34,6 +34,7 @@ angefragten Platz, nicht zur Anfrage als Ganzes (`per_venue` in der Registry).
 |---|---------|----------|--------|--------|
 | 4a | Passt das bei euch? Firmenanfrage für {Datum} ({FG-Nr}) | Knopf „Per Mail anfragen" in der Platz-Pipeline (`fge_venue_send_request`) | Kontaktmail des Platzes, BCC Julius | Wunschtermine, Gruppe mit Ort, Personenzahl und Niveau, Anlass, Liste aller vom Kunden gewünschten Positionen mit der Bitte um je einen Preis, dazu der bei uns notierte Vorpreis je Position. Antwort per Mailantwort, kein Login |
 | 4b | Doch woanders: Firmenanfrage am {Datum} ({FG-Nr}) | Knopf „Absagen" je Platz oder „Allen übrigen absagen" nach der Platzwahl (`fge_venue_send_decline`) | Kontaktmail des Platzes | Persönliche Absage mit dem ehrlichen Grund, ausdrückliche Einladung zur nächsten Anfrage, Bitte um feste Gruppenpreise fürs nächste Mal |
+| 4c | Wollt ihr das dauerhaft anbieten? {Event} | Knopf im Anfrage-Cockpit nach der Buchung (`fge_catalog_send_proposal`) | Kontaktmail des Platzes, BCC Julius | Der Vorschlag aus dem Angebots-Snapshot: Titel, Ort, Ablauf, Gruppengröße, sein Preis, Inklusivleistungen. Antwort per Klick über `/event-vorschlag/<token>/` ohne Login. Bei Ja entsteht ein `firmengolf_event` im Status `zur_pruefung` beim Platz, das über die bestehende Freigabe läuft |
 
 ## B · Terminfindung (Cron täglich + Statuswechsel)
 

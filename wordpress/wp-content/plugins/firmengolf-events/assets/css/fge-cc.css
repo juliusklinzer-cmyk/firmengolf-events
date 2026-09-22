@@ -824,3 +824,29 @@ button.cc-btn { font: inherit; cursor: pointer; }
 	.cc-tile-value { font-size: 21px; }
 	.cc-tasklist .cc-ref { min-width: 0; }
 }
+
+/* ── Einzelseite für Platz-Antworten (ohne Navigation) ─────────────────── */
+
+body.cc--plain { background: var(--cc-bg); }
+.cc-plain-wrap {
+	max-width: 640px;
+	margin: 0 auto;
+	padding: 40px 20px 60px;
+}
+.cc-plain-wrap h1 {
+	margin: 0 0 20px;
+	font-size: 17px;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var(--cc-ink-2);
+}
+.cc-plain-wrap .cc-card h2 { font-size: 20px; margin-bottom: 14px; }
+.cc-plain-wrap .cc-card p { margin: 0 0 12px; }
+.cc-plain-foot { margin-top: 24px; font-size: 12px; text-align: center; }
+
+.cc-catalog {
+	margin-top: 18px;
+	padding-top: 14px;
+	border-top: 1px solid var(--cc-line-soft);
+}
+.cc-catalog p { margin: 0 0 10px; font-size: 13.5px; }

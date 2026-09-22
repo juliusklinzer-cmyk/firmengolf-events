@@ -42,6 +42,8 @@ function fge_cc_messages(): array {
 		'venue_dupe'     => [ 'err', 'Dieser Platz steht schon in der Liste.' ],
 		'venue_nomail'   => [ 'err', 'Dieser Platz hat keine Kontaktmail. Bitte telefonisch und hier festhalten.' ],
 		'relaunched'     => [ 'ok', 'Neues Angebot ist raus. Die alte Fassung liegt im Archiv.' ],
+		'catalog_sent'   => [ 'ok', 'Vorschlag ist beim Platz. Er kann direkt aus der Mail antworten.' ],
+		'catalog_failed' => [ 'err', 'Der Vorschlag konnte nicht verschickt werden.' ],
 		'relaunch_failed' => [ 'err', 'Das Angebot konnte nicht neu aufgelegt werden.' ],
 	];
 }
@@ -89,6 +91,18 @@ add_action( 'admin_post_fge_cc_offer_send', static function (): void {
 	}
 	fge_activity_add( $req, 'offer', 'Angebot aus dem Control Center gesendet' );
 	fge_cc_redirect( $req, 'offer_sent' );
+} );
+
+// ── Katalog-Vorschlag an den Platz ───────────────────────────────────────────
+
+add_action( 'admin_post_fge_cc_catalog', static function (): void {
+	$req = fge_cc_guard( 'fge_cc_catalog' );
+	$err = fge_catalog_send_proposal( $req );
+	if ( '' !== $err ) {
+		set_transient( 'fge_cc_err_' . $req, $err, 60 );
+		fge_cc_redirect( $req, 'catalog_failed' );
+	}
+	fge_cc_redirect( $req, 'catalog_sent' );
 } );
 
 // ── Angebot neu auflegen ─────────────────────────────────────────────────────

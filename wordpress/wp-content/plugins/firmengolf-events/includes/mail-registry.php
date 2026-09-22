@@ -233,6 +233,15 @@ function fge_mail_registry(): array {
 			'content' => [ 'Zusammenfassung', 'fehlende Angaben in Rot' ],
 		],
 
+		'catalog_proposal' => [
+			'label'   => 'Vorschlag: Event dauerhaft anbieten',
+			'party'   => 'platz',
+			'subject' => 'Wollt ihr das dauerhaft anbieten?',
+			'auto'    => false,
+			'trigger' => 'Knopf nach dem Event',
+			'content' => [ 'Titel, Ort und Ablauf wie durchgeführt', 'Gruppengröße', 'euer Preis', 'Inklusivleistungen', 'Antwortlink ohne Login' ],
+		],
+
 		// ── Control Center ────────────────────────────────────────────────
 		'daily_digest' => [
 			'label'   => 'Tagesmail',

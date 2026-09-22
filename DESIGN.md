@@ -2,6 +2,8 @@
 
 Diese Datei ist die eine Wahrheit für das Aussehen aller Oberflächen (Website, Anfrage-Wizard, Event-Modal, Filter, Partner-Login, Onboarding). Wer UI baut oder ändert, liest sie vorher und hängt neue Elemente an die zentralen Komponenten an, statt eigene Stile zu erfinden. Die technischen Definitionen stehen gebündelt am ENDE von `assets/css/fge-frontend.css` unter „DESIGN-LINIE: zentrale Komponenten".
 
+**Eine Ausnahme: das Control Center** (`/control/`, `assets/css/fge-cc.css`). Das ist ein internes Werkzeug, keine Kundenstrecke: dunkle Seitenleiste, helle Arbeitsfläche, dichte Tabellen, eigene Tokens mit dem Präfix `--cc-`. Es übernimmt bewusst weder Marke noch Komponenten dieser Datei, weil ein Backend nach Backend aussehen soll und nicht nach Website. Entschieden mit Julius am 22.09.2026. Alles, was Kunden oder Partner sehen, folgt weiterhin dieser Datei, auch wenn es aus dem Control Center heraus ausgelöst wird. Die einzige gemeinsam genutzte Stelle ist die Antwortseite für Plätze unter `/event-vorschlag/`, die den Control-Center-Stil erbt, weil sie eine reine Ja-Nein-Frage ohne Markenauftritt ist.
+
 ## Grundwerte (Tokens, definiert in :root von fge-frontend.css)
 
 - Markenfarbe: `--fairway-700` (#4279D1), Hover heller: `--fairway-600`. Nie dunkler beim Hover, nie Hex hartkodieren.

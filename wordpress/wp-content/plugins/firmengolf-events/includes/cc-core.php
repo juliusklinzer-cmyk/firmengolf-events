@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const FGE_CC_REWRITE_VERSION = '1.1.0';
+const FGE_CC_REWRITE_VERSION = '1.2.0';
 
 /** Seiten des Control Centers: slug => [Label, Gruppe]. */
 function fge_cc_pages(): array {
@@ -783,6 +783,49 @@ function fge_cc_phase_booked( int $req ): void {
 		}
 		echo '</div>';
 	}
+
+	fge_cc_catalog_block( $req );
+}
+
+/**
+ * Aus diesem Event ein Katalog-Event machen.
+ *
+ * Der Hebel, aus dem eine einmalige Handarbeit ein wiederverkäufliches Produkt
+ * wird. Erscheint, sobald gebucht ist, und zeigt danach die Antwort des Platzes.
+ */
+function fge_cc_catalog_block( int $req ): void {
+	if ( ! function_exists( 'fge_catalog_blocker' ) ) {
+		return;
+	}
+	$answer  = fge_catalog_answer( $req );
+	$asked   = (string) get_post_meta( $req, '_fge_catalog_asked_at', true );
+	$blocker = fge_catalog_blocker( $req );
+
+	echo '<div class="cc-catalog">';
+	echo '<p class="cc-kicker">Aus diesem Event ein Angebot machen</p>';
+
+	if ( 'ja' === $answer ) {
+		$eid = (int) get_post_meta( $req, '_fge_catalog_event_id', true );
+		echo '<p class="cc-done">Der Platz möchte das Event dauerhaft anbieten.</p>';
+		if ( $eid > 0 ) {
+			echo '<p><a class="cc-btn" href="' . esc_url( get_edit_post_link( $eid, 'raw' ) ) . '">Entwurf prüfen und freigeben</a></p>';
+		}
+	} elseif ( 'nein' === $answer ) {
+		$note = (string) get_post_meta( $req, '_fge_catalog_note', true );
+		echo '<p class="cc-muted">Der Platz möchte das nicht dauerhaft anbieten.' . ( '' !== $note ? ' „' . esc_html( $note ) . '"' : '' ) . '</p>';
+	} elseif ( '' !== $blocker ) {
+		echo '<p class="cc-muted">' . esc_html( $blocker ) . '</p>';
+	} else {
+		echo '<p class="cc-muted">Fragt den Platz, ob er genau dieses Paket dauerhaft auf firmengolf.app anbieten will. Bei Ja entsteht ein Entwurf in seinem Portal, den du freigibst. Die nächste Anfrage darauf läuft dann ohne Telefonat.</p>';
+		if ( '' !== $asked ) {
+			echo '<p class="cc-muted">Gefragt am ' . esc_html( wp_date( 'd.m.Y', (int) strtotime( $asked ) ) ) . ', noch keine Antwort.</p>';
+		}
+		fge_cc_button( 'fge_cc_catalog', $req, '' !== $asked ? 'Erneut fragen' : 'Platz fragen', [
+			'class'   => 'cc-btn',
+			'confirm' => 'Dem Platz vorschlagen, dieses Event dauerhaft anzubieten?',
+		] );
+	}
+	echo '</div>';
 }
 
 /** Ein Fakt in der Definitionsliste, leere Werte fallen weg. */

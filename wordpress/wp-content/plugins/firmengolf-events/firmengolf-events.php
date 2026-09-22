@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.271' );
+define( 'FGE_VERSION', '1.9.272' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -84,6 +84,7 @@ require_once FGE_DIR . 'includes/cc-calendar.php';
 require_once FGE_DIR . 'includes/cc-views.php';
 require_once FGE_DIR . 'includes/cc-offer-version.php';
 require_once FGE_DIR . 'includes/cc-providers.php';
+require_once FGE_DIR . 'includes/cc-catalog.php';
 require_once FGE_DIR . 'includes/cc-actions.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
