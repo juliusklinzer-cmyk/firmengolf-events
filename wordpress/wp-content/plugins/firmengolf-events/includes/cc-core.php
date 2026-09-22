@@ -531,14 +531,247 @@ function fge_cc_page_request( int $req ): void {
 		return;
 	}
 	echo '<p class="cc-back"><a href="' . esc_url( fge_cc_url( 'anfragen' ) ) . '">Zurück zur Liste</a></p>';
+	fge_cc_message();
 	fge_cc_request_header( $req );
+	fge_cc_request_steps( $req );
 	echo '<div class="cc-cols">';
 	echo '<div class="cc-col-main">';
 	fge_cc_request_contacts( $req );
+	fge_cc_request_phase_panel( $req );
+	fge_cc_request_timeline( $req );
 	echo '</div><div class="cc-col-side">';
 	fge_cc_request_tasks( $req );
 	fge_cc_request_mails( $req );
+	fge_cc_request_snooze( $req );
 	echo '</div></div>';
+}
+
+/** Meldung nach einer Aktion. */
+function fge_cc_message(): void {
+	$key = sanitize_key( wp_unslash( $_GET['msg'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$all = function_exists( 'fge_cc_messages' ) ? fge_cc_messages() : [];
+	if ( '' === $key || ! isset( $all[ $key ] ) ) {
+		return;
+	}
+	[ $tone, $text ] = $all[ $key ];
+	echo '<p class="cc-msg cc-msg--' . esc_attr( $tone ) . '">' . esc_html( $text ) . '</p>';
+}
+
+/** Die sieben Phasen als Leiste, die aktuelle hervorgehoben. */
+function fge_cc_request_steps( int $req ): void {
+	[ $num ] = fge_cc_phase( $req );
+	$steps = [ 1 => 'Eingang', 2 => 'Termin', 3 => 'Angebot', 4 => 'Entscheidung', 5 => 'Vorbereitung', 6 => 'Eventtag', 7 => 'Nachlauf' ];
+	echo '<ol class="cc-steps">';
+	foreach ( $steps as $i => $label ) {
+		$state = $i < $num ? 'done' : ( $i === $num ? 'on' : 'todo' );
+		echo '<li class="cc-step is-' . esc_attr( $state ) . '"><span class="cc-step-n">' . (int) $i . '</span>' . esc_html( $label ) . '</li>';
+	}
+	echo '</ol>';
+}
+
+/**
+ * Die aktuelle Phase mit genau den Feldern und Knöpfen, die jetzt zählen.
+ * Alles andere bleibt eingeklappt oder im WordPress-Backend.
+ */
+function fge_cc_request_phase_panel( int $req ): void {
+	[ $num, $label ] = fge_cc_phase( $req );
+	$sent  = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
+	$offer = (string) get_post_meta( $req, '_fge_offer_status', true );
+
+	echo '<section class="cc-card cc-phase"><h2>Phase ' . (int) $num . ': ' . esc_html( $label ) . '</h2>';
+
+	if ( 'accepted' === $offer ) {
+		fge_cc_phase_booked( $req );
+	} elseif ( $sent ) {
+		fge_cc_phase_offer_running( $req );
+	} elseif ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 ) {
+		fge_cc_phase_offer_ready( $req );
+	} else {
+		fge_cc_phase_early( $req );
+	}
+	echo '</section>';
+}
+
+/** Eingang und Termin: was fehlt, um ein Angebot senden zu können. */
+function fge_cc_phase_early( int $req ): void {
+	$partner_id = (int) get_post_meta( $req, '_fge_assigned_partner_id', true );
+	$wishes     = function_exists( 'fge_rr_wish_dates' ) ? fge_rr_wish_dates( $req ) : [];
+
+	echo '<dl class="cc-facts">';
+	fge_cc_fact( 'Wunschtermine', $wishes ? implode( ' · ', array_map( 'strval', $wishes ) ) : 'keine angegeben' );
+	fge_cc_fact( 'Teilnehmer', (string) get_post_meta( $req, '_fge_expected_participants', true ) );
+	fge_cc_fact( 'Budget', (string) get_post_meta( $req, '_fge_budget_range', true ) );
+	fge_cc_fact( 'Nachricht', (string) get_post_meta( $req, '_fge_message', true ) );
+	echo '</dl>';
+
+	if ( $partner_id <= 0 ) {
+		echo '<p class="cc-hint">Es ist kein Platz zugeordnet. Die Platz-Pipeline mit mehreren Anfragen je Vorgang kommt als Nächstes; bis dahin den Platz im WordPress-Backend unter „Anfrage Basis" zuordnen.</p>';
+	} else {
+		echo '<p class="cc-hint">Der Platz ist angefragt. Sobald ein Termin bestätigt ist, kann das Angebot raus.</p>';
+	}
+	echo '<p><a class="cc-btn" href="' . esc_url( get_edit_post_link( $req, 'raw' ) ) . '">Terminabstimmung im WordPress</a></p>';
+}
+
+/** Termin steht, Angebot kann raus. */
+function fge_cc_phase_offer_ready( int $req ): void {
+	$idx    = fge_rr_final_index( $req );
+	$wishes = function_exists( 'fge_rr_wish_dates' ) ? fge_rr_wish_dates( $req ) : [];
+	$priced = ! function_exists( 'fge_offer_is_priced' ) || fge_offer_is_priced( $req );
+
+	echo '<dl class="cc-facts">';
+	fge_cc_fact( 'Bestätigter Termin', (string) ( $wishes[ $idx ] ?? 'steht fest' ) );
+	fge_cc_fact( 'Preis hinterlegt', $priced ? 'ja' : 'nein' );
+	echo '</dl>';
+
+	if ( ! $priced ) {
+		echo '<p class="cc-hint cc-hint--warn">Ohne Preis kein Angebot. Erst in Schritt 2 im WordPress-Backend bepreisen, sonst ginge „Auf Anfrage" verbindlich buchbar raus.</p>';
+		echo '<p><a class="cc-btn" href="' . esc_url( get_edit_post_link( $req, 'raw' ) ) . '">Positionen bepreisen</a></p>';
+		return;
+	}
+	fge_cc_button( 'fge_cc_offer_send', $req, 'Angebot jetzt senden', [
+		'class'   => 'cc-btn cc-btn--primary',
+		'confirm' => 'Angebot mit PDF an den Kunden senden?',
+	] );
+	fge_cc_action_preview( 'offer_send', $req );
+}
+
+/** Angebot läuft, der Kunde entscheidet. */
+function fge_cc_phase_offer_running( int $req ): void {
+	$deadline = (int) get_post_meta( $req, '_fge_offer_deadline', true );
+	$query    = (string) get_post_meta( $req, '_fge_offer_query', true );
+
+	echo '<dl class="cc-facts">';
+	fge_cc_fact( 'Frist', $deadline > 0 ? wp_date( 'd.m.Y', $deadline ) . ( time() > $deadline ? ' (abgelaufen)' : '' ) : 'ohne Frist' );
+	fge_cc_fact( 'Rückfrage des Kunden', $query );
+	echo '</dl>';
+	echo '<p class="cc-hint">Der Ball liegt beim Kunden. Angenommen oder abgelehnt wird auf der Angebotsseite, das löst alle weiteren Mails aus.</p>';
+	if ( function_exists( 'fge_offer_link' ) ) {
+		echo '<p><a class="cc-btn" href="' . esc_url( fge_offer_link( $req ) ) . '" target="_blank" rel="noopener">Angebotsseite ansehen</a></p>';
+	}
+	fge_cc_action_preview( 'offer_accept', $req );
+}
+
+/** Gebucht: Eventtag ausfüllen und die beiden Info-Mails. */
+function fge_cc_phase_booked( int $req ): void {
+	$v         = fge_day_values( $req );
+	$plan_sent = (string) get_post_meta( $req, '_fge_day_plan_sent', true );
+	$info_sent = (string) get_post_meta( $req, '_fge_day_info_sent', true );
+
+	echo '<form class="cc-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+	echo '<input type="hidden" name="action" value="fge_cc_day_save">';
+	echo '<input type="hidden" name="request_id" value="' . (int) $req . '">';
+	wp_nonce_field( 'fge_cc_day_save_' . $req );
+	echo '<div class="cc-fields">';
+	foreach ( fge_day_fields() as $k => [ $flabel, $type, $ph ] ) {
+		$raw = trim( (string) get_post_meta( $req, '_fge_' . $k, true ) );
+		$hint = ( '' === $raw && '' !== $v[ $k ] ) ? 'Vorbelegt: ' . $v[ $k ] : $ph;
+		echo '<label class="cc-field' . ( 'textarea' === $type ? ' cc-field--wide' : '' ) . '">';
+		echo '<span>' . esc_html( $flabel ) . '</span>';
+		if ( 'textarea' === $type ) {
+			echo '<textarea name="fge_' . esc_attr( $k ) . '" rows="2" placeholder="' . esc_attr( $hint ) . '">' . esc_textarea( $raw ) . '</textarea>';
+		} else {
+			echo '<input type="text" name="fge_' . esc_attr( $k ) . '" value="' . esc_attr( $raw ) . '" placeholder="' . esc_attr( $hint ) . '">';
+		}
+		echo '</label>';
+	}
+	echo '</div>';
+	echo '<p><button type="submit" class="cc-btn cc-btn--primary">Speichern</button>';
+	echo '<span class="cc-muted"> Sobald Startzeit und Treffpunkt stehen, geht die Ablauf-Info einmalig an den Kunden.</span></p>';
+	echo '</form>';
+
+	echo '<div class="cc-actions">';
+	echo '<div class="cc-action">';
+	if ( '' !== $plan_sent ) {
+		echo '<p class="cc-done">Ablauf-Info gesendet am ' . esc_html( wp_date( 'd.m.Y H:i', (int) $plan_sent ) ) . '</p>';
+	}
+	fge_cc_button( 'fge_cc_day_plan', $req, '' !== $plan_sent ? 'Ablauf-Info erneut senden' : 'Ablauf-Info senden', [
+		'confirm' => 'Ablauf-Info jetzt an den Kunden senden?',
+	] );
+	fge_cc_action_preview( 'day_plan', $req );
+	echo '</div>';
+
+	echo '<div class="cc-action">';
+	if ( '' !== $info_sent ) {
+		echo '<p class="cc-done">Vortags-Info gesendet am ' . esc_html( wp_date( 'd.m.Y H:i', (int) $info_sent ) ) . '</p>';
+	}
+	fge_cc_button( 'fge_cc_day_info', $req, '' !== $info_sent ? 'Vortags-Info erneut senden' : 'Vortags-Info senden', [
+		'confirm' => 'Vortags-Info an Kunde, Platz und events@ senden?',
+	] );
+	fge_cc_action_preview( 'day_info', $req );
+	echo '</div>';
+	echo '</div>';
+
+	// Nachlauf-Knöpfe, sobald der Termin vorbei ist.
+	$date = fge_cc_event_date( $req );
+	if ( $date > 0 && $date < strtotime( 'today' ) ) {
+		echo '<div class="cc-actions cc-actions--end">';
+		foreach ( fge_cc_status_actions() as $slug => $slabel ) {
+			fge_cc_button( 'fge_cc_status', $req, $slabel, [
+				'fields'  => [ 'status' => $slug ],
+				'confirm' => 'Status auf „' . $slabel . '" setzen?',
+			] );
+		}
+		echo '</div>';
+	}
+}
+
+/** Ein Fakt in der Definitionsliste, leere Werte fallen weg. */
+function fge_cc_fact( string $label, string $value ): void {
+	if ( '' === trim( $value ) ) {
+		return;
+	}
+	echo '<div class="cc-fact"><dt>' . esc_html( $label ) . '</dt><dd>' . nl2br( esc_html( $value ) ) . '</dd></div>';
+}
+
+/** Zeitleiste plus Eingabe für Telefonnotizen. */
+function fge_cc_request_timeline( int $req ): void {
+	echo '<section class="cc-card"><h2>Zeitleiste</h2>';
+
+	echo '<form class="cc-form cc-noteform" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+	echo '<input type="hidden" name="action" value="fge_cc_note">';
+	echo '<input type="hidden" name="request_id" value="' . (int) $req . '">';
+	wp_nonce_field( 'fge_cc_note_' . $req );
+	echo '<textarea name="note" rows="2" placeholder="Was wurde besprochen? Telefonnotiz oder Vermerk"></textarea>';
+	echo '<div class="cc-noteform-foot">';
+	echo '<label class="cc-inline"><input type="radio" name="note_type" value="call" checked> Telefonat</label>';
+	echo '<label class="cc-inline"><input type="radio" name="note_type" value="note"> Notiz</label>';
+	echo '<button type="submit" class="cc-btn">Festhalten</button>';
+	echo '</div></form>';
+
+	$items = function_exists( 'fge_activity_for_request' ) ? fge_activity_for_request( $req, 40 ) : [];
+	if ( ! $items ) {
+		fge_cc_empty( 'Noch nichts festgehalten.' );
+		echo '</section>';
+		return;
+	}
+	$labels = function_exists( 'fge_activity_types' ) ? fge_activity_types() : [];
+	echo '<ul class="cc-timeline">';
+	foreach ( $items as $a ) {
+		echo '<li class="cc-tl cc-tl--' . esc_attr( (string) $a['type'] ) . '">';
+		echo '<span class="cc-tl-type">' . esc_html( $labels[ $a['type'] ] ?? (string) $a['type'] ) . '</span>';
+		echo '<span class="cc-tl-text">' . nl2br( esc_html( (string) $a['text'] ) ) . '</span>';
+		echo '<span class="cc-tl-time">' . esc_html( fge_cc_ago( (string) $a['created_at'] ) ) . '</span>';
+		echo '</li>';
+	}
+	echo '</ul></section>';
+}
+
+/** Vorgang für eine Weile aus der Arbeitsliste nehmen. */
+function fge_cc_request_snooze( int $req ): void {
+	$until = (int) get_post_meta( $req, '_fge_cc_snooze', true );
+	echo '<section class="cc-card"><h2>Schlummern</h2>';
+	if ( $until > time() ) {
+		echo '<p class="cc-muted">Taucht am ' . esc_html( wp_date( 'd.m.Y', $until ) ) . ' wieder auf.</p>';
+		fge_cc_button( 'fge_cc_snooze', $req, 'Jetzt wieder zeigen', [ 'fields' => [ 'days' => 0 ] ] );
+	} else {
+		echo '<p class="cc-muted">Aus der Arbeitsliste nehmen, ohne den Vorgang zu schließen.</p>';
+		echo '<div class="cc-actions">';
+		foreach ( [ 3 => '3 Tage', 7 => '1 Woche', 30 => '1 Monat' ] as $d => $l ) {
+			fge_cc_button( 'fge_cc_snooze', $req, $l, [ 'fields' => [ 'days' => $d ] ] );
+		}
+		echo '</div>';
+	}
+	echo '</section>';
 }
 
 function fge_cc_request_header( int $req ): void {
