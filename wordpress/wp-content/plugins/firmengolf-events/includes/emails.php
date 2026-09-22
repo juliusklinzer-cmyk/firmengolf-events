@@ -617,9 +617,24 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		}
 	}
 
+	// Einkauf beim Platz und fehlende Platz-Adresse gehören in die Kontrollmail:
+	// ohne Adresse geht die Auftragsbestätigung still nicht raus (Befund 22.09.2026).
+	$cost_txt  = fge_partner_cost_text( $request_id, (int) ( $snap['participants'] ?? 0 ) );
+	$partner_m = function_exists( 'fge_cc_partner_email' ) ? fge_cc_partner_email( (int) $data['partner_id'] ) : $data['partner_email'];
+	$cost_block = '';
+	if ( '' !== $cost_txt ) {
+		$cost_block .= '<p style="margin:0 0 16px;"><strong>Einkauf beim Platz:</strong> ' . esc_html( $cost_txt ) . '</p>';
+	} else {
+		$cost_block .= '<p style="margin:0 0 16px;color:#9A6B12;">Kein Einkaufspreis für den Platz hinterlegt, die Auftragsbestätigung nennt deshalb keinen Betrag. Nachtragen in Schritt 2.</p>';
+	}
+	if ( (int) $data['partner_id'] > 0 && '' === $partner_m ) {
+		$cost_block .= '<p style="margin:0 0 16px;color:#B4332B;"><strong>Der Platz hat keine Kontaktmail.</strong> Auftragsbestätigung und Vortags-Info gehen nicht raus, bitte von Hand übernehmen und die Adresse im Partnerprofil nachtragen.</p>';
+	}
+
 	$to = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 	$ic = '
 		<p style="margin:0 0 16px;">Der Kunde hat das Angebot <strong>' . esc_html( $ref ) . '</strong> angenommen. Der Auftrag steht.</p>
+		' . $cost_block . '
 		<p style="margin:0 0 16px;"><strong>Termin:</strong> ' . esc_html( $date ?: 'k. A.' ) . '<br>
 		<strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: 'k. A.' ) . '<br>
 		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: 'k. A.' ) . '<br>
@@ -628,15 +643,11 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen. Für die automatische Vortags-Info in der Anfrage unter „Schritt 4: Event-Tag" Startzeit, Treffpunkt und Ansprechpartner vor Ort eintragen.</p>
 		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
 	';
+	fge_mail_log_context( $request_id, 'order_internal' );
 	wp_mail( $to, 'Auftrag steht: ' . $ref, fge_email_wrap( 'Auftrag steht: ' . $ref, $ic ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	fge_mail_log_context_clear();
 
-	if ( $data['partner_email'] !== '' ) {
-		$pc = '
-			<p style="margin:0 0 16px;">Gute Nachricht: der Kunde hat das Event <strong>' . esc_html( $data['event_title'] ?: '' ) . '</strong> am <strong>' . esc_html( $date ?: 'bestätigten Termin' ) . '</strong> verbindlich gebucht.</p>
-			<p style="margin:0;">Firmengolf meldet sich für die Detailabstimmung. Bitte den Termin fest einplanen.</p>
-		';
-		wp_mail( $data['partner_email'], 'Event gebucht: ' . $ref, fge_email_wrap( 'Event gebucht: ' . $ref, $pc ), [ 'Content-Type: text/html; charset=UTF-8' ] );
-	}
+	fge_partner_booking_confirmation( $request_id );
 
 	if ( $data['contact_email'] !== '' ) {
 		$pdf_c = function_exists( 'fge_offer_pdf_tempfile' ) ? fge_offer_pdf_tempfile( $request_id ) : '';
@@ -647,11 +658,140 @@ function fge_notify_offer_accepted( int $request_id ): void {
 			<p style="margin:0;">' . ( function_exists( 'fge_offer_link' ) ? fge_email_button( fge_offer_link( $request_id ), 'Buchung ansehen' ) : '' ) . '</p>
 		';
 		// Beleg für den Kunden: Link plus PDF (Audit 18.09.: vorher ohne Beleg im Postfach).
+		fge_mail_log_context( $request_id, 'booking_customer' );
 		wp_mail( $data['contact_email'], 'Buchung bestätigt: ' . $ref, fge_email_wrap( 'Buchung bestätigt: ' . $ref, $cc ), [ 'Content-Type: text/html; charset=UTF-8' ], '' !== $pdf_c ? [ $pdf_c ] : [] );
+		fge_mail_log_context_clear();
 		if ( function_exists( 'fge_offer_pdf_cleanup' ) ) {
 			fge_offer_pdf_cleanup( $pdf_c );
 		}
 	}
+}
+
+/**
+ * Auftragsbestätigung an den Golfplatz.
+ *
+ * Bis 1.9.266 bestand diese Mail aus zwei Sätzen ohne Kundenname, Teilnehmerzahl,
+ * Betrag und Rechnungsadresse, sodass Julius sie jedes Mal von Hand nachschieben
+ * musste (FG-26-165, 22.09.2026). Vorbild ist die Dienstleister-Auftrags-
+ * bestätigung weiter unten, die genau das schon richtig macht.
+ *
+ * Empfänger sind die Kontaktadresse des Platzes plus alle, die den Termin
+ * abgestimmt haben: das sind die Leute, die die Gruppe in Empfang nehmen.
+ */
+function fge_partner_booking_confirmation( int $req ): bool {
+	$data = fge_get_request_email_data( $req );
+	$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
+	$ref  = fge_request_number( $req );
+	$co   = function_exists( 'fge_company' ) ? fge_company() : [];
+
+	// Empfängerliste über die Registry, damit Mail und Vorschau nie auseinanderlaufen.
+	$to = [];
+	foreach ( fge_mail_recipients( 'booking_partner', $req ) as $r ) {
+		if ( empty( $r['missing'] ) && is_email( $r['email'] ) ) {
+			$to[ strtolower( $r['email'] ) ] = $r['email'];
+		}
+	}
+	if ( ! $to ) {
+		// Kein Empfänger: die interne Mail weist bereits darauf hin, hier nur protokollieren.
+		if ( function_exists( 'fge_activity_add' ) ) {
+			fge_activity_add( $req, 'system', 'Auftragsbestätigung an den Platz nicht möglich, keine Kontaktmail hinterlegt' );
+		}
+		return false;
+	}
+
+	$v       = function_exists( 'fge_day_values' ) ? fge_day_values( $req ) : [];
+	$date    = (string) ( $snap['date'] ?? '' );
+	$start   = (string) ( $v['day_start_time'] ?? '' );
+	$pax     = (int) ( $snap['participants'] ?? 0 );
+	$city    = (string) get_post_meta( $req, '_fge_company_city', true );
+	$level   = (string) get_post_meta( $req, '_fge_group_experience', true );
+	$cust    = trim( $data['first_name'] . ' ' . $data['last_name'] );
+	$cust_c  = trim( $cust . ( '' !== $data['phone'] ? ', ' . $data['phone'] : '' ), ', ' );
+	$company = $data['company_name'] ?: 'unser Kunde';
+
+	$group = $company . ( '' !== $city ? ' aus ' . $city : '' )
+		. ( $pax > 0 ? ', ' . $pax . ' Personen' : '' )
+		. ( '' !== $level ? ', ' . $level : '' );
+
+	$row = static function ( string $k, string $val ): string {
+		return '' === trim( wp_strip_all_tags( $val ) ) ? '' : '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;vertical-align:top;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $val . '</td></tr>';
+	};
+
+	// Gebuchte Leistungen wie in der Vortags-Info, ohne Preise.
+	$booked = array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) );
+	$sel    = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
+	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
+		if ( in_array( (int) ( $x['src'] ?? -1 ), $sel, true ) ) {
+			$booked[] = (string) ( $x['label'] ?? '' );
+		}
+	}
+	$booked_html = '';
+	foreach ( $booked as $b ) {
+		$booked_html .= '<li style="margin-bottom:3px;">' . esc_html( $b ) . '</li>';
+	}
+
+	$rows = $row( 'Termin', esc_html( trim( $date . ( '' !== $start ? ', Start ' . $start : '' ), ', ' ) ) )
+		. $row( 'Gruppe', esc_html( $group ) )
+		. $row( 'Ansprechpartner der Gruppe', esc_html( $cust_c ) )
+		. $row( 'Paket', esc_html( (string) ( $snap['event_title'] ?? $data['event_title'] ) ) )
+		. $row( 'Ablauf', '' !== (string) ( $snap['schedule'] ?? '' ) ? nl2br( esc_html( (string) $snap['schedule'] ) ) : '' )
+		. $row( 'Treffpunkt', esc_html( (string) ( $v['day_meeting_point'] ?? '' ) ) )
+		. $row( 'Vereinbarter Preis', esc_html( fge_partner_cost_text( $req, $pax ) ) )
+		. $row( 'Referenz', esc_html( $ref ) );
+
+	$invoice_to = trim( (string) ( $co['legal_name'] ?? 'Firmengolf' ) );
+	$invoice_ad = trim( (string) ( $co['hq_street'] ?? '' ) . ', ' . trim( (string) ( $co['hq_zip'] ?? '' ) . ' ' . (string) ( $co['hq_city'] ?? '' ) ), ', ' );
+	$invoice_em = (string) ( $co['email_partner'] ?? $co['email_events'] ?? '' );
+
+	$subject = 'Buchung bestätigt: ' . $company . ( '' !== $date ? ', ' . $date : '' ) . ' (' . $ref . ')';
+	$content = '
+		<p style="margin:0 0 16px;">Hallo,</p>
+		<p style="margin:0 0 16px;">der Kunde hat verbindlich gebucht. Hier die Buchung schriftlich:</p>
+		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
+		' . ( '' !== $booked_html ? '<p style="margin:0 0 4px;font-weight:600;">Inklusive</p><ul style="margin:0 0 16px;padding-left:20px;">' . $booked_html . '</ul>' : '' ) . '
+		<p style="margin:0 0 4px;font-weight:600;">Rechnung nach dem Event bitte an</p>
+		<p style="margin:0 0 16px;">' . esc_html( $invoice_to ) . '<br>' . esc_html( $invoice_ad )
+			. ( '' !== $invoice_em ? '<br>per Mail an <a href="mailto:' . esc_attr( $invoice_em ) . '" style="color:#4279D1;">' . esc_html( $invoice_em ) . '</a>' : '' )
+			. '<br>Verwendungszweck: <strong>' . esc_html( $ref ) . '</strong></p>
+		<p style="margin:0;">Für die Detailabstimmung melden wir uns rechtzeitig, den Ablauf und den Ansprechpartner der Gruppe schicken wir spätestens am Vortag. Bei Fragen einfach auf diese Mail antworten.</p>
+	';
+
+	$headers = [ 'Content-Type: text/html; charset=UTF-8' ];
+	if ( ! empty( $co['email_owner'] ) && is_email( $co['email_owner'] ) ) {
+		$headers[] = 'Bcc: ' . $co['email_owner'];
+	}
+
+	if ( function_exists( 'fge_mail_log_context' ) ) {
+		fge_mail_log_context( $req, 'booking_partner' );
+	}
+	$ok = (bool) wp_mail( array_values( $to ), $subject, fge_email_wrap( $subject, $content ), $headers );
+	if ( function_exists( 'fge_mail_log_context_clear' ) ) {
+		fge_mail_log_context_clear();
+	}
+	if ( $ok && function_exists( 'fge_activity_add' ) ) {
+		fge_activity_add( $req, 'system', 'Auftragsbestätigung an den Platz gesendet (' . implode( ', ', $to ) . ')' );
+	}
+	return $ok;
+}
+
+/** Vereinbarter Einkaufspreis des Platzes als Satz, leer wenn keiner hinterlegt ist. */
+function fge_partner_cost_text( int $req, int $pax = 0 ): string {
+	$cost = (float) get_post_meta( $req, '_fge_partner_cost', true );
+	if ( $cost <= 0 ) {
+		return '';
+	}
+	$gross = '0' !== (string) get_post_meta( $req, '_fge_partner_cost_gross', true );
+	$basis = 'pauschal' === (string) get_post_meta( $req, '_fge_partner_cost_basis', true ) ? 'pauschal' : 'person';
+	$tax   = $gross ? 'brutto' : 'netto';
+
+	if ( 'person' === $basis ) {
+		$txt = number_format_i18n( $cost, 2 ) . ' € ' . $tax . ' pro Person';
+		if ( $pax > 0 ) {
+			$txt .= ', gesamt ' . number_format_i18n( $cost * $pax, 2 ) . ' € ' . $tax;
+		}
+		return $txt;
+	}
+	return number_format_i18n( $cost, 2 ) . ' € ' . $tax . ' pauschal';
 }
 
 add_action( 'fge_offer_declined', 'fge_notify_offer_declined' );
@@ -743,10 +883,13 @@ function fge_xs_notify_providers_on_accept( int $req ): void {
 			continue;
 		}
 		if ( in_array( (int) $src, $sel, true ) ) {
+			fge_mail_log_context( $req, 'provider_confirm' );
 			fge_xs_provider_confirmation( $req, $item );
 		} else {
+			fge_mail_log_context( $req, 'provider_cancel' );
 			fge_xs_provider_cancellation( $req, $item, 'Der Kunde hat diese Zusatzleistung abgewählt, das übrige Event findet statt.' );
 		}
+		fge_mail_log_context_clear();
 	}
 }
 

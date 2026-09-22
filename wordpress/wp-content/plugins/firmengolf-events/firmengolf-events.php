@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.266' );
+define( 'FGE_VERSION', '1.9.267' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -69,6 +69,12 @@ require_once FGE_DIR . 'includes/rest-media.php';
 require_once FGE_DIR . 'includes/media-widget.php';
 require_once FGE_DIR . 'includes/golfplatz-verzeichnis.php';
 require_once FGE_DIR . 'includes/simulatoren-data.php';
+
+// Control Center (internes Werkzeug, eigene Oberfläche, eigenes Stylesheet).
+require_once FGE_DIR . 'includes/mail-log.php';
+require_once FGE_DIR . 'includes/mail-registry.php';
+require_once FGE_DIR . 'includes/activity.php';
+require_once FGE_DIR . 'includes/cc-tasks.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once FGE_DIR . 'includes/cli-migrations.php';

@@ -1,6 +1,6 @@
 # Prozess: von der Anfrage bis zur Rechnung
 
-Stand 18.09.2026, Plugin 1.9.265. Was das System automatisch macht und was Julius von Hand macht, mit allen Mails. Beispiel am Ende: FG-26-165, Kanzlei Blumenau, Golfpark Weidenhof, 30.09.2026.
+Stand 22.09.2026, Plugin 1.9.267. Was das System automatisch macht und was Julius von Hand macht, mit allen Mails. Beispiel am Ende: FG-26-165, Kanzlei Blumenau, Golfpark Weidenhof, 30.09.2026.
 
 ## Überblick
 
@@ -9,7 +9,8 @@ Stand 18.09.2026, Plugin 1.9.265. Was das System automatisch macht und was Juliu
 | 1 Eingang | Kunde schickt Anfrage (Eventseite, Anfrage-Wizard, Kontaktformular) | Vorgangsnummer FG-JJ-NNN, Status, Bestätigung an Kunden, Info an events@, Termin-Links an Platz-Kontakte | nichts, außer bei „Von Firmengolf organisiert" |
 | 2 Termin | Platz-Kontakte stimmen ab, oder Julius bestätigt in Schritt 1 | Erinnerungen, Eskalation, Termin-Bestätigung | Selbstplaner: Preis beim Platz holen, Schritt 2 füllen, Termin bestätigen |
 | 3 Angebot | Termin bestätigt | Angebot mit PDF an Kunden, Frist 7 Tage, Erinnerung, Eskalation | nur bei unbepreisten Zusatzwünschen: Positionen bepreisen, „Angebot jetzt senden" |
-| 4 Annahme | Kunde klickt „Angebot annehmen" | Auftrag steht (intern), Event gebucht (Platz), Buchung bestätigt mit PDF (Kunde), Dienstleister-Aufträge | Platz zuordnen (falls noch nicht), Schritt 4 ausfüllen, Details abstimmen |
+| 4 Annahme | Kunde klickt „Angebot annehmen" | Auftrag steht (intern), Auftragsbestätigung mit Betrag und Rechnungsadresse (Platz), Buchung bestätigt mit PDF (Kunde), Dienstleister-Aufträge | Platz zuordnen (falls noch nicht), Einkaufspreis eintragen, Schritt 4 ausfüllen, Details abstimmen |
+| 4b Ablauf | Startzeit und Treffpunkt gefüllt | Ablauf-Info an den Kunden | nichts |
 | 5 Vortag | Cron 07:00 am Tag vor dem Termin | Vortags-Info an Kunde, Platz, events@ | nichts, Kontrolle über die interne Mail |
 | 6 Event | Eventtag | nichts | Erreichbarkeit |
 | 7 Nachlauf | Status „Event durchgeführt" | Bewertungsbitte mit Google-Link | Rechnung in Lexoffice, Status setzen, Eingangsrechnung des Platzes prüfen, abschließen |
@@ -60,15 +61,22 @@ Stand 18.09.2026, Plugin 1.9.265. Was das System automatisch macht und was Juliu
 **Kunde** klickt mit AGB-Häkchen „Angebot annehmen", wählt Zusatzleistungen ab oder an. Status `angebot_angenommen`. Nach Fristablauf wird eine Annahme zur Rückfrage (Termin nicht mehr garantiert), Julius prüft und bestätigt manuell.
 
 **Mails:**
-- events@: „Auftrag steht: FG-…" mit Termin, Firma, Event, Platz, Abrechnungsübersicht der Zusatzleistungen (Einkauf, Marge, Dienstleister, nur intern), Hinweis auf Schritt 4. Mit Partnercode zusätzlich der Block „Partnercode (intern)": Code, Inhaber, Kontakt, Rabatt in Euro, Provision in Euro (offen). Rabatt und Provision gehen zulasten der Firmengolf-Marge, der Platz bekommt sein volles Netto.
-- Platz: „Event gebucht: FG-…" (ohne Preise).
+- events@: „Auftrag steht: FG-…" mit Termin, Firma, Event, Platz, Einkaufspreis des Platzes, Abrechnungsübersicht der Zusatzleistungen (Einkauf, Marge, Dienstleister, nur intern), Hinweis auf Schritt 4. Rot markiert, wenn der Platz keine Kontaktmail hat oder kein Einkaufspreis hinterlegt ist. Mit Partnercode zusätzlich der Block „Partnercode (intern)": Code, Inhaber, Kontakt, Rabatt in Euro, Provision in Euro (offen). Rabatt und Provision gehen zulasten der Firmengolf-Marge, der Platz bekommt sein volles Netto.
+- Platz: „Buchung bestätigt: <Firma>, <Datum> (FG-…)" als vollwertige Auftragsbestätigung an die Kontaktmail und alle Terminabstimmer, BCC an Julius. Enthält Termin mit Startzeit, Gruppe (Firma, Ort, Personenzahl, Niveau), Ansprechpartner der Gruppe mit Telefon, Paket, Ablauf, Treffpunkt, vereinbarten Einkaufspreis mit Brutto- oder Netto-Kennung, Inklusivleistungen, unsere Rechnungsadresse und den Verwendungszweck. Bis 1.9.266 waren das zwei nichtssagende Sätze, die Julius jedes Mal von Hand nachschieben musste.
 - Kunde: „Buchung bestätigt: FG-…" mit Link zur Buchungsübersicht und PDF.
 - Dienstleister je Position: Auftrag oder Absage mit dem vereinbarten Einkaufspreis.
 
 **Julius:**
 1. Platz zuordnen, falls noch nicht (Anfrage Basis).
-2. Schritt 4 „Event-Tag": Startzeit, Treffpunkt, Ansprechpartner vor Ort mit Telefon, Golflehrer, Hinweise. Vorbelegt aus dem Partnerprofil.
-3. Details mit dem Platz abstimmen (Telefon oder Mail, außerhalb des Systems).
+2. Einkaufspreis des Platzes in Schritt 2 eintragen („Vereinbart mit dem Platz", brutto oder netto, p.P. oder pauschal), sonst nennt die Auftragsbestätigung keinen Betrag.
+3. Schritt 4 „Event-Tag": Startzeit, Treffpunkt, Ansprechpartner vor Ort mit Telefon, Golflehrer, Mitbringen, Hinweise. Vorbelegt aus dem Partnerprofil.
+4. Details mit dem Platz abstimmen (Telefon oder Mail, außerhalb des Systems).
+
+## Phase 4b: Ablauf an den Kunden (seit 1.9.267)
+
+Zwischen Buchungsbestätigung und Vortags-Info lagen bisher bis zu acht Tage ohne jeden Kontakt zum Kunden, obwohl Treffpunkt und Ansprechpartner oft am selben Tag feststehen.
+
+**Automatisch:** Sobald Startzeit und Treffpunkt in Schritt 4 erstmals gespeichert sind, geht einmalig „Der Ablauf für euren Eventtag" an den Kunden: Wann, Wo mit Adresse, Treffpunkt, Ansprechpartner vor Ort, was mitzubringen ist, die Ankündigung dass Golflehrer und Ablauf am Vortag folgen, Mobilnummer für den Tag. Gate: `_fge_day_plan_sent`. Manuell jederzeit über „Ablauf-Info jetzt senden" in Schritt 4.
 
 ## Phase 5: Vortag
 

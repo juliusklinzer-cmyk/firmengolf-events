@@ -5,6 +5,12 @@ Alle transaktionalen Mails der Plattform. Quelle der Wahrheit ist der Code
 `partner-portal.php`, `request-followups.php`, `login-branding.php`).
 Stand: 2026-07-08 (FGE_VERSION 1.9.83, nach Kern-Audit).
 
+**Registry und Protokoll (seit 1.9.267):** `includes/mail-registry.php` beschreibt jede Mail
+einmal (Schlüssel, Empfängerauflösung, Inhaltspunkte) und speist daraus die Folgen-Vorschau
+am Aktionsknopf und den Postausgang. `includes/mail-log.php` protokolliert jeden Versand
+über `wp_mail_succeeded` / `wp_mail_failed` in `wp_fge_mail_log`, zugeordnet über die
+Vorgangsnummer im Betreff. Vorher war nicht feststellbar, ob eine Mail ankam.
+
 **Gemeinsamer Stil:** Rahmen `fge_email_wrap()` (Firmengolf-Kopf, Impressum-Fußzeile),
 Absender `events@firmengolf-events.de` (mail-config.php, inkl. Reply-To),
 Buttons über `fge_email_button()` (einheitlich kompakt), Versand via WP Mail SMTP → Brevo.
@@ -38,8 +44,9 @@ Keine Gedankenstriche, Preise im Format „XX € p.P./Gesamt netto".
 | 12 | Erinnerung: euer Angebot ({FG-Nr}) | Kunde reagiert 3 Tage nicht (Cron, Filter `fge_offer_reminder_days`) | Kunde | Frist läuft, Termin noch reserviert |
 | 13 | Rückfrage zum Angebot: {FG-Nr} | Kunde stellt Rückfrage oder nimmt nach Fristablauf an (`fge_offer_query`, idempotent) | intern | Rückfrage-Text bzw. „Termin prüfen" |
 | 14 | Auftrag steht: {FG-Nr} | Kunde nimmt an (`fge_offer_accepted`) | intern | Buchung eingegangen + Abrechnungsübersicht der Zusatzleistungen (Kundenpreis, Einkauf, Marge, Dienstleister; nur intern) |
-| 15 | Event gebucht: {FG-Nr} | Kunde nimmt an | Partner | Euer Platz ist gebucht (ohne Zusatzleistungs-Details) |
+| 15 | Buchung bestätigt: {Firma}, {Datum} ({FG-Nr}) | Kunde nimmt an (`fge_partner_booking_confirmation`) | Partner: Kontaktmail **plus alle Terminabstimmer**, BCC Julius | Auftragsbestätigung wie an Dienstleister: Termin mit Startzeit, Gruppe (Firma, Ort, Personen, Niveau), Ansprechpartner der Gruppe mit Telefon, Paket, Ablauf, Treffpunkt, vereinbarter Einkaufspreis mit Brutto/Netto-Kennung, Inklusivleistungen, Rechnungsadresse und Verwendungszweck. Ohne Kontaktmail geht nichts raus, die interne Mail 14 warnt dann rot |
 | 16 | Buchung bestätigt: {FG-Nr} | Kunde nimmt an | Kunde | Verbindliche Buchungsbestätigung |
+| 16a | Der Ablauf für euren Eventtag: {Event} am {Datum} | Startzeit und Treffpunkt erstmals gefüllt (`save_post`, einmalig über `_fge_day_plan_sent`) oder Button „Ablauf-Info jetzt senden" | Kunde | Wann, Wo mit Adresse, Treffpunkt, Ansprechpartner vor Ort, was mitzubringen ist, Ankündigung dass Golflehrer und Ablauf am Vortag folgen, Mobilnummer. Schließt die Lücke zwischen Buchung und Vortags-Info |
 | 17 | Angebot abgelehnt: {FG-Nr} | Kunde lehnt ab (`fge_offer_declined`, mit Confirm-Dialog) | intern | Absage + Kontext |
 | 17a | Auftragsbestätigung Firmengolf: {Leistung} am {Datum} ({FG-Nr}) | Kunde nimmt an, Position gewählt (`fge_xs_provider_confirmation`) | Dienstleister der Zusatzleistung | Beauftragung mit vereinbartem Einkaufspreis, Termin, Ort, Teilnehmer, Rechnungsadresse; nie Verkaufspreis/Marge |
 | 17b | Absage Firmengolf: {Leistung} am {Datum} ({FG-Nr}) | Position vom Kunden abgewählt, Angebot abgelehnt oder Anfrage terminal geschlossen (`fge_xs_provider_cancellation`, einmaliger Guard) | Dienstleister der Zusatzleistung | Kein Auftrag, freundliche Absage |

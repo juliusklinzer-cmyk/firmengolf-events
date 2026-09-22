@@ -29,6 +29,7 @@ function fge_day_fields(): array {
 		'day_onsite_name'  => [ 'Ansprechpartner vor Ort', 'text', 'Name' ],
 		'day_onsite_phone' => [ 'Telefon vor Ort', 'text', 'Mobilnummer für den Tag' ],
 		'day_pro'          => [ 'Golflehrer / Pro', 'text', 'Name' ],
+		'day_bring_along'  => [ 'Mitbringen', 'text', 'z. B. nichts, Schläger und Bälle gibt es vor Ort' ],
 		'day_notes'        => [ 'Hinweise', 'textarea', 'z. B. Kleidung, Parken, Regenplan' ],
 	];
 }
@@ -103,6 +104,20 @@ function fge_render_rmb_eventtag( WP_Post $post ): void {
 	echo '</table>';
 
 	if ( 'accepted' === $status ) {
+		// Ablauf-Info: schließt die Lücke zwischen Buchung und Vortag. Geht beim
+		// Speichern von allein raus, sobald Startzeit und Treffpunkt stehen.
+		$plan_sent = (string) get_post_meta( $req, '_fge_day_plan_sent', true );
+		echo '<p style="margin:12px 0 0;">';
+		if ( '' !== $plan_sent ) {
+			echo '<span style="display:inline-block;margin-right:10px;color:#2C7A3D;">✓ Ablauf-Info an den Kunden am ' . esc_html( wp_date( 'd.m.Y H:i', (int) $plan_sent ) ) . ' Uhr.</span>';
+		}
+		fge_admin_post_button( 'fge_send_day_plan', [ 'request_id' => $req ], '' !== $plan_sent ? 'Ablauf-Info erneut senden' : 'Ablauf-Info jetzt senden', [
+			'class'        => 'button',
+			'confirm'      => 'Ablauf-Info mit Treffpunkt und Ansprechpartner jetzt an den Kunden senden? Vorher speichern.',
+			'nonce_action' => 'fge_send_day_plan_' . $req,
+		] );
+		echo '<span class="description" style="margin-left:8px;">Geht an den Kunden, ohne Golflehrer und Ablauf.</span></p>';
+
 		echo '<p style="margin:12px 0 0;">';
 		fge_admin_post_button( 'fge_send_day_info', [ 'request_id' => $req ], '' !== $sent ? 'Vortags-Info erneut senden' : 'Vortags-Info jetzt senden', [
 			'class'        => 'button' . ( '' === $sent ? ' button-primary' : '' ),
@@ -287,9 +302,10 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 		. $row( 'Termin', esc_html( $date ) )
 		. $row( 'Start', esc_html( $v['day_start_time'] ) )
 		. $row( 'Treffpunkt', esc_html( $v['day_meeting_point'] ) )
-		. $row( 'Ort', esc_html( $loc ) . ( '' !== $addr ? '<br>' . esc_html( $addr ) : '' ) )
+		. $row( 'Ort', fge_day_location_line( $loc, $addr ) )
 		. $row( 'Ansprechpartner vor Ort', esc_html( $onsite ) )
 		. $row( 'Golflehrer', esc_html( $v['day_pro'] ) )
+		. $row( 'Mitbringen', esc_html( $v['day_bring_along'] ) )
 		. $row( 'Ablauf', $sched )
 		. $row( 'Teilnehmer', $pax > 0 ? $pax . ' Personen' : '' )
 		. $row( 'Hinweise', $notes );
@@ -316,6 +332,7 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 			. $row( 'Treffpunkt', esc_html( $v['day_meeting_point'] ) )
 			. $row( 'Die Gruppe meldet sich bei', esc_html( $onsite ) )
 			. $row( 'Golflehrer', esc_html( $v['day_pro'] ) )
+			. $row( 'Bringt die Gruppe mit', esc_html( $v['day_bring_along'] ) )
 			. $row( 'Ablauf', $sched )
 			. $row( 'Kontakt beim Kunden', esc_html( $cust_c ) )
 			. $row( 'Hinweise', $notes );
@@ -344,7 +361,7 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 		. $row( 'Event', esc_html( $title ) )
 		. $row( 'Termin', esc_html( $date ) )
 		. $row( 'Start', esc_html( $v['day_start_time'] ) )
-		. $row( 'Ort', esc_html( $loc ) . ( '' !== $addr ? '<br>' . esc_html( $addr ) : '' ) )
+		. $row( 'Ort', fge_day_location_line( $loc, $addr ) )
 		. $row( 'Platz', esc_html( $data['partner_title'] ) )
 		. $row( 'Treffpunkt', esc_html( $v['day_meeting_point'] ) )
 		. $row( 'Vor Ort', esc_html( $onsite ) )
@@ -373,3 +390,163 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 	}
 	return $results['kunde'];
 }
+
+// ── Ablauf-Info direkt nach der Buchung ──────────────────────────────────────
+/**
+ * Zwischen Buchungsbestätigung und Vortags-Info lagen bisher bis zu acht Tage
+ * ohne jeden Kontakt zum Kunden (Befund 22.09.2026), obwohl Treffpunkt und
+ * Ansprechpartner oft schon am Tag der Buchung feststehen. Diese Mail schließt
+ * die Lücke: sie geht raus, sobald Startzeit und Treffpunkt erstmals gefüllt
+ * sind, und kündigt an, dass Golflehrer und Ablauf am Vortag folgen.
+ *
+ * Vorlage ist die von Hand getippte Mail an die Kundin von FG-26-165.
+ */
+
+/**
+ * Ort plus Adresse, ohne Dopplung.
+ *
+ * Der Veranstaltungsort aus dem Angebot enthält oft schon die vollständige
+ * Anschrift („Golfpark Weidenhof, Mühlenstraße 140, 25421 Pinneberg"). Die
+ * Adresse aus dem Partnerprofil darunter zu wiederholen, sah nach Fehler aus.
+ */
+function fge_day_location_line( string $loc, string $addr ): string {
+	$loc  = trim( $loc );
+	$addr = trim( $addr, " \t\n\r\0\x0B," );
+	if ( '' === $addr ) {
+		return esc_html( $loc );
+	}
+	if ( '' === $loc ) {
+		return esc_html( $addr );
+	}
+	// Steht die Postleitzahl oder die Straße schon im Ort, reicht der Ort.
+	$haystack = mb_strtolower( $loc );
+	foreach ( preg_split( '/[,\s]+/', mb_strtolower( $addr ) ) as $part ) {
+		if ( mb_strlen( $part ) >= 4 && false !== mb_strpos( $haystack, $part ) ) {
+			return esc_html( $loc );
+		}
+	}
+	return esc_html( $loc ) . '<br>' . esc_html( $addr );
+}
+
+/** Stehen die Eckdaten für die Ablauf-Info? */
+function fge_day_plan_ready( int $req ): bool {
+	if ( 'accepted' !== (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
+		return false;
+	}
+	$v = fge_day_values( $req );
+	return '' !== $v['day_start_time'] && '' !== $v['day_meeting_point'];
+}
+
+/** Ablauf-Info an den Kunden. Gibt false zurück, wenn nichts versendet wurde. */
+function fge_send_day_plan( int $req ): bool {
+	$data = fge_get_request_email_data( $req );
+	$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
+	if ( '' === $data['contact_email'] || empty( $snap ) ) {
+		return false;
+	}
+	$co    = function_exists( 'fge_company' ) ? fge_company() : [];
+	$v     = fge_day_values( $req );
+	$ref   = fge_request_number( $req );
+	$title = (string) ( $snap['event_title'] ?? 'euer Event' );
+	$date  = (string) ( $snap['date'] ?? '' );
+	$loc   = (string) ( $snap['location'] ?? '' );
+
+	$partner_id = (int) $data['partner_id'];
+	$addr       = '';
+	if ( $partner_id > 0 ) {
+		$pm   = static fn( string $k ): string => trim( (string) get_post_meta( $partner_id, $k, true ) );
+		$addr = trim( $pm( '_fge_street' ) . ', ' . trim( $pm( '_fge_postal_code' ) . ' ' . $pm( '_fge_city' ) ), ', ' );
+	}
+
+	$row = static function ( string $k, string $val ): string {
+		return '' === trim( wp_strip_all_tags( $val ) ) ? '' : '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;vertical-align:top;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $val . '</td></tr>';
+	};
+	$onsite = trim( $v['day_onsite_name'] . ( '' !== $v['day_onsite_phone'] ? ', ' . $v['day_onsite_phone'] : '' ), ', ' );
+	$when   = trim( $date . ( '' !== $v['day_start_time'] ? ', ' . $v['day_start_time'] : '' ), ', ' );
+	$mobile = (string) ( $co['whatsapp_display'] ?? $co['phone_display'] ?? '' );
+
+	$rows = $row( 'Wann', esc_html( $when ) )
+		. $row( 'Wo', fge_day_location_line( $loc, $addr ) )
+		. $row( 'Treffpunkt', esc_html( $v['day_meeting_point'] ) )
+		. $row( 'Ansprechpartner vor Ort', esc_html( $onsite ) )
+		. $row( 'Mitbringen', esc_html( $v['day_bring_along'] ) )
+		. $row( 'Golflehrer', esc_html( $v['day_pro'] ) );
+
+	// Was am Vortag noch nachkommt, wird ausdrücklich angekündigt statt verschwiegen.
+	$open = [];
+	if ( '' === $v['day_pro'] ) {
+		$open[] = 'wer euer Golflehrer ist';
+	}
+	if ( '' === trim( (string) ( $snap['schedule'] ?? '' ) ) ) {
+		$open[] = 'wie der Ablauf genau aussieht';
+	}
+
+	$subject = 'Der Ablauf für euren Eventtag: ' . $title . ' am ' . $date;
+	$content = '
+		<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ',</p>
+		<p style="margin:0 0 16px;">der Termin ist fix. Hier alles, was ihr für den Tag braucht:</p>
+		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
+		' . ( $open ? '<p style="margin:0 0 16px;">' . esc_html( ucfirst( implode( ' und ', $open ) ) ) . ', schicken wir euch einen Tag vor der Veranstaltung.</p>' : '' ) . '
+		' . ( '' !== $mobile ? '<p style="margin:0 0 16px;">Falls am Tag selbst etwas ist, erreicht ihr uns unter ' . esc_html( $mobile ) . '.</p>' : '' ) . '
+		<p style="margin:0 0 16px;">Viel Spaß bei eurem Teamevent!</p>
+		' . ( function_exists( 'fge_offer_link' ) ? '<p style="margin:0;color:#6C736E;font-size:13px;">Eure Buchung im Überblick: <a href="' . esc_url( fge_offer_link( $req ) ) . '" style="color:#4279D1;">Buchung ' . esc_html( $ref ) . '</a></p>' : '' ) . '
+	';
+
+	if ( function_exists( 'fge_mail_log_context' ) ) {
+		fge_mail_log_context( $req, 'day_plan_customer' );
+	}
+	$ok = (bool) wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	if ( function_exists( 'fge_mail_log_context_clear' ) ) {
+		fge_mail_log_context_clear();
+	}
+
+	if ( $ok ) {
+		update_post_meta( $req, '_fge_day_plan_sent', time() );
+		if ( function_exists( 'fge_activity_add' ) ) {
+			fge_activity_add( $req, 'system', 'Ablauf-Info an den Kunden gesendet' );
+		}
+	}
+	return $ok;
+}
+
+// Automatik: sobald Startzeit und Treffpunkt erstmals stehen, einmalig.
+add_action( 'save_post', static function ( int $post_id ) {
+	if ( ! isset( $_POST['fge_day_meeting_point'] )
+		|| ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+		|| wp_is_post_revision( $post_id )
+		|| get_post_type( $post_id ) !== 'firmengolf_request'
+		|| ! current_user_can( 'edit_post', $post_id ) ) {
+		return;
+	}
+	if ( '' !== (string) get_post_meta( $post_id, '_fge_day_plan_sent', true ) ) {
+		return; // Gate: nur einmal von allein.
+	}
+	if ( function_exists( 'fge_is_demo_request' ) && fge_is_demo_request( $post_id ) ) {
+		return;
+	}
+	if ( fge_day_plan_ready( $post_id ) ) {
+		fge_send_day_plan( $post_id );
+	}
+}, 30 );
+
+add_action( 'admin_post_fge_send_day_plan', static function () {
+	$req = absint( $_POST['request_id'] ?? 0 );
+	if ( $req <= 0 || ! current_user_can( 'edit_post', $req ) ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
+	}
+	check_admin_referer( 'fge_send_day_plan_' . $req );
+	$ok = fge_send_day_plan( $req );
+	wp_safe_redirect( add_query_arg( [ 'fge_day_plan' => $ok ? 1 : 0 ], get_edit_post_link( $req, 'raw' ) ) );
+	exit;
+} );
+
+add_action( 'admin_notices', static function () {
+	if ( ! isset( $_GET['fge_day_plan'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return;
+	}
+	if ( '1' === (string) $_GET['fge_day_plan'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		echo '<div class="notice notice-success is-dismissible"><p>Ablauf-Info an den Kunden gesendet.</p></div>';
+	} else {
+		echo '<div class="notice notice-error is-dismissible"><p>Ablauf-Info konnte nicht gesendet werden (keine Kunden-Mailadresse oder kein Angebot).</p></div>';
+	}
+} );

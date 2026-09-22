@@ -242,6 +242,30 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 	</p>
 
 	<?php
+	// Einkaufspreis des Platzes (Julius, 22.09.2026): Für das Green Fee gab es bisher
+	// kein Feld, obwohl er telefonisch verhandelt wird. Er steht in der Auftrags-
+	// bestätigung an den Platz und in der internen Margenübersicht, nie beim Kunden.
+	// Brutto/Netto ist Pflicht, weil mit dem Platz brutto verhandelt wird (49 € p.P.),
+	// das Angebot an den Kunden aber netto läuft.
+	$pc_cost  = (string) get_post_meta( $req, '_fge_partner_cost', true );
+	$pc_basis = (string) get_post_meta( $req, '_fge_partner_cost_basis', true );
+	$pc_gross = '1' === (string) get_post_meta( $req, '_fge_partner_cost_gross', true );
+	?>
+	<p style="margin:16px 0 4px;"><strong>Vereinbart mit dem Platz (Einkauf, intern)</strong></p>
+	<p class="description" style="margin:0 0 6px;">Der Preis, den der Golfplatz uns in Rechnung stellt. Steht in der Auftragsbestätigung an den Platz, damit er weiß, was er fakturieren darf. Der Kunde sieht diesen Wert nie.</p>
+	<p style="margin:0;">
+		<input type="text" name="fge_partner_cost" value="<?php echo esc_attr( '' !== $pc_cost ? number_format( (float) $pc_cost, 2, ',', '.' ) : '' ); ?>" placeholder="z. B. 49,00" style="width:130px;"> €
+		<select name="fge_partner_cost_gross" style="margin-left:8px;">
+			<option value="1" <?php selected( $pc_gross, true ); ?>>brutto</option>
+			<option value="0" <?php selected( $pc_gross, false ); ?>>netto</option>
+		</select>
+		<select name="fge_partner_cost_basis" style="margin-left:8px;">
+			<option value="person" <?php selected( $pc_basis, 'person' ); ?>>p.P.</option>
+			<option value="pauschal" <?php selected( $pc_basis, 'pauschal' ); ?>>pauschal</option>
+		</select>
+	</p>
+
+	<?php
 	// Angebotstext für Position 1 (Julius, 17.09.2026): Ort, Ablauf und Leistungen
 	// stehen im Angebot zusammen unter dem Event. Leer = Angaben des zugeordneten Events.
 	$ov_loc  = (string) get_post_meta( $req, '_fge_offer_location', true );
@@ -392,6 +416,18 @@ function fge_save_extra_services( int $post_id ) {
 	} else {
 		delete_post_meta( $post_id, '_fge_offer_base_override' );
 		delete_post_meta( $post_id, '_fge_offer_base_override_unit' );
+	}
+
+	// Einkaufspreis des Platzes (intern, nie beim Kunden).
+	$pc = fge_xs_parse_num( sanitize_text_field( wp_unslash( $_POST['fge_partner_cost'] ?? '' ) ) );
+	if ( $pc > 0 ) {
+		update_post_meta( $post_id, '_fge_partner_cost', $pc );
+		update_post_meta( $post_id, '_fge_partner_cost_basis', 'pauschal' === sanitize_text_field( wp_unslash( $_POST['fge_partner_cost_basis'] ?? '' ) ) ? 'pauschal' : 'person' );
+		update_post_meta( $post_id, '_fge_partner_cost_gross', '0' === (string) ( $_POST['fge_partner_cost_gross'] ?? '1' ) ? 0 : 1 );
+	} else {
+		delete_post_meta( $post_id, '_fge_partner_cost' );
+		delete_post_meta( $post_id, '_fge_partner_cost_basis' );
+		delete_post_meta( $post_id, '_fge_partner_cost_gross' );
 	}
 
 	// Angebotstext zu Position 1 (Ort, Ablauf, Leistungen), leer = Event-Angaben.
