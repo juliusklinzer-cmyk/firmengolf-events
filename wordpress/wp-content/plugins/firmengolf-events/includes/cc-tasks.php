@@ -45,6 +45,64 @@ function fge_cc_terminal_statuses(): array {
 }
 
 /**
+ * Anfragen holen, mit ehrlicher Obergrenze.
+ *
+ * Bei zwanzig Anfragen am Tag kommen im Jahr rund fünftausend zusammen. Eine
+ * pauschale Grenze würde dann stillschweigend Vorgänge verschlucken, ohne dass
+ * es jemandem auffällt. Deshalb zwei Dinge: der Arbeitsvorrat wird über den
+ * Status eingegrenzt statt über eine Zahl, und wenn doch abgeschnitten wird,
+ * sagt die Oberfläche es.
+ *
+ * @return array{ids: int[], truncated: bool, limit: int}
+ */
+function fge_cc_query_requests( array $args = [], int $limit = 500 ): array {
+	$defaults = [
+		'post_type'      => 'firmengolf_request',
+		'post_status'    => [ 'publish', 'draft' ],
+		'posts_per_page' => $limit + 1, // eine mehr, um das Abschneiden zu erkennen
+		'fields'         => 'ids',
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+		'no_found_rows'  => true,
+	];
+	$ids = get_posts( array_merge( $defaults, $args ) );
+
+	$truncated = count( $ids ) > $limit;
+	if ( $truncated ) {
+		$ids = array_slice( $ids, 0, $limit );
+	}
+	if ( $ids ) {
+		_prime_post_caches( $ids, false, true );
+	}
+	return [ 'ids' => $ids, 'truncated' => $truncated, 'limit' => $limit ];
+}
+
+/** Meta-Bedingung: nur Vorgänge, an denen noch etwas zu tun ist. */
+function fge_cc_open_meta_query(): array {
+	return [
+		'relation' => 'OR',
+		[
+			'key'     => '_fge_request_status',
+			'value'   => fge_cc_terminal_statuses(),
+			'compare' => 'NOT IN',
+		],
+		[
+			'key'     => '_fge_request_status',
+			'compare' => 'NOT EXISTS', // frisch angelegt, noch ohne Status
+		],
+	];
+}
+
+/** Hinweis, wenn eine Liste abgeschnitten wurde. */
+function fge_cc_truncation_note( array $result, string $what ): void {
+	if ( empty( $result['truncated'] ) ) {
+		return;
+	}
+	echo '<p class="cc-msg cc-msg--err">Es werden die neuesten ' . (int) $result['limit'] . ' ' . esc_html( $what )
+		. ' gezeigt, es gibt ältere. Grenze die Liste über Suche oder Filter ein.</p>';
+}
+
+/**
  * Phase einer Anfrage: [nummer, name].
  * Deckungsgleich mit docs/prozess-anfrage-bis-rechnung.md.
  */
@@ -90,26 +148,80 @@ function fge_cc_local_ts( string $ymd ): int {
 	return $dt ? $dt->getTimestamp() : 0;
 }
 
-/** Eventdatum als Zeitstempel (lokale Mitternacht), 0 wenn keines feststeht. */
+/**
+ * Eventdatum als Zeitstempel (lokale Mitternacht), 0 wenn keines feststeht.
+ *
+ * Das Datum steht im Angebots-Snapshot als Text („Mi, 30.09.2026") und ist
+ * damit nicht abfragbar. Der berechnete Zeitstempel wird deshalb in
+ * `_fge_event_ts` mitgeschrieben, sodass der Kalender nach Zeitraum suchen
+ * kann, statt alle Vorgänge durchzugehen.
+ */
 function fge_cc_event_date( int $req ): int {
+	$ts = 0;
 	if ( function_exists( 'fge_day_event_date' ) ) {
 		$d = fge_day_event_date( $req );
 		if ( is_numeric( $d ) && (int) $d > 0 ) {
-			return (int) $d;
-		}
-		if ( is_string( $d ) && '' !== $d ) {
-			return fge_cc_local_ts( $d );
+			$ts = (int) $d;
+		} elseif ( is_string( $d ) && '' !== $d ) {
+			$ts = fge_cc_local_ts( $d );
 		}
 	}
-	$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
-	$date = (string) ( $snap['date'] ?? '' );
-	if ( '' === $date ) {
-		return 0;
+	if ( $ts <= 0 ) {
+		$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
+		$date = (string) ( $snap['date'] ?? '' );
+		if ( '' !== $date ) {
+			// Erst normalisieren, dann in der Zeitzone der Site verankern.
+			$parsed = strtotime( $date );
+			$ts     = $parsed > 0 ? fge_cc_local_ts( gmdate( 'Y-m-d', $parsed ) ) : 0;
+		}
 	}
-	// Der Snapshot hält das Datum als Text („Mi, 30.09.2026"), deshalb erst
-	// normalisieren, dann in der Zeitzone der Site verankern.
-	$ts = strtotime( $date );
-	return $ts > 0 ? fge_cc_local_ts( gmdate( 'Y-m-d', $ts ) ) : 0;
+
+	// Nur schreiben, wenn sich etwas geändert hat: sonst schreibt jede Anzeige.
+	$stored = (int) get_post_meta( $req, '_fge_event_ts', true );
+	if ( $ts !== $stored ) {
+		if ( $ts > 0 ) {
+			update_post_meta( $req, '_fge_event_ts', $ts );
+		} else {
+			delete_post_meta( $req, '_fge_event_ts' );
+		}
+	}
+	return $ts;
+}
+
+/**
+ * Einmalige Nachpflege des Datumsfeldes für Altbestand.
+ *
+ * Läuft als Cron in Blöcken, damit keine Seite darauf wartet, und meldet sich
+ * ab, sobald alles durch ist.
+ */
+add_action( 'init', static function (): void {
+	if ( '1' === (string) get_option( 'fge_cc_event_ts_done' ) || wp_next_scheduled( 'fge_cc_backfill_event_ts' ) ) {
+		return;
+	}
+	wp_schedule_single_event( time() + 60, 'fge_cc_backfill_event_ts' );
+}, 12 );
+
+add_action( 'fge_cc_backfill_event_ts', 'fge_cc_backfill_event_ts' );
+function fge_cc_backfill_event_ts(): void {
+	$ids = get_posts( [
+		'post_type'      => 'firmengolf_request',
+		'post_status'    => [ 'publish', 'draft' ],
+		'posts_per_page' => 300,
+		'fields'         => 'ids',
+		'no_found_rows'  => true,
+		'meta_query'     => [ [ 'key' => '_fge_event_ts_checked', 'compare' => 'NOT EXISTS' ] ],
+	] );
+
+	if ( ! $ids ) {
+		update_option( 'fge_cc_event_ts_done', '1', false );
+		return;
+	}
+	_prime_post_caches( $ids, false, true );
+	foreach ( $ids as $id ) {
+		fge_cc_event_date( (int) $id ); // schreibt _fge_event_ts mit
+		update_post_meta( (int) $id, '_fge_event_ts_checked', 1 );
+	}
+	wp_schedule_single_event( time() + 60, 'fge_cc_backfill_event_ts' );
 }
 
 /** Alter in Tagen seit dem letzten Statuswechsel. */
@@ -347,18 +459,11 @@ function fge_cc_worklist(): array {
 	if ( null !== $cache ) {
 		return $cache;
 	}
-	$requests = get_posts( [
-		'post_type'   => 'firmengolf_request',
-		'post_status' => [ 'publish', 'draft' ],
-		'numberposts' => 300,
-		'fields'      => 'ids',
-		'orderby'     => 'date',
-		'order'       => 'DESC',
-	] );
-
-	// Titel und Metafelder einmal vorladen, sonst holt sich jede Zeile ihre
-	// eigenen Abfragen (im Verzeichnis waren das 334 statt 6).
-	_prime_post_caches( $requests, false, true );
+	// Nur offene Vorgänge: abgeschlossene und verlorene können nichts mehr
+	// fordern, und damit bleibt die Arbeitsliste auch nach Jahren klein.
+	$result   = fge_cc_query_requests( [ 'meta_query' => fge_cc_open_meta_query() ] );
+	$requests = $result['ids'];
+	$GLOBALS['fge_cc_worklist_truncated'] = (bool) $result['truncated'];
 
 	$rank = [ 'now' => 0, 'soon' => 1, 'wait' => 2 ];
 	$rows = [];

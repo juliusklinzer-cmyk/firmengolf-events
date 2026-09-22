@@ -186,16 +186,9 @@ function fge_cc_partner_row( array $r ): void {
 function fge_cc_page_customers(): void {
 	$search = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-	$ids = get_posts( [
-		'post_type'      => 'firmengolf_request',
-		'post_status'    => [ 'publish', 'draft' ],
-		'posts_per_page' => 400,
-		'orderby'        => 'date',
-		'order'          => 'DESC',
-		'fields'         => 'ids',
-	] );
+	$result = fge_cc_query_requests( [], 600 );
+	$ids    = $result['ids'];
 
-	_prime_post_caches( $ids, false, true );
 	$companies = [];
 	$by_mail   = [];
 
@@ -250,6 +243,8 @@ function fge_cc_page_customers(): void {
 	if ( '' !== $search ) {
 		$companies = array_filter( $companies, static fn( $c ) => false !== mb_stripos( $c['name'] . ' ' . $c['mail'], $search ) );
 	}
+
+	fge_cc_truncation_note( $result, 'Anfragen' );
 
 	if ( $dupes ) {
 		echo '<p class="cc-msg cc-msg--err">' . (int) count( $dupes ) . ' Einträge teilen sich eine Mailadresse unter verschiedenen Firmennamen. Vermutlich Dubletten.</p>';

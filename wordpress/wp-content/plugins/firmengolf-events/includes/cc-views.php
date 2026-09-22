@@ -65,23 +65,17 @@ function fge_cc_extras_cost_net( int $req ): float {
 function fge_cc_page_offers(): void {
 	$filter = sanitize_key( wp_unslash( $_GET['filter'] ?? 'offen' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-	$ids = get_posts( [
-		'post_type'      => 'firmengolf_request',
-		'post_status'    => [ 'publish', 'draft' ],
-		'posts_per_page' => 300,
-		'fields'         => 'ids',
-		'orderby'        => 'date',
-		'order'          => 'DESC',
-	] );
-	_prime_post_caches( $ids, false, true );
+	// Nur Vorgänge mit versendetem Angebot, das hält die Liste auch bei vielen
+	// Anfragen klein, weil unbepreiste und abgebrochene gar nicht auftauchen.
+	$result = fge_cc_query_requests( [
+		'meta_query' => [ [ 'key' => '_fge_offer_sent', 'value' => '1' ] ],
+	], 400 );
+	$ids = $result['ids'];
 
 	$rows  = [];
 	$counts = [ 'offen' => 0, 'angenommen' => 0, 'abgelehnt' => 0, 'ueberfaellig' => 0 ];
 
 	foreach ( $ids as $req ) {
-		if ( '1' !== (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
-			continue;
-		}
 		$status   = (string) get_post_meta( $req, '_fge_offer_status', true );
 		$deadline = (int) get_post_meta( $req, '_fge_offer_deadline', true );
 		$overdue  = 'pending' === $status && $deadline > 0 && time() > $deadline;
@@ -104,6 +98,8 @@ function fge_cc_page_offers(): void {
 			'query'    => (string) get_post_meta( $req, '_fge_offer_query', true ),
 		];
 	}
+
+	fge_cc_truncation_note( $result, 'Angebote' );
 
 	$labels = [ 'offen' => 'Läuft', 'ueberfaellig' => 'Überfällig', 'angenommen' => 'Angenommen', 'abgelehnt' => 'Abgelehnt' ];
 	echo '<div class="cc-filters">';
@@ -182,15 +178,12 @@ function fge_cc_page_tasks(): void {
 // ── Geld ─────────────────────────────────────────────────────────────────────
 
 function fge_cc_page_money(): void {
-	$ids = get_posts( [
-		'post_type'      => 'firmengolf_request',
-		'post_status'    => [ 'publish', 'draft' ],
-		'posts_per_page' => 300,
-		'fields'         => 'ids',
-		'orderby'        => 'date',
-		'order'          => 'DESC',
-	] );
-	_prime_post_caches( $ids, false, true );
+	// Für die Geldsicht zählen nur Vorgänge mit versendetem Angebot. Alles
+	// davor hat weder Umsatz noch Einkauf.
+	$result = fge_cc_query_requests( [
+		'meta_query' => [ [ 'key' => '_fge_offer_sent', 'value' => '1' ] ],
+	], 400 );
+	$ids = $result['ids'];
 
 	$month_start = fge_cc_local_ts( wp_date( 'Y-m-01' ) );
 	$open_offers  = 0.0;
@@ -269,6 +262,8 @@ function fge_cc_page_money(): void {
 		[ 'Offene Eingangsrechnungen', number_format_i18n( array_sum( array_column( $incoming, 'cost' ) ), 0 ) . ' €', count( $incoming ) . ' Vorgänge' ],
 		[ 'Offene Provisionen', number_format_i18n( array_sum( array_column( $commissions, 'amount' ) ), 0 ) . ' €', count( $commissions ) . ' Codes' ],
 	];
+
+	fge_cc_truncation_note( $result, 'Vorgänge' );
 
 	echo '<div class="cc-tiles">';
 	foreach ( $tiles as [ $label, $value, $hint ] ) {

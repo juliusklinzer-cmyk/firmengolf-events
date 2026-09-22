@@ -41,15 +41,32 @@ function fge_cc_cal_types(): array {
  * @param bool $with_tasks Aufgaben mitliefern (für Abo und Tagesmail).
  */
 function fge_cc_calendar_entries( int $from, int $to, bool $with_tasks = false ): array {
-	$ids = get_posts( [
-		'post_type'      => 'firmengolf_request',
-		'post_status'    => [ 'publish', 'draft' ],
-		'posts_per_page' => 400,
-		'fields'         => 'ids',
-		'orderby'        => 'date',
-		'order'          => 'DESC',
-	] );
-	_prime_post_caches( $ids, false, true );
+	// Gezielt nach Zeitraum suchen statt alle Vorgänge durchzugehen: einmal
+	// über das mitgeschriebene Eventdatum, einmal über die Angebotsfrist.
+	// Ohne das würden bei vielen Anfragen ältere Termine stillschweigend aus
+	// dem Kalender fallen.
+	$pad   = 2 * DAY_IN_SECONDS;
+	$dates = fge_cc_query_requests( [
+		'meta_query' => [ [
+			'key'     => '_fge_event_ts',
+			'value'   => [ $from - $pad, $to + $pad ],
+			'compare' => 'BETWEEN',
+			'type'    => 'NUMERIC',
+		] ],
+	], 400 );
+	$deadlines = fge_cc_query_requests( [
+		'meta_query' => [ [
+			'key'     => '_fge_offer_deadline',
+			'value'   => [ $from, $to ],
+			'compare' => 'BETWEEN',
+			'type'    => 'NUMERIC',
+		] ],
+	], 200 );
+
+	$ids = array_values( array_unique( array_merge( $dates['ids'], $deadlines['ids'] ) ) );
+	if ( $ids ) {
+		_prime_post_caches( $ids, false, true );
+	}
 
 	$out = [];
 	foreach ( $ids as $req ) {

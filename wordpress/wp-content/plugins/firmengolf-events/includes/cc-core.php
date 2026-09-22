@@ -267,6 +267,11 @@ function fge_cc_page_stub( string $title ): void {
 function fge_cc_page_dashboard(): void {
 	$rows = fge_cc_worklist();
 
+	if ( ! empty( $GLOBALS['fge_cc_worklist_truncated'] ) ) {
+		echo '<p class="cc-msg cc-msg--err">Es sind mehr offene Vorgänge da, als hier passen. '
+			. 'Schließe Erledigtes ab oder setze Liegengebliebenes auf „verloren", damit die Liste die Wahrheit sagt.</p>';
+	}
+
 	$mine = $others = $soon = $cold = [];
 	foreach ( $rows as $r ) {
 		if ( $r['snoozed'] ) {
@@ -486,16 +491,8 @@ function fge_cc_page_requests(): void {
 	$search = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$phase  = sanitize_text_field( wp_unslash( $_GET['phase'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-	$ids = get_posts( [
-		'post_type'   => 'firmengolf_request',
-		'post_status' => [ 'publish', 'draft' ],
-		'numberposts' => 200,
-		'fields'      => 'ids',
-		'orderby'     => 'date',
-		'order'       => 'DESC',
-	] );
-
-	_prime_post_caches( $ids, false, true );
+	$result = fge_cc_query_requests( [], 300 );
+	$ids    = $result['ids'];
 
 	$rows = [];
 	foreach ( $ids as $id ) {
@@ -523,6 +520,8 @@ function fge_cc_page_requests(): void {
 			'partner' => (int) get_post_meta( $id, '_fge_assigned_partner_id', true ),
 		];
 	}
+
+	fge_cc_truncation_note( $result, 'Anfragen' );
 
 	// Filterleiste
 	echo '<div class="cc-filters">';
