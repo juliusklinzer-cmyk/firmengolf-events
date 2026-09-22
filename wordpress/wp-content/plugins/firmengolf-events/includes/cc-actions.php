@@ -41,6 +41,8 @@ function fge_cc_messages(): array {
 		'venue_removed'  => [ 'ok', 'Platz aus der Liste entfernt.' ],
 		'venue_dupe'     => [ 'err', 'Dieser Platz steht schon in der Liste.' ],
 		'venue_nomail'   => [ 'err', 'Dieser Platz hat keine Kontaktmail. Bitte telefonisch und hier festhalten.' ],
+		'relaunched'     => [ 'ok', 'Neues Angebot ist raus. Die alte Fassung liegt im Archiv.' ],
+		'relaunch_failed' => [ 'err', 'Das Angebot konnte nicht neu aufgelegt werden.' ],
 	];
 }
 
@@ -87,6 +89,18 @@ add_action( 'admin_post_fge_cc_offer_send', static function (): void {
 	}
 	fge_activity_add( $req, 'offer', 'Angebot aus dem Control Center gesendet' );
 	fge_cc_redirect( $req, 'offer_sent' );
+} );
+
+// ── Angebot neu auflegen ─────────────────────────────────────────────────────
+
+add_action( 'admin_post_fge_cc_offer_relaunch', static function (): void {
+	$req = fge_cc_guard( 'fge_cc_offer_relaunch' );
+	$err = fge_offer_relaunch( $req );
+	if ( '' !== $err ) {
+		set_transient( 'fge_cc_err_' . $req, $err, 60 );
+		fge_cc_redirect( $req, 'relaunch_failed' );
+	}
+	fge_cc_redirect( $req, 'relaunched' );
 } );
 
 // ── Mails rund um den Eventtag ───────────────────────────────────────────────

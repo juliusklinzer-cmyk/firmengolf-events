@@ -506,7 +506,10 @@ function fge_send_offer_email( int $request_id ): bool {
 
 	$wishes = array_merge( (array) ( $snap['wishes_platz'] ?? [] ), (array) ( $snap['wishes_firmengolf'] ?? [] ) );
 
-	$subject = 'Euer Angebot ' . $ref . ': ' . ( (string) ( $snap['event_title'] ?? 'euer Event' ) );
+	// Wurde das Angebot neu aufgelegt, steht die Fassung im Betreff, damit der
+	// Kunde das ersetzte nicht mit dem gültigen verwechselt.
+	$subject = 'Euer Angebot ' . $ref . ': ' . ( (string) ( $snap['event_title'] ?? 'euer Event' ) )
+		. ( function_exists( 'fge_offer_version_suffix' ) ? fge_offer_version_suffix( $request_id ) : '' );
 	$content = '
 		<p style="margin:0 0 16px;">' . $greet . '</p>
 		<p style="margin:0 0 18px;">der Termin steht. Hier ist euer Angebot <strong>' . esc_html( $ref ) . '</strong>, ihr könnt es online mit einem Klick annehmen.' . ( '' !== $pdf ? ' Als PDF findet ihr es auch im Anhang.' : '' ) . '</p>

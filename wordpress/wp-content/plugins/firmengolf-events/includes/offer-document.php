@@ -245,6 +245,11 @@ function fge_offer_document_html( int $req, string $mode = 'web' ): string {
 		. ( '' !== $addr_line ? $e( $addr_line ) : '' ) . '</div></td>';
 	$h .= '<td class="od-facts"><table>'
 		. '<tr><th>Angebotsnummer</th><td><strong>' . $e( $d['ref'] ) . '</strong></td></tr>'
+		// Neu aufgelegte Angebote tragen ihre Fassung, sonst liegen beim Kunden
+		// zwei Dokumente mit derselben Nummer und unterschiedlichem Preis.
+		. ( function_exists( 'fge_offer_version' ) && fge_offer_version( $req ) > 1
+			? '<tr><th>Fassung</th><td>' . (int) fge_offer_version( $req ) . ', ersetzt die vorherige</td></tr>'
+			: '' )
 		. '<tr><th>Datum</th><td>' . $e( wp_date( 'd.m.Y', $d['created'] ) ) . '</td></tr>'
 		. ( $d['deadline'] > 0 && 'pending' === $d['status'] ? '<tr><th>Gültig bis</th><td>' . $e( wp_date( 'd.m.Y', $d['deadline'] ) ) . '</td></tr>' : '' )
 		. '<tr><th>Ansprechpartner</th><td>' . $e( $contact_name )

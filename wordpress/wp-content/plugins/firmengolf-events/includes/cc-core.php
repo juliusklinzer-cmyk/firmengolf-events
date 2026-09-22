@@ -684,9 +684,37 @@ function fge_cc_phase_offer_running( int $req ): void {
 	fge_cc_fact( 'Rückfrage des Kunden', $query );
 	echo '</dl>';
 	echo '<p class="cc-hint">Der Ball liegt beim Kunden. Angenommen oder abgelehnt wird auf der Angebotsseite, das löst alle weiteren Mails aus.</p>';
+	echo '<div class="cc-venue-actions">';
 	if ( function_exists( 'fge_offer_link' ) ) {
-		echo '<p><a class="cc-btn" href="' . esc_url( fge_offer_link( $req ) ) . '" target="_blank" rel="noopener">Angebotsseite ansehen</a></p>';
+		echo '<a class="cc-btn" href="' . esc_url( fge_offer_link( $req ) ) . '" target="_blank" rel="noopener">Angebotsseite ansehen</a>';
 	}
+	// Positionen ändern und neu senden, ohne eine neue Anfrage anzulegen.
+	if ( function_exists( 'fge_offer_relaunch_blocker' ) && '' === fge_offer_relaunch_blocker( $req ) ) {
+		fge_cc_button( 'fge_cc_offer_relaunch', $req, 'Zurückziehen und neu auflegen', [
+			'confirm' => 'Das laufende Angebot wird ungültig und der Kunde bekommt eine neue Fassung mit den aktuellen Positionen. Fortfahren?',
+		] );
+	}
+	echo '</div>';
+	echo '<p class="cc-muted">Neu auflegen nimmt die Positionen, wie sie jetzt in Schritt 2 stehen. Die alte Fassung bleibt im Archiv, die Vorgangsnummer bleibt gleich.</p>';
+
+	// Frühere Fassungen, falls es welche gibt.
+	if ( function_exists( 'fge_offer_archive' ) ) {
+		$old = fge_offer_archive( $req );
+		if ( $old ) {
+			echo '<details class="cc-details"><summary>' . (int) count( $old ) . ' frühere '
+				. ( 1 === count( $old ) ? 'Fassung' : 'Fassungen' ) . '</summary>';
+			foreach ( $old as $o ) {
+				$snap = (array) ( $o['snapshot'] ?? [] );
+				$tot  = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap, null ) : [ 'net' => 0 ];
+				echo '<p class="cc-contact-line">Fassung ' . (int) ( $o['version'] ?? 0 ) . ': '
+					. esc_html( number_format_i18n( (float) ( $tot['net'] ?? 0 ), 2 ) ) . ' € netto, gesendet '
+					. esc_html( (int) ( $o['sent_at'] ?? 0 ) > 0 ? wp_date( 'd.m.Y', (int) $o['sent_at'] ) : 'unbekannt' )
+					. ', zurückgezogen ' . esc_html( wp_date( 'd.m.Y', (int) strtotime( (string) ( $o['retired'] ?? '' ) ) ) ) . '</p>';
+			}
+			echo '</details>';
+		}
+	}
+
 	fge_cc_action_preview( 'offer_accept', $req );
 }
 
