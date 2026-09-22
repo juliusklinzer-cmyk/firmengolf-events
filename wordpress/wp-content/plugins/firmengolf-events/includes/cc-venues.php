@@ -297,6 +297,47 @@ function fge_venue_price_history( int $partner_id, string $wish_key = 'green_fee
 	), ARRAY_A ) ?: [];
 }
 
+/**
+ * Letzte Green-Fee-Preise für viele Plätze in einer Abfrage.
+ *
+ * Das Verzeichnis fragte sonst je Platz einzeln nach, bei zweihundert Plätzen
+ * also zweihundertmal.
+ */
+function fge_venue_price_hints_many( array $partner_ids ): array {
+	$partner_ids = array_values( array_unique( array_map( 'intval', $partner_ids ) ) );
+	if ( ! $partner_ids ) {
+		return [];
+	}
+	global $wpdb;
+	$t  = fge_venues_table();
+	$in = implode( ',', array_fill( 0, count( $partner_ids ), '%d' ) );
+
+	// Je Platz die jüngste Zeile mit Preis.
+	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$rows = $wpdb->get_results( $wpdb->prepare(
+		"SELECT v.partner_id, v.price, v.price_basis, v.price_gross
+		 FROM {$t} v
+		 INNER JOIN (
+			SELECT partner_id, MAX(COALESCE(replied_at, created_at)) AS ts
+			FROM {$t} WHERE price > 0 AND partner_id IN ({$in}) GROUP BY partner_id
+		 ) last ON last.partner_id = v.partner_id
+			AND COALESCE(v.replied_at, v.created_at) = last.ts
+		 WHERE v.price > 0",
+		...$partner_ids
+	), ARRAY_A ) ?: [];
+
+	$out = [];
+	foreach ( $rows as $r ) {
+		$out[ (int) $r['partner_id'] ] = sprintf(
+			'zuletzt %s € %s %s',
+			number_format_i18n( (float) $r['price'], 2 ),
+			(int) $r['price_gross'] ? 'brutto' : 'netto',
+			'person' === $r['price_basis'] ? 'p.P.' : 'pauschal'
+		);
+	}
+	return $out;
+}
+
 /** Letzter bekannter Preis als Satz, leer wenn es keinen gibt. */
 function fge_venue_price_hint( int $partner_id, string $wish_key = 'green_fee' ): string {
 	$rows = fge_venue_price_history( $partner_id, $wish_key, 1 );

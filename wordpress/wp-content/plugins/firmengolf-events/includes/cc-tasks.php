@@ -280,6 +280,10 @@ function fge_cc_worklist(): array {
 		'order'       => 'DESC',
 	] );
 
+	// Titel und Metafelder einmal vorladen, sonst holt sich jede Zeile ihre
+	// eigenen Abfragen (im Verzeichnis waren das 334 statt 6).
+	_prime_post_caches( $requests, false, true );
+
 	$rank = [ 'now' => 0, 'soon' => 1, 'wait' => 2 ];
 	$rows = [];
 	foreach ( $requests as $req ) {

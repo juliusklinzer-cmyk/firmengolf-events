@@ -116,7 +116,7 @@ function fge_cc_render( string $page ): void {
 	<?php fge_cc_sidebar( $page ); ?>
 	<main class="cc-main" id="cc-main">
 		<?php
-		fge_cc_topbar( $title );
+		fge_cc_topbar( $title, $page );
 		echo '<div class="cc-body">';
 		switch ( $page ) {
 			case 'anfragen':
@@ -129,6 +129,12 @@ function fge_cc_render( string $page ): void {
 				break;
 			case 'dashboard':
 				fge_cc_page_dashboard();
+				break;
+			case 'plaetze':
+				fge_cc_page_partners();
+				break;
+			case 'kunden':
+				fge_cc_page_customers();
 				break;
 			default:
 				fge_cc_page_stub( $title );
@@ -168,14 +174,23 @@ function fge_cc_sidebar( string $current ): void {
 	echo '</aside>';
 }
 
-function fge_cc_topbar( string $title ): void {
+function fge_cc_topbar( string $title, string $page = 'anfragen' ): void {
+	// Die Suche bleibt auf der Seite, auf der man steht. Nur Seiten ohne eigene
+	// Suche schicken nach „Anfragen", weil das die häufigste Suche ist.
+	$targets = [
+		'anfragen' => [ 'anfragen', 'Firma oder FG-Nummer' ],
+		'plaetze'  => [ 'plaetze', 'Platz oder Ort' ],
+		'kunden'   => [ 'kunden', 'Firma oder Mailadresse' ],
+	];
+	[ $target, $placeholder ] = $targets[ $page ] ?? $targets['anfragen'];
+
 	echo '<header class="cc-top">';
 	echo '<h1>' . esc_html( $title ) . '</h1>';
-	echo '<form class="cc-search" method="get" action="' . esc_url( fge_cc_url( 'anfragen' ) ) . '" role="search">';
+	echo '<form class="cc-search" method="get" action="' . esc_url( fge_cc_url( $target ) ) . '" role="search">';
 	if ( ! get_option( 'permalink_structure' ) ) {
-		echo '<input type="hidden" name="fge_cc" value="anfragen">';
+		echo '<input type="hidden" name="fge_cc" value="' . esc_attr( $target ) . '">';
 	}
-	echo '<input type="search" name="s" placeholder="Firma oder FG-Nummer" value="' . esc_attr( wp_unslash( $_GET['s'] ?? '' ) ) . '" aria-label="Suche">'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	echo '<input type="search" name="s" placeholder="' . esc_attr( $placeholder ) . '" value="' . esc_attr( wp_unslash( $_GET['s'] ?? '' ) ) . '" aria-label="Suche">'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	echo '</form>';
 	echo '</header>';
 }
@@ -461,6 +476,8 @@ function fge_cc_page_requests(): void {
 		'orderby'     => 'date',
 		'order'       => 'DESC',
 	] );
+
+	_prime_post_caches( $ids, false, true );
 
 	$rows = [];
 	foreach ( $ids as $id ) {
