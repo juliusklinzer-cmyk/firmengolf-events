@@ -151,6 +151,9 @@ function fge_cc_render( string $page ): void {
 			case 'postausgang':
 				fge_cc_page_outbox();
 				break;
+			case 'dienstleister':
+				fge_cc_page_providers();
+				break;
 			default:
 				fge_cc_page_stub( $title );
 		}

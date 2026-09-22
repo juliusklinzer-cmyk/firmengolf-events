@@ -213,7 +213,7 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 					<?php endforeach; ?>
 				</select></td>
 				<td><input type="text" name="fge_xs_pname[]" value="<?php echo esc_attr( (string) ( $it['provider_name'] ?? '' ) ); ?>" class="widefat" placeholder="optional"></td>
-				<td><input type="email" name="fge_xs_pmail[]" value="<?php echo esc_attr( (string) ( $it['provider_email'] ?? '' ) ); ?>" class="widefat" placeholder="optional"></td>
+				<td><input type="email" name="fge_xs_pmail[]" value="<?php echo esc_attr( (string) ( $it['provider_email'] ?? '' ) ); ?>" class="widefat" placeholder="optional" list="fge-provider-mails"></td>
 			</tr>
 			<?php
 		};
@@ -230,6 +230,17 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 		</tbody>
 	</table>
 	<p style="margin:0 0 14px;"><button type="button" class="button" id="fge-xs-add">Position hinzufügen</button></p>
+	<?php
+	// Dienstleister aus dem Verzeichnis zur Vervollständigung anbieten, damit
+	// Mailadressen nicht jedes Mal neu getippt werden.
+	if ( function_exists( 'fge_provider_emails' ) ) {
+		echo '<datalist id="fge-provider-mails">';
+		foreach ( fge_provider_emails() as $mail => $label ) {
+			echo '<option value="' . esc_attr( $mail ) . '">' . esc_html( $label ) . '</option>';
+		}
+		echo '</datalist>';
+	}
+	?>
 
 	<p style="margin:0 0 4px;"><strong>Eventpreis überschreiben (optional)</strong></p>
 	<p class="description" style="margin:0 0 6px;">Nur wenn der Standardpreis des zugeordneten Events nicht gilt (Platzhalter-Event, telefonisch vereinbarter Preis). Leer lassen = Eventpreis wie hinterlegt.</p>
