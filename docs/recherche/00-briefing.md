@@ -137,6 +137,16 @@ Jedes buchbare Format mit eigenem Preis bekommt eine Zeile: Schnupperkurs, Platz
 
 `art` aus `Frühstück`, `Kaffeepause`, `Mittagessen`, `Abendessen`, `BBQ`, `Flying Buffet`, `Fingerfood`, `Getränkepauschale`, `Tagungspauschale`, `Sonstiges`. Bei Getränkepauschalen `getraenke_pauschale_preis` und `getraenke_pauschale_dauer` füllen. `servierart` ist `Menü`, `Buffet`, `Flying`, `à la carte` oder `Selbstbedienung`. `ort` sagt, wo serviert wird. Die Diätfelder `vegetarisch`, `vegan`, `glutenfrei`, `laktosefrei`, `halal` beantworten wir bei jeder zweiten Firmenanfrage, deshalb stehen sie einzeln da.
 
+### 06-betreiber.csv — eine Betreibergesellschaft je Zeile
+
+Nur für Betreiber, die mehr als eine Anlage führen oder als eigene Gesellschaft neben dem Club auftreten. `betreiber_id` ist ein Slug wie die `platz_id`. `rechtsform` nutzt dieselben Werte wie bei den Plätzen. `anlagen_platz_ids` listet die zugehörigen Plätze mit `|` getrennt, jede muss in `01-plaetze.csv` existieren. `zentraler_einkauf` und `zentrale_eventabteilung` sagen, ob Firmenevents zentral verhandelt werden, dann sind `eventabteilung_kontakt_rolle`, `eventabteilung_email` und `eventabteilung_telefon` wichtiger als jeder einzelne Platz. `gruppenkonditionen_bekannt` ist `ja`, wenn öffentlich Gruppen- oder Firmenpreise genannt werden.
+
+Ein Gespräch mit einer Betreibergruppe öffnet mehrere Plätze auf einmal. Deshalb ist diese Tabelle klein, aber für die Akquise die wertvollste.
+
+### 07-marktzahlen.csv — ein Platz und ein Jahr je Zeile
+
+Zahlen aus den öffentlichen Statistiken des Deutschen Golf Verbands und aus Jahresberichten. `jahr` vierstellig, Zahlenfelder ohne Tausenderpunkt. `quelle_art` aus `dgv`, `jahresbericht`, `presse`, `club_website`. Fehlt eine Zahl, bleibt das Feld `unbekannt`, die Zeile wird trotzdem angelegt, wenn mindestens `mitglieder_gesamt` bekannt ist. Höchstens fünf Jahre zurück.
+
 ## 7 Beispiel, wie eine gute Zeile aussieht
 
 So sähe ein vollständig recherchierter Platz in Feldform aus. Übertrage das beim Befüllen in die Spaltenreihenfolge der CSV.
