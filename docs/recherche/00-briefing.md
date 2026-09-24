@@ -94,6 +94,27 @@ Anfänger bringen nichts mit. Ein Platz ohne Leihschläger für zehn Personen f�
 
 **Marketing und Rechtliches.** `auszeichnungen`, `verband_mitglied` (etwa `DGV`), `bildquelle_url`, `bildrechte_hinweis`. Keine Bilder herunterladen, nur die Quelle notieren.
 
+**Wer entscheidet.** Dieser Block bestimmt, wie wir den Platz ansprechen, und ist deshalb so wichtig wie die Preise.
+
+`rechtsform` aus genau diesen Werten:
+
+| Wert | Bedeutung |
+|---|---|
+| `verein` | Eingetragener Verein, Entscheidungen über Vorstand |
+| `verein_mit_gmbh` | Verein mit ausgegliederter Betriebsgesellschaft |
+| `gmbh` | Reine Betreibergesellschaft |
+| `resort` | Teil eines Hotels oder Resorts |
+| `kommunal` | Öffentliche Hand beteiligt |
+| `unbekannt` | Nicht ermittelbar |
+
+Dazu `betreibergesellschaft_name` (falls abweichend vom Club), `betreiber_weitere_anlagen` (weitere Anlagen desselben Betreibers, mit `|` getrennt, Namen genügen), `entscheider_rolle` (wer über Firmenevents entscheidet, aus der Rollenliste, etwa `Geschäftsführer` oder `Clubmanager`), `entscheidung_schnell_moeglich` (kann eine Person allein zusagen), `vorstand_noetig`.
+
+**Wie es dem Platz geht.** Ein Club, der Mitglieder verliert, sucht Zusatzgeschäft. Ein Club mit Warteliste braucht uns nicht. Das ist unser bester Priorisierungsfilter.
+
+`mitglieder_anzahl` als Zahl, `mitglieder_jahr` als Jahr der Angabe, `mitglieder_trend` aus `steigend`, `stabil`, `sinkend`, `unbekannt`. Dazu `warteliste` (ja/nein/unbekannt), `auslastung_einschaetzung` aus `hoch`, `mittel`, `niedrig`, `unbekannt`, `wirtschaftliche_lage` als kurzer Klartext mit Quelle, etwa „Mitgliederschwund laut Jahresbericht 2025", und `offen_fuer_firmenkunden`, wenn der Platz Firmenkunden aktiv bewirbt.
+
+Bei diesem Block gilt die Regel gegen Raten besonders streng. Wirtschaftliche Einschätzungen ohne Beleg sind Rufschädigung, nicht Recherche. Nur eintragen, was aus Jahresberichten, Presseartikeln oder Aussagen des Clubs selbst hervorgeht, und die Quelle immer nennen.
+
 **Firmengolf-intern.** `datenstatus` (immer `ki_recherche`), `preisliste_vorhanden`, `letzter_kontakt` (von dir immer `unbekannt`), `interne_notiz`.
 
 **Herkunft.** `quelle_url`, `quelle_zusatz`, `stand_datum`, `sicherheit`, `luecken`.
