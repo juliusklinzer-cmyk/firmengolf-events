@@ -76,7 +76,9 @@ Wenn ein Platz keine Firmenevents anbietet, trag ihn trotzdem ein, setze `firmen
 
 **Anlage.** `golf_typen` ist eine Mehrfachauswahl aus genau diesen Werten: `course-18`, `course-27`, `course-9`, `short` (Kurzplatz), `pitch-putt`, `links`, `leading`, `range` (Driving Range), `indoor-sim`, `mini-golf`. Dazu `loecher_gesamt`, `par`, `driving_range_plaetze`, `range_ueberdacht_plaetze`, `abschlagmatten_beheizt`, `putting_green`, `chipping_green`, `uebungsbunker`, `kurzplatz_loecher`, `indoor_simulatoren_anzahl`, `simulator_system` (Herstellername, etwa Trackman oder Foresight).
 
-**Betrieb.** `saison_von`, `saison_bis` (Monatsnamen), `oeffnungszeiten` (Freitext), `ruhetag`, `greenfee_wochentag`, `greenfee_wochenende`, `greenfee_brutto_netto` (`brutto` oder `netto`, im Zweifel `brutto`), `mitgliedschaft_noetig`, `platzreife_noetig`, `gaeste_ohne_platzreife_erlaubt`.
+**Betrieb.** `saison_von`, `saison_bis` (Monatsnamen), `oeffnungszeiten` (Freitext), `ruhetag`, `buchungsplattform`, `kursbuchung_url`, `greenfee_wochentag`, `greenfee_wochenende`, `greenfee_brutto_netto` (`brutto` oder `netto`, im Zweifel `brutto`), `mitgliedschaft_noetig`, `platzreife_noetig`, `gaeste_ohne_platzreife_erlaubt`.
+
+`buchungsplattform` aus `pc-caddie`, `swingworks`, `albatros`, `golfsuite`, `teetime`, `eigene`, `keine`, `sonstige`, `unbekannt`. `kursbuchung_url` ist die direkte Adresse der Kurs- oder Terminübersicht auf dieser Plattform, nicht die Clubseite, die sie einbettet. Beide Felder sparen beim nächsten Mal die Suche, und sie sind eine Marktinformation für sich: welche Plattform ein Club nutzt, sagt etwas über seine Größe und seine Arbeitsweise. Wie du an die Daten hinter dem Buchungsfenster kommst, steht in `AUFTRAG.md`, Abschnitt 9.
 
 Das letzte Feld ist für uns besonders wichtig: Firmengruppen sind fast immer Anfänger ohne Platzreife.
 
