@@ -31,12 +31,19 @@ def new_request(company, email, city, dates, wishes, pax='7'):
             'experience': 'Überwiegend Anfänger', 'starttime': 'After-Work', 'contact_pref': 'E-Mail', 'consent': '1',
             'date1': dates[0], 'date2': dates[1] if len(dates) > 1 else '', 'date3': dates[2] if len(dates) > 2 else '', 'notes': '', 'wishes': json.dumps(wishes)}
     r = requests.post(BASE + '/wp-admin/admin-ajax.php', data=data)
-    check(r.status_code == 200 and '"success":true' in r.text, 'Anfrage über die Eventseite angelegt')
+    ok = r.status_code == 200 and '"success":true' in r.text
+    check(ok, 'Anfrage über die Eventseite angelegt')
+    if not ok:
+        # Nie auf eine fremde Anfrage zurückfallen (28.09.: ein Fehllauf schrieb in den Klon von FG-26-166).
+        sys.exit(f'ABBRUCH: Anfrage nicht angelegt, HTTP {r.status_code}: {r.text[:400]}')
+    ref = r.json()['data']['ref']
+    req = int(wp(f"echo (int) fge_request_by_ref('{ref}');") or 0)
+    if req <= 0 or wp(f"echo get_post_meta({req}, '_fge_company_name', true);") != company:
+        sys.exit(f'ABBRUCH: Anfrage {ref} nicht gefunden oder falsche Firma (req={req})')
     ms = mails(clear=True)
     check(any('kunde' in m['to'] and 'zwei Werktagen' in m['text'] for m in ms), 'Eingangsbestätigung mit „zwei Werktagen"')
     check(any('events@' in m['to'] and '/control/anfragen/?req=' in m['html'] for m in ms), 'Interne Mail verlinkt ins Control Center')
-    h = get('/control/anfragen/').text
-    return max(int(x) for x in re.findall(r'req=(\d+)', h))
+    return req
 
 def pipeline_two_places(req):
     h = get(f'/control/anfragen/?req={req}').text

@@ -1,66 +1,67 @@
 # Mail-Inventar Firmengolf
 
-Alle transaktionalen Mails der Plattform. Quelle der Wahrheit ist der Code
-(`includes/emails.php`, `email-verification.php`, `partner-invite.php`,
-`partner-portal.php`, `request-followups.php`, `login-branding.php`).
-Stand: 2026-07-08 (FGE_VERSION 1.9.83, nach Kern-Audit).
+Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 28.09.2026, Version 1.9.285, 32 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
 
-**Registry und Protokoll (seit 1.9.267):** `includes/mail-registry.php` beschreibt jede Mail
-einmal (Schlüssel, Empfängerauflösung, Inhaltspunkte) und speist daraus die Folgen-Vorschau
-am Aktionsknopf und den Postausgang. `includes/mail-log.php` protokolliert jeden Versand
-über `wp_mail_succeeded` / `wp_mail_failed` in `wp_fge_mail_log`, zugeordnet über die
-Vorgangsnummer im Betreff. Vorher war nicht feststellbar, ob eine Mail ankam.
+Gemeinsamer Stil: Rahmen `fge_email_wrap()`, Absender events@firmengolf-events.de (mail-config.php, auch Reply-To), Buttons `fge_email_button()`, Versand über WP Mail SMTP und Brevo, Protokoll je Versand in `wp_fge_mail_log` (mail-log.php, Zuordnung über die Vorgangsnummer im Betreff). Keine Gedankenstriche, Preise als „XX € p.P.“ oder „XX € netto“.
 
-**Gemeinsamer Stil:** Rahmen `fge_email_wrap()` (Firmengolf-Kopf, Impressum-Fußzeile),
-Absender `events@firmengolf-events.de` (mail-config.php, inkl. Reply-To),
-Buttons über `fge_email_button()` (einheitlich kompakt), Versand via WP Mail SMTP → Brevo.
-Keine Gedankenstriche, Preise im Format „XX € p.P./Gesamt netto".
+Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst löst jemand die Mail am Knopf aus.
 
-## A · Kundenanfrage
+## An Firmenkunden (8)
 
-| # | Betreff | Auslöser | An wen | Inhalt |
-|---|---------|----------|--------|--------|
-| 1 | Deine Anfrage bei Firmengolf ist eingegangen | Anfrage abgeschickt (Event-Modal, Wizard, Kontakt); Hook `fge_request_created` | Kunde | Eingangsbestätigung, wie es weitergeht (Rückmeldung binnen 1 Werktag), Status-Link-Button |
-| 2 | Neue Firmengolf Event Anfrage: {Firma} | wie 1 | intern (events@) | Alle Anfrage-Daten, Wunsch-Leistungen, Admin-Button |
-| 3 | Eine Firmenanfrage wartet auf deine Rückmeldung ({FG-Nr}) | Anfrage mit Wunschterminen bei zugeordnetem Platz | Partner-Terminkontakte | Wunschtermine + „Jetzt Termine bestätigen"-Button (Freigabe-Link) |
-| 4 | Neue Verfügbarkeitsanfrage für ein Firmengolf Event | wie 3, aber Partner ohne Terminkontakte | Partner (Hauptkontakt) | Bitte Verfügbarkeit prüfen |
+| Schlüssel | Mail | Betreff | Auslöser | Inhalt |
+|---|---|---|---|---|
+| `request_customer_ack` | Eingangsbestätigung | Deine Anfrage bei Firmengolf ist eingegangen | Anfrage abgeschickt (automatisch) | Vorgangsnummer, wie es weitergeht, Link zur Statusseite |
+| `date_confirmed_customer` | Termin steht (nur wenn das Angebot hängt) | Euer Termin steht | Termin bestätigt, Angebot zurückgehalten (automatisch) | Termin ist fix, Angebot folgt |
+| `offer_customer` | Angebot an den Kunden | Euer Angebot für {Event} | Termin bestätigt und bepreist, oder Knopf „Angebot jetzt senden" (Knopf) | Positionen und Summen, Partnercode-Rabatt, Frist, Annehmen-Link, PDF im Anhang, BCC an dich |
+| `offer_reminder` | Angebotserinnerung | Erinnerung: euer Angebot | Cron, drei Tage ohne Reaktion (automatisch) | Frist läuft, Termin noch reserviert |
+| `booking_customer` | Buchungsbestätigung an den Kunden | Buchung bestätigt | Kunde nimmt an (automatisch) | Dank und Termin, PDF der Buchungsbestätigung, Link zur Buchung |
+| `day_plan_customer` | Ablauf für den Eventtag an den Kunden | Der Ablauf für euren Eventtag steht | Startzeit und Treffpunkt erstmals vollständig, oder Knopf (Knopf) | Wann und wo mit Adresse, Treffpunkt, Ansprechpartner vor Ort, was mitzubringen ist, Ablauf folgt am Vortag, Mobilnummer |
+| `day_info_customer` | Vortags-Info an den Kunden | Morgen ist es soweit | Cron 07:00 am Vortag, oder Knopf (automatisch) | Start, Treffpunkt, Adresse, Ansprechpartner vor Ort, Golflehrer und Ablauf, gebuchte Leistungen, Mobilnummer |
+| `review_customer` | Bewertungsbitte | Danke für euer Event mit Firmengolf | Status „Event durchgeführt" (automatisch) | Bitte um Google-Bewertung |
 
-## A2 · Platz-Pipeline (Control Center, seit 1.9.268)
+## An Golfplätze und Simulatoren (13)
 
-Mehrere Plätze je Anfrage. Diese beiden Mails gehören zu einem einzelnen
-angefragten Platz, nicht zur Anfrage als Ganzes (`per_venue` in der Registry).
+| Schlüssel | Mail | Betreff | Auslöser | Inhalt |
+|---|---|---|---|---|
+| `request_contact_dates` | Terminabstimmung an die Platz-Kontakte | Eine Firmenanfrage wartet auf deine Rückmeldung | Anfrage mit zugeordnetem Platz (automatisch) | Wunschtermine, persönlicher Zusage-Link, kein Login nötig |
+| `request_partner_availability` | Verfügbarkeitsanfrage (Fallback) | Neue Verfügbarkeitsanfrage für ein Firmengolf Event | Platz ohne Terminkontakte (automatisch) | Bitte um Prüfung der Verfügbarkeit |
+| `venue_request` | Anfrage an einen Platz | Passt das bei euch? Firmenanfrage | Knopf in der Platz-Pipeline (Knopf) | Wunschtermine, Gruppe mit Personenzahl und Niveau, Liste der Positionen mit Preisfrage, bei uns notierte Vorpreise |
+| `venue_decline` | Absage an einen nicht gewählten Platz | Doch woanders: Firmenanfrage | Knopf nach der Platzwahl (Knopf) | persönliche Absage, ehrlicher Grund, Einladung für die nächste Anfrage, Einladung, das Angebot dauerhaft anzubieten |
+| `venue_summary` | Absprache bestätigt: so haben wir es notiert | Danke für die Rückmeldung: Firmenanfrage | Knopf in der Pipeline-Zeile nach der erfassten Antwort (Knopf) | freie Termine und Alternativvorschlag, Preise je Position wie besprochen, nicht angebotene Positionen, Bitte, die Termine vorläufig freizuhalten |
+| `venue_reservation` | Reservierungsbitte: Angebot ist beim Kunden | Bitte reservieren bis <Frist>: Firmenanfrage | Versand eines Angebots mit Optionen, an jeden Platz im Angebot (automatisch) | Entscheidungsfrist des Kunden, Termine, die reserviert bleiben sollen, Preise je Position wie besprochen |
+| `venue_release` | Termin wird frei: der Kunde hat abgesagt | Termin wird frei: Firmenanfrage | Knopf nach der Absage des Kunden (Knopf) | Vorgangsnummer und Termin, kein Auftrag, Dank und Einladung für die nächste Anfrage |
+| `date_reminder` | Erinnerung an die Platz-Kontakte | Erinnerung: kurze Rückmeldung zu einer Firmenanfrage | Cron, nach zwei Tagen ohne Antwort (automatisch) | Erinnerung, derselbe Link |
+| `date_all_responded` | Alle Rückmeldungen da | Alle Rückmeldungen da, Termin bestätigen | alle Kontakte haben geantwortet (automatisch) | bitte final bestätigen |
+| `booking_partner` | Auftragsbestätigung an den Platz | Buchung bestätigt | Kunde nimmt an (automatisch) | Termin und Startzeit, Gruppe, Personenzahl, Niveau, Ansprechpartner der Gruppe, Paket und Leistungen, vereinbarter Betrag, unsere Rechnungsadresse, Verwendungszweck |
+| `venue_details_reminder` | Erinnerung an den Platz: Details für den Eventtag | Kurze Bitte: Details für den Eventtag | Cron, drei Tage nach der Buchung ohne Eintrag, nur vor dem Termin (automatisch) | Termin und Gruppe, welche Angaben fehlen, Link zum Formular ohne Login, bis wann |
+| `day_info_partner` | Vortags-Info an den Platz | Morgen: Firmengolf-Event | Cron 07:00 am Vortag, oder Knopf (automatisch) | Firma und Personenzahl, Start und Treffpunkt, Kontakt beim Kunden, gebuchte Leistungen, keine Preise |
+| `catalog_proposal` | Vorschlag: Event dauerhaft anbieten | Wollt ihr das dauerhaft anbieten? | Knopf nach dem Event (Knopf) | Titel, Ort und Ablauf wie durchgeführt, Gruppengröße, euer Preis, Inklusivleistungen, Antwortlink ohne Login |
 
-| # | Betreff | Auslöser | An wen | Inhalt |
-|---|---------|----------|--------|--------|
-| 4a | Passt das bei euch? Firmenanfrage für {Datum} ({FG-Nr}) | Knopf „Per Mail anfragen" in der Platz-Pipeline (`fge_venue_send_request`) | Kontaktmail des Platzes, BCC Julius | Wunschtermine, Gruppe mit Ort, Personenzahl und Niveau, Anlass, Liste aller vom Kunden gewünschten Positionen mit der Bitte um je einen Preis, dazu der bei uns notierte Vorpreis je Position. Antwort per Mailantwort, kein Login |
-| 4b | Doch woanders: Firmenanfrage am {Datum} ({FG-Nr}) | Knopf „Absagen" je Platz oder „Allen übrigen absagen" nach der Platzwahl (`fge_venue_send_decline`) | Kontaktmail des Platzes | Persönliche Absage mit dem ehrlichen Grund, ausdrückliche Einladung zur nächsten Anfrage, Bitte um feste Gruppenpreise fürs nächste Mal |
-| 4c | Wollt ihr das dauerhaft anbieten? {Event} | Knopf im Anfrage-Cockpit nach der Buchung (`fge_catalog_send_proposal`) | Kontaktmail des Platzes, BCC Julius | Der Vorschlag aus dem Angebots-Snapshot: Titel, Ort, Ablauf, Gruppengröße, sein Preis, Inklusivleistungen. Antwort per Klick über `/event-vorschlag/<token>/` ohne Login. Bei Ja entsteht ein `firmengolf_event` im Status `zur_pruefung` beim Platz, das über die bestehende Freigabe läuft |
+## An Dienstleister (2)
 
-## B · Terminfindung (Cron täglich + Statuswechsel)
+| Schlüssel | Mail | Betreff | Auslöser | Inhalt |
+|---|---|---|---|---|
+| `provider_confirm` | Auftrag an den Dienstleister | Auftragsbestätigung Firmengolf | Kunde nimmt an, Position gebucht (automatisch) | Leistung, Termin, Ort, vereinbarter Einkaufspreis, Rechnungsadresse, nie Verkaufspreis |
+| `provider_cancel` | Absage an den Dienstleister | Absage Firmengolf | Position abgewählt oder Angebot abgelehnt (automatisch) | kein Auftrag, freundliche Absage |
 
-| # | Betreff | Auslöser | An wen | Inhalt |
-|---|---------|----------|--------|--------|
-| 5 | Erinnerung: kurze Rückmeldung zu einer Firmenanfrage ({FG-Nr}) | Terminkontakt antwortet 2 Tage nicht (Cron, Filter `fge_request_reminder_days`) | Partner-Kontakt | Erinnerung + Link |
-| 6 | Überfällig: Anfrage {FG-Nr} braucht Aufmerksamkeit | weiterhin keine Antwort (Cron-Eskalation) | intern | Admin-Link zum Eingreifen |
-| 7 | Kein Termin möglich: {FG-Nr} | alle Kontakte geantwortet, Ergebnis nicht verfügbar (`fge_request_all_responded`) | intern | Alternativen anstoßen |
-| 8 | Alle Rückmeldungen da, Termin bestätigen ({FG-Nr}) | alle Kontakte geantwortet, Termin machbar | Partner (Hauptkontakt, Fallback Event-Kontakt) | Bitte final bestätigen |
-| 9 | Termin bestätigt: {FG-Nr} ({Platz}) | Partner bestätigt Termin (`fge_request_date_confirmed`) | intern | Angebot kann raus |
-| 10 | Euer Termin steht: {Event} am {Datum} | Terminbestätigung | Kunde | Termin fix, Angebot folgt |
+## Intern an Firmengolf (9)
 
-## C · Angebot und Buchung
+| Schlüssel | Mail | Betreff | Auslöser | Inhalt |
+|---|---|---|---|---|
+| `request_internal` | Neue Anfrage (intern) | Neue Firmengolf Event Anfrage | Anfrage abgeschickt (automatisch) | alle Anfragefelder, Wünsche, Partnercode, Admin-Link |
+| `venue_catalog_internal` | Platz will dauerhaft anbieten | Platz will dauerhaft anbieten | Platz klickt Ja auf dem Link aus der Absage-Mail (automatisch) | Platz und Vorgangsnummer, Link zum Event-Entwurf, Hinweis auf Einladungsmail bei Stammdaten-Platz |
+| `date_confirmed_internal` | Termin bestätigt (intern) | Termin bestätigt | Termin bestätigt (automatisch) | Termin, Platz, ob das Angebot rausgeht oder hängt |
+| `offer_query_internal` | Rückfrage des Kunden (intern) | Rückfrage zum Angebot | Kunde stellt eine Rückfrage (automatisch) | Rückfragetext |
+| `order_internal` | Auftrag steht (intern) | Auftrag steht | Kunde nimmt an (automatisch) | Termin, Firma, Platz, Abrechnung der Zusatzleistungen, Einkauf und Marge, Partnercode |
+| `offer_declined_internal` | Angebot abgelehnt (intern) | Angebot abgelehnt | Kunde lehnt ab (automatisch) | Absage mit Kontext |
+| `venue_details_internal` | Platzdetails eingetragen (intern) | Platzdetails eingetragen | Platz speichert das Formular aus der Auftragsbestätigung (automatisch) | alle sieben Eventtag-Felder, fehlende in Rot, ob die Ablauf-Info an den Kunden raus ist, Link zur Anfrage |
+| `day_info_internal` | Vortags-Info verschickt (intern) | Vortags-Info verschickt | Cron 07:00 am Vortag, oder Knopf (automatisch) | Zusammenfassung, fehlende Angaben in Rot |
+| `daily_digest` | Tagesmail | Heute bei Firmengolf | Cron 07:00, nur wenn es etwas zu melden gibt (automatisch) | fällige Aufgaben mit Vorgangsnummer, Termine heute und morgen, Link ins Control Center |
 
-| # | Betreff | Auslöser | An wen | Inhalt |
-|---|---------|----------|--------|--------|
-| 11 | Euer Angebot für {Event} ({FG-Nr}) | Angebot versendet | Kunde | Positionen inkl. bepreister Zusatzleistungen (Verkaufspreis), Summe netto + zzgl. 19 % MwSt + Endpreis (mit „ca." bei p.P.), Hinweis auf Einzelabwahl, Frist, Annehmen-Button |
-| 12 | Erinnerung: euer Angebot ({FG-Nr}) | Kunde reagiert 3 Tage nicht (Cron, Filter `fge_offer_reminder_days`) | Kunde | Frist läuft, Termin noch reserviert |
-| 13 | Rückfrage zum Angebot: {FG-Nr} | Kunde stellt Rückfrage oder nimmt nach Fristablauf an (`fge_offer_query`, idempotent) | intern | Rückfrage-Text bzw. „Termin prüfen" |
-| 14 | Auftrag steht: {FG-Nr} | Kunde nimmt an (`fge_offer_accepted`) | intern | Buchung eingegangen + Abrechnungsübersicht der Zusatzleistungen (Kundenpreis, Einkauf, Marge, Dienstleister; nur intern) |
-| 15 | Buchung bestätigt: {Firma}, {Datum} ({FG-Nr}) | Kunde nimmt an (`fge_partner_booking_confirmation`) | Partner: Kontaktmail **plus alle Terminabstimmer**, BCC Julius | Auftragsbestätigung wie an Dienstleister: Termin mit Startzeit, Gruppe (Firma, Ort, Personen, Niveau), Ansprechpartner der Gruppe mit Telefon, Paket, Ablauf, Treffpunkt, vereinbarter Einkaufspreis mit Brutto/Netto-Kennung, Inklusivleistungen, Rechnungsadresse und Verwendungszweck. Ohne Kontaktmail geht nichts raus, die interne Mail 14 warnt dann rot |
-| 16 | Buchung bestätigt: {FG-Nr} | Kunde nimmt an | Kunde | Verbindliche Buchungsbestätigung |
-| 16a | Der Ablauf für euren Eventtag: {Event} am {Datum} | Startzeit und Treffpunkt erstmals gefüllt (`save_post`, einmalig über `_fge_day_plan_sent`) oder Button „Ablauf-Info jetzt senden" | Kunde | Wann, Wo mit Adresse, Treffpunkt, Ansprechpartner vor Ort, was mitzubringen ist, Ankündigung dass Golflehrer und Ablauf am Vortag folgen, Mobilnummer. Schließt die Lücke zwischen Buchung und Vortags-Info |
-| 17 | Angebot abgelehnt: {FG-Nr} | Kunde lehnt ab (`fge_offer_declined`, mit Confirm-Dialog) | intern | Absage + Kontext |
-| 17a | Auftragsbestätigung Firmengolf: {Leistung} am {Datum} ({FG-Nr}) | Kunde nimmt an, Position gewählt (`fge_xs_provider_confirmation`) | Dienstleister der Zusatzleistung | Beauftragung mit vereinbartem Einkaufspreis, Termin, Ort, Teilnehmer, Rechnungsadresse; nie Verkaufspreis/Marge |
-| 17b | Absage Firmengolf: {Leistung} am {Datum} ({FG-Nr}) | Position vom Kunden abgewählt, Angebot abgelehnt oder Anfrage terminal geschlossen (`fge_xs_provider_cancellation`, einmaliger Guard) | Dienstleister der Zusatzleistung | Kein Auftrag, freundliche Absage |
+
+# Anhang (von Hand gepflegt, nicht in der Registry): Onboarding, Portal, System
+
+Diese Mails liegen außerhalb des Anfrage-Prozesses und stehen noch nicht in `mail-registry.php`. Quelle: email-verification.php, partner-invite.php, partner-portal.php, login-branding.php. Stand 1.9.83 mit Nachträgen bis 1.9.269.
 
 ## D · Onboarding und Einladung (Partner-Gewinnung)
 
@@ -99,6 +100,7 @@ angefragten Platz, nicht zur Anfrage als Ganzes (`per_venue` in der Registry).
 | # | Betreff | Auslöser | An wen | Inhalt |
 |---|---------|----------|--------|--------|
 | 31 | Passwort-Reset (Firmengolf-gebrandet) | „Passwort vergessen" am Login (`retrieve_password`-Filter) | Nutzer | Reset-Link im Firmengolf-Design |
+
 
 ## Interne Cron-Eskalationen (request-followups.php, täglich)
 

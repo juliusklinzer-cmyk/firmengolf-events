@@ -6,7 +6,7 @@
  *   1. die Folgen-Vorschau am Aktionsknopf („wer bekommt gleich was")
  *   2. der Postausgang (Klarnamen statt Betreffzeilen)
  *   3. die Phasenleiste im Control Center
- *   4. docs/mail-inventar.md
+ *   4. docs/mail-inventar.md (erzeugt per bash tests/mail-inventar.sh)
  *
  * Grundsatz aus dem Plan vom 22.09.2026: keine Aktion ohne sichtbare Folge.
  * Fehlt ein Empfänger, muss das VOR dem Klick sichtbar sein, nicht als stille
