@@ -75,7 +75,7 @@ function fge_llms_txt_content(): string {
 	$lines[] = '## Wie es funktioniert';
 	$lines[] = '';
 	$lines[] = '- Firmen wählen ein fertiges Event mit Preis und Ablauf oder beschreiben ihr Wunschevent, und fragen unverbindlich an.';
-	$lines[] = '- Innerhalb eines Werktags meldet sich ein persönlicher Ansprechpartner mit Vorschlägen für Platz, Format und Termin.';
+	$lines[] = '- Innerhalb von zwei Werktagen meldet sich ein persönlicher Ansprechpartner mit Vorschlägen für Platz, Format und Termin.';
 	$lines[] = '- Der Golfplatz oder die Indoor-Anlage bestätigt den Termin, Firmengolf Events übernimmt Koordination, Catering-Absprache und Abrechnung.';
 	$lines[] = '- Für Golfplätze und Simulatoren ist die Teilnahme kostenlos, die Vermittlungsgebühr zahlt der Kunde über einen Aufschlag auf den Partnerpreis.';
 	$lines[] = '';

@@ -66,7 +66,7 @@ function fge_render_mb_basisdaten( WP_Post $post ) {
 			<td>
 				<select id="fge_assigned_partner_id" name="fge_assigned_partner_id">
 					<option value="0">kein Golfplatz zugeordnet</option>
-					<?php foreach ( fge_get_posts_select_options( 'firmengolf_partner' ) as $pid => $label ) : ?>
+					<?php foreach ( fge_get_posts_select_options( 'firmengolf_partner', (int) $assigned_partner_id ) as $pid => $label ) : ?>
 						<option value="<?php echo esc_attr( $pid ); ?>" <?php selected( (int) $assigned_partner_id, $pid ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
 				</select>

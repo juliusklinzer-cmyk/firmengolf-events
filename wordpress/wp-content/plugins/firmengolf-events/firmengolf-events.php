@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.277' );
+define( 'FGE_VERSION', '1.9.285' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -69,6 +69,8 @@ require_once FGE_DIR . 'includes/rest-media.php';
 require_once FGE_DIR . 'includes/media-widget.php';
 require_once FGE_DIR . 'includes/golfplatz-verzeichnis.php';
 require_once FGE_DIR . 'includes/simulatoren-data.php';
+require_once FGE_DIR . 'includes/stammdaten-mails-2026-09.php';
+require_once FGE_DIR . 'includes/stammdaten-import.php';
 
 // Control Center (internes Werkzeug, eigene Oberfläche, eigenes Stylesheet).
 require_once FGE_DIR . 'includes/mail-log.php';
@@ -85,8 +87,12 @@ require_once FGE_DIR . 'includes/cc-views.php';
 require_once FGE_DIR . 'includes/cc-offer-version.php';
 require_once FGE_DIR . 'includes/cc-providers.php';
 require_once FGE_DIR . 'includes/cc-catalog.php';
+require_once FGE_DIR . 'includes/cc-venue-catalog.php';
+require_once FGE_DIR . 'includes/cc-offer-options.php';
+require_once FGE_DIR . 'includes/cc-venue-details.php';
 require_once FGE_DIR . 'includes/cc-positions.php';
 require_once FGE_DIR . 'includes/cc-actions.php';
+require_once FGE_DIR . 'includes/seed-fg-26-166.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once FGE_DIR . 'includes/cli-migrations.php';

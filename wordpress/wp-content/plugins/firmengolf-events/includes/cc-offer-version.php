@@ -45,6 +45,10 @@ function fge_offer_relaunch_blocker( int $req ): string {
 	if ( 'accepted' === (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
 		return 'Dieses Angebot wurde angenommen. Ein angenommenes Angebot ist ein Vertrag und wird nicht neu aufgelegt.';
 	}
+	if ( '1' === (string) get_post_meta( $req, '_fge_offer_options_mode', true ) ) {
+		// Optionen-Angebot: der Termin steht erst mit der Wahl des Kunden.
+		return function_exists( 'fge_offer_options_blocker' ) ? fge_offer_options_blocker( $req ) : '';
+	}
 	if ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) < 1 ) {
 		return 'Für diese Anfrage ist kein Termin bestätigt.';
 	}
@@ -91,6 +95,8 @@ function fge_offer_relaunch( int $req ): string {
 		'_fge_offer_extras_selected',
 		'_fge_offer_hold',
 		'_fge_offer_review_done',
+		// Sonst blieben die Dienstleister-Aufträge nach „abgelehnt, neu aufgelegt, angenommen" stumm.
+		'_fge_xs_providers_notified',
 	] as $key ) {
 		delete_post_meta( $req, $key );
 	}
@@ -100,7 +106,11 @@ function fge_offer_relaunch( int $req ): string {
 
 	// Derselbe Weg wie beim ersten Mal; die Kennung fürs Protokoll setzt
 	// fge_send_offer_email() selbst.
-	fge_offer_on_date_confirmed( $req, $idx );
+	if ( '1' === (string) get_post_meta( $req, '_fge_offer_options_mode', true ) && function_exists( 'fge_offer_send_options' ) ) {
+		fge_offer_send_options( $req );
+	} else {
+		fge_offer_on_date_confirmed( $req, $idx );
+	}
 
 	if ( '1' !== (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
 		return 'Das neue Angebot konnte nicht erstellt werden. Bitte im WordPress-Backend nachsehen.';

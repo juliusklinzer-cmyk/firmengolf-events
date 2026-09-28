@@ -275,12 +275,33 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 	$sel    = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
 	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
 		if ( in_array( (int) ( $x['src'] ?? -1 ), $sel, true ) ) {
-			$booked[] = (string) ( $x['label'] ?? '' );
+			$booked[] = (string) ( $x['label'] ?? '' ) . ( 'verbrauch' === (string) ( $x['basis'] ?? '' ) ? ' (nach Verbrauch)' : '' );
 		}
 	}
 	$booked_html = '';
 	foreach ( $booked as $b ) {
 		$booked_html .= '<li style="margin-bottom:3px;">' . esc_html( $b ) . '</li>';
+	}
+	// Der Platz bekommt nur, was er selbst erbringt; extern Organisiertes (Fotograf,
+	// Gravur) als Hinweis, damit er weiß, wer noch auf der Anlage auftaucht (Audit 28.09.).
+	$booked_partner_html = '';
+	$extern_labels       = [];
+	foreach ( array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) ) as $b ) {
+		$booked_partner_html .= '<li style="margin-bottom:3px;">' . esc_html( $b ) . '</li>';
+	}
+	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
+		if ( ! in_array( (int) ( $x['src'] ?? -1 ), $sel, true ) ) {
+			continue;
+		}
+		$lbl = (string) ( $x['label'] ?? '' ) . ( 'verbrauch' === (string) ( $x['basis'] ?? '' ) ? ' (nach Verbrauch)' : '' );
+		if ( 'extern' === (string) ( $x['organizer'] ?? 'platz' ) ) {
+			$extern_labels[] = (string) ( $x['label'] ?? '' );
+		} else {
+			$booked_partner_html .= '<li style="margin-bottom:3px;">' . esc_html( $lbl ) . '</li>';
+		}
+	}
+	if ( $extern_labels ) {
+		$booked_partner_html .= '<li style="margin-bottom:3px;color:#6C736E;">Zusätzlich über Firmengolf organisiert, nicht durch euch: ' . esc_html( implode( ', ', $extern_labels ) ) . '</li>';
 	}
 
 	$row = static function ( string $k, string $v ): string {
@@ -341,7 +362,7 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 			<p style="margin:0 0 16px;">Guten Tag,</p>
 			<p style="margin:0 0 16px;">' . $when . ' ist das Team von <strong>' . esc_html( $company ) . '</strong> bei Ihnen zu Gast. Hier die Eckdaten:</p>
 			<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows_p . '</table>
-			' . ( '' !== $booked_html ? '<p style="margin:0 0 4px;font-weight:600;">Gebucht und bestätigt</p><ul style="margin:0 0 16px;padding-left:20px;">' . $booked_html . '</ul>' : '' ) . '
+			' . ( '' !== $booked_partner_html ? '<p style="margin:0 0 4px;font-weight:600;">Gebucht und bestätigt</p><ul style="margin:0 0 16px;padding-left:20px;">' . $booked_partner_html . '</ul>' : '' ) . '
 			<p style="margin:0 0 16px;">Falls sich kurzfristig etwas ändert, erreichen Sie uns unter ' . esc_html( $fg_contact ) . '. Vielen Dank und einen schönen Tag!</p>
 			<p style="margin:0;color:#6C736E;font-size:13px;">Buchung ' . esc_html( $ref ) . ' · Firmengolf</p>
 		';

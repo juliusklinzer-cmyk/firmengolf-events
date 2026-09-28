@@ -850,8 +850,8 @@ get_header();
 					</button>
 
 					<div class="fg-rail-note"><?php echo esc_html( $is_self
-						? 'Anfrage ist kostenlos und unverbindlich. Sie geht direkt an uns, wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein und melden uns innerhalb eines Werktags.'
-						: 'Anfrage ist kostenlos. Sie geht direkt an den Golfplatz zur Terminfreigabe und an uns, du bekommst eine Antwort innerhalb eines Werktags.' ); ?></div>
+						? 'Anfrage ist kostenlos und unverbindlich. Sie geht direkt an uns, wir holen Verfügbarkeit und ein konkretes Angebot beim passenden Golfplatz ein und melden uns innerhalb von zwei Werktagen mit dem Angebot.'
+						: 'Anfrage ist kostenlos. Sie geht direkt an den Golfplatz zur Terminfreigabe und an uns, du bekommst eine Antwort innerhalb von zwei Werktagen.' ); ?></div>
 				</div>
 
 				<div class="fg-rail-host">
@@ -921,7 +921,7 @@ get_header();
 		<div class="fg-modal-head" id="fg-modal-head">
 			<div class="fg-detail-eyebrow"><?php echo esc_html( $format_label . ( $venue ? ' · ' . $venue : '' ) ); ?></div>
 			<h2 class="fg-modal-title" id="fg-modal-title">Eure Anfrage zu diesem Event</h2>
-			<p class="fg-modal-sub" id="fg-modal-sub">Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb eines Werktags zurück.</p>
+			<p class="fg-modal-sub" id="fg-modal-sub">Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb von zwei Werktagen mit konkreten Vorschlägen.</p>
 			<div class="fg-step-rail">
 				<div class="fg-step done" id="fg-srail-0"></div>
 				<div class="fg-step" id="fg-srail-1"></div>
@@ -1172,7 +1172,7 @@ get_header();
 			<div class="fg-success-mark"><?php echo fge_icon_check(); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 			<div class="fg-receipt-tag" id="fg-receipt-ref">k. A.</div>
 			<h2 class="fg-modal-title" style="max-width:400px;margin:14px auto 0;">Eure Anfrage ist eingegangen.</h2>
-			<p class="fg-modal-sub" style="margin-top:8px;">Das ist noch keine Buchungsbestätigung, wir melden uns, sobald der Platz den Termin bestätigt hat, in der Regel innerhalb eines Werktags.</p>
+			<p class="fg-modal-sub" style="margin-top:8px;">Das ist noch keine Buchungsbestätigung, wir melden uns, sobald der Platz den Termin bestätigt hat, in der Regel innerhalb von zwei Werktagen.</p>
 			<div class="rw-care" style="margin:22px auto 0;max-width:480px;">
 				<img class="rw-care-img" src="<?php echo esc_url( fge_get_placeholder_image_url( 'gruender-julius-klinzer.jpg' ) ); ?>" alt="Julius Klinzer" width="64" height="64">
 				<div class="rw-care-txt">
@@ -1211,7 +1211,7 @@ get_header();
 		var srail = [0, 1, 2].map(function (i) { return document.getElementById('fg-srail-' + i); });
 
 		var COPY = [
-			{ t: 'Wann & wie groß?',            s: 'Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb eines Werktags zurück.' },
+			{ t: 'Wann & wie groß?',            s: 'Erzähl uns kurz, was ihr vorhabt. Wir melden uns innerhalb von zwei Werktagen mit konkreten Vorschlägen.' },
 			{ t: 'Was wünscht ihr euch?',       s: 'Optionale Zusatzleistungen, die wir gleich mit anfragen und ins Angebot aufnehmen.' },
 			{ t: 'Wer ist Ansprechpartner?',    s: 'Nur damit wir euch erreichen können, kein Newsletter, kein Spam.' }
 		];

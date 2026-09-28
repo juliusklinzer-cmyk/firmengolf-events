@@ -166,7 +166,7 @@ get_header();
 			<div>
 				<div class="mk-eyebrow">Noch Fragen?</div>
 				<h2 class="blog-newsletter-h">Lieber kurz sprechen statt lange lesen.</h2>
-				<p class="muted">Erzähl uns von eurem Anlass, wir melden uns innerhalb eines Werktags mit konkreten Vorschlägen.</p>
+				<p class="muted">Erzähl uns von eurem Anlass, wir melden uns innerhalb von zwei Werktagen mit konkreten Vorschlägen.</p>
 				<div class="blog-nl-cta">
 					<a class="fg-btn-brand" href="<?php echo esc_url( home_url( '/individuelle-events/?anfrage=quick' ) ); ?>">In 30 Sekunden anfragen</a>
 					<a class="fg-btn-ghost" href="<?php echo esc_url( home_url( '/kontakt/' ) ); ?>">Zum Kontakt</a>

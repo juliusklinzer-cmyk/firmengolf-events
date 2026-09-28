@@ -114,7 +114,7 @@ function fge_send_customer_confirmation_email( int $request_id, array $data ): b
 		<p style="margin:0 0 8px;"><strong>Wie es jetzt weitergeht</strong></p>
 		<ul style="margin:0 0 16px;padding-left:20px;">
 			<li style="margin-bottom:6px;">Wir sehen uns deine Angaben in Ruhe an und prüfen passende Optionen.</li>
-			<li style="margin-bottom:6px;">Innerhalb eines Werktags meldet sich ein echter Ansprechpartner persönlich bei dir.</li>
+			<li style="margin-bottom:6px;">Wir prüfen passende Plätze und Termine, innerhalb von zwei Werktagen hast du unser Angebot im Postfach.</li>
 		</ul>
 		<p style="margin:0 0 16px;">Du musst nichts weiter tun. Fällt dir in der Zwischenzeit noch etwas ein, antworte einfach auf diese E-Mail oder schreib uns an <a href="mailto:' . esc_attr( $events_email ) . '" style="color:#4279D1;">' . esc_html( $events_email ) . '</a>.</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( fge_offer_link( $request_id ), 'Status meiner Anfrage ansehen' ) . '</p>
@@ -233,7 +233,7 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;">' . $table_rows . '</table>
 		' . ( $wishes_html !== '' ? '<div style="margin-top:18px;">' . $wishes_html . '</div>' : '' ) . '
 		<p style="margin-top:28px;">
-			' . fge_email_button( $admin_link, 'Anfrage im Admin öffnen' ) . '
+			' . fge_email_button( $admin_link, 'Im Control Center öffnen' ) . '
 		</p>
 	';
 
@@ -250,7 +250,8 @@ function fge_send_internal_request_email( int $request_id, array $data ): bool {
 }
 
 function fge_send_partner_availability_email( int $request_id, array $data ): bool {
-	$subject = 'Neue Verfügbarkeitsanfrage: ' . ( $data['company_name'] ?: 'Firmenevent' );
+	// Vor der Buchung bleibt das Unternehmen gegenüber dem Platz anonym (Paket C).
+	$subject = 'Neue Verfügbarkeitsanfrage: ' . fge_request_partner_title( $request_id );
 
 	$dates = array_filter( [ $data['date_1'], $data['date_2'], $data['date_3'] ] );
 	$dates_html = '';
@@ -267,7 +268,7 @@ function fge_send_partner_availability_email( int $request_id, array $data ): bo
 	$content = '
 		<p>Hallo,</p>
 		<p>für euer Angebot <strong>' . esc_html( $data['event_title'] ) . '</strong> ist eine neue Anfrage eingegangen.</p>
-		<p><strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ) . '<br>
+		<p><strong>Gruppe:</strong> ' . esc_html( fge_request_group_label( $request_id ) ) . '<br>
 		<strong>Teilnehmer:</strong> ' . esc_html( $data['participants'] ?: 'k. A.' ) . '</p>
 		' . $dates_html . '
 		' . ( fge_wishes_email_html( $request_id ) !== '' ? '<div style="margin:0 0 12px;">' . fge_wishes_email_html( $request_id ) . '</div>' : '' ) . '
@@ -317,7 +318,7 @@ function fge_send_contact_termin_emails( int $request_id, array $data ): int {
 		$subject = 'Eine Firmenanfrage wartet auf deine Rückmeldung (' . $ref . ')';
 		$content = '
 			<p style="margin:0 0 16px;">Hallo ' . esc_html( $first ) . ',</p>
-			<p style="margin:0 0 16px;">für <strong>' . esc_html( $venue ) . '</strong> gibt es eine neue Anfrage von <strong>' . esc_html( $data['company_name'] ?: 'einem Unternehmen' ) . '</strong>' . ( $data['participants'] ? ' (ca. ' . esc_html( $data['participants'] ) . ' Personen)' : '' ) . '.</p>
+			<p style="margin:0 0 16px;">für <strong>' . esc_html( $venue ) . '</strong> gibt es eine neue Anfrage: <strong>' . esc_html( fge_request_group_label( $request_id ) ) . '</strong>.</p>
 			<p style="margin:0 0 8px;"><strong>Mögliche Termine:</strong></p>
 			<ul style="margin:0 0 18px;padding-left:20px;">' . ( $dates_html ?: '<li>Nach Absprache</li>' ) . '</ul>
 			' . ( $wishes_html !== '' ? '<div style="margin:0 0 18px;">' . $wishes_html . '</div>' : '' ) . '
@@ -346,7 +347,7 @@ function fge_send_contact_reminder( int $request_id, array $contact ): bool {
 	$subject = 'Erinnerung: kurze Rückmeldung zu einer Firmenanfrage (' . $ref . ')';
 	$content = '
 		<p style="margin:0 0 16px;">Hallo ' . esc_html( $first ) . ',</p>
-		<p style="margin:0 0 16px;">die Anfrage von <strong>' . esc_html( $data['company_name'] ?: 'einem Unternehmen' ) . '</strong> für <strong>' . esc_html( $venue ) . '</strong> wartet noch auf deine Rückmeldung. Es dauert nur einen Moment.</p>
+		<p style="margin:0 0 16px;">die Firmenanfrage <strong>' . esc_html( $ref ) . '</strong> (' . esc_html( fge_request_group_label( $request_id ) ) . ') für <strong>' . esc_html( $venue ) . '</strong> wartet noch auf deine Rückmeldung. Es dauert nur einen Moment.</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Jetzt Termine bestätigen' ) . '</p>
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
 	';
@@ -363,7 +364,7 @@ function fge_notify_overdue( int $request_id ): void {
 	$content = '
 		<p style="margin:0 0 16px;">Die Anfrage <strong>' . esc_html( $ref ) . '</strong> (' . esc_html( $data['company_name'] ?: 'k. A.' ) . ' · ' . esc_html( $data['partner_title'] ?: 'k. A.' ) . ') hat die Reaktionsfrist überschritten, noch nicht alle Beteiligten haben reagiert.</p>
 		<p style="margin:0 0 16px;">Bitte nachfassen oder die Koordination übernehmen (direkt mit der Firma einen Termin festlegen).</p>
-		<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>
+		<p style="margin:0;">' . fge_email_button( $admin, 'Im Control Center öffnen' ) . '</p>
 	';
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -384,7 +385,7 @@ function fge_notify_all_responded( int $request_id ): void {
 			$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $request_id ) : admin_url();
 			$subject = 'Kein Termin möglich: ' . $ref;
 			$content = '<p style="margin:0 0 16px;">Für die Anfrage <strong>' . esc_html( $ref ) . '</strong> haben alle Ansprechpartner alle Wunschtermine abgesagt, es gibt keinen bestätigbaren Termin. Bitte mit dem Kunden Alternativen klären (Alternativvorschläge stehen ggf. in der Anfrage).</p>'
-				. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
+				. '<p style="margin:0;">' . fge_email_button( $admin, 'Im Control Center öffnen' ) . '</p>';
 			wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 			return;
 		}
@@ -400,7 +401,7 @@ function fge_notify_all_responded( int $request_id ): void {
 	$portal = trailingslashit( home_url( '/partnerportal/' ) ) . '?tab=anfragen&req=' . $request_id;
 	$subject = 'Alle Rückmeldungen da, Termin bestätigen (' . $ref . ')';
 	$content = '
-		<p style="margin:0 0 16px;">Hallo,</p>
+		<p style="margin:0 0 16px;">' . esc_html( function_exists( 'fge_venue_greeting' ) ? fge_venue_greeting( $partner_id ) : 'Hallo,' ) . '</p>
 		<p style="margin:0 0 16px;">für die Anfrage <strong>' . esc_html( $ref ) . '</strong> haben alle Ansprechpartner reagiert. Du kannst jetzt im Portal den passenden Termin bestätigen.</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( $portal, 'Im Portal öffnen' ) . '</p>
 	';
@@ -441,7 +442,7 @@ function fge_notify_date_confirmed( int $request_id, int $date_index ): void {
 		<strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: 'k. A.' ) . '<br>
 		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: 'k. A.' ) . '</p>
 		' . $next . '
-		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
+		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Im Control Center öffnen' ) . '</p>
 	';
 	fge_mail_log_context( $request_id, 'date_confirmed_internal' );
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
@@ -498,6 +499,13 @@ function fge_send_offer_email( int $request_id ): bool {
 	$table  = function_exists( 'fge_offer_mail_table_html' ) ? fge_offer_mail_table_html( $request_id ) : '';
 	$extras = array_values( (array) ( $snap['extras'] ?? [] ) );
 	$pdf    = function_exists( 'fge_offer_pdf_tempfile' ) ? fge_offer_pdf_tempfile( $request_id ) : '';
+	if ( '' === $pdf && function_exists( 'fge_offer_pdf_tempfile' ) ) {
+		// Ohne PDF geht die Mail trotzdem raus, aber der Kunde bekommt kein Dokument
+		// (Audit 28.09.2026: lokal war der Cache-Ordner nicht beschreibbar, still).
+		$to_w = apply_filters( 'fge_internal_email', fge_company_internal_email() );
+		$cw   = '<p style="margin:0 0 16px;">Die Angebotsmail zu <strong>' . esc_html( $ref ) . '</strong> geht ohne PDF raus: das PDF konnte nicht erzeugt werden. Meist ist der Ordner <code>wp-content/uploads/fge-pdf-cache</code> nicht beschreibbar. Der Kunde kann das PDF weiterhin über die Angebotsseite laden.</p>';
+		wp_mail( $to_w, 'Angebots-PDF fehlt: ' . $ref, fge_email_wrap( 'Angebots-PDF fehlt: ' . $ref, $cw ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	}
 
 	$cname         = (string) ( $snap['contact_name'] ?? '' );
 	$cphone        = (string) ( $snap['contact_phone'] ?? '' );
@@ -517,11 +525,16 @@ function fge_send_offer_email( int $request_id ): bool {
 		. ( function_exists( 'fge_offer_version_suffix' ) ? fge_offer_version_suffix( $request_id ) : '' );
 	$content = '
 		<p style="margin:0 0 16px;">' . $greet . '</p>
-		<p style="margin:0 0 18px;">der Termin steht. Hier ist euer Angebot <strong>' . esc_html( $ref ) . '</strong>, ihr könnt es online mit einem Klick annehmen.' . ( '' !== $pdf ? ' Als PDF findet ihr es auch im Anhang.' : '' ) . '</p>
+		<p style="margin:0 0 18px;">' . ( function_exists( 'fge_offer_version' ) && fge_offer_version( $request_id ) > 1
+			? 'hier ist die neue Fassung eures Angebots <strong>' . esc_html( $ref ) . '</strong>, sie ersetzt die vorherige. Ihr könnt sie online mit einem Klick annehmen.'
+			: ( ! empty( $snap['options'] ) && count( (array) $snap['options'] ) > 1
+				? 'hier ist euer Angebot <strong>' . esc_html( $ref ) . '</strong> mit ' . count( (array) $snap['options'] ) . ' Optionen. Wählt online Option und Termin und nehmt mit einem Klick an.'
+				: ( ! empty( $snap['options'] )
+					? 'hier ist euer Angebot <strong>' . esc_html( $ref ) . '</strong>' . ( count( (array) ( $snap['options'][0]['dates'] ?? [] ) ) > 1 ? '. Wählt online euren Termin und nehmt mit einem Klick an.' : ', ihr könnt es online mit einem Klick annehmen.' )
+					: 'der Termin steht. Hier ist euer Angebot <strong>' . esc_html( $ref ) . '</strong>, ihr könnt es online mit einem Klick annehmen.' ) ) ) . ( '' !== $pdf ? ' Als PDF findet ihr es auch im Anhang.' : '' ) . '</p>
 		' . $table . '
 		' . ( ! empty( $extras ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Zusatzleistungen könnt ihr auf der Angebotsseite einzeln abwählen, die Summe passt sich an.</p>' : '' ) . '
 		' . ( ! empty( $snap['discount']['percent'] ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Der Rabatt über euren Partnercode ist bereits abgezogen.</p>' : '' ) . '
-		' . ( ! empty( $wishes ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Auf Wunsch zusätzlich organisierbar, wird separat angeboten: ' . esc_html( implode( ', ', array_map( 'strval', $wishes ) ) ) . '.</p>' : '' ) . '
 		<p style="margin:0 0 18px;color:#555;font-size:12px;">' . ( $deadline > 0 ? 'Das Angebot ist gültig bis ' . esc_html( wp_date( 'd.m.Y', $deadline ) ) . ', bis dahin halten wir den Termin für euch. ' : '' ) . 'Es gelten unsere <a href="' . esc_url( home_url( '/agb/' ) ) . '" style="color:#4279D1;">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Angebot ansehen & annehmen' ) . '</p>
 		' . $contact_block . '
@@ -547,7 +560,7 @@ function fge_send_offer_email( int $request_id ): bool {
 		// Angebot gilt als versendet, kam aber nicht raus: intern warnen (Audit 18.09.).
 		$to_i = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 		$ci   = '<p style="margin:0 0 16px;">Die Angebotsmail zu <strong>' . esc_html( $ref ) . '</strong> an ' . esc_html( $data['contact_email'] ) . ' konnte nicht versendet werden. Bitte den Kunden manuell informieren, der Angebots-Link steht in der Anfrage.</p>'
-			. '<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>';
+			. '<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Im Control Center öffnen' ) . '</p>';
 		wp_mail( $to_i, 'Angebot nicht zugestellt: ' . $ref, fge_email_wrap( 'Angebot nicht zugestellt: ' . $ref, $ci ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 	}
 	return (bool) $sent;
@@ -567,7 +580,7 @@ function fge_notify_offer_query( int $request_id, string $message = '' ): void {
 		<p style="margin:0 0 16px;"><strong>Unternehmen:</strong> ' . esc_html( $data['company_name'] ?: 'k. A.' ) . '<br>
 		<strong>Kontakt:</strong> ' . esc_html( $name ?: 'k. A.' ) . ' &nbsp;·&nbsp; ' . esc_html( $data['contact_email'] ?: 'k. A.' ) . '</p>
 		' . ( '' !== trim( $message ) ? '<p style="margin:0 0 16px;"><strong>Nachricht:</strong><br>' . nl2br( esc_html( $message ) ) . '</p>' : '<p style="margin:0 0 16px;color:#6C736E;">(Keine Nachricht hinterlegt.)</p>' ) . '
-		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
+		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Im Control Center öffnen' ) . '</p>
 	';
 	wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -590,24 +603,27 @@ function fge_notify_offer_accepted( int $request_id ): void {
 			$sel = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $request_id ) : [];
 			$th  = static function ( $t ) { return '<td style="padding:4px 10px 4px 0;color:#6C736E;font-size:12px;">' . $t . '</td>'; };
 			$td  = static function ( $t ) { return '<td style="padding:4px 10px 4px 0;">' . $t . '</td>'; };
-			$trs = '<tr>' . $th( 'Leistung' ) . $th( 'Status' ) . $th( 'Kunde zahlt (netto)' ) . $th( 'Einkauf (netto)' ) . $th( 'Dienstleister' ) . '</tr>';
+			$trs = '<tr>' . $th( 'Leistung' ) . $th( 'Status' ) . $th( 'Kunde zahlt (netto)' ) . $th( 'Einkauf (netto)' ) . $th( 'Organisation' ) . '</tr>';
 			foreach ( $priced as $src => $it ) {
 				$on    = in_array( (int) $src, $sel, true );
-				$per   = 'person' === $it['basis'] ? ' p.P.' : ' pauschal';
+				$cons  = function_exists( 'fge_xs_is_consumption' ) && fge_xs_is_consumption( $it );
+				$per   = 'person' === $it['basis'] ? ' p.P.' : ( $cons ? '' : ' pauschal' );
 				$prov  = trim( $it['provider_name'] . ' ' . $it['provider_email'] );
+				$org   = ( 'platz' === (string) ( $it['organizer'] ?? '' ) ? 'Golfplatz' : 'extern' ) . ( '' !== $prov ? ': ' . $prov : ' (ohne Dienstleister)' );
+				$cnet  = function_exists( 'fge_xs_cost_net' ) ? fge_xs_cost_net( $it ) : (float) $it['cost'];
 				$trs  .= '<tr>'
 					. $td( esc_html( $it['label'] ) )
 					. $td( $on ? '<strong style="color:#2C7A3D;">gebucht</strong>' : '<span style="color:#B4332B;">abgewählt</span>' )
-					. $td( esc_html( number_format_i18n( fge_xs_sale_price( $it ), 2 ) . ' €' . $per ) )
-					. $td( esc_html( number_format_i18n( (float) $it['cost'], 2 ) . ' €' . $per . ' zzgl. ' . number_format_i18n( (float) $it['margin'], 0 ) . ' % Marge' ) )
-					. $td( '' !== $prov ? esc_html( $prov ) : '<span style="color:#6C736E;">ohne, freie Position</span>' )
+					. $td( $cons ? 'nach Verbrauch' . ( '' !== (string) $it['guide'] ? ' (Richtwert ' . esc_html( $it['guide'] ) . ')' : '' ) : esc_html( number_format_i18n( fge_xs_sale_price( $it ), 2 ) . ' €' . $per ) )
+					. $td( $cons ? 'nach Verbrauch, ' . esc_html( number_format_i18n( (float) $it['margin'], 0 ) ) . ' % Marge bei der Weiterberechnung' : esc_html( number_format_i18n( $cnet, 2 ) . ' €' . $per . ( ! empty( $it['cost_gross'] ) ? ' (aus ' . number_format_i18n( (float) $it['cost'], 2 ) . ' € brutto)' : '' ) . ' zzgl. ' . number_format_i18n( (float) $it['margin'], 0 ) . ' % Marge' ) )
+					. $td( esc_html( $org ) )
 					. '</tr>';
 			}
 			$tot      = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap, $sel ) : [ 'net' => 0.0, 'ca' => false ];
 			$xs_block = '<p style="margin:0 0 6px;font-weight:600;">Abrechnungsübersicht Zusatzleistungen (intern)</p>'
 				. '<table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.5;margin:0 0 8px;">' . $trs . '</table>'
 				. ( (float) $tot['net'] > 0 ? '<p style="margin:0 0 6px;"><strong>Rechnungsbetrag an den Kunden (netto, inkl. Event und gebuchter Zusatzleistungen):</strong> ' . esc_html( number_format_i18n( (float) $tot['net'], 2 ) . ' €' . ( $tot['ca'] ? ' bei ' . (int) ( $snap['participants'] ?? 0 ) . ' gebuchten Teilnehmern' : '' ) ) . '</p>' : '' )
-				. '<p style="margin:0 0 16px;color:#6C736E;font-size:13px;">Dienstleister mit hinterlegter Mail wurden automatisch beauftragt bzw. bei Abwahl abgesagt.</p>';
+				. '<p style="margin:0 0 16px;color:#6C736E;font-size:13px;">Externe Dienstleister mit hinterlegter Mail wurden automatisch beauftragt bzw. bei Abwahl abgesagt. Positionen des Golfplatzes stehen in seiner Buchungsbestätigung.</p>';
 		}
 	}
 
@@ -653,7 +669,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: 'k. A.' ) . '</p>
 		' . $xs_block . $pc_block . '
 		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen. Für die automatische Vortags-Info in der Anfrage unter „Schritt 4: Event-Tag" Startzeit, Treffpunkt und Ansprechpartner vor Ort eintragen.</p>
-		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
+		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Im Control Center öffnen' ) . '</p>
 	';
 	fge_mail_log_context( $request_id, 'order_internal' );
 	wp_mail( $to, 'Auftrag steht: ' . $ref, fge_email_wrap( 'Auftrag steht: ' . $ref, $ic ), [ 'Content-Type: text/html; charset=UTF-8' ] );
@@ -715,27 +731,40 @@ function fge_partner_booking_confirmation( int $req ): bool {
 	$date    = (string) ( $snap['date'] ?? '' );
 	$start   = (string) ( $v['day_start_time'] ?? '' );
 	$pax     = (int) ( $snap['participants'] ?? 0 );
-	$city    = (string) get_post_meta( $req, '_fge_company_city', true );
-	$level   = (string) get_post_meta( $req, '_fge_group_experience', true );
 	$cust    = trim( $data['first_name'] . ' ' . $data['last_name'] );
 	$cust_c  = trim( $cust . ( '' !== $data['phone'] ? ', ' . $data['phone'] : '' ), ', ' );
 	$company = $data['company_name'] ?: 'unser Kunde';
 
-	$group = $company . ( '' !== $city ? ' aus ' . $city : '' )
-		. ( $pax > 0 ? ', ' . $pax . ' Personen' : '' )
-		. ( '' !== $level ? ', ' . $level : '' );
+	// Buchung steht: hier darf der Platz den Namen sehen (Paket C).
+	$group = fge_request_group_label( $req, true );
 
 	$row = static function ( string $k, string $val ): string {
 		return '' === trim( wp_strip_all_tags( $val ) ) ? '' : '<tr><td style="padding:5px 16px 5px 0;color:#555;white-space:nowrap;vertical-align:top;"><strong>' . esc_html( $k ) . '</strong></td><td style="padding:5px 0;color:#1a1a1a;">' . $val . '</td></tr>';
 	};
 
 	// Gebuchte Leistungen wie in der Vortags-Info, ohne Preise.
+	// Nur Positionen, die der Platz selbst erbringt; extern eingekaufte (Fotograf,
+	// Shuttle) gehören nicht in seine Auftragsbestätigung (Julius, 28.09.2026).
+	// Ältere Snapshots ohne Organisator-Feld zählen wie bisher als Platz-Leistung.
 	$booked = array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) );
 	$sel    = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
+	$xs_all = function_exists( 'fge_extra_services' ) ? fge_extra_services( $req ) : [];
 	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
-		if ( in_array( (int) ( $x['src'] ?? -1 ), $sel, true ) ) {
-			$booked[] = (string) ( $x['label'] ?? '' );
+		if ( ! in_array( (int) ( $x['src'] ?? -1 ), $sel, true ) || 'platz' !== (string) ( $x['organizer'] ?? 'platz' ) ) {
+			continue;
 		}
+		$line = (string) ( $x['label'] ?? '' );
+		foreach ( $xs_all as $it ) {
+			if ( (int) $it['id'] !== (int) ( $x['src'] ?? -1 ) ) {
+				continue;
+			}
+			if ( function_exists( 'fge_xs_is_consumption' ) && fge_xs_is_consumption( $it ) ) {
+				$line .= ' (nach Verbrauch, Abrechnung im Nachgang)';
+			} elseif ( (float) $it['cost'] > 0 ) {
+				$line .= ' (vereinbart: ' . number_format_i18n( (float) $it['cost'], 2 ) . ' € ' . ( ! empty( $it['cost_gross'] ) ? 'brutto' : 'netto' ) . ( 'person' === $it['basis'] ? ' p.P.' : ' pauschal' ) . ')';
+			}
+		}
+		$booked[] = $line;
 	}
 	$booked_html = '';
 	foreach ( $booked as $b ) {
@@ -755,17 +784,51 @@ function fge_partner_booking_confirmation( int $req ): bool {
 	$invoice_ad = trim( (string) ( $co['hq_street'] ?? '' ) . ', ' . trim( (string) ( $co['hq_zip'] ?? '' ) . ' ' . (string) ( $co['hq_city'] ?? '' ) ), ', ' );
 	$invoice_em = (string) ( $co['email_partner'] ?? $co['email_events'] ?? '' );
 
+	// Eventtag-Details trägt der Platz selbst ein, ohne Login (cc-venue-details.php).
+	// Partner-Events ohne Pipeline bekommen dafür eine gewählte Zeile.
+	$partner_id   = (int) $data['partner_id'];
+	$details_html = '';
+	if ( $partner_id > 0 && function_exists( 'fge_venue_detail_row_for' ) && function_exists( 'fge_venue_detail_link' ) ) {
+		$vrow = fge_venue_detail_row_for( $req, $partner_id, true );
+		if ( $vrow ) {
+			$due          = function_exists( 'fge_venue_detail_deadline' ) ? fge_venue_detail_deadline( $req ) : '';
+			$details_html = '<p style="margin:16px 0 12px;">Damit die Gruppe alles Wichtige vorab bekommt, tragt bitte ' . ( '' !== $due ? 'bis ' . esc_html( $due ) : 'in den nächsten Tagen' ) . ' ein: Ansprechpartner vor Ort mit Telefon, Golflehrer, Treffpunkt, Startzeit und was mitzubringen ist.</p>'
+				. '<p style="margin:0;">' . fge_email_button( fge_venue_detail_link( (int) $vrow['id'] ), 'Details für den Eventtag eintragen' ) . '</p>';
+		}
+	}
+
+	// Was die Gruppe erwartet: Wünsche aus der Anfrage, die der Platz kennen sollte.
+	$expect     = [];
+	$wish_start = trim( (string) get_post_meta( $req, '_fge_start_time', true ) );
+	$level      = trim( (string) get_post_meta( $req, '_fge_group_experience', true ) );
+	$msg        = trim( (string) get_post_meta( $req, '_fge_message', true ) );
+	if ( '' !== $wish_start ) {
+		$expect[] = '<li style="margin-bottom:3px;">Startzeitwunsch: ' . esc_html( $wish_start ) . '</li>';
+	}
+	if ( '' !== $level ) {
+		$expect[] = '<li style="margin-bottom:3px;">Niveau: ' . esc_html( $level ) . '</li>';
+	}
+	if ( '' !== $msg ) {
+		if ( mb_strlen( $msg ) > 400 ) {
+			$msg = rtrim( mb_substr( $msg, 0, 400 ) ) . '…';
+		}
+		$expect[] = '<li style="margin-bottom:3px;">Nachricht der Gruppe: „' . nl2br( esc_html( $msg ) ) . '"</li>';
+	}
+	$expect_html = $expect ? '<p style="margin:0 0 4px;font-weight:600;">Was die Gruppe erwartet</p><ul style="margin:0 0 16px;padding-left:20px;">' . implode( '', $expect ) . '</ul>' : '';
+
 	$subject = 'Buchung bestätigt: ' . $company . ( '' !== $date ? ', ' . $date : '' ) . ' (' . $ref . ')';
 	$content = '
-		<p style="margin:0 0 16px;">Hallo,</p>
+		<p style="margin:0 0 16px;">' . esc_html( function_exists( 'fge_venue_greeting' ) ? fge_venue_greeting( (int) get_post_meta( $req, '_fge_assigned_partner_id', true ) ) : 'Hallo,' ) . '</p>
 		<p style="margin:0 0 16px;">der Kunde hat verbindlich gebucht. Hier die Buchung schriftlich:</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
 		' . ( '' !== $booked_html ? '<p style="margin:0 0 4px;font-weight:600;">Inklusive</p><ul style="margin:0 0 16px;padding-left:20px;">' . $booked_html . '</ul>' : '' ) . '
+		' . $expect_html . '
 		<p style="margin:0 0 4px;font-weight:600;">Rechnung nach dem Event bitte an</p>
 		<p style="margin:0 0 16px;">' . esc_html( $invoice_to ) . '<br>' . esc_html( $invoice_ad )
 			. ( '' !== $invoice_em ? '<br>per Mail an <a href="mailto:' . esc_attr( $invoice_em ) . '" style="color:#4279D1;">' . esc_html( $invoice_em ) . '</a>' : '' )
 			. '<br>Verwendungszweck: <strong>' . esc_html( $ref ) . '</strong></p>
 		<p style="margin:0;">Für die Detailabstimmung melden wir uns rechtzeitig, den Ablauf und den Ansprechpartner der Gruppe schicken wir spätestens am Vortag. Bei Fragen einfach auf diese Mail antworten.</p>
+		' . $details_html . '
 	';
 
 	$headers = [ 'Content-Type: text/html; charset=UTF-8' ];
@@ -814,7 +877,7 @@ function fge_notify_offer_declined( int $request_id ): void {
 	$content = '
 		<p style="margin:0 0 16px;">Der Kunde hat das Angebot <strong>' . esc_html( $ref ) . '</strong> (' . esc_html( $data['company_name'] ?: 'k. A.' ) . ') abgelehnt.</p>
 		<p style="margin:0 0 16px;">Bitte nachfassen oder eine Alternative anbieten.</p>
-		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Anfrage im Admin öffnen' ) . '</p>
+		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Im Control Center öffnen' ) . '</p>
 	';
 	wp_mail( $to, 'Angebot abgelehnt: ' . $ref, fge_email_wrap( 'Angebot abgelehnt: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
@@ -838,7 +901,10 @@ function fge_xs_mail_facts( int $req ): array {
 
 /** Vereinbarter Einkaufspreis als Text für den Dienstleister. */
 function fge_xs_cost_text( array $item, int $pax ): string {
-	$s = number_format_i18n( (float) $item['cost'], 2 ) . ' € netto ' . ( 'person' === $item['basis'] ? 'p.P.' : 'pauschal' );
+	if ( function_exists( 'fge_xs_is_consumption' ) && fge_xs_is_consumption( $item ) ) {
+		return 'nach tatsächlichem Verbrauch, Abrechnung im Nachgang';
+	}
+	$s = number_format_i18n( (float) $item['cost'], 2 ) . ' € ' . ( ! empty( $item['cost_gross'] ) ? 'brutto ' : 'netto ' ) . ( 'person' === $item['basis'] ? 'p.P.' : 'pauschal' );
 	if ( 'person' === $item['basis'] && $pax > 0 ) {
 		$s .= ' bei ' . $pax . ' Personen';
 	}
@@ -891,7 +957,8 @@ function fge_xs_notify_providers_on_accept( int $req ): void {
 	}
 	$sel = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
 	foreach ( fge_xs_priced( $req ) as $src => $item ) {
-		if ( ! is_email( $item['provider_email'] ) ) {
+		// Der Golfplatz bekommt seine Positionen über die Buchungsbestätigung, nicht als Dienstleister-Auftrag.
+		if ( 'platz' === (string) ( $item['organizer'] ?? '' ) || ! is_email( $item['provider_email'] ) ) {
 			continue;
 		}
 		if ( in_array( (int) $src, $sel, true ) ) {
@@ -912,7 +979,7 @@ function fge_xs_cancel_providers( int $req ): void {
 		return;
 	}
 	foreach ( fge_xs_priced( $req ) as $item ) {
-		if ( ! is_email( $item['provider_email'] ) ) {
+		if ( 'platz' === (string) ( $item['organizer'] ?? '' ) || ! is_email( $item['provider_email'] ) ) {
 			continue;
 		}
 		fge_xs_provider_cancellation( $req, $item, 'Das Event kommt leider nicht zustande.' );
@@ -1480,7 +1547,14 @@ function fge_send_onboarding_resume_email( string $to, string $resume_url, strin
 	return (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
 
+/**
+ * Link zur Anfrage in internen Mails: seit 28.09.2026 ins Control Center, das
+ * WordPress-Backend bleibt von dort aus erreichbar („Im WordPress öffnen").
+ */
 function fge_format_request_admin_link( int $request_id ): string {
+	if ( function_exists( 'fge_cc_request_url' ) ) {
+		return fge_cc_request_url( $request_id );
+	}
 	return admin_url( 'post.php?post=' . $request_id . '&action=edit' );
 }
 

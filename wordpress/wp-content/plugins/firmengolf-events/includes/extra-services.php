@@ -21,10 +21,35 @@ function fge_xs_default_margin(): float {
 	return defined( 'FGE_MARKUP_PERCENT' ) ? (float) FGE_MARKUP_PERCENT : 20.0;
 }
 
+/** Mehrwertsteuersatz für die Brutto-nach-Netto-Rechnung beim Einkauf. */
+function fge_xs_vat_percent(): float {
+	return defined( 'FGE_VAT_PERCENT' ) ? (float) FGE_VAT_PERCENT : 19.0;
+}
+
+/** Wer eine Position erbringt: der gewählte Golfplatz selbst oder ein externer Dienstleister. */
+function fge_xs_organizers(): array {
+	return [
+		'platz'  => 'Golfplatz selbst',
+		'extern' => 'Externer Dienstleister',
+	];
+}
+
+/** Abrechnungsbasis einer Position. „verbrauch" = kein fester Betrag, Abrechnung nach dem Event. */
+function fge_xs_bases(): array {
+	return [
+		'pauschal'  => 'pauschal',
+		'person'    => 'p.P.',
+		'verbrauch' => 'nach Verbrauch',
+	];
+}
+
 /**
- * Normalisierte Positionsliste einer Anfrage.
+ * Normalisierte Positionsliste einer Anfrage, Schlüssel = Zeilenindex, jede Zeile mit
+ * stabiler `id` (Julius, 28.09.2026): Die id verbindet Snapshot, Kundenauswahl und
+ * Dienstleister-Mails und überlebt Löschen und Umsortieren nach dem Versand. Altdaten
+ * ohne id bekommen beim Lesen index+1, das entspricht ihrer bisherigen Position.
  *
- * @return array<int,array{label:string,cost:float,basis:string,margin:float,provider_name:string,provider_email:string,wish:string}>
+ * @return array<int,array{id:int,label:string,cost:float,cost_gross:int,basis:string,margin:float,organizer:string,provider_name:string,provider_email:string,partner_id:int,wish:string,note:string,guide:string,status:string}>
  */
 function fge_extra_services( int $req ): array {
 	$raw = get_post_meta( $req, '_fge_extra_services', true );
@@ -32,48 +57,109 @@ function fge_extra_services( int $req ): array {
 		return [];
 	}
 	$out = [];
+	$idx = 0;
 	foreach ( $raw as $r ) {
 		if ( ! is_array( $r ) || '' === trim( (string) ( $r['label'] ?? '' ) ) ) {
 			continue;
 		}
+		$idx++;
+		$partner   = max( 0, (int) ( $r['partner_id'] ?? 0 ) );
+		$organizer = (string) ( $r['organizer'] ?? '' );
+		if ( ! isset( fge_xs_organizers()[ $organizer ] ) ) {
+			// Altdaten: Partner-Zuordnung hieß „der Platz macht es", sonst extern.
+			$organizer = $partner > 0 ? 'platz' : 'extern';
+		}
+		$basis = (string) ( $r['basis'] ?? '' );
+		if ( ! isset( fge_xs_bases()[ $basis ] ) ) {
+			$basis = 'pauschal';
+		}
 		$out[] = [
+			'id'             => max( 0, (int) ( $r['id'] ?? 0 ) ) ?: $idx,
 			'label'          => (string) $r['label'],
 			'cost'           => max( 0.0, (float) ( $r['cost'] ?? 0 ) ),
-			'basis'          => 'person' === ( $r['basis'] ?? '' ) ? 'person' : 'pauschal',
+			'cost_gross'     => ! empty( $r['cost_gross'] ) ? 1 : 0,
+			'basis'          => $basis,
 			'margin'         => max( 0.0, (float) ( $r['margin'] ?? fge_xs_default_margin() ) ),
+			'organizer'      => $organizer,
 			'provider_name'  => (string) ( $r['provider_name'] ?? '' ),
 			'provider_email' => (string) ( $r['provider_email'] ?? '' ),
 			// Mehr-Partner-Angebot (Plan Abschnitt 7.1): Position kann einem
 			// Firmengolf-Partner (z. B. Golflehrer) zugeordnet sein, damit dessen
 			// Eingangsrechnung der Buchung zuordenbar ist.
-			'partner_id'     => max( 0, (int) ( $r['partner_id'] ?? 0 ) ),
+			'partner_id'     => $partner,
 			'wish'           => (string) ( $r['wish'] ?? '' ),
+			'note'           => trim( (string) ( $r['note'] ?? '' ) ),
+			'guide'          => trim( (string) ( $r['guide'] ?? '' ) ),
+			'status'         => 'nicht_moeglich' === ( $r['status'] ?? '' ) ? 'nicht_moeglich' : 'angeboten',
+			// Verkaufspreis aus der Kalkulation je Platz (Optionen-Angebot), schlägt Einkauf plus Marge.
+			'sale_override'  => max( 0.0, (float) ( $r['sale_override'] ?? 0 ) ),
 		];
 	}
 	return $out;
 }
 
-/** Verkaufspreis (netto) einer Position: Einkauf + Marge. */
+/** Einkaufspreis netto: brutto eingegebene Preise (wie mit Plätzen verhandelt) werden umgerechnet. */
+function fge_xs_cost_net( array $item ): float {
+	$cost = max( 0.0, (float) ( $item['cost'] ?? 0 ) );
+	if ( $cost <= 0 ) {
+		return 0.0;
+	}
+	return ! empty( $item['cost_gross'] ) ? round( $cost / ( 1 + fge_xs_vat_percent() / 100 ), 2 ) : $cost;
+}
+
+/** Verkaufspreis (netto) einer Position: Einkauf netto + Marge. */
 function fge_xs_sale_price( array $item ): float {
-	$cost = (float) ( $item['cost'] ?? 0 );
+	if ( (float) ( $item['sale_override'] ?? 0 ) > 0 ) {
+		return round( (float) $item['sale_override'], 2 );
+	}
+	$cost = fge_xs_cost_net( $item );
 	if ( $cost <= 0 ) {
 		return 0.0;
 	}
 	return round( $cost * ( 1 + (float) ( $item['margin'] ?? 0 ) / 100 ), 2 );
 }
 
+/** Position ohne festen Betrag, Abrechnung nach tatsächlichem Verbrauch im Nachgang. */
+function fge_xs_is_consumption( array $item ): bool {
+	return 'verbrauch' === (string) ( $item['basis'] ?? '' );
+}
+
 /**
- * Bepreiste Positionen (Verkauf > 0), Schlüssel = Original-Zeilenindex ('src').
- * Der src-Index verbindet Snapshot-Extras, Kundenauswahl und Dienstleister-Mails.
+ * Angebotsfähige Positionen, Schlüssel = stabile Zeilen-id ('src'): bepreiste Zeilen
+ * (Verkauf > 0) und Verbrauchs-Positionen (ohne Betrag, aber im Angebot sichtbar).
+ * Als „nicht möglich" markierte Zeilen bleiben draußen, sie landen als Hinweis im Angebot.
  */
 function fge_xs_priced( int $req ): array {
 	$out = [];
-	foreach ( fge_extra_services( $req ) as $i => $item ) {
-		if ( fge_xs_sale_price( $item ) > 0 ) {
-			$out[ $i ] = $item;
+	foreach ( fge_extra_services( $req ) as $item ) {
+		if ( 'nicht_moeglich' === $item['status'] ) {
+			continue;
+		}
+		if ( fge_xs_sale_price( $item ) > 0 || fge_xs_is_consumption( $item ) ) {
+			$out[ (int) $item['id'] ] = $item;
 		}
 	}
 	return $out;
+}
+
+/** Wünsche, die der gewählte Platz nicht anbieten kann und die niemand extern gelöst hat. */
+function fge_xs_not_possible( int $req ): array {
+	$out = [];
+	foreach ( fge_extra_services( $req ) as $item ) {
+		if ( 'nicht_moeglich' === $item['status'] ) {
+			$out[] = (string) $item['label'];
+		}
+	}
+	return array_values( array_unique( $out ) );
+}
+
+/** Kundentaugliche Angabe, wer die Position erbringt. Nie der Name eines externen Dienstleisters. */
+function fge_xs_organizer_label( array $item ): string {
+	if ( 'platz' === (string) ( $item['organizer'] ?? '' ) ) {
+		$name = trim( (string) ( $item['provider_name'] ?? '' ) );
+		return '' !== $name ? 'über den Golfplatz (' . $name . ')' : 'über den Golfplatz';
+	}
+	return 'organisiert von Firmengolf mit einem externen Dienstleister';
 }
 
 /**
@@ -85,7 +171,12 @@ function fge_xs_priced( int $req ): array {
 function fge_xs_uncovered_wishes( int $req ): array {
 	$g = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ];
 	$covered = [];
-	foreach ( fge_xs_priced( $req ) as $item ) {
+	// Angebotene UND als nicht möglich markierte Zeilen decken einen Wunsch ab; nur
+	// Wünsche ohne jede Zeile bleiben „offen" und stehen als Nachtrag im Angebot.
+	foreach ( fge_extra_services( $req ) as $item ) {
+		if ( 'nicht_moeglich' !== $item['status'] && fge_xs_sale_price( $item ) <= 0 && ! fge_xs_is_consumption( $item ) ) {
+			continue;
+		}
 		foreach ( [ $item['wish'], $item['label'] ] as $k ) {
 			$k = mb_strtolower( trim( (string) $k ) );
 			if ( '' !== $k ) {
@@ -164,55 +255,56 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 		echo '<p style="margin:0 0 10px;color:#9A6B12;"><strong>Hinweis:</strong> Das Angebot ist bereits versendet. Änderungen hier wirken sich nicht mehr auf das laufende Angebot aus.</p>';
 	}
 	?>
-	<p class="description" style="margin:0 0 10px;">Verhandelte Zusatzleistungen (Shuttle, Fotograf, Kurs …) und freie Angebotszeilen. Der Kunde sieht nur den Verkaufspreis, Einkauf und Marge bleiben intern. Positionen mit Dienstleister-Mail lösen bei Annahme automatisch Auftrag bzw. Absage aus. Zeile löschen = Leistung leeren.</p>
+	<p class="description" style="margin:0 0 10px;">Verhandelte Zusatzleistungen (Shuttle, Fotograf, Kurs …) und freie Angebotszeilen. Der Kunde sieht Verkaufspreis, Beschreibung und ob der Platz oder ein externer Dienstleister organisiert; Einkauf, Marge und Dienstleister-Name bleiben intern. Externe Positionen mit Dienstleister-Mail lösen bei Annahme automatisch Auftrag bzw. Absage aus. „Nach Verbrauch" = kein fester Betrag, Abrechnung nach dem Event. Zeile löschen = Leistung leeren.</p>
 	<table class="widefat striped" id="fge-xs-table" style="margin:0 0 8px;">
 		<thead><tr>
-			<th style="width:22%;">Leistung</th>
-			<th style="width:9%;">Einkauf € netto</th>
-			<th style="width:8%;">Basis</th>
-			<th style="width:7%;">Marge %</th>
-			<th style="width:10%;">Verkauf € netto</th>
-			<th style="width:14%;">Firmengolf-Partner</th>
-			<th style="width:14%;">Dienstleister</th>
+			<th style="width:26%;">Leistung und Beschreibung</th>
+			<th style="width:13%;">Einkauf €</th>
+			<th style="width:9%;">Basis</th>
+			<th style="width:6%;">Marge %</th>
+			<th style="width:9%;">Verkauf € netto</th>
+			<th style="width:12%;">Organisation</th>
+			<th style="width:12%;">Dienstleister</th>
 			<th>Dienstleister E-Mail</th>
 		</tr></thead>
 		<tbody>
 		<?php
-		// Aktive Partner für die Positions-Zuordnung (Golflehrer zuerst, dann Rest).
-		$xs_partners = get_posts( [
-			'post_type'      => 'firmengolf_partner',
-			'post_status'    => 'publish',
-			'posts_per_page' => -1,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
-			'meta_query'     => [ [ 'key' => '_fge_partner_status', 'value' => 'aktiv' ] ],
-		] );
-		$xs_partner_opts = [];
-		foreach ( $xs_partners as $xp ) {
-			$xs_partner_opts[ (int) $xp->ID ] = get_the_title( $xp ) . ' (' . ( fge_catalog_partner_types()[ fge_partner_type( (int) $xp->ID ) ] ?? 'Partner' ) . ')';
-		}
-		$row = static function ( array $it = [] ) use ( $xs_partner_opts ) {
+		$row = static function ( array $it = [] ) {
 			$cost   = (float) ( $it['cost'] ?? 0 );
 			$margin = isset( $it['margin'] ) ? (float) $it['margin'] : fge_xs_default_margin();
 			$sale   = $it ? fge_xs_sale_price( $it + [ 'margin' => $margin ] ) : 0.0;
+			$basis  = (string) ( $it['basis'] ?? 'pauschal' );
+			$np     = 'nicht_moeglich' === (string) ( $it['status'] ?? '' );
 			?>
-			<tr class="fge-xs-row">
+			<tr class="fge-xs-row<?php echo $np ? ' fge-xs-row--np' : ''; ?>">
 				<td><input type="text" name="fge_xs_label[]" value="<?php echo esc_attr( (string) ( $it['label'] ?? '' ) ); ?>" class="widefat" placeholder="z. B. Shuttle Hotel und Platz">
-					<input type="hidden" name="fge_xs_wish[]" value="<?php echo esc_attr( (string) ( $it['wish'] ?? '' ) ); ?>"></td>
-				<td><input type="text" name="fge_xs_cost[]" value="<?php echo esc_attr( $cost > 0 ? number_format( $cost, 2, ',', '.' ) : '' ); ?>" class="widefat fge-xs-cost" placeholder="450,00"></td>
-				<td><select name="fge_xs_basis[]" class="widefat">
-					<option value="pauschal" <?php selected( ( $it['basis'] ?? 'pauschal' ), 'pauschal' ); ?>>pauschal</option>
-					<option value="person" <?php selected( ( $it['basis'] ?? '' ), 'person' ); ?>>p.P.</option>
-				</select></td>
+					<input type="hidden" name="fge_xs_wish[]" value="<?php echo esc_attr( (string) ( $it['wish'] ?? '' ) ); ?>">
+					<input type="hidden" name="fge_xs_id[]" value="<?php echo (int) ( $it['id'] ?? 0 ); ?>">
+					<input type="hidden" name="fge_xs_partner[]" value="<?php echo (int) ( $it['partner_id'] ?? 0 ); ?>">
+					<textarea name="fge_xs_note[]" rows="2" class="widefat" style="margin-top:4px;" placeholder="Beschreibung für den Kunden (optional), z. B. Grillsemmeln und Getränke, Abrechnung nach Verbrauch"><?php echo esc_textarea( (string) ( $it['note'] ?? '' ) ); ?></textarea>
+					<select name="fge_xs_status[]" class="widefat fge-xs-status" style="margin-top:4px;">
+						<option value="angeboten" <?php selected( ! $np ); ?>>steht im Angebot</option>
+						<option value="nicht_moeglich" <?php selected( $np ); ?>>am Platz nicht möglich (Kunde erfährt es)</option>
+					</select></td>
+				<td><input type="text" name="fge_xs_cost[]" value="<?php echo esc_attr( $cost > 0 ? number_format( $cost, 2, ',', '.' ) : '' ); ?>" class="widefat fge-xs-cost" placeholder="450,00">
+					<select name="fge_xs_gross[]" class="widefat fge-xs-gross" style="margin-top:4px;">
+						<option value="0" <?php selected( empty( $it['cost_gross'] ) ); ?>>netto</option>
+						<option value="1" <?php selected( ! empty( $it['cost_gross'] ) ); ?>>brutto</option>
+					</select></td>
+				<td><select name="fge_xs_basis[]" class="widefat fge-xs-basis">
+					<?php foreach ( fge_xs_bases() as $bk => $bl ) : ?>
+						<option value="<?php echo esc_attr( $bk ); ?>" <?php selected( $basis, $bk ); ?>><?php echo esc_html( $bl ); ?></option>
+					<?php endforeach; ?>
+				</select>
+					<input type="text" name="fge_xs_guide[]" value="<?php echo esc_attr( (string) ( $it['guide'] ?? '' ) ); ?>" class="widefat fge-xs-guide" style="margin-top:4px;<?php echo 'verbrauch' === $basis ? '' : 'display:none;'; ?>" placeholder="Richtwert, z. B. 15 bis 25 € p.P."></td>
 				<td><input type="text" name="fge_xs_margin[]" value="<?php echo esc_attr( number_format( $margin, $margin === floor( $margin ) ? 0 : 1, ',', '.' ) ); ?>" class="widefat fge-xs-margin"></td>
-				<td><span class="fge-xs-sale" style="font-weight:600;"><?php echo $sale > 0 ? esc_html( number_format( $sale, 2, ',', '.' ) . ' €' ) : ''; ?></span></td>
-				<td><select name="fge_xs_partner[]" class="widefat">
-					<option value="0">Extern / keiner</option>
-					<?php $cur_p = (int) ( $it['partner_id'] ?? 0 ); foreach ( $xs_partner_opts as $pid_opt => $plabel ) : ?>
-						<option value="<?php echo esc_attr( (string) $pid_opt ); ?>" <?php selected( $cur_p, $pid_opt ); ?>><?php echo esc_html( $plabel ); ?></option>
+				<td><span class="fge-xs-sale" style="font-weight:600;"><?php echo $sale > 0 ? esc_html( number_format( $sale, 2, ',', '.' ) . ' €' ) : ( 'verbrauch' === $basis ? 'nach Verbrauch' : '' ); ?></span></td>
+				<td><select name="fge_xs_org[]" class="widefat fge-xs-org">
+					<?php foreach ( fge_xs_organizers() as $ok => $ol ) : ?>
+						<option value="<?php echo esc_attr( $ok ); ?>" <?php selected( (string) ( $it['organizer'] ?? 'extern' ), $ok ); ?>><?php echo esc_html( $ol ); ?></option>
 					<?php endforeach; ?>
 				</select></td>
-				<td><input type="text" name="fge_xs_pname[]" value="<?php echo esc_attr( (string) ( $it['provider_name'] ?? '' ) ); ?>" class="widefat" placeholder="optional"></td>
+				<td><input type="text" name="fge_xs_pname[]" value="<?php echo esc_attr( (string) ( $it['provider_name'] ?? '' ) ); ?>" class="widefat" placeholder="bei „Golfplatz selbst" automatisch"></td>
 				<td><input type="email" name="fge_xs_pmail[]" value="<?php echo esc_attr( (string) ( $it['provider_email'] ?? '' ) ); ?>" class="widefat" placeholder="optional" list="fge-provider-mails"></td>
 			</tr>
 			<?php
@@ -280,7 +372,7 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 	// Angebotstext für Position 1 (Julius, 17.09.2026): Ort, Ablauf und Leistungen
 	// stehen im Angebot zusammen unter dem Event. Leer = Angaben des zugeordneten Events.
 	$ov_loc  = (string) get_post_meta( $req, '_fge_offer_location', true );
-	$ov_sch  = (string) get_post_meta( $req, '_fge_offer_schedule', true );
+	$ov_sch  = function_exists( 'fge_offer_schedule_prefill' ) ? fge_offer_schedule_prefill( $req ) : (string) get_post_meta( $req, '_fge_offer_schedule', true );
 	$ov_inc  = (string) get_post_meta( $req, '_fge_offer_includes', true );
 	$ev_loc  = $event_id > 0 ? (string) get_post_meta( $event_id, '_fge_event_location', true ) : '';
 	$ev_inc  = $event_id > 0 ? get_post_meta( $event_id, '_fge_event_includes', true ) : [];
@@ -320,17 +412,22 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 		    EVENT_PP = <?php echo 'pro Person' === (string) ( $pricing['unit'] ?? '' ) ? 'true' : 'false'; ?>;
 		function num(s){ s = (s||'').replace(/[\s€]/g,''); if (s.indexOf(',') !== -1) { s = s.replace(/\./g,'').replace(',', '.'); } var f = parseFloat(s); return isNaN(f) || f < 0 ? 0 : f; }
 		function fmt(n){ return n.toLocaleString('de-DE', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' €'; }
+		var VAT = <?php echo wp_json_encode( fge_xs_vat_percent() ); ?>;
 		function rowSale(tr){
 			var cost = num(tr.querySelector('.fge-xs-cost').value), m = num(tr.querySelector('.fge-xs-margin').value);
+			if (tr.querySelector('.fge-xs-gross').value === '1') { cost = cost / (1 + VAT/100); }
 			return cost > 0 ? cost * (1 + m/100) : 0;
 		}
 		function recalc(){
 			var pos = 0, ppMissing = false;
 			t.querySelectorAll('.fge-xs-row').forEach(function(tr){
-				var sale = rowSale(tr);
-				tr.querySelector('.fge-xs-sale').textContent = sale > 0 ? sale.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €' : '';
-				if (sale <= 0) return;
-				var pp = tr.querySelector('select[name="fge_xs_basis[]"]').value === 'person';
+				var basis = tr.querySelector('.fge-xs-basis').value, np = tr.querySelector('.fge-xs-status').value === 'nicht_moeglich';
+				tr.querySelector('.fge-xs-guide').style.display = basis === 'verbrauch' ? '' : 'none';
+				tr.classList.toggle('fge-xs-row--np', np);
+				var sale = np ? 0 : rowSale(tr);
+				tr.querySelector('.fge-xs-sale').textContent = np ? 'nicht möglich' : (sale > 0 ? sale.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €' : (basis === 'verbrauch' ? 'nach Verbrauch' : ''));
+				if (sale <= 0 || basis === 'verbrauch') return;
+				var pp = basis === 'person';
 				if (pp && PAX <= 0) { ppMissing = true; return; }
 				pos += pp ? sale * PAX : sale;
 			});
@@ -352,8 +449,13 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 		var add = document.getElementById('fge-xs-add');
 		if (add) add.addEventListener('click', function(){
 			var rows = t.querySelectorAll('.fge-xs-row'), tpl = rows[rows.length-1].cloneNode(true);
-			tpl.querySelectorAll('input').forEach(function(i){ i.value = i.name === 'fge_xs_margin[]' ? '<?php echo esc_js( number_format( fge_xs_default_margin(), 0, ',', '.' ) ); ?>' : ''; });
-			tpl.querySelector('select').value = 'pauschal';
+			tpl.querySelectorAll('input').forEach(function(i){ i.value = i.name === 'fge_xs_margin[]' ? '<?php echo esc_js( number_format( fge_xs_default_margin(), 0, ',', '.' ) ); ?>' : (i.name === 'fge_xs_id[]' || i.name === 'fge_xs_partner[]' ? '0' : ''); });
+			tpl.querySelectorAll('textarea').forEach(function(i){ i.value = ''; });
+			tpl.querySelector('.fge-xs-basis').value = 'pauschal';
+			tpl.querySelector('.fge-xs-gross').value = '0';
+			tpl.querySelector('.fge-xs-status').value = 'angeboten';
+			tpl.querySelector('.fge-xs-org').value = 'extern';
+			tpl.classList.remove('fge-xs-row--np');
 			tpl.querySelector('.fge-xs-sale').textContent = '';
 			t.querySelector('tbody').appendChild(tpl);
 		});
@@ -398,21 +500,39 @@ function fge_xs_items_from_post( array $src ): array {
 	$pmails  = array_map( 'sanitize_email', wp_unslash( (array) ( $src['fge_xs_pmail'] ?? [] ) ) );
 	$partners = array_map( 'absint', wp_unslash( (array) ( $src['fge_xs_partner'] ?? [] ) ) );
 	$wishes  = array_map( 'sanitize_text_field', wp_unslash( (array) ( $src['fge_xs_wish'] ?? [] ) ) );
+	$ids     = array_map( 'absint', wp_unslash( (array) ( $src['fge_xs_id'] ?? [] ) ) );
+	$gross   = array_map( 'absint', wp_unslash( (array) ( $src['fge_xs_gross'] ?? [] ) ) );
+	$orgs    = array_map( 'sanitize_key', wp_unslash( (array) ( $src['fge_xs_org'] ?? [] ) ) );
+	$notes   = array_map( 'sanitize_textarea_field', wp_unslash( (array) ( $src['fge_xs_note'] ?? [] ) ) );
+	$guides  = array_map( 'sanitize_text_field', wp_unslash( (array) ( $src['fge_xs_guide'] ?? [] ) ) );
+	$status  = array_map( 'sanitize_key', wp_unslash( (array) ( $src['fge_xs_status'] ?? [] ) ) );
+
+	// Stabile Zeilen-ids: vorhandene bleiben, neue Zeilen bekommen die nächste freie.
+	$next_id = max( array_merge( [ 0 ], array_map( 'intval', $ids ) ) ) + 1;
+	// Der gewählte Platz erbringt „Golfplatz selbst"-Positionen; seine Kontaktdaten
+	// werden nachgefüllt, damit Buchungsbestätigung und Margenübersicht ihn nennen.
+	$req_id      = (int) ( $src['request_id'] ?? $src['post_ID'] ?? 0 );
+	$venue_id    = $req_id > 0 ? (int) get_post_meta( $req_id, '_fge_assigned_partner_id', true ) : 0;
 
 	$items = [];
 	foreach ( $labels as $i => $label ) {
 		if ( '' === trim( $label ) ) {
 			continue;
 		}
-		$xs_pid = (int) ( $partners[ $i ] ?? 0 );
+		$organizer = isset( fge_xs_organizers()[ $orgs[ $i ] ?? '' ] ) ? (string) $orgs[ $i ] : 'extern';
+		$xs_pid    = (int) ( $partners[ $i ] ?? 0 );
+		if ( 'platz' === $organizer && $xs_pid <= 0 ) {
+			$xs_pid = $venue_id;
+		}
 		if ( $xs_pid > 0 && 'firmengolf_partner' !== get_post_type( $xs_pid ) ) {
+			$xs_pid = 0;
+		}
+		if ( 'extern' === $organizer ) {
 			$xs_pid = 0;
 		}
 		$pname = trim( $pnames[ $i ] ?? '' );
 		$pmail = (string) ( $pmails[ $i ] ?? '' );
-		// Partner-Zuordnung füllt Dienstleister-Name/Mail automatisch nach, damit
-		// die bestehenden Auftrags-/Absage-Mails ohne Sonderfall funktionieren.
-		if ( $xs_pid > 0 ) {
+		if ( 'platz' === $organizer && $xs_pid > 0 ) {
 			if ( '' === $pname ) {
 				$pname = (string) get_post_meta( $xs_pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $xs_pid );
 			}
@@ -420,15 +540,28 @@ function fge_xs_items_from_post( array $src ): array {
 				$pmail = sanitize_email( (string) get_post_meta( $xs_pid, '_fge_main_contact_email', true ) );
 			}
 		}
+		$id = (int) ( $ids[ $i ] ?? 0 );
+		if ( $id <= 0 ) {
+			$id = $next_id++;
+		}
+		$b    = (string) ( $basis[ $i ] ?? '' );
+		$cost = fge_xs_parse_num( $costs[ $i ] ?? '' );
+		$st   = 'nicht_moeglich' === ( $status[ $i ] ?? '' ) ? 'nicht_moeglich' : 'angeboten';
 		$items[] = [
+			'id'             => $id,
 			'label'          => trim( $label ),
-			'cost'           => fge_xs_parse_num( $costs[ $i ] ?? '' ),
-			'basis'          => 'person' === ( $basis[ $i ] ?? '' ) ? 'person' : 'pauschal',
+			'cost'           => $cost,
+			'cost_gross'     => ! empty( $gross[ $i ] ) ? 1 : 0,
+			'basis'          => isset( fge_xs_bases()[ $b ] ) ? $b : 'pauschal',
 			'margin'         => '' === trim( $margins[ $i ] ?? '' ) ? fge_xs_default_margin() : fge_xs_parse_num( $margins[ $i ] ),
+			'organizer'      => $organizer,
 			'provider_name'  => $pname,
 			'provider_email' => $pmail,
 			'partner_id'     => $xs_pid,
 			'wish'           => trim( $wishes[ $i ] ?? '' ),
+			'note'           => trim( $notes[ $i ] ?? '' ),
+			'guide'          => trim( $guides[ $i ] ?? '' ),
+			'status'         => $st,
 		];
 	}
 	return $items;

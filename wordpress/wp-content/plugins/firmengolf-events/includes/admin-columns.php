@@ -94,6 +94,7 @@ function fge_partner_column_content( string $column, int $post_id ) {
 		case 'fge_partner_status':
 			$ps_val    = (string) get_post_meta( $post_id, '_fge_partner_status', true );
 			$ps_labels = [
+				'stammdaten'  => [ 'Stammdaten',  'gray'   ],
 				'in_pruefung' => [ 'In Prüfung', 'orange' ],
 				'aktiv'       => [ 'Aktiv',       'green'  ],
 				'pausiert'    => [ 'Pausiert',    'gray'   ],

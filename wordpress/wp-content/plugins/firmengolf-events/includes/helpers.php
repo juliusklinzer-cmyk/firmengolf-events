@@ -193,6 +193,7 @@ function fge_course_partner_choices(): array {
 		'post_status' => [ 'publish', 'draft' ],
 		'numberposts' => 300,
 		'fields'      => 'ids',
+		'meta_query'  => fge_stammdaten_exclude_meta_clause(),
 	] );
 	$out = [];
 	foreach ( $ids as $pid ) {
@@ -277,6 +278,7 @@ function fge_course_coach_suggestions( int $course_id ): array {
 		'post_status' => [ 'publish', 'draft' ],
 		'numberposts' => 300,
 		'fields'      => 'ids',
+		'meta_query'  => fge_stammdaten_exclude_meta_clause(),
 	] );
 	$out = [];
 	foreach ( $ids as $pid ) {
@@ -536,20 +538,50 @@ function fge_calculate_sale_price_net( array $meta ): float {
  * @param string $post_type The post type to query.
  * @return array<int, string> [ post_ID => 'Post Titel (#post_ID)' ]
  */
-function fge_get_posts_select_options( string $post_type ): array {
-	$posts = get_posts( [
+function fge_get_posts_select_options( string $post_type, int $keep_id = 0 ): array {
+	$args = [
 		'post_type'   => $post_type,
 		'post_status' => [ 'publish', 'draft', 'pending' ],
 		'numberposts' => -1,
 		'orderby'     => 'title',
 		'order'       => 'ASC',
-	] );
+	];
+	// Stammdaten-Plätze (alle DGV-Plätze und Simulatoren) würden die Dropdowns auf
+	// ~1000 Einträge aufblähen. Der aktuell zugeordnete bleibt immer wählbar, sonst
+	// verliert das Speichern der Metabox die Zuordnung (erste Option = 0).
+	if ( 'firmengolf_partner' === $post_type ) {
+		$args['meta_query'] = fge_stammdaten_exclude_meta_clause();
+	}
+	$posts = get_posts( $args );
 
 	$options = [];
 	foreach ( $posts as $p ) {
 		$options[ $p->ID ] = $p->post_title . ' (#' . $p->ID . ')';
 	}
+	if ( $keep_id > 0 && ! isset( $options[ $keep_id ] ) && get_post_type( $keep_id ) === $post_type ) {
+		$options[ $keep_id ] = get_the_title( $keep_id ) . ' (#' . $keep_id . ')' . ( fge_partner_is_stammdaten( $keep_id ) ? ' (Stammdaten)' : '' );
+	}
 	return $options;
+}
+
+// ── Stammdaten-Plätze ────────────────────────────────────────────────────────
+
+/**
+ * Stammdaten-Platz: ein Golfplatz oder Simulator aus dem Verzeichnis, den wir in
+ * der Pipeline anfragen können, der aber kein Partner ist (kein Portal, nicht
+ * öffentlich, keine Termin-Einladungen, kein Matching). Status `stammdaten`.
+ */
+function fge_partner_is_stammdaten( int $partner_id ): bool {
+	return $partner_id > 0 && 'stammdaten' === (string) get_post_meta( $partner_id, '_fge_partner_status', true );
+}
+
+/** meta_query-Klausel, die Stammdaten-Plätze aus Partner-Abfragen heraushält. */
+function fge_stammdaten_exclude_meta_clause(): array {
+	return [
+		'relation' => 'OR',
+		[ 'key' => '_fge_partner_status', 'value' => 'stammdaten', 'compare' => '!=' ],
+		[ 'key' => '_fge_partner_status', 'compare' => 'NOT EXISTS' ],
+	];
 }
 
 /**
@@ -606,4 +638,64 @@ function fge_admin_post_button( string $action, array $fields, string $label, ar
 	});
 	</script>
 	<?php
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Anonymität gegenüber dem Platz (Paket C)
+// Firma, Kontaktperson, Mail, Telefon, Kundentext und Budget sieht ein Golfplatz
+// erst, wenn die Buchung steht. Vorher beschreiben wir die Gruppe nur anonym.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Buchung steht: Angebot angenommen oder ein Status danach. */
+function fge_request_is_booked( int $req ): bool {
+	if ( 'accepted' === (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
+		return true;
+	}
+	$status = (string) get_post_meta( $req, '_fge_request_status', true );
+	return in_array( $status, [ 'angebot_angenommen', 'event_durchgefuehrt', 'rechnung_in_lexoffice_erstellt', 'abgeschlossen' ], true );
+}
+
+/**
+ * Gruppenbeschreibung für den Platz.
+ * Mit Namen: „<Firma> aus <Stadt>, N Personen, <Niveau>", anonym: „Ein Unternehmen aus <Stadt>, …".
+ * Leere Bestandteile fallen weg. $named = null entscheidet über fge_request_is_booked().
+ * Stadt: _fge_company_city, sonst _fge_desired_region. Personen: Angebots-Snapshot, sonst _fge_expected_participants.
+ */
+function fge_request_group_label( int $req, ?bool $named = null ): string {
+	if ( null === $named ) {
+		$named = fge_request_is_booked( $req );
+	}
+	$company = trim( (string) get_post_meta( $req, '_fge_company_name', true ) );
+	$city    = trim( (string) get_post_meta( $req, '_fge_company_city', true ) );
+	if ( '' === $city ) {
+		$city = trim( (string) get_post_meta( $req, '_fge_desired_region', true ) );
+	}
+	$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
+	$pax  = (int) ( $snap['participants'] ?? 0 );
+	if ( $pax <= 0 ) {
+		$pax = (int) get_post_meta( $req, '_fge_expected_participants', true );
+	}
+	$level = trim( (string) get_post_meta( $req, '_fge_group_experience', true ) );
+
+	$label = ( $named && '' !== $company ) ? $company : 'Ein Unternehmen';
+	if ( '' !== $city ) {
+		$label .= ' aus ' . $city;
+	}
+	if ( $pax > 0 ) {
+		$label .= ', ' . $pax . ' Personen';
+	}
+	if ( '' !== $level ) {
+		$label .= ', ' . $level;
+	}
+	return $label;
+}
+
+/** Titel einer Anfrage aus Platzsicht: vor der Buchung „Firmenanfrage FG-…", danach „<Firma> (FG-…)". */
+function fge_request_partner_title( int $req ): string {
+	$ref = function_exists( 'fge_request_number' ) ? fge_request_number( $req ) : sprintf( 'FG-%06d', $req );
+	if ( ! fge_request_is_booked( $req ) ) {
+		return 'Firmenanfrage ' . $ref;
+	}
+	$company = trim( (string) get_post_meta( $req, '_fge_company_name', true ) );
+	return ( '' !== $company ? $company : 'Unternehmen' ) . ' (' . $ref . ')';
 }

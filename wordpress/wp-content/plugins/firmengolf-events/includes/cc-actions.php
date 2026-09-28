@@ -36,8 +36,10 @@ function fge_cc_messages(): array {
 		'venue_added'    => [ 'ok', 'Platz in die Liste aufgenommen.' ],
 		'venue_asked'    => [ 'ok', 'Platz ist angefragt.' ],
 		'venue_reply'    => [ 'ok', 'Antwort des Platzes festgehalten.' ],
+		'venue_reply_sent' => [ 'ok', 'Antwort festgehalten. Der Platz hat die Bestätigung mit Terminen, Preisen und Reservierungsbitte bekommen.' ],
 		'venue_chosen'   => [ 'ok', 'Platz gewählt und der Anfrage zugeordnet.' ],
 		'venue_declined' => [ 'ok', 'Absage ist raus.' ],
+		'venue_summary'  => [ 'ok', 'Bestätigung mit Reservierungsbitte ist beim Platz.' ],
 		'venue_removed'  => [ 'ok', 'Platz aus der Liste entfernt.' ],
 		'venue_dupe'     => [ 'err', 'Dieser Platz steht schon in der Liste.' ],
 		'venue_nomail'   => [ 'err', 'Dieser Platz hat keine Kontaktmail. Bitte telefonisch und hier festhalten.' ],
@@ -50,6 +52,11 @@ function fge_cc_messages(): array {
 		'task_added'     => [ 'ok', 'Aufgabe notiert.' ],
 		'task_done'      => [ 'ok', 'Aufgabe abgehakt.' ],
 		'relaunch_failed' => [ 'err', 'Das Angebot konnte nicht neu aufgelegt werden.' ],
+		'venue_exists'    => [ 'err', 'Dieser Platz steht schon in der Liste.' ],
+		'geo_saved'       => [ 'ok', 'Kundenstandort gesetzt, die Plätze in der Nähe sind aktualisiert.' ],
+		'contact_saved'   => [ 'ok', 'Kontakt beim Platz ergänzt.' ],
+		'contact_invalid' => [ 'err', 'Die Mailadresse sieht nicht gültig aus, Kontakt nicht gespeichert.' ],
+		'calc_saved'      => [ 'ok', 'Kalkulation gespeichert.' ],
 	];
 }
 
@@ -402,8 +409,9 @@ add_action( 'admin_post_fge_cc_venue_reply', static function (): void {
 	$venue = fge_cc_venue_from_post( $req );
 	$yes   = 'zusagt' === sanitize_key( wp_unslash( $_POST['answer'] ?? '' ) );
 
+	// Ein gewählter Platz bleibt gewählt, wenn nur Termine oder Preise nachgetragen werden.
 	$data = [
-		'status'     => $yes ? 'zugesagt' : 'abgesagt',
+		'status'     => $yes ? ( 'gewaehlt' === (string) $venue['status'] ? 'gewaehlt' : 'zugesagt' ) : 'abgesagt',
 		'replied_at' => current_time( 'mysql' ),
 		'reason'     => sanitize_textarea_field( wp_unslash( $_POST['reason'] ?? '' ) ),
 		'note'       => sanitize_textarea_field( wp_unslash( $_POST['note'] ?? '' ) ),
@@ -417,22 +425,103 @@ add_action( 'admin_post_fge_cc_venue_reply', static function (): void {
 
 	// Preise je Position mitschreiben, damit die Angebote vergleichbar werden.
 	foreach ( (array) ( $_POST['item_price'] ?? [] ) as $key => $raw ) {
-		$key = sanitize_key( (string) $key );
+		$key       = sanitize_key( (string) $key );
+		$available = isset( $_POST['item_available'][ $key ] ) ? 1 : 0;
+		// Was der Platz nicht anbietet, hat auch keinen Preis; ein getippter Wert bliebe sonst stehen.
 		fge_venue_item_set( (int) $venue['id'], $key, [
-			'price'       => fge_xs_parse_num( sanitize_text_field( wp_unslash( (string) $raw ) ) ),
-			'available'   => isset( $_POST['item_available'][ $key ] ) ? 1 : 0,
+			'price'       => $available ? fge_xs_parse_num( sanitize_text_field( wp_unslash( (string) $raw ) ) ) : 0.0,
+			'available'   => $available,
 			'price_basis' => 'pauschal' === sanitize_key( wp_unslash( $_POST['item_basis'][ $key ] ?? '' ) ) ? 'pauschal' : 'person',
 			'price_gross' => '0' === (string) ( $_POST['item_gross'][ $key ] ?? '1' ) ? 0 : 1,
 		] );
 	}
 
+	// Verfügbarkeit je Wunschtermin: 1 geht, 0 geht nicht, leer bleibt offen.
+	// Der Alternativvorschlag hängt als Notiz am ersten gesendeten Termin-Index.
+	$avail = [];
+	foreach ( (array) ( $_POST['date_avail'] ?? [] ) as $idx => $raw ) {
+		$idx = (int) $idx;
+		if ( $idx >= 1 && $idx <= 3 ) {
+			$avail[ $idx ] = (string) $raw;
+		}
+	}
+	$dates_note = '';
+	if ( $avail && function_exists( 'fge_venue_date_set' ) ) {
+		$alt   = sanitize_text_field( wp_unslash( $_POST['date_alt'] ?? '' ) );
+		$first = (int) min( array_keys( $avail ) );
+		foreach ( $avail as $idx => $raw ) {
+			fge_venue_date_set( (int) $venue['id'], $idx, '' === $raw ? null : ( '1' === $raw ? 1 : 0 ), $idx === $first ? $alt : '' );
+		}
+		if ( $yes ) {
+			$free       = function_exists( 'fge_venue_free_dates' ) ? fge_venue_free_dates( (int) $venue['id'] ) : [];
+			$dates_note = $free ? ' (Termin ' . implode( ', ', $free ) . ' frei)' : ' (kein Wunschtermin frei)';
+		}
+	}
+
 	fge_activity_add( $req, 'venue', sprintf(
-		'%s hat %s%s',
+		'%s hat %s%s%s',
 		get_the_title( (int) $venue['partner_id'] ),
 		$yes ? 'zugesagt' : 'abgesagt',
+		$dates_note,
 		'' !== $data['reason'] ? ': ' . $data['reason'] : ''
 	) );
+	// Erste Zusage erfasst: dem Platz bestätigen, was wir notiert haben, mit Reservierungsbitte.
+	// Nur beim Wechsel von „angefragt" zu „zugesagt". Spätere Korrekturen lösen keine Mail
+	// aus (Julius, 28.09.: GolfKultur ist fix und soll nur die Auftragsbestätigung bekommen),
+	// dafür gibt es den Knopf „Bestätigung erneut senden".
+	$first_reply = in_array( (string) $venue['status'], [ 'idee', 'angefragt' ], true ) && '' === (string) ( $venue['summary_at'] ?? '' ) && '' === (string) ( $venue['reservation_at'] ?? '' );
+	if ( $yes && $first_reply && function_exists( 'fge_venue_send_summary' ) && '' !== fge_venue_partner_email( (int) $venue['partner_id'] )
+		&& ! ( function_exists( 'fge_request_is_booked' ) && fge_request_is_booked( $req ) ) ) {
+		fge_cc_redirect( $req, fge_venue_send_summary( $req, (int) $venue['id'], 'absprache' ) ? 'venue_reply_sent' : 'venue_reply' );
+	}
 	fge_cc_redirect( $req, 'venue_reply' );
+} );
+
+/**
+ * Kalkulation je Platz: Aufschlag, Verkaufspreis des Grundpreises, je Position
+ * Verkaufspreis und Organisator. Leere Felder übernehmen den Vorschlag aus
+ * Einkauf plus Aufschlag.
+ */
+add_action( 'admin_post_fge_cc_venue_calc', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_calc' );
+	$venue = fge_cc_venue_from_post( $req );
+	$vid   = (int) $venue['id'];
+
+	$markup_raw = trim( sanitize_text_field( wp_unslash( $_POST['markup'] ?? '' ) ) );
+	$markup     = '' !== $markup_raw ? fge_xs_parse_num( $markup_raw ) : (float) ( $venue['markup_percent'] ?? 20 );
+	$markup     = min( 500.0, $markup );
+
+	$base_raw = trim( sanitize_text_field( wp_unslash( $_POST['sale_base'] ?? '' ) ) );
+	$sale     = '' !== $base_raw
+		? fge_xs_parse_num( $base_raw )
+		: fge_venue_sale_from_cost( (float) $venue['price'], (bool) (int) $venue['price_gross'], $markup );
+
+	fge_venue_update( $vid, [
+		'markup_percent' => $markup,
+		'sale_price'     => $sale,
+	] );
+
+	// Über die gespeicherten Positionen laufen, nicht über den POST: so sind die
+	// Keys garantiert echt, und Positionen ohne Eingabe bekommen den Vorschlag.
+	$sale_items = (array) ( $_POST['sale_item'] ?? [] );
+	$organizers = (array) ( $_POST['organizer'] ?? [] );
+	foreach ( fge_venue_items_get( $vid ) as $it ) {
+		$key = (string) $it['wish_key'];
+		if ( 'green_fee' === $key || ! (int) $it['available'] || (float) $it['price'] <= 0 ) {
+			continue;
+		}
+		$raw = isset( $sale_items[ $key ] ) ? trim( sanitize_text_field( wp_unslash( (string) $sale_items[ $key ] ) ) ) : '';
+		$org = sanitize_key( wp_unslash( (string) ( $organizers[ $key ] ?? 'platz' ) ) );
+		fge_venue_item_set( $vid, $key, [
+			'sale_price' => '' !== $raw
+				? fge_xs_parse_num( $raw )
+				: fge_venue_sale_from_cost( (float) $it['price'], (bool) (int) $it['price_gross'], $markup ),
+			'organizer'  => 'extern' === $org ? 'extern' : 'platz',
+		] );
+	}
+
+	fge_activity_add( $req, 'venue', sprintf( 'Kalkulation für %s gespeichert', get_the_title( (int) $venue['partner_id'] ) ) );
+	fge_cc_redirect( $req, 'calc_saved' );
 } );
 
 add_action( 'admin_post_fge_cc_venue_choose', static function (): void {
@@ -448,11 +537,23 @@ add_action( 'admin_post_fge_cc_venue_decline', static function (): void {
 	fge_cc_redirect( $req, fge_venue_send_decline( $req, (int) $venue['id'], $reason ) ? 'venue_declined' : 'venue_nomail' );
 } );
 
+add_action( 'admin_post_fge_cc_venue_summary', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_summary' );
+	$venue = fge_cc_venue_from_post( $req );
+	fge_cc_redirect( $req, fge_venue_send_summary( $req, (int) $venue['id'], 'absprache' ) ? 'venue_summary' : 'venue_nomail' );
+} );
+
+add_action( 'admin_post_fge_cc_venue_release', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_release' );
+	$venue = fge_cc_venue_from_post( $req );
+	fge_cc_redirect( $req, fge_venue_send_release( $req, (int) $venue['id'] ) ? 'venue_declined' : 'venue_nomail' );
+} );
+
 add_action( 'admin_post_fge_cc_venue_decline_all', static function (): void {
 	$req  = fge_cc_guard( 'fge_cc_venue_decline_all' );
 	$sent = 0;
 	foreach ( fge_venues_to_decline( $req ) as $v ) {
-		if ( fge_venue_send_decline( $req, (int) $v['id'], 'Der Termin passte diesmal bei einem anderen Platz besser.' ) ) {
+		if ( fge_venue_send_decline( $req, (int) $v['id'], '' ) ) {
 			$sent++;
 		}
 	}
@@ -464,4 +565,101 @@ add_action( 'admin_post_fge_cc_venue_remove', static function (): void {
 	$venue = fge_cc_venue_from_post( $req );
 	fge_venue_delete( (int) $venue['id'] );
 	fge_cc_redirect( $req, 'venue_removed' );
+} );
+
+// ── Standort, Stammdaten-Plätze, Kontakt (28.09.2026) ────────────────────────
+
+add_action( 'admin_post_fge_cc_geo_anchor', static function (): void {
+	$req  = fge_cc_guard( 'fge_cc_geo_anchor' );
+	$text = sanitize_text_field( wp_unslash( $_POST['geo_anchor'] ?? '' ) );
+	if ( '' === $text ) {
+		delete_post_meta( $req, '_fge_geo_anchor' );
+		fge_activity_add( $req, 'note', 'Kundenstandort zurückgesetzt' );
+	} else {
+		update_post_meta( $req, '_fge_geo_anchor', $text );
+		fge_activity_add( $req, 'note', sprintf( 'Kundenstandort auf %s gesetzt', $text ) );
+	}
+	fge_cc_redirect( $req, 'geo_saved' );
+} );
+
+/**
+ * Platz aus dem DGV-Verzeichnis oder der Simulatoren-Liste aufnehmen.
+ * Legt bei Bedarf den Stammdaten-Partner an (stammdaten-import.php); fehlt
+ * die Datei, passiert nichts und die Seite bleibt heil.
+ */
+add_action( 'admin_post_fge_cc_venue_add_place', static function (): void {
+	global $wpdb;
+	$req = fge_cc_guard( 'fge_cc_venue_add_place' );
+	$vid = absint( $_POST['vid'] ?? 0 );
+	$sim = sanitize_text_field( wp_unslash( $_POST['sim'] ?? '' ) );
+	$pid = 0;
+
+	if ( $vid > 0 ) {
+		if ( ! function_exists( 'fge_stammdaten_ensure_from_verzeichnis_row' ) || ! function_exists( 'fge_verzeichnis_table' ) ) {
+			fge_cc_redirect( $req, 'nothing' );
+		}
+		$t = fge_verzeichnis_table();
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $vid ), ARRAY_A );
+		if ( $row ) {
+			$pid = (int) fge_stammdaten_ensure_from_verzeichnis_row( $row );
+		}
+	} elseif ( '' !== $sim ) {
+		if ( ! function_exists( 'fge_stammdaten_ensure_from_simulator' ) || ! function_exists( 'fge_stammdaten_sim_key' ) || ! function_exists( 'fge_simulatoren' ) ) {
+			fge_cc_redirect( $req, 'nothing' );
+		}
+		foreach ( fge_simulatoren() as $s ) {
+			if ( fge_stammdaten_sim_key( (string) $s['name'], (string) ( $s['plz'] ?? '' ), (string) ( $s['ort'] ?? '' ) ) === $sim ) {
+				$pid = (int) fge_stammdaten_ensure_from_simulator( $s );
+				break;
+			}
+		}
+	}
+
+	if ( $pid <= 0 || 'firmengolf_partner' !== get_post_type( $pid ) ) {
+		fge_cc_redirect( $req, 'nothing' );
+	}
+	fge_cc_redirect( $req, fge_venue_add( $req, $pid ) > 0 ? 'venue_added' : 'venue_exists' );
+} );
+
+/**
+ * Hauptkontakt eines Platzes ergänzen, aus dem Cockpit oder dem Verzeichnis.
+ * Eigene Prüfung, weil der Nonce am Platz hängt, nicht an der Anfrage.
+ */
+add_action( 'admin_post_fge_cc_partner_contact', static function (): void {
+	$pid = absint( $_POST['partner_id'] ?? 0 );
+	$req = absint( $_POST['request_id'] ?? 0 );
+	if ( $pid <= 0 || ! fge_cc_can() || 'firmengolf_partner' !== get_post_type( $pid ) ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
+	}
+	check_admin_referer( 'fge_cc_partner_contact_' . $pid );
+
+	$back = static function ( string $msg ) use ( $req ): void {
+		if ( $req > 0 ) {
+			fge_cc_redirect( $req, $msg );
+		}
+		wp_safe_redirect( fge_cc_url( 'plaetze', [ 'msg' => $msg ] ) );
+		exit;
+	};
+
+	$name  = sanitize_text_field( wp_unslash( $_POST['contact_name'] ?? '' ) );
+	$phone = sanitize_text_field( wp_unslash( $_POST['contact_phone'] ?? '' ) );
+	$email = sanitize_email( wp_unslash( $_POST['contact_email'] ?? '' ) );
+	$raw   = trim( (string) wp_unslash( $_POST['contact_email'] ?? '' ) );
+
+	update_post_meta( $pid, '_fge_main_contact_name', $name );
+	update_post_meta( $pid, '_fge_main_contact_phone', $phone );
+	if ( '' !== $raw ) {
+		if ( ! is_email( $email ) ) {
+			$back( 'contact_invalid' );
+		}
+		update_post_meta( $pid, '_fge_main_contact_email', $email );
+	}
+	if ( function_exists( 'fge_partner_ensure_owner_contact' ) ) {
+		fge_partner_ensure_owner_contact( $pid );
+	}
+	if ( $req > 0 && function_exists( 'fge_activity_add' ) ) {
+		fge_activity_add( $req, 'venue', sprintf( 'Kontakt bei %s ergänzt', get_the_title( $pid ) ) );
+	}
+	$back( 'contact_saved' );
 } );

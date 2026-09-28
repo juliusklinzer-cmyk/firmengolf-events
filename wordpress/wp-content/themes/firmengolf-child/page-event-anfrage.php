@@ -30,7 +30,7 @@ get_header();
 			<button type="button" class="fg-btn-cta fg-btn-lg" data-rw-open="full" data-rw-intro data-rw-source="general_anfrage_page">
 				Anfrage starten <?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 			</button>
-			<p class="fg-rail-note" style="margin-top:14px;">Geführte Anfrage in fünf kurzen Schritten, ca. zwei Minuten, unverbindlich. Antwort innerhalb eines Werktags.</p>
+			<p class="fg-rail-note" style="margin-top:14px;">Geführte Anfrage in fünf kurzen Schritten, ca. zwei Minuten, unverbindlich. Konkrete Vorschläge innerhalb von zwei Werktagen.</p>
 		</section>
 
 	</div><?php /* .fg-detail */ ?>

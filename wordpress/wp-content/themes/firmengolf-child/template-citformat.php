@@ -435,7 +435,7 @@ foreach ( $sibling_cities as $sib ) {
 }
 get_template_part( 'template-parts/fge-putt-cta', null, [
 	'headline_html' => 'Lasst uns ' . esc_html( function_exists( 'fge_format_possessive' ) ? fge_format_possessive( (string) get_query_var( 'fge_format' ) ) : 'euer' ) . ' ' . esc_html( $format_name ) . ' in ' . esc_html( $city_name ) . ' <em class="mk-italic">planen</em>.',
-	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
+	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb von zwei Werktagen habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
 	'anfrage_url'   => $cf_anfrage_quick,
 	'links_html'    => $cf_cta_links,
 ] );

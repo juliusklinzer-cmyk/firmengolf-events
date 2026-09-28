@@ -183,6 +183,9 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 					<?php if ( isset( $_GET['agb'] ) ) : ?>
 					<p class="od-err">Bitte bestätigt die AGB, um verbindlich zu buchen.</p>
 					<?php endif; ?>
+					<?php if ( isset( $_GET['option'] ) ) : ?>
+					<p class="od-err">Bitte wählt eine Option und einen Termin, dann könnt ihr verbindlich buchen.</p>
+					<?php endif; ?>
 					<?php if ( isset( $_GET['session'] ) ) : ?>
 					<p class="od-err">Die Sitzung war abgelaufen. Bitte bestätigt eure Auswahl noch einmal.</p>
 					<?php endif; ?>
@@ -221,12 +224,59 @@ $done_val = sanitize_key( $_GET['done'] ?? '' );
 				var tq = document.getElementById('tl-toggle-q'), qw = document.getElementById('tl-q-wrap');
 				if (tq && qw) { tq.addEventListener('click', function(){ qw.style.display = (qw.style.display === 'block' ? 'none' : 'block'); }); }
 
+				var vat = <?php echo (int) $tl_pos['vat_percent']; ?>,
+				    discPct = <?php echo wp_json_encode( (float) ( $snap['discount']['percent'] ?? 0 ) ); ?>;
+				function fmt(n){ return n.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €'; }
+				// Optionen-Angebot: Annehmen erst mit Option und Termin, Summen je Option.
+				var optPicks = document.querySelectorAll('.od-opt-pick');
+				var singleOpt = document.querySelector('.od-option.is-single');
+				if (singleOpt && !optPicks.length) {
+					// Eine Option: Termin-Radios (falls mehrere Termine) schalten den Annehmen-Knopf frei.
+					var dateRadios = singleOpt.querySelectorAll('input[type=radio][name^="fge_offer_date_"]');
+					function singleState(){
+						var dateOk = !dateRadios.length || singleOpt.querySelector('input[type=radio][name^="fge_offer_date_"]:checked');
+						if (acc) { acc.disabled = !(agb && agb.checked && dateOk); }
+					}
+					dateRadios.forEach(function(r){ r.addEventListener('change', singleState); });
+					if (agb) { agb.addEventListener('change', singleState); }
+					singleState();
+				}
+				if (optPicks.length) {
+					var optBase = <?php echo wp_json_encode( array_column( (array) ( $snap['options'] ?? [] ), 'price_total', 'key' ) ); ?>;
+					function optState(){
+						var chosen = document.querySelector('.od-opt-pick:checked');
+						document.querySelectorAll('.od-option').forEach(function(box){
+							var on = chosen && box.dataset.option === chosen.value;
+							box.classList.toggle('is-chosen', !!on);
+							box.querySelectorAll('input[type=radio][name^="fge_offer_date_"]').forEach(function(r){ r.disabled = !on; if (!on) { r.checked = false; } });
+						});
+						var dateOk = chosen && document.querySelector('input[name="fge_offer_date_' + chosen.value + '"]:checked');
+						if (acc) { acc.disabled = !(agb && agb.checked && chosen && dateOk); }
+					}
+					function optRecalc(key){
+						var box = document.querySelector('.od-option[data-option="' + key + '"]'); if (!box) return;
+						var sub = parseFloat(optBase[key] || 0) || 0;
+						box.querySelectorAll('.tl-x-pick').forEach(function(p){ var tr = p.closest('tr'); if (tr) { tr.classList.toggle('od-off', !p.checked); } if (p.checked && tr) { sub += parseFloat(tr.dataset.total || '0') || 0; } });
+						sub = Math.round(sub * 100) / 100;
+						var disc = discPct > 0 ? Math.round(sub * discPct) / 100 : 0, net = Math.round((sub - disc) * 100) / 100, v = Math.round(net * vat) / 100;
+						var set = function(id, val){ var el = document.getElementById(id + '_' + key); if (el) el.textContent = fmt(val); };
+						set('od-net', sub); set('od-disc', disc); set('od-vat', v); set('od-total', Math.round((net + v) * 100) / 100);
+					}
+					document.querySelectorAll('.od-option').forEach(function(box){
+						box.querySelectorAll('.tl-x-pick').forEach(function(p){ p.addEventListener('change', function(){ optRecalc(box.dataset.option); }); });
+						box.querySelectorAll('.od-opt-pick, input[type=radio][name^="fge_offer_date_"]').forEach(function(r){ r.addEventListener('change', optState); });
+						optRecalc(box.dataset.option);
+					});
+					if (agb) { agb.addEventListener('change', optState); }
+					// Eine Option mit genau einem Termin: vorauswählen.
+					if (optPicks.length === 1) { optPicks[0].checked = true; var only = document.querySelectorAll('input[name="fge_offer_date_' + optPicks[0].value + '"]'); if (only.length === 1) { only[0].checked = true; } }
+					optState();
+					return;
+				}
+
 				// Zusatzleistungen abwählbar: Zwischensumme, USt. und Gesamtbetrag exakt nachrechnen.
 				var base = <?php echo wp_json_encode( round( $tl_base, 2 ) ); ?>,
-				    vat = <?php echo (int) $tl_pos['vat_percent']; ?>,
-				    discPct = <?php echo wp_json_encode( (float) ( $snap['discount']['percent'] ?? 0 ) ); ?>,
 				    picks = document.querySelectorAll('.tl-x-pick');
-				function fmt(n){ return n.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €'; }
 				function recalc(){
 					var sub = base;
 					picks.forEach(function(p){

@@ -193,3 +193,49 @@ class FGE_CLI_Migrations {
 WP_CLI::add_command( 'firmengolf migrate-formats', [ new FGE_CLI_Migrations(), 'migrate_formats' ] );
 WP_CLI::add_command( 'firmengolf migrate-cover-to-gallery', [ new FGE_CLI_Migrations(), 'migrate_cover_to_gallery' ] );
 WP_CLI::add_command( 'firmengolf migrate-partner-type', [ new FGE_CLI_Migrations(), 'migrate_partner_type' ] );
+
+/**
+ * Stammdaten-Plätze (alle DGV-Plätze und Simulatoren) lokal importieren.
+ *
+ *     wp firmengolf stammdaten-import [--dry-run] [--batch=200] [--reset]
+ *     wp firmengolf stammdaten-status
+ *     wp firmengolf seed-fg-26-166 --request=<ID> [--force]
+ */
+WP_CLI::add_command( 'firmengolf stammdaten-import', static function ( $args, $assoc ) {
+	if ( isset( $assoc['reset'] ) ) {
+		delete_option( FGE_STAMMDATEN_OPTION );
+		WP_CLI::line( 'Fortschritt zurückgesetzt.' );
+	}
+	if ( isset( $assoc['dry-run'] ) ) {
+		WP_CLI::line( sprintf( '[DRY RUN] %d Einträge im Verzeichnis, %d Simulatoren, %d Stammdaten-Posts vorhanden.', fge_verzeichnis_count(), count( fge_simulatoren() ), count( get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => 'any', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_fge_partner_status', 'meta_value' => 'stammdaten' ] ) ) ) );
+		return;
+	}
+	$batch = max( 1, (int) ( $assoc['batch'] ?? 200 ) );
+	do {
+		$s = fge_stammdaten_import_run_batch( $batch );
+		WP_CLI::line( sprintf( '%s: %d / %d (angelegt %d, übersprungen %d, Fehler %d)', $s['phase'], $s['done'], $s['total'], $s['created'], $s['skipped'], count( $s['errors'] ) ) );
+	} while ( 'done' !== $s['phase'] );
+	foreach ( (array) $s['errors'] as $e ) {
+		WP_CLI::warning( $e );
+	}
+	WP_CLI::success( 'Import abgeschlossen.' );
+} );
+WP_CLI::add_command( 'firmengolf stammdaten-status', static function () {
+	WP_CLI::line( wp_json_encode( fge_stammdaten_import_state(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) );
+} );
+WP_CLI::add_command( 'firmengolf seed-fg-26-166', static function ( $args, $assoc ) {
+	$req = (int) ( $assoc['request'] ?? 0 );
+	if ( $req <= 0 || 'firmengolf_request' !== get_post_type( $req ) ) {
+		WP_CLI::error( 'Bitte --request=<ID> einer Anfrage angeben.' );
+	}
+	if ( isset( $assoc['force'] ) ) {
+		delete_option( 'fge_seed_fg_26_166' );
+	}
+	if ( get_option( 'fge_seed_fg_26_166' ) ) {
+		WP_CLI::error( 'Seed lief schon (Option fge_seed_fg_26_166). --force zum Wiederholen.' );
+	}
+	update_option( 'fge_seed_fg_26_166', '1', true );
+	$r = fge_seed_fg166_run( $req );
+	WP_CLI::line( wp_json_encode( $r, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) );
+	WP_CLI::success( 'Seed ausgeführt.' );
+} );

@@ -804,7 +804,7 @@ $trust = [
 	[ 'ic' => '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
 	  'k' => 'Eine Rechnung', 't' => 'Alle Posten sauber ausgewiesen, von Greenfee bis Catering, auf Wunsch BGM-konform.' ],
 	[ 'ic' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-	  'k' => 'Antwort in 24 Stunden', 't' => 'Werktags habt ihr innerhalb eines Arbeitstags eine persönliche Rückmeldung mit konkreten Vorschlägen.' ],
+	  'k' => 'Angebot in zwei Werktagen', 't' => 'Innerhalb von zwei Werktagen habt ihr eine persönliche Rückmeldung mit konkreten Vorschlägen.' ],
 ];
 ?>
 <section class="mk-section cty-reveal" aria-label="Worauf ihr euch verlassen könnt">
@@ -885,7 +885,7 @@ if ( function_exists( 'fge_get_cities' ) ) {
 }
 get_template_part( 'template-parts/fge-putt-cta', null, [
 	'headline_html' => 'Lasst uns euer Event <em class="mk-italic">planen</em>.',
-	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
+	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb von zwei Werktagen habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
 	'anfrage_url'   => add_query_arg( 'anfrage', 'quick', $ind_url ),
 	'links_html'    => $ev_cta_links,
 ] );

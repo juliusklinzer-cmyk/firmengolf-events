@@ -79,22 +79,49 @@ function fge_cc_page_partners(): void {
 	$rows    = [];
 	$no_mail = 0;
 
-	// Alles, was sonst je Zeile eine eigene Abfrage wäre, einmal vorladen:
-	// Titel über den Post-Cache, Metafelder, Kontakte, Preise.
+	// Stammdaten-Plätze (alle DGV-Plätze und Simulatoren, seit 28.09.2026) sind
+	// keine Partner: eigene Sektion, nur mit Filter oder Suche gerendert, und sie
+	// zählen nicht in die Warnung „ohne Kontaktmail" (sonst ~800 Treffer).
 	_prime_post_caches( $ids, false, true );
-	$contacts_by_partner = fge_cc_contacts_many( $ids );
-	$price_hints         = function_exists( 'fge_venue_price_hints_many' ) ? fge_venue_price_hints_many( $ids ) : [];
-
+	$partner_ids = [];
+	$stamm_ids   = [];
 	foreach ( $ids as $pid ) {
+		if ( function_exists( 'fge_partner_is_stammdaten' ) && fge_partner_is_stammdaten( (int) $pid ) ) {
+			$stamm_ids[] = (int) $pid;
+		} else {
+			$partner_ids[] = (int) $pid;
+		}
+	}
+	$show_stamm = 'stammdaten' === $only;
+	$list_ids   = $show_stamm ? $stamm_ids : $partner_ids;
+	if ( '' !== $search && ! $show_stamm ) {
+		$list_ids = array_merge( $partner_ids, $stamm_ids ); // Suche findet auch Stammdaten.
+	}
+
+	// Vorfilter über Titel und Ort, damit Kontakte und Preise nur für die
+	// tatsächlich gezeigten Zeilen geladen werden.
+	$shown = [];
+	foreach ( $list_ids as $pid ) {
 		$title = get_the_title( $pid );
 		$city  = (string) get_post_meta( $pid, '_fge_city', true );
-		if ( '' !== $search && false === mb_stripos( $title . ' ' . $city, $search ) ) {
+		$plz   = (string) get_post_meta( $pid, '_fge_postal_code', true );
+		if ( '' !== $search && false === mb_stripos( $title . ' ' . $city . ' ' . $plz, $search ) ) {
 			continue;
 		}
-		$mail = function_exists( 'fge_cc_partner_email' ) ? fge_cc_partner_email( (int) $pid ) : '';
-		if ( '' === $mail ) {
+		$shown[ $pid ] = [ $title, $city ];
+	}
+	$shown_ids           = array_keys( $shown );
+	$contacts_by_partner = $shown_ids ? fge_cc_contacts_many( $shown_ids ) : [];
+	$price_hints         = ( $shown_ids && function_exists( 'fge_venue_price_hints_many' ) ) ? fge_venue_price_hints_many( $shown_ids ) : [];
+
+	foreach ( $partner_ids as $pid ) {
+		if ( '' === ( function_exists( 'fge_cc_partner_email' ) ? fge_cc_partner_email( $pid ) : '' ) ) {
 			$no_mail++;
 		}
+	}
+
+	foreach ( $shown as $pid => [ $title, $city ] ) {
+		$mail = function_exists( 'fge_cc_partner_email' ) ? fge_cc_partner_email( (int) $pid ) : '';
 		if ( 'ohne_mail' === $only && '' !== $mail ) {
 			continue;
 		}
@@ -111,17 +138,25 @@ function fge_cc_page_partners(): void {
 		];
 	}
 
+	if ( function_exists( 'fge_stammdaten_import_status_line' ) ) {
+		fge_stammdaten_import_status_line();
+	}
+
 	// Datenqualität zuerst: was den Betrieb still sabotiert.
 	if ( $no_mail > 0 ) {
-		echo '<p class="cc-msg cc-msg--err">' . (int) $no_mail . ' ' . ( 1 === $no_mail ? 'Platz hat' : 'Plätze haben' )
+		echo '<p class="cc-msg cc-msg--err">' . (int) $no_mail . ' ' . ( 1 === $no_mail ? 'Partner hat' : 'Partner haben' )
 			. ' keine Kontaktmail. Diese Plätze bekommen weder die Auftragsbestätigung noch die Vortags-Info. '
 			. '<a href="' . esc_url( fge_cc_url( 'plaetze', [ 'filter' => 'ohne_mail' ] ) ) . '">Nur diese zeigen</a></p>';
 	}
 
 	echo '<div class="cc-filters">';
-	echo '<a class="cc-chip' . ( '' === $only ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'plaetze' ) ) . '">Alle ' . (int) count( $ids ) . '</a>';
+	echo '<a class="cc-chip' . ( '' === $only ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'plaetze' ) ) . '">Partner ' . (int) count( $partner_ids ) . '</a>';
 	echo '<a class="cc-chip' . ( 'ohne_mail' === $only ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'plaetze', [ 'filter' => 'ohne_mail' ] ) ) . '">Ohne Kontaktmail</a>';
+	echo '<a class="cc-chip' . ( $show_stamm ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'plaetze', [ 'filter' => 'stammdaten' ] ) ) . '">Stammdaten ' . (int) count( $stamm_ids ) . '</a>';
 	echo '</div>';
+	if ( $show_stamm && '' === $search ) {
+		echo '<p class="cc-muted">Stammdaten sind alle Golfplätze und Simulatoren aus dem Verzeichnis, keine Partner. Sie lassen sich in jeder Anfrage anfragen. Mit der Suche oben eingrenzen, die Liste zeigt sonst alle.</p>';
+	}
 
 	if ( ! $rows ) {
 		fge_cc_empty( 'Kein Platz gefunden.' );
@@ -136,7 +171,7 @@ function fge_cc_page_partners(): void {
 }
 
 function fge_cc_partner_row( array $r ): void {
-	$tone = [ 'aktiv' => 'good', 'in_pruefung' => 'warn', 'rueckfragen' => 'warn', 'pausiert' => 'neutral', 'abgelehnt' => 'bad' ][ $r['status'] ] ?? 'neutral';
+	$tone = [ 'aktiv' => 'good', 'in_pruefung' => 'warn', 'rueckfragen' => 'warn', 'pausiert' => 'neutral', 'abgelehnt' => 'bad', 'stammdaten' => 'neutral' ][ $r['status'] ] ?? 'neutral';
 
 	echo '<div class="cc-dir-row">';
 	echo '<div class="cc-dir-head">';
@@ -153,6 +188,9 @@ function fge_cc_partner_row( array $r ): void {
 
 	if ( '' === $r['mail'] ) {
 		echo '<p class="cc-warn">Keine Kontaktmail hinterlegt.</p>';
+	}
+	if ( function_exists( 'fge_cc_partner_contact_form' ) && ( '' === $r['mail'] || 'stammdaten' === $r['status'] ) ) {
+		fge_cc_partner_contact_form( (int) $r['id'] );
 	}
 
 	$contacts = $r['contacts'];

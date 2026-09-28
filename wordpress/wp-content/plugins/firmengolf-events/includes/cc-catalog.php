@@ -223,11 +223,20 @@ function fge_catalog_handle_answer( int $req, string $answer, string $note ): st
  * gilt seine Kalkulation, nicht der einmal telefonisch verhandelte Sonderpreis.
  */
 function fge_catalog_create_event( int $req ): int {
-	$p   = fge_catalog_proposal( $req );
-	$pid = (int) $p['partner'];
+	$p = fge_catalog_proposal( $req );
+	return fge_catalog_create_event_from( $p, (int) $p['partner'], $req );
+}
+
+/**
+ * Der eigentliche Entwurf aus einem Vorschlag (Schlüssel wie fge_catalog_proposal).
+ * Wird auch von der Platz-Pipeline genutzt (cc-venue-catalog.php), dort kommt
+ * der Vorschlag nicht aus dem Angebots-Snapshot, sondern aus der Pipeline-Zeile.
+ */
+function fge_catalog_create_event_from( array $p, int $pid, int $req ): int {
 	if ( $pid <= 0 ) {
 		return 0;
 	}
+	$p += [ 'title' => 'Firmengolf-Event', 'location' => '', 'schedule' => '', 'includes' => [], 'pax_min' => 0, 'pax_max' => 0 ];
 
 	$event_id = (int) wp_insert_post( [
 		'post_type'    => 'firmengolf_event',

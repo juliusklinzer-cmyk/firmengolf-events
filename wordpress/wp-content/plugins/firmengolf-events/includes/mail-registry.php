@@ -84,7 +84,43 @@ function fge_mail_registry(): array {
 			'subject'   => 'Doch woanders: Firmenanfrage',
 			'auto'      => false,
 			'trigger'   => 'Knopf nach der Platzwahl',
-			'content'   => [ 'persönliche Absage', 'ehrlicher Grund', 'Einladung für die nächste Anfrage' ],
+			'content'   => [ 'persönliche Absage', 'ehrlicher Grund', 'Einladung für die nächste Anfrage', 'Einladung, das Angebot dauerhaft anzubieten' ],
+		],
+		'venue_catalog_internal' => [
+			'label'     => 'Platz will dauerhaft anbieten',
+			'party'     => 'intern',
+			'per_venue' => true,
+			'subject'   => 'Platz will dauerhaft anbieten',
+			'auto'      => true,
+			'trigger'   => 'Platz klickt Ja auf dem Link aus der Absage-Mail',
+			'content'   => [ 'Platz und Vorgangsnummer', 'Link zum Event-Entwurf', 'Hinweis auf Einladungsmail bei Stammdaten-Platz' ],
+		],
+		'venue_summary' => [
+			'label'     => 'Absprache bestätigt: so haben wir es notiert',
+			'party'     => 'platz',
+			'per_venue' => true,
+			'subject'   => 'Danke für die Rückmeldung: Firmenanfrage',
+			'auto'      => false,
+			'trigger'   => 'Knopf in der Pipeline-Zeile nach der erfassten Antwort',
+			'content'   => [ 'freie Termine und Alternativvorschlag', 'Preise je Position wie besprochen', 'nicht angebotene Positionen', 'Bitte, die Termine vorläufig freizuhalten' ],
+		],
+		'venue_reservation' => [
+			'label'     => 'Reservierungsbitte: Angebot ist beim Kunden',
+			'party'     => 'platz',
+			'per_venue' => true,
+			'subject'   => 'Bitte reservieren bis <Frist>: Firmenanfrage',
+			'auto'      => true,
+			'trigger'   => 'Versand eines Angebots mit Optionen, an jeden Platz im Angebot',
+			'content'   => [ 'Entscheidungsfrist des Kunden', 'Termine, die reserviert bleiben sollen', 'Preise je Position wie besprochen' ],
+		],
+		'venue_release' => [
+			'label'     => 'Termin wird frei: der Kunde hat abgesagt',
+			'party'     => 'platz',
+			'per_venue' => true,
+			'subject'   => 'Termin wird frei: Firmenanfrage',
+			'auto'      => false,
+			'trigger'   => 'Knopf nach der Absage des Kunden',
+			'content'   => [ 'Vorgangsnummer und Termin', 'kein Auftrag', 'Dank und Einladung für die nächste Anfrage' ],
 		],
 
 		// ── Phase 2: Termin ───────────────────────────────────────────────
@@ -205,6 +241,22 @@ function fge_mail_registry(): array {
 			'auto'    => false,
 			'trigger' => 'Startzeit und Treffpunkt erstmals vollständig, oder Knopf',
 			'content' => [ 'Wann und wo mit Adresse', 'Treffpunkt', 'Ansprechpartner vor Ort', 'was mitzubringen ist', 'Ablauf folgt am Vortag', 'Mobilnummer' ],
+		],
+		'venue_details_reminder' => [
+			'label'   => 'Erinnerung an den Platz: Details für den Eventtag',
+			'party'   => 'platz',
+			'subject' => 'Kurze Bitte: Details für den Eventtag',
+			'auto'    => true,
+			'trigger' => 'Cron, drei Tage nach der Buchung ohne Eintrag, nur vor dem Termin',
+			'content' => [ 'Termin und Gruppe', 'welche Angaben fehlen', 'Link zum Formular ohne Login', 'bis wann' ],
+		],
+		'venue_details_internal' => [
+			'label'   => 'Platzdetails eingetragen (intern)',
+			'party'   => 'intern',
+			'subject' => 'Platzdetails eingetragen',
+			'auto'    => true,
+			'trigger' => 'Platz speichert das Formular aus der Auftragsbestätigung',
+			'content' => [ 'alle sieben Eventtag-Felder, fehlende in Rot', 'ob die Ablauf-Info an den Kunden raus ist', 'Link zur Anfrage' ],
 		],
 
 		// ── Phase 5: Vortag ───────────────────────────────────────────────
@@ -392,6 +444,9 @@ function fge_mail_provider_recipients( string $key, int $req ): array {
 	$rows     = [];
 
 	foreach ( fge_xs_priced( $req ) as $src => $item ) {
+		if ( 'platz' === (string) ( $item['organizer'] ?? '' ) ) {
+			continue; // Der Platz bekommt die Buchungsbestätigung, keinen Dienstleister-Auftrag.
+		}
 		$on = in_array( (int) $src, $selected, true );
 		if ( $on !== $want_on ) {
 			continue;

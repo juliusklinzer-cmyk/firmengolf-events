@@ -319,10 +319,10 @@ function fge_match_partners_for_request( int $req, int $limit = 8 ): array {
 		}
 	}
 
-	$partners = get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => 'publish', 'numberposts' => -1 ] );
+	$partners = get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => 'publish', 'numberposts' => -1, 'meta_query' => function_exists( 'fge_stammdaten_exclude_meta_clause' ) ? fge_stammdaten_exclude_meta_clause() : [] ] );
 	$out = [];
 	foreach ( $partners as $p ) {
-		if ( 'pausiert' === (string) get_post_meta( $p->ID, '_fge_partner_status', true ) ) {
+		if ( in_array( (string) get_post_meta( $p->ID, '_fge_partner_status', true ), [ 'pausiert', 'stammdaten' ], true ) ) {
 			continue;
 		}
 		$cap = get_post_meta( $p->ID, '_fge_cap', true );
@@ -457,7 +457,10 @@ function fge_request_ics( int $request_id ): ?string {
 	$esc     = static function ( string $t ): string {
 		return str_replace( [ '\\', ';', ',', "\n" ], [ '\\\\', '\\;', '\\,', '\\n' ], $t );
 	};
-	$summary = $esc( 'Firmenevent: ' . $company . ( $etype ? ' (' . $etype . ')' : '' ) );
+	// Vor der Buchung ohne Firmenname (Paket C).
+	$summary = fge_request_is_booked( $request_id )
+		? $esc( 'Firmenevent: ' . $company . ( $etype ? ' (' . $etype . ')' : '' ) )
+		: $esc( 'Firmengolf-Event ' . fge_request_number( $request_id ) . ( $etype ? ' (' . $etype . ')' : '' ) );
 	$host    = (string) wp_parse_url( home_url(), PHP_URL_HOST );
 	$lines   = [
 		'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Firmengolf//Termin//DE', 'CALSCALE:GREGORIAN',

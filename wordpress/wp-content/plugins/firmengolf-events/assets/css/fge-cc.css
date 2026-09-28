@@ -945,10 +945,20 @@ body.cc--plain { background: var(--cc-bg); }
 .cc-posrows { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 16px; }
 .cc-posrow {
 	display: grid;
-	grid-template-columns: minmax(0, 1.6fr) 110px 100px 80px minmax(0, 1fr) minmax(0, 1.3fr) 110px;
+	grid-template-columns: minmax(0, 1.5fr) 90px 78px 118px 70px 150px minmax(0, 1fr) minmax(0, 1.2fr) 110px;
 	gap: 7px;
 	align-items: center;
+	padding: 8px 0 10px;
+	border-bottom: 1px solid var(--cc-line);
 }
+.cc-posrow__more {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 190px;
+	gap: 7px;
+}
+.cc-posrow--np { opacity: .75; }
+.cc-posrow--np input[name="fge_xs_label[]"] { text-decoration: line-through; }
 .cc-posrow input,
 .cc-posrow select {
 	font: inherit;
@@ -972,5 +982,165 @@ body.cc--plain { background: var(--cc-bg); }
 @media (max-width: 900px) {
 	.cc-posrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 	.cc-posrow input:first-child { grid-column: 1 / -1; }
+	.cc-posrow__more { grid-template-columns: minmax(0, 1fr); }
 	.cc-possale { grid-column: 1 / -1; text-align: left; }
+}
+
+/* ── Platz-Pipeline: Nähe-Liste und Suche (28.09.2026) ─────────────────── */
+
+.cc-nearby-wrap,
+.cc-vsearch-wrap {
+	margin-top: 16px;
+	padding-top: 14px;
+	border-top: 1px solid var(--cc-line-soft);
+}
+.cc-nearby-wrap .cc-kicker,
+.cc-vsearch-wrap .cc-kicker { margin-top: 0; }
+.cc-nearby-wrap > .cc-muted,
+.cc-vsearch-wrap > .cc-muted { margin: 8px 0 0; font-size: 12.5px; }
+.cc-warn-inline { color: var(--cc-warn); font-weight: 600; }
+
+.cc-vsearch {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+	margin: 0;
+}
+.cc-vsearch input[type="text"] {
+	font: inherit;
+	font-size: 14px;
+	padding: 8px 11px;
+	border: 1px solid var(--cc-line);
+	border-radius: 6px;
+	background: var(--cc-card);
+	color: var(--cc-ink);
+	flex: 1 1 260px;
+	min-width: 0;
+	max-width: 100%;
+}
+.cc-vsearch input[type="text"]:focus { outline: 2px solid var(--cc-accent); outline-offset: 1px; }
+
+.cc-nearby {
+	list-style: none;
+	margin: 10px 0 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+}
+.cc-nearby-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 56px auto auto;
+	gap: 6px 12px;
+	align-items: center;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--cc-line-soft);
+}
+.cc-nearby-row:last-child { border-bottom: 0; }
+.cc-nearby-row.is-inpipe .cc-nearby-name { color: var(--cc-muted); }
+.cc-nearby-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cc-nearby-name { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+.cc-nearby-main .cc-muted { font-size: 12.5px; }
+.cc-nearby-dist {
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+	white-space: nowrap;
+	font-size: 13px;
+	color: var(--cc-ink-2);
+}
+.cc-nearby-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+.cc-nearby-act { display: flex; justify-content: flex-end; font-size: 12.5px; }
+.cc-nearby-act .cc-actform { margin: 0; }
+.cc-nearby--search .cc-nearby-row { grid-template-columns: minmax(0, 1fr) 0 auto auto; gap: 6px 8px; }
+.cc-nearby--search .cc-nearby-dist { display: none; }
+.cc-contact-edit .cc-form { margin-top: 10px; }
+
+@media (max-width: 900px) {
+	.cc-nearby-row,
+	.cc-nearby--search .cc-nearby-row { grid-template-columns: minmax(0, 1fr) auto; }
+	.cc-nearby-main { grid-column: 1; }
+	.cc-nearby-dist { grid-column: 2; grid-row: 1; }
+	.cc-nearby-pills { grid-column: 1; grid-row: 2; }
+	.cc-nearby-act { grid-column: 2; grid-row: 2; }
+}
+@media (max-width: 720px) {
+	.cc-nearby-row,
+	.cc-nearby--search .cc-nearby-row { grid-template-columns: minmax(0, 1fr); }
+	.cc-nearby-main,
+	.cc-nearby-dist,
+	.cc-nearby-pills,
+	.cc-nearby-act { grid-column: 1; grid-row: auto; }
+	.cc-nearby-dist { text-align: left; }
+	.cc-nearby-act { justify-content: flex-start; }
+	.cc-vsearch input[type="text"] { flex-basis: 100%; }
+}
+@media (max-width: 768px) {
+	.cc-vsearch input[type="text"] { font-size: 16px; }
+	.cc-nearby-act .cc-muted { min-height: 44px; display: inline-flex; align-items: center; }
+}
+
+/* ── Platz-Pipeline: Terminabfrage und Kalkulation (28.09.2026) ─────────── */
+
+.cc-dategrid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.cc-daterow {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 6px 14px;
+	align-items: center;
+	font-size: 13px;
+}
+.cc-daterow-label { color: var(--cc-ink-2); font-variant-numeric: tabular-nums; }
+.cc-daterow-opts { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.cc-dates { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 0; font-size: 13px; }
+.cc-dates .cc-pill { cursor: help; }
+.cc-dates-alt { color: var(--cc-ink-2); }
+
+.cc-calc { margin-top: 12px; }
+.cc-calc summary { font-size: 13px; color: var(--cc-accent); }
+.cc-calc .cc-form { margin-top: 10px; }
+.cc-field--markup { max-width: 140px; margin-bottom: 10px; }
+.cc-calc-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+	margin-bottom: 10px;
+}
+.cc-calc-table th,
+.cc-calc-table td {
+	padding: 5px 8px;
+	border-bottom: 1px solid var(--cc-line-soft);
+	text-align: right;
+	white-space: nowrap;
+	vertical-align: middle;
+}
+.cc-calc-table th:first-child,
+.cc-calc-table td:first-child { text-align: left; white-space: normal; }
+.cc-calc-table th { font-weight: 600; color: var(--cc-muted); font-size: 12px; }
+.cc-calc-table input[type="text"],
+.cc-calc-table select {
+	font: inherit;
+	font-size: 13px;
+	padding: 5px 7px;
+	border: 1px solid var(--cc-line);
+	border-radius: 6px;
+	background: var(--cc-card);
+	color: var(--cc-ink);
+	width: 96px;
+	text-align: right;
+}
+.cc-calc-table select { width: auto; text-align: left; }
+.cc-calc-table tr.is-muted td { color: var(--cc-muted); }
+.cc-calc-sum { margin: 0 0 6px; font-size: 13.5px; }
+.cc-calc-sum + .cc-muted { margin: 0 0 10px; font-size: 12.5px; }
+
+@media (max-width: 720px) {
+	.cc-daterow { grid-template-columns: minmax(0, 1fr); }
+	.cc-calc-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+@media (max-width: 768px) {
+	.cc-calc-table input[type="text"],
+	.cc-calc-table select,
+	.cc-field--markup input { font-size: 16px; }
 }

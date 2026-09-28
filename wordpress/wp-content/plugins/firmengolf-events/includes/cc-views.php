@@ -55,7 +55,9 @@ function fge_cc_extras_cost_net( int $req ): float {
 		if ( ! in_array( (int) $src, $sel, true ) ) {
 			continue;
 		}
-		$sum += 'person' === $item['basis'] ? (float) $item['cost'] * max( 1, $pax ) : (float) $item['cost'];
+		// Verbrauchs-Positionen haben noch keinen Betrag, brutto eingegebene Einkäufe zählen netto.
+		$cnet = function_exists( 'fge_xs_cost_net' ) ? fge_xs_cost_net( $item ) : (float) $item['cost'];
+		$sum += 'person' === $item['basis'] ? $cnet * max( 1, $pax ) : ( 'verbrauch' === $item['basis'] ? 0.0 : $cnet );
 	}
 	return $sum;
 }

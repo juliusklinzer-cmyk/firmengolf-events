@@ -241,6 +241,9 @@ function fge_cc_phase_tone( string $phase ): string {
 		'Vorbereitung'  => 'good',
 		'Eventtag'      => 'good',
 		'Nachlauf'      => 'neutral',
+		'Abgelehnt'     => 'bad',
+		'Verloren'      => 'bad',
+		'Nicht verfügbar' => 'bad',
 	];
 	return $map[ $phase ] ?? 'neutral';
 }
@@ -525,7 +528,7 @@ function fge_cc_page_requests(): void {
 
 	// Filterleiste
 	echo '<div class="cc-filters">';
-	$phases = [ 'Eingang', 'Termin', 'Angebot', 'Angebot läuft', 'Vorbereitung', 'Eventtag', 'Nachlauf' ];
+	$phases = [ 'Eingang', 'Termin', 'Angebot', 'Angebot läuft', 'Vorbereitung', 'Eventtag', 'Nachlauf', 'Abgelehnt', 'Verloren' ];
 	echo '<a class="cc-chip' . ( '' === $phase ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'anfragen', $search ? [ 's' => $search ] : [] ) ) . '">Alle</a>';
 	foreach ( $phases as $p ) {
 		$args = [ 'phase' => $p ] + ( $search ? [ 's' => $search ] : [] );
@@ -571,6 +574,7 @@ function fge_cc_page_request( int $req ): void {
 	echo '<div class="cc-cols">';
 	echo '<div class="cc-col-main">';
 	fge_cc_request_contacts( $req );
+	fge_cc_request_facts( $req );
 	// Die Platz-Pipeline steht vor der Phasenkarte, solange noch kein Angebot
 	// raus ist: dort wird in dieser Zeit tatsächlich gearbeitet. Danach bleibt
 	// sie sichtbar, solange Plätze in der Liste stehen.
@@ -642,6 +646,8 @@ function fge_cc_request_phase_panel( int $req ): void {
 
 	if ( 'accepted' === $offer ) {
 		fge_cc_phase_booked( $req );
+	} elseif ( 'declined' === $offer ) {
+		fge_cc_phase_offer_declined( $req );
 	} elseif ( $sent ) {
 		fge_cc_phase_offer_running( $req );
 	} elseif ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 ) {
@@ -657,18 +663,19 @@ function fge_cc_phase_early( int $req ): void {
 	$partner_id = (int) get_post_meta( $req, '_fge_assigned_partner_id', true );
 	$wishes     = function_exists( 'fge_rr_wish_dates' ) ? fge_rr_wish_dates( $req ) : [];
 
-	echo '<dl class="cc-facts">';
-	fge_cc_fact( 'Wunschtermine', $wishes ? implode( ' · ', array_map( 'strval', $wishes ) ) : 'keine angegeben' );
-	fge_cc_fact( 'Teilnehmer', (string) get_post_meta( $req, '_fge_expected_participants', true ) );
-	fge_cc_fact( 'Budget', (string) get_post_meta( $req, '_fge_budget_range', true ) );
-	fge_cc_fact( 'Nachricht', (string) get_post_meta( $req, '_fge_message', true ) );
-	echo '</dl>';
-
-	if ( $partner_id <= 0 ) {
-		echo '<p class="cc-hint">Es ist noch kein Platz zugeordnet. Nimm oben Plätze in die Liste auf, frag sie an und wähle einen.</p>';
+	// Die Fakten stehen seit 28.09.2026 im Block „Angefragt" über der Pipeline.
+	$has_pipeline = function_exists( 'fge_venues_get' ) && fge_venues_get( $req );
+	if ( $partner_id <= 0 && ! $has_pipeline ) {
+		echo '<p class="cc-hint">Es ist noch kein Platz in der Liste. Nimm oben Plätze auf (Nähe oder Suche), frag sie an und stelle aus den Zusagen das Angebot zusammen.</p>';
 	}
-
+	if ( function_exists( 'fge_cc_offer_options_panel' ) ) {
+		fge_cc_offer_options_panel( $req );
+	}
+	// Der alte Weg „Termin bestätigen, Angebot geht raus" bleibt für Sonderfälle
+	// (Partner-Event mit Portal-Abstimmung, telefonisch fixierter Einzeltermin).
+	echo '<details class="cc-details"><summary>Sonderfall: Termin direkt bestätigen (ohne Optionen)</summary>';
 	fge_cc_confirm_date_form( $req, $wishes );
+	echo '</details>';
 }
 
 /**
@@ -741,6 +748,47 @@ function fge_cc_phase_offer_ready( int $req ): void {
 		'confirm' => 'Angebot mit PDF an den Kunden senden?',
 	] );
 	fge_cc_action_preview( 'offer_send', $req );
+}
+
+/**
+ * Der Kunde hat abgesagt: Platz freigeben, neu auflegen oder als verloren ablegen.
+ * Bis 28.09.2026 stand hier weiter „Angebot läuft" und der gewählte Platz erfuhr nichts.
+ */
+function fge_cc_phase_offer_declined( int $req ): void {
+	$query = (string) get_post_meta( $req, '_fge_offer_query', true );
+	echo '<dl class="cc-facts">';
+	fge_cc_fact( 'Kunde', 'hat das Angebot abgelehnt' );
+	fge_cc_fact( 'Nachricht des Kunden', $query );
+	echo '</dl>';
+	echo '<p class="cc-hint">Drei Wege: Positionen anpassen und als neue Fassung senden, den Platz über die Absage informieren, oder den Vorgang als verloren ablegen.</p>';
+	echo '<div class="cc-venue-actions">';
+	if ( function_exists( 'fge_offer_relaunch_blocker' ) && '' === fge_offer_relaunch_blocker( $req ) ) {
+		fge_cc_button( 'fge_cc_offer_relaunch', $req, 'Zurückziehen und neu auflegen', [
+			'confirm' => 'Der Kunde bekommt eine neue Fassung mit den aktuellen Positionen. Fortfahren?',
+		] );
+	}
+	$chosen = null;
+	if ( function_exists( 'fge_venues_get' ) ) {
+		foreach ( fge_venues_get( $req ) as $v ) {
+			if ( 'gewaehlt' === (string) $v['status'] ) {
+				$chosen = $v;
+			}
+		}
+	}
+	if ( '1' === (string) get_post_meta( $req, '_fge_venue_released', true ) ) {
+		echo '<p class="cc-done">Platz informiert, Termin freigegeben.</p>';
+	} elseif ( $chosen ) {
+		fge_cc_button( 'fge_cc_venue_release', $req, 'Platz informieren: Termin wird frei', [
+			'fields'  => [ 'venue_id' => (int) $chosen['id'] ],
+			'confirm' => get_the_title( (int) $chosen['partner_id'] ) . ' per Mail informieren, dass der Kunde abgesagt hat?',
+		] );
+		fge_cc_action_preview( 'venue_release', $req );
+	}
+	fge_cc_button( 'fge_cc_status', $req, 'Als verloren ablegen', [
+		'fields'  => [ 'status' => 'verloren' ],
+		'confirm' => 'Vorgang als verloren ablegen?',
+	] );
+	echo '</div>';
 }
 
 /** Angebot läuft, der Kunde entscheidet. */
@@ -973,6 +1021,64 @@ function fge_cc_request_header( int $req ): void {
 	}
 	echo '<a class="cc-btn cc-btn--ghost" href="' . esc_url( get_edit_post_link( $req, 'raw' ) ) . '">Im WordPress öffnen</a>';
 	echo '</div></header>';
+}
+
+/**
+ * Was wurde angefragt: in jeder Phase sichtbar, damit Preisanfrage, Kalkulation und
+ * Angebot immer gegen die Wünsche des Kunden geprüft werden (Julius, 28.09.2026).
+ */
+function fge_cc_request_facts( int $req ): void {
+	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+	$pax      = (int) get_post_meta( $req, '_fge_expected_participants', true );
+	$dates    = function_exists( 'fge_request_wish_date_labels' ) ? fge_request_wish_date_labels( $req ) : [];
+	$d_txt    = [];
+	foreach ( $dates as $i => $label ) {
+		$d_txt[] = $i . '. ' . $label;
+	}
+
+	// Leistungen: Wunschliste aus dem Event-Dialog plus Häkchen aus dem Wizard.
+	$g      = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ];
+	$wants  = [
+		'wants_golf_teacher' => 'Golflehrer', 'wants_meeting_room' => 'Meetingraum', 'wants_breakfast' => 'Frühstück',
+		'wants_lunch' => 'Lunch', 'wants_dinner' => 'Abendessen', 'wants_shuttle' => 'Shuttle', 'wants_branding' => 'Branding',
+		'wants_tournament_mode' => 'Turniermodus', 'wants_bad_weather_alternative' => 'Schlechtwetter-Alternative',
+	];
+	$platz  = array_values( array_filter( array_map( 'strval', (array) ( $g['platz'] ?? [] ) ) ) );
+	$fg     = array_values( array_filter( array_map( 'strval', (array) ( $g['firmengolf'] ?? [] ) ) ) );
+	foreach ( $wants as $k => $l ) {
+		if ( '1' === (string) get_post_meta( $req, '_fge_' . $k, true ) && ! in_array( $l, $platz, true ) && ! in_array( $l, $fg, true ) ) {
+			$platz[] = $l;
+		}
+	}
+	$extra = trim( (string) get_post_meta( $req, '_fge_additional_wishes', true ) );
+
+	// Platzhalter-Preis zur Orientierung: was der Kunde auf der Eventseite gesehen hat.
+	$price_txt = '';
+	if ( $event_id > 0 && 'firmengolf_event' === get_post_type( $event_id ) && function_exists( 'fge_event_pricing_for_pax' ) ) {
+		$p = fge_event_pricing_for_pax( $event_id, $pax );
+		$gross = (float) ( $p['gross'] ?? 0 );
+		if ( $gross > 0 ) {
+			$is_pp     = 'pro Person' === (string) ( $p['unit'] ?? '' );
+			$price_txt = number_format_i18n( $gross, 2 ) . ' € netto ' . ( $is_pp ? 'p.P.' : 'pauschal' )
+				. ( $is_pp && $pax > 0 ? ', ' . number_format_i18n( $gross * $pax, 2 ) . ' € bei ' . $pax . ' Personen' : '' )
+				. ( ! function_exists( 'fge_offer_event_is_placeholder' ) || fge_offer_event_is_placeholder( $req ) ? ' (Platzhalter, nur Orientierung)' : '' );
+		}
+	}
+	$start = trim( (string) get_post_meta( $req, '_fge_start_time', true ) ) ?: trim( (string) get_post_meta( $req, '_fge_preferred_time', true ) );
+
+	echo '<section class="cc-card cc-requested"><h2>Angefragt</h2><dl class="cc-facts">';
+	fge_cc_fact( 'Event', $event_id > 0 ? get_the_title( $event_id ) : (string) get_post_meta( $req, '_fge_event_type', true ) );
+	fge_cc_fact( 'Wunschtermine', $d_txt ? implode( ' · ', $d_txt ) : 'keine angegeben' );
+	fge_cc_fact( 'Teilnehmer', $pax > 0 ? (string) $pax : '' );
+	fge_cc_fact( 'Niveau', (string) get_post_meta( $req, '_fge_group_experience', true ) );
+	fge_cc_fact( 'Startzeit', $start );
+	fge_cc_fact( 'Leistungen am Platz', implode( ', ', $platz ) );
+	fge_cc_fact( 'Über Firmengolf', implode( ', ', $fg ) );
+	fge_cc_fact( 'Weitere Wünsche', $extra );
+	fge_cc_fact( 'Preis auf der Eventseite', $price_txt );
+	fge_cc_fact( 'Budget', (string) get_post_meta( $req, '_fge_budget_range', true ) );
+	fge_cc_fact( 'Nachricht', (string) get_post_meta( $req, '_fge_message', true ) );
+	echo '</dl></section>';
 }
 
 /** Die beiden Kontaktkarten: Kunde und Platz, Telefon zum Antippen. */

@@ -69,7 +69,7 @@ function fge_request_run_followups(): array {
 				$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 				$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
 				$content = '<p style="margin:0 0 16px;">Die Event-Anfrage <strong>' . esc_html( $ref ) . '</strong> hat keinen einzigen Ansprechpartner für die Terminabstimmung und liegt seit Fristablauf unbearbeitet. Bitte manuell übernehmen.</p>'
-					. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
+					. '<p style="margin:0;">' . fge_email_button( $admin, 'Im Control Center öffnen' ) . '</p>';
 				if ( function_exists( 'fge_email_wrap' ) ) {
 					wp_mail( $to, 'Anfrage ohne Ansprechpartner: ' . $ref, fge_email_wrap( 'Anfrage ohne Ansprechpartner: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 				}
@@ -148,7 +148,7 @@ function fge_offer_hold_followups(): array {
 		$to      = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 		$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
 		$content = '<p style="margin:0 0 16px;">Die Anfrage <strong>' . esc_html( $ref ) . '</strong> hat einen bestätigten Termin, aber das Angebot ist wegen unbepreister Zusatzleistungen zurückgehalten, seit ' . (int) $days . ' Tagen. Der Kunde wartet. Bitte Feinplanung abschließen und „Angebot jetzt senden" klicken.</p>'
-			. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
+			. '<p style="margin:0;">' . fge_email_button( $admin, 'Im Control Center öffnen' ) . '</p>';
 		if ( function_exists( 'fge_email_wrap' ) ) {
 			wp_mail( $to, 'Feinplanung offen: ' . $ref, fge_email_wrap( 'Feinplanung offen: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 		}
@@ -191,7 +191,7 @@ function fge_offer_run_followups(): array {
 				$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
 				$q       = (string) get_post_meta( $req, '_fge_offer_query', true );
 				$content = '<p style="margin:0 0 16px;">Die Kundenrückfrage zum Angebot <strong>' . esc_html( $ref ) . '</strong> ist seit 2 Tagen unbeantwortet' . ( '' !== $q ? ': <em>„' . esc_html( wp_trim_words( $q, 30, '…' ) ) . '"</em>' : '.' ) . ' Der Kunde wartet.</p>'
-					. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
+					. '<p style="margin:0;">' . fge_email_button( $admin, 'Im Control Center öffnen' ) . '</p>';
 				if ( function_exists( 'fge_email_wrap' ) ) {
 					wp_mail( $to, 'Rückfrage unbeantwortet: ' . $ref, fge_email_wrap( 'Rückfrage unbeantwortet: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 				}
@@ -220,7 +220,7 @@ function fge_offer_run_followups(): array {
 			$to  = apply_filters( 'fge_internal_email', fge_company_internal_email() );
 			$admin = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
 			$content = '<p style="margin:0 0 16px;">Das Angebot <strong>' . esc_html( $ref ) . '</strong> ist seit der Frist offen, der Kunde hat noch nicht zugesagt. Bitte nachfassen.</p>'
-				. '<p style="margin:0;">' . fge_email_button( $admin, 'Anfrage im Admin öffnen' ) . '</p>';
+				. '<p style="margin:0;">' . fge_email_button( $admin, 'Im Control Center öffnen' ) . '</p>';
 			if ( function_exists( 'fge_email_wrap' ) ) {
 				wp_mail( $to, 'Angebot überfällig: ' . $ref, fge_email_wrap( 'Angebot überfällig: ' . $ref, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 			}
@@ -229,6 +229,54 @@ function fge_offer_run_followups(): array {
 		}
 	}
 
+	return $stats;
+}
+
+// ── Eventtag-Details vom Platz: einmalige Erinnerung nach der Buchung ────────
+add_action( 'fge_request_followups_cron', 'fge_venue_details_followups' );
+function fge_venue_details_followups(): array {
+	$stats = [ 'venue_details_reminded' => 0 ];
+	if ( ! function_exists( 'fge_venue_detail_row_for' ) || ! function_exists( 'fge_send_venue_details_reminder' ) || ! function_exists( 'fge_cc_event_date' ) ) {
+		return $stats;
+	}
+	$reqs = get_posts( [
+		'post_type'   => 'firmengolf_request',
+		'post_status' => [ 'publish', 'draft' ],
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_key'    => '_fge_offer_status', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		'meta_value'  => 'accepted', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+	] );
+	$days = (int) apply_filters( 'fge_venue_details_reminder_days', 3 );
+	foreach ( $reqs as $req ) {
+		if ( function_exists( 'fge_is_demo_request' ) && fge_is_demo_request( $req ) ) {
+			continue;
+		}
+		if ( '1' === (string) get_post_meta( $req, '_fge_venue_details_reminded', true ) ) {
+			continue;
+		}
+		$partner_id = (int) get_post_meta( $req, '_fge_assigned_partner_id', true );
+		if ( $partner_id <= 0 ) {
+			continue;
+		}
+		// Nur bevorstehende Termine, und erst wenn die Buchung ein paar Tage her ist.
+		$event_ts = fge_cc_event_date( $req );
+		if ( $event_ts <= 0 || $event_ts <= fge_cc_today() ) {
+			continue;
+		}
+		$accepted = (int) strtotime( (string) get_post_meta( $req, '_fge_offer_accepted_at', true ) ?: (string) get_post_meta( $req, '_fge_last_status_change', true ) ?: '' );
+		if ( $accepted <= 0 || time() < $accepted + $days * DAY_IN_SECONDS ) {
+			continue;
+		}
+		$row = fge_venue_detail_row_for( $req, $partner_id );
+		if ( ! $row || '' !== (string) ( $row['details_at'] ?? '' ) ) {
+			continue;
+		}
+		if ( fge_send_venue_details_reminder( $req, $row ) ) {
+			update_post_meta( $req, '_fge_venue_details_reminded', 1 );
+			$stats['venue_details_reminded']++;
+		}
+	}
 	return $stats;
 }
 

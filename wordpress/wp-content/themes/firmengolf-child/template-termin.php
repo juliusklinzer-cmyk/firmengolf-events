@@ -37,11 +37,11 @@ $done_locked = ( sanitize_key( wp_unslash( $_GET['done'] ?? '' ) ) === 'locked' 
 	<?php else :
 		$contact  = $resolved['contact'];
 		$first    = trim( explode( ' ', (string) $contact['name'] )[0] );
-		$company  = (string) get_post_meta( $req, '_fge_company_name', true );
+		// Vor der Buchung bleibt das Unternehmen anonym, kein Budget (Paket C).
+		$group    = function_exists( 'fge_request_group_label' ) ? fge_request_group_label( $req ) : 'Ein Unternehmen';
 		$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
 		$event_t  = $event_id ? get_the_title( $event_id ) : ( (string) get_post_meta( $req, '_fge_event_type', true ) ?: 'Firmen-Event' );
 		$pax      = (int) get_post_meta( $req, '_fge_expected_participants', true );
-		$budget   = (string) get_post_meta( $req, '_fge_budget_range', true );
 		$city     = (string) get_post_meta( $req, '_fge_company_city', true );
 		$ref      = fge_request_number( $req );
 		$wish     = fge_rr_wish_dates( $req );
@@ -102,12 +102,11 @@ $done_locked = ( sanitize_key( wp_unslash( $_GET['done'] ?? '' ) ) === 'locked' 
 		<?php endif; ?>
 
 		<div class="tl-summary">
-			<div class="tl-sum-co"><?php echo esc_html( $company ?: 'Ein Unternehmen' ); ?></div>
+			<div class="tl-sum-co"><?php echo esc_html( $group ); ?></div>
 			<div class="tl-sum-grid">
 				<div class="tl-sum-item"><div class="k">Veranstaltung</div><div class="v"><?php echo esc_html( $event_t ); ?></div></div>
 				<?php if ( $pax > 0 ) : ?><div class="tl-sum-item"><div class="k">Teilnehmer</div><div class="v">ca. <?php echo esc_html( (string) $pax ); ?> Personen</div></div><?php endif; ?>
 				<?php if ( '' !== $city ) : ?><div class="tl-sum-item"><div class="k">Region</div><div class="v"><?php echo esc_html( $city ); ?></div></div><?php endif; ?>
-				<?php if ( '' !== $budget ) : ?><div class="tl-sum-item"><div class="k">Budget</div><div class="v"><?php echo esc_html( $budget ); ?></div></div><?php endif; ?>
 			</div>
 		</div>
 

@@ -25,7 +25,7 @@ function fge_format_price_faq( string $question, string $plural, array $types, s
 	$range = function_exists( 'fge_format_price_range' ) ? fge_format_price_range( $types ) : null;
 
 	if ( ! $range ) {
-		$answer = 'Das hängt von Platz, Gruppengröße und Leistungen ab. Sag uns euren Rahmen, dann bekommt ihr innerhalb eines Werktags ein konkretes Angebot mit allen Posten.';
+		$answer = 'Das hängt von Platz, Gruppengröße und Leistungen ab. Sag uns euren Rahmen, dann bekommt ihr innerhalb von zwei Werktagen ein konkretes Angebot mit allen Posten.';
 		return [ 'q' => $question, 'a' => trim( $answer . ' ' . $tail ) ];
 	}
 
@@ -78,7 +78,7 @@ function fge_get_event_format_pages(): array {
 	$r_team = $reason( 'users', 'Für jedes Level', 'Von kompletten Einsteigenden bis zu Stammspielern. Schläger werden gestellt, ein Golflehrer führt an.' );
 	$r_one  = $reason( 'flag', 'Eine Anfrage, ein Kontakt', 'Platzwahl, Format, Catering und Abrechnung über einen einzigen Ansprechpartner.' );
 	$f_anf  = $faq( 'Müssen unsere Mitarbeitenden Golf spielen können?', 'Nein. Das Format ist auch für Teams ohne Vorerfahrung geeignet. Schläger werden gestellt, ein Golflehrer führt euch an, der gemeinsame Tag steht im Vordergrund.' );
-	$f_fast = $faq( 'Wie schnell bekomme ich eine Rückmeldung?', 'Nach eurer Anfrage meldet sich innerhalb eines Werktags ein persönlicher Ansprechpartner mit konkreten Vorschlägen für Platz, Format und Termin.' );
+	$f_fast = $faq( 'Wie schnell bekomme ich eine Rückmeldung?', 'Nach eurer Anfrage meldet sich innerhalb von zwei Werktagen ein persönlicher Ansprechpartner mit konkreten Vorschlägen für Platz, Format und Termin.' );
 	$f_bill = $faq( 'Wie wird abgerechnet?', 'Ihr bekommt eine Sammelrechnung von Firmengolf mit allen Posten, einfach für HR und Buchhaltung.' );
 
 	return [

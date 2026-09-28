@@ -95,17 +95,23 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 	// Extras: NUR Verkaufspreis, Basis und Zeilenindex (src). Einkauf, Marge und
 	// Dienstleister-Kontakt bleiben bewusst außerhalb des Snapshots — die Kundenseite
 	// rendert ausschließlich hieraus und kann die Marge damit nicht leaken.
+	// Dazu seit 28.09.2026: Beschreibung, wer organisiert (Platz oder extern, ohne
+	// Dienstleister-Namen) und bei „nach Verbrauch" der Richtwert statt eines Betrags.
 	$extras = [];
 	if ( function_exists( 'fge_xs_priced' ) ) {
 		foreach ( fge_xs_priced( $req ) as $src => $item ) {
 			$extras[] = [
-				'label' => (string) $item['label'],
-				'price' => fge_xs_sale_price( $item ),
-				'basis' => (string) $item['basis'],
-				'src'   => (int) $src,
+				'label'     => (string) $item['label'],
+				'price'     => fge_xs_sale_price( $item ),
+				'basis'     => (string) $item['basis'],
+				'src'       => (int) $src,
+				'note'      => (string) ( $item['note'] ?? '' ),
+				'organizer' => (string) ( $item['organizer'] ?? 'extern' ),
+				'guide'     => (string) ( $item['guide'] ?? '' ),
 			];
 		}
 	}
+	$not_possible = function_exists( 'fge_xs_not_possible' ) ? fge_xs_not_possible( $req ) : [];
 
 	$co       = function_exists( 'fge_company' ) ? fge_company() : [];
 	$location = $event_id ? (string) get_post_meta( $event_id, '_fge_event_location', true ) : '';
@@ -122,6 +128,11 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 	$inc_override = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) get_post_meta( $req, '_fge_offer_includes', true ) ) ) ) );
 	if ( ! empty( $inc_override ) ) {
 		$includes = $inc_override;
+	} elseif ( fge_offer_event_is_placeholder( $req ) ) {
+		// Platzhalter-Events („Golf-Teamevent in Stuttgart") tragen eine generische
+		// Leistungsliste mit „Verpflegung im Clubhaus" u. ä. Die darf nie ungeprüft zum
+		// Kunden und in die Auftragsbestätigung des Platzes (Audit 28.09.2026).
+		$includes = [];
 	}
 
 	// Partnercode-Rabatt (Multiplikator): Prozent auf die Netto-Zwischensumme aus Event und
@@ -149,6 +160,7 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 		'includes'          => array_values( array_filter( array_map( 'strval', (array) $includes ) ) ),
 		'wishes_platz'      => array_values( (array) ( $g['platz'] ?? [] ) ),
 		'wishes_firmengolf' => array_values( (array) ( $g['firmengolf'] ?? [] ) ),
+		'not_possible'      => array_values( $not_possible ),
 		'contact_name'      => (string) ( $co['managing_director'] ?? 'Firmengolf' ),
 		'contact_phone'     => (string) ( $co['phone_display'] ?? '' ),
 		'contact_email'     => (string) ( $co['email_events'] ?? '' ),
@@ -157,6 +169,41 @@ function fge_build_offer_snapshot( int $req, int $date_index ): array {
 		$snap['discount'] = $discount;
 	}
 	return $snap;
+}
+
+/** Gehört die Anfrage zu einem Platzhalter-Event (Event ohne eigenen Partner)? */
+function fge_offer_event_is_placeholder( int $req ): bool {
+	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+	if ( $event_id <= 0 || 'firmengolf_event' !== get_post_type( $event_id ) ) {
+		return true;
+	}
+	return (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true ) <= 0;
+}
+
+/**
+ * Ablauf-Text für den Editor: der gespeicherte Angebots-Ablauf, sonst der Tagesablauf
+ * des Events als Startpunkt (Julius, 28.09.2026: bei Platzhalter-Anfragen muss der Ablauf
+ * angepasst werden, nicht neu getippt). Ins Angebot kommt nur, was gespeichert wurde.
+ */
+function fge_offer_schedule_prefill( int $req ): string {
+	$own = trim( (string) get_post_meta( $req, '_fge_offer_schedule', true ) );
+	if ( '' !== $own ) {
+		return $own;
+	}
+	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+	if ( $event_id <= 0 || 'firmengolf_event' !== get_post_type( $event_id ) ) {
+		return '';
+	}
+	$flow = trim( (string) get_post_meta( $event_id, '_fge_event_dayflow', true ) );
+	// Tagesablauf-Format „Überschrift\nText\n\nÜberschrift\nText" auf Stichzeilen eindampfen.
+	$lines = [];
+	foreach ( preg_split( '/\r\n\r\n|\n\n|\r\r/', $flow ) as $block ) {
+		$parts = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $block ) ) ) );
+		if ( ! empty( $parts ) ) {
+			$lines[] = $parts[0];
+		}
+	}
+	return implode( "\n", $lines );
 }
 
 /** Preis als Text fürs Angebot. */
@@ -282,7 +329,15 @@ function fge_offer_is_priced( int $req ): bool {
 			return true;
 		}
 	}
-	return function_exists( 'fge_xs_priced' ) && ! empty( fge_xs_priced( $req ) );
+	// Verbrauchs-Positionen tragen keinen Betrag; allein machen sie kein Angebot bepreist.
+	if ( function_exists( 'fge_xs_priced' ) ) {
+		foreach ( fge_xs_priced( $req ) as $item ) {
+			if ( fge_xs_sale_price( $item ) > 0 ) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 add_action( 'fge_request_date_confirmed', 'fge_offer_on_date_confirmed', 20, 2 );
@@ -414,13 +469,26 @@ function fge_offer_handle_post(): void {
 				wp_safe_redirect( fge_offer_link( $req ) . '?done=expired' );
 				exit;
 			}
-			// Vom Kunden gewählte Zusatzleistungen festhalten (Checkbox je Position,
-			// abgewählte lösen eine Absage an den Dienstleister aus).
+			// Optionen-Angebot (28.09.2026): Option plus Termin sind Pflicht, die Wahl
+			// setzt Platz, Termin und Positionen und zieht den Snapshot flach.
 			$snap_x = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
-			$valid  = array_map( static fn( $x ) => (int) ( $x['src'] ?? -1 ), (array) ( $snap_x['extras'] ?? [] ) );
-			if ( ! empty( $valid ) ) {
-				$picked = array_map( 'intval', (array) ( $_POST['fge_offer_extras'] ?? [] ) );
-				update_post_meta( $req, '_fge_offer_extras_selected', array_values( array_intersect( $valid, $picked ) ) );
+			if ( ! empty( $snap_x['options'] ) && function_exists( 'fge_offer_resolve_option' ) ) {
+				$okey = strtoupper( sanitize_key( $_POST['fge_offer_option'] ?? '' ) );
+				$oidx = (int) ( $_POST[ 'fge_offer_date_' . $okey ] ?? 0 );
+				$opick = array_map( 'intval', (array) ( $_POST[ 'fge_offer_extras_' . $okey ] ?? $_POST['fge_offer_extras'] ?? [] ) );
+				if ( '' === $okey || $oidx <= 0 || ! fge_offer_resolve_option( $req, $okey, $oidx, $opick ) ) {
+					delete_post_meta( $req, '_fge_offer_decided' );
+					wp_safe_redirect( fge_offer_link( $req ) . '?option=1' );
+					exit;
+				}
+			} else {
+				// Vom Kunden gewählte Zusatzleistungen festhalten (Checkbox je Position,
+				// abgewählte lösen eine Absage an den Dienstleister aus).
+				$valid = array_map( static fn( $x ) => (int) ( $x['src'] ?? -1 ), (array) ( $snap_x['extras'] ?? [] ) );
+				if ( ! empty( $valid ) ) {
+					$picked = array_map( 'intval', (array) ( $_POST['fge_offer_extras'] ?? [] ) );
+					update_post_meta( $req, '_fge_offer_extras_selected', array_values( array_intersect( $valid, $picked ) ) );
+				}
 			}
 			update_post_meta( $req, '_fge_offer_status', 'accepted' );
 			update_post_meta( $req, '_fge_offer_accepted_at', current_time( 'mysql' ) ); // fürs Übersichts-Dashboard (Buchungen/Umsatz je Monat)

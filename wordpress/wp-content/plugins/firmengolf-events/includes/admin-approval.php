@@ -75,6 +75,7 @@ function fge_event_list_filters( string $post_type ): void {
 		'numberposts' => -1,
 		'orderby'     => 'title',
 		'order'       => 'ASC',
+		'meta_query'  => function_exists( 'fge_stammdaten_exclude_meta_clause' ) ? fge_stammdaten_exclude_meta_clause() : [],
 	] );
 	echo '<select name="fge_filter_partner">';
 	echo '<option value="0">Alle Partner</option>';
@@ -285,6 +286,7 @@ function fge_partner_list_filters( string $post_type ): void {
 	$cur = sanitize_key( $_GET['fge_filter_partner_status'] ?? '' );
 	$statuses = [
 		''            => 'Alle Status',
+		'stammdaten'  => 'Stammdaten',
 		'in_pruefung' => 'In Prüfung',
 		'aktiv'       => 'Aktiv',
 		'pausiert'    => 'Pausiert',

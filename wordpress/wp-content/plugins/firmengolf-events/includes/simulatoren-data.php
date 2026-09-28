@@ -185,7 +185,7 @@ function fge_simulatoren_featured(): array {
 	}
 	$names = [];
 	$extra = [];
-	$partners = get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_fge_partner_type', 'meta_value' => 'indoor' ] );
+	$partners = get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_query' => [ [ 'key' => '_fge_partner_type', 'value' => 'indoor' ], [ 'key' => '_fge_partner_status', 'value' => 'aktiv' ] ] ] );
 	foreach ( $partners as $pid ) {
 		if ( function_exists( 'fge_partner_is_public' ) && ! fge_partner_is_public( (int) $pid ) ) {
 			continue;

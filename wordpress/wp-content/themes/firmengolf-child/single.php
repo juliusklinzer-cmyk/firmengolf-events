@@ -163,7 +163,7 @@ get_header();
 			<div>
 				<div class="mk-eyebrow">Vom Lesen ins Machen</div>
 				<h2 class="mk-h2" style="font-size:28px;">Golf-Event für euer Team planen?</h2>
-				<p class="mk-sub">Schickt uns eure Eckdaten in 30 Sekunden, ihr bekommt innerhalb eines Werktags konkrete Vorschläge.</p>
+				<p class="mk-sub">Schickt uns eure Eckdaten in 30 Sekunden, ihr bekommt innerhalb von zwei Werktagen konkrete Vorschläge.</p>
 			</div>
 			<a class="fg-btn-brand" href="<?php echo esc_url( home_url( '/individuelle-events/?anfrage=quick' ) ); ?>">In 30 Sekunden anfragen →</a>
 		</div>

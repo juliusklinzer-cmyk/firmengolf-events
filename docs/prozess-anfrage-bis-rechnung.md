@@ -139,3 +139,41 @@ Kein Systemschritt. Julius ist telefonisch erreichbar (Nummer steht in beiden Vo
 | Vortags-Info 29.09. um 07:00 | automatisch |
 | Event 30.09. mittags, 3 Stunden, 6 Personen | |
 | Status „Event durchgeführt", Bewertungsbitte, Rechnung 371,28 € brutto, Eingangsrechnung 294 € brutto, abschließen | danach |
+
+## Nachtrag 28.09.2026 (1.9.278, live): Positionen, Organisation, Anonymität
+
+Auslöser FG-26-166 (solutio, Golf-Teamevent Stuttgart, Grillabend nach Verbrauch). Fünf Lücken geschlossen, Control Center zusammen damit erstmals deployt.
+
+- **Positionen haben jetzt**: stabile Zeilen-id (Löschen und Umsortieren nach dem Versand verschiebt Kundenauswahl und Dienstleister-Mails nicht mehr), Organisation „Golfplatz selbst" oder „Externer Dienstleister", Einkauf brutto oder netto (Verkauf rechnet netto), Basis „nach Verbrauch" mit Richtwert, Beschreibung für den Kunden, Status „am Platz nicht möglich".
+- **Angebot zeigt je Zusatzposition** Beschreibung, Abrechnung (bei Verbrauch) und „Organisation: über den Golfplatz" bzw. „Firmengolf mit einem externen Dienstleister", nie den Dienstleister-Namen. Verbrauchs-Positionen stehen ohne Betrag in der Tabelle und fehlen in der Summe, mit eigenem Hinweis. Nicht mögliche Wünsche stehen als Hinweis „Am gewählten Platz leider nicht möglich: …".
+- **Buchungsbestätigung an den Platz** listet nur noch Positionen mit Organisation Golfplatz, inklusive vereinbartem Einkauf je Position. Dienstleister-Aufträge und -Absagen gehen nur an externe Positionen.
+- **Platz-Pipeline füllt das Angebot**: Platzwahl übernimmt die Positionspreise (brutto/netto, Basis, Notiz) und „bietet der Platz nicht an" in die Angebots-Positionen, belegt Veranstaltungsort mit dem Platz vor und bei Anfragen ohne Eventpreis den Eventpreis mit Einkauf netto plus Standardmarge. Wünsche aus dem Event-Dialog (Abendessen, Getränkepauschale) stehen jetzt in der Wunschliste der Preisanfrage.
+- **Ablauf bei Platzhaltern**: Das Feld „Ablauf und Zeiten" startet mit den Überschriften des Event-Tagesablaufs, Julius passt an statt neu zu tippen. Ins Angebot kommt nur, was gespeichert ist.
+- **Nachträge**: Position im Cockpit speichern, dann direkt darunter „Zurückziehen und als neue Fassung senden". Beim Neuauflegen wird der Einmal-Guard der Dienstleister-Mails mit gelöscht.
+- **Kundenname erst nach Buchung**: Preisanfrage, Termin-Link-Mails, Verfügbarkeitsanfrage, Termin-Seite, Partnerportal (Liste, Detail, Inbox, Widget, Kalender) und ICS nennen vor `angebot_angenommen` nur „Firmenanfrage FG-…" und „Ein Unternehmen aus <Stadt>, N Personen, Niveau". Kontaktname, Mail, Telefon, Kundenfreitext und Budget erscheinen beim Platz erst mit der Buchungsbestätigung. Helper: `fge_request_is_booked()`, `fge_request_group_label()`, `fge_request_partner_title()` in helpers.php.
+
+**Nachtrag 1.9.279 (Audit über die Oberfläche, `docs/audit-control-center-2026-09-28.md`):** Nach einer Kundenabsage zeigt das Cockpit „Abgelehnt" mit drei Wegen (neu auflegen, Platz informieren „Termin wird frei", als verloren ablegen); „Verloren" und „Nicht verfügbar" sind eigene Phasen mit Listenfilter. Platzhalter-Events geben ihre generische Leistungsliste nicht mehr ins Angebot (Cockpit warnt, solange Leistungen oder Ablauf fehlen). Die Vortags-Info an den Platz nennt nur seine Positionen, extern Organisiertes als Hinweis. Fehlt das Angebots-PDF, geht eine interne Warnmail raus. Offen: Angebot mit zwei Platz-Varianten zur Wahl des Kunden (Vorschlag im Audit-Dokument).
+
+## Nachtrag 28.09.2026 abends (1.9.280): Stammdaten-Plätze, Plätze in der Nähe, Katalog-Einladung
+
+- **Stammdaten-Plätze**: Alle DGV-Golfplätze aus `wp_fge_golfplaetze` und alle Simulatoren aus `simulatoren-data.php` sind Partner-Posts mit Status `stammdaten` (Import `includes/stammdaten-import.php`, läuft auf Live in Batches beim Öffnen des Control Centers und per Cron, Statuszeile unter Plätze). Sie sind kein Partner: nicht öffentlich, kein Portal, keine Termin-Einladungen, kein Matching, nicht in Admin-Dropdowns (Klausel `fge_stammdaten_exclude_meta_clause()`). Kontaktmails stammen aus den Recherche-Dateien (`includes/stammdaten-mails-2026-09.php`, 133 Bayern-Plätze, 157 Simulatoren), fehlende Mails ergänzt Julius im Cockpit oder unter Plätze über „Kontakt ergänzen".
+- **Plätze in der Nähe**: Jedes Cockpit zeigt die fünf nächsten Golfplätze und drei nächsten Simulatoren zum Kundenstandort (Feld „Kundenstandort", Meta `_fge_geo_anchor`, sonst PLZ oder Ort der Anfrage) mit Entfernung und „Aufnehmen". Die Platzsuche ersetzt das große Auswahlfeld.
+- **Absage an nicht gewählte Plätze** sagt „Die Gruppe hat sich diesmal für einen anderen Platz entschieden" und lädt ein, das Angebot dauerhaft bei Firmengolf zu zeigen (Link `/platz-vorschlag/<token>/`, `includes/cc-venue-catalog.php`). Bei Ja: Stammdaten-Platz wird `in_pruefung`, Event-Entwurf `zur_pruefung` aus den Pipeline-Preisen, interne Mail, Einladung mit Portalzugang. Das Cockpit zeigt die Antwort in der Pipeline-Zeile.
+- **FG-26-166** wurde per Einmal-Seed (`includes/seed-fg-26-166.php`) auf Live nachgetragen: GolfKultur Stuttgart gewählt (33 € brutto p.P., Verkauf 35 € netto), Schönbuch zugesagt, Hammetweil angefragt, Positionen Grillabend nach Verbrauch und Getränkepauschale nicht möglich, Ort, Ablauf, Leistungen, Chronik. Kein Versand durch den Seed.
+
+
+## Soll-Prozess seit 1.9.281 (28.09.2026 abends): Optionen statt blinder Terminbestätigung
+
+Der Termin wird nie blind bestätigt. Verfügbarkeit kommt vom Platz je Wunschtermin, die Entscheidung vom Kunden.
+
+| # | Schritt | Automatisch | Von Hand (Julius) |
+|---|---|---|---|
+| 1 | Eingang | Bestätigung an den Kunden („Angebot innerhalb von zwei Werktagen"), interne Mail mit Link ins Control Center; Cockpit-Block „Angefragt" (Termine nummeriert, Teilnehmer, Niveau, Startzeit, Leistungen, Preis der Eventseite) | nichts |
+| 2 | Optionen finden | Block „Plätze in der Nähe" (5 Plätze, 3 Simulatoren zum Kundenstandort), Platzsuche, Stammdaten aller Plätze | Kundenstandort prüfen, Plätze aufnehmen |
+| 3 | Plätze anfragen | Preisanfrage-Mail mit anonymer Gruppe, Anlass (Niveau, Startzeit), Positionsliste und nummerierten Wunschterminen („Sagt uns je Termin, ob er geht") | telefonisch oder per Knopf; Antwort erfassen: je Termin geht / geht nicht / offen, Alternativtermin, Preise je Position, nicht möglich |
+| 4 | Kalkulation je Platz | Vorschlag = Einkauf netto plus Aufschlag (20 %), auf volle Euro aufgerundet | Aufschlag und Verkaufspreise je Position prüfen, Organisation Platz/extern, „Kalkulation speichern" |
+| 5 | Angebot mit Optionen | Snapshot mit bis zu 3 Optionen (Platz, freie Termine, Positionen, Summe), Empfehlung, Mail mit PDF, Angebotsseite mit Wahl von Option und Termin | Optionen A/B/C markieren, Empfehlung und Kurztexte, „Angebot mit Optionen senden" |
+| 6 | Entscheidung | Kunde wählt Option und Termin: Termin wird final, Platz zugeordnet, Positionen und Einkauf übernommen; Buchungsbestätigung an den Platz mit Detail-Link und „Was die Gruppe erwartet"; übrige Plätze bekommen automatisch die Absage mit Katalog-Einladung; bei Ablehnung Freigabe an alle. Kunden-Erinnerung nach 3 Tagen, intern „überfällig" | Rückfragen beantworten, nachfassen |
+| 7 | Nach der Buchung | Platz trägt über `/platz-details/<token>/` Startzeit, Treffpunkt, Ansprechpartner, Golflehrer, Mitbringen ein; Ablauf-Info geht dann automatisch an den Kunden; Erinnerung an den Platz nach 3 Tagen; Aufgabe „Platzdetails fehlen, anrufen" 7 Tage vor dem Termin; Vortags-Info wie bisher | Details prüfen, ergänzen, Nachlauf wie bisher |
+
+Der alte Weg „Termin direkt bestätigen" bleibt im Cockpit als Sonderfall (Partner-Event mit Portal-Abstimmung, telefonisch fixierter Einzeltermin). Ein Optionen-Angebot mit nur einer Option und einem Termin ist der Normalfall dafür.

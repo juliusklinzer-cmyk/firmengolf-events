@@ -20,7 +20,7 @@ function fge_get_cities(): array {
 	$local  = $reason( 'flag', 'Lokale Partnerplätze', 'Wir arbeiten direkt mit den Clubs vor Ort. Kurze Wege, verlässliche Termine, echte Ansprechpartner.' );
 	$f_anf  = $faq( 'Müssen unsere Mitarbeitenden Golf spielen können?', 'Nein. Unsere Teamevents starten immer mit einem Schnupper- und Grundlagenteil und sind genau für Teams ohne Vorerfahrung gedacht. Schläger werden gestellt, ein Golflehrer führt euch an, der gemeinsame Tag steht im Vordergrund, nicht das Handicap.' );
 	$f_size = $faq( 'Wie groß darf die Gruppe sein?', 'Vom Coaching für zwei Personen bis zum Firmenturnier mit rund 80 Teilnehmenden ist alles möglich. Sag uns einfach eure Gruppengröße in der Anfrage, dann wählen wir Platz und Format passend aus.' );
-	$f_fast = static function ( $city ) use ( $faq ) { return $faq( 'Wie schnell bekomme ich eine Rückmeldung?', 'Nach eurer Anfrage meldet sich innerhalb eines Werktags ein persönlicher Ansprechpartner mit konkreten Vorschlägen für Platz, Format und Termin in ' . $city . '.' ); };
+	$f_fast = static function ( $city ) use ( $faq ) { return $faq( 'Wie schnell bekomme ich eine Rückmeldung?', 'Nach eurer Anfrage meldet sich innerhalb von zwei Werktagen ein persönlicher Ansprechpartner mit konkreten Vorschlägen für Platz, Format und Termin in ' . $city . '.' ); };
 
 	// Preise kommen aus den real buchbaren Angeboten, nicht aus dem Text (Audit 2026-08-12).
 	$price_summary = function_exists( 'fge_price_from_summary' ) ? fge_price_from_summary( [

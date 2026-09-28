@@ -115,6 +115,16 @@ function fge_cc_phase( int $req ): array {
 	if ( in_array( $status, [ 'abgeschlossen', 'rechnung_in_lexoffice_erstellt', 'event_durchgefuehrt' ], true ) ) {
 		return [ 7, 'Nachlauf' ];
 	}
+	// Verlorene Vorgänge hießen bis 28.09.2026 weiter „Angebot läuft" (Audit).
+	if ( 'verloren' === $status ) {
+		return [ 4, 'Verloren' ];
+	}
+	if ( 'nicht_verfuegbar' === $status ) {
+		return [ 2, 'Nicht verfügbar' ];
+	}
+	if ( 'angebot_abgelehnt' === $status || 'declined' === $offer ) {
+		return [ 4, 'Abgelehnt' ];
+	}
 	if ( 'accepted' === $offer ) {
 		$date = fge_cc_event_date( $req );
 		return $date > 0 && $date < time() ? [ 6, 'Eventtag' ] : [ 5, 'Vorbereitung' ];
@@ -332,6 +342,18 @@ function fge_cc_tasks( int $req ): array {
 			} elseif ( '' === (string) get_post_meta( $req, '_fge_day_plan_sent', true ) ) {
 				// Gate hält einen Zeitstempel, nicht "1".
 				$add( 'send_day_plan', 'Ablauf an den Kunden schicken', 'me', 'soon', 'day_plan' );
+			}
+			// Der Platz trägt seine Angaben selbst ein (Link aus der Auftragsbestätigung).
+			// Kurz vor dem Termin wird das Warten zum Anruf.
+			if ( $partner_id > 0 && function_exists( 'fge_venue_detail_row_for' ) ) {
+				$vrow = fge_venue_detail_row_for( $req, $partner_id );
+				if ( $vrow && '' === (string) ( $vrow['details_at'] ?? '' ) ) {
+					if ( $near ) {
+						$add( 'venue_details_call', 'Platzdetails fehlen: ' . get_the_title( $partner_id ) . ' anrufen', 'me', 'now' );
+					} else {
+						$add( 'venue_details_wait', 'Platz trägt Eventtag-Details ein', 'them', 'wait' );
+					}
+				}
 			}
 		}
 		if ( $date > 0 && $date < fge_cc_today() && 'event_durchgefuehrt' !== $status

@@ -61,7 +61,7 @@ $topics = [
 $prefs = [ 'Egal', 'E-Mail', 'Telefon', 'WhatsApp' ];
 
 $faqs = [
-	[ 'Wie schnell antwortet ihr?', 'Werktags innerhalb eines Arbeitstags, per WhatsApp meist in Minuten. Anfragen von Freitagnachmittag bis Sonntag beantworten wir Montag früh.' ],
+	[ 'Wie schnell antwortet ihr?', 'Auf Nachrichten antworten wir innerhalb von zwei Werktagen, per WhatsApp meist in Minuten. Konkrete Angebote und Vorschläge kommen ebenfalls innerhalb von zwei Werktagen.' ],
 	[ 'Ich rede lieber, als zu tippen, geht das?', 'Klar. Ruf direkt an, schreib uns auf WhatsApp, oder fordere oben einen Rückruf an, dann melden wir uns zur gewünschten Zeit bei dir.' ],
 	[ 'Ich bin Golfplatz und will Partner werden, wohin?', 'Schreib an ' . $co['email_partner'] . ' oder starte direkt das Partner-Onboarding über „Partnerportal" oben. Bei größeren Anlagen kommen wir auch persönlich vorbei.' ],
 	[ 'Ich habe eine Frage zum Benefit-Programm.', 'Das läuft über firmen.golf, schreib uns trotzdem hier, wir leiten weiter und sorgen, dass du eine Antwort bekommst.' ],
@@ -81,7 +81,7 @@ $faqs = [
 	</h1>
 	<p class="ct-hero-sub">
 		Kein Chatbot, kein Ticketsystem, keine Warteschleife ins Nichts. Wähl den Weg, der dir
-		am liebsten ist, wir antworten innerhalb eines Werktags, oft schneller.
+		am liebsten ist, wir antworten innerhalb von zwei Werktagen, oft schneller.
 	</p>
 	<?php /* Die drei Direktwege als ruhige Zeile im Hero: die erste Entscheidung
 	         der Seite (anrufen, schreiben, mailen), statt als Boxenstapel neben
@@ -113,7 +113,7 @@ $faqs = [
 				<div class="fg-success-mark"><?php echo $cicon( 'check', 22 ); // phpcs:ignore WordPress.Security.EscapeOutput ?></div>
 				<h2 class="contact-form-h">Danke, wir haben dich.</h2>
 				<p class="muted" style="margin-top:12px;max-width:420px;">
-					Deine Nachricht ist angekommen. Wir melden uns innerhalb eines Werktags.
+					Deine Nachricht ist angekommen. Wir melden uns innerhalb von zwei Werktagen.
 				</p>
 				<?php if ( $fgref !== '' ) : ?>
 					<div class="ct-success-ref">
@@ -204,7 +204,7 @@ $faqs = [
 					<button type="submit" class="fg-btn-brand">
 						Nachricht senden <span class="fg-arrow"><?php echo fge_icon_arrow_right(); // phpcs:ignore WordPress.Security.EscapeOutput ?></span>
 					</button>
-					<span class="fg-rail-note">Antwort innerhalb eines Werktags. Kein Vertriebs-Druck.</span>
+					<span class="fg-rail-note">Antwort innerhalb von zwei Werktagen. Kein Vertriebs-Druck.</span>
 				</div>
 			</form>
 		<?php endif; ?>
@@ -223,7 +223,7 @@ $faqs = [
 					<span class="ct-person-role">Gründer · Firmengolf</span>
 				</div>
 				<div class="ct-person-facts">
-					<span class="ct-person-fact"><?php echo $cicon( 'clock', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>Antwort in einem Werktag</span>
+					<span class="ct-person-fact"><?php echo $cicon( 'clock', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>Antwort in zwei Werktagen</span>
 					<span class="ct-person-fact"><?php echo $cicon( 'check', 14 ); // phpcs:ignore WordPress.Security.EscapeOutput ?>Unverbindlich und kostenlos</span>
 				</div>
 			</div>

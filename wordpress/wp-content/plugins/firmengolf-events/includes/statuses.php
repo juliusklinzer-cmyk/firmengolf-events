@@ -15,6 +15,7 @@ function fge_get_statuses( string $type ): array {
 			'abgelehnt',
 		],
 		'partner' => [
+			'stammdaten',
 			'in_pruefung',
 			'rueckfragen',
 			'aktiv',

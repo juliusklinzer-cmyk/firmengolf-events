@@ -1044,6 +1044,7 @@ function fge_portal_format_event_status( string $status ): string {
 
 function fge_portal_format_partner_status( string $status ): string {
 	return [
+		'stammdaten'  => 'Stammdaten',
 		'in_pruefung' => 'In Prüfung',
 		'aktiv'       => 'Aktiv',
 		'pausiert'    => 'Pausiert',
@@ -1874,7 +1875,7 @@ function fge_portal_next_booking( int $partner_id ): ?array {
 			$best = [
 				'ymd'     => $ymd,
 				'label'   => $label,
-				'company' => (string) get_post_meta( $rid, '_fge_company_name', true ) ?: 'Unternehmen',
+				'company' => fge_request_partner_title( $rid ), // vor der Buchung anonym (Paket C)
 				'req'     => $rid,
 				'booked'  => 'accepted' === (string) get_post_meta( $rid, '_fge_offer_status', true ),
 			];
@@ -2133,15 +2134,14 @@ function fge_portal_render_cat_card( WP_Post $event, string $type_label, string 
 
 function fge_portal_render_inbox_row( WP_Post $req, int $idx = 0 ): void {
 	$status  = (string) get_post_meta( $req->ID, '_fge_request_status', true );
-	$company = (string) get_post_meta( $req->ID, '_fge_company_name', true );
-	$first   = (string) get_post_meta( $req->ID, '_fge_contact_first_name', true );
-	$last    = (string) get_post_meta( $req->ID, '_fge_contact_last_name', true );
+	$booked  = fge_request_is_booked( $req->ID );
 	$ev_id   = (int)    get_post_meta( $req->ID, '_fge_assigned_event_id', true );
 	$ev_type = $ev_id > 0 ? (string) get_post_meta( $ev_id, '_fge_event_type', true ) : '';
-	$desc    = wp_trim_words( wp_strip_all_tags( $req->post_content ?: (string) get_post_meta( $req->ID, '_fge_message', true ) ), 12, '…' );
+	// Vor der Buchung: kein Firmenname, kein Kundentext (Paket C).
+	$desc    = $booked ? wp_trim_words( wp_strip_all_tags( $req->post_content ?: (string) get_post_meta( $req->ID, '_fge_message', true ) ), 12, '…' ) : '';
 
-	$name     = $company ?: trim( $first . ' ' . $last ) ?: 'Unbekannte Anfrage';
-	$initials = fge_portal_name_initials( $name );
+	$name     = fge_request_partner_title( $req->ID );
+	$initials = $booked ? fge_portal_name_initials( $name ) : 'FG';
 	$color    = fge_portal_avatar_color( $idx );
 	$time     = fge_portal_relative_time( $req->post_date );
 	$is_new   = ( time() - (int) strtotime( $req->post_date ) ) < 172800;
@@ -2621,18 +2621,20 @@ function fge_portal_render_request_list( int $partner_id, string $base ): void {
 
 function fge_portal_render_request_item( WP_Post $r, string $sid, string $slabel, string $base, bool $is_du = false ): void {
 	$id      = $r->ID;
-	$company = (string) get_post_meta( $id, '_fge_company_name', true ) ?: 'Unternehmen';
+	// Vor der Buchung: kein Firmenname, kein Kundentext (Paket C).
+	$booked  = fge_request_is_booked( $id );
+	$company = fge_request_partner_title( $id );
 	$pax     = (int) get_post_meta( $id, '_fge_expected_participants', true );
 	$etype   = (string) get_post_meta( $id, '_fge_event_type', true );
 	$eid     = (int) get_post_meta( $id, '_fge_assigned_event_id', true );
 	$etype   = $eid ? get_the_title( $eid ) : ( $etype ?: 'Firmen-Event' );
-	$msg     = (string) get_post_meta( $id, '_fge_message', true );
+	$msg     = $booked ? (string) get_post_meta( $id, '_fge_message', true ) : '';
 	$wish    = function_exists( 'fge_rr_wish_dates' ) ? fge_rr_wish_dates( $id ) : [];
 	$when    = get_the_date( 'd.m.Y', $id );
 	$meta    = $etype . ( $pax ? ' · ' . $pax . ' Pers.' : '' ) . ( count( $wish ) > 1 ? ' · ' . count( $wish ) . ' Wunschtermine' : '' );
 	?>
 	<a class="req-item<?php echo $is_du ? ' is-du' : ''; ?>" href="<?php echo esc_url( $base . '?tab=anfragen&req=' . $id ); ?>">
-		<span class="av green"><?php echo esc_html( fge_portal_initials( $company ) ); ?></span>
+		<span class="av green"><?php echo esc_html( $booked ? fge_portal_initials( $company ) : 'FG' ); ?></span>
 		<span class="ri-main">
 			<span class="ri-co"><?php echo esc_html( $company ); ?><?php if ( $is_du ) : ?> <span class="ri-du">Du bist dran</span><?php endif; ?></span>
 			<span class="ri-meta"><?php echo esc_html( $meta ); ?></span>
@@ -2648,17 +2650,20 @@ function fge_portal_render_request_item( WP_Post $r, string $sid, string $slabel
 
 function fge_portal_render_request_detail( int $req, string $base ): void {
 	[ $sid, $slabel ] = fge_portal_request_status( $req );
-	$company  = (string) get_post_meta( $req, '_fge_company_name', true ) ?: 'Unternehmen';
-	$contact  = trim( (string) get_post_meta( $req, '_fge_contact_first_name', true ) . ' ' . (string) get_post_meta( $req, '_fge_contact_last_name', true ) );
-	$role     = (string) get_post_meta( $req, '_fge_contact_role', true );
-	$email    = (string) get_post_meta( $req, '_fge_contact_email', true );
-	$phone    = (string) get_post_meta( $req, '_fge_contact_phone', true );
+	// Vor der Buchung bleibt das Unternehmen anonym: kein Name, keine Kontaktdaten,
+	// kein Budget, keine Nachricht (Paket C). Mit der Buchung erscheint alles wie gehabt.
+	$booked   = fge_request_is_booked( $req );
+	$company  = $booked ? ( (string) get_post_meta( $req, '_fge_company_name', true ) ?: 'Unternehmen' ) : fge_request_partner_title( $req );
+	$contact  = $booked ? trim( (string) get_post_meta( $req, '_fge_contact_first_name', true ) . ' ' . (string) get_post_meta( $req, '_fge_contact_last_name', true ) ) : '';
+	$role     = $booked ? (string) get_post_meta( $req, '_fge_contact_role', true ) : '';
+	$email    = $booked ? (string) get_post_meta( $req, '_fge_contact_email', true ) : '';
+	$phone    = $booked ? (string) get_post_meta( $req, '_fge_contact_phone', true ) : '';
 	$pax      = (int) get_post_meta( $req, '_fge_expected_participants', true );
-	$budget   = (string) get_post_meta( $req, '_fge_budget_range', true );
+	$budget   = $booked ? (string) get_post_meta( $req, '_fge_budget_range', true ) : '';
 	$eid      = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
 	$etype    = $eid ? get_the_title( $eid ) : ( (string) get_post_meta( $req, '_fge_event_type', true ) ?: 'Firmen-Event' );
 	$slot     = (string) get_post_meta( $req, '_fge_preferred_time', true ) ?: 'Nach Absprache';
-	$msg      = (string) get_post_meta( $req, '_fge_message', true );
+	$msg      = $booked ? (string) get_post_meta( $req, '_fge_message', true ) : '';
 	$ref      = function_exists( 'fge_request_number' ) ? fge_request_number( $req ) : 'FG-' . $req;
 	$wish     = function_exists( 'fge_rr_wish_dates' ) ? fge_rr_wish_dates( $req ) : [];
 	$m        = function_exists( 'fge_rr_matrix' ) ? fge_rr_matrix( $req ) : [ 'dates' => [], 'responders' => [], 'all_responded' => false, 'overall' => 'offen', 'final_index' => null ];
@@ -2704,15 +2709,19 @@ function fge_portal_render_request_detail( int $req, string $base ): void {
 				<span class="req-no"><span class="req-no-hash">#<?php echo esc_html( $ref ); ?></span></span>
 				<span class="spill s-<?php echo esc_attr( $sid ); ?>" style="margin-left:10px;"><?php echo esc_html( $phase['pill'] ); ?></span>
 				<div class="req-detail-top" style="margin-top:14px;">
-					<span class="av green"><?php echo esc_html( fge_portal_initials( $company ) ); ?></span>
+					<span class="av green"><?php echo esc_html( $booked ? fge_portal_initials( $company ) : 'FG' ); ?></span>
 					<div>
 						<div class="req-detail-co"><?php echo esc_html( $company ); ?></div>
-						<div class="req-detail-sub"><?php echo esc_html( trim( ( $contact ?: 'Ansprechpartner' ) . ( $role ? ' · ' . $role : '' ) ) ); ?></div>
+						<div class="req-detail-sub"><?php echo esc_html( $booked ? trim( ( $contact ?: 'Ansprechpartner' ) . ( $role ? ' · ' . $role : '' ) ) : fge_request_group_label( $req ) ); ?></div>
 					</div>
 				</div>
 				<div class="req-contact-row">
-					<?php if ( '' !== $email ) : ?><a href="mailto:<?php echo esc_attr( $email ); ?>"><?php echo esc_html( $email ); ?></a><?php endif; ?>
-					<?php if ( '' !== $phone ) : ?><a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $phone ) ); ?>"><?php echo esc_html( $phone ); ?></a><?php endif; ?>
+					<?php if ( ! $booked ) : ?>
+						<span style="color:var(--ink-500);">Kontaktdaten des Unternehmens erhältst du mit der Buchungsbestätigung.</span>
+					<?php else : ?>
+						<?php if ( '' !== $email ) : ?><a href="mailto:<?php echo esc_attr( $email ); ?>"><?php echo esc_html( $email ); ?></a><?php endif; ?>
+						<?php if ( '' !== $phone ) : ?><a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $phone ) ); ?>"><?php echo esc_html( $phone ); ?></a><?php endif; ?>
+					<?php endif; ?>
 				</div>
 			</div>
 			<div class="req-detail-body">
@@ -2907,14 +2916,15 @@ function fge_portal_section_kalender( int $partner_id ): void {
 					<?php foreach ( $bookings as $b ) :
 						$idx   = (int) get_post_meta( $b->ID, '_fge_final_date_index', true );
 						$label = (string) get_post_meta( $b->ID, '_fge_preferred_date_' . $idx, true );
-						$comp  = (string) get_post_meta( $b->ID, '_fge_company_name', true ) ?: 'Unternehmen';
+						$bkd   = fge_request_is_booked( $b->ID );
+						$comp  = fge_request_partner_title( $b->ID ); // vor der Buchung anonym (Paket C)
 						$eid   = (int) get_post_meta( $b->ID, '_fge_assigned_event_id', true );
 						$etype = $eid ? get_the_title( $eid ) : (string) get_post_meta( $b->ID, '_fge_event_type', true );
 						$pax   = (int) get_post_meta( $b->ID, '_fge_expected_participants', true );
 						$ics_ok = function_exists( 'fge_parse_german_date' ) && null !== fge_parse_german_date( $label );
 						$ics_url = wp_nonce_url( add_query_arg( [ 'tab' => 'kalender', 'fge_ics' => $b->ID ], $base ), 'fge_ics_' . $b->ID ); ?>
 					<div class="tm-row">
-						<span class="tm-av"><?php echo esc_html( fge_portal_initials( $comp ) ); ?></span>
+						<span class="tm-av"><?php echo esc_html( $bkd ? fge_portal_initials( $comp ) : 'FG' ); ?></span>
 						<div class="tm-main">
 							<div class="tm-name"><?php echo esc_html( $label ?: 'Termin' ); ?></div>
 							<div class="tm-sub"><?php echo esc_html( trim( $comp . ( $etype ? ' · ' . $etype : '' ) . ( $pax ? ' · ' . $pax . ' Pers.' : '' ) ) ); ?></div>

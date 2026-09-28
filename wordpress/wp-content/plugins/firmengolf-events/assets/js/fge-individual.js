@@ -674,7 +674,7 @@
 				+ '<div class="rw-eyebrow">Schön, dass du da bist</div>'
 				+ '<h2 class="rw-h">Toll, ihr plant ' + art + ' <span class="mk-italic">' + esc(occ) + '</span> für euer Team.</h2>'
 				+ '<p class="rw-lead">Lass uns kurz ein paar Infos sammeln. Danach meldet sich ' + esc(CONTACT.name)
-				+ ' persönlich bei dir, meist innerhalb eines Werktags, mit ersten Ideen und einem Richtpreis.</p>'
+				+ ' persönlich bei dir, innerhalb von zwei Werktagen mit ersten Ideen und einem Richtpreis.</p>'
 				+ '<div class="rw-intro-contact"><div><div class="rw-intro-c-name">' + esc(CONTACT.name) + '</div>'
 				+ '<div class="rw-intro-c-role">' + esc(CONTACT.role) + ' · Firmengolf</div>'
 				+ '<div class="rw-intro-c-note">„Ich kümmere mich persönlich um deine Anfrage."</div></div></div>'
@@ -714,7 +714,7 @@
 			}
 			return '<div class="rw-stage"><div class="rw-screen rw-has-photo"><div class="rw-main">'
 				+ '<h2 class="rw-h rw-h--quick rw-h--quick2">Noch kurz zu euch.</h2>'
-				+ '<p class="rw-lead rw-lead--quick">Innerhalb eines Werktags habt ihr konkrete Vorschläge im Postfach.</p>'
+				+ '<p class="rw-lead rw-lead--quick">Innerhalb von zwei Werktagen habt ihr konkrete Vorschläge im Postfach.</p>'
 				+ '<div class="rw-form">'
 				+ '<div class="rw-row"><div class="rw-field">' + label('Vor- & Nachname', true) + input('firstName', 'required', 'Vor- und Nachname') + '</div>'
 				+ '<div class="rw-field">' + label('E-Mail', true) + input('email', 'type="email" required', 'name@firma.de') + '</div></div>'
@@ -796,7 +796,7 @@
 			// step 4
 			return '<div class="rw-eyebrow">Schritt 5 · ' + FULL_STEPS[4] + '</div>'
 				+ '<h2 class="rw-h">Wer seid ihr, und wie erreichen wir dich?</h2>'
-				+ '<p class="rw-lead">Letzter Schritt. Danach melden wir uns innerhalb eines Werktags.</p>'
+				+ '<p class="rw-lead">Letzter Schritt. Danach melden wir uns kurz, das Angebot kommt innerhalb von zwei Werktagen.</p>'
 				+ '<div class="rw-form"><div class="rw-row"><div class="rw-field">' + label('Unternehmen', true) + input('company', 'required', 'Musterfirma GmbH') + '</div>'
 				+ '<div class="rw-field">' + label('Ort') + input('city', 'list="rw-city-list" autocomplete="off"', 'Ort eintippen …') + '<datalist id="rw-city-list"></datalist></div></div>'
 				+ '<div class="rw-row"><div class="rw-field">' + label('Vorname') + input('firstName', '', 'Vorname') + '</div>'
@@ -872,7 +872,7 @@
 				+ '<div class="rw-care-n">' + esc(CONTACT.name) + '</div>'
 				+ '<div class="rw-care-r">' + esc(CONTACT.role) + ' · Firmengolf</div>'
 				+ (CFG.juliusEmail ? '<a class="rw-care-mail" href="mailto:' + esc(CFG.juliusEmail) + '">' + esc(CFG.juliusEmail) + '</a>' : '')
-				+ '<div class="rw-care-note">' + (S.mode === 'budget' ? 'Wir melden uns schnellstmöglich telefonisch bei dir, um alles abzustimmen.' : 'Wir melden uns innerhalb eines Werktags persönlich bei dir.') + '</div></div></div>'
+				+ '<div class="rw-care-note">' + (S.mode === 'budget' ? 'Wir melden uns schnellstmöglich telefonisch bei dir, um alles abzustimmen.' : 'Wir melden uns kurz persönlich bei dir, das Angebot kommt innerhalb von zwei Werktagen.') + '</div></div></div>'
 				+ '<div class="rw-receipt-h">Zusammenfassung deiner Anfrage</div>'
 				+ '<div class="rw-receipt">'
 				+ '<div><span>Anlass</span><span>' + esc(resp.occasion || S.form.occasion || 'k. A.') + '</span></div>'

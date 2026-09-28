@@ -403,7 +403,7 @@ if ( $home_prices ) : ?>
 				was ihr vorhabt. Wir bauen das Format für euch und schlagen die passenden Plätze vor.
 			</p>
 			<div class="home-ind-points">
-				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Persönliche Beratung in einem Werktag</span></div>
+				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Konkretes Angebot in zwei Werktagen</span></div>
 				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Maßgeschneidertes Programm</span></div>
 				<div><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput ?><span>Ein Ansprechpartner, eine Rechnung</span></div>
 			</div>
@@ -488,7 +488,7 @@ if ( $home_prices ) : ?>
 	bereits alle Orte. Blog-Teaser-Sektion entfernt (Julius, 2026-08-28). */
 get_template_part( 'template-parts/fge-putt-cta', null, [
 	'headline_html' => 'Lasst uns euer nächstes Event <em class="mk-italic">zusammen</em> planen.',
-	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
+	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb von zwei Werktagen habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
 	'anfrage_url'   => add_query_arg( 'anfrage', 'quick', $url_ind ),
 	'links_html'    => '<a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '">' . esc_html( fge_company()['email_events'] ) . '</a>',
 ] );

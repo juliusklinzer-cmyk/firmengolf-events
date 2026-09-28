@@ -92,10 +92,18 @@ add_action( 'template_redirect', static function () {
 	}
 }, 2 );
 
-// Einmaliger Flush, sobald die golflehrer-Regel fehlt (Muster aus partner-invite.php).
+// Einmaliger Flush, sobald eine unserer Regeln fehlt (Muster aus partner-invite.php).
+// platz-vorschlag: Antwortlink aus der Absage-Mail (cc-venue-catalog.php).
+// platz-details: Eventtag-Formular aus der Auftragsbestätigung (cc-venue-details.php).
 add_action( 'init', static function () {
 	$rules = get_option( 'rewrite_rules' );
-	if ( is_array( $rules ) && ! isset( $rules['^golflehrer/([^/]+)/?$'] ) ) {
-		flush_rewrite_rules( false );
+	if ( ! is_array( $rules ) ) {
+		return;
+	}
+	foreach ( [ '^golflehrer/([^/]+)/?$', '^platz-vorschlag/([^/]+)/?$', '^platz-details/([^/]+)/?$' ] as $rule ) {
+		if ( ! isset( $rules[ $rule ] ) ) {
+			flush_rewrite_rules( false );
+			return;
+		}
 	}
 }, 99 );

@@ -45,7 +45,7 @@ if ( $city_coords ) {
 $faqs = ! empty( $city['faqs'] ) ? $city['faqs'] : [
 	[ 'q' => 'Welche Golfplätze gibt es für Firmenevents in ' . $city_name . '?', 'a' => 'Wir arbeiten mit ausgewählten Partnerplätzen in der Region ' . $city_region . ' zusammen, von der Übungsanlage für Einsteigende bis zur 18-Loch-Anlage für Firmenturniere.' ],
 	[ 'q' => 'Müssen unsere Mitarbeitenden Golf spielen können?', 'a' => 'Nein. Unsere Teamevents enthalten immer einen Schnupper- und Grundlagenteil, Golflehrer vor Ort, Schläger werden gestellt.' ],
-	[ 'q' => 'Wie schnell bekommen wir eine Antwort?', 'a' => 'Innerhalb eines Werktags meldet sich ein persönlicher Ansprechpartner mit passenden Optionen für ' . $city_name . '.' ],
+	[ 'q' => 'Wie schnell bekommen wir eine Antwort?', 'a' => 'Innerhalb von zwei Werktagen meldet sich ein persönlicher Ansprechpartner mit passenden Optionen für ' . $city_name . '.' ],
 	[ 'q' => 'Wie wird abgerechnet?', 'a' => 'Eine Sammelrechnung von Firmengolf mit allen Posten, einfach für HR und Buchhaltung.' ],
 ];
 
@@ -296,7 +296,7 @@ get_template_part( 'template-parts/fge-nav', null, [ 'active_item' => '' ] );
 			<p class="cty-founder-p">
 				Ich bin Julius, Gründer von Firmengolf. Ich kenne die Partnerplätze rund um
 				<?php echo esc_html( $city_name ); ?> persönlich und stelle euch ein Event zusammen,
-				das zu Team, Anlass und Budget passt. Innerhalb eines Werktags habt ihr konkrete
+				das zu Team, Anlass und Budget passt. Innerhalb von zwei Werktagen habt ihr konkrete
 				Vorschläge für Platz, Format und Termin auf dem Tisch.
 			</p>
 			<div class="cty-founder-ctas">
@@ -475,7 +475,7 @@ foreach ( $cities as $cslug => $c ) {
 }
 get_template_part( 'template-parts/fge-putt-cta', null, [
 	'headline_html' => 'Lasst uns euer Event in ' . esc_html( $city_name ) . ' <em class="mk-italic">planen</em>.',
-	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb eines Werktags habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
+	'sub'           => 'Schickt uns eure Eckdaten in 30 Sekunden. Innerhalb von zwei Werktagen habt ihr konkrete Vorschläge, kostenlos und unverbindlich.',
 	'anfrage_url'   => $anfrage_url,
 	'links_html'    => $cty_cta_links,
 ] );

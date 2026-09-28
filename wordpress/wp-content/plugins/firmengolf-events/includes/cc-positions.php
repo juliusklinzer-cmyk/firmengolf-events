@@ -42,7 +42,7 @@ function fge_cc_positions_panel( int $req ): void {
 	echo '<summary>Angebots-Positionen' . ( $priced ? '' : ' (noch kein Preis hinterlegt)' ) . '</summary>';
 
 	if ( $sent ) {
-		echo '<p class="cc-hint cc-hint--warn">Das Angebot ist bereits draußen. Änderungen hier wirken erst, wenn du das Angebot neu auflegst.</p>';
+		echo '<p class="cc-hint cc-hint--warn">Das Angebot ist bereits draußen. Änderungen hier wirken erst, wenn du das Angebot neu auflegst: erst speichern, dann unten „Zurückziehen und als neue Fassung senden".</p>';
 	}
 
 	echo '<form class="cc-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
@@ -78,7 +78,7 @@ function fge_cc_positions_panel( int $req ): void {
 
 	// ── Zusatzleistungen ──
 	echo '<p class="cc-kicker">Zusatzleistungen</p>';
-	echo '<p class="cc-muted">Der Kunde sieht nur den Verkaufspreis. Positionen mit Dienstleister-Mail lösen bei der Buchung automatisch Auftrag oder Absage aus.</p>';
+	echo '<p class="cc-muted">Der Kunde sieht Verkaufspreis, Beschreibung und ob der Platz oder ein externer Dienstleister organisiert. Einkauf, Marge und Dienstleister-Name bleiben intern. Externe Positionen mit Dienstleister-Mail lösen bei der Buchung automatisch Auftrag oder Absage aus. „Nach Verbrauch" heißt: kein fester Betrag, Abrechnung nach dem Event, optional mit Richtwert. „Am Platz nicht möglich" steht so im Angebot.</p>';
 
 	$rows = $items;
 	for ( $i = 0; $i < FGE_CC_BLANK_ROWS; $i++ ) {
@@ -92,12 +92,27 @@ function fge_cc_positions_panel( int $req ): void {
 
 	// ── Angebotstext ──
 	echo '<p class="cc-kicker">Text zur Hauptposition</p>';
+	if ( function_exists( 'fge_offer_event_is_placeholder' ) && fge_offer_event_is_placeholder( $req ) ) {
+		$miss = [];
+		if ( '' === trim( (string) get_post_meta( $req, '_fge_offer_includes', true ) ) ) {
+			$miss[] = 'Leistungen';
+		}
+		if ( '' === trim( (string) get_post_meta( $req, '_fge_offer_schedule', true ) ) ) {
+			$miss[] = 'Ablauf';
+		}
+		if ( $miss ) {
+			echo '<p class="cc-hint cc-hint--warn">Platzhalter-Event: ' . esc_html( implode( ' und ', $miss ) ) . ' bitte hier eintragen. Die generische Liste des Platzhalters kommt nicht ins Angebot, ohne Eintrag fehlt der Block beim Kunden und beim Platz.</p>';
+		}
+	}
 	foreach ( [
 		'fge_offer_location' => [ 'Veranstaltungsort', 'text', 'leer = Angabe des Events' ],
 		'fge_offer_schedule' => [ 'Ablauf und Zeiten', 'textarea', 'z. B. 12:00 Uhr Treffen, 12:30 Uhr Kurs' ],
 		'fge_offer_includes' => [ 'Leistungen, eine je Zeile', 'textarea', 'z. B. Leihschläger und Bälle' ],
 	] as $key => [ $label, $type, $ph ] ) {
 		$val = (string) get_post_meta( $req, '_' . $key, true );
+		if ( 'fge_offer_schedule' === $key && function_exists( 'fge_offer_schedule_prefill' ) ) {
+			$val = fge_offer_schedule_prefill( $req );
+		}
 		echo '<label class="cc-field cc-field--wide"><span>' . esc_html( $label ) . '</span>';
 		if ( 'textarea' === $type ) {
 			echo '<textarea name="' . esc_attr( $key ) . '" rows="3" placeholder="' . esc_attr( $ph ) . '">' . esc_textarea( $val ) . '</textarea>';
@@ -109,29 +124,70 @@ function fge_cc_positions_panel( int $req ): void {
 
 	echo '<p><button type="submit" class="cc-btn cc-btn--primary">Positionen speichern</button>';
 	echo '<span class="cc-muted"> Leere Leistungszeilen werden verworfen.</span></p>';
-	echo '</form></details>';
+	echo '</form>';
+
+	// Nachträge (Kunde will noch einen Meetingraum): Speichern allein ändert das
+	// versendete Angebot nicht, erst die neue Fassung. Deshalb der Knopf direkt hier.
+	if ( $sent && function_exists( 'fge_offer_relaunch_blocker' ) && '' === fge_offer_relaunch_blocker( $req ) && function_exists( 'fge_cc_button' ) ) {
+		echo '<div class="cc-venue-actions">';
+		fge_cc_button( 'fge_cc_offer_relaunch', $req, 'Zurückziehen und als neue Fassung senden', [
+			'confirm' => 'Das laufende Angebot wird ungültig und der Kunde bekommt eine neue Fassung mit den gespeicherten Positionen. Fortfahren?',
+		] );
+		echo '</div>';
+	}
+	echo '</details>';
 }
 
 /** Eine Positionszeile. Leeres Array heißt: neue, leere Zeile. */
 function fge_cc_position_row( array $it, int $pax ): void {
 	$margin = isset( $it['margin'] ) ? (float) $it['margin'] : ( function_exists( 'fge_xs_default_margin' ) ? fge_xs_default_margin() : 20 );
 	$sale   = $it && function_exists( 'fge_xs_sale_price' ) ? fge_xs_sale_price( $it + [ 'margin' => $margin ] ) : 0.0;
+	$basis  = (string) ( $it['basis'] ?? 'pauschal' );
+	$np     = 'nicht_moeglich' === (string) ( $it['status'] ?? '' );
+	$bases  = function_exists( 'fge_xs_bases' ) ? fge_xs_bases() : [ 'pauschal' => 'pauschal', 'person' => 'p.P.' ];
+	$orgs   = function_exists( 'fge_xs_organizers' ) ? fge_xs_organizers() : [ 'platz' => 'Golfplatz selbst', 'extern' => 'Externer Dienstleister' ];
 
-	echo '<div class="cc-posrow">';
+	if ( $np ) {
+		$sale_txt = 'nicht möglich';
+	} elseif ( $sale > 0 ) {
+		$sale_txt = number_format_i18n( $sale, 2 ) . ' € Verkauf' . ( 'person' === $basis && $pax > 0 ? ' p.P.' : '' );
+	} else {
+		$sale_txt = 'verbrauch' === $basis ? 'nach Verbrauch' : '';
+	}
+
+	echo '<div class="cc-posrow' . ( $np ? ' cc-posrow--np' : '' ) . '">';
 	echo '<input type="text" name="fge_xs_label[]" value="' . esc_attr( (string) ( $it['label'] ?? '' ) ) . '" placeholder="Leistung, z. B. Abendessen">';
-	echo '<input type="text" name="fge_xs_cost[]" value="' . esc_attr( isset( $it['cost'] ) && (float) $it['cost'] > 0 ? number_format( (float) $it['cost'], 2, ',', '.' ) : '' ) . '" placeholder="Einkauf netto">';
+	echo '<input type="text" name="fge_xs_cost[]" value="' . esc_attr( isset( $it['cost'] ) && (float) $it['cost'] > 0 ? number_format( (float) $it['cost'], 2, ',', '.' ) : '' ) . '" placeholder="Einkauf">';
+	echo '<select name="fge_xs_gross[]" title="Einkauf brutto oder netto">';
+	echo '<option value="0"' . selected( empty( $it['cost_gross'] ), true, false ) . '>netto</option>';
+	echo '<option value="1"' . selected( ! empty( $it['cost_gross'] ), true, false ) . '>brutto</option>';
+	echo '</select>';
 	echo '<select name="fge_xs_basis[]">';
-	echo '<option value="pauschal"' . selected( (string) ( $it['basis'] ?? '' ), 'pauschal', false ) . '>pauschal</option>';
-	echo '<option value="person"' . selected( (string) ( $it['basis'] ?? '' ), 'person', false ) . '>p.P.</option>';
+	foreach ( $bases as $bk => $bl ) {
+		echo '<option value="' . esc_attr( $bk ) . '"' . selected( $basis, $bk, false ) . '>' . esc_html( $bl ) . '</option>';
+	}
 	echo '</select>';
 	echo '<input type="text" name="fge_xs_margin[]" value="' . esc_attr( (string) $margin ) . '" placeholder="Marge %">';
-	echo '<input type="text" name="fge_xs_pname[]" value="' . esc_attr( (string) ( $it['provider_name'] ?? '' ) ) . '" placeholder="Dienstleister">';
+	echo '<select name="fge_xs_org[]" title="Wer organisiert">';
+	foreach ( $orgs as $ok => $ol ) {
+		echo '<option value="' . esc_attr( $ok ) . '"' . selected( (string) ( $it['organizer'] ?? 'extern' ), $ok, false ) . '>' . esc_html( $ol ) . '</option>';
+	}
+	echo '</select>';
+	echo '<input type="text" name="fge_xs_pname[]" value="' . esc_attr( (string) ( $it['provider_name'] ?? '' ) ) . '" placeholder="Dienstleister (Platz: automatisch)">';
 	echo '<input type="email" name="fge_xs_pmail[]" value="' . esc_attr( (string) ( $it['provider_email'] ?? '' ) ) . '" placeholder="Dienstleister-Mail" list="fge-cc-provider-mails">';
+	echo '<span class="cc-possale">' . esc_html( $sale_txt ) . '</span>';
 	echo '<input type="hidden" name="fge_xs_wish[]" value="' . esc_attr( (string) ( $it['wish'] ?? '' ) ) . '">';
+	echo '<input type="hidden" name="fge_xs_id[]" value="' . (int) ( $it['id'] ?? 0 ) . '">';
 	echo '<input type="hidden" name="fge_xs_partner[]" value="' . (int) ( $it['partner_id'] ?? 0 ) . '">';
-	echo '<span class="cc-possale">' . ( $sale > 0
-		? esc_html( number_format_i18n( $sale, 2 ) . ' € Verkauf' . ( 'person' === ( $it['basis'] ?? '' ) && $pax > 0 ? ' p.P.' : '' ) )
-		: '' ) . '</span>';
+	// Zweite Zeile: was der Kunde liest, Richtwert bei Verbrauch, Status.
+	echo '<div class="cc-posrow__more">';
+	echo '<input type="text" name="fge_xs_note[]" value="' . esc_attr( (string) ( $it['note'] ?? '' ) ) . '" placeholder="Beschreibung für den Kunden, z. B. Grillsemmeln und Getränke, Abrechnung nach Verbrauch">';
+	echo '<input type="text" name="fge_xs_guide[]" value="' . esc_attr( (string) ( $it['guide'] ?? '' ) ) . '" placeholder="Richtwert bei Verbrauch, z. B. 15 bis 25 € p.P.">';
+	echo '<select name="fge_xs_status[]">';
+	echo '<option value="angeboten"' . selected( ! $np, true, false ) . '>steht im Angebot</option>';
+	echo '<option value="nicht_moeglich"' . selected( $np, true, false ) . '>am Platz nicht möglich</option>';
+	echo '</select>';
+	echo '</div>';
 	echo '</div>';
 }
 

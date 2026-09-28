@@ -41,3 +41,4 @@ _design/
 # Marketing-Bildexport aus der Live-Mediathek (nur lokal, 339 MB)
 _marketing-bilder/
 _marketing-bilder.zip
+tests/out/

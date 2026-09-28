@@ -56,21 +56,26 @@ function fge_offer_positions( array $snap, ?array $selected = null ): array {
 	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
 		$src   = (int) ( $x['src'] ?? -1 );
 		$x_pp  = 'person' === (string) ( $x['basis'] ?? '' );
-		$price = (float) ( $x['price'] ?? 0 );
+		$cons  = 'verbrauch' === (string) ( $x['basis'] ?? '' );
+		$price = $cons ? 0.0 : (float) ( $x['price'] ?? 0 );
 		$q     = $x_pp ? max( 1, $pax ) : 1;
 		$t     = round( $price * $q, 2 );
 		$on    = null === $selected || in_array( $src, $selected, true );
 		$rows[] = [
-			'kind'       => 'extra',
-			'src'        => $src,
-			'title'      => (string) ( $x['label'] ?? '' ),
-			'qty'        => $q,
-			'unit_label' => $x_pp ? 'Pers.' : 'pauschal',
-			'unit_price' => $price,
-			'total'      => $t,
-			'selected'   => $on,
+			'kind'        => 'extra',
+			'src'         => $src,
+			'title'       => (string) ( $x['label'] ?? '' ),
+			'qty'         => $q,
+			'unit_label'  => $cons ? 'nach Verbrauch' : ( $x_pp ? 'Pers.' : 'pauschal' ),
+			'unit_price'  => $price,
+			'total'       => $t,
+			'selected'    => $on,
+			'consumption' => $cons,
+			'note'        => trim( (string) ( $x['note'] ?? '' ) ),
+			'organizer'   => (string) ( $x['organizer'] ?? '' ),
+			'guide'       => trim( (string) ( $x['guide'] ?? '' ) ),
 		];
-		if ( $on ) {
+		if ( $on && ! $cons ) {
 			$net += $t;
 			$pp   = $pp || $x_pp;
 		}
@@ -165,6 +170,15 @@ function fge_offer_document_css(): string {
 .od-pick { margin: 0 6px 0 0; vertical-align: -1px; }
 .od p.od-note { font-size: 12px; color: #555; margin: 10px 0 0; line-height: 1.5; }
 .od-note a { color: #4279D1; }
+.od-reco { margin: 0 0 14px; padding: 10px 12px; background: #F0F6F1; border-radius: 6px; font-size: 13px; }
+.od-option { margin: 18px 0 8px; padding: 12px 14px 4px; border: 1px solid #D9DDD6; border-radius: 8px; }
+.od-option.is-reco { border-color: #2F6E45; }
+.od-option-title { margin: 0 0 6px; font-size: 15px; }
+.od-option-title label { cursor: pointer; }
+.od-reco-pill { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #2F6E45; color: #fff; font-size: 11px; font-weight: 600; vertical-align: middle; }
+.od-option-text { margin: 0 0 6px; color: #444; font-size: 13px; }
+.od-option-dates { margin: 0 0 10px; font-size: 13px; }
+.od-date-pick { display: inline-block; margin-right: 12px; cursor: pointer; }
 .od-foot { margin-top: 26px; padding-top: 10px; border-top: 1px solid #e4e4e0; font-size: 10px; color: #8a8a84; line-height: 1.55; }
 ';
 }
@@ -206,6 +220,102 @@ function fge_offer_document_data( int $req ): array {
  * @param int    $req  Anfrage.
  * @param string $mode 'web' (mit Abwahl-Checkboxen bei offenem Angebot), 'pdf' (statisch).
  */
+
+/**
+ * Positionstabelle plus Hinweise für einen (Teil-)Snapshot. $sfx = Optionsschlüssel
+ * („_A"), damit Checkboxen und Summen-IDs je Option eindeutig sind.
+ */
+function fge_offer_positions_block_html( array $snap, ?array $selected, bool $pick, array $d, string $sfx = '' ): string {
+	$pos = fge_offer_positions( $snap, $selected );
+	$e   = 'esc_html';
+	$h   = '';
+	// ── Positionen ──
+	$h .= '<table class="od-pos"><thead><tr><th class="c-pos">Pos.</th><th>Leistung</th><th class="r c-qty">Menge</th><th class="r c-unit">Einzelpreis netto</th><th class="r c-sum">Gesamt netto</th></tr></thead><tbody>';
+	$n  = 0;
+	foreach ( $pos['rows'] as $row ) {
+		$n++;
+		$is_event = 'event' === $row['kind'];
+		$cls      = $row['selected'] ? '' : ' class="od-off"';
+		$attrs    = ! $is_event ? ' data-src="' . (int) $row['src'] . '" data-total="' . esc_attr( (string) $row['total'] ) . '"' : '';
+		$h       .= '<tr' . $cls . $attrs . '><td class="c-pos">' . $n . '</td><td>';
+		if ( $pick && ! $is_event ) {
+			$h .= '<label><input type="checkbox" class="od-pick tl-x-pick" name="fge_offer_extras' . $sfx . '[]" value="' . (int) $row['src'] . '"' . ( $row['selected'] ? ' checked' : '' ) . '><strong>' . $e( $row['title'] ) . '</strong></label>';
+		} else {
+			$h .= '<strong>' . $e( $row['title'] ) . '</strong>' . ( $row['selected'] ? '' : ' <span class="od-desc">(abgewählt)</span>' );
+		}
+		if ( $is_event ) {
+			$desc  = '';
+			$desc .= '' !== (string) ( $snap['date'] ?? '' ) ? '<span class="k">Termin:</span> ' . $e( (string) $snap['date'] ) . '<br>' : '';
+			$desc .= '' !== (string) ( $snap['location'] ?? '' ) ? '<span class="k">Ort:</span> ' . $e( (string) $snap['location'] ) . '<br>' : '';
+			$sched = trim( (string) ( $snap['schedule'] ?? '' ) );
+			if ( '' !== $sched ) {
+				$desc .= '<span class="k">Ablauf:</span> ' . nl2br( $e( $sched ) ) . '<br>';
+			}
+			$inc = array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) );
+			if ( ! empty( $inc ) ) {
+				$desc .= '<span class="k">Leistungen:</span><ul>';
+				foreach ( $inc as $i ) {
+					$desc .= '<li>' . $e( $i ) . '</li>';
+				}
+				$desc .= '</ul>';
+			}
+			if ( '' !== $desc ) {
+				$h .= '<div class="od-desc">' . $desc . '</div>';
+			}
+		} else {
+			$xd = fge_offer_extra_desc_html( $row, $e );
+			if ( '' !== $xd ) {
+				$h .= '<div class="od-desc">' . $xd . '</div>';
+			}
+		}
+		$h .= '</td>';
+		if ( ! empty( $row['consumption'] ) ) {
+			$h .= '<td class="r c-qty"></td><td class="r c-unit"></td><td class="r c-sum" data-label="Gesamt netto">' . ( $row['selected'] || $pick ? 'nach Verbrauch' : '' ) . '</td>';
+		} elseif ( $row['unit_price'] > 0 && ( $row['selected'] || $pick ) ) {
+			$h .= '<td class="r c-qty" data-label="Menge">' . (int) $row['qty'] . ' ' . $e( $row['unit_label'] ) . '</td>'
+				. '<td class="r c-unit" data-label="Einzelpreis netto">' . $e( fge_money( (float) $row['unit_price'] ) ) . '</td>'
+				. '<td class="r c-sum" data-label="Gesamt netto">' . $e( fge_money( (float) $row['total'] ) ) . '</td>';
+		} elseif ( $row['unit_price'] > 0 ) {
+			$h .= '<td class="r c-qty"></td><td class="r c-unit"></td><td class="r c-sum"></td>';
+		} else {
+			// Event ohne eigenen Preis: „auf Anfrage" nur, wenn es sonst keine bepreiste Zeile gibt (Audit 18.09.).
+			$h .= '<td class="r c-qty"></td><td class="r c-unit"></td><td class="r c-sum" data-label="Gesamt netto">' . ( $pos['net'] > 0 ? '' : 'auf Anfrage' ) . '</td>';
+		}
+		$h .= '</tr>';
+	}
+	$h .= '</tbody>';
+	if ( $pos['subtotal'] > 0 ) {
+		$dc = $pos['discount'];
+		$h .= '<tfoot>'
+			. '<tr><td colspan="4" class="r">Zwischensumme netto</td><td class="r"><span id="od-net' . $sfx . '">' . $e( fge_money( $pos['subtotal'] ) ) . '</span></td></tr>'
+			. ( $dc ? '<tr class="od-disc"><td colspan="4" class="r">Partnercode ' . $e( $dc['code'] ) . ( '' !== $dc['holder'] ? ' (' . $e( $dc['holder'] ) . ')' : '' ) . ', ' . $e( rtrim( rtrim( number_format_i18n( $dc['percent'], 2 ), '0' ), ',' ) ) . ' % Rabatt</td><td class="r">-<span id="od-disc' . $sfx . '">' . $e( fge_money( $dc['amount'] ) ) . '</span></td></tr>' : '' )
+			. '<tr><td colspan="4" class="r">zzgl. ' . (int) $pos['vat_percent'] . ' % USt.</td><td class="r"><span id="od-vat' . $sfx . '">' . $e( fge_money( $pos['vat'] ) ) . '</span></td></tr>'
+			. '<tr class="od-total"><td colspan="4" class="r">Gesamtbetrag</td><td class="r"><span id="od-total' . $sfx . '">' . $e( fge_money( $pos['total'] ) ) . '</span></td></tr>'
+			. '</tfoot>';
+	}
+	$h .= '</table>';
+
+	// ── Hinweise ──
+	if ( $pos['pp'] && $pos['pax'] > 0 ) {
+		$h .= '<p class="od-note">' . fge_offer_pax_note( (int) $pos['pax'] ) . '</p>';
+	}
+	if ( $pick && count( $pos['rows'] ) > 1 ) {
+		$h .= '<p class="od-note">Zusatzleistungen könnt ihr abwählen, die Summe passt sich sofort an.</p>';
+	}
+	foreach ( fge_offer_extra_notes( $snap, $pos ) as $note ) {
+		$h .= '<p class="od-note">' . $e( $note ) . '</p>';
+	}
+	$valid = ( $d['deadline'] > 0 && 'pending' === $d['status'] )
+		? 'Dieses Angebot ist gültig bis ' . $e( wp_date( 'd.m.Y', $d['deadline'] ) ) . ', bis dahin halten wir den Termin für euch. '
+		: '';
+	$h .= '<p class="od-note">' . $e( fge_offer_payment_note( (float) $pos['net'] ) ) . '</p>';
+	if ( '' === $sfx ) {
+		$h .= '<p class="od-note">' . $valid . 'Es gelten unsere <a href="' . esc_url( $d['agb_url'] ) . '">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>';
+	}
+
+	return $h;
+}
+
 function fge_offer_document_html( int $req, string $mode = 'web' ): string {
 	$d    = fge_offer_document_data( $req );
 	$snap = $d['snap'];
@@ -214,7 +324,7 @@ function fge_offer_document_html( int $req, string $mode = 'web' ): string {
 	}
 	$co   = $d['company'];
 	$cu   = $d['customer'];
-	$pos  = fge_offer_positions( $snap, $d['selected'] );
+	$selected = $d['selected'];
 	$pick = 'web' === $mode && 'pending' === $d['status'];
 	$e    = 'esc_html';
 
@@ -261,81 +371,52 @@ function fge_offer_document_html( int $req, string $mode = 'web' ): string {
 	$h .= '<div class="od-title">Angebot ' . $e( $d['ref'] ) . ': ' . $e( (string) ( $snap['event_title'] ?? 'Firmen-Event' ) ) . '</div>';
 	$h .= '<p class="od-intro">' . ( '' !== $first ? 'Hallo ' . $e( $first ) . ', ' : '' ) . 'vielen Dank für eure Anfrage. Wie besprochen bieten wir euch folgendes Event an:</p>';
 
-	// ── Positionen ──
-	$h .= '<table class="od-pos"><thead><tr><th class="c-pos">Pos.</th><th>Leistung</th><th class="r c-qty">Menge</th><th class="r c-unit">Einzelpreis netto</th><th class="r c-sum">Gesamt netto</th></tr></thead><tbody>';
-	$n  = 0;
-	foreach ( $pos['rows'] as $row ) {
-		$n++;
-		$is_event = 'event' === $row['kind'];
-		$cls      = $row['selected'] ? '' : ' class="od-off"';
-		$attrs    = ! $is_event ? ' data-src="' . (int) $row['src'] . '" data-total="' . esc_attr( (string) $row['total'] ) . '"' : '';
-		$h       .= '<tr' . $cls . $attrs . '><td class="c-pos">' . $n . '</td><td>';
-		if ( $pick && ! $is_event ) {
-			$h .= '<label><input type="checkbox" class="od-pick tl-x-pick" name="fge_offer_extras[]" value="' . (int) $row['src'] . '"' . ( $row['selected'] ? ' checked' : '' ) . '><strong>' . $e( $row['title'] ) . '</strong></label>';
-		} else {
-			$h .= '<strong>' . $e( $row['title'] ) . '</strong>' . ( $row['selected'] ? '' : ' <span class="od-desc">(abgewählt)</span>' );
+	if ( ! empty( $snap['options'] ) ) {
+		// Optionen-Angebot: Empfehlung, dann je Option ein eigener Block mit Terminen.
+		if ( '' !== (string) ( $snap['recommendation'] ?? '' ) && count( (array) $snap['options'] ) > 1 ) {
+			$h .= '<p class="od-reco"><span class="k">Unsere Empfehlung:</span> ' . nl2br( $e( (string) $snap['recommendation'] ) ) . '</p>';
 		}
-		if ( $is_event ) {
-			$desc  = '';
-			$desc .= '' !== (string) ( $snap['date'] ?? '' ) ? '<span class="k">Termin:</span> ' . $e( (string) $snap['date'] ) . '<br>' : '';
-			$desc .= '' !== (string) ( $snap['location'] ?? '' ) ? '<span class="k">Ort:</span> ' . $e( (string) $snap['location'] ) . '<br>' : '';
-			$sched = trim( (string) ( $snap['schedule'] ?? '' ) );
-			if ( '' !== $sched ) {
-				$desc .= '<span class="k">Ablauf:</span> ' . nl2br( $e( $sched ) ) . '<br>';
-			}
-			$inc = array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) );
-			if ( ! empty( $inc ) ) {
-				$desc .= '<span class="k">Leistungen:</span><ul>';
-				foreach ( $inc as $i ) {
-					$desc .= '<li>' . $e( $i ) . '</li>';
+		// Genau eine Option: kein „Option A", nur bei mehreren Terminen die Terminwahl.
+		$single = 1 === count( (array) $snap['options'] );
+		foreach ( (array) $snap['options'] as $o ) {
+			$key   = (string) $o['key'];
+			$multi = count( (array) $o['dates'] ) > 1;
+			$osnap = array_merge( $snap, $o, [ 'event_title' => (string) ( $snap['event_title'] ?? '' ) . ' bei ' . (string) $o['title'], 'options' => [], 'date' => $single && ! $multi ? (string) ( $o['dates'][0]['label'] ?? '' ) : '' ] );
+			$h    .= '<div class="od-option' . ( ! empty( $o['recommended'] ) && ! $single ? ' is-reco' : '' ) . ( $single ? ' is-single' : '' ) . '" data-option="' . $e( $key ) . '">';
+			if ( $single ) {
+				if ( $pick ) {
+					$h .= '<input type="hidden" name="fge_offer_option" value="' . $e( $key ) . '">';
+					if ( ! $multi ) {
+						$h .= '<input type="hidden" name="fge_offer_date_' . $e( $key ) . '" value="' . (int) ( $o['dates'][0]['index'] ?? 0 ) . '">';
+					}
 				}
-				$desc .= '</ul>';
+				if ( '' !== (string) ( $o['text'] ?? '' ) ) {
+					$h .= '<p class="od-option-text">' . $e( (string) $o['text'] ) . '</p>';
+				}
+			} else {
+				$h .= '<h3 class="od-option-title">' . ( $pick ? '<label><input type="radio" class="od-opt-pick" name="fge_offer_option" value="' . $e( $key ) . '"> ' : '' )
+					. 'Option ' . $e( $key ) . ': ' . $e( (string) $o['title'] ) . ( ! empty( $o['recommended'] ) ? ' <span class="od-reco-pill">empfohlen</span>' : '' ) . ( $pick ? '</label>' : '' ) . '</h3>';
+				if ( '' !== (string) ( $o['text'] ?? '' ) ) {
+					$h .= '<p class="od-option-text">' . $e( (string) $o['text'] ) . '</p>';
+				}
 			}
-			if ( '' !== $desc ) {
-				$h .= '<div class="od-desc">' . $desc . '</div>';
+			if ( $multi || ! $single ) {
+				$dl = [];
+				foreach ( (array) $o['dates'] as $dt ) {
+					$dl[] = $pick
+						? '<label class="od-date-pick"><input type="radio" name="fge_offer_date_' . $e( $key ) . '" value="' . (int) $dt['index'] . '"> ' . $e( (string) $dt['label'] ) . '</label>'
+						: $e( (string) $dt['label'] );
+				}
+				$h .= '<p class="od-option-dates"><span class="k">' . ( $multi ? ( $pick ? 'Bitte Termin wählen:' : 'Mögliche Termine:' ) : 'Termin:' ) . '</span> ' . implode( $pick ? ' ' : ' oder ', $dl ) . '</p>';
 			}
+			$h .= fge_offer_positions_block_html( $osnap, $selected, $pick, $d, $single ? '' : '_' . $key );
+			$h .= '</div>';
 		}
-		$h .= '</td>';
-		if ( $row['unit_price'] > 0 && ( $row['selected'] || $pick ) ) {
-			$h .= '<td class="r c-qty" data-label="Menge">' . (int) $row['qty'] . ' ' . $e( $row['unit_label'] ) . '</td>'
-				. '<td class="r c-unit" data-label="Einzelpreis netto">' . $e( fge_money( (float) $row['unit_price'] ) ) . '</td>'
-				. '<td class="r c-sum" data-label="Gesamt netto">' . $e( fge_money( (float) $row['total'] ) ) . '</td>';
-		} elseif ( $row['unit_price'] > 0 ) {
-			$h .= '<td class="r c-qty"></td><td class="r c-unit"></td><td class="r c-sum"></td>';
-		} else {
-			// Event ohne eigenen Preis: „auf Anfrage" nur, wenn es sonst keine bepreiste Zeile gibt (Audit 18.09.).
-			$h .= '<td class="r c-qty"></td><td class="r c-unit"></td><td class="r c-sum" data-label="Gesamt netto">' . ( $pos['net'] > 0 ? '' : 'auf Anfrage' ) . '</td>';
-		}
-		$h .= '</tr>';
+		$h .= '<p class="od-note">Es gelten unsere <a href="' . esc_url( $d['agb_url'] ) . '">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.'
+			. ( $d['deadline'] > 0 && 'pending' === $d['status'] ? ' Dieses Angebot ist gültig bis ' . $e( wp_date( 'd.m.Y', $d['deadline'] ) ) . ', bis dahin halten wir die Termine für euch.' : '' ) . '</p>';
+	} else {
+		$h .= fge_offer_positions_block_html( $snap, $d['selected'], $pick, $d, '' );
 	}
-	$h .= '</tbody>';
-	if ( $pos['subtotal'] > 0 ) {
-		$dc = $pos['discount'];
-		$h .= '<tfoot>'
-			. '<tr><td colspan="4" class="r">Zwischensumme netto</td><td class="r"><span id="od-net">' . $e( fge_money( $pos['subtotal'] ) ) . '</span></td></tr>'
-			. ( $dc ? '<tr class="od-disc"><td colspan="4" class="r">Partnercode ' . $e( $dc['code'] ) . ( '' !== $dc['holder'] ? ' (' . $e( $dc['holder'] ) . ')' : '' ) . ', ' . $e( rtrim( rtrim( number_format_i18n( $dc['percent'], 2 ), '0' ), ',' ) ) . ' % Rabatt</td><td class="r">-<span id="od-disc">' . $e( fge_money( $dc['amount'] ) ) . '</span></td></tr>' : '' )
-			. '<tr><td colspan="4" class="r">zzgl. ' . (int) $pos['vat_percent'] . ' % USt.</td><td class="r"><span id="od-vat">' . $e( fge_money( $pos['vat'] ) ) . '</span></td></tr>'
-			. '<tr class="od-total"><td colspan="4" class="r">Gesamtbetrag</td><td class="r"><span id="od-total">' . $e( fge_money( $pos['total'] ) ) . '</span></td></tr>'
-			. '</tfoot>';
-	}
-	$h .= '</table>';
-
-	// ── Hinweise ──
-	if ( $pos['pp'] && $pos['pax'] > 0 ) {
-		$h .= '<p class="od-note">' . fge_offer_pax_note( (int) $pos['pax'] ) . '</p>';
-	}
-	if ( $pick && count( $pos['rows'] ) > 1 ) {
-		$h .= '<p class="od-note">Zusatzleistungen könnt ihr abwählen, die Summe passt sich sofort an.</p>';
-	}
-	$wishes = array_merge( (array) ( $snap['wishes_platz'] ?? [] ), (array) ( $snap['wishes_firmengolf'] ?? [] ) );
-	if ( ! empty( $wishes ) ) {
-		$h .= '<p class="od-note">Auf Wunsch zusätzlich organisierbar, wird separat angeboten: ' . $e( implode( ', ', array_map( 'strval', $wishes ) ) ) . '.</p>';
-	}
-	$valid = ( $d['deadline'] > 0 && 'pending' === $d['status'] )
-		? 'Dieses Angebot ist gültig bis ' . $e( wp_date( 'd.m.Y', $d['deadline'] ) ) . ', bis dahin halten wir den Termin für euch. '
-		: '';
-	$h .= '<p class="od-note">' . $e( fge_offer_payment_note( (float) $pos['net'] ) ) . '</p>';
-	$h .= '<p class="od-note">' . $valid . 'Es gelten unsere <a href="' . esc_url( $d['agb_url'] ) . '">AGB</a> inkl. der dort genannten Storno- und Zahlungsbedingungen.</p>';
 
 	// ── Fußzeile (Pflichtangaben) ──
 	$imp_addr = trim( ( $co['office_street'] ?? '' ) . ', ' . ( $co['office_zip'] ?? '' ) . ' ' . ( $co['office_city'] ?? '' ), ', ' );
@@ -360,7 +441,40 @@ function fge_offer_mail_table_html( int $req ): string {
 	if ( empty( $snap ) ) {
 		return '';
 	}
-	$pos = fge_offer_positions( $snap, $d['selected'] );
+	if ( empty( $snap['options'] ) ) {
+		return fge_offer_mail_table_for_snap( $snap, $d['selected'] );
+	}
+	// Optionen-Angebot: Empfehlung, dann je Option Titel, Termine und die Tabelle.
+	$h      = '';
+	$single = 1 === count( (array) $snap['options'] );
+	if ( '' !== (string) ( $snap['recommendation'] ?? '' ) && ! $single ) {
+		$h .= '<p style="margin:0 0 12px;"><strong>Unsere Empfehlung:</strong> ' . nl2br( esc_html( (string) $snap['recommendation'] ) ) . '</p>';
+	}
+	foreach ( (array) $snap['options'] as $o ) {
+		$multi = count( (array) $o['dates'] ) > 1;
+		$osnap = array_merge( $snap, $o, [ 'event_title' => (string) ( $snap['event_title'] ?? '' ) . ' bei ' . (string) $o['title'], 'options' => [], 'date' => $single && ! $multi ? (string) ( $o['dates'][0]['label'] ?? '' ) : '' ] );
+		if ( ! $single ) {
+			$h .= '<h3 style="margin:18px 0 4px;font-size:15px;">Option ' . esc_html( (string) $o['key'] ) . ': ' . esc_html( (string) $o['title'] ) . ( ! empty( $o['recommended'] ) ? ' <span style="color:#2F6E45;font-size:12px;">empfohlen</span>' : '' ) . '</h3>';
+		}
+		if ( '' !== (string) ( $o['text'] ?? '' ) ) {
+			$h .= '<p style="margin:0 0 6px;color:#444;font-size:13px;">' . esc_html( (string) $o['text'] ) . '</p>';
+		}
+		if ( $multi || ! $single ) {
+			$h .= '<p style="margin:0 0 8px;font-size:13px;"><span style="color:#6C736E;">' . ( $multi ? 'Mögliche Termine:' : 'Termin:' ) . '</span> ' . esc_html( implode( ' oder ', array_column( (array) $o['dates'], 'label' ) ) ) . '</p>';
+		}
+		$h .= fge_offer_mail_table_for_snap( $osnap, null );
+	}
+	if ( ! $single ) {
+		$h .= '<p style="margin:8px 0 6px;color:#555;font-size:12px;">Option und Termin wählt ihr auf der Angebotsseite, dort könnt ihr auch Zusatzleistungen abwählen.</p>';
+	} elseif ( count( (array) ( $snap['options'][0]['dates'] ?? [] ) ) > 1 ) {
+		$h .= '<p style="margin:8px 0 6px;color:#555;font-size:12px;">Den Termin wählt ihr auf der Angebotsseite, dort könnt ihr auch Zusatzleistungen abwählen.</p>';
+	}
+	return $h;
+}
+
+/** Positionstabelle einer Mail für einen (Teil-)Snapshot. */
+function fge_offer_mail_table_for_snap( array $snap, ?array $selected ): string {
+	$pos = fge_offer_positions( $snap, $selected );
 	$e   = 'esc_html';
 	$th  = 'text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6C736E;border-bottom:2px solid #20294D;padding:6px 8px;';
 	$td  = 'padding:10px 8px;border-bottom:1px solid #e4e4e0;vertical-align:top;font-size:14px;';
@@ -389,9 +503,16 @@ function fge_offer_mail_table_html( int $req ): string {
 			if ( '' !== $desc ) {
 				$h .= '<div style="margin-top:6px;color:#444;font-size:12px;line-height:1.55;">' . $desc . '</div>';
 			}
+		} else {
+			$xd = fge_offer_extra_desc_html( $row, $e, 'color:#6C736E;' );
+			if ( '' !== $xd ) {
+				$h .= '<div style="margin-top:6px;color:#444;font-size:12px;line-height:1.55;">' . $xd . '</div>';
+			}
 		}
 		$h .= '</td>';
-		if ( $row['unit_price'] > 0 && $row['selected'] ) {
+		if ( ! empty( $row['consumption'] ) ) {
+			$h .= '<td style="' . $td . '"></td><td style="' . $td . '"></td><td style="' . $td . $r . '">' . ( $row['selected'] ? 'nach Verbrauch' : '' ) . '</td>';
+		} elseif ( $row['unit_price'] > 0 && $row['selected'] ) {
 			$h .= '<td style="' . $td . $r . '">' . (int) $row['qty'] . ' ' . $e( $row['unit_label'] ) . '</td>'
 				. '<td style="' . $td . $r . '">' . $e( fge_money( (float) $row['unit_price'] ) ) . '</td>'
 				. '<td style="' . $td . $r . '">' . $e( fge_money( (float) $row['total'] ) ) . '</td>';
@@ -414,8 +535,56 @@ function fge_offer_mail_table_html( int $req ): string {
 	if ( $pos['pp'] && $pos['pax'] > 0 ) {
 		$h .= '<p style="margin:0 0 6px;color:#555;font-size:12px;">' . fge_offer_pax_note( (int) $pos['pax'] ) . '</p>';
 	}
+	foreach ( fge_offer_extra_notes( $snap, $pos ) as $note ) {
+		$h .= '<p style="margin:0 0 6px;color:#555;font-size:12px;">' . esc_html( $note ) . '</p>';
+	}
 	$h .= '<p style="margin:0 0 6px;color:#555;font-size:12px;">' . esc_html( fge_offer_payment_note( (float) $pos['net'] ) ) . '</p>';
 	return $h;
+}
+
+/**
+ * Beschreibungsblock einer Zusatzposition: Freitext, Richtwert bei Verbrauch und wer
+ * organisiert. Bewusst ohne den Namen eines externen Dienstleisters (Julius, 28.09.2026).
+ */
+function fge_offer_extra_desc_html( array $row, callable $e, string $kstyle = '' ): string {
+	$k     = static fn( string $t ): string => '' !== $kstyle ? '<span style="' . $kstyle . '">' . $t . '</span>' : '<span class="k">' . $t . '</span>';
+	$parts = [];
+	if ( '' !== (string) ( $row['note'] ?? '' ) ) {
+		$parts[] = nl2br( $e( (string) $row['note'] ) );
+	}
+	if ( ! empty( $row['consumption'] ) ) {
+		$parts[] = $k( 'Abrechnung:' ) . ' nach tatsächlichem Verbrauch im Nachgang' . ( '' !== (string) ( $row['guide'] ?? '' ) ? ', Richtwert ' . $e( (string) $row['guide'] ) : '' );
+	}
+	$org = (string) ( $row['organizer'] ?? '' );
+	if ( 'platz' === $org ) {
+		$parts[] = $k( 'Organisation:' ) . ' über den Golfplatz';
+	} elseif ( 'extern' === $org ) {
+		$parts[] = $k( 'Organisation:' ) . ' Firmengolf mit einem externen Dienstleister';
+	}
+	return implode( '<br>', $parts );
+}
+
+/** Hinweise unter der Positionstabelle: offene Wünsche, nicht mögliche Wünsche, Verbrauch. */
+function fge_offer_extra_notes( array $snap, array $pos ): array {
+	$notes  = [];
+	$wishes = array_merge( (array) ( $snap['wishes_platz'] ?? [] ), (array) ( $snap['wishes_firmengolf'] ?? [] ) );
+	if ( ! empty( $wishes ) ) {
+		$notes[] = 'Auf Wunsch zusätzlich organisierbar, wird separat angeboten: ' . implode( ', ', array_map( 'strval', $wishes ) ) . '.';
+	}
+	$np = array_values( array_filter( array_map( 'strval', (array) ( $snap['not_possible'] ?? [] ) ) ) );
+	if ( ! empty( $np ) ) {
+		$notes[] = 'Am gewählten Platz leider nicht möglich: ' . implode( ', ', $np ) . '. Sagt Bescheid, wenn wir dafür eine Alternative organisieren sollen.';
+	}
+	$cons = [];
+	foreach ( (array) ( $pos['rows'] ?? [] ) as $row ) {
+		if ( ! empty( $row['consumption'] ) && ! empty( $row['selected'] ) ) {
+			$cons[] = (string) $row['title'];
+		}
+	}
+	if ( ! empty( $cons ) ) {
+		$notes[] = ( count( $cons ) > 1 ? 'Die Positionen ' : 'Die Position ' ) . implode( ', ', $cons ) . ' rechnen wir nach dem Event nach tatsächlichem Verbrauch ab, die Summe oben enthält sie nicht.';
+	}
+	return $notes;
 }
 
 // ── PDF ──────────────────────────────────────────────────────────────────────
