@@ -3946,14 +3946,7 @@ function fge_onboarding_render_step_12( int $step, int $partner_id, string $toke
 		return esc_url( add_query_arg( 'ob_return', '1', fge_onboarding_step_url( fge_onboarding_ordinal_of( $slide_id ), $token ) ) );
 	};
 
-	$states = [
-		'baden_wuerttemberg' => 'Baden-Württemberg', 'bayern' => 'Bayern', 'berlin' => 'Berlin',
-		'brandenburg' => 'Brandenburg', 'bremen' => 'Bremen', 'hamburg' => 'Hamburg', 'hessen' => 'Hessen',
-		'mecklenburg_vorpommern' => 'Mecklenburg-Vorpommern', 'niedersachsen' => 'Niedersachsen',
-		'nordrhein_westfalen' => 'Nordrhein-Westfalen', 'rheinland_pfalz' => 'Rheinland-Pfalz',
-		'saarland' => 'Saarland', 'sachsen' => 'Sachsen', 'sachsen_anhalt' => 'Sachsen-Anhalt',
-		'schleswig_holstein' => 'Schleswig-Holstein', 'thueringen' => 'Thüringen',
-	];
+	$states = fge_catalog_federal_states();
 	?>
 	<header class="ob-step-head">
 		<div class="ob-eyebrow">Letzter Schritt</div>

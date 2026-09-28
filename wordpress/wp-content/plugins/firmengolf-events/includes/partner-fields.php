@@ -151,24 +151,7 @@ function fge_render_pmb_standort( WP_Post $post ) {
 	$poi_parking    = get_post_meta( $post->ID, '_fge_poi_parking', true );
 	$poi_hotel      = get_post_meta( $post->ID, '_fge_poi_hotel', true );
 
-	$federal_states = [
-		'baden_wuerttemberg'    => 'Baden-Württemberg',
-		'bayern'                => 'Bayern',
-		'berlin'                => 'Berlin',
-		'brandenburg'           => 'Brandenburg',
-		'bremen'                => 'Bremen',
-		'hamburg'               => 'Hamburg',
-		'hessen'                => 'Hessen',
-		'mecklenburg_vorpommern' => 'Mecklenburg-Vorpommern',
-		'niedersachsen'         => 'Niedersachsen',
-		'nordrhein_westfalen'   => 'Nordrhein-Westfalen',
-		'rheinland_pfalz'       => 'Rheinland-Pfalz',
-		'saarland'              => 'Saarland',
-		'sachsen'               => 'Sachsen',
-		'sachsen_anhalt'        => 'Sachsen-Anhalt',
-		'schleswig_holstein'    => 'Schleswig-Holstein',
-		'thueringen'            => 'Thüringen',
-	];
+	$federal_states = fge_catalog_federal_states();
 	?>
 	<table class="form-table">
 		<tr>
@@ -624,12 +607,7 @@ function fge_save_partner_fields( int $post_id ) {
 
 	// Allowed values.
 	$allowed_statuses         = fge_get_statuses( 'partner' );
-	$allowed_federal_states   = [
-		'baden_wuerttemberg', 'bayern', 'berlin', 'brandenburg', 'bremen', 'hamburg',
-		'hessen', 'mecklenburg_vorpommern', 'niedersachsen', 'nordrhein_westfalen',
-		'rheinland_pfalz', 'saarland', 'sachsen', 'sachsen_anhalt',
-		'schleswig_holstein', 'thueringen',
-	];
+	$allowed_federal_states   = array_keys( fge_catalog_federal_states() );
 	$allowed_seasons          = [ 'year_round', 'march_to_october', 'april_to_october', 'on_request' ];
 	$allowed_event_days       = [ 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday' ];
 

@@ -219,12 +219,7 @@ function fge_render_rmb_positionen( WP_Post $post ) {
 			$have_wish[ mb_strtolower( trim( (string) $k ) ) ] = true;
 		}
 	}
-	$wants_labels = [
-		'wants_golf_teacher' => 'Golflehrer', 'wants_meeting_room' => 'Meetingraum',
-		'wants_breakfast' => 'Frühstück', 'wants_lunch' => 'Lunch', 'wants_dinner' => 'Abendessen',
-		'wants_shuttle' => 'Shuttle', 'wants_branding' => 'Branding', 'wants_tournament_mode' => 'Turniermodus',
-		'wants_bad_weather_alternative' => 'Schlechtwetter Alternative',
-	];
+	$wants_labels = fge_catalog_wish_labels();
 	$candidates = array_merge( $open['platz'], $open['firmengolf'] );
 	foreach ( $wants_labels as $key => $label ) {
 		if ( '1' === (string) get_post_meta( $req, '_fge_' . $key, true ) ) {

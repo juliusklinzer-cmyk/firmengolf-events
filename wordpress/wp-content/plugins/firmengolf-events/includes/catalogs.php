@@ -464,3 +464,47 @@ function fge_catalog_contact_roles(): array {
 		'Captain', 'Mannschaftsführer', 'Sonstige',
 	];
 }
+
+/**
+ * Bundesländer: Schlüssel der Partner-Metabox → Anzeige. Einzige Quelle seit dem
+ * Aufräumen am 28.09.2026 (vorher drei Kopien in partner-fields, onboarding, stammdaten-import).
+ */
+function fge_catalog_federal_states(): array {
+	return [
+		'baden_wuerttemberg'     => 'Baden-Württemberg',
+		'bayern'                 => 'Bayern',
+		'berlin'                 => 'Berlin',
+		'brandenburg'            => 'Brandenburg',
+		'bremen'                 => 'Bremen',
+		'hamburg'                => 'Hamburg',
+		'hessen'                 => 'Hessen',
+		'mecklenburg_vorpommern' => 'Mecklenburg-Vorpommern',
+		'niedersachsen'          => 'Niedersachsen',
+		'nordrhein_westfalen'    => 'Nordrhein-Westfalen',
+		'rheinland_pfalz'        => 'Rheinland-Pfalz',
+		'saarland'               => 'Saarland',
+		'sachsen'                => 'Sachsen',
+		'sachsen_anhalt'         => 'Sachsen-Anhalt',
+		'schleswig_holstein'     => 'Schleswig-Holstein',
+		'thueringen'             => 'Thüringen',
+	];
+}
+
+/**
+ * Zusatzwünsche einer Anfrage (Wizard-Häkchen `_fge_wants_*`): Meta-Schlüssel ohne
+ * `_fge_` → Label. Einzige Quelle für Metabox, Cockpit, Pipeline und Positionen.
+ */
+function fge_catalog_wish_labels(): array {
+	return [
+		'wants_golf_teacher'             => 'Golflehrer',
+		'wants_meeting_room'             => 'Meetingraum',
+		'wants_breakfast'                => 'Frühstück',
+		'wants_lunch'                    => 'Lunch',
+		'wants_dinner'                   => 'Abendessen',
+		'wants_shuttle'                  => 'Shuttle',
+		'wants_branding'                 => 'Branding',
+		'wants_tournament_mode'          => 'Turniermodus',
+		'wants_bad_weather_alternative'  => 'Schlechtwetter-Alternative',
+		'wants_individual_customization' => 'Individuelle Anpassung',
+	];
+}

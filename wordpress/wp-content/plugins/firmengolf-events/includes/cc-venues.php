@@ -266,18 +266,7 @@ function fge_venue_item_set( int $venue_id, string $wish_key, array $data ): voi
  * werden statt nur beim Green Fee.
  */
 function fge_venue_wishlist( int $req ): array {
-	$labels = [
-		'wants_golf_teacher'             => 'Golflehrer',
-		'wants_meeting_room'             => 'Meetingraum',
-		'wants_breakfast'                => 'Frühstück',
-		'wants_lunch'                    => 'Lunch',
-		'wants_dinner'                   => 'Abendessen',
-		'wants_shuttle'                  => 'Shuttle',
-		'wants_branding'                 => 'Branding',
-		'wants_tournament_mode'          => 'Turniermodus',
-		'wants_bad_weather_alternative'  => 'Schlechtwetter-Alternative',
-		'wants_individual_customization' => 'Individuelle Anpassung',
-	];
+	$labels = fge_catalog_wish_labels();
 
 	$out = [ 'green_fee' => 'Event und Platznutzung' ];
 	foreach ( $labels as $key => $label ) {

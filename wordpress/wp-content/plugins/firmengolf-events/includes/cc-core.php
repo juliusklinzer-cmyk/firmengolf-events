@@ -1038,11 +1038,7 @@ function fge_cc_request_facts( int $req ): void {
 
 	// Leistungen: Wunschliste aus dem Event-Dialog plus Häkchen aus dem Wizard.
 	$g      = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $req ) : [ 'platz' => [], 'firmengolf' => [] ];
-	$wants  = [
-		'wants_golf_teacher' => 'Golflehrer', 'wants_meeting_room' => 'Meetingraum', 'wants_breakfast' => 'Frühstück',
-		'wants_lunch' => 'Lunch', 'wants_dinner' => 'Abendessen', 'wants_shuttle' => 'Shuttle', 'wants_branding' => 'Branding',
-		'wants_tournament_mode' => 'Turniermodus', 'wants_bad_weather_alternative' => 'Schlechtwetter-Alternative',
-	];
+	$wants  = fge_catalog_wish_labels();
 	$platz  = array_values( array_filter( array_map( 'strval', (array) ( $g['platz'] ?? [] ) ) ) );
 	$fg     = array_values( array_filter( array_map( 'strval', (array) ( $g['firmengolf'] ?? [] ) ) ) );
 	foreach ( $wants as $k => $l ) {

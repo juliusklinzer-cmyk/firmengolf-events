@@ -116,14 +116,7 @@ function fge_stammdaten_match_existing_partner( string $name, string $plz ): int
 function fge_stammdaten_state_key( string $state ): string {
 	$s = mb_strtolower( trim( $state ) );
 	$s = str_replace( [ 'ä', 'ö', 'ü', 'ß', '-', ' ' ], [ 'ae', 'oe', 'ue', 'ss', '_', '_' ], $s );
-	$map = [
-		'baden_wuerttemberg' => 'baden_wuerttemberg', 'bayern' => 'bayern', 'berlin' => 'berlin', 'brandenburg' => 'brandenburg',
-		'bremen' => 'bremen', 'hamburg' => 'hamburg', 'hessen' => 'hessen', 'mecklenburg_vorpommern' => 'mecklenburg_vorpommern',
-		'niedersachsen' => 'niedersachsen', 'nordrhein_westfalen' => 'nordrhein_westfalen', 'rheinland_pfalz' => 'rheinland_pfalz',
-		'saarland' => 'saarland', 'sachsen' => 'sachsen', 'sachsen_anhalt' => 'sachsen_anhalt', 'schleswig_holstein' => 'schleswig_holstein',
-		'thueringen' => 'thueringen',
-	];
-	return $map[ $s ] ?? '';
+	return isset( fge_catalog_federal_states()[ $s ] ) ? $s : '';
 }
 
 // ── Anlegen ──────────────────────────────────────────────────────────────────

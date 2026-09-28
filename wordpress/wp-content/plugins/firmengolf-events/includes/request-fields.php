@@ -451,18 +451,7 @@ function fge_render_rmb_angebot( WP_Post $post ) {
 // ── Render: Gewünschte Zusatzleistungen ───────────────────────────────────────
 
 function fge_render_rmb_leistungen( WP_Post $post ) {
-	$checkboxes = [
-		'wants_golf_teacher'             => 'Golflehrer',
-		'wants_meeting_room'             => 'Meetingraum',
-		'wants_breakfast'                => 'Frühstück',
-		'wants_lunch'                    => 'Lunch',
-		'wants_dinner'                   => 'Abendessen',
-		'wants_shuttle'                  => 'Shuttle',
-		'wants_branding'                 => 'Branding',
-		'wants_tournament_mode'          => 'Turniermodus',
-		'wants_bad_weather_alternative'  => 'Schlechtwetter Alternative',
-		'wants_individual_customization' => 'Individuelle Anpassung',
-	];
+	$checkboxes = fge_catalog_wish_labels();
 	$additional_wishes = get_post_meta( $post->ID, '_fge_additional_wishes', true );
 	$wish_groups = function_exists( 'fge_request_wish_groups' ) ? fge_request_wish_groups( $post->ID ) : [ 'platz' => [], 'firmengolf' => [] ];
 	if ( ! empty( $wish_groups['platz'] ) || ! empty( $wish_groups['firmengolf'] ) ) :
@@ -798,11 +787,7 @@ function fge_save_request_fields( int $post_id ) {
 	update_post_meta( $post_id, '_fge_preferred_time',     $san_select( 'fge_preferred_time', $allowed_preferred_times ) );
 
 	// ── Metabox 6: Leistungen ──
-	$leistungen_keys = [
-		'wants_golf_teacher', 'wants_meeting_room', 'wants_breakfast', 'wants_lunch',
-		'wants_dinner', 'wants_shuttle', 'wants_branding', 'wants_tournament_mode',
-		'wants_bad_weather_alternative', 'wants_individual_customization',
-	];
+	$leistungen_keys = array_keys( fge_catalog_wish_labels() );
 	foreach ( $leistungen_keys as $key ) {
 		update_post_meta( $post_id, '_fge_' . $key, isset( $_POST[ 'fge_' . $key ] ) ? 1 : 0 );
 	}
