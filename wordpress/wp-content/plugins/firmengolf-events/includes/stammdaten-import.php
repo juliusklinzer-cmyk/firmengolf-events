@@ -466,3 +466,75 @@ function fge_stammdaten_import_status_line(): void {
 	wp_nonce_field( 'fge_cc_stammdaten_tick' );
 	echo '<button type="submit" class="cc-btn">Weiter importieren</button></form></div>';
 }
+
+// ── Abgleich Simulatoren-Datei ↔ Stammdaten-Plätze ───────────────────────────
+
+/**
+ * Hält die Stammdaten-Simulatoren auf dem Stand von simulatoren-data.php und der
+ * Mail-Liste: neue Einträge werden angelegt, Einträge, die aus der Datei entfernt wurden
+ * (z. B. geschlossene Anlagen), wandern in den Papierkorb, geänderte Mail/Website wird übernommen. Nur Posts mit
+ * Status `stammdaten` und Quelle `simulator`, echte Partner bleiben unberührt.
+ * Läuft einmal je Datenstand (Hash), angestoßen beim Admin-Aufruf. Julius, 29.09.2026.
+ */
+function fge_stammdaten_sync_simulators(): array {
+	$keys = [];
+	foreach ( function_exists( 'fge_simulatoren' ) ? fge_simulatoren() : [] as $sim ) {
+		$keys[ fge_stammdaten_sim_key( (string) ( $sim['name'] ?? '' ), (string) ( $sim['plz'] ?? '' ), (string) ( $sim['ort'] ?? '' ) ) ] = (string) ( $sim['name'] ?? '' );
+	}
+	$ids = get_posts( [
+		'post_type'      => 'firmengolf_partner',
+		'post_status'    => 'any',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'meta_query'     => [
+			[ 'key' => '_fge_partner_status', 'value' => 'stammdaten' ],
+			[ 'key' => '_fge_stammdaten_source', 'value' => 'simulator' ],
+		],
+	] );
+	$out = [ 'trashed' => 0, 'updated' => 0, 'created' => 0 ];
+	foreach ( function_exists( 'fge_simulatoren' ) ? fge_simulatoren() : [] as $sim ) {
+		$key = fge_stammdaten_sim_key( (string) ( $sim['name'] ?? '' ), (string) ( $sim['plz'] ?? '' ), (string) ( $sim['ort'] ?? '' ) );
+		if ( fge_stammdaten_find_by_meta( '_fge_simulator_key', $key ) <= 0 && fge_stammdaten_ensure_from_simulator( $sim ) > 0 ) {
+			$out['created']++;
+		}
+	}
+	foreach ( $ids as $pid ) {
+		$key = (string) get_post_meta( $pid, '_fge_simulator_key', true );
+		if ( '' === $key ) {
+			continue;
+		}
+		if ( ! isset( $keys[ $key ] ) ) {
+			wp_trash_post( $pid );
+			$out['trashed']++;
+			continue;
+		}
+		$c     = fge_stammdaten_mail_lookup_sim( $key, $keys[ $key ] );
+		$email = is_email( (string) ( $c['email'] ?? '' ) ) ? sanitize_email( (string) $c['email'] ) : '';
+		// Leere Mail bei vorhandenem Listeneintrag = Opt-out (z. B. „Löschen Sie meine E-Mail“), dann auch am Platz leeren.
+		if ( ( '' !== $email || isset( $c['email'] ) ) && get_post_meta( $pid, '_fge_main_contact_email', true ) !== $email ) {
+			update_post_meta( $pid, '_fge_main_contact_email', $email );
+			$out['updated']++;
+		}
+		$web = trim( (string) ( $c['website'] ?? '' ) );
+		if ( '' !== $web && get_post_meta( $pid, '_fge_website_url', true ) !== $web ) {
+			update_post_meta( $pid, '_fge_website_url', $web );
+		}
+	}
+	return $out;
+}
+
+add_action( 'admin_init', static function (): void {
+	if ( ! current_user_can( 'manage_options' ) || ! function_exists( 'fge_simulatoren' ) || ! function_exists( 'fge_stammdaten_mails_simulators' ) ) {
+		return;
+	}
+	$s = fge_stammdaten_import_state();
+	if ( ! $s || 'done' !== $s['phase'] ) {
+		return; // Erst nach abgeschlossenem Import abgleichen.
+	}
+	$hash = md5( wp_json_encode( [ fge_simulatoren(), fge_stammdaten_mails_simulators() ] ) );
+	if ( get_option( 'fge_stammdaten_sim_sync' ) === $hash ) {
+		return;
+	}
+	update_option( 'fge_stammdaten_sim_sync', $hash, false );
+	fge_stammdaten_sync_simulators();
+} );
