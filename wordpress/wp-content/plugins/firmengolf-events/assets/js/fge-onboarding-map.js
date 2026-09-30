@@ -69,6 +69,12 @@
 		// fields must not move it again (it may sit on the clubhouse door).
 		var pinLocked = false;
 
+		// Nur Treffer in Deutschland übernehmen (Google liefert bei Fantasienamen
+		// sonst auch Einträge irgendwo in der Welt, etwa rund um 0/0).
+		function inGermany(lat, lng) {
+			return lat >= 47.2 && lat <= 55.1 && lng >= 5.8 && lng <= 15.1;
+		}
+
 		function setPin(lat, lng, recenter) {
 			marker.setPosition({ lat: lat, lng: lng });
 			marker.setVisible(true);
@@ -81,10 +87,12 @@
 		}
 
 		marker.addListener('dragend', function (e) {
+			if (!inGermany(e.latLng.lat(), e.latLng.lng())) { return; }
 			pinLocked = true;
 			setPin(e.latLng.lat(), e.latLng.lng(), false);
 		});
 		map.addListener('click', function (e) {
+			if (!inGermany(e.latLng.lat(), e.latLng.lng())) { return; }
 			pinLocked = true;
 			setPin(e.latLng.lat(), e.latLng.lng(), false);
 		});
@@ -101,6 +109,7 @@
 				var place = ac.getPlace();
 				if (!place || !place.geometry || !place.geometry.location) { return; }
 				var loc = place.geometry.location;
+				if (!inGermany(loc.lat(), loc.lng())) { return; }
 				pinLocked = false; // Explicit selection resets any manual pin.
 				setPin(loc.lat(), loc.lng(), true);
 				fillAddress(place.address_components || []);
@@ -127,11 +136,17 @@
 				var svc = new google.maps.places.PlacesService(map);
 				svc.findPlaceFromQuery({
 					query: search.value.trim(),
-					fields: ['place_id', 'geometry', 'formatted_address', 'name']
+					fields: ['place_id', 'geometry', 'formatted_address', 'name'],
+					locationBias: { north: 55.1, south: 47.2, east: 15.1, west: 5.8 }
 				}, function (results, status) {
 					if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results[0]) { return; }
 					if (pinLocked) { return; }
-					var top = results[0];
+					var top = null;
+					for (var i = 0; i < results.length; i++) {
+						var l = results[i].geometry && results[i].geometry.location;
+						if (l && inGermany(l.lat(), l.lng())) { top = results[i]; break; }
+					}
+					if (!top) { return; }
 					if (top.geometry && top.geometry.location) {
 						setPin(top.geometry.location.lat(), top.geometry.location.lng(), true);
 					}
@@ -168,6 +183,7 @@
 			geocoder.geocode({ address: addr, region: 'de' }, function (results, status) {
 				if (status !== 'OK' || !results || !results[0] || pinLocked) { return; }
 				var loc = results[0].geometry.location;
+				if (!inGermany(loc.lat(), loc.lng())) { return; }
 				setPin(loc.lat(), loc.lng(), true);
 				fillState(results[0].address_components || []);
 			});
@@ -176,9 +192,12 @@
 		['fge_street', 'fge_house_number', 'fge_postal_code', 'fge_city'].forEach(function (id) {
 			var el = byId(id);
 			if (!el) { return; }
-			el.addEventListener('input', function () {
-				clearTimeout(debounce);
-				debounce = setTimeout(geocodeFields, 900);
+			// change zusätzlich zu input: Browser-Autofill löst oft kein input aus.
+			['input', 'change'].forEach(function (evt) {
+				el.addEventListener(evt, function () {
+					clearTimeout(debounce);
+					debounce = setTimeout(geocodeFields, 900);
+				});
 			});
 		});
 

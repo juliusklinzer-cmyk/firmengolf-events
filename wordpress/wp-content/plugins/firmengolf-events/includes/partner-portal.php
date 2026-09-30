@@ -563,8 +563,10 @@ function fge_portal_handle_profile_update(): void {
 			foreach ( [ 'street', 'house_number', 'postal_code', 'city', 'federal_state', 'free_region' ] as $k ) {
 				update_post_meta( $partner_id, '_fge_' . $k, sanitize_text_field( $P[ 'fge_' . $k ] ?? '' ) );
 			}
-			update_post_meta( $partner_id, '_fge_latitude',  '' === ( $P['fge_latitude'] ?? '' )  ? '' : (string) (float) $P['fge_latitude'] );
-			update_post_meta( $partner_id, '_fge_longitude', '' === ( $P['fge_longitude'] ?? '' ) ? '' : (string) (float) $P['fge_longitude'] );
+			update_post_meta( $partner_id, '_fge_latitude',  '' === ( $P['fge_latitude'] ?? '' ) ? '' : (string) (float) str_replace( ',', '.', (string) $P['fge_latitude'] ) );
+			update_post_meta( $partner_id, '_fge_longitude', '' === ( $P['fge_longitude'] ?? '' ) ? '' : (string) (float) str_replace( ',', '.', (string) $P['fge_longitude'] ) );
+			// Leer oder außerhalb Deutschlands (Tippfehler, vertauschte Werte): PLZ-Mittelpunkt.
+			fge_partner_ensure_coords( $partner_id );
 			foreach ( [ 'poi_car', 'poi_parking', 'poi_train', 'poi_shuttle', 'poi_hotel' ] as $k ) {
 				update_post_meta( $partner_id, '_fge_' . $k, sanitize_text_field( $P[ 'fge_' . $k ] ?? '' ) );
 			}

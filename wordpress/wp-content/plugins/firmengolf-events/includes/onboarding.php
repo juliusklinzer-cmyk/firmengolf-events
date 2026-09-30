@@ -507,9 +507,12 @@ function fge_onboarding_save_slide( int $partner_id, string $id, array $post ): 
 			if ( isset( $post['fge_latitude'], $post['fge_longitude'] ) ) {
 				$lat = (float) $post['fge_latitude'];
 				$lng = (float) $post['fge_longitude'];
-				update_post_meta( $partner_id, '_fge_latitude',  ( $lat >= -90 && $lat <= 90 && 0.0 !== $lat ) ? $lat : '' );
-				update_post_meta( $partner_id, '_fge_longitude', ( $lng >= -180 && $lng <= 180 && 0.0 !== $lng ) ? $lng : '' );
+				$in_de = fge_geo_in_germany( $lat, $lng );
+				update_post_meta( $partner_id, '_fge_latitude',  $in_de ? $lat : '' );
+				update_post_meta( $partner_id, '_fge_longitude', $in_de ? $lng : '' );
 			}
+			// Kein Pin in Deutschland (Karte ohne Einwilligung, Google-Fehltreffer): PLZ-Mittelpunkt.
+			fge_partner_ensure_coords( $partner_id );
 			if ( isset( $post['fge_google_place_id'] ) ) {
 				update_post_meta( $partner_id, '_fge_google_place_id', $s( 'fge_google_place_id' ) );
 			}

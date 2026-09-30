@@ -216,3 +216,67 @@ function fge_ajax_geo_suggest(): void {
 	$q = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
 	wp_send_json_success( fge_geo_suggest( $q ) );
 }
+
+// ── Partner-Koordinaten absichern (01.10.2026, Anlass FLIGHT Alzenau auf 0/0) ──
+
+/** Liegt der Punkt in Deutschland (grobe Bounding-Box inkl. Grenzlagen)? */
+function fge_geo_in_germany( float $lat, float $lng ): bool {
+	return $lat >= 47.2 && $lat <= 55.1 && $lng >= 5.8 && $lng <= 15.1;
+}
+
+/**
+ * Hält die Karten-Koordinaten eines Partners plausibel: Punkte außerhalb Deutschlands
+ * (z. B. Google-Fehltreffer rund um 0/0) werden verworfen, fehlende Koordinaten fallen
+ * auf den PLZ-Mittelpunkt zurück. Liefert true, wenn sich etwas geändert hat.
+ */
+function fge_partner_ensure_coords( int $partner_id ): bool {
+	$lat = (float) get_post_meta( $partner_id, '_fge_latitude', true );
+	$lng = (float) get_post_meta( $partner_id, '_fge_longitude', true );
+	if ( fge_geo_in_germany( $lat, $lng ) ) {
+		return false;
+	}
+	$geo = fge_geo_lookup_plz( (string) get_post_meta( $partner_id, '_fge_postal_code', true ) );
+	$new = $geo ? [ (float) $geo[0], (float) $geo[1] ] : [ '', '' ];
+	if ( (string) $new[0] === (string) get_post_meta( $partner_id, '_fge_latitude', true ) ) {
+		return false;
+	}
+	update_post_meta( $partner_id, '_fge_latitude', $new[0] );
+	update_post_meta( $partner_id, '_fge_longitude', $new[1] );
+	return true;
+}
+
+/**
+ * Einmal-Korrektur Bestandspartner: alle Partner mit Koordinaten außerhalb Deutschlands.
+ * FLIGHT Alzenau bekommt die exakte Adresse (Gerichtsplatzstraße 75, Masterbestand 29.09.),
+ * alle anderen den PLZ-Mittelpunkt. Ergebnis steht in der Option (Liste der Korrekturen).
+ */
+add_action( 'init', static function (): void {
+	if ( get_option( 'fge_geo_partner_fix_2026_10' ) ) {
+		return;
+	}
+	update_option( 'fge_geo_partner_fix_2026_10', [ 'running' => time() ], false );
+	$ids = get_posts( [
+		'post_type'      => 'firmengolf_partner',
+		'post_status'    => 'any',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'meta_query'     => [ [ 'key' => '_fge_latitude', 'value' => '', 'compare' => '!=' ] ],
+	] );
+	$fixed = [];
+	foreach ( $ids as $pid ) {
+		$lat = (float) get_post_meta( $pid, '_fge_latitude', true );
+		$lng = (float) get_post_meta( $pid, '_fge_longitude', true );
+		if ( fge_geo_in_germany( $lat, $lng ) ) {
+			continue;
+		}
+		$title = (string) get_the_title( $pid );
+		if ( false !== stripos( $title, 'flight' ) && false !== stripos( (string) get_post_meta( $pid, '_fge_city', true ), 'alzenau' ) ) {
+			update_post_meta( $pid, '_fge_latitude', 50.057206 );
+			update_post_meta( $pid, '_fge_longitude', 9.060840 );
+		} else {
+			fge_partner_ensure_coords( $pid );
+		}
+		$fixed[] = $pid . ' ' . $title . ' (' . $lat . '/' . $lng . ' → ' . get_post_meta( $pid, '_fge_latitude', true ) . '/' . get_post_meta( $pid, '_fge_longitude', true ) . ')';
+	}
+	update_option( 'fge_geo_partner_fix_2026_10', [ 'done' => time(), 'fixed' => $fixed ], false );
+}, 40 );

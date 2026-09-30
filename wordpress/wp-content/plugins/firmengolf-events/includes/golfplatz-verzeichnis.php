@@ -163,8 +163,8 @@ add_action( 'wp_enqueue_scripts', function (): void {
 		if ( $pid > 0 ) {
 			$plat = (float) get_post_meta( $pid, '_fge_latitude', true );
 			$plng = (float) get_post_meta( $pid, '_fge_longitude', true );
-			if ( ! ( $plat && $plng ) ) {
-				// Bestands-Partner ohne Meta-Koordinaten: das Verzeichnis kennt sie (wie Fall 3).
+			if ( ! fge_geo_in_germany( $plat, $plng ) ) {
+				// Bestands-Partner ohne (plausible) Meta-Koordinaten: das Verzeichnis kennt sie (wie Fall 3).
 				global $wpdb;
 				$row = $wpdb->get_row( $wpdb->prepare(
 					'SELECT lat, lng FROM ' . fge_verzeichnis_table() . ' WHERE partner_id = %d LIMIT 1', // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -175,11 +175,11 @@ add_action( 'wp_enqueue_scripts', function (): void {
 					$plng = (float) $row->lng;
 				}
 			}
-			if ( ! ( $plat && $plng ) ) {
+			if ( ! fge_geo_in_germany( $plat, $plng ) ) {
 				$plat = (float) get_post_meta( $eid, '_fge_geo_lat', true );
 				$plng = (float) get_post_meta( $eid, '_fge_geo_lng', true );
 			}
-			if ( $plat && $plng ) {
+			if ( fge_geo_in_germany( $plat, $plng ) ) {
 				$coords     = [ $plat, $plng ];
 				$self_place = [
 					'id'      => 0,
@@ -198,7 +198,7 @@ add_action( 'wp_enqueue_scripts', function (): void {
 		$pid  = get_the_ID();
 		$plat = (float) get_post_meta( $pid, '_fge_latitude', true );
 		$plng = (float) get_post_meta( $pid, '_fge_longitude', true );
-		if ( ! ( $plat && $plng ) ) {
+		if ( ! fge_geo_in_germany( $plat, $plng ) ) {
 			// Die 20 Bestands-Partner haben keine Meta-Koordinaten — das DGV-Verzeichnis
 			// (verlinkt über partner_id) kennt sie aber.
 			global $wpdb;
@@ -211,7 +211,13 @@ add_action( 'wp_enqueue_scripts', function (): void {
 				$plng = (float) $row->lng;
 			}
 		}
-		if ( $plat && $plng ) {
+		if ( ! fge_geo_in_germany( $plat, $plng ) ) {
+			// Weder Pin noch Verzeichnis plausibel: PLZ-Mittelpunkt statt Pin im Meer.
+			$geo  = fge_geo_lookup_plz( (string) get_post_meta( $pid, '_fge_postal_code', true ) );
+			$plat = $geo ? (float) $geo[0] : 0.0;
+			$plng = $geo ? (float) $geo[1] : 0.0;
+		}
+		if ( fge_geo_in_germany( $plat, $plng ) ) {
 			$coords     = [ $plat, $plng ];
 			$self_place = [
 				'id'      => 0,
