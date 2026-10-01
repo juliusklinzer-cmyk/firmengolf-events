@@ -161,3 +161,163 @@ function fge_simulatoren(): array {
 		[ 'name' => 'Wellnesshotel THE GRAND Ahrenshoop', 'ort' => 'Ahrenshoop', 'plz' => '', 'bundesland' => '', 'adresse' => '', 'website' => '', 'bays' => '', 'system' => '', 'eventlocation' => '', 'bar' => '', 'verified' => false, 'precision' => 'ort', 'lat' => 54.378951, 'lng' => 12.419192 ],
 	];
 }
+
+/**
+ * Simulatoren, die bei Firmengolf Events anbieten: aktive Indoor-Partner mit
+ * öffentlichen Events, per Namensabgleich mit der Liste (plus Partner, die nicht
+ * in der Liste stehen, als eigene Pins).
+ *
+ * @return array{names: string[], extra: array<int,array<string,mixed>>}
+ */
+function fge_simulatoren_featured(): array {
+	static $cache = null;
+	if ( null !== $cache ) {
+		return $cache;
+	}
+	$names = [];
+	$extra = [];
+	$partners = get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_query' => [ [ 'key' => '_fge_partner_type', 'value' => 'indoor' ], [ 'key' => '_fge_partner_status', 'value' => 'aktiv' ] ] ] );
+	foreach ( $partners as $pid ) {
+		if ( function_exists( 'fge_partner_is_public' ) && ! fge_partner_is_public( (int) $pid ) ) {
+			continue;
+		}
+		$events = get_posts( [ 'post_type' => 'firmengolf_event', 'post_status' => 'publish', 'numberposts' => 1, 'fields' => 'ids', 'meta_query' => [ [ 'key' => '_fge_assigned_partner_id', 'value' => (string) $pid ], [ 'key' => '_fge_event_status', 'value' => function_exists( 'fge_public_event_statuses' ) ? fge_public_event_statuses() : [ 'freigegeben' ], 'compare' => 'IN' ] ] ] );
+		if ( ! $events ) {
+			continue;
+		}
+		$title = mb_strtolower( trim( (string) get_post_meta( (int) $pid, '_fge_public_golfclub_name', true ) ?: get_the_title( (int) $pid ) ) );
+		$names[ $title ] = (int) $pid;
+		$lat = (float) get_post_meta( (int) $pid, '_fge_latitude', true );
+		$lng = (float) get_post_meta( (int) $pid, '_fge_longitude', true );
+		$hit = false;
+		foreach ( fge_simulatoren() as $s ) {
+			$sn = mb_strtolower( $s['name'] );
+			if ( $sn === $title || false !== mb_strpos( $sn, $title ) || false !== mb_strpos( $title, $sn ) ) {
+				$hit = true;
+				break;
+			}
+		}
+		if ( ! $hit && $lat && $lng ) {
+			$extra[] = [ 'name' => get_the_title( (int) $pid ), 'ort' => (string) get_post_meta( (int) $pid, '_fge_city', true ), 'lat' => $lat, 'lng' => $lng, 'website' => (string) get_permalink( (int) $pid ), 'bays' => '', 'system' => '', 'featured' => true ];
+		}
+	}
+	$cache = [ 'names' => array_keys( $names ), 'extra' => $extra ];
+	return $cache;
+}
+
+/**
+ * Karte mit allen Simulatoren (Klaro-gegated wie die City-Karten): Daten
+ * lokalisieren, Google-Maps-JS mit Callback fgeSimMapInit einhängen.
+ */
+function fge_simulatoren_map_enqueue(): void {
+	if ( ! function_exists( 'fge_gmaps_api_key' ) || '' === fge_gmaps_api_key() ) {
+		return;
+	}
+	$featured = fge_simulatoren_featured();
+	$places   = [];
+	foreach ( fge_simulatoren() as $s ) {
+		if ( (float) $s['lat'] === 0.0 ) {
+			continue;
+		}
+		$sn   = mb_strtolower( $s['name'] );
+		$feat = false;
+		foreach ( $featured['names'] as $fn ) {
+			if ( $sn === $fn || false !== mb_strpos( $sn, $fn ) || false !== mb_strpos( $fn, $sn ) ) {
+				$feat = true;
+				break;
+			}
+		}
+		$places[] = [
+			'name'     => $s['name'],
+			'ort'      => $s['ort'],
+			'lat'      => (float) $s['lat'],
+			'lng'      => (float) $s['lng'],
+			'featured' => $feat,
+			'event'    => 'Ja' === $s['eventlocation'],
+			'meta'     => trim( ( '' !== $s['bays'] ? $s['bays'] . ' Boxen' : '' ) . ( '' !== $s['system'] ? ( '' !== $s['bays'] ? ', ' : '' ) . $s['system'] : '' ) ),
+			'website'  => $s['website'],
+			'approx'   => 'ort' === $s['precision'],
+		];
+	}
+	foreach ( $featured['extra'] as $e ) {
+		$places[] = [ 'name' => $e['name'], 'ort' => $e['ort'], 'lat' => $e['lat'], 'lng' => $e['lng'], 'featured' => true, 'event' => true, 'meta' => '', 'website' => $e['website'], 'approx' => false ];
+	}
+	// Golfplätze nur, wenn sie selbst eine Weihnachtsfeier anbieten (Julius, 07.09.:
+	// ohne Angebot fallen sie raus, im Winter meist geschlossen). Blauer Pin, Link aufs Event.
+	global $wpdb;
+	$xmas_events = get_posts( [
+		'post_type'   => 'firmengolf_event',
+		'post_status' => 'publish',
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_query'  => [
+			[ 'key' => '_fge_event_type', 'value' => 'weihnachtsfeier' ],
+			[ 'key' => '_fge_assigned_partner_id', 'value' => '0', 'compare' => '>', 'type' => 'NUMERIC' ],
+			[ 'key' => '_fge_event_status', 'value' => function_exists( 'fge_public_event_statuses' ) ? fge_public_event_statuses() : [ 'freigegeben' ], 'compare' => 'IN' ],
+		],
+	] );
+	$seen_partner = [];
+	foreach ( $xmas_events as $xe ) {
+		if ( function_exists( 'fge_event_is_public' ) && ! fge_event_is_public( (int) $xe ) ) {
+			continue;
+		}
+		$pid = (int) get_post_meta( (int) $xe, '_fge_assigned_partner_id', true );
+		if ( $pid <= 0 || isset( $seen_partner[ $pid ] ) || ( function_exists( 'fge_partner_type' ) && 'course' !== fge_partner_type( $pid ) ) ) {
+			continue;
+		}
+		$seen_partner[ $pid ] = true;
+		$plat = (float) get_post_meta( $pid, '_fge_latitude', true );
+		$plng = (float) get_post_meta( $pid, '_fge_longitude', true );
+		if ( ! ( $plat && $plng ) && function_exists( 'fge_verzeichnis_table' ) ) {
+			$row = $wpdb->get_row( $wpdb->prepare( 'SELECT lat, lng FROM ' . fge_verzeichnis_table() . ' WHERE partner_id = %d LIMIT 1', $pid ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			if ( $row ) {
+				$plat = (float) $row->lat;
+				$plng = (float) $row->lng;
+			}
+		}
+		if ( ! ( $plat && $plng ) ) {
+			continue;
+		}
+		$places[] = [
+			'name'     => (string) get_post_meta( $pid, '_fge_public_golfclub_name', true ) ?: get_the_title( $pid ),
+			'ort'      => (string) get_post_meta( $pid, '_fge_city', true ),
+			'lat'      => $plat,
+			'lng'      => $plng,
+			'featured' => false,
+			'course'   => true,
+			'event'    => true,
+			'meta'     => 'Golfanlage mit Clubhaus',
+			'website'  => (string) get_permalink( (int) $xe ),
+			'approx'   => false,
+		];
+	}
+	$src = plugins_url( 'assets/js/fge-sim-map.js', FGE_DIR . 'firmengolf-events.php' );
+	wp_enqueue_script( 'fge-sim-map', $src, [], FGE_VERSION, true );
+	// Standort aus der URL (nach Freigabe auf der Seite): Karte zentriert dort und
+	// zoomt so, dass mindestens fünf Simulatoren im Bild sind (Julius, 07.09.).
+	// Kein weiterer Google-Aufruf, nur die Kartenansicht.
+	$u_lat = isset( $_GET['lat'] ) ? (float) $_GET['lat'] : 0.0; // phpcs:ignore WordPress.Security.NonceVerification
+	$u_lng = isset( $_GET['lng'] ) ? (float) $_GET['lng'] : 0.0; // phpcs:ignore WordPress.Security.NonceVerification
+	// Eingetippter Ort oder PLZ aus der Filterleiste (?q=…): gleiche Auflösung wie
+	// das Angebots-Grid im Template, damit die Karte dorthin springt.
+	$u_q = sanitize_text_field( wp_unslash( $_GET['q'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification
+	if ( ! ( $u_lat && $u_lng ) && '' !== $u_q ) {
+		$u_c = null;
+		if ( ctype_digit( $u_q ) && function_exists( 'fge_geo_lookup_plz' ) ) {
+			$u_c = fge_geo_lookup_plz( $u_q );
+		} elseif ( function_exists( 'fge_geo_city_coords' ) ) {
+			$u_c = fge_geo_city_coords( $u_q );
+		}
+		if ( is_array( $u_c ) ) {
+			$u_lat = (float) ( $u_c[0] ?? $u_c['lat'] ?? 0 );
+			$u_lng = (float) ( $u_c[1] ?? $u_c['lng'] ?? 0 );
+		}
+	}
+	$user  = ( $u_lat > 46 && $u_lat < 56 && $u_lng > 5 && $u_lng < 16 ) ? [ 'lat' => $u_lat, 'lng' => $u_lng ] : null;
+	wp_localize_script( 'fge-sim-map', 'FGE_SIM_MAP', [ 'places' => $places, 'anfrage' => '#anfrage', 'user' => $user, 'minNear' => 5 ] );
+	$maps_url = add_query_arg(
+		[ 'key' => rawurlencode( fge_gmaps_api_key() ), 'callback' => 'fgeSimMapInit', 'loading' => 'async', 'language' => 'de', 'region' => 'DE' ],
+		'https://maps.googleapis.com/maps/api/js'
+	);
+	wp_enqueue_script( 'google-maps', $maps_url, [ 'fge-sim-map' ], null, true );
+}
