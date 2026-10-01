@@ -37,12 +37,11 @@ function fge_send_review_request_email( int $request_id ): bool {
 		return false;
 	}
 	$greet   = $data['first_name'] !== '' ? 'Hallo ' . esc_html( $data['first_name'] ) . ',' : 'Hallo,';
-	$what    = $data['event_title'] !== '' ? esc_html( $data['event_title'] ) : 'euer Event';
-	$where   = $data['partner_title'] !== '' ? ' bei ' . esc_html( $data['partner_title'] ) : '';
+	// Kein eingesetzter Eventtitel (Julius, 01.10.: wirkt wie schlecht eingefügt).
 	$subject = 'Danke für euer Event mit Firmengolf, zwei Minuten für uns?';
 	$content = '
 		<p style="margin:0 0 16px;">' . $greet . '</p>
-		<p style="margin:0 0 16px;">danke, dass ihr ' . $what . $where . ' mit uns gemacht habt. Ich hoffe, der Tag hat eurem Team genauso viel Spaß gemacht wie uns die Planung.</p>
+		<p style="margin:0 0 16px;">danke, dass ihr euer Teamevent mit uns gemacht habt. Ich hoffe, der Tag hat eurem Team genauso viel Spaß gemacht wie uns die Planung.</p>
 		<p style="margin:0 0 16px;">Eine Bitte habe ich: Wir sind noch jung, und jede ehrliche Bewertung hilft anderen Firmen bei der Entscheidung, ob ein Golf-Teamevent etwas für sie ist. Zwei Minuten reichen, ein Satz genügt.</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( $url, 'Bei Google bewerten' ) . '</p>
 		<p style="margin:0 0 16px;">Und wenn etwas nicht gepasst hat, antworte bitte einfach auf diese Mail. Das lese ich persönlich, und es hilft uns mehr als jede Bewertung.</p>
