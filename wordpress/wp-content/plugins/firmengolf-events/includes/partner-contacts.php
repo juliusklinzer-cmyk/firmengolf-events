@@ -270,3 +270,82 @@ function fge_contact_delete( int $id, bool $hard = false ): bool {
 	}
 	return fge_contact_update( $id, [ 'status' => 'inactive' ] );
 }
+
+// ── Einmal-Übernahme Kontakte Bestandspartner (01.10.2026) ────────────────────
+
+/**
+ * Die Golfclub-Partner aus der Website-Übernahme hatten im Control Center keine
+ * Kontaktdaten („Partner ohne Kontaktdaten"). Quelle: Julius' Outlook-Korrespondenz
+ * (Signaturen, Verträge) und HubSpot, Stand 01.10.2026. Füllt nur leere Felder und
+ * legt den Ansprechpartner an, wenn er noch nicht als Kontakt existiert. Nur
+ * veröffentlichte, echte Partner (keine Stammdaten, kein Muster-Platz).
+ */
+function fge_partner_contacts_fill_2026_10_data(): array {
+	return [
+		'Jersbek'         => [ 'Nadja Nissen', 'Sekretariat', 'n.nissen@golfclub-jersbek.de', '04532 20950' ],
+		'OPEN.9'          => [ 'Lea Schneider', 'Eventmanager', 'lea.schneider@open9.de', '08123 989280' ],
+		'Eurach'          => [ 'Andreas Röhrl', 'Clubmanager', 'a.roehrl@eurach.de', '+49 8801 915830' ],
+		'Bayerwald'       => [ 'Albert Harz', 'Vorstand', 'sport@gc-bayerwald.de', '08581 1040' ],
+		'Chieming'        => [ 'Jannik Heine', 'Clubmanager', 'j.heine@golfchieming.de', '08669 87330' ],
+		'Erding'          => [ 'Marc Ober', 'Clubmanager', 'mo@golf-erding.de', '0160 94870549' ],
+		'Escheburg'       => [ 'Nina Cockayne', 'Sekretariat', 'nina.cockayne@gc-escheburg.de', '04152 83204' ],
+		'Grambek'         => [ 'Karina Czech', 'Sekretariat', 'k.czech@gcgrambek.de', '04542 841474' ],
+		'Ahrensburg'      => [ 'Tobias Wilde', 'Clubmanager', 'clubmanager@golfclub-ahrensburg.de', '04102 51309' ],
+		'Lutzhorn'        => [ 'Justin Eller-Hughes', 'Sonstige', 'ellerhughes97@gmail.com', '+49 178 6914426' ],
+		'Mangfalltal'     => [ 'Markus Steinle', 'Geschäftsführer', 'm.steinle@gc-mangfalltal.de', '+49 8063 6300' ],
+		'Maxlrain'        => [ 'Alexandra Sturm', 'Clubmanager', 'alexandra.sturm@golfclub-maxlrain.de', '+49 8061 1403' ],
+		'Igling'          => [ 'Manuel Argentari', 'Präsident', 'praesident@golfclub-igling.de', '08248 1893' ],
+		'Stiftland'       => [ 'Andreas Graf', 'Clubmanager', 'clubmanager@gc-stiftland.de', '09638 1271' ],
+		'Wiggensbach'     => [ 'Ralf Schwarz', 'Vorstand', 'rs@nohcp.de', '+49 8370 93073' ],
+		'Gut Kaden'       => [ 'Wolfgang Mych', 'Geschäftsführer', 'wolfgang.mych@gutkaden.de', '+49 4193 99290' ],
+		'Holledau'        => [ 'Dietmar Strunz', 'Clubmanager', 'ds@golfclubholledau.de', '08756 96010' ],
+		'Bergkramerhof'   => [ 'Sebastian Hochbaum', 'Sonstige', 'sh@leadgolf.de', '+49 157 72737843' ],
+		'Schwäbisch Hall' => [ 'Ingo Bücher', 'Präsident', 'i.buecher@incomma.com', '07907 8190' ],
+		'Weidenhof'       => [ 'Sandy Voß', 'Sonstige', 'info@golfpark-weidenhof.de', '04101 511830' ],
+	];
+}
+
+add_action( 'init', static function (): void {
+	if ( get_option( 'fge_partner_contacts_fill_2026_10' ) || ! function_exists( 'fge_contact_add' ) ) {
+		return;
+	}
+	update_option( 'fge_partner_contacts_fill_2026_10', [ 'running' => time() ], false );
+	global $wpdb;
+	$ids = get_posts( [
+		'post_type'      => 'firmengolf_partner',
+		'post_status'    => 'publish',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+	] );
+	$log = [];
+	foreach ( $ids as $pid ) {
+		if ( ( function_exists( 'fge_partner_is_stammdaten' ) && fge_partner_is_stammdaten( $pid ) )
+			|| ( function_exists( 'fge_is_demo_partner' ) && fge_is_demo_partner( $pid ) ) ) {
+			continue;
+		}
+		$title = (string) get_the_title( $pid );
+		foreach ( fge_partner_contacts_fill_2026_10_data() as $needle => [ $name, $role, $email, $phone ] ) {
+			if ( false === mb_stripos( $title, $needle ) ) {
+				continue;
+			}
+			$set = [];
+			foreach ( [ '_fge_main_contact_name' => $name, '_fge_main_contact_email' => $email, '_fge_main_contact_phone' => $phone ] as $k => $v ) {
+				if ( '' === trim( (string) get_post_meta( $pid, $k, true ) ) ) {
+					update_post_meta( $pid, $k, $v );
+					$set[] = $k;
+				}
+			}
+			$exists = (int) $wpdb->get_var( $wpdb->prepare(
+				'SELECT COUNT(*) FROM ' . fge_contacts_table() . " WHERE partner_id = %d AND email = %s AND status = 'active'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$pid,
+				$email
+			) );
+			if ( 0 === $exists && fge_contact_add( $pid, [ 'name' => $name, 'email' => $email, 'role' => $role, 'permission' => 'vote' ] ) > 0 ) {
+				$set[] = 'kontakt';
+			}
+			$log[] = $pid . ' ' . $title . ': ' . ( $set ? implode( ', ', $set ) : 'schon vollständig' );
+			break;
+		}
+	}
+	update_option( 'fge_partner_contacts_fill_2026_10', [ 'done' => time(), 'log' => $log ], false );
+}, 45 );
