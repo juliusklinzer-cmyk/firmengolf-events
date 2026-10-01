@@ -46,6 +46,7 @@ function fge_send_review_request_email( int $request_id ): bool {
 		<p style="margin:0 0 16px;">Eine Bitte habe ich: Wir sind noch jung, und jede ehrliche Bewertung hilft anderen Firmen bei der Entscheidung, ob ein Golf-Teamevent etwas für sie ist. Zwei Minuten reichen, ein Satz genügt.</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( $url, 'Bei Google bewerten' ) . '</p>
 		<p style="margin:0 0 16px;">Und wenn etwas nicht gepasst hat, antworte bitte einfach auf diese Mail. Das lese ich persönlich, und es hilft uns mehr als jede Bewertung.</p>
+		<p style="margin:0 0 16px;">Die Rechnung schicken wir dir in den nächsten Tagen separat zu.</p>
 		<p style="margin:24px 0 0;">Sportliche Grüße<br><strong>Julius Klinzer</strong><br><span style="color:#6C736E;font-size:13px;">Gründer Firmengolf Events</span></p>
 	';
 	$sent = (bool) wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
