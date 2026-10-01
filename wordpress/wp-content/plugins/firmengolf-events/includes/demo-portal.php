@@ -61,6 +61,48 @@ function fge_demo_exclude_meta_clause(): array {
 	];
 }
 
+// ── Control Center ohne Musterdaten (Julius, 01.10.2026) ─────────────────────
+
+/**
+ * Die Musterumgebung ist ein Klickdummy fürs Partnerportal. Im Control Center
+ * verwirren Muster-Platz, Muster-Events und Muster-Anfragen nur, deshalb blendet
+ * jede Post-Abfrage auf /control/ sie aus. Das Partnerportal (/partnerportal/)
+ * zeigt sie weiter vollständig.
+ */
+add_action( 'template_redirect', static function (): void {
+	if ( '' !== (string) get_query_var( 'fge_cc' ) && ! defined( 'FGE_CC_CONTEXT' ) ) {
+		define( 'FGE_CC_CONTEXT', true );
+	}
+}, 0 );
+
+/** Läuft gerade das Control Center (Seitenaufruf oder dessen Formular-Aktion)? */
+function fge_demo_hide_in_cc(): bool {
+	if ( defined( 'FGE_CC_CONTEXT' ) ) {
+		return true;
+	}
+	$action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	return '' !== $action && 0 === strpos( $action, 'fge_cc_' );
+}
+
+add_action( 'pre_get_posts', static function ( $q ): void {
+	if ( ! fge_demo_hide_in_cc() ) {
+		return;
+	}
+	$demo_id = fge_demo_partner_id();
+	if ( $demo_id <= 0 ) {
+		return;
+	}
+	$types = (array) $q->get( 'post_type' );
+	if ( in_array( 'firmengolf_partner', $types, true ) ) {
+		$q->set( 'post__not_in', array_merge( (array) $q->get( 'post__not_in' ), [ $demo_id ] ) );
+	}
+	if ( [] !== array_intersect( $types, [ 'firmengolf_request', 'firmengolf_event' ] ) && ! in_array( 'firmengolf_partner', $types, true ) ) {
+		$mq   = (array) $q->get( 'meta_query' );
+		$mq[] = fge_demo_exclude_meta_clause();
+		$q->set( 'meta_query', $mq );
+	}
+} );
+
 // ── Seeder / Reset ────────────────────────────────────────────────────────────
 
 /**
