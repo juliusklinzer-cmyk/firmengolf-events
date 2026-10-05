@@ -1,12 +1,12 @@
 # Mail-Inventar Firmengolf
 
-Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 28.09.2026, Version 1.9.285, 32 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
+Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 05.10.2026, Version 1.9.294, 33 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
 
 Gemeinsamer Stil: Rahmen `fge_email_wrap()`, Absender events@firmengolf-events.de (mail-config.php, auch Reply-To), Buttons `fge_email_button()`, Versand über WP Mail SMTP und Brevo, Protokoll je Versand in `wp_fge_mail_log` (mail-log.php, Zuordnung über die Vorgangsnummer im Betreff). Keine Gedankenstriche, Preise als „XX € p.P.“ oder „XX € netto“.
 
 Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst löst jemand die Mail am Knopf aus.
 
-## An Firmenkunden (8)
+## An Firmenkunden (9)
 
 | Schlüssel | Mail | Betreff | Auslöser | Inhalt |
 |---|---|---|---|---|
@@ -16,6 +16,7 @@ Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst lös
 | `offer_reminder` | Angebotserinnerung | Erinnerung: euer Angebot | Cron, drei Tage ohne Reaktion (automatisch) | Frist läuft, Termin noch reserviert |
 | `booking_customer` | Buchungsbestätigung an den Kunden | Buchung bestätigt | Kunde nimmt an (automatisch) | Dank und Termin, PDF der Buchungsbestätigung, Link zur Buchung |
 | `day_plan_customer` | Ablauf für den Eventtag an den Kunden | Der Ablauf für euren Eventtag steht | Startzeit und Treffpunkt erstmals vollständig, oder Knopf (Knopf) | Wann und wo mit Adresse, Treffpunkt, Ansprechpartner vor Ort, was mitzubringen ist, Ablauf folgt am Vortag, Mobilnummer |
+| `pax_reminder_customer` | Teilnehmerzahl-Erinnerung | Passt die Teilnehmerzahl noch? | Cron 08:00, 16 Tage vor dem Termin (Fenster 15 bis 16) (automatisch) | aktuelle Teilnehmerzahl, Stichtag 14 Tage vorher, danach wird die gemeldete Zahl berechnet |
 | `day_info_customer` | Vortags-Info an den Kunden | Morgen ist es soweit | Cron 07:00 am Vortag, oder Knopf (automatisch) | Start, Treffpunkt, Adresse, Ansprechpartner vor Ort, Golflehrer und Ablauf, gebuchte Leistungen, Mobilnummer |
 | `review_customer` | Bewertungsbitte | Danke für euer Event mit Firmengolf | Status „Event durchgeführt" (automatisch) | Bitte um Google-Bewertung |
 

@@ -113,11 +113,11 @@ function fge_offer_positions( array $snap, ?array $selected = null ): array {
 }
 
 /**
- * Hinweis zur Teilnehmerzahl bei Pro-Kopf-Preisen: freundlich formuliert (Julius,
- * 17.09.2026), die verbindliche Regel (Storno, Fristen) steht in den AGB.
+ * Hinweis zur Teilnehmerzahl bei Pro-Kopf-Preisen mit Stichtag 14 Tage vorher (Julius,
+ * 05.10.2026, passend zu § 4 Abs. 2 AGB), Erinnerung dazu: pax-reminder.php.
  */
 function fge_offer_pax_note( int $pax ): string {
-	return 'Berechnungsbasis ' . $pax . ' Teilnehmer. Falls sich an der Teilnehmerzahl etwas ändert, gebt uns bitte frühzeitig Bescheid.';
+	return 'Berechnungsbasis ' . $pax . ' Teilnehmer. Die endgültige Teilnehmerzahl brauchen wir spätestens 14 Tage vor dem Event, danach berechnen wir die gemeldete Zahl.';
 }
 
 /**

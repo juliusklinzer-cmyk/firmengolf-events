@@ -66,7 +66,9 @@ $addr = $co['hq_street'] . ', ' . $co['hq_zip'] . ' ' . $co['hq_city'];
 			ist im Angebot als Spanne („von, bis Personen") angegeben.<br>
 			(2) Änderungen der Teilnehmerzahl innerhalb der angegebenen Spanne sind möglich; der Preis kann sich entsprechend
 			anpassen. Wesentliche Abweichungen außerhalb der Spanne bedürfen der Abstimmung und können zu Preis- bzw.
-			Leistungsänderungen führen.<br>
+			Leistungsänderungen führen. Die endgültige Teilnehmerzahl ist spätestens 14 Tage vor dem Termin in Textform
+			mitzuteilen. Danach ist eine Reduzierung nicht mehr preiswirksam; berechnet wird die zuletzt gemeldete
+			Teilnehmerzahl. Verlangt ein Leistungsträger für Reduzierungen eine längere Frist, gilt § 7 Abs. 2 entsprechend.<br>
 			(3) Geringfügige, dem Kunden zumutbare Änderungen des Ablaufs oder der eingesetzten Anlagen/Partner aus
 			organisatorischen Gründen bleiben vorbehalten und stellen keinen Mangel dar.
 		</p>

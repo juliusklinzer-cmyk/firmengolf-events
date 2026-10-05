@@ -259,6 +259,16 @@ function fge_mail_registry(): array {
 			'content' => [ 'alle sieben Eventtag-Felder, fehlende in Rot', 'ob die Ablauf-Info an den Kunden raus ist', 'Link zur Anfrage' ],
 		],
 
+		// ── Phase 4c: Teilnehmerzahl ──────────────────────────────────────
+		'pax_reminder_customer' => [
+			'label'   => 'Teilnehmerzahl-Erinnerung',
+			'party'   => 'kunde',
+			'subject' => 'Passt die Teilnehmerzahl noch?',
+			'auto'    => true,
+			'trigger' => 'Cron 08:00, 16 Tage vor dem Termin (Fenster 15 bis 16)',
+			'content' => [ 'aktuelle Teilnehmerzahl', 'Stichtag 14 Tage vorher', 'danach wird die gemeldete Zahl berechnet' ],
+		],
+
 		// ── Phase 5: Vortag ───────────────────────────────────────────────
 		'day_info_customer' => [
 			'label'   => 'Vortags-Info an den Kunden',
