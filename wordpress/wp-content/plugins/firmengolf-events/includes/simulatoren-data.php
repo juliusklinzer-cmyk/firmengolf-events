@@ -201,8 +201,30 @@ function fge_simulatoren_featured(): array {
 			$extra[] = [ 'name' => get_the_title( (int) $pid ), 'ort' => (string) get_post_meta( (int) $pid, '_fge_city', true ), 'lat' => $lat, 'lng' => $lng, 'website' => (string) get_permalink( (int) $pid ), 'bays' => '', 'system' => '', 'featured' => true ];
 		}
 	}
-	$cache = [ 'names' => array_keys( $names ), 'extra' => $extra ];
+	$cache = [ 'names' => array_keys( $names ), 'ids' => $names, 'extra' => $extra ];
 	return $cache;
+}
+
+/**
+ * Günstigster Boxpreis eines Partners für die Karte, z. B. „ab 44 € pro Box/Std. · bis 6 Personen“.
+ * Nur Events mit Preisbasis „pro Box & Stunde“; leer, wenn der Partner keinen Boxpreis hat.
+ */
+function fge_partner_box_price_text( int $partner_id ): string {
+	if ( $partner_id <= 0 || ! function_exists( 'fge_event_pricing' ) ) {
+		return '';
+	}
+	$best = null;
+	$ids  = get_posts( [ 'post_type' => 'firmengolf_event', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_query' => [ [ 'key' => '_fge_assigned_partner_id', 'value' => (string) $partner_id ], [ 'key' => '_fge_price_basis', 'value' => 'box' ] ] ] );
+	foreach ( $ids as $eid ) {
+		if ( function_exists( 'fge_event_is_public' ) && ! fge_event_is_public( (int) $eid ) ) {
+			continue;
+		}
+		$p = fge_event_pricing( (int) $eid );
+		if ( $p['gross'] > 0 && ( null === $best || $p['gross'] < $best['gross'] ) ) {
+			$best = $p;
+		}
+	}
+	return $best ? 'ab ' . number_format_i18n( $best['gross'], 0 ) . ' € pro Box/Std. · bis ' . (int) $best['box_persons'] . ' Personen' : '';
 }
 
 /**
@@ -219,11 +241,13 @@ function fge_simulatoren_map_enqueue(): void {
 		if ( (float) $s['lat'] === 0.0 ) {
 			continue;
 		}
-		$sn   = mb_strtolower( $s['name'] );
-		$feat = false;
+		$sn    = mb_strtolower( $s['name'] );
+		$feat  = false;
+		$price = '';
 		foreach ( $featured['names'] as $fn ) {
 			if ( $sn === $fn || false !== mb_strpos( $sn, $fn ) || false !== mb_strpos( $fn, $sn ) ) {
-				$feat = true;
+				$feat  = true;
+				$price = fge_partner_box_price_text( (int) ( $featured['ids'][ $fn ] ?? 0 ) );
 				break;
 			}
 		}
@@ -237,10 +261,11 @@ function fge_simulatoren_map_enqueue(): void {
 			'meta'     => trim( ( '' !== $s['bays'] ? $s['bays'] . ' Boxen' : '' ) . ( '' !== $s['system'] ? ( '' !== $s['bays'] ? ', ' : '' ) . $s['system'] : '' ) ),
 			'website'  => $s['website'],
 			'approx'   => 'ort' === $s['precision'],
+			'price'    => $price,
 		];
 	}
 	foreach ( $featured['extra'] as $e ) {
-		$places[] = [ 'name' => $e['name'], 'ort' => $e['ort'], 'lat' => $e['lat'], 'lng' => $e['lng'], 'featured' => true, 'event' => true, 'meta' => '', 'website' => $e['website'], 'approx' => false ];
+		$places[] = [ 'name' => $e['name'], 'ort' => $e['ort'], 'lat' => $e['lat'], 'lng' => $e['lng'], 'featured' => true, 'event' => true, 'meta' => '', 'website' => $e['website'], 'approx' => false, 'price' => fge_partner_box_price_text( (int) ( $featured['ids'][ mb_strtolower( $e['name'] ) ] ?? 0 ) ) ];
 	}
 	// Golfplätze nur, wenn sie selbst eine Weihnachtsfeier anbieten (Julius, 07.09.:
 	// ohne Angebot fallen sie raus, im Winter meist geschlossen). Blauer Pin, Link aufs Event.

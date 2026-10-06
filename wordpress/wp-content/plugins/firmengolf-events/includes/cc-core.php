@@ -1056,6 +1056,7 @@ function fge_cc_request_facts( int $req ): void {
 		if ( $gross > 0 ) {
 			$is_pp     = 'pro Person' === (string) ( $p['unit'] ?? '' );
 			$price_txt = number_format_i18n( $gross, 2 ) . ' € netto ' . ( $is_pp ? 'p.P.' : 'pauschal' )
+				. ( ! empty( $p['box_count'] ) ? ' (' . (int) $p['box_count'] . ' Box' . ( (int) $p['box_count'] > 1 ? 'en' : '' ) . ' × ' . rtrim( rtrim( number_format( (float) $p['box_hours'], 1, ',', '' ), '0' ), ',' ) . ' Std. à ' . number_format_i18n( (float) $p['box_gross'], 0 ) . ' €)' : '' )
 				. ( $is_pp && $pax > 0 ? ', ' . number_format_i18n( $gross * $pax, 2 ) . ' € bei ' . $pax . ' Personen' : '' )
 				. ( ! function_exists( 'fge_offer_event_is_placeholder' ) || fge_offer_event_is_placeholder( $req ) ? ' (Platzhalter, nur Orientierung)' : '' );
 		}

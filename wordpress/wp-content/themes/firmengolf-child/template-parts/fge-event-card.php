@@ -29,7 +29,7 @@ $card_desc = function_exists( 'fge_tidy_teaser' )
 $pricing = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $pid ) : [];
 if ( ( $pricing['gross'] ?? 0 ) > 0 ) {
 	$price_amount = number_format_i18n( (float) $pricing['gross'], 0 ) . ' €';
-	$price_unit   = ( ( $pricing['unit'] ?? '' ) === 'pro Person' ) ? 'p.P. netto' : 'Gesamt netto';
+	$price_unit   = ( ( $pricing['unit'] ?? '' ) === 'pro Person' ) ? 'p.P. netto' : ( ( $pricing['unit'] ?? '' ) === 'pro Box' ? 'pro Box/Std. netto' : 'Gesamt netto' );
 } else {
 	$fallback = trim( (string) fge_get_event_price_display( $pid ) );
 	if ( $fallback !== '' && preg_match( '/^(.*?€)\s*(.*)$/u', $fallback, $fm ) ) {

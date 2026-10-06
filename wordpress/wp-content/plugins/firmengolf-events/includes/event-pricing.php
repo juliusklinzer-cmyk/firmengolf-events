@@ -28,7 +28,7 @@ function fge_price_smooth( float $gross, string $unit ): float {
 	if ( $gross <= 0 ) {
 		return 0.0;
 	}
-	$step = ( 'pro Person' === $unit ) ? 5 : 50;
+	$step = ( 'pro Person' === $unit || 'pro Box' === $unit ) ? 5 : 50;
 	return (float) ( ceil( ( $gross + 1 ) / $step ) * $step - 1 );
 }
 
@@ -44,8 +44,27 @@ const FGE_VAT_PERCENT = 19;
  * @param array<int,array{label:string,cost:mixed}> $line_items Einzelposten (bei 'einzel')
  * @return array{net:float,markup:float,gross:float,unit:string,basis:string,mode:string}
  */
-function fge_event_pricing_calc( string $mode, float $amount, string $basis, array $line_items, int $pax_max = 0 ): array {
-	$mode  = ( $mode === 'einzel' ) ? 'einzel' : 'gesamt';
+function fge_event_pricing_calc( string $mode, float $amount, string $basis, array $line_items, int $pax_max = 0, int $box_persons = 0, float $box_hours = 0.0 ): array {
+	$mode = ( $mode === 'einzel' ) ? 'einzel' : 'gesamt';
+	// Pro Box und Stunde (Julius, 06.10.2026, Simulatoren): Netto je Box und Stunde,
+	// dazu „bis X Personen pro Box“. Nur im Gesamtpreis-Modus.
+	if ( 'box' === $basis && 'gesamt' === $mode ) {
+		$net   = max( 0.0, $amount );
+		$gross = fge_price_smooth( $net * ( 1 + FGE_MARKUP_PERCENT / 100 ), 'pro Box' );
+		return [
+			'net'         => round( $net, 2 ),
+			'markup'      => round( $gross - $net, 2 ),
+			'gross'       => $gross,
+			'unit'        => 'pro Box',
+			'basis'       => 'box',
+			'mode'        => 'gesamt',
+			'pp_net'      => 0.0,
+			'flat_net'    => round( $net, 2 ),
+			'pax_max'     => $pax_max,
+			'box_persons' => $box_persons > 0 ? $box_persons : 6,
+			'box_hours'   => $box_hours > 0 ? $box_hours : 2.0,
+		];
+	}
 	$basis = ( $basis === 'pauschal' ) ? 'pauschal' : 'person';
 
 	$pp_net   = 0.0; // Summe der Pro-Person-Posten
@@ -112,7 +131,7 @@ function fge_event_pricing( int $event_id ): array {
 		// p.P.-Preis. Dann wenigstens auf die Mindestteilnehmer umlegen.
 		$pax = (int) get_post_meta( $event_id, '_fge_participants_min', true );
 	}
-	return fge_event_pricing_calc( $mode, $amount, $basis, $items, $pax );
+	return fge_event_pricing_calc( $mode, $amount, $basis, $items, $pax, (int) get_post_meta( $event_id, '_fge_box_persons', true ), (float) get_post_meta( $event_id, '_fge_box_hours', true ) );
 }
 
 /**
@@ -130,7 +149,46 @@ function fge_event_pricing_for_pax( int $event_id, int $pax ): array {
 	$amount = (float) get_post_meta( $event_id, '_fge_price_amount', true );
 	$basis  = (string) get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person';
 	$items  = (array) get_post_meta( $event_id, '_fge_line_items', true );
+	if ( 'box' === $basis && 'gesamt' === $mode ) {
+		// Angebot/Anfrage: Boxen = Personen ÷ Personen je Box (aufgerundet) × Stunden.
+		// Ergebnis als Gesamtpreis, damit Angebot, Kalkulation und Positionen unverändert rechnen.
+		$b     = fge_event_pricing( $event_id );
+		$boxes = max( 1, (int) ceil( $pax / max( 1, (int) $b['box_persons'] ) ) );
+		$units = $boxes * (float) $b['box_hours'];
+		return [
+			'net'         => round( $b['net'] * $units, 2 ),
+			'markup'      => round( ( $b['gross'] - $b['net'] ) * $units, 2 ),
+			'gross'       => round( $b['gross'] * $units, 2 ),
+			'unit'        => 'gesamt',
+			'basis'       => 'pauschal',
+			'mode'        => 'gesamt',
+			'pp_net'      => 0.0,
+			'flat_net'    => round( $b['net'] * $units, 2 ),
+			'pax_max'     => $pax,
+			'box_persons' => $b['box_persons'],
+			'box_hours'   => $b['box_hours'],
+			'box_count'   => $boxes,
+			'box_gross'   => $b['gross'],
+		];
+	}
 	return fge_event_pricing_calc( $mode, $amount, $basis, $items, $pax );
+}
+
+/** Einheiten-Zusatz zum Preis: „p.P.“, „pro Box/Std.“ oder „gesamt“. */
+function fge_price_unit_suffix( string $unit ): string {
+	if ( 'pro Person' === $unit ) {
+		return 'p.P.';
+	}
+	return 'pro Box' === $unit ? 'pro Box/Std.' : 'gesamt';
+}
+
+/** Hinweis unter einem Boxpreis, z. B. „bis 6 Personen pro Box, mind. 2 Std.“. Leer bei anderen Einheiten. */
+function fge_price_box_note( array $p ): string {
+	if ( 'pro Box' !== ( $p['unit'] ?? '' ) ) {
+		return '';
+	}
+	$h = (float) ( $p['box_hours'] ?? 0 );
+	return 'bis ' . (int) ( $p['box_persons'] ?? 6 ) . ' Personen pro Box' . ( $h > 0 ? ', mind. ' . rtrim( rtrim( number_format( $h, 1, ',', '' ), '0' ), ',' ) . ' Std.' : '' );
 }
 
 /** Formatierter Kundenpreis (netto, zzgl. USt) fürs Unternehmen, z. B. „320 € p.P." oder „2.400 € gesamt". */
@@ -140,7 +198,7 @@ function fge_event_price_label( int $event_id ): string {
 		return 'Auf Anfrage';
 	}
 	$amount = number_format_i18n( $p['gross'], 0 ) . ' €'; // Suffix-Format (Kern-Audit H6)
-	return $p['unit'] === 'pro Person' ? $amount . ' p.P.' : $amount . ' gesamt';
+	return $amount . ' ' . fge_price_unit_suffix( $p['unit'] );
 }
 
 // ── Preisspannen für die Landingpages ────────────────────────────────────────

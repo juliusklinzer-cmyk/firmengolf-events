@@ -552,7 +552,7 @@ function fge_get_event_price_display( int $post_id ): string {
 		$p = fge_event_pricing( $post_id );
 		if ( ( $p['gross'] ?? 0 ) > 0 ) {
 			$amount = number_format_i18n( $p['gross'], 0 ) . ' €';
-			return ( ( $p['unit'] ?? '' ) === 'pro Person' ) ? $amount . ' p.P.' : $amount . ' gesamt';
+			return $amount . ' ' . fge_price_unit_suffix( (string) ( $p['unit'] ?? '' ) );
 		}
 	}
 	// Legacy-Fallback (alte Felder).

@@ -57,7 +57,7 @@ $pricing_new    = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $p
 $price_is_netto = false; // steuert den „netto, zzgl. MwSt."-Hinweis
 if ( $pricing_new && $pricing_new['gross'] > 0 ) {
 	$price_main     = number_format( $pricing_new['gross'], 0, ',', '.' ) . ' €';
-	$price_suffix   = $pricing_new['unit'] === 'pro Person' ? ' p.P.' : ' gesamt';
+	$price_suffix   = ' ' . ( function_exists( 'fge_price_unit_suffix' ) ? fge_price_unit_suffix( (string) $pricing_new['unit'] ) : ( $pricing_new['unit'] === 'pro Person' ? 'p.P.' : 'gesamt' ) );
 	$price_is_netto = true;
 } elseif ( $price_label ) {
 	$price_main     = $price_label;
@@ -830,7 +830,7 @@ get_header();
 							<?php echo esc_html( $price_main ); ?>
 							<?php if ( $price_suffix ) : ?><span><?php echo esc_html( $price_suffix ); ?></span><?php endif; ?>
 						</div>
-						<?php if ( $price_is_netto ) : ?><div style="font-size:11.5px;color:var(--ink-500);margin-top:2px;">netto, zzgl. 19&nbsp;% MwSt.</div><?php endif; ?>
+						<?php if ( $price_is_netto ) : ?><div style="font-size:11.5px;color:var(--ink-500);margin-top:2px;"><?php echo esc_html( ( $pricing_new && function_exists( 'fge_price_box_note' ) && '' !== fge_price_box_note( $pricing_new ) ) ? fge_price_box_note( $pricing_new ) . ' · ' : '' ); ?>netto, zzgl. 19&nbsp;% MwSt.</div><?php endif; ?>
 					</div>
 
 					<div class="fg-rail-fields">
@@ -897,7 +897,7 @@ get_header();
 	$mcta_strong    = ( $mcta_has_price && $is_self && 0 !== stripos( $price_main, 'ab ' ) ) ? 'ab ' . $price_main : $price_main;
 	$mcta_unit      = '';
 	if ( $mcta_has_price ) {
-		$mcta_unit = false !== strpos( $price_suffix, 'gesamt' ) ? 'gesamt' : 'pro Person';
+		$mcta_unit = false !== strpos( $price_suffix, 'gesamt' ) ? 'gesamt' : ( false !== strpos( $price_suffix, 'Box' ) ? 'pro Box/Std.' : 'pro Person' );
 	}
 	?>
 	<div class="fg-mcta" id="fg-mcta">

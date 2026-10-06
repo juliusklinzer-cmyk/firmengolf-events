@@ -81,6 +81,7 @@ window.fgeSimMapInit = function () {
 			var html = '<div class="fge-sim-info">'
 				+ '<strong>' + fgeSimEsc( p.name ) + '</strong>'
 				+ '<div class="fge-sim-info-meta">' + fgeSimEsc( p.ort ) + ( p.meta ? ' · ' + fgeSimEsc( p.meta ) : '' ) + ( p.approx ? ' · Lage ungefähr' : '' ) + '</div>'
+				+ ( p.price ? '<div class="fge-sim-info-meta"><strong>' + fgeSimEsc( p.price ) + '</strong></div>' : '' )
 				+ ( p.course ? '<div class="fge-sim-info-tag">Weihnachtsfeier buchbar</div>' : ( p.featured ? '<div class="fge-sim-info-tag">Bei Firmengolf buchbar</div>' : ( p.event ? '<div class="fge-sim-info-tag fge-sim-info-tag--soft">Eventlocation</div>' : '' ) ) )
 				+ '<div class="fge-sim-info-links">'
 				+ ( p.course

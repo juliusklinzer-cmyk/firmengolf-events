@@ -351,7 +351,9 @@ function fge_render_mb_angebot_neu( WP_Post $post ) {
 				&nbsp;Basis:
 				<label><input type="radio" name="fge_price_basis" value="person"   <?php checked( $basis, 'person' ); ?>> pro Person</label>
 				<label style="margin-left:10px;"><input type="radio" name="fge_price_basis" value="pauschal" <?php checked( $basis, 'pauschal' ); ?>> Pauschal</label>
-				<p class="description">Nur bei „Gesamtpreis". Bei „Einzelauflistung" werden die Posten unten summiert.</p>
+				<label style="margin-left:10px;"><input type="radio" name="fge_price_basis" value="box" <?php checked( $basis, 'box' ); ?>> pro Box &amp; Stunde</label>
+				<br><span style="display:inline-block;margin-top:6px;">bei Box: bis <input type="number" min="1" max="20" name="fge_box_persons" value="<?php echo esc_attr( (string) ( get_post_meta( $post->ID, '_fge_box_persons', true ) ?: 6 ) ); ?>" style="width:60px;"> Personen pro Box, mind. <input type="number" min="0.5" max="12" step="0.5" name="fge_box_hours" value="<?php echo esc_attr( (string) ( get_post_meta( $post->ID, '_fge_box_hours', true ) ?: 2 ) ); ?>" style="width:60px;"> Std.</span>
+				<p class="description">Nur bei „Gesamtpreis". Bei „Einzelauflistung" werden die Posten unten summiert. „Pro Box &amp; Stunde“: Preis gilt je Simulatorbox und Stunde; im Angebot wird daraus Boxen × Stunden.</p>
 			</td>
 		</tr>
 		<tr>
@@ -504,7 +506,11 @@ function fge_save_event_fields( int $post_id ) {
 	$amount_gross = (float) str_replace( ',', '.', $amount_raw );
 	update_post_meta( $post_id, '_fge_price_gross', $amount_gross );
 	update_post_meta( $post_id, '_fge_price_amount', $mb_price_div ? fge_gross_to_net( $amount_gross, $mb_price_pid ) : $amount_gross );
-	update_post_meta( $post_id, '_fge_price_basis', in_array( $_POST['fge_price_basis'] ?? '', [ 'person', 'pauschal' ], true ) ? $_POST['fge_price_basis'] : 'person' );
+	update_post_meta( $post_id, '_fge_price_basis', in_array( $_POST['fge_price_basis'] ?? '', [ 'person', 'pauschal', 'box' ], true ) ? $_POST['fge_price_basis'] : 'person' );
+	if ( isset( $_POST['fge_box_persons'] ) ) {
+		update_post_meta( $post_id, '_fge_box_persons', max( 1, min( 20, absint( $_POST['fge_box_persons'] ) ) ) );
+		update_post_meta( $post_id, '_fge_box_hours', max( 0.5, min( 12.0, (float) str_replace( ',', '.', (string) wp_unslash( $_POST['fge_box_hours'] ?? '2' ) ) ) ) );
+	}
 
 	$line_items       = [];
 	$line_items_gross = [];

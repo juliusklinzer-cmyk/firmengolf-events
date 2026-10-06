@@ -986,7 +986,11 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	$amount_gross = fge_parse_de_amount( wp_unslash( $_POST['fge_price_amount'] ?? '' ) );
 	update_post_meta( $post_id, '_fge_price_gross', $amount_gross ); // exaktes Brutto für die Editor-Anzeige
 	update_post_meta( $post_id, '_fge_price_amount', $price_pid > 0 ? fge_gross_to_net( $amount_gross, $price_pid ) : $amount_gross );
-	update_post_meta( $post_id, '_fge_price_basis', in_array( $_POST['fge_price_basis'] ?? '', [ 'person', 'pauschal' ], true ) ? $_POST['fge_price_basis'] : 'person' );
+	update_post_meta( $post_id, '_fge_price_basis', in_array( $_POST['fge_price_basis'] ?? '', [ 'person', 'pauschal', 'box' ], true ) ? $_POST['fge_price_basis'] : 'person' );
+	if ( isset( $_POST['fge_box_persons'] ) ) {
+		update_post_meta( $post_id, '_fge_box_persons', max( 1, min( 20, absint( $_POST['fge_box_persons'] ) ) ) );
+		update_post_meta( $post_id, '_fge_box_hours', max( 0.5, min( 12.0, (float) str_replace( ',', '.', (string) wp_unslash( $_POST['fge_box_hours'] ?? '2' ) ) ) ) );
+	}
 	$pli       = []; // Netto (Downstream)
 	$pli_gross = []; // Brutto (Editor-Rückanzeige)
 	foreach ( preg_split( '/\r?\n/', (string) wp_unslash( $_POST['fge_line_items'] ?? '' ) ) as $line ) {
@@ -4556,6 +4560,11 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 							$pamount = $fmt_gross( $gross_meta );
 						}
 						$pbasis  = (string) ( $saved['fge_price_basis'] ?? '' ) ?: ( $event_id ? ( get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person' ) : 'person' );
+						// Pro Box & Stunde nur für Indoor-Anlagen (und Bestand, der es schon nutzt).
+						$pbox_pid     = fge_portal_get_partner_id();
+						$pbox_allowed = 'box' === $pbasis || ( $pbox_pid > 0 && function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $pbox_pid ) );
+						$pbox_persons = (int) ( $saved['fge_box_persons'] ?? 0 ) ?: ( $event_id ? (int) get_post_meta( $event_id, '_fge_box_persons', true ) : 0 ) ?: 6;
+						$pbox_hours   = (float) ( $saved['fge_box_hours'] ?? 0 ) ?: ( $event_id ? (float) get_post_meta( $event_id, '_fge_box_hours', true ) : 0 ) ?: 2;
 						if ( isset( $saved['fge_line_items'] ) ) {
 							$pitems = [];
 							foreach ( preg_split( '/\r?\n/', (string) $saved['fge_line_items'] ) as $pi_line ) {
@@ -4597,9 +4606,22 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 									<div class="fp-price-modes" style="margin-bottom:0;">
 										<button type="button" class="fp-price-mode<?php echo 'person' === $pbasis ? ' on' : ''; ?>" data-fp-basis="person">pro Person</button>
 										<button type="button" class="fp-price-mode<?php echo 'pauschal' === $pbasis ? ' on' : ''; ?>" data-fp-basis="pauschal">Pauschal</button>
+										<?php if ( $pbox_allowed ) : ?><button type="button" class="fp-price-mode<?php echo 'box' === $pbasis ? ' on' : ''; ?>" data-fp-basis="box">pro Box &amp; Std.</button><?php endif; ?>
 									</div>
 								</div>
 							</div>
+							<?php if ( $pbox_allowed ) : ?>
+							<div class="fg-form-row fg-form-row--2col" id="fp-box-fields" style="<?php echo 'box' === $pbasis ? '' : 'display:none;'; ?>">
+								<div>
+									<label class="fg-form-label" for="fge_box_persons">Bis wie viele Personen pro Box?</label>
+									<input class="fg-form-input" type="number" min="1" max="20" id="fge_box_persons" name="fge_box_persons" value="<?php echo esc_attr( (string) $pbox_persons ); ?>">
+								</div>
+								<div>
+									<label class="fg-form-label" for="fge_box_hours">Mindestbuchung (Stunden)</label>
+									<input class="fg-form-input" type="number" min="0.5" max="12" step="0.5" id="fge_box_hours" name="fge_box_hours" value="<?php echo esc_attr( (string) $pbox_hours ); ?>">
+								</div>
+							</div>
+							<?php endif; ?>
 						</div>
 
 						<div id="fp-price-einzel" style="<?php echo 'einzel' === $pmode ? '' : 'display:none;'; ?>">
@@ -5139,7 +5161,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					var paxIn  = byId('fge_participants_max');
 					var paxMax = paxIn ? parseInt(paxIn.value, 10) || 0 : 0;
 					var einzel = modeIn && modeIn.value === 'einzel';
-					var net, perPerson, netLabel;
+					var net, perPerson, netLabel, perBox = false;
 					if (einzel) {
 						var su = itemSums();
 						perPerson = su.pp > 0;
@@ -5151,19 +5173,21 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						if (perPerson && su.flat > 0 && !paxMax) { netLabel += ', bitte max. Teilnehmer angeben'; }
 					} else {
 						perPerson = basisIn && basisIn.value === 'person';
+						perBox    = basisIn && basisIn.value === 'box';
 						net = ( amount ? parseNum(amount.value) : 0 ) / divisor; // Brutto → Netto
-						netLabel = fmt(net) + (perPerson ? ' pro Person' : '');
+						netLabel = fmt(net) + (perPerson ? ' pro Person' : (perBox ? ' pro Box/Std.' : ''));
 					}
 					// Kundenpreis geglättet wie in PHP (fge_price_smooth, event-pricing.php):
 					// aufrunden auf Endziffer 4 oder 9 (5er-Raster p.P., 50er-Raster Gesamt,
 					// um eins nach unten versetzt). Zwilling identisch zur PHP-Funktion halten!
-					var step  = perPerson ? 5 : 50;
+					var step  = (perPerson || perBox) ? 5 : 50;
 					var total = net > 0 ? Math.ceil((net * (1 + markup / 100) + 1) / step) * step - 1 : 0;
+					var unitTxt = perPerson ? ' pro Person' : (perBox ? ' pro Box/Std.' : '');
 					byId('fp-sum-net').textContent   = netLabel;
-					byId('fp-sum-fee').textContent   = fmt(total - net) + (perPerson ? ' pro Person' : '');
-					byId('fp-sum-total').textContent = (einzel && perPerson ? 'ab ' : '') + fmt(total) + (perPerson ? ' pro Person' : '') + (einzel && perPerson && paxMax ? ' (bei ' + paxMax + ' Personen)' : '');
+					byId('fp-sum-fee').textContent   = fmt(total - net) + unitTxt;
+					byId('fp-sum-total').textContent = (einzel && perPerson ? 'ab ' : '') + fmt(total) + unitTxt + (einzel && perPerson && paxMax ? ' (bei ' + paxMax + ' Personen)' : '');
 					var pv = byId('fp-pv-price');
-					if (pv) { pv.textContent = net > 0 ? 'ab ' + fmt(total) + (perPerson ? ' /p.P.' : '') : 'Preis'; }
+					if (pv) { pv.textContent = net > 0 ? 'ab ' + fmt(total) + (perPerson ? ' /p.P.' : (perBox ? ' /Box·Std.' : '')) : 'Preis'; }
 				}
 				var paxMaxIn = byId('fge_participants_max');
 				if (paxMaxIn) { paxMaxIn.addEventListener('input', recalc); }
@@ -5180,6 +5204,8 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					b.addEventListener('click', function () {
 						if (basisIn) { basisIn.value = b.dataset.fpBasis; }
 						document.querySelectorAll('[data-fp-basis]').forEach(function (x) { x.classList.toggle('on', x === b); });
+						var bf = byId('fp-box-fields');
+						if (bf) { bf.style.display = b.dataset.fpBasis === 'box' ? '' : 'none'; }
 						recalc();
 					});
 				});

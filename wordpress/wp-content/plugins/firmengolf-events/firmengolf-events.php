@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.295' );
+define( 'FGE_VERSION', '1.9.296' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -91,6 +91,7 @@ require_once FGE_DIR . 'includes/cc-venue-details.php';
 require_once FGE_DIR . 'includes/cc-positions.php';
 require_once FGE_DIR . 'includes/cc-actions.php';
 require_once FGE_DIR . 'includes/seed-fg-26-166.php';
+require_once FGE_DIR . 'includes/seed-indoor-2026-10.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once FGE_DIR . 'includes/cli-migrations.php';
