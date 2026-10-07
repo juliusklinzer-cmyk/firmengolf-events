@@ -75,7 +75,7 @@ function fge_mail_registry(): array {
 			'subject'   => 'Passt das bei euch? Firmenanfrage',
 			'auto'      => false,
 			'trigger'   => 'Knopf in der Platz-Pipeline',
-			'content'   => [ 'Wunschtermine', 'Gruppe mit Personenzahl und Niveau', 'Liste der Positionen mit Preisfrage', 'bei uns notierte Vorpreise' ],
+			'content'   => [ 'Was angefragt ist: Beschreibung, Dauer, Paketinhalt, Ablauf', 'Gruppe mit Personenzahl, Niveau und Essenswünschen', 'Wunschtermin oder Wunschtermine', 'Liste der Positionen mit Preisfrage', 'bei uns notierte Vorpreise' ],
 		],
 		'venue_decline' => [
 			'label'     => 'Absage an einen nicht gewählten Platz',

@@ -29,6 +29,54 @@ function fge_venue_mail_facts( int $req ): array {
 	];
 }
 
+/**
+ * Was genau angefragt ist, aus dem Event (meist ein Platzhalter): Beschreibung,
+ * Dauer, Paketinhalt und Ablauf. Ohne das weiß der Platz nicht, was ein
+ * „Teamevent" bei uns heißt (Julius, 07.10.2026). Ablauf und Paketinhalt nehmen
+ * zuerst, was im Angebot angepasst wurde, sonst das Event.
+ */
+function fge_venue_program_html( int $req ): string {
+	$event_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+	if ( $event_id <= 0 || 'firmengolf_event' !== get_post_type( $event_id ) ) {
+		return '';
+	}
+	$split = static fn( string $t ): array => array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', $t ) ) ) );
+
+	$desc     = trim( (string) get_post_meta( $event_id, '_fge_card_description', true ) );
+	$duration = trim( (string) get_post_meta( $event_id, '_fge_duration', true ) );
+	$includes = $split( (string) get_post_meta( $req, '_fge_offer_includes', true ) );
+	if ( ! $includes ) {
+		$raw      = get_post_meta( $event_id, '_fge_event_includes', true );
+		$includes = is_array( $raw ) ? array_values( array_filter( array_map( 'trim', array_map( 'strval', $raw ) ) ) ) : $split( (string) $raw );
+	}
+	// Unsere eigene Leistung ist für den Platz kein Programmpunkt.
+	$includes = array_values( array_filter( $includes, static fn( $i ) => false === mb_stripos( $i, 'Organisation' ) ) );
+	$flow     = function_exists( 'fge_offer_schedule_prefill' ) ? $split( fge_offer_schedule_prefill( $req ) ) : [];
+
+	$html = '<p style="margin:0 0 4px;font-weight:600;">Angefragt ist: ' . esc_html( get_the_title( $event_id ) ) . '</p>';
+	if ( '' !== $desc ) {
+		$html .= '<p style="margin:0 0 8px;">' . esc_html( $desc ) . '</p>';
+	}
+	if ( '' !== $duration ) {
+		$html .= '<p style="margin:0 0 8px;"><strong>Dauer:</strong> ' . esc_html( $duration ) . '</p>';
+	}
+	if ( $includes ) {
+		$html .= '<p style="margin:0 0 4px;"><strong>Im Paket enthalten</strong></p><ul style="margin:0 0 8px;padding-left:20px;">';
+		foreach ( $includes as $i ) {
+			$html .= '<li style="margin-bottom:2px;">' . esc_html( $i ) . '</li>';
+		}
+		$html .= '</ul>';
+	}
+	if ( $flow ) {
+		$html .= '<p style="margin:0 0 4px;"><strong>Ablauf</strong></p><ol style="margin:0 0 8px;padding-left:20px;">';
+		foreach ( $flow as $step ) {
+			$html .= '<li style="margin-bottom:2px;">' . esc_html( $step ) . '</li>';
+		}
+		$html .= '</ol>';
+	}
+	return '<div style="margin:0 0 16px;padding:12px 14px;background:#F5F6F8;border-radius:10px;">' . $html . '</div>';
+}
+
 /** Kontaktadresse eines Platzes für die Pipeline. */
 function fge_venue_partner_email( int $partner_id ): string {
 	return function_exists( 'fge_cc_partner_email' ) ? fge_cc_partner_email( $partner_id ) : '';
@@ -86,18 +134,27 @@ function fge_venue_send_request( int $req, int $venue_id ): bool {
 	], static fn( $s ) => '' !== $s );
 
 	$rows = $rowfn( 'Gruppe', esc_html( $group ) )
-		. $rowfn( 'Anlass', esc_html( implode( ', ', $anlass ) ) );
+		. $rowfn( 'Anlass', esc_html( implode( ', ', $anlass ) ) )
+		. $rowfn( 'Essenswünsche', esc_html( trim( (string) get_post_meta( $req, '_fge_catering_notes', true ) ) ) );
+
+	$program_html = fge_venue_program_html( $req );
 
 	// Wunschtermine nummeriert, damit der Platz je Termin antworten kann und
 	// die Antwort in der Pipeline dem richtigen Index zugeordnet wird.
 	$labels = function_exists( 'fge_request_wish_date_labels' ) ? fge_request_wish_date_labels( $req ) : [];
 	$dates_html = '';
 	if ( $labels ) {
-		$dates_html = '<p style="margin:0 0 4px;font-weight:600;">Wunschtermine</p><ol style="margin:0 0 8px;padding-left:20px;">';
-		foreach ( $labels as $idx => $label ) {
-			$dates_html .= '<li value="' . (int) $idx . '" style="margin-bottom:4px;">' . esc_html( (string) $label ) . '</li>';
+		if ( 1 === count( $labels ) ) {
+			// Nur ein Wunschtermin: keine Liste, kein „je Termin" (Julius, 07.10.2026).
+			$dates_html = '<p style="margin:0 0 4px;font-weight:600;">Wunschtermin</p><p style="margin:0 0 8px;">' . esc_html( (string) reset( $labels ) ) . '</p>'
+				. '<p style="margin:0 0 16px;">Sagt uns bitte, ob der Termin bei euch geht, und nennt gern einen Alternativtermin, falls nicht.</p>';
+		} else {
+			$dates_html = '<p style="margin:0 0 4px;font-weight:600;">Wunschtermine</p><ol style="margin:0 0 8px;padding-left:20px;">';
+			foreach ( $labels as $idx => $label ) {
+				$dates_html .= '<li value="' . (int) $idx . '" style="margin-bottom:4px;">' . esc_html( (string) $label ) . '</li>';
+			}
+			$dates_html .= '</ol><p style="margin:0 0 16px;">Sagt uns bitte je Termin, ob er bei euch geht, und nennt gern einen Alternativtermin, falls keiner passt.</p>';
 		}
-		$dates_html .= '</ol><p style="margin:0 0 16px;">Sagt uns bitte je Termin, ob er bei euch geht, und nennt gern einen Alternativtermin, falls keiner passt.</p>';
 	} else {
 		$dates_html = '<p style="margin:0 0 16px;">Terminlich ist der Kunde flexibel, ein Vorschlag von euch reicht.</p>';
 	}
@@ -115,11 +172,13 @@ function fge_venue_send_request( int $req, int $venue_id ): bool {
 	$subject = 'Passt das bei euch? Firmenanfrage ' . ( $f['dates'] ? 'für ' . $f['dates'][0] : '' ) . ' (' . $f['ref'] . ')';
 	$content = '
 		<p style="margin:0 0 16px;">' . esc_html( fge_venue_greeting( $partner_id ) ) . '</p>
-		<p style="margin:0 0 16px;">wir haben eine Firmenanfrage und schauen gerade, welcher Platz am besten passt. Hier die Eckdaten:</p>
+		<p style="margin:0 0 16px;">wir haben eine Firmenanfrage und schauen gerade, welcher Platz am besten passt.</p>
+		' . $program_html . '
+		<p style="margin:0 0 4px;font-weight:600;">Eckdaten</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
 		' . $dates_html . '
 		' . ( '' !== $list ? '<p style="margin:0 0 4px;font-weight:600;">Dazu bräuchten wir je einen Preis</p><ul style="margin:0 0 16px;padding-left:20px;">' . $list . '</ul>' : '' ) . '
-		<p style="margin:0 0 16px;">Eine kurze Antwort auf diese Mail genügt: welche Termine gehen, und was kostet es bei euch? Wenn eine der Positionen bei euch nicht geht, schreib es einfach dazu.</p>
+		<p style="margin:0 0 16px;">Eine kurze Antwort auf diese Mail genügt: ' . ( count( $labels ) === 1 ? 'geht der Termin' : 'welche Termine gehen' ) . ', und was kostet es bei euch? Wenn eine der Positionen bei euch nicht geht, schreib es einfach dazu.</p>
 		<p style="margin:0;">Danke dir und sportliche Grüße<br>' . esc_html( (string) ( $co['managing_director'] ?? 'Firmengolf' ) ) . '</p>
 	';
 
