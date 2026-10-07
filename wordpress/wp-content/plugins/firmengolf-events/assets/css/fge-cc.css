@@ -1276,7 +1276,7 @@ body.cc--plain { background: var(--cc-bg); }
 .cc-nearby-pills { display: flex; gap: 4px; flex-wrap: wrap; }
 .cc-nearby-act { display: flex; justify-content: flex-end; font-size: 12.5px; }
 .cc-nearby-act .cc-actform { margin: 0; }
-.cc-nearby--search .cc-nearby-row { grid-template-columns: minmax(0, 1fr) 0 auto auto; gap: 6px 8px; }
+.cc-nearby--search .cc-nearby-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 12px; }
 .cc-nearby--search .cc-nearby-dist { display: none; }
 .cc-contact-edit .cc-form { margin-top: 10px; }
 
