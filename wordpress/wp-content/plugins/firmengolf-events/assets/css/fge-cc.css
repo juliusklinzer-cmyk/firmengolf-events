@@ -1276,13 +1276,17 @@ body.cc--plain { background: var(--cc-bg); }
 .cc-nearby-pills { display: flex; gap: 4px; flex-wrap: wrap; }
 .cc-nearby-act { display: flex; justify-content: flex-end; font-size: 12.5px; }
 .cc-nearby-act .cc-actform { margin: 0; }
-.cc-nearby--search .cc-nearby-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 12px; }
-.cc-nearby--search .cc-nearby-dist { display: none; }
+/* Suche: Kilometer direkt vor dem Knopf, damit sie bündig stehen, egal wie viele Pillen. */
+.cc-nearby--search .cc-nearby-row { grid-template-columns: minmax(0, 1fr) auto 56px auto; }
+.cc-nearby--search .cc-nearby-pills { order: 1; justify-content: flex-end; }
+.cc-nearby--search .cc-nearby-dist { order: 2; }
+.cc-nearby--search .cc-nearby-act { order: 3; }
 .cc-contact-edit .cc-form { margin-top: 10px; }
 
 @media (max-width: 900px) {
 	.cc-nearby-row,
 	.cc-nearby--search .cc-nearby-row { grid-template-columns: minmax(0, 1fr) auto; }
+	.cc-nearby--search .cc-nearby-pills { justify-content: flex-start; }
 	.cc-nearby-main { grid-column: 1; }
 	.cc-nearby-dist { grid-column: 2; grid-row: 1; }
 	.cc-nearby-pills { grid-column: 1; grid-row: 2; }

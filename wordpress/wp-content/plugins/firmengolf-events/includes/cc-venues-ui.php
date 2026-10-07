@@ -528,6 +528,23 @@ function fge_cc_venue_add_form( int $req, array $venues ): void {
 		return;
 	}
 
+	// Entfernung vom selben Standort wie die Nähe-Liste; Treffer ohne Koordinaten
+	// nehmen den PLZ-Mittelpunkt, ganz ohne Ort landen sie am Ende.
+	$anchor = function_exists( 'fge_request_geo_anchor' ) ? fge_request_geo_anchor( $req ) : [ 'source' => 'none' ];
+	if ( 'none' !== ( $anchor['source'] ?? 'none' ) && function_exists( 'fge_geo_distance' ) ) {
+		foreach ( $hits as &$h ) {
+			$lat = (float) get_post_meta( (int) $h['id'], '_fge_latitude', true );
+			$lng = (float) get_post_meta( (int) $h['id'], '_fge_longitude', true );
+			if ( ( 0.0 === $lat || 0.0 === $lng ) && '' !== (string) $h['plz'] && function_exists( 'fge_geo_lookup_plz' ) ) {
+				$geo = fge_geo_lookup_plz( (string) $h['plz'] );
+				[ $lat, $lng ] = $geo ? [ (float) $geo[0], (float) $geo[1] ] : [ 0.0, 0.0 ];
+			}
+			$h['dist'] = ( 0.0 !== $lat && 0.0 !== $lng ) ? fge_geo_distance( (float) $anchor['lat'], (float) $anchor['lng'], $lat, $lng ) : -1.0;
+		}
+		unset( $h );
+		usort( $hits, static fn( $a, $b ) => ( $a['dist'] < 0 ? INF : $a['dist'] ) <=> ( $b['dist'] < 0 ? INF : $b['dist'] ) );
+	}
+
 	echo '<ul class="cc-nearby cc-nearby--search">';
 	foreach ( $hits as $h ) {
 		$pid  = (int) $h['id'];
@@ -546,7 +563,8 @@ function fge_cc_venue_add_form( int $req, array $venues ): void {
 			echo '<span class="cc-muted">' . esc_html( $hint ) . '</span>';
 		}
 		echo '</div>';
-		echo '<span class="cc-nearby-dist"></span>';
+		$dist = (float) ( $h['dist'] ?? -1 );
+		echo '<span class="cc-nearby-dist">' . ( $dist >= 0 ? esc_html( number_format_i18n( round( $dist ) ) . ' km' ) : '' ) . '</span>';
 		echo '<span class="cc-nearby-pills">';
 		echo fge_cc_pill( $is_s ? 'Stammdaten' : 'Partner', $is_s ? 'neutral' : 'good' ); // phpcs:ignore WordPress.Security.EscapeOutput
 		if ( '' === $mail ) {
