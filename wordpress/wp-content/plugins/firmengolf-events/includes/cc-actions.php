@@ -638,7 +638,7 @@ add_action( 'admin_post_fge_cc_partner_contact', static function (): void {
 		if ( $req > 0 ) {
 			fge_cc_redirect( $req, $msg );
 		}
-		wp_safe_redirect( fge_cc_url( 'plaetze', [ 'msg' => $msg ] ) );
+		wp_safe_redirect( fge_cc_url( 'verzeichnis', [ 'msg' => $msg ] ) );
 		exit;
 	};
 

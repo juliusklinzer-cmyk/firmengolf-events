@@ -103,7 +103,7 @@ def scenario_accept():
     ms = mails(clear=True)
     check(any('kunde-regi' in m['to'] and 'Ablauf' in m['subject'] for m in ms), 'Ablauf-Info an den Kunden nach Platzdetails')
     h = get(f'/control/anfragen/?req={req}').text
-    check('Vorbereitung' in text(h)[:600], 'Cockpit in Phase Vorbereitung')
+    check('Vorbereitung' in main_text(h)[:600], 'Cockpit in Phase Vorbereitung')
     return req
 
 def scenario_decline():
@@ -122,7 +122,7 @@ def scenario_decline():
     ms = mails(clear=True)
     check(sum(1 for m in ms if 'Termin wird frei' in m['subject']) == 2, 'Freigabe an beide Plätze nach Ablehnung')
     h = get(f'/control/anfragen/?req={req}').text
-    check('Abgelehnt' in text(h)[:400], 'Cockpit zeigt Abgelehnt')
+    check('Abgelehnt' in main_text(h)[:400], 'Cockpit zeigt Abgelehnt')
     return req
 
 def cleanup(reqs):

@@ -146,13 +146,13 @@ function fge_cc_page_partners(): void {
 	if ( $no_mail > 0 ) {
 		echo '<p class="cc-msg cc-msg--err">' . (int) $no_mail . ' ' . ( 1 === $no_mail ? 'Partner hat' : 'Partner haben' )
 			. ' keine Kontaktmail. Diese Plätze bekommen weder die Auftragsbestätigung noch die Vortags-Info. '
-			. '<a href="' . esc_url( fge_cc_url( 'plaetze', [ 'filter' => 'ohne_mail' ] ) ) . '">Nur diese zeigen</a></p>';
+			. '<a href="' . esc_url( fge_cc_url( 'verzeichnis', [ 'filter' => 'ohne_mail' ] ) ) . '">Nur diese zeigen</a></p>';
 	}
 
 	echo '<div class="cc-filters">';
-	echo '<a class="cc-chip' . ( '' === $only ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'plaetze' ) ) . '">Partner ' . (int) count( $partner_ids ) . '</a>';
-	echo '<a class="cc-chip' . ( 'ohne_mail' === $only ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'plaetze', [ 'filter' => 'ohne_mail' ] ) ) . '">Ohne Kontaktmail</a>';
-	echo '<a class="cc-chip' . ( $show_stamm ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'plaetze', [ 'filter' => 'stammdaten' ] ) ) . '">Stammdaten ' . (int) count( $stamm_ids ) . '</a>';
+	echo '<a class="cc-chip' . ( '' === $only ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'verzeichnis' ) ) . '">Partner ' . (int) count( $partner_ids ) . '</a>';
+	echo '<a class="cc-chip' . ( 'ohne_mail' === $only ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'verzeichnis', [ 'filter' => 'ohne_mail' ] ) ) . '">Ohne Kontaktmail</a>';
+	echo '<a class="cc-chip' . ( $show_stamm ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'verzeichnis', [ 'filter' => 'stammdaten' ] ) ) . '">Stammdaten ' . (int) count( $stamm_ids ) . '</a>';
 	echo '</div>';
 	if ( $show_stamm && '' === $search ) {
 		echo '<p class="cc-muted">Stammdaten sind alle Golfplätze und Simulatoren aus dem Verzeichnis, keine Partner. Sie lassen sich in jeder Anfrage anfragen. Mit der Suche oben eingrenzen, die Liste zeigt sonst alle.</p>';
@@ -179,7 +179,8 @@ function fge_cc_partner_row( array $r ): void {
 	if ( '' !== $r['city'] ) {
 		echo '<span class="cc-muted">' . esc_html( $r['city'] ) . '</span>';
 	}
-	echo fge_cc_pill( $r['status'] ?: 'ohne Status', $tone ); // phpcs:ignore WordPress.Security.EscapeOutput
+	$labels = [ 'stammdaten' => 'Stammdaten', 'in_pruefung' => 'In Prüfung', 'rueckfragen' => 'Rückfragen', 'aktiv' => 'Aktiv', 'pausiert' => 'Pausiert', 'abgelehnt' => 'Abgelehnt' ];
+	echo fge_cc_pill( $labels[ $r['status'] ] ?? ( $r['status'] ?: 'ohne Status' ), $tone ); // phpcs:ignore WordPress.Security.EscapeOutput
 	echo '<span class="cc-dir-meta">' . (int) $r['events'] . ' Events · ' . (int) $r['requests'] . ' Anfragen</span>';
 	if ( '' !== $r['price'] ) {
 		echo '<span class="cc-dir-price">' . esc_html( $r['price'] ) . '</span>';

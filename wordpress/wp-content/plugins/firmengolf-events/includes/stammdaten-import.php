@@ -441,7 +441,7 @@ add_action( 'admin_post_fge_cc_stammdaten_tick', static function (): void {
 			break;
 		}
 	}
-	wp_safe_redirect( function_exists( 'fge_cc_url' ) ? fge_cc_url( 'plaetze' ) : admin_url() );
+	wp_safe_redirect( function_exists( 'fge_cc_url' ) ? fge_cc_url( 'verzeichnis' ) : admin_url() );
 	exit;
 } );
 

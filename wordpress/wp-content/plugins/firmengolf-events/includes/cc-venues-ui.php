@@ -16,13 +16,47 @@ function fge_cc_venues_panel( int $req ): void {
 	$venues = function_exists( 'fge_venues_get' ) ? fge_venues_get( $req ) : [];
 	$chosen = (int) get_post_meta( $req, '_fge_assigned_partner_id', true );
 
-	echo '<section class="cc-card"><h2>Angefragte Plätze</h2>';
+	echo '<section class="cc-card"><h2>Plätze</h2>';
 
 	if ( ! $venues ) {
 		echo '<p class="cc-muted">Noch kein Platz in der Liste. Nimm die Plätze auf, die für diese Anfrage in Frage kommen, dann stehen ihre Preise nebeneinander.</p>';
 	}
-	foreach ( $venues as $v ) {
-		fge_cc_venue_row( $req, $v );
+	// Als Tafel nach Stand, wie im Design vom 07.10.2026. Abgesagte liegen
+	// darunter, damit die laufenden Plätze vorne stehen.
+	if ( $venues ) {
+		$cols = [
+			'idee'      => [ 'Vorschläge', 'neutral', [] ],
+			'angefragt' => [ 'Angefragt', 'warn', [] ],
+			'zugesagt'  => [ 'Zugesagt', 'good', [] ],
+		];
+		$off = [];
+		foreach ( $venues as $v ) {
+			$st = (string) $v['status'];
+			if ( 'abgesagt' === $st ) {
+				$off[] = $v;
+			} else {
+				$cols[ 'gewaehlt' === $st ? 'zugesagt' : ( isset( $cols[ $st ] ) ? $st : 'idee' ) ][2][] = $v;
+			}
+		}
+		echo '<div class="cc-board">';
+		foreach ( $cols as $key => [ $label, $tone, $list ] ) {
+			echo '<div class="cc-board-col cc-board-col--' . esc_attr( $tone ) . '"><p class="cc-board-head"><span class="cc-dot"></span>' . esc_html( $label ) . '<span class="cc-count">' . (int) count( $list ) . '</span></p>';
+			if ( ! $list ) {
+				echo '<p class="cc-muted cc-board-empty">Keine.</p>';
+			}
+			foreach ( $list as $v ) {
+				fge_cc_venue_row( $req, $v );
+			}
+			echo '</div>';
+		}
+		echo '</div>';
+		if ( $off ) {
+			echo '<details class="cc-details"><summary>Abgesagt (' . (int) count( $off ) . ')</summary>';
+			foreach ( $off as $v ) {
+				fge_cc_venue_row( $req, $v );
+			}
+			echo '</details>';
+		}
 	}
 
 	// Nähe-Liste und Suche stören, sobald die Plätze stehen: ab drei Plätzen eingeklappt.

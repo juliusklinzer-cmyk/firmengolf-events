@@ -23,6 +23,11 @@ def get(path, save=None):
         open(os.path.join(OUT, save), 'w', encoding='utf-8').write(r.text)
     return r
 
+def main_text(h):
+    """Nur der Inhaltsbereich des Control Centers, ohne Seitenleiste."""
+    i = h.find('id="cc-main"')
+    return text(h[i:] if i >= 0 else h)
+
 def text(h):
     h = re.sub(r'<(script|style).*?</\1>', ' ', h, flags=re.S)
     t = re.sub(r'<br\s*/?>', '\n', h)
