@@ -74,6 +74,8 @@ function fge_venue_program_html( int $req ): string {
 		}
 		$html .= '</ol>';
 	}
+	// Platzhalter sind Orientierung, kein Pflichtenheft (Julius, 07.10.2026).
+	$html .= '<p style="margin:8px 0 0;color:#4B5054;">Das ist unsere Orientierung, wie so ein Tag aussehen kann. Es muss bei euch nicht genau so laufen: Sagt uns einfach, was ihr davon anbietet und was ihr anders machen würdet.</p>';
 	return '<div style="margin:0 0 16px;padding:12px 14px;background:#F5F6F8;border-radius:10px;">' . $html . '</div>';
 }
 
