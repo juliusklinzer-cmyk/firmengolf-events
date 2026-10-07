@@ -730,7 +730,7 @@ function fge_partner_booking_confirmation( int $req ): bool {
 	$v       = function_exists( 'fge_day_values' ) ? fge_day_values( $req ) : [];
 	$date    = (string) ( $snap['date'] ?? '' );
 	$start   = (string) ( $v['day_start_time'] ?? '' );
-	$pax     = (int) ( $snap['participants'] ?? 0 );
+	$pax     = function_exists( 'fge_request_pax_current' ) ? fge_request_pax_current( $req ) : (int) ( $snap['participants'] ?? 0 );
 	$cust    = trim( $data['first_name'] . ' ' . $data['last_name'] );
 	$cust_c  = trim( $cust . ( '' !== $data['phone'] ? ', ' . $data['phone'] : '' ), ', ' );
 	$company = $data['company_name'] ?: 'unser Kunde';
@@ -747,20 +747,14 @@ function fge_partner_booking_confirmation( int $req ): bool {
 	// Shuttle) gehören nicht in seine Auftragsbestätigung (Julius, 28.09.2026).
 	// Ältere Snapshots ohne Organisator-Feld zählen wie bisher als Platz-Leistung.
 	$booked = array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) );
-	$sel    = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
 	$xs_all = function_exists( 'fge_extra_services' ) ? fge_extra_services( $req ) : [];
-	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
-		if ( ! in_array( (int) ( $x['src'] ?? -1 ), $sel, true ) || 'platz' !== (string) ( $x['organizer'] ?? 'platz' ) ) {
+	foreach ( ( function_exists( 'fge_booked_extras' ) ? fge_booked_extras( $req ) : [] ) as $x ) {
+		if ( 'platz' !== $x['organizer'] ) {
 			continue;
 		}
-		$line = (string) ( $x['label'] ?? '' );
+		$line = $x['label'];
 		foreach ( $xs_all as $it ) {
-			if ( (int) $it['id'] !== (int) ( $x['src'] ?? -1 ) ) {
-				continue;
-			}
-			if ( function_exists( 'fge_xs_is_consumption' ) && fge_xs_is_consumption( $it ) ) {
-				$line .= ' (nach Verbrauch, Abrechnung im Nachgang)';
-			} elseif ( (float) $it['cost'] > 0 ) {
+			if ( (int) $it['id'] === $x['src'] && ! $x['consumption'] && (float) $it['cost'] > 0 ) {
 				$line .= ' (vereinbart: ' . number_format_i18n( (float) $it['cost'], 2 ) . ' € ' . ( ! empty( $it['cost_gross'] ) ? 'brutto' : 'netto' ) . ( 'person' === $it['basis'] ? ' p.P.' : ' pauschal' ) . ')';
 			}
 		}
@@ -895,7 +889,7 @@ function fge_xs_mail_facts( int $req ): array {
 		'event'    => (string) ( $snap['event_title'] ?? '' ),
 		'date'     => (string) ( $snap['date'] ?? '' ),
 		'location' => (string) ( $snap['location'] ?? '' ),
-		'pax'      => (int) ( $snap['participants'] ?? 0 ),
+		'pax'      => function_exists( 'fge_request_pax_current' ) ? fge_request_pax_current( $req ) : (int) ( $snap['participants'] ?? 0 ),
 	];
 }
 

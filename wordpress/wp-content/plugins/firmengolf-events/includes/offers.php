@@ -309,6 +309,68 @@ function fge_offer_selected_extras( int $req ): array {
 }
 
 /**
+ * Aktuelle Teilnehmerzahl für Mails nach der Buchung (Julius, 07.10.2026, FG-26-166:
+ * 7 gebucht, mit allen auf 6 geeinigt). Feld der Anfrage gewinnt, sonst der Angebotsstand.
+ */
+function fge_request_pax_current( int $req ): int {
+	$pax = (int) get_post_meta( $req, '_fge_expected_participants', true );
+	if ( $pax > 0 ) {
+		return $pax;
+	}
+	$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
+	return (int) ( $snap['participants'] ?? 0 );
+}
+
+/**
+ * Gebuchte Zusatzleistungen für Buchungs- und Vortagsmails: im Angebot gewählte
+ * Positionen plus Positionen, die nach der Annahme ergänzt wurden (FG-26-166:
+ * Grillabend fehlte in der Vortags-Info). Mit Beschreibung („Abendessen: Grillabend …“),
+ * ohne Verkaufspreise.
+ *
+ * @return array<int,array{label:string,organizer:string,consumption:bool,src:int}>
+ */
+function fge_booked_extras( int $req ): array {
+	$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
+	$sel  = fge_offer_selected_extras( $req );
+	$all  = function_exists( 'fge_extra_services' ) ? fge_extra_services( $req ) : [];
+	$by   = [];
+	foreach ( $all as $it ) {
+		$by[ (int) $it['id'] ] = $it;
+	}
+	$out  = [];
+	$seen = [];
+	$add  = static function ( array $x, ?array $it ) use ( &$out ): void {
+		$label = trim( (string) ( $it['label'] ?? $x['label'] ?? '' ) );
+		$note  = trim( (string) ( $it['note'] ?? $x['note'] ?? '' ) );
+		$cons  = $it ? ( function_exists( 'fge_xs_is_consumption' ) && fge_xs_is_consumption( $it ) ) : ( 'verbrauch' === (string) ( $x['basis'] ?? '' ) );
+		if ( '' !== $note && false === mb_stripos( $label, $note ) ) {
+			$label .= ': ' . $note;
+		}
+		if ( $cons && false === mb_stripos( $label, 'verbrauch' ) ) {
+			$label .= ' (nach Verbrauch)';
+		}
+		$out[] = [ 'label' => $label, 'organizer' => (string) ( $it['organizer'] ?? $x['organizer'] ?? 'platz' ), 'consumption' => $cons, 'src' => (int) ( $x['src'] ?? $it['id'] ?? 0 ) ];
+	};
+	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
+		$src           = (int) ( $x['src'] ?? -1 );
+		$seen[ $src ]  = true;
+		if ( in_array( $src, $sel, true ) ) {
+			$add( $x, $by[ $src ] ?? null );
+		}
+	}
+	// Nach der Annahme ergänzt (nicht im Angebot), Status „steht im Angebot“: gilt als vereinbart.
+	if ( 'accepted' === (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
+		foreach ( $all as $it ) {
+			if ( isset( $seen[ (int) $it['id'] ] ) || 'nicht_moeglich' === (string) ( $it['status'] ?? '' ) || '' === trim( (string) $it['label'] ) ) {
+				continue;
+			}
+			$add( [], $it );
+		}
+	}
+	return $out;
+}
+
+/**
  * Ist die Anfrage bepreist (Eventpreis, Preis-Override oder bepreiste Positionen)?
  * Ohne Preis darf kein Angebot raus, sonst wäre „Auf Anfrage" verbindlich buchbar
  * (Audit 18.09.2026: „Angebot jetzt senden" umging das Gate).

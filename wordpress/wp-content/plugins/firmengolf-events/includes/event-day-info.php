@@ -259,7 +259,7 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 	$Whend = $is_today ? 'Heute' : 'Morgen';
 	$date  = (string) ( $snap['date'] ?? '' );
 	$title = (string) ( $snap['event_title'] ?? 'euer Event' );
-	$pax   = (int) ( $snap['participants'] ?? 0 );
+	$pax   = function_exists( 'fge_request_pax_current' ) ? fge_request_pax_current( $req ) : (int) ( $snap['participants'] ?? 0 );
 	$loc   = (string) ( $snap['location'] ?? '' );
 	$partner_id = (int) $data['partner_id'];
 
@@ -271,12 +271,10 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 	}
 
 	// Gebuchte Leistungen: Leistungsliste plus gewählte Zusatzleistungen.
-	$booked = array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) );
-	$sel    = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
-	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
-		if ( in_array( (int) ( $x['src'] ?? -1 ), $sel, true ) ) {
-			$booked[] = (string) ( $x['label'] ?? '' ) . ( 'verbrauch' === (string) ( $x['basis'] ?? '' ) ? ' (nach Verbrauch)' : '' );
-		}
+	$booked   = array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) );
+	$xs_booked = function_exists( 'fge_booked_extras' ) ? fge_booked_extras( $req ) : [];
+	foreach ( $xs_booked as $x ) {
+		$booked[] = $x['label'];
 	}
 	$booked_html = '';
 	foreach ( $booked as $b ) {
@@ -289,15 +287,11 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 	foreach ( array_values( array_filter( array_map( 'strval', (array) ( $snap['includes'] ?? [] ) ) ) ) as $b ) {
 		$booked_partner_html .= '<li style="margin-bottom:3px;">' . esc_html( $b ) . '</li>';
 	}
-	foreach ( (array) ( $snap['extras'] ?? [] ) as $x ) {
-		if ( ! in_array( (int) ( $x['src'] ?? -1 ), $sel, true ) ) {
-			continue;
-		}
-		$lbl = (string) ( $x['label'] ?? '' ) . ( 'verbrauch' === (string) ( $x['basis'] ?? '' ) ? ' (nach Verbrauch)' : '' );
-		if ( 'extern' === (string) ( $x['organizer'] ?? 'platz' ) ) {
-			$extern_labels[] = (string) ( $x['label'] ?? '' );
+	foreach ( $xs_booked as $x ) {
+		if ( 'extern' === $x['organizer'] ) {
+			$extern_labels[] = $x['label'];
 		} else {
-			$booked_partner_html .= '<li style="margin-bottom:3px;">' . esc_html( $lbl ) . '</li>';
+			$booked_partner_html .= '<li style="margin-bottom:3px;">' . esc_html( $x['label'] ) . '</li>';
 		}
 	}
 	if ( $extern_labels ) {
