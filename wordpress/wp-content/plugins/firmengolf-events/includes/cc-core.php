@@ -963,10 +963,9 @@ function fge_cc_phase_offer_running( int $req ): void {
 	fge_cc_action_preview( 'offer_accept', $req );
 }
 
-/** Gebucht: Eventtag ausfüllen und die beiden Info-Mails. */
+/** Gebucht: Eventtag ausfüllen, die Vortags-Info geht am Tag vor dem Event. */
 function fge_cc_phase_booked( int $req ): void {
 	$v         = fge_day_values( $req );
-	$plan_sent = (string) get_post_meta( $req, '_fge_day_plan_sent', true );
 	$info_sent = (string) get_post_meta( $req, '_fge_day_info_sent', true );
 
 	echo '<form class="cc-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
@@ -988,27 +987,20 @@ function fge_cc_phase_booked( int $req ): void {
 	}
 	echo '</div>';
 	echo '<p><button type="submit" class="cc-btn cc-btn--primary">Speichern</button>';
-	echo '<span class="cc-muted"> Sobald Startzeit und Treffpunkt stehen, geht die Ablauf-Info einmalig an den Kunden.</span></p>';
+	$date = fge_day_event_date( $req );
+	echo '<span class="cc-muted"> Die Felder gehen mit der Vortags-Info an Kunde und Platz' . ( null !== $date ? ', am ' . esc_html( gmdate( 'd.m.Y', strtotime( $date . ' -1 day' ) ) ) . ' um 7:00 Uhr' : ', am Tag vor dem Event um 7:00 Uhr' ) . '.</span></p>';
 	echo '</form>';
 
 	echo '<div class="cc-actions">';
 	echo '<div class="cc-action">';
-	if ( '' !== $plan_sent ) {
-		echo '<p class="cc-done">Ablauf-Info gesendet am ' . esc_html( wp_date( 'd.m.Y H:i', (int) $plan_sent ) ) . '</p>';
-	}
-	fge_cc_button( 'fge_cc_day_plan', $req, '' !== $plan_sent ? 'Ablauf-Info erneut senden' : 'Ablauf-Info senden', [
-		'confirm' => 'Ablauf-Info jetzt an den Kunden senden?',
-	] );
-	fge_cc_action_preview( 'day_plan', $req );
-	echo '</div>';
-
-	echo '<div class="cc-action">';
 	if ( '' !== $info_sent ) {
 		echo '<p class="cc-done">Vortags-Info gesendet am ' . esc_html( wp_date( 'd.m.Y H:i', (int) $info_sent ) ) . '</p>';
 	}
-	fge_cc_button( 'fge_cc_day_info', $req, '' !== $info_sent ? 'Vortags-Info erneut senden' : 'Vortags-Info senden', [
-		'confirm' => 'Vortags-Info an Kunde, Platz und events@ senden?',
-	] );
+	if ( fge_day_info_open( $req ) ) {
+		fge_cc_button( 'fge_cc_day_info', $req, '' !== $info_sent ? 'Vortags-Info erneut senden' : 'Vortags-Info senden', [
+			'confirm' => 'Vortags-Info an Kunde, Platz und events@ senden?',
+		] );
+	}
 	fge_cc_action_preview( 'day_info', $req );
 	echo '</div>';
 	echo '</div>';

@@ -20,8 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 function fge_cc_messages(): array {
 	return [
 		'offer_sent'   => [ 'ok', 'Angebot ist raus. Der Kunde hat Mail und PDF, du das BCC.' ],
-		'day_plan'     => [ 'ok', 'Ablauf-Info an den Kunden gesendet.' ],
 		'day_info'     => [ 'ok', 'Vortags-Info gesendet.' ],
+		'day_info_early' => [ 'err', 'Die Vortags-Info geht erst am Tag vor dem Event raus.' ],
 		'status'       => [ 'ok', 'Status geändert.' ],
 		'note'         => [ 'ok', 'Notiz gespeichert.' ],
 		'saved'        => [ 'ok', 'Gespeichert.' ],
@@ -210,14 +210,12 @@ add_action( 'admin_post_fge_cc_offer_relaunch', static function (): void {
 
 // ── Mails rund um den Eventtag ───────────────────────────────────────────────
 
-add_action( 'admin_post_fge_cc_day_plan', static function (): void {
-	$req = fge_cc_guard( 'fge_cc_day_plan' );
-	fge_cc_redirect( $req, fge_send_day_plan( $req ) ? 'day_plan' : 'mail_failed' );
-} );
-
 add_action( 'admin_post_fge_cc_day_info', static function (): void {
 	$req  = fge_cc_guard( 'fge_cc_day_info' );
-	$date = function_exists( 'fge_day_event_date' ) ? fge_day_event_date( $req ) : null;
+	if ( ! fge_day_info_open( $req ) ) {
+		fge_cc_redirect( $req, 'day_info_early' );
+	}
+	$date = fge_day_event_date( $req );
 	$ok   = fge_send_day_info( $req, null !== $date && $date === wp_date( 'Y-m-d' ) );
 	fge_cc_redirect( $req, $ok ? 'day_info' : 'mail_failed' );
 } );
@@ -234,14 +232,6 @@ add_action( 'admin_post_fge_cc_day_save', static function (): void {
 		} else {
 			delete_post_meta( $req, '_fge_' . $k );
 		}
-	}
-	// Gleiche Automatik wie beim Speichern im WordPress-Backend: sobald Startzeit
-	// und Treffpunkt erstmals stehen, geht die Ablauf-Info einmalig raus.
-	if ( '' === (string) get_post_meta( $req, '_fge_day_plan_sent', true )
-		&& fge_day_plan_ready( $req )
-		&& ! ( function_exists( 'fge_is_demo_request' ) && fge_is_demo_request( $req ) ) ) {
-		fge_send_day_plan( $req );
-		fge_cc_redirect( $req, 'day_plan' );
 	}
 	fge_activity_add( $req, 'system', 'Eventtag-Felder aktualisiert' );
 	fge_cc_redirect( $req, 'saved' );

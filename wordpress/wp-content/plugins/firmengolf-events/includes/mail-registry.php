@@ -261,14 +261,6 @@ function fge_mail_registry(): array {
 		],
 
 		// ── Zwischen Buchung und Vortag ───────────────────────────────────
-		'day_plan_customer' => [
-			'label'   => 'Ablauf für den Eventtag an den Kunden',
-			'party'   => 'kunde',
-			'subject' => 'Der Ablauf für euren Eventtag steht',
-			'auto'    => false,
-			'trigger' => 'Startzeit und Treffpunkt erstmals vollständig, oder Knopf',
-			'content' => [ 'Wann und wo mit Adresse', 'Treffpunkt', 'Ansprechpartner vor Ort', 'was mitzubringen ist', 'Ablauf folgt am Vortag', 'Mobilnummer' ],
-		],
 		'venue_details_reminder' => [
 			'label'   => 'Erinnerung an den Platz: Details für den Eventtag',
 			'party'   => 'platz',
@@ -283,7 +275,7 @@ function fge_mail_registry(): array {
 			'subject' => 'Platzdetails eingetragen',
 			'auto'    => true,
 			'trigger' => 'Platz speichert das Formular aus der Auftragsbestätigung',
-			'content' => [ 'alle sieben Eventtag-Felder, fehlende in Rot', 'ob die Ablauf-Info an den Kunden raus ist', 'Link zur Anfrage' ],
+			'content' => [ 'alle sieben Eventtag-Felder, fehlende in Rot', 'wann die Vortags-Info rausgeht', 'Link zur Anfrage' ],
 		],
 
 		// ── Phase 5: Vortag ───────────────────────────────────────────────
@@ -499,7 +491,6 @@ function fge_mail_action_map(): array {
 		'offer_send'    => [ 'offer_customer' ],
 		'offer_accept'  => [ 'order_internal', 'booking_partner', 'booking_customer', 'provider_confirm', 'provider_cancel' ],
 		'offer_decline' => [ 'offer_declined_internal', 'provider_cancel' ],
-		'day_plan'      => [ 'day_plan_customer' ],
 		'day_info'      => [ 'day_info_customer', 'day_info_partner', 'day_info_internal' ],
 		'date_confirm'  => [ 'date_confirmed_internal', 'offer_customer' ],
 		'review'        => [ 'review_customer' ],

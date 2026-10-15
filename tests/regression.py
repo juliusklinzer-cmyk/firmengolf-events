@@ -146,8 +146,11 @@ def scenario_accept():
     data.update({'fge_day_start_time': '16:00', 'fge_day_meeting_point': 'Clubhaus', 'fge_day_onsite_name': 'Petra Will', 'fge_day_onsite_phone': '07127 97430', 'fge_day_pro': 'Pro', 'fge_day_bring_along': 'Sportkleidung', 'fge_day_notes': '', 'save': '1'})
     requests.post(dl[0], data=data, allow_redirects=True)
     ms = mails(clear=True)
-    check(any('kunde-regi' in m['to'] and 'Ablauf' in m['subject'] for m in ms), 'Ablauf-Info an den Kunden nach Platzdetails')
+    # Seit 1.9.307 nur noch die Vortags-Info, und die erst am Tag vor dem Event.
+    check(not any('kunde-regi' in m['to'] for m in ms), 'Keine Mail an den Kunden nach Platzdetails')
+    check(any('events@' in m['to'] and 'Vortags-Info an Kunde und Platz geht am' in m['text'] for m in ms), 'Interne Mail nennt den Tag der Vortags-Info')
     h = get(f'/control/anfragen/?req={req}').text
+    check(not [x for x in forms(h) if x['action'] in ('fge_cc_day_info', 'fge_cc_day_plan')], 'Vor dem Vortag kein Knopf für Info-Mails')
     check('Gebucht' in main_text(h)[:900], 'Cockpit zeigt Gebucht')
     return req
 

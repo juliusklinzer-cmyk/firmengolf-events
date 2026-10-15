@@ -339,9 +339,6 @@ function fge_cc_tasks( int $req ): array {
 		if ( $upcoming ) {
 			if ( '' === $start || '' === $meeting ) {
 				$add( 'fill_day', 'Eventtag ausfüllen: Startzeit und Treffpunkt', 'me', $near ? 'now' : 'soon', 'day' );
-			} elseif ( '' === (string) get_post_meta( $req, '_fge_day_plan_sent', true ) ) {
-				// Gate hält einen Zeitstempel, nicht "1".
-				$add( 'send_day_plan', 'Ablauf an den Kunden schicken', 'me', 'soon', 'day_plan' );
 			}
 			// Der Platz trägt seine Angaben selbst ein (Link aus der Auftragsbestätigung).
 			// Kurz vor dem Termin wird das Warten zum Anruf.

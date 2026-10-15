@@ -1,12 +1,12 @@
 # Mail-Inventar Firmengolf
 
-Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 15.10.2026, Version 1.9.305, 35 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
+Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 15.10.2026, Version 1.9.307, 34 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
 
 Gemeinsamer Stil: Rahmen `fge_email_wrap()`, Absender events@firmengolf-events.de (mail-config.php, auch Reply-To), Buttons `fge_email_button()`, Versand über WP Mail SMTP und Brevo, Protokoll je Versand in `wp_fge_mail_log` (mail-log.php, Zuordnung über die Vorgangsnummer im Betreff). Keine Gedankenstriche, Preise als „XX € p.P.“ oder „XX € netto“.
 
 Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst löst jemand die Mail am Knopf aus.
 
-## An Firmenkunden (8)
+## An Firmenkunden (7)
 
 | Schlüssel | Mail | Betreff | Auslöser | Inhalt |
 |---|---|---|---|---|
@@ -15,7 +15,6 @@ Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst lös
 | `offer_customer` | Angebot an den Kunden | Euer Angebot für {Event} | Termin bestätigt und bepreist, oder Knopf „Angebot jetzt senden" (Knopf) | Positionen und Summen, Partnercode-Rabatt, Frist, Annehmen-Link, PDF im Anhang, BCC an dich |
 | `offer_reminder` | Angebotserinnerung | Erinnerung: euer Angebot | Cron, drei Tage ohne Reaktion (automatisch) | Frist läuft, Termin noch reserviert |
 | `booking_customer` | Buchungsbestätigung an den Kunden | Buchung bestätigt | Kunde nimmt an (automatisch) | Dank und Termin, PDF der Buchungsbestätigung, Link zur Buchung |
-| `day_plan_customer` | Ablauf für den Eventtag an den Kunden | Der Ablauf für euren Eventtag steht | Startzeit und Treffpunkt erstmals vollständig, oder Knopf (Knopf) | Wann und wo mit Adresse, Treffpunkt, Ansprechpartner vor Ort, was mitzubringen ist, Ablauf folgt am Vortag, Mobilnummer |
 | `day_info_customer` | Vortags-Info an den Kunden | Morgen ist es soweit | Cron 07:00 am Vortag, oder Knopf (automatisch) | Start, Treffpunkt, Adresse, Ansprechpartner vor Ort, Golflehrer und Ablauf, gebuchte Leistungen, Mobilnummer |
 | `review_customer` | Bewertungsbitte | Danke für euer Event mit Firmengolf | Status „Event durchgeführt" (automatisch) | Bitte um Google-Bewertung |
 
@@ -57,7 +56,7 @@ Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst lös
 | `offer_query_internal` | Rückfrage des Kunden (intern) | Rückfrage zum Angebot | Kunde stellt eine Rückfrage (automatisch) | Rückfragetext |
 | `order_internal` | Auftrag steht (intern) | Auftrag steht | Kunde nimmt an (automatisch) | Termin, Firma, Platz, Abrechnung der Zusatzleistungen, Einkauf und Marge, Partnercode |
 | `offer_declined_internal` | Angebot abgelehnt (intern) | Angebot abgelehnt | Kunde lehnt ab (automatisch) | Absage mit Kontext |
-| `venue_details_internal` | Platzdetails eingetragen (intern) | Platzdetails eingetragen | Platz speichert das Formular aus der Auftragsbestätigung (automatisch) | alle sieben Eventtag-Felder, fehlende in Rot, ob die Ablauf-Info an den Kunden raus ist, Link zur Anfrage |
+| `venue_details_internal` | Platzdetails eingetragen (intern) | Platzdetails eingetragen | Platz speichert das Formular aus der Auftragsbestätigung (automatisch) | alle sieben Eventtag-Felder, fehlende in Rot, wann die Vortags-Info rausgeht, Link zur Anfrage |
 | `day_info_internal` | Vortags-Info verschickt (intern) | Vortags-Info verschickt | Cron 07:00 am Vortag, oder Knopf (automatisch) | Zusammenfassung, fehlende Angaben in Rot |
 | `daily_digest` | Tagesmail | Heute bei Firmengolf | Cron 07:00, nur wenn es etwas zu melden gibt (automatisch) | fällige Aufgaben mit Vorgangsnummer, Termine heute und morgen, Link ins Control Center |
 

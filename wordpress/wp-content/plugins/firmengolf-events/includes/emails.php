@@ -699,7 +699,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		$pdf_c = function_exists( 'fge_offer_pdf_tempfile' ) ? fge_offer_pdf_tempfile( $request_id ) : '';
 		$cc    = '
 			<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ', danke für die Zusage.</p>
-			<p style="margin:0 0 16px;">Euer Event <strong>' . esc_html( $data['event_title'] ?: '' ) . '</strong> am <strong>' . esc_html( $date ?: '' ) . '</strong> ist gebucht. Wir kümmern uns um die letzten Details und melden uns.</p>
+			<p style="margin:0 0 16px;">Euer Event <strong>' . esc_html( $data['event_title'] ?: '' ) . '</strong> am <strong>' . esc_html( $date ?: '' ) . '</strong> ist gebucht. Wir kümmern uns um die letzten Details. Alles für den Tag, also Start, Treffpunkt und Ansprechpartner vor Ort, bekommt ihr am Vortag per Mail.</p>
 			' . ( $pdf_c !== '' ? '<p style="margin:0 0 16px;">Die Buchungsbestätigung mit allen Leistungen und Preisen findet ihr als PDF im Anhang.</p>' : '' ) . '
 			<p style="margin:0;">' . ( function_exists( 'fge_offer_link' ) ? fge_email_button( fge_offer_link( $request_id ), 'Buchung ansehen' ) : '' ) . '</p>
 		';

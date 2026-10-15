@@ -11,7 +11,7 @@
  *
  * Die Werte landen in denselben Metas wie die Cockpit-Box (fge_day_fields),
  * der Zeitpunkt in der Pipeline-Zeile (details_at). Sobald Startzeit und
- * Treffpunkt stehen, geht die Ablauf-Info einmalig an den Kunden.
+ * Treffpunkt stehen, gehen sie am Vortag mit der Vortags-Info an den Kunden.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -148,7 +148,7 @@ add_action( 'template_redirect', static function (): void {
 
 /**
  * Formular speichern: Metas wie in der Cockpit-Box, Zeitpunkt in der Zeile,
- * einmalig die Ablauf-Info an den Kunden, dann die interne Mail.
+ * dann die interne Mail. Der Kunde bekommt die Werte mit der Vortags-Info.
  */
 function fge_venue_detail_save( int $req, array $venue ): bool {
 	$venue_id = (int) ( $venue['id'] ?? 0 );
@@ -178,10 +178,6 @@ function fge_venue_detail_save( int $req, array $venue ): bool {
 		return true; // Musterumgebung: speichern ja, Mails nie.
 	}
 
-	// Das Gate liegt beim Aufrufer, fge_send_day_plan() prüft es nicht selbst.
-	if ( '' === (string) get_post_meta( $req, '_fge_day_plan_sent', true ) && fge_day_plan_ready( $req ) ) {
-		fge_send_day_plan( $req );
-	}
 	fge_venue_detail_notify_internal( $req, $pid, $update );
 	return true;
 }
@@ -199,13 +195,8 @@ function fge_venue_detail_notify_internal( int $req, int $pid, bool $update ): b
 			. ( '' !== $val ? nl2br( esc_html( $val ) ) : '<span style="color:#B3261E;">fehlt</span>' ) . '</td></tr>';
 	}
 
-	if ( '' !== (string) get_post_meta( $req, '_fge_day_plan_sent', true ) ) {
-		$plan = 'Die Ablauf-Info an den Kunden ist raus.';
-	} elseif ( fge_day_plan_ready( $req ) ) {
-		$plan = 'Die Ablauf-Info an den Kunden konnte nicht gesendet werden, bitte im Cockpit nachsehen.';
-	} else {
-		$plan = 'Startzeit oder Treffpunkt fehlen noch, die Ablauf-Info an den Kunden wartet.';
-	}
+	$date = function_exists( 'fge_day_event_date' ) ? fge_day_event_date( $req ) : null;
+	$plan = 'Die Vortags-Info an Kunde und Platz geht ' . ( null !== $date ? 'am ' . gmdate( 'd.m.Y', strtotime( $date . ' -1 day' ) ) . ' um 7:00 Uhr' : 'am Tag vor dem Event um 7:00 Uhr' ) . ' raus.';
 
 	$admin   = function_exists( 'fge_format_request_admin_link' ) ? fge_format_request_admin_link( $req ) : admin_url();
 	$subject = 'Platzdetails eingetragen: ' . $name . ' (' . $ref . ')';
