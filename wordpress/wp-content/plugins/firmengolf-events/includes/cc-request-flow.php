@@ -1062,12 +1062,12 @@ function fge_cc_flow_pane_billing( int $req, int $cur ): void {
 		echo '<li class="' . ( $done ? 'is-done' : ( $at + 1 === $n ? 'is-now' : '' ) ) . '">';
 		echo '<span class="cc-billsteps-dot" aria-hidden="true">' . ( $done ? '✓' : (int) $n ) . '</span>';
 		echo '<span class="cc-billsteps-text"><strong>' . esc_html( $label ) . '</strong><span class="cc-muted">' . esc_html( $hint ) . '</span></span>';
-		if ( ! $done && $n >= 2 && ( 'verloren' !== $status ) ) {
-			fge_cc_button( 'fge_cc_status', $req, 3 === $n ? 'Bezahlt, abschließen' : 'Rechnung gestellt', [
-				'class'   => $at + 1 === $n || $n === 2 ? 'cc-btn cc-btn--primary' : 'cc-btn',
-				'fields'  => [ 'status' => $slug ],
-				'confirm' => 3 === $n ? 'Zahlung eingegangen und Vorgang abschließen?' : 'Rechnung als gestellt markieren?',
-			] );
+		if ( ! $done && 2 === $n && 'verloren' !== $status ) {
+			fge_cc_invoice_form( $req );
+		} elseif ( ! $done && 3 === $n && 2 === $at ) {
+			fge_cc_paid_button( $req );
+		} elseif ( $done && 2 === $n && '' !== ( $no = (string) get_post_meta( $req, '_fge_lexoffice_invoice_number', true ) ) ) {
+			echo '<span class="cc-mono">' . esc_html( $no ) . '</span>';
 		} elseif ( $done && $n >= 2 && $at === $n ) {
 			// Versehen zurücknehmen: eine Stufe zurück.
 			$back = 3 === $n ? 'rechnung_in_lexoffice_erstellt' : ( $date > 0 && $date < fge_cc_today() ? 'event_durchgefuehrt' : 'angebot_angenommen' );

@@ -312,7 +312,7 @@ function fge_cc_page_calendar(): void {
 /** Der Abo-Link für Outlook, mit der ehrlichen Einschränkung dazu. */
 function fge_cc_ics_panel(): void {
 	echo '<section class="cc-card"><h2>In Outlook abonnieren</h2>';
-	echo '<p class="cc-muted">Diesen Link einmal in Outlook als Internetkalender hinzufügen. Danach erscheinen Events, Optionen, Fristen und fällige Aufgaben von selbst.</p>';
+	echo '<p class="cc-muted">Diesen Link einmal in Outlook als Internetkalender hinzufügen. Danach erscheinen Events, Optionen, Fristen und fällige Erinnerungen von selbst.</p>';
 	echo '<p><input class="cc-copyfield" type="text" readonly value="' . esc_attr( fge_cc_ics_url() ) . '" onclick="this.select()"></p>';
 	echo '<p class="cc-muted">Outlook aktualisiert abonnierte Kalender nur alle paar Stunden. Für Termine, die Wochen vorher feststehen, ist das egal. Bei kurzfristigen Änderungen gilt die Tagesmail um 07:00 Uhr.</p>';
 	echo '<p class="cc-muted">Der Link enthält einen geheimen Schlüssel. Wer ihn hat, sieht die Termine. Nicht weitergeben.</p>';

@@ -259,9 +259,11 @@ def scenario_tools():
     out = wp(f"$s=(array)get_post_meta({req},'_fge_offer_snapshot',true); $s['date']='Mo, 12.10.2026'; update_post_meta({req},'_fge_offer_snapshot',$s); echo get_post_meta({req},'_fge_offer_status',true) . '|' . fge_cc_auto_close() . '|' . get_post_meta({req},'_fge_request_status',true);")
     check(out.startswith('accepted|') and out.endswith('|event_durchgefuehrt'), 'Am Tag nach dem Event automatisch durchgeführt (' + out + ')')
     h = get(f'/control/anfragen/?req={req}').text
-    post_form(find_form(h, 'fge_cc_status', contains='rechnung_in_lexoffice_erstellt'))
+    post_form(find_form(h, 'fge_cc_invoice', contains='value="set"'), {'invoice_number': 'RE-TEST-1'})
+    h = get('/control/rechnungen/?tab=offen').text
+    check('RE-TEST-1' in h, 'Rechnungen zeigt gestellte Rechnung mit Nummer')
     h = get(f'/control/anfragen/?req={req}').text
-    post_form(find_form(h, 'fge_cc_status', contains='abgeschlossen'))
+    post_form(find_form(h, 'fge_cc_invoice', contains='value="paid"'))
     check(wp(f"echo get_post_meta({req}, '_fge_request_status', true);") == 'abgeschlossen', 'Rechnung gestellt, bezahlt, abgeschlossen')
     mails(clear=True)
     return req
@@ -311,6 +313,26 @@ def scenario_partner():
     finally:
         wp(f'wp_delete_post({eid},true); wp_delete_post({pid},true); global $wpdb; $wpdb->delete(fge_verzeichnis_table(),["partner_id"=>{pid},"ist_partner"=>1]);')
 
+def scenario_pages():
+    print('\n[5] Übrige Menüpunkte: Leads, Partnercodes, Nutzer, Einstellungen')
+    for page, needle in [('dashboard', 'Anfragen'), ('rechnungen', 'Zu stellen'), ('leads', 'Budget-Rechner'), ('partnercodes', 'Partnercode anlegen'), ('nutzer', 'Passwort-Link senden'), ('einstellungen', 'In Outlook abonnieren'), ('finanzen', ''), ('kunden', ''), ('verzeichnis', ''), ('dienstleister', ''), ('postausgang', ''), ('angebote', '')]:
+        r = get(f'/control/{page}/')
+        check(r.status_code == 200 and needle in r.text and 'Kommt in Etappe' not in r.text, f'Seite {page} ist fertig')
+    lead = int(wp('$id=wp_insert_post(["post_type"=>"firmengolf_request","post_status"=>"publish","post_title"=>"Lead (TEST)"]); update_post_meta($id,"_fge_request_type","budget_lead"); update_post_meta($id,"_fge_contact_email","lead-regi@example.org"); update_post_meta($id,"_fge_company_name","Regressions Lead (TEST)"); echo $id;'))
+    try:
+        check('lead-regi' not in get('/control/anfragen/?tab=alle').text, 'Offener Lead steht nicht in den Anfragen')
+        h = get('/control/leads/').text
+        post_form(find_form(h, 'fge_cc_lead', contains=f'value="{lead}"'))
+        r = post_form(find_form(get('/control/leads/').text, 'fge_cc_lead', contains='umgewandelt'))
+        check('lead_conv' in r.url and wp(f'echo get_post_meta({lead},"_fge_request_type",true);') == 'general_event_request', 'Lead in Anfrage umgewandelt')
+    finally:
+        wp(f'wp_delete_post({lead},true);')
+    h = get('/control/partnercodes/').text
+    r = post_form(find_form(h, 'fge_cc_pc_save'), {'holder': 'Regressions Verband (TEST)', 'code': 'REGTEST', 'eur': '40,00'})
+    pc = wp('echo fge_pc_find("REGTEST");')
+    check('pc_saved' in r.url and pc not in ('', '0') and wp(f'echo get_post_meta({pc},"_fge_pc_commission_eur",true);') == '40', 'Partnercode angelegt')
+    wp(f'wp_delete_post({pc or 0},true);')
+
 def cleanup(reqs):
     # Auch liegengebliebene Testanfragen früherer Läufe (Firma mit „Regressions" und „(TEST)").
     ids = ','.join(str(r) for r in reqs) or '0'
@@ -327,6 +349,7 @@ if __name__ == '__main__':
         reqs.append(scenario_decline())
         reqs.append(scenario_tools())
         scenario_partner()
+        scenario_pages()
     finally:
         cleanup(reqs)
         wp('require_once ABSPATH."wp-admin/includes/user.php"; $u=get_user_by("login","audit-bot"); if($u) wp_delete_user($u->ID);')

@@ -65,7 +65,13 @@ function fge_cc_query_requests( array $args = [], int $limit = 500 ): array {
 		'order'          => 'DESC',
 		'no_found_rows'  => true,
 	];
+	$with_leads = ! empty( $args['fge_with_leads'] );
+	unset( $args['fge_with_leads'] );
 	$ids = get_posts( array_merge( $defaults, $args ) );
+	// Budget-Leads sind noch keine Anfragen, sie stehen unter „Leads" (15.10.2026).
+	if ( ! $with_leads && function_exists( 'fge_cc_open_lead_ids' ) ) {
+		$ids = array_values( array_diff( $ids, fge_cc_open_lead_ids() ) );
+	}
 
 	$truncated = count( $ids ) > $limit;
 	if ( $truncated ) {

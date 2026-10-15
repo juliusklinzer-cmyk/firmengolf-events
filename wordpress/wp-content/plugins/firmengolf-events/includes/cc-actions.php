@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /** Meldungen nach einer Aktion. */
 function fge_cc_messages(): array {
-	return ( function_exists( 'fge_cc_partner_messages' ) ? fge_cc_partner_messages() : [] ) + [
+	return ( function_exists( 'fge_cc_partner_messages' ) ? fge_cc_partner_messages() : [] ) + ( function_exists( 'fge_cc_admin_messages' ) ? fge_cc_admin_messages() : [] ) + [
 		'offer_sent'   => [ 'ok', 'Angebot ist raus. Der Kunde hat Mail und PDF, du das BCC.' ],
 		'day_info'     => [ 'ok', 'Vortags-Info gesendet.' ],
 		'status_lost'     => [ 'ok', 'Als verloren abgelegt. Über „Wieder aufnehmen" kommt die Anfrage zurück.' ],

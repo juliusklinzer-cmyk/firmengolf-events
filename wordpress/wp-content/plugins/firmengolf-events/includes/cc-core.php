@@ -143,6 +143,11 @@ function fge_cc_render( string $page ): void {
 		'dashboard'     => 'fge_cc_page_dashboard',
 		'partner'       => 'fge_cc_page_partner_area',
 		'events'        => 'fge_cc_page_events',
+		'rechnungen'    => 'fge_cc_page_invoices',
+		'leads'         => 'fge_cc_page_leads',
+		'partnercodes'  => 'fge_cc_page_partnercodes',
+		'nutzer'        => 'fge_cc_page_users',
+		'einstellungen' => 'fge_cc_page_settings',
 		'angebote'      => 'fge_cc_page_offers',
 		'verzeichnis'   => 'fge_cc_page_partners',
 		'kunden'        => 'fge_cc_page_customers',
@@ -352,25 +357,7 @@ function fge_cc_empty( string $text ): void {
  * Etappe nach dem Plan vom 07.10.2026.
  */
 function fge_cc_admin_links(): array {
-	$pc = defined( 'FGE_PC_POST_TYPE' ) ? FGE_PC_POST_TYPE : 'fge_partnercode';
-	return [
-		'leads'         => [ 3, 'Leads aus dem Budget-Rechner und die Preise des Rechners.', [
-			'Anfragen im WordPress-Admin' => admin_url( 'edit.php?post_type=firmengolf_request' ),
-			'Budget-Rechner'              => admin_url( 'edit.php?post_type=firmengolf_event&page=fge-budget-calc' ),
-		] ],
-		'partnercodes'  => [ 3, 'Partnercodes, Rabatt, Provision und Abrechnung.', [
-			'Partnercodes im WordPress-Admin' => admin_url( 'edit.php?post_type=' . $pc ),
-		] ],
-		'rechnungen'    => [ 5, 'Rechnungen laufen manuell über Lexoffice. Nummern und Status stehen je Anfrage im Feld „Lexoffice (intern, manuell)".', [
-			'Anfragen im WordPress-Admin' => admin_url( 'edit.php?post_type=firmengolf_request' ),
-		] ],
-		'nutzer'        => [ 4, 'Nutzer, Passwort zurücksetzen, Mailadresse ändern, Admins anlegen.', [
-			'Benutzer im WordPress-Admin' => admin_url( 'users.php' ),
-		] ],
-		'einstellungen' => [ 4, 'Firmendaten, Aufschlag und Absender sind derzeit fest im Plugin hinterlegt.', [
-			'Allgemeine Einstellungen' => admin_url( 'options-general.php' ),
-		] ],
-	];
+	return []; // Seit 1.9.310 hat jede Seite ihren Inhalt im Control Center.
 }
 
 function fge_cc_page_stub( string $page ): void {
