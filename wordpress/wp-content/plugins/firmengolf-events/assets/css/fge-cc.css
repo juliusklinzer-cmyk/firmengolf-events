@@ -1935,3 +1935,22 @@ body.cc .cc-btn:disabled { background: var(--cc-hover); color: var(--cc-muted); 
 	.cc-evline { grid-template-columns: minmax(0, 1fr) auto; }
 	.cc-evline-act { grid-column: 1 / -1; justify-content: flex-start; }
 }
+
+/* Audit 15.10.2026: Leere Tabellen, Seitenleiste, Mobil, Tap-Flächen */
+.cc-table tr.is-empty td { color: var(--cc-muted); padding: 28px 18px; }
+.cc-pager { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+.cc-drawer-x { flex: 0 0 44px; height: 44px; }
+@media (max-height: 960px) {
+	.cc-nav { gap: 6px; }
+	body.cc a.cc-nav-item { padding-top: 5px; padding-bottom: 5px; }
+}
+@media (max-width: 768px) {
+	.cc-evtable td:first-child .cc-ellipsis, .cc-ptable td:first-child .cc-ellipsis { max-width: 46vw; display: block; }
+	.cc-evtable, .cc-ptable { min-width: 0; }
+	.cc-evtable th:nth-child(2), .cc-evtable td:nth-child(2), .cc-evtable th:nth-child(3), .cc-evtable td:nth-child(3), .cc-evtable th:nth-child(4), .cc-evtable td:nth-child(4) { display: none; }
+	.cc-ptable th:nth-child(2), .cc-ptable td:nth-child(2), .cc-ptable th:nth-child(5), .cc-ptable td:nth-child(5), .cc-ptable th:nth-child(6), .cc-ptable td:nth-child(6), .cc-ptable th:nth-child(7), .cc-ptable td:nth-child(7) { display: none; }
+	.cc-minichip--btn, .cc-back a, .cc-details summary { min-height: 44px; display: inline-flex; align-items: center; }
+	.cc-ptable td:first-child a { display: inline-flex; min-height: 44px; align-items: center; }
+	.cc-backrow { flex-direction: column; align-items: flex-start; gap: 8px; }
+	.cc-checkline input { width: 20px; height: 20px; }
+}

@@ -67,11 +67,12 @@ function fge_cc_query_requests( array $args = [], int $limit = 500 ): array {
 	];
 	$with_leads = ! empty( $args['fge_with_leads'] );
 	unset( $args['fge_with_leads'] );
-	$ids = get_posts( array_merge( $defaults, $args ) );
-	// Budget-Leads sind noch keine Anfragen, sie stehen unter „Leads" (15.10.2026).
-	if ( ! $with_leads && function_exists( 'fge_cc_open_lead_ids' ) ) {
-		$ids = array_values( array_diff( $ids, fge_cc_open_lead_ids() ) );
+	// Budget-Leads sind noch keine Anfragen, sie stehen unter „Leads“ (15.10.2026).
+	// Schon in der Abfrage ausschließen, sonst fehlen Zeilen hinter dem Limit.
+	if ( ! $with_leads && function_exists( 'fge_cc_open_lead_ids' ) && fge_cc_open_lead_ids() ) {
+		$args['post__not_in'] = array_merge( (array) ( $args['post__not_in'] ?? [] ), fge_cc_open_lead_ids() );
 	}
+	$ids = get_posts( array_merge( $defaults, $args ) );
 
 	$truncated = count( $ids ) > $limit;
 	if ( $truncated ) {
@@ -121,7 +122,7 @@ function fge_cc_phase( int $req ): array {
 	if ( in_array( $status, [ 'abgeschlossen', 'rechnung_in_lexoffice_erstellt', 'event_durchgefuehrt' ], true ) ) {
 		return [ 7, 'Nachlauf' ];
 	}
-	// Verlorene Vorgänge hießen bis 28.09.2026 weiter „Angebot läuft" (Audit).
+	// Verlorene Vorgänge hießen bis 28.09.2026 weiter „Angebot läuft“ (Audit).
 	if ( 'verloren' === $status ) {
 		return [ 4, 'Verloren' ];
 	}
@@ -167,7 +168,7 @@ function fge_cc_local_ts( string $ymd ): int {
 /**
  * Eventdatum als Zeitstempel (lokale Mitternacht), 0 wenn keines feststeht.
  *
- * Das Datum steht im Angebots-Snapshot als Text („Mi, 30.09.2026") und ist
+ * Das Datum steht im Angebots-Snapshot als Text („Mi, 30.09.2026“) und ist
  * damit nicht abfragbar. Der berechnete Zeitstempel wird deshalb in
  * `_fge_event_ts` mitgeschrieben, sodass der Kalender nach Zeitraum suchen
  * kann, statt alle Vorgänge durchzugehen.
@@ -361,7 +362,7 @@ function fge_cc_tasks( int $req ): array {
 		}
 		if ( $date > 0 && $date < fge_cc_today() && 'event_durchgefuehrt' !== $status
 			&& 'rechnung_in_lexoffice_erstellt' !== $status ) {
-			$add( 'mark_done', 'Event ist vorbei, Status auf „Event durchgeführt" setzen', 'me', 'now', 'done' );
+			$add( 'mark_done', 'Event ist vorbei, Status auf „Event durchgeführt“ setzen', 'me', 'now', 'done' );
 		}
 	}
 
@@ -394,7 +395,7 @@ function fge_cc_tasks( int $req ): array {
  * Eigene Aufgaben einer Anfrage.
  *
  * Alles andere wird abgeleitet, das hier ist der Platz für das, was nur Julius
- * weiß: „Pro anrufen", „Rechnungsadresse klären". Jede Zeile hat eine eigene
+ * weiß: „Pro anrufen“, „Rechnungsadresse klären“. Jede Zeile hat eine eigene
  * Kennung, damit das Abhaken nicht die falsche trifft, wenn dazwischen etwas
  * gelöscht wurde.
  */
@@ -467,7 +468,7 @@ function fge_cc_tasks_mine( int $req ): array {
  * Ab wann gilt ein Vorgang als verstaubt.
  *
  * Ohne diese Grenze flutet jede alte Anfrage ohne Platz die Arbeitsliste mit
- * „Passende Plätze finden", obwohl niemand mehr daran arbeitet. Verstaubte
+ * „Passende Plätze finden“, obwohl niemand mehr daran arbeitet. Verstaubte
  * Vorgänge verschwinden nicht, sie wandern in einen eigenen Eimer.
  */
 function fge_cc_cold_days(): int {

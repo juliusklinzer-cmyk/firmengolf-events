@@ -82,7 +82,7 @@ function fge_cc_venue_km( int $req, int $pid ): float {
 	return ( 0.0 !== $lat && 0.0 !== $lng ) ? fge_geo_distance( (float) $a['lat'], (float) $a['lng'], $lat, $lng ) : -1.0;
 }
 
-/** Die Plätze einer Anfrage als Zeilen, wie im Entwurf „Anfragen". */
+/** Die Plätze einer Anfrage als Zeilen, wie im Entwurf „Anfragen“. */
 function fge_cc_venues_panel( int $req ): void {
 	$venues = function_exists( 'fge_venues_get' ) ? fge_venues_get( $req ) : [];
 	$chosen = (int) get_post_meta( $req, '_fge_assigned_partner_id', true );
@@ -93,7 +93,7 @@ function fge_cc_venues_panel( int $req ): void {
 	echo '<div class="cc-block-head"><h3>Golfplätze</h3>';
 	echo '<button type="button" class="cc-btn" data-cc-drawer-open="cc-addvenue">Golfplatz hinzufügen</button></div>';
 	if ( ! $venues ) {
-		echo '<p class="cc-rowempty">Noch kein Golfplatz. Plätze in der Nähe findest du über „Golfplatz hinzufügen".</p>';
+		echo '<p class="cc-rowempty">Noch kein Golfplatz. Plätze in der Nähe findest du über „Golfplatz hinzufügen“.</p>';
 	}
 	foreach ( $venues as $v ) {
 		fge_cc_venue_row( $req, $v );
@@ -101,7 +101,7 @@ function fge_cc_venues_panel( int $req ): void {
 	// Mehrere Entwürfe auf einmal anfragen (15.10.2026).
 	$drafts = array_values( array_filter( $venues, static fn( $v ) => 'idee' === (string) $v['status'] && '' !== fge_cc_partner_email( (int) $v['partner_id'] ) ) );
 	if ( count( $drafts ) > 1 ) {
-		echo '<div class="cc-stepfoot"><button type="button" class="cc-btn" data-cc-drawer-open="cc-askbulk">Alle ' . (int) count( $drafts ) . ' Entwürfe per Mail anfragen</button></div>';
+		echo '<div class="cc-stepfoot"><button type="button" class="cc-btn" data-cc-drawer-open="cc-askbulk">Alle ' . (int) count( $drafts ) . ' Plätze per Mail anfragen</button></div>';
 		fge_cc_mail_drawer( $req, 'cc-askbulk', count( $drafts ) . ' Plätze anfragen', 'fge_cc_venue_ask_bulk',
 			[ 'venue_ids[]' => array_map( static fn( $v ) => (int) $v['id'], $drafts ) ],
 			array_map( static fn( $v ) => [ (string) $v['title'], fge_cc_partner_email( (int) $v['partner_id'] ) ], $drafts ),
@@ -116,7 +116,7 @@ function fge_cc_venues_panel( int $req ): void {
 		fge_cc_button( 'fge_cc_venue_decline_all', $req, 'Allen übrigen absagen', [
 			'confirm' => 'Allen übrigen Plätzen eine freundliche Absage schicken?',
 		] );
-		echo '<p class="cc-muted">Persönlich formuliert, mit dem Hinweis, dass wir wieder anfragen. Einzeln absagen geht je Platz unter „Mehr".</p>';
+		echo '<p class="cc-muted">Persönlich formuliert, mit dem Hinweis, dass wir wieder anfragen. Einzeln absagen geht je Platz unter „Mehr“.</p>';
 		echo '</div>';
 	}
 
@@ -259,7 +259,7 @@ function fge_cc_venue_row( int $req, array $v ): void {
 	}
 
 	if ( '' === $mail ) {
-		echo '<span class="cc-warn">Keine Kontaktmail hinterlegt, ' . ( $dl ? 'nur telefonisch erreichbar.' : 'dieser Platz geht nur telefonisch.' ) . '</span>';
+		echo '<span class="cc-warn">Keine Kontaktmail hinterlegt, ' . ( $dl ? 'nur telefonisch erreichbar.' : 'diesen Platz bitte telefonisch anfragen.' ) . '</span>';
 	}
 	// Kontakt ergänzen nur, wo die Mail fehlt; sonst stünde es an jeder
 	// Stammdaten-Zeile und der Platz käme nie aus der Liste heraus.
@@ -587,9 +587,9 @@ function fge_cc_venue_reply_form( int $req, array $v, bool $bare = false ): void
 			$i_gross = (int) $it['price_gross'] ? '1' : '0';
 			$i_basis = 'pauschal' === (string) $it['price_basis'] ? 'pauschal' : 'person';
 			echo '<label class="cc-inline"><input type="checkbox" name="item_available[' . esc_attr( $key ) . ']" value="1"' . ( $i_on ? ' checked' : '' ) . '> ' . esc_html( (string) $it['label'] ) . '</label>';
-			echo '<input type="text" name="item_price[' . esc_attr( $key ) . ']" value="' . esc_attr( $i_price ) . '" placeholder="' . esc_attr( '' !== $ihint ? $ihint : 'Preis' ) . '">';
-			echo '<select name="item_gross[' . esc_attr( $key ) . ']"><option value="1"' . selected( $i_gross, '1', false ) . '>brutto</option><option value="0"' . selected( $i_gross, '0', false ) . '>netto</option></select>';
-			echo '<select name="item_basis[' . esc_attr( $key ) . ']"><option value="person"' . selected( $i_basis, 'person', false ) . '>p.P.</option><option value="pauschal"' . selected( $i_basis, 'pauschal', false ) . '>pauschal</option></select>';
+			echo '<input type="text" name="item_price[' . esc_attr( $key ) . ']" aria-label="' . esc_attr( 'Preis ' . $it['label'] ) . '" value="' . esc_attr( $i_price ) . '" placeholder="' . esc_attr( '' !== $ihint ? $ihint : 'Preis' ) . '">';
+			echo '<select name="item_gross[' . esc_attr( $key ) . ']" aria-label="brutto oder netto"><option value="1"' . selected( $i_gross, '1', false ) . '>brutto</option><option value="0"' . selected( $i_gross, '0', false ) . '>netto</option></select>';
+			echo '<select name="item_basis[' . esc_attr( $key ) . ']" aria-label="Basis"><option value="person"' . selected( $i_basis, 'person', false ) . '>p. P.</option><option value="pauschal"' . selected( $i_basis, 'pauschal', false ) . '>pauschal</option></select>';
 			echo '</div>';
 		}
 		echo '</div>';
@@ -597,15 +597,15 @@ function fge_cc_venue_reply_form( int $req, array $v, bool $bare = false ): void
 	}
 
 	// Extra-Posten, die der Platz zusätzlich anbietet (15.10.2026).
-	echo '<p class="cc-kicker">Extra Posten</p><div class="cc-extras" data-cc-clone-wrap>';
+	echo '<p class="cc-kicker">Weitere Posten</p><div class="cc-extras" data-cc-clone-wrap>';
 	echo '<div class="cc-item cc-extra" data-cc-clone-row>';
-	echo '<input type="text" name="extra_label[]" placeholder="z. B. Feuerwerk" aria-label="Extra Posten">';
-	echo '<input type="text" name="extra_price[]" placeholder="Preis" inputmode="decimal" aria-label="Preis Extra Posten">';
+	echo '<input type="text" name="extra_label[]" placeholder="z. B. Feuerwerk" aria-label="Weitere Posten">';
+	echo '<input type="text" name="extra_price[]" placeholder="Preis" inputmode="decimal" aria-label="Preis Weitere Posten">';
 	echo '<select name="extra_gross[]" aria-label="brutto oder netto"><option value="1">brutto</option><option value="0">netto</option></select>';
-	echo '<select name="extra_basis[]" aria-label="Basis"><option value="pauschal">pauschal</option><option value="person">p.P.</option></select>';
+	echo '<select name="extra_basis[]" aria-label="Basis"><option value="pauschal">pauschal</option><option value="person">p. P.</option></select>';
 	echo '</div></div>';
 	echo '<p><button type="button" class="cc-btn cc-btn--dashed" data-cc-clone>Weiteren Posten hinzufügen</button></p>';
-	echo '<p class="cc-muted">Extra Posten zählen nur bei einer Zusage. Gespeicherte stehen danach oben bei den Positionen.</p>';
+	echo '<p class="cc-muted">Weitere Posten zählen nur bei einer Zusage. Gespeicherte stehen danach oben bei den Positionen.</p>';
 
 	echo '<label class="cc-field cc-field--wide"><span>Grund bei Absage</span>';
 	echo '<input type="text" name="reason" list="cc-reasons" value="' . esc_attr( (string) $v['reason'] ) . '" placeholder="z. B. Termin belegt"></label>';
@@ -616,7 +616,7 @@ function fge_cc_venue_reply_form( int $req, array $v, bool $bare = false ): void
 	echo '</datalist>';
 
 	echo '<label class="cc-field cc-field--wide"><span>Notiz aus dem Gespräch</span>';
-	echo '<textarea name="note" rows="2" placeholder="Was sonst noch gesagt wurde">' . esc_textarea( (string) $v['note'] ) . '</textarea></label>';
+	echo '<textarea name="note" rows="2" aria-label="Notiz zur Rückmeldung" placeholder="Was sonst noch gesagt wurde">' . esc_textarea( (string) $v['note'] ) . '</textarea></label>';
 
 	if ( $bare ) {
 		echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn" data-cc-drawer-close>Abbrechen</button><button type="submit" class="cc-btn cc-btn--primary">Rückmeldung speichern</button></div>';

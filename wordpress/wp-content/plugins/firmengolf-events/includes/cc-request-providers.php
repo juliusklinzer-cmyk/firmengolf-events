@@ -1,6 +1,6 @@
 <?php
 /**
- * Dienstleister vor dem Angebot anfragen (Julius, 15.10.2026, Entwurf „Anfragen").
+ * Dienstleister vor dem Angebot anfragen (Julius, 15.10.2026, Entwurf „Anfragen“).
  *
  * Shuttle, Catering, Fotograf usw. werden wie Plätze angefragt: aufnehmen,
  * per Mail oder Telefon anfragen, nachfassen, Rückmeldung mit Preisen
@@ -146,7 +146,7 @@ function fge_provider_send_request( int $req, int $row_id, array $opts = [] ): b
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
 		' . ( '' !== $list ? '<p style="margin:0 0 4px;font-weight:600;">Angefragt ist</p><ul style="margin:0 0 16px;padding-left:20px;">' . $list . '</ul>' : '' ) . '
 		<p style="margin:0 0 16px;">Eine kurze Antwort auf diese Mail genügt: ' . ( count( $labels ) > 1 ? 'welche Termine gehen' : 'geht der Termin' ) . ', und was kostet es bei euch (netto oder brutto, pauschal oder pro Person)?</p>
-		<p style="margin:0;">Danke dir und viele Grüße<br>' . esc_html( (string) ( $co['managing_director'] ?? 'Firmengolf' ) ) . '</p>
+		<p style="margin:0;">Danke euch und viele Grüße<br>' . esc_html( (string) ( $co['managing_director'] ?? 'Firmengolf' ) ) . '</p>
 	';
 	$headers = [ 'Content-Type: text/html; charset=UTF-8' ];
 	if ( ! empty( $co['email_owner'] ) && is_email( $co['email_owner'] ) ) {
@@ -192,9 +192,11 @@ function fge_provider_send_cancel( int $req, array $row, string $reason ): bool 
 // Auftragsmail kommt über die Positionen), alle übrigen angefragten bekommen
 // eine kurze Absage.
 add_action( 'fge_offer_accepted', static function ( int $req ): void {
+	// Nur Positionen, die der Kunde auch gewählt hat (Audit 15.10.2026).
 	$used = [];
-	foreach ( (array) get_post_meta( $req, '_fge_extra_services', true ) as $x ) {
-		if ( ! empty( $x['provider_row'] ) ) {
+	$sel  = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
+	foreach ( (array) get_post_meta( $req, '_fge_extra_services', true ) as $i => $x ) {
+		if ( ! empty( $x['provider_row'] ) && in_array( (int) ( $x['id'] ?? 0 ) ?: (int) $i, $sel, true ) ) {
 			$used[ (int) $x['provider_row'] ] = true;
 		}
 	}
@@ -277,7 +279,7 @@ add_action( 'admin_post_fge_cc_provider_item', static function (): void {
 	fge_cc_redirect( $req, 'saved' );
 } );
 
-// ── Oberfläche: Gruppe „Dienstleister" im Schritt Anfragen ───────────────────
+// ── Oberfläche: Gruppe „Dienstleister“ im Schritt Anfragen ───────────────────
 
 function fge_cc_providers_panel( int $req ): void {
 	$rows = fge_venues_get( $req, 'dl' );
@@ -287,7 +289,7 @@ function fge_cc_providers_panel( int $req ): void {
 	echo '<div class="cc-block">';
 	echo '<div class="cc-block-head"><h3>Dienstleister</h3><button type="button" class="cc-btn" data-cc-drawer-open="cc-addprovider">Dienstleister hinzufügen</button></div>';
 	if ( ! $rows ) {
-		echo '<p class="cc-rowempty">Noch kein Dienstleister angefragt. Shuttle, Catering oder Fotograf findest du über „Dienstleister hinzufügen".</p>';
+		echo '<p class="cc-rowempty">Noch kein Dienstleister angefragt. Shuttle, Catering oder Fotograf findest du über „Dienstleister hinzufügen“.</p>';
 	}
 	foreach ( $rows as $row ) {
 		fge_cc_venue_row( $req, $row );

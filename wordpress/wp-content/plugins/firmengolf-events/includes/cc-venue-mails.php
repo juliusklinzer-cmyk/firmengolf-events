@@ -32,7 +32,7 @@ function fge_venue_mail_facts( int $req ): array {
 /**
  * Was genau angefragt ist, aus dem Event (meist ein Platzhalter): Beschreibung,
  * Dauer, Paketinhalt und Ablauf. Ohne das weiß der Platz nicht, was ein
- * „Teamevent" bei uns heißt (Julius, 07.10.2026). Ablauf und Paketinhalt nehmen
+ * „Teamevent“ bei uns heißt (Julius, 07.10.2026). Ablauf und Paketinhalt nehmen
  * zuerst, was im Angebot angepasst wurde, sonst das Event.
  */
 function fge_venue_program_html( int $req ): string {
@@ -116,7 +116,7 @@ function fge_venue_request_defaults( int $req, bool $followup = false ): array {
 	];
 }
 
-/** Notiz zu einer Leistung aus dem Bedarf (z. B. „Grillbuffet"), leer ohne. */
+/** Notiz zu einer Leistung aus dem Bedarf (z. B. „Grillbuffet“), leer ohne. */
 function fge_need_note( int $req, string $label ): string {
 	$notes = (array) get_post_meta( $req, '_fge_need_notes', true );
 	return trim( (string) ( $notes[ mb_strtolower( trim( $label ) ) ] ?? '' ) );
@@ -129,7 +129,7 @@ function fge_need_note( int $req, string $label ): string {
  * die Angebote mehrerer Plätze vergleichbar werden und nicht nur beim Green Fee.
  *
  * $opts: subject, intro (aus dem Dialog im Control Center), followup (Nachfrage
- * an einen schon angefragten Platz: gleicher Inhalt, Stand bleibt „angefragt").
+ * an einen schon angefragten Platz: gleicher Inhalt, Stand bleibt „angefragt“).
  */
 function fge_venue_send_request( int $req, int $venue_id, array $opts = [] ): bool {
 	$row = fge_venue_get( $venue_id );
@@ -157,7 +157,7 @@ function fge_venue_send_request( int $req, int $venue_id, array $opts = [] ): bo
 	$group = fge_request_group_label( $req );
 
 	// Anlass mit Niveau und Startzeitwunsch, damit der Platz Pro und Slot
-	// gleich mitdenken kann: „Golf-Teamevent, überwiegend Anfänger, Start After-Work".
+	// gleich mitdenken kann: „Golf-Teamevent, überwiegend Anfänger, Start After-Work“.
 	$start  = trim( (string) get_post_meta( $req, '_fge_start_time', true ) );
 	$anlass = array_filter( [
 		trim( $f['event'] ),
@@ -178,7 +178,7 @@ function fge_venue_send_request( int $req, int $venue_id, array $opts = [] ): bo
 	$dates_html = '';
 	if ( $labels ) {
 		if ( 1 === count( $labels ) ) {
-			// Nur ein Wunschtermin: keine Liste, kein „je Termin" (Julius, 07.10.2026).
+			// Nur ein Wunschtermin: keine Liste, kein „je Termin“ (Julius, 07.10.2026).
 			$dates_html = '<p style="margin:0 0 4px;font-weight:600;">Wunschtermin</p><p style="margin:0 0 8px;">' . esc_html( (string) reset( $labels ) ) . '</p>'
 				. '<p style="margin:0 0 16px;">Sagt uns bitte, ob der Termin bei euch geht, und nennt gern einen Alternativtermin, falls nicht.</p>';
 		} else {

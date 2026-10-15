@@ -5,7 +5,7 @@
  * Nach der Buchung fehlen genau die Angaben, die nur der Platz kennt:
  * Ansprechpartner vor Ort mit Telefon, Golflehrer, Treffpunkt, Startzeit und
  * was die Gruppe mitbringen soll. Bisher hat Julius das telefonisch erfragt
- * und in die Box „Schritt 4: Event-Tag" getippt. Jetzt trägt der Platz es über
+ * und in die Box „Schritt 4: Event-Tag“ getippt. Jetzt trägt der Platz es über
  * einen signierten Link aus der Auftragsbestätigung selbst ein, nach dem
  * Muster von cc-venue-catalog.php.
  *

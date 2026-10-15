@@ -210,7 +210,8 @@ function fge_cc_partner_row( array $r ): void {
 		echo '<p class="cc-muted">Keine weiteren Ansprechpartner hinterlegt.</p>';
 	}
 
-	echo '<p class="cc-dir-links"><a href="' . esc_url( get_edit_post_link( $r['id'], 'raw' ) ) . '">Im WordPress öffnen</a></p>';
+	$is_partner = 'stammdaten' !== (string) get_post_meta( $r['id'], '_fge_partner_status', true );
+	echo '<p class="cc-dir-links">' . ( $is_partner ? '<a href="' . esc_url( fge_cc_url( 'partner', [ 'pid' => $r['id'] ] ) ) . '">Partner öffnen</a> · ' : '' ) . '<a href="' . esc_url( get_edit_post_link( $r['id'], 'raw' ) ) . '">Im WordPress öffnen</a></p>';
 	echo '</div>';
 }
 

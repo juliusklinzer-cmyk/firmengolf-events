@@ -1,6 +1,6 @@
 <?php
 /**
- * Anfragen im Control Center nach dem Entwurf „Anfragen" aus Claude Design
+ * Anfragen im Control Center nach dem Entwurf „Anfragen“ aus Claude Design
  * (Julius, 15.10.2026): Liste als Tabelle mit Reitern, Detail mit sechs
  * Schritten Bedarf, Anfragen, Kalkulation, Angebot, Termin, Abrechnung.
  *
@@ -32,6 +32,29 @@ function fge_cc_flow_steps(): array {
  * step: aktueller Schritt 1 bis 6, 7 heißt alles erledigt.
  * label/tone: Status-Pille. bucket: Reiter der Liste (offen, kunde, gebucht, fertig).
  */
+/**
+ * Plätze je Status für eine Anfrage, für Listen gesammelt in einer Abfrage
+ * (Audit 15.10.2026: vorher lud jede Listenzeile alle Plätze samt Positionen).
+ */
+function fge_cc_venue_status_counts( int $req, array $prime = [] ): array {
+	static $cache = [];
+	$need = array_values( array_diff( array_map( 'intval', $prime ?: [ $req ] ), array_keys( $cache ) ) );
+	if ( $need && function_exists( 'fge_venues_table' ) ) {
+		global $wpdb;
+		$t   = fge_venues_table();
+		$in  = implode( ',', array_map( 'intval', $need ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$res = $wpdb->get_results( "SELECT request_id, status, COUNT(*) AS n FROM {$t} WHERE request_id IN ({$in}) AND kind = 'platz' GROUP BY request_id, status", ARRAY_A ) ?: [];
+		foreach ( $need as $id ) {
+			$cache[ $id ] = [];
+		}
+		foreach ( $res as $r ) {
+			$cache[ (int) $r['request_id'] ][ (string) $r['status'] ] = (int) $r['n'];
+		}
+	}
+	return $cache[ $req ] ?? [];
+}
+
 function fge_cc_flow( int $req ): array {
 	static $cache = [];
 	if ( isset( $cache[ $req ] ) ) {
@@ -40,8 +63,8 @@ function fge_cc_flow( int $req ): array {
 	$status = (string) get_post_meta( $req, '_fge_request_status', true );
 	$offer  = (string) get_post_meta( $req, '_fge_offer_status', true );
 	$sent   = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
-	$venues = function_exists( 'fge_venues_get' ) ? fge_venues_get( $req ) : [];
-	$by     = array_count_values( array_map( static fn( $v ) => (string) $v['status'], $venues ) );
+	$by     = fge_cc_venue_status_counts( $req );
+	$venues = array_sum( $by ) > 0;
 	$yes    = ( $by['zugesagt'] ?? 0 ) + ( $by['gewaehlt'] ?? 0 );
 	$final  = function_exists( 'fge_rr_final_index' ) ? fge_rr_final_index( $req ) : 0;
 
@@ -61,7 +84,7 @@ function fge_cc_flow( int $req ): array {
 	}
 
 	// Phasen nach dem Event (Julius, 15.10.2026): durchgeführt, Rechnung gestellt,
-	// bezahlt und damit abgeschlossen. Erst „abgeschlossen" verlässt „Gebucht".
+	// bezahlt und damit abgeschlossen. Erst „abgeschlossen“ verlässt „Gebucht“.
 	if ( 'abgeschlossen' === $status ) {
 		$out = [ 7, 'Abgeschlossen', 'neutral', 'fertig' ];
 	} elseif ( 'rechnung_in_lexoffice_erstellt' === $status ) {
@@ -111,6 +134,9 @@ function fge_cc_page_requests(): void {
 	}
 
 	$result = fge_cc_query_requests( [], 300 );
+	if ( $result['ids'] ) {
+		fge_cc_venue_status_counts( 0, $result['ids'] );
+	}
 	$rows   = [];
 	$count  = array_fill_keys( array_keys( $tabs ), 0 );
 	foreach ( $result['ids'] as $id ) {
@@ -124,11 +150,18 @@ function fge_cc_page_requests(): void {
 		$flow = fge_cc_flow( $id );
 		$count[ $flow['bucket'] ]++;
 		$count['alle']++;
-		if ( 'alle' !== $tab && $flow['bucket'] !== $tab ) {
-			continue;
-		}
 		$rows[] = [ $id, $company ?: ( $contact ?: 'Ohne Firma' ), $contact, $f, $flow ];
 	}
+	// Ohne gewählten Reiter nicht auf einer leeren Ansicht landen (Audit 15.10.2026).
+	if ( ! isset( $_GET['tab'] ) && 0 === $count[ $tab ] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		foreach ( [ 'offen', 'kunde', 'gebucht', 'fertig' ] as $k ) {
+			if ( $count[ $k ] > 0 ) {
+				$tab = $k;
+				break;
+			}
+		}
+	}
+	$rows = array_values( array_filter( $rows, static fn( $r ) => 'alle' === $tab || $r[4]['bucket'] === $tab ) );
 
 	fge_cc_truncation_note( $result, 'Anfragen' );
 	echo '<p class="cc-top-sub cc-sub-under">' . esc_html( $count['offen'] . ' offen, ' . $count['kunde'] . ' beim Kunden, ' . $count['gebucht'] . ' gebucht' ) . '</p>';
@@ -258,7 +291,7 @@ function fge_cc_flow_header( int $req, array $flow ): void {
 		fge_cc_button( 'fge_cc_status', $req, 'Als verloren ablegen', [
 			'class'   => 'cc-menu-item',
 			'fields'  => [ 'status' => 'verloren' ],
-			'confirm' => 'Anfrage als verloren ablegen? Sie wandert in „Abgeschlossen" und lässt sich wieder aufnehmen.',
+			'confirm' => 'Anfrage als verloren ablegen? Sie wandert in „Abgeschlossen“ und lässt sich wieder aufnehmen. Ist ein Angebot beim Kunden, wird es geschlossen, Plätze und Dienstleister bekommen Bescheid.',
 		] );
 		echo '</div></details>';
 	}
@@ -454,7 +487,7 @@ function fge_cc_need_questions( int $req ): array {
 	return array_values( array_filter( (array) get_post_meta( $req, '_fge_need_questions', true ), 'is_array' ) );
 }
 
-/** Prüfpunkte vor „Bedarf ist geklärt", je [Text, erfüllt]. */
+/** Prüfpunkte vor „Bedarf ist geklärt“, je [Text, erfüllt]. */
 function fge_cc_need_checks( int $req ): array {
 	$f     = fge_cc_request_fact_data( $req );
 	$dates = function_exists( 'fge_request_wish_date_labels' ) ? fge_request_wish_date_labels( $req ) : [];
@@ -481,7 +514,7 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 		echo '<div class="cc-quote"><span class="cc-label">Nachricht des Kunden</span><p>' . nl2br( esc_html( $msg ) ) . '</p></div>';
 	}
 
-	// Geklärt: Zusammenfassung wie im Entwurf, „Anpassen" klappt die Bearbeitung auf.
+	// Geklärt: Zusammenfassung wie im Entwurf, „Anpassen“ klappt die Bearbeitung auf.
 	if ( $done ) {
 		echo '<div class="cc-needsum">';
 		fge_cc_need_readonly( $req, $f );
@@ -505,7 +538,7 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	echo '<form class="cc-form cc-needform" id="cc-needform" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 	echo '<input type="hidden" name="action" value="fge_cc_need_save"><input type="hidden" name="request_id" value="' . (int) $req . '">';
 	wp_nonce_field( 'fge_cc_need_save_' . $req );
-	// Enter in einem Textfeld speichert nur und trifft nicht das erste „×".
+	// Enter in einem Textfeld speichert nur und trifft nicht das erste „×“.
 	echo '<button type="submit" name="save_only" value="1" class="cc-sr" tabindex="-1" aria-hidden="true">Speichern</button>';
 
 	echo '<label class="cc-field cc-field--wide"><span>Event</span><input type="text" name="event" value="' . esc_attr( (string) get_post_meta( $req, '_fge_need_event', true ) ) . '" placeholder="' . esc_attr( $f['event'] ) . '"></label>';
@@ -542,7 +575,7 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	foreach ( $services as $lk => $sv ) {
 		echo '<div class="cc-svcrow">';
 		echo '<span class="cc-svcrow-label"><strong>' . esc_html( $sv['label'] ) . '</strong><span class="cc-muted">' . esc_html( fge_cc_need_who( $sv['label'] ) ) . '</span></span>';
-		echo '<input type="text" name="note[' . esc_attr( $lk ) . ']" value="' . esc_attr( fge_need_note( $req, $sv['label'] ) ) . '" placeholder="Details für die Anfrage, z. B. Menüwunsch, Abholort" aria-label="' . esc_attr( 'Details zu ' . $sv['label'] ) . '">';
+		echo '<input type="text" name="note[' . esc_attr( md5( $lk ) ) . ']" value="' . esc_attr( fge_need_note( $req, $sv['label'] ) ) . '" placeholder="Details für die Anfrage, z. B. Menüwunsch, Abholort" aria-label="' . esc_attr( 'Details zu ' . $sv['label'] ) . '">';
 		echo '<button type="submit" name="remove_one" value="' . esc_attr( $sv['label'] ) . '" class="cc-svcrow-x" title="Leistung entfernen"><span aria-hidden="true">×</span><span class="cc-sr">' . esc_html( $sv['label'] . ' entfernen' ) . '</span></button>';
 		echo '</div>';
 	}
@@ -575,7 +608,7 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	echo '<div class="cc-qadd"><input type="text" name="question" form="cc-q-add" placeholder="Neue Frage notieren" aria-label="Neue Frage an den Kunden"><button type="submit" form="cc-q-add" class="cc-btn">Hinzufügen</button></div>';
 	echo '</div>';
 
-	// Fuß: Prüfpunkte, Hinweis, „Bedarf ist geklärt" oder „Änderungen speichern".
+	// Fuß: Prüfpunkte, Hinweis, „Bedarf ist geklärt“ oder „Änderungen speichern“.
 	$checks = fge_cc_need_checks( $req );
 	$ok     = ! array_filter( $checks, static fn( $c ) => ! $c[1] );
 	echo '<div class="cc-stepfoot cc-stepfoot--need">';
@@ -691,8 +724,9 @@ add_action( 'admin_post_fge_cc_need_save', static function (): void {
 				update_post_meta( $req, $mk, $keep );
 			}
 		}
-		$lines = fge_cc_need_free_lines( $req );
-		$keep  = array_values( array_filter( $lines, static fn( $x ) => mb_strtolower( $x ) !== mb_strtolower( $label ) ) );
+		// Ungekürzt arbeiten, sonst würden die übrigen Wünsche beim Speichern abgeschnitten.
+		$lines = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n|,/', (string) get_post_meta( $req, '_fge_additional_wishes', true ) ) ), 'strlen' ) );
+		$keep  = array_values( array_filter( $lines, static fn( $x ) => mb_strtolower( mb_substr( $x, 0, 120 ) ) !== mb_strtolower( $label ) ) );
 		if ( count( $keep ) !== count( $lines ) ) {
 			update_post_meta( $req, '_fge_additional_wishes', implode( "\n", $keep ) );
 		}
@@ -718,8 +752,9 @@ add_action( 'admin_post_fge_cc_need_save', static function (): void {
 	$notes_in = (array) wp_unslash( $_POST['note'] ?? [] );
 	$notes    = [];
 	foreach ( fge_cc_need_services( $req ) as $lk => $sv ) {
-		$n = mb_substr( trim( sanitize_text_field( (string) ( $notes_in[ $lk ] ?? '' ) ) ), 0, 300 );
-		if ( '' === $n && ! isset( $notes_in[ $lk ] ) ) {
+		$nk = md5( $lk ); // Schlüssel ohne Sonderzeichen, eckige Klammern im Text brachen das Formular
+		$n  = mb_substr( trim( sanitize_text_field( (string) ( $notes_in[ $nk ] ?? '' ) ) ), 0, 300 );
+		if ( '' === $n && ! isset( $notes_in[ $nk ] ) ) {
 			$n = fge_need_note( $req, $sv['label'] );
 		}
 		if ( '' !== $n ) {
@@ -870,7 +905,7 @@ function fge_cc_flow_pane_partners( int $req, int $cur ): void {
 function fge_cc_flow_pane_calc( int $req, int $cur ): void {
 	$sent  = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
 	$yes   = static fn( $v ) => in_array( (string) $v['status'], [ 'zugesagt', 'gewaehlt' ], true );
-	$golf  = array_values( array_filter( fge_cc_flow( $req )['venues'], $yes ) );
+	$golf  = array_values( array_filter( fge_venues_get( $req ), $yes ) );
 	$provs = array_values( array_filter( fge_venues_get( $req, 'dl' ), $yes ) );
 	$open  = count( array_filter( fge_venues_get( $req, 'all' ), static fn( $v ) => 'angefragt' === (string) $v['status'] ) );
 
@@ -910,7 +945,7 @@ function fge_cc_flow_pane_calc( int $req, int $cur ): void {
 	}
 }
 
-/** Eine Zeile „Rückmeldung": frei an welchen Terminen, welche Preise. */
+/** Eine Zeile „Rückmeldung“: frei an welchen Terminen, welche Preise. */
 function fge_cc_flow_reply_summary( int $req, array $v ): void {
 	$labels = function_exists( 'fge_request_wish_date_labels' ) ? fge_request_wish_date_labels( $req ) : [];
 	$free   = [];
@@ -1063,15 +1098,17 @@ function fge_cc_flow_pane_billing( int $req, int $cur ): void {
 			fge_cc_invoice_form( $req );
 		} elseif ( ! $done && 3 === $n && 2 === $at ) {
 			fge_cc_paid_button( $req );
-		} elseif ( $done && 2 === $n && '' !== ( $no = (string) get_post_meta( $req, '_fge_lexoffice_invoice_number', true ) ) ) {
+		}
+		if ( $done && 2 === $n && '' !== ( $no = (string) get_post_meta( $req, '_fge_lexoffice_invoice_number', true ) ) ) {
 			echo '<span class="cc-mono">' . esc_html( $no ) . '</span>';
-		} elseif ( $done && $n >= 2 && $at === $n ) {
+		}
+		if ( $done && $n >= 2 && $at === $n ) {
 			// Versehen zurücknehmen: eine Stufe zurück.
 			$back = 3 === $n ? 'rechnung_in_lexoffice_erstellt' : ( $date > 0 && $date < fge_cc_today() ? 'event_durchgefuehrt' : 'angebot_angenommen' );
 			fge_cc_button( 'fge_cc_status', $req, 'Zurücknehmen', [
 				'class'   => 'cc-btn cc-btn--text',
 				'fields'  => [ 'status' => $back ],
-				'confirm' => 'Den Haken bei „' . $label . '" zurücknehmen?',
+				'confirm' => 'Den Haken bei „' . $label . '“ zurücknehmen?',
 			] );
 		}
 		echo '</li>';
@@ -1084,7 +1121,7 @@ function fge_cc_flow_pane_billing( int $req, int $cur ): void {
 
 /**
  * Läuft mit der Tagesmail um 07:00. Gebuchte Vorgänge, deren Event vor heute
- * lag, gehen auf „durchgeführt". Abgeschlossen wird erst mit der Zahlung
+ * lag, gehen auf „durchgeführt“. Abgeschlossen wird erst mit der Zahlung
  * (Schritt Abrechnung). Der Statuswechsel löst wie von Hand die
  * Danke-Mail mit Bewertungsbitte aus (review-request.php), einmal je Anfrage,
  * aber nur für Events der letzten sieben Tage.
@@ -1104,11 +1141,15 @@ function fge_cc_auto_close(): int {
 			continue;
 		}
 		$status = (string) get_post_meta( $req, '_fge_request_status', true );
-		if ( in_array( $status, [ 'event_durchgefuehrt', 'rechnung_in_lexoffice_erstellt', 'abgeschlossen', 'verloren' ], true ) ) {
+		$date   = fge_cc_event_date( (int) $req );
+		if ( 'verloren' === $status || $date <= 0 || $date >= fge_cc_today() ) {
 			continue;
 		}
-		$date = fge_cc_event_date( (int) $req );
-		if ( $date <= 0 || $date >= fge_cc_today() ) {
+		// Schon vor dem Event abgerechnet (Vorkasse): Status bleibt, der Dank geht jetzt.
+		if ( in_array( $status, [ 'event_durchgefuehrt', 'rechnung_in_lexoffice_erstellt', 'abgeschlossen' ], true ) ) {
+			if ( 'event_durchgefuehrt' !== $status && $date >= fge_cc_today() - 7 * DAY_IN_SECONDS && function_exists( 'fge_send_review_request_email' ) && fge_send_review_request_email( (int) $req ) ) {
+				fge_activity_add( (int) $req, 'system', 'Danke-Mail nach dem Event gesendet (vorher schon abgerechnet)' );
+			}
 			continue;
 		}
 		// Altfälle (Event länger als eine Woche her) schließen still: eine Danke-Mail
@@ -1120,7 +1161,7 @@ function fge_cc_auto_close(): int {
 			update_post_meta( $req, '_fge_review_mail_skipped', 'auto_close_late' );
 		}
 		fge_request_set_status( (int) $req, 'event_durchgefuehrt' );
-		fge_activity_add( (int) $req, 'system', 'Am Tag nach dem Event automatisch auf durchgeführt gesetzt' . ( $late ? ' (Event lag über eine Woche zurück, ohne Danke-Mail)' : '' ) );
+		fge_activity_add( (int) $req, 'system', 'Nach dem Event automatisch auf durchgeführt gesetzt' . ( $late ? ' (Event lag über eine Woche zurück, ohne Danke-Mail)' : '' ) );
 		$n++;
 	}
 	return $n;

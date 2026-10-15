@@ -1,7 +1,7 @@
 <?php
 /**
  * Control Center: Rechnungen, Leads, Partnercodes, Nutzer, Einstellungen
- * (Julius, 15.10.2026: „baue das ganze Control Center fertig", Design folgt je
+ * (Julius, 15.10.2026: „baue das ganze Control Center fertig“, Design folgt je
  * Menüpunkt). Alles auf vorhandenen Daten, Lexoffice bleibt manuell.
  *
  * Neu ist nur _fge_lead_status an Budget-Leads (neu, kontaktiert, umgewandelt,
@@ -23,11 +23,12 @@ function fge_cc_admin_messages(): array {
 		'pc_invalid'   => [ 'err', 'Bitte einen Inhaber angeben.' ],
 		'pc_settled'   => [ 'ok', 'Provision als abgerechnet markiert.' ],
 		'pc_none'      => [ 'ok', 'Keine offene Provision zum Abrechnen.' ],
-		'user_reset'   => [ 'ok', 'Link zum Passwort setzen ist per Mail raus.' ],
+		'user_reset'   => [ 'ok', 'Der Link zum Setzen des Passworts ist per Mail raus.' ],
 		'user_mail'    => [ 'ok', 'Mailadresse geändert. Die alte Adresse bekommt einen Hinweis.' ],
 		'user_created' => [ 'ok', 'Zugang angelegt. Die Einladung mit Passwort-Link ist raus.' ],
 		'user_invalid' => [ 'err', 'Die Mailadresse ist ungültig oder schon vergeben.' ],
 		'user_failed'  => [ 'err', 'Das hat nicht geklappt, bitte im WordPress prüfen.' ],
+		'user_admin_mail' => [ 'err', 'Die Mailadresse eines anderen Admins änderst du im WordPress, dort mit Bestätigung an die neue Adresse.' ],
 	];
 }
 
@@ -73,7 +74,7 @@ add_action( 'admin_post_fge_cc_invoice', static function (): void {
 	fge_cc_redirect( $req, $msg );
 } );
 
-/** Knopf „Rechnung gestellt" mit Feld für die Lexoffice-Nummer. */
+/** Knopf „Rechnung gestellt“ mit Feld für die Lexoffice-Nummer. */
 function fge_cc_invoice_form( int $req, string $back = '', string $tab = '' ): void {
 	echo '<form class="cc-actform cc-invform" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 	echo '<input type="hidden" name="action" value="fge_cc_invoice"><input type="hidden" name="request_id" value="' . (int) $req . '"><input type="hidden" name="step" value="set">';
@@ -106,6 +107,14 @@ function fge_cc_page_invoices(): void {
 		$net           = fge_cc_offer_net( (int) $req );
 		$rows[ $b ][]  = [ (int) $req, $net ];
 		$sum[ $b ]    += $net;
+	}
+	if ( ! isset( $_GET['tab'] ) && ! $rows[ $tab ] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		foreach ( array_keys( $tabs ) as $k ) {
+			if ( $rows[ $k ] ) {
+				$tab = $k;
+				break;
+			}
+		}
 	}
 	fge_cc_truncation_note( $res, 'Buchungen' );
 	echo '<p class="cc-top-sub cc-sub-under">Rechnungen schreibst du in Lexoffice, hier hältst du nach, was gestellt und bezahlt ist.</p>';
@@ -194,13 +203,19 @@ add_action( 'admin_post_fge_cc_lead', static function (): void {
 function fge_cc_page_leads(): void {
 	fge_cc_message();
 	$st   = sanitize_key( wp_unslash( $_GET['tab'] ?? 'offen' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$all  = get_posts( [
-		'post_type'   => 'firmengolf_request',
-		'post_status' => [ 'publish', 'draft' ],
-		'numberposts' => 500,
-		'fields'      => 'ids',
-		'meta_query'  => [ 'relation' => 'OR', [ 'key' => '_fge_request_type', 'value' => 'budget_lead' ], [ 'key' => '_fge_lead_status', 'compare' => 'EXISTS' ] ], // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-	] );
+	// Direkt per SQL: eine OR-Metaabfrage würde vom Demo-Filter (demo-portal.php)
+	// um eine weitere ODER-Bedingung ergänzt und zeigte dann alle Anfragen (Audit).
+	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$all = array_map( 'intval', $wpdb->get_col(
+		"SELECT DISTINCT p.ID FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} m ON m.post_id = p.ID
+		 WHERE p.post_type = 'firmengolf_request' AND p.post_status IN ('publish','draft')
+		 AND ( ( m.meta_key = '_fge_request_type' AND m.meta_value = 'budget_lead' ) OR m.meta_key = '_fge_lead_status' )
+		 ORDER BY p.post_date DESC LIMIT 500"
+	) );
+	if ( function_exists( 'fge_is_demo_request' ) ) {
+		$all = array_values( array_filter( $all, static fn( $id ) => ! fge_is_demo_request( $id ) ) );
+	}
 	$map  = fge_cc_lead_statuses();
 	$of   = static fn( int $id ) => (string) get_post_meta( $id, '_fge_lead_status', true ) ?: 'neu';
 	$tabs = [ 'offen' => 'Offen', 'umgewandelt' => 'Umgewandelt', 'verloren' => 'Verloren', 'alle' => 'Alle' ];
@@ -409,6 +424,16 @@ add_action( 'admin_post_fge_cc_user', static function (): void {
 		wp_safe_redirect( fge_cc_url( 'nutzer', [ 'msg' => $msg ] ) );
 		exit;
 	};
+	// Nutzerverwaltung braucht dieselben Rechte wie im WordPress (Audit 15.10.2026).
+	if ( ( 'create' === $do && ! ( current_user_can( 'create_users' ) && current_user_can( 'promote_users' ) ) )
+		|| ( 'create' !== $do && ! current_user_can( 'edit_user', $uid ) ) ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
+	}
+	// Mailadresse anderer Admins nur über das WordPress mit Bestätigung, sonst
+	// reicht eine gekaperte Sitzung, um einen Admin-Zugang zu übernehmen.
+	if ( 'mail' === $do && $uid !== get_current_user_id() && user_can( $uid, 'manage_options' ) ) {
+		$back( 'user_admin_mail' );
+	}
 	if ( 'create' === $do ) {
 		$mail = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 		$name = trim( sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) ) );
@@ -482,7 +507,7 @@ function fge_cc_page_users(): void {
 		echo '<td>' . ( $pid > 0 ? '<a href="' . esc_url( fge_cc_url( 'partner', [ 'pid' => $pid ] ) ) . '">' . esc_html( function_exists( 'fge_cc_partner_name' ) ? fge_cc_partner_name( $pid ) : get_the_title( $pid ) ) . '</a>' : '' ) . '</td>';
 		echo '<td class="cc-tnum">' . esc_html( wp_date( 'd.m.Y', strtotime( $u->user_registered ) ) ) . '</td><td class="cc-td-act">';
 		fge_cc_user_form_open( $u->ID, 'reset' );
-		echo '<button type="submit" class="cc-btn cc-btn--tiny" onclick="return confirm(' . esc_attr( wp_json_encode( 'Link zum Passwort setzen an ' . $u->user_email . ' senden?' ) ) . ')">Passwort-Link senden</button></form>';
+		echo '<button type="submit" class="cc-btn cc-btn--tiny" onclick="return confirm(' . esc_attr( wp_json_encode( 'Link zum Setzen des Passworts an ' . $u->user_email . ' senden?' ) ) . ')">Passwort-Link senden</button></form>';
 		echo '<button type="button" class="cc-btn cc-btn--text" data-cc-drawer-open="cc-user-' . (int) $u->ID . '">Mail ändern</button>';
 		echo '</td></tr>';
 	}
@@ -545,7 +570,8 @@ function fge_cc_page_settings(): void {
 	echo '<section class="cc-card"><h2 class="cc-h-small">Kalkulation</h2><dl class="cc-facts">';
 	fge_cc_fact( 'Aufschlag', number_format_i18n( function_exists( 'fge_xs_default_margin' ) ? fge_xs_default_margin() : 20, 0 ) . ' % auf den Einkauf netto' );
 	fge_cc_fact( 'Umsatzsteuer', number_format_i18n( function_exists( 'fge_xs_vat_percent' ) ? fge_xs_vat_percent() : 19, 0 ) . ' %' );
-	fge_cc_fact( 'Preisglättung', 'auf 4 oder 9 am Ende, Stufen 5 € p. P. und 50 € pauschal' );
+	fge_cc_fact( 'Preise auf der Website', 'enden auf 4 oder 9, Stufen 5 € p. P. und 50 € pauschal' );
+	fge_cc_fact( 'Positionen im Angebot', 'auf volle Euro aufgerundet' );
 	fge_cc_fact( 'Antwortfrist Angebot', 'im Senden-Dialog wählbar, höchstens 60 Tage' );
 	echo '</dl><p class="cc-muted">Preise des Budget-Rechners: <a href="' . esc_url( admin_url( 'edit.php?post_type=firmengolf_event&page=fge-budget-calc' ) ) . '">im WordPress</a>.</p></section>';
 

@@ -215,6 +215,8 @@
 
 	// ── Menü auf dem Telefon ─────────────────────────────────────────────
 	function initNav() {
+		var on = document.querySelector('.cc-nav .is-on');
+		if (on && on.scrollIntoView) { on.scrollIntoView({ block: 'nearest' }); }
 		var t = document.querySelector('[data-cc-navtoggle]');
 		if (!t) { return; }
 		t.addEventListener('click', function () {

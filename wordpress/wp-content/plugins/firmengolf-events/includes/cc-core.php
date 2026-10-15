@@ -135,6 +135,7 @@ add_action( 'template_redirect', static function (): void {
 
 function fge_cc_render( string $page ): void {
 	nocache_headers();
+	send_frame_options_header(); // nur im eigenen Fenster, kein Einbetten von außen
 	$pages  = fge_cc_pages();
 	$title  = $pages[ $page ][0];
 	$base   = plugins_url( '', FGE_DIR . 'firmengolf-events.php' );
@@ -361,20 +362,7 @@ function fge_cc_admin_links(): array {
 }
 
 function fge_cc_page_stub( string $page ): void {
-	$info = fge_cc_admin_links()[ $page ] ?? null;
-	echo '<section class="cc-card cc-stub">';
-	if ( ! $info ) {
-		echo '<p class="cc-muted">Dieser Bereich ist noch nicht gebaut.</p></section>';
-		return;
-	}
-	[ $stage, $text, $links ] = $info;
-	echo '<p class="cc-kicker">Kommt in Etappe ' . (int) $stage . '</p>';
-	echo '<p>' . esc_html( $text ) . '</p>';
-	echo '<p class="cc-muted">Bis dahin liegt das im WordPress-Admin:</p><div class="cc-btnrow">';
-	foreach ( $links as $label => $url ) {
-		echo '<a class="cc-btn" href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a>';
-	}
-	echo '</div></section>';
+	echo '<section class="cc-card cc-stub"><p class="cc-muted">Diese Seite gibt es nicht.</p></section>';
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
@@ -384,7 +372,7 @@ function fge_cc_page_dashboard(): void {
 
 	if ( ! empty( $GLOBALS['fge_cc_worklist_truncated'] ) ) {
 		echo '<p class="cc-msg cc-msg--err">Es sind mehr offene Vorgänge da, als hier passen. '
-			. 'Schließe Erledigtes ab oder setze Liegengebliebenes auf „verloren", damit die Liste die Wahrheit sagt.</p>';
+			. 'Schließe Erledigtes ab oder setze Liegengebliebenes auf „verloren“, damit die Liste die Wahrheit sagt.</p>';
 	}
 
 	fge_cc_month_kpis_panel();
@@ -418,7 +406,7 @@ function fge_cc_page_dashboard(): void {
 	fge_cc_worklist_panel( 'mine', $mine, 'Nichts offen. Alles, was zu tun war, ist getan.' );
 	fge_cc_worklist_panel( 'others', $others, 'Es wartet gerade nichts auf andere.' );
 	fge_cc_worklist_panel( 'soon', $soon, 'Heute und morgen steht kein Event an.' );
-	fge_cc_worklist_panel( 'cold', $cold, 'Nichts ist liegen geblieben.', 'Seit mehr als ' . (int) fge_cc_cold_days() . ' Tagen ohne Fortschritt und ohne Termin. Nachfassen oder auf „verloren" setzen, damit die Liste ehrlich bleibt.' );
+	fge_cc_worklist_panel( 'cold', $cold, 'Nichts ist liegen geblieben.', 'Seit mehr als ' . (int) fge_cc_cold_days() . ' Tagen ohne Fortschritt und ohne Termin. Nachfassen oder auf „verloren“ setzen, damit die Liste ehrlich bleibt.' );
 	echo '</section>';
 
 	echo '<div class="cc-cols cc-cols--even">';
@@ -436,7 +424,7 @@ function fge_cc_page_dashboard(): void {
  * Kennzahlen des laufenden Monats, nur aus vorhandenen Daten.
  *
  * Anfragen und Angebote zählen nach Eingang im Monat (wie bisher der
- * Trichter), Buchungen, Umsatz und Marge nach Annahme im Monat (wie „Finanzen").
+ * Trichter), Buchungen, Umsatz und Marge nach Annahme im Monat (wie „Finanzen“).
  */
 function fge_cc_month_kpis(): array {
 	$since = fge_cc_local_ts( wp_date( 'Y-m-01' ) );
@@ -445,6 +433,7 @@ function fge_cc_month_kpis(): array {
 		'post_status' => [ 'publish', 'draft' ],
 		'numberposts' => 400,
 		'fields'      => 'ids',
+		'post__not_in' => function_exists( 'fge_cc_open_lead_ids' ) ? fge_cc_open_lead_ids() : [],
 		'date_query'  => [ [ 'after' => wp_date( 'Y-m-d', $since - 1 ) ] ],
 	] );
 	$k = [ 'reqs' => count( $ids ), 'offers' => 0, 'book' => 0, 'net' => 0.0, 'margin' => 0.0, 'margin_base' => 0.0 ];
@@ -691,7 +680,7 @@ function fge_cc_failed_mails_panel(): void {
 	echo '</details></section>';
 }
 
-/** „vor 3 Stunden" statt Zeitstempel. */
+/** „vor 3 Stunden“ statt Zeitstempel. */
 function fge_cc_ago( string $mysql ): string {
 	$ts = (int) strtotime( $mysql );
 	if ( $ts <= 0 ) {
@@ -730,7 +719,7 @@ function fge_cc_tabs_script(): void {
 // ── Einzelne Anfrage ─────────────────────────────────────────────────────────
 // Liste und Detail liegen seit 15.10.2026 in cc-request-flow.php.
 
-/** Reiter „Lexoffice und Tracking": Lesesicht der Felder aus dem WP-Admin. */
+/** Reiter „Lexoffice und Tracking“: Lesesicht der Felder aus dem WP-Admin. */
 function fge_cc_request_lex_tab( int $req ): void {
 	$m   = static fn( string $k ) => (string) get_post_meta( $req, '_fge_' . $k, true );
 	$yes = static fn( string $v ) => '1' === $v ? 'ja' : 'nein';
@@ -760,7 +749,7 @@ function fge_cc_request_lex_tab( int $req ): void {
 	fge_cc_fact( 'HubSpot', trim( $m( 'hubspot_status' ) . ' ' . $m( 'hubspot_contact_id' ) ) );
 	echo '</dl></section>';
 	echo '</div>';
-	echo '<p class="cc-muted">Die Rechnungsnummer trägst du oben bei „Rechnung gestellt" ein. Angebotsnummer und Tracking stehen im <a href="' . esc_url( get_edit_post_link( $req, 'raw' ) ) . '">WordPress</a>.</p>';
+	echo '<p class="cc-muted">Die Rechnungsnummer trägst du oben bei „Rechnung gestellt“ ein. Angebotsnummer und Tracking stehen im <a href="' . esc_url( get_edit_post_link( $req, 'raw' ) ) . '">WordPress</a>.</p>';
 }
 
 /**
@@ -850,7 +839,7 @@ function fge_cc_phase_offer_ready( int $req ): void {
 	echo '</dl>';
 
 	if ( ! $priced ) {
-		echo '<p class="cc-hint cc-hint--warn">Ohne Preis kein Angebot. Erst im Reiter „Angebot und Eventtag“ bepreisen, sonst ginge „Auf Anfrage" verbindlich buchbar raus.</p>';
+		echo '<p class="cc-hint cc-hint--warn">Ohne Preis kein Angebot. Erst im Reiter „Angebot und Eventtag“ bepreisen, sonst ginge „Auf Anfrage“ verbindlich buchbar raus.</p>';
 		echo '<p><a class="cc-btn" href="' . esc_url( fge_cc_request_url( $req ) . '#angebot' ) . '">Positionen bepreisen</a></p>';
 		return;
 	}
@@ -863,7 +852,7 @@ function fge_cc_phase_offer_ready( int $req ): void {
 
 /**
  * Der Kunde hat abgesagt: Platz freigeben, neu auflegen oder als verloren ablegen.
- * Bis 28.09.2026 stand hier weiter „Angebot läuft" und der gewählte Platz erfuhr nichts.
+ * Bis 28.09.2026 stand hier weiter „Angebot läuft“ und der gewählte Platz erfuhr nichts.
  */
 function fge_cc_phase_offer_declined( int $req ): void {
 	$query = (string) get_post_meta( $req, '_fge_offer_query', true );
@@ -981,7 +970,7 @@ function fge_cc_phase_booked( int $req ): void {
 	}
 	if ( fge_day_info_open( $req ) ) {
 		fge_cc_button( 'fge_cc_day_info', $req, '' !== $info_sent ? 'Vortags-Info erneut senden' : 'Vortags-Info senden', [
-			'confirm' => 'Vortags-Info an Kunde, Platz und events@ senden?',
+			'confirm' => 'Vortags-Info an Kunde, Platz und ' . fge_company_internal_email() . ' senden?',
 		] );
 	} else {
 		// Fragt der Kunde vorher nach dem Ablauf: dieselbe Mail von Hand, nur an ihn.
@@ -1024,7 +1013,7 @@ function fge_cc_catalog_block( int $req ): void {
 		}
 	} elseif ( 'nein' === $answer ) {
 		$note = (string) get_post_meta( $req, '_fge_catalog_note', true );
-		echo '<p class="cc-muted">Der Platz möchte das nicht dauerhaft anbieten.' . ( '' !== $note ? ' „' . esc_html( $note ) . '"' : '' ) . '</p>';
+		echo '<p class="cc-muted">Der Platz möchte das nicht dauerhaft anbieten.' . ( '' !== $note ? ' „' . esc_html( $note ) . '“' : '' ) . '</p>';
 	} elseif ( '' !== $blocker ) {
 		echo '<p class="cc-muted">' . esc_html( $blocker ) . '</p>';
 	} else {
@@ -1056,7 +1045,7 @@ function fge_cc_request_timeline( int $req ): void {
 	echo '<input type="hidden" name="action" value="fge_cc_note">';
 	echo '<input type="hidden" name="request_id" value="' . (int) $req . '">';
 	wp_nonce_field( 'fge_cc_note_' . $req );
-	echo '<textarea name="note" rows="2" placeholder="Was wurde besprochen? Telefonnotiz oder Vermerk"></textarea>';
+	echo '<textarea name="note" rows="2" aria-label="Notiz" placeholder="Was wurde besprochen? Telefonnotiz oder Vermerk"></textarea>';
 	echo '<div class="cc-noteform-foot">';
 	echo '<label class="cc-inline"><input type="radio" name="note_type" value="call" checked> Telefonat</label>';
 	echo '<label class="cc-inline"><input type="radio" name="note_type" value="note"> Notiz</label>';

@@ -3,7 +3,7 @@
  * Mail-Registry: jede transaktionale Mail einmal beschrieben.
  *
  * Eine Quelle für vier Verbraucher, damit nichts auseinanderläuft:
- *   1. die Folgen-Vorschau am Aktionsknopf („wer bekommt gleich was")
+ *   1. die Folgen-Vorschau am Aktionsknopf („wer bekommt gleich was“)
  *   2. der Postausgang (Klarnamen statt Betreffzeilen)
  *   3. die Phasenleiste im Control Center
  *   4. docs/mail-inventar.md (erzeugt per bash tests/mail-inventar.sh)
@@ -83,7 +83,7 @@ function fge_mail_registry(): array {
 			'per_venue' => true,
 			'subject'   => 'Kurze Nachfrage: Firmenanfrage',
 			'auto'      => false,
-			'trigger'   => 'Knopf „Follow-up senden" in der Platz-Pipeline',
+			'trigger'   => 'Knopf „Follow-up senden“ in der Platz-Pipeline',
 			'content'   => [ 'kurze Nachfrage, ob die Anfrage angekommen ist', 'derselbe Inhalt wie die Anfrage an den Platz' ],
 		],
 		'provider_request' => [
@@ -92,7 +92,7 @@ function fge_mail_registry(): array {
 			'per_venue' => true,
 			'subject'   => 'Anfrage für ein Firmenevent',
 			'auto'      => false,
-			'trigger'   => 'Knopf „Per Mail anfragen" beim Dienstleister',
+			'trigger'   => 'Knopf „Per Mail anfragen“ beim Dienstleister',
 			'content'   => [ 'Gruppe, Termine, Start, Region', 'angefragte Leistungen mit Notizen', 'Bitte um Preis und Terminzusage' ],
 		],
 		'provider_followup' => [
@@ -101,7 +101,7 @@ function fge_mail_registry(): array {
 			'per_venue' => true,
 			'subject'   => 'Kurze Nachfrage: Anfrage für ein Firmenevent',
 			'auto'      => false,
-			'trigger'   => 'Knopf „Follow-up senden" beim Dienstleister',
+			'trigger'   => 'Knopf „Follow-up senden“ beim Dienstleister',
 			'content'   => [ 'kurze Nachfrage', 'derselbe Inhalt wie die Anfrage' ],
 		],
 		'venue_decline' => [
@@ -190,13 +190,13 @@ function fge_mail_registry(): array {
 			'party'   => 'kunde',
 			'subject' => 'Euer Angebot für {Event}',
 			'auto'    => false,
-			'trigger' => 'Termin bestätigt und bepreist, oder Knopf „Angebot jetzt senden"',
+			'trigger' => 'Termin bestätigt und bepreist, oder Knopf „Angebot jetzt senden“',
 			'content' => [ 'Positionen und Summen', 'Partnercode-Rabatt', 'Frist', 'Annehmen-Link', 'PDF im Anhang', 'BCC an dich' ],
 		],
 		'offer_reminder' => [
 			'label'   => 'Angebotserinnerung',
 			'party'   => 'kunde',
-			'subject' => 'Erinnerung: euer Angebot',
+			'subject' => 'Erinnerung: euer Angebot, am Fristtag: Letzte Erinnerung',
 			'auto'    => true,
 			'trigger' => 'Cron, drei Tage vor der Frist und als letzte Erinnerung am Fristtag',
 			'content' => [ 'Frist läuft', 'Termin noch reserviert' ],
@@ -233,7 +233,7 @@ function fge_mail_registry(): array {
 			'subject' => 'Buchung bestätigt',
 			'auto'    => true,
 			'trigger' => 'Kunde nimmt an',
-			'content' => [ 'Dank und Termin', 'PDF der Buchungsbestätigung', 'Link zur Buchung' ],
+			'content' => [ 'Dank und Termin', 'Infos zum Tag folgen am Vortag', 'PDF der Buchungsbestätigung', 'Link zur Buchung' ],
 		],
 		'provider_confirm' => [
 			'label'   => 'Auftrag an den Dienstleister',
@@ -282,9 +282,9 @@ function fge_mail_registry(): array {
 		'day_info_customer' => [
 			'label'   => 'Vortags-Info an den Kunden',
 			'party'   => 'kunde',
-			'subject' => 'Morgen ist es soweit',
+			'subject' => 'Morgen ist es so weit',
 			'auto'    => true,
-			'trigger' => 'Cron 07:00 am Vortag, oder Knopf',
+			'trigger' => 'Cron 07:00 am Vortag; vorher von Hand nur an den Kunden („Alles für euren Eventtag“)',
 			'content' => [ 'Start, Treffpunkt, Adresse', 'Ansprechpartner vor Ort', 'Golflehrer und Ablauf', 'gebuchte Leistungen', 'Mobilnummer' ],
 		],
 		'day_info_partner' => [
@@ -329,7 +329,7 @@ function fge_mail_registry(): array {
 			'party'   => 'kunde',
 			'subject' => 'Danke für euer Event mit Firmengolf',
 			'auto'    => true,
-			'trigger' => 'Status „Event durchgeführt"',
+			'trigger' => 'Status „Event durchgeführt“',
 			'content' => [ 'Bitte um Google-Bewertung' ],
 		],
 
@@ -337,7 +337,7 @@ function fge_mail_registry(): array {
 		'partner_approved' => [
 			'label'   => 'Partner freigeschaltet',
 			'party'   => 'platz',
-			'subject' => 'Dein Golfplatz ist jetzt live auf Firmengolf',
+			'subject' => 'Dein Profil ist jetzt live auf Firmengolf',
 			'auto'    => true,
 			'trigger' => 'Partner freigeben (Control Center oder WordPress)',
 			'content' => [ 'Profil ist live', 'Link zur öffentlichen Seite', 'erstes Event anlegen' ],
@@ -345,7 +345,7 @@ function fge_mail_registry(): array {
 		'partner_question' => [
 			'label'   => 'Rückfrage zur Partner-Anmeldung',
 			'party'   => 'platz',
-			'subject' => 'Kurze Rückfragen zu deinem Golfplatz-Profil',
+			'subject' => 'Kurze Rückfrage zu deinem Profil bei Firmengolf',
 			'auto'    => true,
 			'trigger' => 'Rückfrage senden in der Prüfansicht',
 			'content' => [ 'deine Nachricht', 'Link ins Partnerportal' ],
@@ -353,7 +353,7 @@ function fge_mail_registry(): array {
 		'partner_rejected' => [
 			'label'   => 'Partner-Anmeldung abgelehnt',
 			'party'   => 'platz',
-			'subject' => 'Dein Golfplatz-Profil bei Firmengolf',
+			'subject' => 'Dein Profil bei Firmengolf',
 			'auto'    => true,
 			'trigger' => 'Ablehnen in der Prüfansicht',
 			'content' => [ 'Absage', 'deine Nachricht' ],

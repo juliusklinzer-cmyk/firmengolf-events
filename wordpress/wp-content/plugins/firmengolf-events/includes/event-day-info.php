@@ -3,15 +3,15 @@
  * Vortags-Info (Julius, 17.09.2026): Am Tag vor einem gebuchten Event bekommen alle
  * Beteiligten einmalig eine Info-Mail.
  *
- *  - Kunde: „Morgen ist es soweit", Start, Treffpunkt, Ort, Ansprechpartner vor Ort,
+ *  - Kunde: „Morgen ist es so weit“, Start, Treffpunkt, Ort, Ansprechpartner vor Ort,
  *    Golflehrer, Ablauf, gebuchte Leistungen, Kontakt für den Tag.
- *  - Golfplatz: „Morgen kommt das Team von …", Teilnehmer, Start, Treffpunkt, bei wem
+ *  - Golfplatz: „Morgen kommt das Team von …“, Teilnehmer, Start, Treffpunkt, bei wem
  *    sich die Gruppe meldet, Kundenkontakt, gebuchte und bestätigte Leistungen.
  *  - Firmengolf (events@): dieselbe Zusammenfassung als Kontrolle, inkl. Hinweis,
  *    welche Mails rausgingen.
  *
  * Datenquelle: Angebots-Snapshot (Termin, Ort, Ablauf, Leistungen) plus die Box
- * „Schritt 4: Event-Tag" (Treffpunkt, Startzeit, Ansprechpartner vor Ort, Golflehrer,
+ * „Schritt 4: Event-Tag“ (Treffpunkt, Startzeit, Ansprechpartner vor Ort, Golflehrer,
  * Hinweise). Auslöser: täglicher Cron (07:00 Site-Zeit) für angenommene Angebote,
  * deren Termin morgen ist (Nachholer: heute). Manuell über den Button in der Box.
  */
@@ -112,7 +112,7 @@ function fge_render_rmb_eventtag( WP_Post $post ): void {
 				'confirm'      => 'Vortags-Info jetzt an Kunde, Golfplatz und events@ senden? Vorher speichern, sonst gehen ungespeicherte Felder nicht mit.',
 				'nonce_action' => 'fge_send_day_info_' . $req,
 			] );
-			echo '<span class="description" style="margin-left:8px;">Erst „Aktualisieren", dann senden.</span></p>';
+			echo '<span class="description" style="margin-left:8px;">Erst „Aktualisieren“, dann senden.</span></p>';
 		}
 	}
 }
@@ -234,7 +234,7 @@ add_action( 'admin_notices', static function () {
 // ── Mails ────────────────────────────────────────────────────────────────────
 
 /**
- * Schickt die drei Vortags-Mails. $is_today: Termin ist heute (Nachholer), Wortwahl „heute".
+ * Schickt die drei Vortags-Mails. $is_today: Termin ist heute (Nachholer), Wortwahl „heute“.
  * $early: von Hand vor dem Vortag, z. B. weil der Kunde nach dem Ablauf fragt. Dann
  * geht nur die Kundenmail, ohne Platz und intern, und die automatische Vortags-Info
  * am Vortag bleibt geplant (Julius, 15.10.2026).
@@ -317,14 +317,14 @@ function fge_send_day_info( int $req, bool $is_today = false, bool $early = fals
 		. $row( 'Ablauf', $sched )
 		. $row( 'Teilnehmer', $pax > 0 ? $pax . ' Personen' : '' )
 		. $row( 'Hinweise', $notes );
-	$subject_c = $early ? 'Alles für euren Eventtag: ' . $title . ' am ' . $date : $Whend . ' ist es soweit: ' . $title . ' am ' . $date;
+	$subject_c = $early ? 'Alles für euren Eventtag am ' . $date : $Whend . ' ist es so weit: ' . $title . ' am ' . $date;
 	$content_c = '
 		<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ',</p>
-		<p style="margin:0 0 16px;">' . $Whend . ' ist es soweit, wir freuen uns auf euch! Hier ' . ( $early ? '' : 'noch einmal ' ) . 'alles Wichtige für den Tag:</p>
+		<p style="margin:0 0 16px;">' . esc_html( $Whend ) . ' ist es so weit, wir freuen uns auf euch! Hier ' . ( $early ? '' : 'noch einmal ' ) . 'alles Wichtige für den Tag:</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
 		' . ( '' !== $booked_html ? '<p style="margin:0 0 4px;font-weight:600;">Gebucht und bestätigt</p><ul style="margin:0 0 16px;padding-left:20px;">' . $booked_html . '</ul>' : '' ) . '
 		<p style="margin:0 0 16px;">Wenn ' . $when . ' etwas dazwischenkommt oder ihr Fragen habt: ' . esc_html( $fg_contact ) . '.</p>
-		<p style="margin:0 0 16px;">' . ( $early ? 'Bis bald' : 'Bis ' . $when ) . ' und viel Spaß!</p>
+		<p style="margin:0 0 16px;">' . ( $early ? 'Bis bald' : 'Bis ' . esc_html( $when ) ) . ' und viel Spaß!</p>
 		' . ( function_exists( 'fge_offer_link' ) ? '<p style="margin:0;color:#6C736E;font-size:13px;">Eure Buchung im Überblick: <a href="' . esc_url( fge_offer_link( $req ) ) . '" style="color:#4279D1;">Angebot ' . esc_html( $ref ) . '</a></p>' : '' ) . '
 	';
 	$results['kunde'] = (bool) wp_mail( $data['contact_email'], $subject_c, fge_email_wrap( $subject_c, $content_c ), [ 'Content-Type: text/html; charset=UTF-8' ] );

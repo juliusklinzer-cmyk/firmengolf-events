@@ -53,7 +53,9 @@ def pipeline_two_places(req):
     post_form(find_form(h, 'fge_cc_question_add'), {'question': 'Vegetarisch gewünscht?'})
     h = get(f'/control/anfragen/?req={req}').text
     need = find_form(h, 'fge_cc_need_save')
-    notes = {k: ('Grillbuffet' if 'abendessen' in k else '') for k in need['fields'] if k.startswith('note[')}
+    import hashlib
+    ak = 'note[' + hashlib.md5('abendessen'.encode()).hexdigest() + ']'
+    notes = {k: ('Grillbuffet' if k == ak else '') for k in need['fields'] if k.startswith('note[')}
     r = post_form(need, {'need_done': '1', 'save_only': None, **notes})
     check('need_blocked' in r.url, 'Offene Frage sperrt „Bedarf ist geklärt"')
     h = get(f'/control/anfragen/?req={req}').text
@@ -78,7 +80,7 @@ def pipeline_two_places(req):
     check(items().count('Feuerwerk TEST') == 1, 'Chip wählt Leistung bei einem Platz ab')
     h = get(f'/control/anfragen/?req={req}').text
     post_form(find_form(h, 'fge_cc_need_save'), {'remove_one': 'Feuerwerk TEST', 'save_only': None})
-    check('Feuerwerk TEST' not in items() and 'note[feuerwerk test]' not in get(f'/control/anfragen/?req={req}').text, 'Entfernen im Bedarf nimmt Leistung überall raus')
+    check('Feuerwerk TEST' not in items() and 'Feuerwerk TEST</strong>' not in get(f'/control/anfragen/?req={req}').text, 'Entfernen im Bedarf nimmt Leistung überall raus')
     h = get(f'/control/anfragen/?req={req}').text
     for f in [x for x in forms(h) if x['action'] == 'fge_cc_venue_ask' and x['fields'].get('how') == 'mail']:
         post_form(f)
@@ -260,7 +262,7 @@ def scenario_tools():
     mails(clear=True)
     wp(f"$s=(array)get_post_meta({req},'_fge_offer_snapshot',true); $s['date']=wp_date('D, d.m.Y', strtotime('+1 day', current_datetime()->getTimestamp())); update_post_meta({req},'_fge_offer_snapshot',$s); fge_event_day_info_run();")
     ms = mails(clear=True)
-    check(any('Morgen ist es soweit' in m['subject'] for m in ms) and any('events@' in m['to'] and 'Vortags-Info verschickt' in m['subject'] for m in ms), 'Vortags-Info am Vortag automatisch (' + str(len(ms)) + ' Mails)')
+    check(any('Morgen ist es so weit' in m['subject'] for m in ms) and any('events@' in m['to'] and 'Vortags-Info verschickt' in m['subject'] for m in ms), 'Vortags-Info am Vortag automatisch (' + str(len(ms)) + ' Mails)')
     out = wp(f"$s=(array)get_post_meta({req},'_fge_offer_snapshot',true); $s['date']='Mo, 12.10.2026'; update_post_meta({req},'_fge_offer_snapshot',$s); echo get_post_meta({req},'_fge_offer_status',true) . '|' . fge_cc_auto_close() . '|' . get_post_meta({req},'_fge_request_status',true);")
     check(out.startswith('accepted|') and out.endswith('|event_durchgefuehrt'), 'Am Tag nach dem Event automatisch durchgeführt (' + out + ')')
     h = get(f'/control/anfragen/?req={req}').text
@@ -309,6 +311,11 @@ def scenario_partner():
         ms = mails(clear=True)
         out = wp(f'echo get_post_meta({eid},"_fge_event_status",true),"|",get_the_title({eid}),"|",get_post_meta({eid},"_fge_price_gross",true);')
         check(out.startswith('freigegeben|Regressions-Event angepasst (TEST)|50') and any('Freigegeben' in m['subject'] for m in ms), 'Event mit Anpassung freigegeben (' + out + ')')
+        # Audit: Speichern ohne Preiseingabe darf den Preis nicht löschen.
+        wp(f'delete_post_meta({eid},"_fge_price_gross"); update_post_meta({eid},"_fge_price_amount",125);')
+        h = get(f'/control/events/?edit={eid}').text
+        post_form(find_form(h, 'fge_cc_event_save', contains=f'value="{eid}"'), {'price': ''})
+        check(wp(f'echo get_post_meta({eid},"_fge_price_amount",true);') == '125', 'Event speichern ohne Preis lässt den Preis stehen')
         h = get(f'/control/partner/?pid={pid}').text
         post_form(find_form(h, 'fge_cc_partner_pstatus'), {'status': 'pausiert'})
         check(wp(f'echo get_post_meta({eid},"_fge_event_status",true);') == 'pausiert', 'Partner pausiert nimmt Events offline')
@@ -332,6 +339,14 @@ def scenario_pages():
         check('lead_conv' in r.url and wp(f'echo get_post_meta({lead},"_fge_request_type",true);') == 'general_event_request', 'Lead in Anfrage umgewandelt')
     finally:
         wp(f'wp_delete_post({lead},true); global $wpdb; $wpdb->delete(fge_activity_table(),["request_id"=>{lead}]);')
+    lost = int(wp('$id=wp_insert_post(["post_type"=>"firmengolf_request","post_status"=>"publish","post_title"=>"Verloren (TEST)"]); update_post_meta($id,"_fge_offer_status","pending"); update_post_meta($id,"_fge_company_name","Regressions Verloren (TEST)"); echo $id;'))
+    try:
+        h = get(f'/control/anfragen/?req={lost}').text
+        post_form(find_form(h, 'fge_cc_status', contains='value="verloren"'))
+        out = wp(f'echo get_post_meta({lost},"_fge_request_status",true),"|",get_post_meta({lost},"_fge_offer_status",true);')
+        check(out == 'verloren|declined', 'Verloren schließt das offene Angebot (' + out + ')')
+    finally:
+        wp(f'wp_delete_post({lost},true); global $wpdb; $wpdb->delete(fge_activity_table(),["request_id"=>{lost}]);')
     h = get('/control/partnercodes/').text
     r = post_form(find_form(h, 'fge_cc_pc_save'), {'holder': 'Regressions Verband (TEST)', 'code': 'REGTEST', 'eur': '40,00'})
     pc = wp('echo fge_pc_find("REGTEST");')

@@ -2,7 +2,7 @@
 /**
  * Angebot mit Optionen (Julius, 28.09.2026).
  *
- * Statt „Platz wählen, Termin blind bestätigen, Angebot raus" läuft es so: Plätze
+ * Statt „Platz wählen, Termin blind bestätigen, Angebot raus“ läuft es so: Plätze
  * aus der Pipeline werden zu Optionen A, B, C (je Platz Kalkulation, freie
  * Wunschtermine, kurzer Text), Julius markiert eine Empfehlung und schickt EIN
  * Angebot. Der Kunde wählt Option und Termin und nimmt an. Erst dann steht der
@@ -86,7 +86,7 @@ function fge_offer_option_from_venue( int $req, array $v, string $key ): array {
 			continue;
 		}
 		$sale = fge_offer_option_item_sale( $it, $v );
-		// Position ohne Preis, aber verfügbar (z. B. „Getränke nach Verbrauch"): steht
+		// Position ohne Preis, aber verfügbar (z. B. „Getränke nach Verbrauch“): steht
 		// als Verbrauchs-Position ohne Betrag im Angebot, die Notiz erklärt sie.
 		$cons = $sale <= 0;
 		if ( $cons && '' === trim( (string) ( $it['note'] ?? '' ) ) ) {
@@ -155,7 +155,7 @@ function fge_offer_options_blocker( int $req ): string {
 	foreach ( $venues as $i => $v ) {
 		$o = fge_offer_option_from_venue( $req, $v, fge_offer_option_key( $i + 1 ) );
 		if ( ! $o['dates'] ) {
-			return 'Option ' . $o['key'] . ' (' . $o['title'] . ') hat keinen freien Wunschtermin. Bitte in der Antwort des Platzes je Termin „geht" setzen.';
+			return 'Option ' . $o['key'] . ' (' . $o['title'] . ') hat keinen freien Wunschtermin. Bitte in der Antwort des Platzes je Termin „geht“ setzen.';
 		}
 		if ( $o['price_gross'] <= 0 ) {
 			return 'Option ' . $o['key'] . ' (' . $o['title'] . ') hat keinen Grundpreis. Bitte Kalkulation speichern.';
@@ -219,7 +219,7 @@ function fge_offer_send_options( int $req, array $args = [] ): string {
 	update_post_meta( $req, '_fge_offer_status', 'pending' );
 	$days     = (int) apply_filters( 'fge_offer_response_days', 7 );
 	$deadline = (int) ( $args['deadline'] ?? 0 );
-	update_post_meta( $req, '_fge_offer_deadline', $deadline > time() ? $deadline : time() + $days * DAY_IN_SECONDS );
+	update_post_meta( $req, '_fge_offer_deadline', $deadline > time() ? $deadline : fge_offer_deadline_eod( time() + $days * DAY_IN_SECONDS ) );
 	update_post_meta( $req, '_fge_offer_sent_at', time() );
 	if ( array_key_exists( 'to', $args ) ) {
 		update_post_meta( $req, '_fge_offer_send_to', (string) $args['to'] );
@@ -291,6 +291,12 @@ function fge_offer_resolve_option( int $req, string $key, int $date_index, array
 		fge_venue_choose( $req, (int) $venue['id'] );
 	} else {
 		update_post_meta( $req, '_fge_assigned_partner_id', (int) $opt['partner_id'] );
+	}
+	// Paket-Angebot: Einkauf so, wie er im Paket kalkuliert war (Audit 15.10.2026).
+	if ( is_array( $opt['base_cost'] ?? null ) && (float) $opt['base_cost']['cost'] > 0 ) {
+		update_post_meta( $req, '_fge_partner_cost', (float) $opt['base_cost']['cost'] );
+		update_post_meta( $req, '_fge_partner_cost_basis', (string) $opt['base_cost']['basis'] );
+		update_post_meta( $req, '_fge_partner_cost_gross', (int) $opt['base_cost']['gross'] );
 	}
 	update_post_meta( $req, '_fge_offer_base_override', (float) $opt['price_gross'] );
 	update_post_meta( $req, '_fge_offer_base_override_unit', 'pro Person' === (string) $opt['price_unit'] ? 'person' : 'pauschal' );
@@ -501,7 +507,7 @@ function fge_cc_offer_options_panel( int $req ): void {
 	$blocker = fge_offer_options_blocker( $req );
 	$sent    = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
 	if ( $sent ) {
-		echo '<p class="cc-muted">Es ist schon ein Angebot draußen. Änderungen an den Optionen wirken erst nach „Zurückziehen und neu auflegen".</p>';
+		echo '<p class="cc-muted">Es ist schon ein Angebot draußen. Änderungen an den Optionen wirken erst nach „Zurückziehen und neu auflegen“.</p>';
 	} elseif ( '' !== $blocker ) {
 		echo '<p class="cc-hint cc-hint--warn">' . esc_html( $blocker ) . '</p>';
 	} else {
@@ -541,7 +547,7 @@ function fge_cc_offer_send_drawer( int $req ): void {
 	echo '<label class="cc-field"><span>Antwortfrist</span><input type="date" name="send_deadline" required min="' . esc_attr( wp_date( 'Y-m-d', time() + DAY_IN_SECONDS ) ) . '" max="' . esc_attr( wp_date( 'Y-m-d', time() + 60 * DAY_IN_SECONDS ) ) . '" value="' . esc_attr( wp_date( 'Y-m-d', time() + $days * DAY_IN_SECONDS ) ) . '"></label>';
 	echo '</div>';
 	echo '<label class="cc-field cc-field--wide"><span>Persönliche Nachricht (optional)</span><textarea name="send_note" rows="5" placeholder="' . esc_attr( 'Steht in der Mail nach „Hallo ' . ( '' !== $first ? $first : '…' ) . '“ und dem Satz zum Angebot.' ) . '"></textarea></label>';
-	echo '<label class="cc-checkline"><input type="checkbox" name="send_remind" value="1" checked><span><strong>Automatisches Follow-up</strong><span class="cc-muted">Eine Erinnerung an den Kunden drei Tage vor der Frist und eine letzte am Fristtag. Stoppt, sobald er antwortet.</span></span></label>';
+	echo '<label class="cc-checkline"><input type="checkbox" name="send_remind" value="1" checked><span><strong>Automatisches Follow-up</strong><span class="cc-muted">Eine Erinnerung an den Kunden drei Tage vor der Frist und eine letzte am Fristtag. Stoppt, sobald er annimmt oder ablehnt.</span></span></label>';
 	if ( function_exists( 'fge_cc_action_preview' ) ) {
 		fge_cc_action_preview( 'offer_send', $req );
 	}

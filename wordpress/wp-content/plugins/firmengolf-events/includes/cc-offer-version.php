@@ -97,6 +97,15 @@ function fge_offer_relaunch( int $req ): string {
 		'_fge_offer_review_done',
 		// Sonst blieben die Dienstleister-Aufträge nach „abgelehnt, neu aufgelegt, angenommen" stumm.
 		'_fge_xs_providers_notified',
+		// Neue Fassung, neue Runde: Erinnerungen, Eskalation und Senden-Dialog
+		// gelten nur für die alte (Audit 15.10.2026).
+		'_fge_offer_reminded',
+		'_fge_offer_reminded_last',
+		'_fge_offer_escalated',
+		'_fge_offer_send_to',
+		'_fge_offer_send_note',
+		'_fge_offer_remind_off',
+		'_fge_query_reminded',
 	] as $key ) {
 		delete_post_meta( $req, $key );
 	}

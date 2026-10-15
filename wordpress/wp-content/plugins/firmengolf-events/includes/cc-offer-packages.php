@@ -1,6 +1,6 @@
 <?php
 /**
- * Angebote A, B, C als eigene Pakete (Julius, 15.10.2026, Entwurf „Anfragen").
+ * Angebote A, B, C als eigene Pakete (Julius, 15.10.2026, Entwurf „Anfragen“).
  *
  * Bis 1.9.304 war eine Option gleich ein Platz mit dessen Kalkulation. Jetzt hat
  * jedes Angebot einen Golfplatz, einen Titel, eine Einleitung, einen Termin und
@@ -172,10 +172,13 @@ function fge_offer_option_from_package( int $req, array $pkg, string $key ): arr
 	$extras = [];
 	$gross  = 0.0;
 	$unit   = 'pro Person';
+	$bcost  = null;
 	foreach ( (array) $pkg['items'] as $it ) {
 		if ( 'base' === $it['kind'] ) {
 			$gross = (float) $it['sale'];
 			$unit  = 'pauschal' === $it['unit'] ? 'pauschal' : 'pro Person';
+			// Einkauf des Grundpreises wie im Paket, für Marge nach der Annahme.
+			$bcost = [ 'cost' => (float) $it['cost'], 'gross' => (int) $it['gross'], 'basis' => 'pauschal' === $it['unit'] ? 'pauschal' : 'person' ];
 			continue;
 		}
 		$prov  = (int) ( $it['provider_row'] ?? 0 );
@@ -209,6 +212,7 @@ function fge_offer_option_from_package( int $req, array $pkg, string $key ): arr
 		'text'              => trim( (string) $pkg['intro'] ),
 		'price_gross'       => $gross,
 		'price_unit'        => $unit,
+		'base_cost'         => $bcost,
 		'price_total'       => 'pro Person' === $unit && $pax > 0 ? $gross * $pax : $gross,
 		'extras'            => $extras,
 		'dates'             => $dates,
@@ -252,7 +256,7 @@ function fge_offer_packages_blocker( int $req ): string {
 			return 'Angebot ' . $key . ': Der Golfplatz hat nicht zugesagt.';
 		}
 		if ( ! fge_pkg_dates( $req, $p ) ) {
-			return 'Angebot ' . $key . ': Kein freier Termin. Bitte in der Rückmeldung des Platzes je Termin „geht" setzen.';
+			return 'Angebot ' . $key . ': Kein freier Termin. Bitte in der Rückmeldung des Platzes je Termin „geht“ setzen.';
 		}
 		$base = array_values( array_filter( (array) $p['items'], static fn( $it ) => 'base' === $it['kind'] ) );
 		if ( ! $base || (float) $base[0]['sale'] <= 0 ) {
@@ -270,9 +274,9 @@ function fge_offer_packages_blocker( int $req ): string {
 
 /** Paket per Index aus dem POST, geprüft. */
 function fge_cc_pkg_index_from_post( int $req ): int {
-	$i    = absint( $_POST['pkg'] ?? -1 ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$i    = isset( $_POST['pkg'] ) ? absint( $_POST['pkg'] ) : -1; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	$pkgs = fge_offer_packages_get( $req );
-	// Nach dem Versand bleibt es änderbar: „Zurückziehen und neu auflegen" schickt
+	// Nach dem Versand bleibt es änderbar: „Zurückziehen und neu auflegen“ schickt
 	// den aktuellen Stand. Nach der Annahme ist das Angebot fest.
 	if ( ! isset( $pkgs[ $i ] ) || 'accepted' === (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
 		fge_cc_redirect( $req, 'nothing' );
@@ -410,7 +414,7 @@ function fge_cc_packages_panel( int $req ): void {
 	$sent = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
 	echo '<div class="cc-stepfoot cc-stepfoot--offer">';
 	if ( $sent ) {
-		echo '<span class="cc-muted">Das Angebot ist beim Kunden. Änderungen hier gehen erst mit „Zurückziehen und neu auflegen" im Schritt Angebot raus.</span></div>';
+		echo '<span class="cc-muted">Das Angebot ist beim Kunden. Änderungen hier gehen erst mit „Zurückziehen und neu auflegen“ im Schritt Angebot raus.</span></div>';
 		return;
 	}
 	if ( count( $pkgs ) < FGE_OFFER_MAX_OPTIONS && $golf ) {
@@ -439,7 +443,7 @@ function fge_cc_packages_panel( int $req ): void {
 		echo '<form class="cc-form cc-recoform" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		echo '<input type="hidden" name="action" value="fge_cc_offer_reco_save"><input type="hidden" name="request_id" value="' . (int) $req . '">';
 		wp_nonce_field( 'fge_cc_offer_reco_save_' . $req );
-		echo '<label class="cc-field cc-field--wide"><span>Empfehlung an den Kunden (steht über den Angeboten)</span><textarea name="opt_recommendation" rows="2" placeholder="z. B. Unsere Empfehlung ist Angebot A: kürzeste Anfahrt, Abendessen direkt am Platz.">' . esc_textarea( (string) get_post_meta( $req, '_fge_offer_recommendation', true ) ) . '</textarea></label>';
+		echo '<label class="cc-field cc-field--wide"><span>Empfehlung an den Kunden (steht über den Angeboten)</span><textarea name="opt_recommendation" rows="2" placeholder="z. B. Unsere Empfehlung ist Option A: kürzeste Anfahrt, Abendessen direkt am Platz.">' . esc_textarea( (string) get_post_meta( $req, '_fge_offer_recommendation', true ) ) . '</textarea></label>';
 		echo '<p><button type="submit" class="cc-btn">Empfehlung speichern</button></p></form>';
 	}
 	if ( $pkgs && '' === $blocker && function_exists( 'fge_cc_offer_send_drawer' ) ) {

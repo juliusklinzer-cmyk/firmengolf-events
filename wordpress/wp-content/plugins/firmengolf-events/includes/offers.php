@@ -28,6 +28,15 @@ function fge_request_set_status( int $req, string $status ): void {
 	do_action( 'fge_request_status_changed', $req, $status, $old );
 }
 
+/**
+ * Frist immer bis 23:59 Uhr des Tages (Audit 15.10.2026): sonst lief die Frist
+ * mitten am Tag ab und die letzte Erinnerung am Fristtag kam nie.
+ */
+function fge_offer_deadline_eod( int $ts ): int {
+	$d = date_create_immutable( wp_date( 'Y-m-d', $ts ) . ' 23:59:59', wp_timezone() );
+	return $d ? $d->getTimestamp() : $ts;
+}
+
 // ── Kunden-Magic-Link ─────────────────────────────────────────────────────────
 
 /** Kunden-Token, lazy erzeugt. */
@@ -429,7 +438,7 @@ function fge_offer_on_date_confirmed( int $req, int $date_index ): void {
 	update_post_meta( $req, '_fge_offer_date_index', $date_index );
 	update_post_meta( $req, '_fge_offer_status', 'pending' );
 	$days = (int) apply_filters( 'fge_offer_response_days', 7 );
-	update_post_meta( $req, '_fge_offer_deadline', time() + $days * DAY_IN_SECONDS );
+	update_post_meta( $req, '_fge_offer_deadline', fge_offer_deadline_eod( time() + $days * DAY_IN_SECONDS ) );
 	update_post_meta( $req, '_fge_offer_sent_at', time() );
 
 	fge_send_offer_email( $req );

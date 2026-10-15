@@ -373,21 +373,22 @@ function fge_partner_row_actions( array $actions, WP_Post $post ): array {
  * Partner-Status setzen, gemeinsamer Weg für WordPress und Control Center.
  *
  * $message: Text an den Partner bei Rückfrage oder Ablehnung (Julius, 15.10.2026),
- * steht in der Mail und bleibt als „Deine Rückfrage" am Partner stehen.
+ * steht in der Mail und bleibt als „Deine Rückfrage“ am Partner stehen.
  */
 function fge_partner_apply_status( int $post_id, string $new_status, string $message = '' ): void {
 	$old_status = (string) get_post_meta( $post_id, '_fge_partner_status', true );
 	if ( in_array( $new_status, [ 'rueckfragen', 'abgelehnt' ], true ) && '' !== trim( $message ) ) {
 		update_post_meta( $post_id, '_fge_review_message', trim( $message ) );
 		update_post_meta( $post_id, '_fge_review_message_at', time() );
-	} elseif ( 'aktiv' === $new_status ) {
+	} elseif ( 'aktiv' === $new_status || ( $new_status !== $old_status && in_array( $new_status, [ 'rueckfragen', 'abgelehnt' ], true ) ) ) {
+		// Ohne neue Nachricht keine alte in die nächste Mail mitnehmen.
 		delete_post_meta( $post_id, '_fge_review_message' );
 		delete_post_meta( $post_id, '_fge_review_message_at' );
 	}
 	update_post_meta( $post_id, '_fge_partner_status', $new_status );
 
 	// Partner über Freischaltung, Rückfragen oder Ablehnung informieren. Eine
-	// zweite Rückfrage geht auch raus, wenn der Status schon „rueckfragen" ist.
+	// zweite Rückfrage geht auch raus, wenn der Status schon „rueckfragen“ ist.
 	if ( function_exists( 'fge_notify_partner_status_change' ) ) {
 		fge_notify_partner_status_change( $post_id, $old_status === $new_status && '' !== trim( $message ) ? '' : $old_status, $new_status );
 	}
@@ -406,7 +407,7 @@ function fge_partner_apply_status( int $post_id, string $new_status, string $mes
 			update_post_meta( $post_id, '_fge_can_view_requests', 1 );
 			update_post_meta( $post_id, '_fge_can_view_statistics', 1 );
 		}
-		// „Partner seit" bei der ersten Freigabe, wenn leer (Julius, 15.10.2026).
+		// „Partner seit“ bei der ersten Freigabe, wenn leer (Julius, 15.10.2026).
 		if ( '' === (string) get_post_meta( $post_id, '_fge_partner_since', true ) ) {
 			update_post_meta( $post_id, '_fge_partner_since', wp_date( 'Y-m-d' ) );
 		}
@@ -422,7 +423,7 @@ function fge_event_apply_status( int $post_id, string $new_status, string $messa
 	if ( 'abgelehnt' === $new_status && '' !== trim( $message ) ) {
 		update_post_meta( $post_id, '_fge_review_message', trim( $message ) );
 		update_post_meta( $post_id, '_fge_review_message_at', time() );
-	} elseif ( 'freigegeben' === $new_status ) {
+	} elseif ( in_array( $new_status, [ 'freigegeben', 'abgelehnt' ], true ) ) {
 		delete_post_meta( $post_id, '_fge_review_message' );
 		delete_post_meta( $post_id, '_fge_review_message_at' );
 	}
@@ -484,7 +485,7 @@ function fge_partner_status_notice(): void {
 	$key = sanitize_key( $_GET['fge_partner_notice'] ?? '' );
 	$messages = [
 		'aktiv'       => 'Partner wurde freigegeben und per E-Mail informiert.',
-		'rueckfragen' => 'Status „Rückfragen" gesetzt, der Partner wurde per E-Mail informiert.',
+		'rueckfragen' => 'Status „Rückfragen“ gesetzt, der Partner wurde per E-Mail informiert.',
 		'in_pruefung' => 'Partner wurde zur Prüfung gesetzt.',
 		'pausiert'    => 'Partner wurde pausiert.',
 		'abgelehnt'   => 'Partner wurde abgelehnt und per E-Mail informiert.',

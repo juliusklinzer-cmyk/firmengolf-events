@@ -1,6 +1,6 @@
 <?php
 /**
- * Control Center: Partner und Events (Entwurf „Partner", Julius 15.10.2026).
+ * Control Center: Partner und Events (Entwurf „Partner“, Julius 15.10.2026).
  *
  * Partner: Liste aller echten Partner (ohne DGV-Stammdaten) plus Dienstleister,
  * oben die Anmeldungen zur Freigabe. Detail mit Events, Buchungen und
@@ -265,7 +265,7 @@ function fge_cc_partner_messages(): array {
 		'p_asked'     => [ 'ok', 'Rückfrage gesendet. Die Anmeldung bleibt in Prüfung.' ],
 		'p_rejected'  => [ 'ok', 'Abgelehnt. Der Partner bekommt deine Nachricht per Mail.' ],
 		'p_needmsg'   => [ 'err', 'Für Rückfrage oder Ablehnung bitte eine Nachricht an den Partner schreiben.' ],
-		'p_needcheck' => [ 'err', 'Vor der Freigabe alle drei Punkte unter „Deine Prüfung" abhaken.' ],
+		'p_needcheck' => [ 'err', 'Vor der Freigabe alle drei Punkte unter „Deine Prüfung“ abhaken.' ],
 		'p_paused'    => [ 'ok', 'Pausiert. Die Events sind offline.' ],
 		'p_active'    => [ 'ok', 'Wieder aktiv. Die pausierten Events sind zurück.' ],
 		'p_saved'     => [ 'ok', 'Stammdaten gespeichert.' ],
@@ -274,7 +274,7 @@ function fge_cc_partner_messages(): array {
 		'e_saved'     => [ 'ok', 'Event gespeichert.' ],
 		'e_created'   => [ 'ok', 'Event angelegt.' ],
 		'e_invalid'   => [ 'err', 'Bitte einen Titel angeben.' ],
-		'e_approved'  => [ 'ok', 'Event freigegeben, es ist live. Der Partner ist informiert.' ],
+		'e_approved'  => [ 'ok', 'Event freigegeben. Hatte der Partner es pausiert, bleibt es pausiert.' ],
 		'e_asked'     => [ 'ok', 'Rückfrage gesendet. Das Event bleibt in Prüfung.' ],
 		'e_rejected'  => [ 'ok', 'Event abgelehnt. Der Partner bekommt deine Nachricht per Mail.' ],
 	];
@@ -439,6 +439,17 @@ function fge_cc_event_simple_price( int $eid ): bool {
 		&& ! array_filter( (array) get_post_meta( $eid, '_fge_line_items', true ) );
 }
 
+/** Partnerpreis p. P. brutto wie im Formular: gespeichertes Brutto, sonst aus dem Netto. */
+function fge_cc_event_partner_gross( int $eid ): float {
+	$gross = (float) get_post_meta( $eid, '_fge_price_gross', true );
+	if ( $gross > 0 ) {
+		return $gross;
+	}
+	$net = (float) get_post_meta( $eid, '_fge_price_amount', true );
+	$pid = (int) get_post_meta( $eid, '_fge_assigned_partner_id', true );
+	return $net > 0 && $pid > 0 && function_exists( 'fge_net_to_gross' ) ? fge_net_to_gross( $net, $pid ) : $net;
+}
+
 /** Felder aus dem Event-Formular übernehmen. Gibt false zurück, wenn der Titel fehlt. */
 function fge_cc_event_apply_form( int $eid ): bool {
 	// phpcs:disable WordPress.Security.NonceVerification.Missing -- Aufrufer prüft die Nonce.
@@ -446,9 +457,14 @@ function fge_cc_event_apply_form( int $eid ): bool {
 	if ( '' === $title ) {
 		return false;
 	}
-	wp_update_post( [ 'ID' => $eid, 'post_title' => $title, 'post_content' => wp_kses_post( wp_unslash( $_POST['text'] ?? '' ) ) ] );
+	// Die Beschreibung steht im Formular als reiner Text. Unverändert bleibt die
+	// Formatierung im Beitrag erhalten, nur bei echter Änderung wird ersetzt.
+	$text = (string) wp_unslash( $_POST['text'] ?? '' );
+	$old  = (string) get_post_field( 'post_content', $eid );
+	$same = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $old ) ) ) === trim( preg_replace( '/\s+/', ' ', $text ) );
+	wp_update_post( [ 'ID' => $eid, 'post_title' => $title ] + ( $same ? [] : [ 'post_content' => wp_kses_post( $text ) ] ) );
 	$type = sanitize_key( wp_unslash( $_POST['type'] ?? '' ) );
-	if ( isset( fge_get_event_formats()['standard'][ $type ] ) ) {
+	if ( isset( fge_get_event_formats()['standard'][ $type ] ) || $type === (string) get_post_meta( $eid, '_fge_event_type', true ) ) {
 		update_post_meta( $eid, '_fge_event_type', $type );
 	}
 	foreach ( [ 'min' => '_fge_participants_min', 'max' => '_fge_participants_max' ] as $k => $meta ) {
@@ -458,8 +474,12 @@ function fge_cc_event_apply_form( int $eid ): bool {
 		}
 	}
 	// Preis wie im WordPress: Partnerpreis brutto rein, netto und Verkaufspreis daraus.
-	if ( isset( $_POST['price'] ) && fge_cc_event_simple_price( $eid ) ) {
-		$gross = (float) str_replace( ',', '.', preg_replace( '/[^\d.,]/', '', (string) wp_unslash( $_POST['price'] ) ) );
+	// Nur bei echter Eingabe, ein leeres oder unverändertes Feld lässt den Preis stehen
+	// (Audit 15.10.2026: sonst fiel der Preis bei Events ohne Brutto-Wert auf 0).
+	$raw   = trim( (string) wp_unslash( $_POST['price'] ?? '' ) );
+	$num   = preg_replace( '/[^\d.,]/', '', $raw );
+	$gross = (float) ( false !== strpos( $num, ',' ) ? str_replace( [ '.', ',' ], [ '', '.' ], $num ) : $num );
+	if ( '' !== $raw && $gross > 0 && abs( $gross - fge_cc_event_partner_gross( $eid ) ) > 0.004 && fge_cc_event_simple_price( $eid ) ) {
 		$pid   = (int) get_post_meta( $eid, '_fge_assigned_partner_id', true );
 		update_post_meta( $eid, '_fge_price_mode', 'gesamt' );
 		update_post_meta( $eid, '_fge_price_basis', 'person' );
@@ -480,6 +500,7 @@ add_action( 'admin_post_fge_cc_event_save', static function (): void {
 	$eid  = fge_cc_obj_guard( 'fge_cc_event_save' );
 	$from = sanitize_key( wp_unslash( $_POST['from'] ?? 'events' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	$pid  = absint( $_POST['partner_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$pid  = 'firmengolf_partner' === get_post_type( $pid ) ? $pid : 0;
 	$new  = 0 === $eid;
 	if ( $new ) {
 		$eid = (int) wp_insert_post( [ 'post_type' => 'firmengolf_event', 'post_status' => 'publish', 'post_title' => 'Neues Event' ] );
@@ -506,11 +527,9 @@ add_action( 'admin_post_fge_cc_event_save', static function (): void {
 	$st  = sanitize_key( wp_unslash( $_POST['status'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	$cur = (string) get_post_meta( $eid, '_fge_event_status', true );
 	if ( in_array( $st, [ 'freigegeben', 'entwurf', 'pausiert' ], true ) && ! in_array( $cur, [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) && $st !== $cur ) {
-		if ( 'freigegeben' === $st ) {
-			fge_event_apply_status( $eid, 'freigegeben' );
-		} else {
-			update_post_meta( $eid, '_fge_event_status', $st );
-		}
+		// Live schalten oder pausieren ist keine Prüfung: keine Freigabe-Mail an den Partner.
+		update_post_meta( $eid, '_fge_event_status', $st );
+		delete_post_meta( $eid, '_fge_was_paused' );
 	}
 	fge_cc_obj_back( 'partner' === $from ? 'partner' : 'events', 'partner' === $from ? [ 'pid' => $pid ] : [], $new ? 'e_created' : 'e_saved' );
 } );
@@ -612,12 +631,18 @@ function fge_cc_event_fields( int $eid, bool $with_status, string $form = '' ): 
 	$max    = $eid > 0 ? (string) get_post_meta( $eid, '_fge_participants_max', true ) : '40';
 	$text   = $eid > 0 ? (string) get_post_field( 'post_content', $eid ) : '';
 	$simple = 0 === $eid || fge_cc_event_simple_price( $eid );
-	$gross  = $eid > 0 ? (float) get_post_meta( $eid, '_fge_price_gross', true ) : 0.0;
+	$gross  = $eid > 0 ? fge_cc_event_partner_gross( $eid ) : 0.0;
 
 	echo '<label class="cc-field cc-field--wide"><span>Titel</span><input type="text" name="title" value="' . esc_attr( $title ) . '" required' . $fa . '></label>'; // phpcs:ignore WordPress.Security.EscapeOutput
 	echo '<div class="cc-fields cc-fields--2">';
 	echo '<label class="cc-field"><span>Art</span><select name="type"' . $fa . '>'; // phpcs:ignore WordPress.Security.EscapeOutput
-	foreach ( fge_cc_event_types() as $k => $l ) {
+	$types = fge_cc_event_types();
+	if ( '' !== $type && ! isset( $types[ $type ] ) ) {
+		// Alte Art behalten, sonst würde Speichern sie still zu „Teamevent“ machen.
+		$flat  = function_exists( 'fge_get_event_formats_flat' ) ? fge_get_event_formats_flat() : [];
+		$types = [ $type => (string) ( $flat[ $type ] ?? $type ) ] + $types;
+	}
+	foreach ( $types as $k => $l ) {
 		echo '<option value="' . esc_attr( $k ) . '"' . selected( $type, $k, false ) . '>' . esc_html( $l ) . '</option>';
 	}
 	echo '</select></label>';
@@ -636,7 +661,7 @@ function fge_cc_event_fields( int $eid, bool $with_status, string $form = '' ): 
 	if ( $with_status ) {
 		$cur = $eid > 0 ? (string) get_post_meta( $eid, '_fge_event_status', true ) : 'entwurf';
 		if ( in_array( $cur, [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) ) {
-			echo '<p class="cc-muted">Das Event ist in Prüfung. Freigeben geht über „Prüfen".</p>';
+			echo '<p class="cc-muted">Das Event ist in Prüfung. Freigeben geht über „Prüfen“.</p>';
 		} else {
 			echo '<label class="cc-field"><span>Status</span><select name="status"' . $fa . '>'; // phpcs:ignore WordPress.Security.EscapeOutput
 			foreach ( [ 'freigegeben' => 'Live', 'entwurf' => 'Entwurf', 'pausiert' => 'Pausiert' ] as $k => $l ) {
@@ -991,7 +1016,7 @@ function fge_cc_partner_review_page( int $pid ): void {
 	$checks = fge_cc_partner_checks( $pid );
 
 	echo '<div class="cc-backrow"><p class="cc-back"><a href="' . esc_url( fge_cc_url( 'partner', [ 'pid' => $pid ] ) ) . '">Zurück zu ' . esc_html( $r['name'] ) . '</a></p>';
-	echo '<span class="cc-review-note">' . fge_cc_pill( 'Nicht öffentlich', 'warn' ) . ' So sieht ' . esc_html( $r['name'] ) . ' auf firmengolf-events.de aus. <a href="' . esc_url( $link ) . '" target="_blank" rel="noopener">In neuem Tab</a></span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '<span class="cc-review-note">' . fge_cc_pill( 'Nicht öffentlich', 'warn' ) . ' So sieht ' . esc_html( $r['name'] ) . ' auf ' . esc_html( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) . ' aus. <a href="' . esc_url( $link ) . '" target="_blank" rel="noopener">In neuem Tab</a></span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput
 
 	echo '<div class="cc-reviewgrid">';
 	echo '<div class="cc-reviewframe"><iframe src="' . esc_url( add_query_arg( 'fge_cc_preview', 1, $link ) ) . '" title="Partnerseite ' . esc_attr( $r['name'] ) . '" loading="lazy"></iframe></div>';
@@ -1023,9 +1048,9 @@ function fge_cc_partner_review_page( int $pid ): void {
 	foreach ( fge_cc_review_quicktexts() as $l => $t ) {
 		echo '<button type="button" class="cc-minichip cc-minichip--btn" data-cc-quick="' . esc_attr( $t ) . '">' . esc_html( $l ) . '</button>';
 	}
-	echo '</div><textarea name="message" rows="4" placeholder="Für Rückfrage oder Ablehnung" data-cc-msg></textarea></div>';
+	echo '</div><textarea name="message" rows="4" placeholder="Für Rückfrage oder Ablehnung" aria-label="Nachricht an den Partner" data-cc-msg></textarea></div>';
 	echo '<button type="submit" name="decision" value="aktiv" class="cc-btn cc-btn--primary cc-btn--block" data-cc-gate-btn>Partner freigeben</button>';
-	echo '<span class="cc-muted cc-center" data-cc-gate-hint>Erst alle drei Punkte unter „Deine Prüfung" abhaken</span>';
+	echo '<span class="cc-muted cc-center" data-cc-gate-hint>Erst alle drei Punkte unter „Deine Prüfung“ abhaken</span>';
 	echo '<div class="cc-btnrow"><button type="submit" name="decision" value="rueckfragen" class="cc-btn cc-grow" data-cc-needmsg>Rückfrage senden</button>';
 	echo '<button type="submit" name="decision" value="abgelehnt" class="cc-btn cc-btn--text cc-btn--danger" data-cc-needmsg>Ablehnen</button></div>';
 	echo '</form></aside></div>';
@@ -1048,6 +1073,8 @@ function fge_cc_page_events(): void {
 			$all[ $eid ] = $pid;
 		}
 	}
+	_prime_post_caches( array_keys( $all ), false, true );
+	_prime_post_caches( array_keys( $all ), false, true );
 	$live_n  = count( array_filter( array_keys( $all ), 'fge_cc_event_is_live' ) );
 	$partner = count( array_filter( array_keys( $by ), static fn( $p ) => $p > 0 ) );
 	echo '<p class="cc-top-sub cc-sub-under">' . esc_html( $live_n . ' live · ' . count( $all ) . ' angelegt bei ' . $partner . ' Partnern und Firmengolf' ) . '</p>';
@@ -1089,7 +1116,13 @@ function fge_cc_page_events(): void {
 		$counts[ $k ] = count( array_filter( $match, $fn ) );
 	}
 	fge_cc_seglinks( 'events', 'tab', $tabs, $tab, $counts, [ 's' => $q ] );
-	$rows = array_filter( $match, $groups[ $tab ] );
+	$rows  = array_values( array_filter( $match, $groups[ $tab ] ) );
+	// Seiten zu 100, sonst wird „Alle“ mit fast 400 Events sehr lang.
+	$per   = 100;
+	$pages = max( 1, (int) ceil( count( $rows ) / $per ) );
+	$pg    = min( $pages, max( 1, absint( $_GET['seite'] ?? 1 ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$total = count( $rows );
+	$rows  = array_slice( $rows, ( $pg - 1 ) * $per, $per );
 
 	$types = function_exists( 'fge_get_event_formats_flat' ) ? fge_get_event_formats_flat() : [];
 	echo '<section class="cc-tablewrap"><table class="cc-table cc-evtable"><thead><tr><th>Event</th><th>Partner</th><th>Art</th><th class="cc-num">ab p. P.</th><th>Status</th><th></th></tr></thead><tbody>';
@@ -1109,13 +1142,17 @@ function fge_cc_page_events(): void {
 		echo '<tr class="is-empty"><td colspan="6">Keine Events in dieser Ansicht.</td></tr>';
 	}
 	echo '</tbody></table></section>';
+	if ( $pages > 1 ) {
+		echo '<nav class="cc-pager" aria-label="Seiten"><span class="cc-muted">' . esc_html( ( ( $pg - 1 ) * $per + 1 ) . ' bis ' . min( $total, $pg * $per ) . ' von ' . $total ) . '</span>';
+		for ( $i = 1; $i <= $pages; $i++ ) {
+			echo '<a class="cc-seg' . ( $i === $pg ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'events', array_filter( [ 'tab' => 'alle' !== $tab ? $tab : '', 's' => $q, 'seite' => $i > 1 ? $i : '' ] ) ) ) . '">' . (int) $i . '</a>';
+		}
+		echo '</nav>';
+	}
 
 	// Bearbeiten öffnet nur das eine Panel, bei fast 400 Events wäre die Seite sonst riesig.
 	if ( $edit > 0 && isset( $all[ $edit ] ) ) {
 		fge_cc_event_drawer( $edit, $all[ $edit ], 'events', true );
-	}
-	foreach ( $rev as $eid ) {
-		fge_cc_event_drawer( $eid, $all[ $eid ], 'events' );
 	}
 	foreach ( $rev as $eid ) {
 		fge_cc_event_review_drawer( $eid, 'events', $open === $eid );

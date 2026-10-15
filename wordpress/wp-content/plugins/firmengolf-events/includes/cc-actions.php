@@ -21,7 +21,7 @@ function fge_cc_messages(): array {
 	return ( function_exists( 'fge_cc_partner_messages' ) ? fge_cc_partner_messages() : [] ) + ( function_exists( 'fge_cc_admin_messages' ) ? fge_cc_admin_messages() : [] ) + [
 		'offer_sent'   => [ 'ok', 'Angebot ist raus. Der Kunde hat Mail und PDF, du das BCC.' ],
 		'day_info'     => [ 'ok', 'Vortags-Info gesendet.' ],
-		'status_lost'     => [ 'ok', 'Als verloren abgelegt. Über „Wieder aufnehmen" kommt die Anfrage zurück.' ],
+		'status_lost'     => [ 'ok', 'Als verloren abgelegt. Über „Wieder aufnehmen“ kommt die Anfrage zurück.' ],
 		'status_reopened' => [ 'ok', 'Anfrage wieder aufgenommen.' ],
 		'day_info_early' => [ 'ok', 'Infos zum Eventtag an den Kunden gesendet. Die Vortags-Info an Kunde und Platz bleibt geplant.' ],
 		'status'       => [ 'ok', 'Status geändert.' ],
@@ -75,8 +75,8 @@ function fge_cc_messages(): array {
 		'package_added'   => [ 'ok', 'Angebot angelegt.' ],
 		'package_removed' => [ 'ok', 'Angebot gelöscht.' ],
 		'package_max'     => [ 'err', 'Höchstens drei Angebote.' ],
-		'venue_followup'  => [ 'ok', 'Nachfrage ist beim Platz.' ],
-		'venue_noanswer'  => [ 'ok', 'Platz steht auf keine Antwort.' ],
+		'venue_followup'  => [ 'ok', 'Nachfrage gesendet.' ],
+		'venue_noanswer'  => [ 'ok', 'Als „Keine Antwort“ markiert.' ],
 		'offer_deadline'  => [ 'err', 'Die Antwortfrist muss in der Zukunft liegen, höchstens 60 Tage.' ],
 		'offer_to'        => [ 'err', 'Die Empfänger-Adresse sieht nicht gültig aus.' ],
 	];
@@ -91,7 +91,7 @@ function fge_cc_redirect( int $req, string $msg ): void {
 /** Rechte und Nonce für jede Aktion, liefert die Anfrage-ID. */
 function fge_cc_guard( string $action ): int {
 	$req = absint( $_POST['request_id'] ?? 0 );
-	if ( $req <= 0 || ! fge_cc_can() || ! current_user_can( 'edit_post', $req ) ) {
+	if ( $req <= 0 || ! fge_cc_can() || ! current_user_can( 'edit_post', $req ) || 'firmengolf_request' !== get_post_type( $req ) ) {
 		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
 	}
 	check_admin_referer( $action . '_' . $req );
@@ -251,6 +251,28 @@ function fge_cc_status_actions(): array {
 	];
 }
 
+/** Offenes Angebot eines verlorenen Vorgangs schließen, ohne Kundenmail. */
+function fge_cc_close_lost_offer( int $req ): void {
+	if ( 'pending' !== (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
+		return;
+	}
+	update_post_meta( $req, '_fge_offer_status', 'declined' );
+	if ( function_exists( 'fge_xs_cancel_providers' ) ) {
+		fge_xs_cancel_providers( $req );
+	}
+	foreach ( function_exists( 'fge_venues_get' ) ? fge_venues_get( $req, 'all' ) : [] as $v ) {
+		if ( 'dl' === (string) ( $v['kind'] ?? 'platz' ) ) {
+			if ( in_array( (string) $v['status'], [ 'angefragt', 'zugesagt' ], true ) && function_exists( 'fge_provider_send_cancel' ) ) {
+				fge_provider_send_cancel( $req, $v, 'Der Kunde hat das Event leider nicht gebucht.' );
+			}
+		} elseif ( in_array( (string) $v['status'], [ 'zugesagt', 'gewaehlt', 'angefragt' ], true ) && function_exists( 'fge_venue_send_release' ) ) {
+			fge_venue_send_release( $req, (int) $v['id'] );
+		}
+	}
+	update_post_meta( $req, '_fge_venue_released', 1 );
+	fge_activity_add( $req, 'status', 'Angebot geschlossen, Plätze und Dienstleister informiert' );
+}
+
 add_action( 'admin_post_fge_cc_status', static function (): void {
 	$req    = fge_cc_guard( 'fge_cc_status' );
 	$status = sanitize_key( wp_unslash( $_POST['status'] ?? '' ) );
@@ -261,9 +283,21 @@ add_action( 'admin_post_fge_cc_status', static function (): void {
 	if ( 'angebot_angenommen' === $status && 'accepted' !== (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
 		fge_cc_redirect( $req, 'nothing' );
 	}
+	// Verloren nur vor der Buchung, und dann wie im WordPress: ein offenes Angebot
+	// wird geschlossen, Plätze bekommen den Termin frei, Dienstleister eine Absage.
+	if ( 'verloren' === $status ) {
+		if ( function_exists( 'fge_request_is_booked' ) && fge_request_is_booked( $req ) ) {
+			fge_cc_redirect( $req, 'nothing' );
+		}
+		fge_request_set_status( $req, 'verloren' );
+		fge_cc_close_lost_offer( $req );
+		fge_cc_redirect( $req, 'status_lost' );
+	}
 	fge_request_set_status( $req, $status ); // Verlauf schreibt fge_activity_log_status mit.
 	if ( in_array( $status, [ 'rechnung_in_lexoffice_erstellt', 'abgeschlossen' ], true ) ) {
 		update_post_meta( $req, '_fge_lexoffice_invoice_created', 1 ); // gleiches Häkchen wie im WordPress
+	} elseif ( in_array( $status, [ 'event_durchgefuehrt', 'angebot_angenommen' ], true ) ) {
+		update_post_meta( $req, '_fge_lexoffice_invoice_created', 0 ); // Rechnung zurückgenommen
 	}
 	fge_cc_redirect( $req, 'verloren' === $status ? 'status_lost' : ( 'in_uebernahme' === $status ? 'status_reopened' : 'status' ) );
 } );
@@ -448,7 +482,7 @@ add_action( 'admin_post_fge_cc_venue_ask_bulk', static function (): void {
 	fge_cc_redirect( $req, $sent > 0 ? 'venues_asked' : 'venue_nomail' );
 } );
 
-// Nachfrage an einen Platz, der nicht antwortet. Stand bleibt „angefragt".
+// Nachfrage an einen Platz, der nicht antwortet. Stand bleibt „angefragt“.
 add_action( 'admin_post_fge_cc_venue_followup', static function (): void {
 	$req   = fge_cc_guard( 'fge_cc_venue_followup' );
 	$venue = fge_cc_venue_from_post( $req );
@@ -466,7 +500,7 @@ add_action( 'admin_post_fge_cc_venue_noanswer', static function (): void {
 		fge_cc_redirect( $req, 'nothing' );
 	}
 	fge_venue_update( (int) $venue['id'], [ 'status' => 'keine', 'replied_at' => current_time( 'mysql' ) ] );
-	fge_activity_add( $req, 'venue', sprintf( '%s auf keine Antwort gesetzt', get_the_title( (int) $venue['partner_id'] ) ) );
+	fge_activity_add( $req, 'venue', sprintf( '%s als „Keine Antwort“ markiert', get_the_title( (int) $venue['partner_id'] ) ) );
 	fge_cc_redirect( $req, 'venue_noanswer' );
 } );
 
@@ -552,9 +586,9 @@ add_action( 'admin_post_fge_cc_venue_reply', static function (): void {
 		'' !== $data['reason'] ? ': ' . $data['reason'] : ''
 	) );
 	// Erste Zusage erfasst: dem Platz bestätigen, was wir notiert haben, mit Reservierungsbitte.
-	// Nur beim Wechsel von „angefragt" zu „zugesagt". Spätere Korrekturen lösen keine Mail
+	// Nur beim Wechsel von „angefragt“ zu „zugesagt“. Spätere Korrekturen lösen keine Mail
 	// aus (Julius, 28.09.: GolfKultur ist fix und soll nur die Auftragsbestätigung bekommen),
-	// dafür gibt es den Knopf „Bestätigung erneut senden".
+	// dafür gibt es den Knopf „Bestätigung erneut senden“.
 	$first_reply = in_array( (string) $venue['status'], [ 'idee', 'angefragt', 'keine' ], true ) && '' === (string) ( $venue['summary_at'] ?? '' ) && '' === (string) ( $venue['reservation_at'] ?? '' );
 	if ( $yes && $first_reply && function_exists( 'fge_venue_send_summary' ) && '' !== fge_venue_partner_email( (int) $venue['partner_id'] )
 		&& ! ( function_exists( 'fge_request_is_booked' ) && fge_request_is_booked( $req ) ) ) {

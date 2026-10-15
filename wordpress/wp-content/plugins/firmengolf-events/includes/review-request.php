@@ -16,6 +16,11 @@ add_action( 'fge_request_status_changed', static function ( int $req, string $st
 	if ( ! in_array( $status, [ 'event_durchgefuehrt', 'abgeschlossen' ], true ) ) {
 		return;
 	}
+	// Vorkasse: bezahlt und abgeschlossen vor dem Event heißt noch kein Dank.
+	// Die Mail kommt dann mit dem Lauf am Tag nach dem Event (fge_cc_auto_close).
+	if ( function_exists( 'fge_cc_event_date' ) && fge_cc_event_date( $req ) >= ( function_exists( 'fge_cc_today' ) ? fge_cc_today() : strtotime( 'today' ) ) ) {
+		return;
+	}
 	fge_send_review_request_email( $req );
 }, 10, 3 );
 

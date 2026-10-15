@@ -313,7 +313,7 @@ function fge_cc_page_calendar(): void {
 function fge_cc_ics_panel(): void {
 	echo '<section class="cc-card"><h2>In Outlook abonnieren</h2>';
 	echo '<p class="cc-muted">Diesen Link einmal in Outlook als Internetkalender hinzufügen. Danach erscheinen Events, Optionen, Fristen und fällige Erinnerungen von selbst.</p>';
-	echo '<p><input class="cc-copyfield" type="text" readonly value="' . esc_attr( fge_cc_ics_url() ) . '" onclick="this.select()"></p>';
+	echo '<p><input class="cc-copyfield" type="text" aria-label="Kalender-Link für Outlook" readonly value="' . esc_attr( fge_cc_ics_url() ) . '" onclick="this.select()"></p>';
 	echo '<p class="cc-muted">Outlook aktualisiert abonnierte Kalender nur alle paar Stunden. Für Termine, die Wochen vorher feststehen, ist das egal. Bei kurzfristigen Änderungen gilt die Tagesmail um 07:00 Uhr.</p>';
 	echo '<p class="cc-muted">Der Link enthält einen geheimen Schlüssel. Wer ihn hat, sieht die Termine. Nicht weitergeben.</p>';
 	echo '</section>';
@@ -420,7 +420,7 @@ function fge_cc_ics_output(): void {
 		// praktisch nicht unterstützt.
 		if ( in_array( $e['type'], [ 'task', 'deadline', 'prep' ], true ) ) {
 			// Ganztägige Einträge beginnen um Mitternacht. Eine Erinnerung
-			// „15 Minuten vorher" käme dann um 23:45 am Vorabend, deshalb
+			// „15 Minuten vorher“ käme dann um 23:45 am Vorabend, deshalb
 			// werden sie auf 8 Uhr des Tages selbst gelegt.
 			$trigger = $e['allday'] ? 'PT8H' : '-PT15M';
 			$ics    .= "BEGIN:VALARM\r\nACTION:DISPLAY\r\nTRIGGER:{$trigger}\r\n";
@@ -452,7 +452,7 @@ add_action( 'init', static function (): void {
 add_action( 'fge_cc_daily_digest', 'fge_cc_send_daily_digest' );
 
 /**
- * „Das steht heute an": fällige Aufgaben und Termine des Tages.
+ * „Das steht heute an“: fällige Aufgaben und Termine des Tages.
  *
  * Ersetzt das tägliche Öffnen des Control Centers und fängt ab, dass Outlook
  * abonnierte Kalender nur träge aktualisiert.
@@ -500,7 +500,7 @@ function fge_cc_send_daily_digest(): bool {
 			. '</li>';
 	}
 
-	$subject = 'Heute bei Firmengolf: ' . count( $mine ) . ' ' . ( 1 === count( $mine ) ? 'Aufgabe' : 'Aufgaben' )
+	$subject = 'Heute bei Firmengolf: ' . count( $mine ) . ' ' . ( 1 === count( $mine ) ? 'offener Punkt' : 'offene Punkte' )
 		. ( $entries ? ', ' . count( $entries ) . ' ' . ( 1 === count( $entries ) ? 'Termin' : 'Termine' ) : '' );
 
 	$content = '
@@ -508,7 +508,7 @@ function fge_cc_send_daily_digest(): bool {
 		' . ( '' !== $rows
 			? '<p style="margin:0 0 6px;font-weight:600;">Das wartet auf dich</p><table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>'
 			: '<p style="margin:0 0 16px;">Nichts Dringendes offen.</p>' ) . '
-		' . ( '' !== $cal ? '<p style="margin:0 0 6px;font-weight:600;">Heute und morgen im Kalender</p><ul style="margin:0 0 16px;padding-left:20px;">' . $cal . '</ul>' : '' ) . '
+		' . ( '' !== $cal ? '<p style="margin:0 0 6px;font-weight:600;">Termine heute und morgen</p><ul style="margin:0 0 16px;padding-left:20px;">' . $cal . '</ul>' : '' ) . '
 		<p style="margin:0;">' . fge_email_button( fge_cc_url( 'dashboard' ), 'Control Center öffnen' ) . '</p>
 	';
 

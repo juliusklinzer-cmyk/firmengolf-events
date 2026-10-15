@@ -173,7 +173,7 @@ function fge_pc_mail_cell( int $request_id ): string {
 		return $pc['code_id'] > 0 ? '<a href="' . esc_url( get_edit_post_link( $pc['code_id'], 'raw' ) ) . '" style="color:#4279D1;">' . $label . '</a>' : $label;
 	}
 	if ( '' !== $pc['invalid'] ) {
-		return '<span style="color:#B4332B;">„' . esc_html( $pc['invalid'] ) . '" eingegeben, nicht gültig, nicht übernommen</span>';
+		return '<span style="color:#B4332B;">„' . esc_html( $pc['invalid'] ) . '“ eingegeben, nicht gültig, nicht übernommen</span>';
 	}
 	return 'k. A.';
 }
@@ -372,7 +372,7 @@ function fge_notify_overdue( int $request_id ): void {
 /** Alle Beteiligten haben reagiert → Platz-Manager soll im Portal den Termin bestätigen. */
 add_action( 'fge_request_all_responded', 'fge_notify_all_responded', 10 );
 function fge_notify_all_responded( int $request_id ): void {
-	// „Alle abgesagt" war eine stille Sackgasse (Audit B1): kein Termin bestätigbar →
+	// „Alle abgesagt“ war eine stille Sackgasse (Audit B1): kein Termin bestätigbar →
 	// nicht den Platz zum Bestätigen auffordern, sondern Firmengolf eskalieren.
 	if ( function_exists( 'fge_rr_matrix' ) ) {
 		$m = fge_rr_matrix( $request_id );
@@ -426,13 +426,13 @@ function fge_notify_date_confirmed( int $request_id, int $date_index ): void {
 		$wishes = implode( ', ', array_merge( (array) $g['platz'], (array) $g['firmengolf'] ) );
 		$reason = '' !== $wishes
 			? 'Der Kunde hat Zusatzleistungen angefragt (' . esc_html( $wishes ) . '), die noch keinen Preis haben.'
-			: 'Der Anfrage ist kein bepreistes Event zugeordnet, ein Auto-Angebot wäre „Auf Anfrage" und trotzdem verbindlich buchbar.';
-		$next   = '<p style="margin:0 0 16px;"><strong>⚠️ Angebot zurückgehalten:</strong> ' . $reason . ' Bitte die Feinheiten mit dem Kunden klären und danach in der Anfrage auf <strong>„Angebot jetzt senden"</strong> klicken. Der Kunde hat eine Termin-Bestätigung erhalten und wartet auf das Angebot.</p>';
+			: 'Der Anfrage ist kein bepreistes Event zugeordnet, ein Auto-Angebot wäre „Auf Anfrage“ und trotzdem verbindlich buchbar.';
+		$next   = '<p style="margin:0 0 16px;"><strong>⚠️ Angebot zurückgehalten:</strong> ' . $reason . ' Bitte die Feinheiten mit dem Kunden klären und danach in der Anfrage auf <strong>„Angebot jetzt senden“</strong> klicken. Der Kunde hat eine Termin-Bestätigung erhalten und wartet auf das Angebot.</p>';
 	} else {
 		$next = '<p style="margin:0 0 16px;">Das Angebot geht automatisch an den Kunden. Sobald er annimmt, steht der Auftrag und ihr werdet informiert.</p>';
 	}
 
-	// „Alle Beteiligten haben zugestimmt" nur, wenn es eine Abstimmung mit Zusagen gab (Audit 18.09.).
+	// „Alle Beteiligten haben zugestimmt“ nur, wenn es eine Abstimmung mit Zusagen gab (Audit 18.09.).
 	$m_conf   = function_exists( 'fge_rr_matrix' ) ? fge_rr_matrix( $request_id ) : [];
 	$all_yes  = ! empty( $m_conf['responders'] ) && ! empty( $m_conf['all_responded'] );
 	$content = '
@@ -686,7 +686,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		<strong>Event:</strong> ' . esc_html( $data['event_title'] ?: 'k. A.' ) . '<br>
 		<strong>Platz:</strong> ' . esc_html( $data['partner_title'] ?: 'k. A.' ) . '</p>
 		' . $xs_block . $pc_block . '
-		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen. Für die automatische Vortags-Info in der Anfrage unter „Schritt 4: Event-Tag" Startzeit, Treffpunkt und Ansprechpartner vor Ort eintragen.</p>
+		<p style="margin:0 0 16px;">Bitte Buchung finalisieren und Rechnung anstoßen. Für die automatische Vortags-Info in der Anfrage unter „Schritt 4: Event-Tag“ Startzeit, Treffpunkt und Ansprechpartner vor Ort eintragen.</p>
 		<p style="margin:0;">' . fge_email_button( fge_format_request_admin_link( $request_id ), 'Im Control Center öffnen' ) . '</p>
 	';
 	fge_mail_log_context( $request_id, 'order_internal' );
@@ -699,7 +699,7 @@ function fge_notify_offer_accepted( int $request_id ): void {
 		$pdf_c = function_exists( 'fge_offer_pdf_tempfile' ) ? fge_offer_pdf_tempfile( $request_id ) : '';
 		$cc    = '
 			<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ', danke für die Zusage.</p>
-			<p style="margin:0 0 16px;">Euer Event <strong>' . esc_html( $data['event_title'] ?: '' ) . '</strong> am <strong>' . esc_html( $date ?: '' ) . '</strong> ist gebucht. Wir kümmern uns um die letzten Details. Alles für den Tag, also Start, Treffpunkt und Ansprechpartner vor Ort, bekommt ihr am Vortag per Mail.</p>
+			<p style="margin:0 0 16px;">Euer Teamevent am <strong>' . esc_html( $date ?: '' ) . '</strong> ist gebucht. Wir kümmern uns um die letzten Details. Alles für den Tag, also Start, Treffpunkt und Ansprechpartner vor Ort, bekommt ihr am Vortag per Mail.</p>
 			' . ( $pdf_c !== '' ? '<p style="margin:0 0 16px;">Die Buchungsbestätigung mit allen Leistungen und Preisen findet ihr als PDF im Anhang.</p>' : '' ) . '
 			<p style="margin:0;">' . ( function_exists( 'fge_offer_link' ) ? fge_email_button( fge_offer_link( $request_id ), 'Buchung ansehen' ) : '' ) . '</p>
 		';
@@ -824,7 +824,7 @@ function fge_partner_booking_confirmation( int $req ): bool {
 		if ( mb_strlen( $msg ) > 400 ) {
 			$msg = rtrim( mb_substr( $msg, 0, 400 ) ) . '…';
 		}
-		$expect[] = '<li style="margin-bottom:3px;">Nachricht der Gruppe: „' . nl2br( esc_html( $msg ) ) . '"</li>';
+		$expect[] = '<li style="margin-bottom:3px;">Nachricht der Gruppe: „' . nl2br( esc_html( $msg ) ) . '“</li>';
 	}
 	$expect_html = $expect ? '<p style="margin:0 0 4px;font-weight:600;">Was die Gruppe erwartet</p><ul style="margin:0 0 16px;padding-left:20px;">' . implode( '', $expect ) . '</ul>' : '';
 
@@ -1010,7 +1010,7 @@ function fge_send_offer_reminder( int $request_id, bool $last = false ): bool {
 	$snap = (array) get_post_meta( $request_id, '_fge_offer_snapshot', true );
 	$content = '
 		<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ',</p>
-		<p style="margin:0 0 16px;">euer Angebot für <strong>' . esc_html( (string) ( $snap['event_title'] ?? 'euer Event' ) ) . '</strong> am <strong>' . esc_html( (string) ( $snap['date'] ?? '' ) ) . '</strong> wartet noch auf eure Rückmeldung.' . ( $last ? ' Heute ist der letzte Tag, danach können wir den Termin beim Platz nicht mehr halten.' : '' ) . '</p>
+		<p style="margin:0 0 16px;">euer Angebot für euer Teamevent am <strong>' . esc_html( (string) ( $snap['date'] ?? '' ) ) . '</strong> wartet noch auf eure Rückmeldung.' . ( $last ? ' Heute ist der letzte Tag, danach können wir den Termin beim Platz nicht mehr halten.' : '' ) . '</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Angebot ansehen & bestätigen' ) . '</p>
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
 	';
@@ -1029,7 +1029,7 @@ function fge_send_onboarding_submitted_email( int $partner_id, string $temp_pass
 		return false;
 	}
 
-	// Typspezifische Begriffe (Audit 28.08.: vorher überall „Golfplatz").
+	// Typspezifische Begriffe (Audit 28.08.: vorher überall „Golfplatz“).
 	$ptype     = function_exists( 'fge_partner_type' ) ? fge_partner_type( $partner_id ) : 'course';
 	$term_map  = [ 'course' => 'Golfplatz', 'indoor' => 'Indoor Golf', 'coach' => 'Profil' ];
 	$term      = $term_map[ $ptype ] ?? 'Profil';
@@ -1121,7 +1121,7 @@ function fge_send_partner_welcome_email( int $user_id, int $partner_id ): bool {
 		<p style="margin-top:28px;">
 			' . fge_email_button( $set_url, 'Passwort festlegen' ) . '
 		</p>
-		<p style="font-size:13px;color:#888;">Der Link ist aus Sicherheitsgründen 24 Stunden gültig. Danach kannst du jederzeit über „Passwort vergessen" auf der Anmeldeseite einen neuen Link anfordern.</p>
+		<p style="font-size:13px;color:#888;">Der Link ist aus Sicherheitsgründen 24 Stunden gültig. Danach kannst du jederzeit über „Passwort vergessen“ auf der Anmeldeseite einen neuen Link anfordern.</p>
 		<p>Im Partner-Portal verwaltest du euer Platzprofil, Fotos und alle Event-Anfragen.</p>
 		<p style="font-size:13px;color:#888;">Bei Fragen erreichst du uns unter <a href="mailto:' . esc_attr( fge_company()['email_events'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_events'] ) . '</a>.</p>
 	';
@@ -1362,7 +1362,7 @@ function fge_send_partner_embed_promo_email( int $partner_id ): bool {
 /**
  * Zugangs-Bestätigung an den Club nach Einlösung der Einladung.
  * Der Partner hat sein Passwort selbst gesetzt — die Mail ist die schriftliche
- * Spur „dein Zugang existiert, so kommst du wieder rein" (Funnel-Audit 2026-07-12).
+ * Spur „dein Zugang existiert, so kommst du wieder rein“ (Funnel-Audit 2026-07-12).
  */
 function fge_send_invite_access_email( int $user_id, int $partner_id ): bool {
 	$user = get_userdata( $user_id );
@@ -1379,7 +1379,7 @@ function fge_send_invite_access_email( int $user_id, int $partner_id ): bool {
 		<p>' . $greeting . '</p>
 		<p>willkommen an Bord! Dein Zugang für <strong>' . esc_html( $name ) . '</strong> ist angelegt und das vorbereitete Profil gehört jetzt euch.</p>
 		<p><strong>Deine Anmelde-E-Mail:</strong> ' . esc_html( $user->user_email ) . '<br>
-		Das Passwort hast du gerade selbst festgelegt. Solltest du es vergessen, hilft „Passwort vergessen" auf der Anmeldeseite.</p>
+		Das Passwort hast du gerade selbst festgelegt. Solltest du es vergessen, hilft „Passwort vergessen“ auf der Anmeldeseite.</p>
 		<p style="margin-top:28px;">
 			' . fge_email_button( $portal_url, 'Zum Partner-Portal' ) . '
 		</p>
@@ -1467,7 +1467,10 @@ function fge_notify_partner_status_change( int $partner_id, string $old, string 
 	}
 	switch ( $new ) {
 		case 'aktiv':
-			fge_send_partner_approved_email( $partner_id );
+			// Nach einer Pause kein zweites „Du bist live“ (Audit 15.10.2026).
+			if ( 'pausiert' !== $old ) {
+				fge_send_partner_approved_email( $partner_id );
+			}
 			break;
 		case 'rueckfragen':
 			fge_send_partner_inquiry_email( $partner_id );
@@ -1519,7 +1522,7 @@ function fge_partner_mail_basics( int $partner_id ): array {
 	return [ $name, $email, $contact !== '' ? 'Hallo ' . esc_html( $contact ) . ',' : 'Hallo,' ];
 }
 
-/** „Dein Platz ist live": nach der Freischaltung, mit CTA fürs erste Event. */
+/** „Dein Platz ist live“: nach der Freischaltung, mit CTA fürs erste Event. */
 function fge_send_partner_approved_email( int $partner_id ): bool {
 	[ $name, $email, $greeting ] = fge_partner_mail_basics( $partner_id );
 	if ( ! is_email( $email ) ) {
@@ -1529,7 +1532,7 @@ function fge_send_partner_approved_email( int $partner_id ): bool {
 	$public_url = (string) get_permalink( $partner_id );
 	$new_event  = $portal . '?tab=angebote&portal_action=new&preset_type=teamevent';
 
-	$subject = 'Dein Golfplatz ist jetzt live auf Firmengolf';
+	$subject = 'Dein Profil ist jetzt live auf Firmengolf';
 	$content = '
 		<p>' . $greeting . '</p>
 		<p>gute Nachrichten: <strong>' . esc_html( $name ) . '</strong> ist geprüft, freigeschaltet und ab sofort für Unternehmen sichtbar.</p>
@@ -1550,15 +1553,15 @@ function fge_send_partner_inquiry_email( int $partner_id ): bool {
 		return false;
 	}
 	$portal  = trailingslashit( home_url( '/partnerportal/' ) );
-	$subject = 'Kurze Rückfragen zu deinem Golfplatz-Profil';
+	$subject = 'Kurze Rückfrage zu deinem Profil bei Firmengolf';
 	$content = '
 		<p>' . $greeting . '</p>
 		' . ( '' !== ( $msg = trim( (string) get_post_meta( $partner_id, '_fge_review_message', true ) ) )
 			? '<p>bei der Prüfung von <strong>' . esc_html( $name ) . '</strong> ist uns noch etwas aufgefallen:</p>' . fge_review_message_block( $msg ) . '<p>Sobald das erledigt ist, schalten wir dich frei.</p>'
 			: '<p>bei der Prüfung von <strong>' . esc_html( $name ) . '</strong> sind ein paar Fragen aufgekommen. Wir melden uns dazu in Kürze per E-Mail oder Telefon bei dir.</p>' ) . '
-		<p>Du kannst dein Profil in der Zwischenzeit jederzeit im Partner-Portal anpassen und ergänzen.</p>
+		<p>Du kannst dein Profil in der Zwischenzeit jederzeit im Partnerportal anpassen und ergänzen.</p>
 		<p style="margin-top:28px;">
-			' . fge_email_button( $portal, 'Zum Partner-Portal' ) . '
+			' . fge_email_button( $portal, 'Zum Partnerportal' ) . '
 		</p>
 		<p style="font-size:13px;color:#888;">Du erreichst uns direkt unter <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_partner'] ) . '</a>. Antworte gern auch einfach auf diese E-Mail.</p>
 	';
@@ -1571,11 +1574,11 @@ function fge_send_partner_rejected_email( int $partner_id ): bool {
 	if ( ! is_email( $email ) ) {
 		return false;
 	}
-	$subject = 'Dein Golfplatz-Profil bei Firmengolf';
+	$subject = 'Dein Profil bei Firmengolf';
 	$content = '
 		<p>' . $greeting . '</p>
 		<p>danke für dein Interesse an Firmengolf. Nach der Prüfung können wir <strong>' . esc_html( $name ) . '</strong> aktuell leider nicht freischalten.</p>
-		' . ( '' !== ( $msg = trim( (string) get_post_meta( $partner_id, '_fge_review_message', true ) ) ) ? fge_review_message_block( $msg ) : '' ) . '
+		' . ( '' !== ( $msg = trim( (string) get_post_meta( $partner_id, '_fge_review_message', true ) ) ) ? '<p>Unsere Anmerkung dazu:</p>' . fge_review_message_block( $msg ) : '' ) . '
 		<p>Wenn du die Gründe besprechen möchtest oder sich bei euch etwas ändert, melde dich jederzeit. Oft lässt sich gemeinsam ein Weg finden.</p>
 		<p style="font-size:13px;color:#888;">Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_partner'] ) . '</a>.</p>
 	';
@@ -1601,7 +1604,7 @@ function fge_send_onboarding_resume_email( string $to, string $resume_url, strin
 
 /**
  * Link zur Anfrage in internen Mails: seit 28.09.2026 ins Control Center, das
- * WordPress-Backend bleibt von dort aus erreichbar („Im WordPress öffnen").
+ * WordPress-Backend bleibt von dort aus erreichbar („Im WordPress öffnen“).
  */
 function fge_format_request_admin_link( int $request_id ): string {
 	if ( function_exists( 'fge_cc_request_url' ) ) {
@@ -1617,7 +1620,7 @@ function fge_format_request_admin_link( int $request_id ): string {
  */
 function fge_email_button( string $url, string $label ): string {
 	// Tabellen-Bauweise, weil Outlook Padding auf <a> ignoriert (sah dort wie ein
-	// nackter blauer Kasten aus). Dunklere Unterkante = „drückbarer" 3D-Look.
+	// nackter blauer Kasten aus). Dunklere Unterkante = „drückbarer“ 3D-Look.
 	return '<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse:separate;display:inline-table;"><tr>'
 		. '<td bgcolor="#4279D1" style="border-radius:8px;border-bottom:3px solid #2C55A0;">'
 		. '<a href="' . esc_url( $url ) . '" style="display:inline-block;padding:12px 26px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">' . esc_html( $label ) . '</a>'

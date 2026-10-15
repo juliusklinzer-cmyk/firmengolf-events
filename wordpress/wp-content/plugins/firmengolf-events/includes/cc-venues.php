@@ -417,10 +417,10 @@ function fge_venue_choose( int $req, int $venue_id ): bool {
 		return false;
 	}
 	$t = fge_venues_table();
-	// Ein zuvor gewählter Platz fällt auf „zugesagt" zurück.
+	// Ein zuvor gewählter Platz fällt auf „zugesagt“ zurück.
 	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	$wpdb->query( $wpdb->prepare(
-		"UPDATE {$t} SET status = 'zugesagt' WHERE request_id = %d AND status = 'gewaehlt'",
+		"UPDATE {$t} SET status = 'zugesagt' WHERE request_id = %d AND status = 'gewaehlt' AND kind = 'platz'",
 		$req
 	) );
 	fge_venue_update( $venue_id, [ 'status' => 'gewaehlt' ] );
@@ -534,8 +534,8 @@ function fge_venue_apply_to_offer( int $req, array $row ): int {
 				continue;
 			}
 			if ( in_array( $norm( $label ), $fg_wishes, true ) ) {
-				// „Über Firmengolf gewünscht" (Fotograf): sagt der Platz Nein, bleibt es
-				// eine externe Position, die Julius bepreist, kein „nicht möglich" beim Kunden.
+				// „Über Firmengolf gewünscht“ (Fotograf): sagt der Platz Nein, bleibt es
+				// eine externe Position, die Julius bepreist, kein „nicht möglich“ beim Kunden.
 				$it['organizer']  = 'extern';
 				$it['partner_id'] = 0;
 				$it['status']     = 'angeboten';
@@ -613,7 +613,7 @@ function fge_venues_idle_counts(): array {
 	global $wpdb;
 	$t = fge_venues_table();
 	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-	$rows = $wpdb->get_results( "SELECT request_id, COUNT(*) AS n FROM {$t} WHERE status = 'idee' GROUP BY request_id", ARRAY_A ) ?: [];
+	$rows = $wpdb->get_results( "SELECT request_id, COUNT(*) AS n FROM {$t} WHERE status = 'idee' AND kind = 'platz' GROUP BY request_id", ARRAY_A ) ?: [];
 
 	$cache = [];
 	foreach ( $rows as $r ) {

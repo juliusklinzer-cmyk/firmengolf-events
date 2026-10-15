@@ -16,6 +16,10 @@ function fge_is_private_token_page(): bool {
 	if ( get_query_var( 'fge_angebot' ) || get_query_var( 'fge_termin' ) || get_query_var( 'fge_einladung' ) ) {
 		return true;
 	}
+	// Prüfansicht im Control Center: keine Seitenaufrufe an Google oder Meta (Audit 15.10.2026).
+	if ( function_exists( 'fge_cc_is_review_frame' ) && fge_cc_is_review_frame() ) {
+		return true;
+	}
 	return isset( $_GET['ob_token'] ) || isset( $_GET['ob_resume'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 }
 
