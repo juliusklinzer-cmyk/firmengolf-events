@@ -240,12 +240,65 @@
 		});
 	}
 
+	// ── Angebote A, B, C: Positionen live rechnen ────────────────────────
+	// Aufschlag und Verkauf hängen zusammen wie in der Platz-Kalkulation:
+	// Verkauf = Einkauf netto plus Aufschlag, auf volle Euro aufgerundet.
+	function initPackages() {
+		var VAT = 19;
+		function num(s) { s = String(s || '').replace(/[\s€%]/g, ''); if (s.indexOf(',') !== -1) { s = s.replace(/\./g, '').replace(',', '.'); } var f = parseFloat(s); return isNaN(f) ? 0 : f; }
+		function eur(n) { var r = Math.round(n * 100) / 100; return r.toLocaleString('de-DE', { minimumFractionDigits: r % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; }
+		function pct(n) { return (Math.round(n * 10) / 10).toLocaleString('de-DE', { maximumFractionDigits: 1 }); }
+		document.querySelectorAll('form[data-cc-pkg]').forEach(function (form) {
+			var pax = parseInt(form.dataset.pax, 10) || 1;
+			var rows = form.querySelectorAll('[data-pkg-row]');
+			function net(r) { var c = num(r.querySelector('[data-cost]').value); return r.querySelector('[data-gross]').value === '1' ? c / (1 + VAT / 100) : c; }
+			function tone(el, p) { el.classList.toggle('is-bad', p < 10); el.classList.toggle('is-good', p >= 10); }
+			function totals() {
+				var ek = 0, vk = 0;
+				rows.forEach(function (r) {
+					var del = r.querySelector('input[type="checkbox"]');
+					var unit = r.querySelector('[data-unit]').value;
+					var q = unit === 'person' ? pax : 1;
+					var sale = unit === 'verbrauch' ? 0 : num(r.querySelector('[data-sale]').value);
+					var n = unit === 'verbrauch' ? 0 : net(r);
+					var sum = sale * q, m = (sale - n) * q, p = sum > 0 ? Math.round(m / sum * 100) : 0;
+					r.querySelector('[data-sum]').textContent = eur(sum);
+					var mEl = r.querySelector('[data-margin] span');
+					mEl.textContent = eur(m) + ' · ' + p + ' %';
+					tone(mEl, p);
+					if (del && del.checked) { return; }
+					ek += n * q; vk += sum;
+				});
+				var t = form.querySelector('[data-totals]');
+				if (!t) { return; }
+				var m = vk - ek, p = vk > 0 ? Math.round(m / vk * 100) : 0;
+				t.querySelector('[data-t-ek]').textContent = eur(ek);
+				t.querySelector('[data-t-vk]').textContent = eur(vk);
+				t.querySelector('[data-t-m]').textContent = eur(m) + ' · ' + p + ' %';
+				tone(t.querySelector('[data-t-m]'), p);
+				t.querySelector('[data-t-b]').textContent = eur(vk * (1 + VAT / 100));
+			}
+			rows.forEach(function (r) {
+				var mk = r.querySelector('[data-markup]'), sa = r.querySelector('[data-sale]');
+				function fromMarkup() { var n = net(r); if (n > 0) { sa.value = Math.ceil(n * (1 + num(mk.value) / 100) - 0.00001); } totals(); }
+				mk.addEventListener('input', fromMarkup);
+				r.querySelector('[data-cost]').addEventListener('input', fromMarkup);
+				r.querySelector('[data-gross]').addEventListener('change', fromMarkup);
+				r.querySelector('[data-unit]').addEventListener('change', totals);
+				sa.addEventListener('input', function () { var n = net(r); if (n > 0 && num(sa.value) > 0) { mk.value = pct((num(sa.value) / n - 1) * 100); } totals(); });
+				var del = r.querySelector('input[type="checkbox"]');
+				if (del) { del.addEventListener('change', function () { r.classList.toggle('is-removed', del.checked); totals(); }); }
+			});
+		});
+	}
+
 	function init() {
 		initDialog();
 		initSearch();
 		initRequestTabs();
 		initDrawers();
 		initClone();
+		initPackages();
 		initNav();
 	}
 	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }

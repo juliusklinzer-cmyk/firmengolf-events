@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const FGE_VENUES_DB_VERSION = '1.5.0';
+const FGE_VENUES_DB_VERSION = '1.6.0';
 
 function fge_venues_table(): string {
 	global $wpdb;
@@ -77,6 +77,7 @@ function fge_venues_install(): void {
 		reservation_at DATETIME NULL DEFAULT NULL,
 		reserved_until DATE NULL DEFAULT NULL,
 		followup_at DATETIME NULL DEFAULT NULL,
+		kind VARCHAR(10) NOT NULL DEFAULT 'platz',
 		PRIMARY KEY (id),
 		UNIQUE KEY req_partner (request_id, partner_id),
 		KEY request_id (request_id),
@@ -159,12 +160,19 @@ function fge_venue_reasons(): array {
 // ── Lesen ────────────────────────────────────────────────────────────────────
 
 /** Alle angefragten Plätze einer Anfrage, gewählter zuerst. */
-function fge_venues_get( int $req ): array {
+/**
+ * Zeilen der Pipeline einer Anfrage. $kind 'platz' (Standard) = Golfplätze,
+ * 'dl' = Dienstleister (seit 15.10.2026 in derselben Tabelle), 'all' = beide.
+ * Alles, was nur Plätze kennt (Absagen, Reservierung, Aufgaben), sieht so
+ * weiterhin nur Plätze.
+ */
+function fge_venues_get( int $req, string $kind = 'platz' ): array {
 	global $wpdb;
-	$t = fge_venues_table();
+	$t     = fge_venues_table();
+	$where = 'all' === $kind ? '' : $wpdb->prepare( ' AND kind = %s', 'dl' === $kind ? 'dl' : 'platz' );
 	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	$rows = $wpdb->get_results( $wpdb->prepare(
-		"SELECT * FROM {$t} WHERE request_id = %d ORDER BY FIELD(status,'gewaehlt','zugesagt','angefragt','idee','keine','abgesagt'), id ASC",
+		"SELECT * FROM {$t} WHERE request_id = %d{$where} ORDER BY FIELD(status,'gewaehlt','zugesagt','angefragt','idee','keine','abgesagt'), id ASC",
 		$req
 	), ARRAY_A ) ?: [];
 

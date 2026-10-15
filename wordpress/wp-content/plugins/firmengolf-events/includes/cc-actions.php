@@ -66,6 +66,12 @@ function fge_cc_messages(): array {
 		'question_open'   => [ 'ok', 'Frage wieder offen.' ],
 		'question_removed' => [ 'ok', 'Frage entfernt.' ],
 		'venues_asked'    => [ 'ok', 'Anfragen sind raus.' ],
+		'provider_added'  => [ 'ok', 'Dienstleister aufgenommen.' ],
+		'provider_invalid' => [ 'err', 'Bitte Name und Mail oder Telefon angeben.' ],
+		'packages_saved'  => [ 'ok', 'Angebot gespeichert.' ],
+		'package_added'   => [ 'ok', 'Angebot angelegt.' ],
+		'package_removed' => [ 'ok', 'Angebot gelöscht.' ],
+		'package_max'     => [ 'err', 'Höchstens drei Angebote.' ],
 		'venue_followup'  => [ 'ok', 'Nachfrage ist beim Platz.' ],
 		'venue_noanswer'  => [ 'ok', 'Platz steht auf keine Antwort.' ],
 		'offer_deadline'  => [ 'err', 'Die Antwortfrist muss in der Zukunft liegen, höchstens 60 Tage.' ],
@@ -433,7 +439,7 @@ add_action( 'admin_post_fge_cc_venue_ask_bulk', static function (): void {
 	$opts = fge_cc_mail_opts_from_post();
 	$ids  = array_map( 'absint', (array) wp_unslash( $_POST['venue_ids'] ?? [] ) );
 	$sent = 0;
-	foreach ( fge_venues_get( $req ) as $v ) {
+	foreach ( fge_venues_get( $req, 'all' ) as $v ) {
 		if ( in_array( (int) $v['id'], $ids, true ) && 'idee' === (string) $v['status'] && fge_venue_send_request( $req, (int) $v['id'], $opts ) ) {
 			$sent++;
 		}

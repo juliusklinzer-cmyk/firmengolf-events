@@ -716,6 +716,9 @@ function fge_cc_flow_pane_partners( int $req, int $cur ): void {
 	if ( function_exists( 'fge_cc_venues_panel' ) ) {
 		fge_cc_venues_panel( $req );
 	}
+	if ( function_exists( 'fge_cc_providers_panel' ) ) {
+		fge_cc_providers_panel( $req );
+	}
 	$by  = fge_cc_flow( $req )['count'];
 	$yes = ( $by['zugesagt'] ?? 0 ) + ( $by['gewaehlt'] ?? 0 );
 	if ( 2 <= $cur && $cur <= 3 ) {
@@ -734,54 +737,43 @@ function fge_cc_flow_pane_partners( int $req, int $cur ): void {
 // ── Schritt 3: Kalkulation ───────────────────────────────────────────────────
 
 function fge_cc_flow_pane_calc( int $req, int $cur ): void {
-	$sent   = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
-	$venues = array_values( array_filter( fge_cc_flow( $req )['venues'], static fn( $v ) => in_array( (string) $v['status'], [ 'zugesagt', 'gewaehlt' ], true ) ) );
+	$sent  = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
+	$yes   = static fn( $v ) => in_array( (string) $v['status'], [ 'zugesagt', 'gewaehlt' ], true );
+	$golf  = array_values( array_filter( fge_cc_flow( $req )['venues'], $yes ) );
+	$provs = array_values( array_filter( fge_venues_get( $req, 'dl' ), $yes ) );
+	$open  = count( array_filter( fge_venues_get( $req, 'all' ), static fn( $v ) => 'angefragt' === (string) $v['status'] ) );
 
-	// Rückmeldungen: was die Plätze zugesagt haben, auf einen Blick.
-	if ( $venues ) {
-		echo '<div class="cc-block"><div class="cc-block-head"><h3>Rückmeldungen</h3><span class="cc-muted">' . (int) count( $venues ) . ( 1 === count( $venues ) ? ' Zusage' : ' Zusagen' ) . '</span></div>';
-		foreach ( $venues as $v ) {
+	// Rückmeldungen: was Plätze und Dienstleister zugesagt haben, auf einen Blick.
+	if ( $golf || $provs ) {
+		$n = count( $golf ) + count( $provs );
+		echo '<div class="cc-block"><div class="cc-block-head"><h3>Rückmeldungen</h3><span class="cc-muted">' . (int) $n . ( 1 === $n ? ' Zusage' : ' Zusagen' ) . ( $open ? ' · ' . (int) $open . ' noch offen' : '' ) . '</span></div>';
+		foreach ( array_merge( $golf, $provs ) as $v ) {
 			fge_cc_flow_reply_summary( $req, $v );
 		}
 		echo '</div>';
 	}
 
-	// Kalkulation je Platz, offen statt eingeklappt.
-	if ( ! $sent && function_exists( 'fge_cc_venue_calc_form' ) ) {
-		foreach ( $venues as $v ) {
-			echo '<div class="cc-subcard"><div class="cc-subcard-head"><strong>' . esc_html( (string) $v['title'] ) . '</strong>'
-				. fge_cc_pill( 'gewaehlt' === (string) $v['status'] ? 'Gewählt' : 'Zusage', 'good' ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
-			fge_cc_venue_calc_form( $req, $v, true );
-			echo '</div>';
-		}
-	}
-
-	if ( $sent ) {
+	$accepted = 'accepted' === (string) get_post_meta( $req, '_fge_offer_status', true );
+	if ( $accepted || ( $sent && '1' !== (string) get_post_meta( $req, '_fge_offer_options_mode', true ) ) ) {
 		echo '<p class="cc-muted">Das Angebot ist verschickt. Den Stand siehst du im Schritt Angebot.</p>';
-	} elseif ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 ) {
+	} elseif ( ! $sent && function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 ) {
 		echo '<div class="cc-block"><h3>Termin bestätigt, Angebot senden</h3>';
 		fge_cc_phase_offer_ready( $req );
 		echo '</div>';
-	} else {
-		echo '<div class="cc-subcard cc-subcard--offer">';
-		if ( function_exists( 'fge_cc_offer_options_panel' ) ) {
-			fge_cc_offer_options_panel( $req );
-		}
-		echo '</div>';
+	} elseif ( function_exists( 'fge_cc_packages_panel' ) ) {
+		fge_cc_packages_panel( $req );
 	}
 
-	if ( ! $sent && function_exists( 'fge_cc_positions_panel' ) ) {
-		echo '<details class="cc-details cc-details--card"><summary>Zusatzleistungen und Dienstleister</summary>';
-		fge_cc_positions_panel( $req );
-		if ( function_exists( 'fge_cc_provider_datalist' ) ) {
-			fge_cc_provider_datalist();
-		}
-		echo '</details>';
-	}
-
+	// Sonderweg ohne Optionen, mit dem alten Positions-Editor.
 	if ( ! $sent && ! ( function_exists( 'fge_rr_final_index' ) && fge_rr_final_index( $req ) > 0 ) ) {
 		$wishes = function_exists( 'fge_rr_wish_dates' ) ? fge_rr_wish_dates( $req ) : [];
-		echo '<details class="cc-details cc-details--card"><summary>Sonderfall: Termin direkt bestätigen (ohne Optionen)</summary>';
+		echo '<details class="cc-details cc-details--card"><summary>Sonderfall: Termin direkt bestätigen (ohne Angebote A, B, C)</summary>';
+		if ( function_exists( 'fge_cc_positions_panel' ) ) {
+			fge_cc_positions_panel( $req );
+			if ( function_exists( 'fge_cc_provider_datalist' ) ) {
+				fge_cc_provider_datalist();
+			}
+		}
 		fge_cc_confirm_date_form( $req, $wishes );
 		echo '</details>';
 	}
@@ -800,7 +792,7 @@ function fge_cc_flow_reply_summary( int $req, array $v ): void {
 	echo '<div class="cc-reply">';
 	echo '<div class="cc-reply-who"><strong>' . esc_html( (string) $v['title'] ) . '</strong><span class="cc-muted">Frei am ' . esc_html( $free ? implode( ', ', $free ) : 'keinem Wunschtermin' ) . '</span></div>';
 	echo '<div class="cc-reply-items">';
-	if ( (float) $v['price'] > 0 ) {
+	if ( 'dl' !== (string) ( $v['kind'] ?? 'platz' ) && (float) $v['price'] > 0 ) {
 		echo '<div><span>Event und Platznutzung</span><span>' . esc_html( $money( $v['price'], $v['price_gross'], $v['price_basis'] ) ) . '</span></div>';
 	}
 	foreach ( (array) $v['items'] as $it ) {

@@ -136,6 +136,10 @@ function fge_venue_send_request( int $req, int $venue_id, array $opts = [] ): bo
 	if ( ! $row ) {
 		return false;
 	}
+	// Dienstleister bekommen ihre eigene Mail (cc-request-providers.php).
+	if ( 'dl' === (string) ( $row['kind'] ?? 'platz' ) ) {
+		return function_exists( 'fge_provider_send_request' ) && fge_provider_send_request( $req, $venue_id, $opts );
+	}
 	$partner_id = (int) $row['partner_id'];
 	$to         = fge_venue_partner_email( $partner_id );
 	if ( '' === $to ) {

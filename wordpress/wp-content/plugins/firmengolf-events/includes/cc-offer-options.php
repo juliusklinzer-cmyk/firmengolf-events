@@ -138,6 +138,10 @@ function fge_offer_option_from_venue( int $req, array $v, string $key ): array {
 
 /** Warum das Optionen-Angebot noch nicht raus kann. Leer = bereit. */
 function fge_offer_options_blocker( int $req ): string {
+	// Seit 1.9.305 laufen Angebote über Pakete (cc-offer-packages.php).
+	if ( function_exists( 'fge_offer_packages_blocker' ) ) {
+		return fge_offer_packages_blocker( $req );
+	}
 	$venues = fge_offer_options_venues( $req );
 	if ( ! $venues ) {
 		return 'Noch kein Platz als Option markiert.';
@@ -165,11 +169,7 @@ function fge_offer_options_blocker( int $req ): string {
 
 /** Snapshot mit Optionen: flache Schlüssel = empfohlene (sonst erste) Option. */
 function fge_build_offer_snapshot_options( int $req ): array {
-	$venues  = fge_offer_options_venues( $req );
-	$options = [];
-	foreach ( $venues as $i => $v ) {
-		$options[] = fge_offer_option_from_venue( $req, $v, fge_offer_option_key( $i + 1 ) );
-	}
+	$options = function_exists( 'fge_offer_options_list' ) ? fge_offer_options_list( $req ) : [];
 	$lead = $options[0] ?? [];
 	foreach ( $options as $o ) {
 		if ( ! empty( $o['recommended'] ) ) {
@@ -311,16 +311,19 @@ function fge_offer_resolve_option( int $req, string $key, int $date_index, array
 			}
 		}
 		$extern = 'extern' === (string) ( $x['organizer'] ?? '' );
+		// Pakete (seit 1.9.305) tragen Einkauf und Dienstleister je Position selbst.
+		$pkg    = array_key_exists( 'cost', $x );
 		$rows[] = [
 			'id'             => (int) $x['src'],
 			'label'          => (string) $x['label'],
-			'cost'           => 'verbrauch' === (string) $x['basis'] ? 0.0 : (float) ( $it['price'] ?? 0 ),
-			'cost_gross'     => (int) ( $it['price_gross'] ?? 1 ),
+			'cost'           => 'verbrauch' === (string) $x['basis'] ? 0.0 : ( $pkg ? (float) $x['cost'] : (float) ( $it['price'] ?? 0 ) ),
+			'cost_gross'     => $pkg ? (int) $x['cost_gross'] : (int) ( $it['price_gross'] ?? 1 ),
 			'basis'          => (string) $x['basis'],
-			'margin'         => $margin,
+			'margin'         => $pkg ? (float) ( $x['markup'] ?? $margin ) : $margin,
 			'organizer'      => $extern ? 'extern' : 'platz',
-			'provider_name'  => $extern ? '' : $pname,
-			'provider_email' => $extern ? '' : $pmail,
+			'provider_name'  => $extern ? (string) ( $x['provider_name'] ?? '' ) : $pname,
+			'provider_email' => $extern ? (string) ( $x['provider_email'] ?? '' ) : $pmail,
+			'provider_row'   => (int) ( $x['provider_row'] ?? 0 ),
 			'partner_id'     => $extern ? 0 : (int) $opt['partner_id'],
 			'wish'           => (string) $x['label'],
 			'note'           => (string) ( $x['note'] ?? '' ),
@@ -514,7 +517,7 @@ function fge_cc_offer_options_panel( int $req ): void {
  */
 function fge_cc_offer_send_drawer( int $req ): void {
 	$data   = fge_get_request_email_data( $req );
-	$venues = fge_offer_options_venues( $req );
+	$opts   = function_exists( 'fge_offer_options_list' ) ? fge_offer_options_list( $req ) : [];
 	$days   = (int) apply_filters( 'fge_offer_response_days', 7 );
 	$rdays  = (int) apply_filters( 'fge_offer_reminder_days', 3 );
 	$first  = trim( (string) $data['first_name'] );
@@ -524,8 +527,14 @@ function fge_cc_offer_send_drawer( int $req ): void {
 	echo '<input type="hidden" name="action" value="fge_cc_offer_send_options"><input type="hidden" name="request_id" value="' . (int) $req . '">';
 	wp_nonce_field( 'fge_cc_offer_send_options_' . $req );
 	echo '<div class="cc-sendlist">';
-	foreach ( $venues as $i => $v ) {
-		echo '<div><strong>Option ' . esc_html( fge_offer_option_key( $i + 1 ) ) . '</strong> · ' . esc_html( (string) $v['title'] ) . '</div>';
+	$pax = (int) get_post_meta( $req, '_fge_expected_participants', true );
+	$vat = defined( 'FGE_VAT_PERCENT' ) ? (float) FGE_VAT_PERCENT : 19.0;
+	foreach ( $opts as $o ) {
+		$net = (float) $o['price_total'];
+		foreach ( (array) $o['extras'] as $x ) {
+			$net += 'person' === $x['basis'] ? (float) $x['price'] * max( 1, $pax ) : ( 'pauschal' === $x['basis'] ? (float) $x['price'] : 0.0 );
+		}
+		echo '<div><span><strong>Angebot ' . esc_html( (string) $o['key'] ) . '</strong> · ' . esc_html( (string) $o['title'] ) . '</span><span class="cc-tnum">' . esc_html( number_format_i18n( $net * ( 1 + $vat / 100 ), 2 ) ) . ' € brutto</span></div>';
 	}
 	echo '</div>';
 	echo '<div class="cc-fields cc-fields--send">';

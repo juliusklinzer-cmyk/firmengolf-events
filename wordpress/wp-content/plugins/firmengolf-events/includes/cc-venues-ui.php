@@ -133,15 +133,24 @@ function fge_cc_venue_row( int $req, array $v ): void {
 	$id      = (int) $v['id'];
 	$pid     = (int) $v['partner_id'];
 	$status  = (string) $v['status'];
-	$mail    = function_exists( 'fge_cc_partner_email' ) ? fge_cc_partner_email( $pid ) : '';
-	$stamm   = function_exists( 'fge_partner_is_stammdaten' ) && fge_partner_is_stammdaten( $pid );
+	$dl      = 'dl' === (string) ( $v['kind'] ?? 'platz' );
 	$booked  = function_exists( 'fge_request_is_booked' ) && fge_request_is_booked( $req );
-	$types   = function_exists( 'fge_catalog_partner_types' ) ? fge_catalog_partner_types() : [];
-	$type    = function_exists( 'fge_partner_type' ) ? fge_partner_type( $pid ) : 'course';
-	$tlabel  = is_array( $types[ $type ] ?? null ) ? (string) ( $types[ $type ]['label'] ?? 'Golfplatz' ) : (string) ( $types[ $type ] ?? 'Golfplatz' );
-	$km      = fge_cc_venue_km( $req, $pid );
-	$phone   = (string) get_post_meta( $pid, '_fge_event_contact_phone', true ) ?: (string) get_post_meta( $pid, '_fge_main_contact_phone', true );
-	$sub     = implode( ' · ', array_filter( [ 'course' === $type ? 'Golfplatz' : $tlabel, (string) get_post_meta( $pid, '_fge_city', true ), $km >= 0 ? number_format_i18n( round( $km ) ) . ' km' : '' ] ) );
+	if ( $dl ) {
+		// Dienstleister: Kontakt und Art aus dem Verzeichnis, keine Entfernung.
+		$mail  = function_exists( 'fge_provider_email' ) ? fge_provider_email( $pid ) : '';
+		$stamm = false;
+		$phone = (string) get_post_meta( $pid, '_fge_provider_phone', true );
+		$sub   = implode( ' · ', array_filter( [ (string) ( fge_provider_types()[ (string) get_post_meta( $pid, '_fge_provider_type', true ) ] ?? 'Dienstleister' ), (string) get_post_meta( $pid, '_fge_provider_region', true ) ] ) );
+	} else {
+		$mail   = function_exists( 'fge_cc_partner_email' ) ? fge_cc_partner_email( $pid ) : '';
+		$stamm  = function_exists( 'fge_partner_is_stammdaten' ) && fge_partner_is_stammdaten( $pid );
+		$types  = function_exists( 'fge_catalog_partner_types' ) ? fge_catalog_partner_types() : [];
+		$type   = function_exists( 'fge_partner_type' ) ? fge_partner_type( $pid ) : 'course';
+		$tlabel = is_array( $types[ $type ] ?? null ) ? (string) ( $types[ $type ]['label'] ?? 'Golfplatz' ) : (string) ( $types[ $type ] ?? 'Golfplatz' );
+		$km     = fge_cc_venue_km( $req, $pid );
+		$phone  = (string) get_post_meta( $pid, '_fge_event_contact_phone', true ) ?: (string) get_post_meta( $pid, '_fge_main_contact_phone', true );
+		$sub    = implode( ' · ', array_filter( [ 'course' === $type ? 'Golfplatz' : $tlabel, (string) get_post_meta( $pid, '_fge_city', true ), $km >= 0 ? number_format_i18n( round( $km ) ) . ' km' : '' ] ) );
+	}
 	$labels  = function_exists( 'fge_request_wish_date_labels' ) ? fge_request_wish_date_labels( $req ) : [];
 	$dates   = function_exists( 'fge_venue_dates_get' ) ? fge_venue_dates_get( $id ) : [];
 
@@ -195,10 +204,26 @@ function fge_cc_venue_row( int $req, array $v ): void {
 
 	// Angefragte Leistungen als Chips.
 	$asked = array_values( array_filter( (array) $v['items'], static fn( $it ) => 'green_fee' !== (string) $it['wish_key'] ) );
-	echo '<div class="cc-minichips"><span class="cc-minichip is-on">Event und Platznutzung</span>';
-	foreach ( $asked as $it ) {
-		$off = in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) && ! (int) $it['available'];
-		echo '<span class="cc-minichip' . ( $off ? ' is-off' : ' is-on' ) . '"' . ( $off ? ' title="bietet der Platz nicht an"' : '' ) . '>' . esc_html( (string) $it['label'] ) . '</span>';
+	echo '<div class="cc-minichips">';
+	if ( $dl && 'idee' === $status ) {
+		// Noch nicht angefragt: Leistungen an- und abwählen, wie im Entwurf.
+		$on_labels = array_map( static fn( $it ) => mb_strtolower( (string) $it['label'] ), $asked );
+		$choices   = array_map( static fn( $it ) => (string) $it['label'], $asked );
+		foreach ( function_exists( 'fge_cc_need_services' ) ? fge_cc_need_services( $req ) : [] as $sv ) {
+			$choices[] = $sv['label'];
+		}
+		foreach ( array_unique( $choices ) as $label ) {
+			$on = in_array( mb_strtolower( $label ), $on_labels, true );
+			fge_cc_button( 'fge_cc_provider_item', $req, $label, [ 'class' => 'cc-minichip cc-minichip--btn' . ( $on ? ' is-on' : ' is-off-soft' ), 'fields' => [ 'venue_id' => $id, 'label' => $label ] ] );
+		}
+	} else {
+		if ( ! $dl ) {
+			echo '<span class="cc-minichip is-on">Event und Platznutzung</span>';
+		}
+		foreach ( $asked as $it ) {
+			$off = in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) && ! (int) $it['available'];
+			echo '<span class="cc-minichip' . ( $off ? ' is-off' : ' is-on' ) . '"' . ( $off ? ' title="nicht im Angebot"' : '' ) . '>' . esc_html( (string) $it['label'] ) . '</span>';
+		}
 	}
 	echo '</div>';
 
@@ -207,7 +232,9 @@ function fge_cc_venue_row( int $req, array $v ): void {
 	if ( in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) ) {
 		$money = static fn( $p, $gross, $basis ) => number_format_i18n( (float) $p, 2 ) . ' € ' . ( (int) $gross ? 'brutto' : 'netto' ) . ( 'person' === $basis ? ' p. P.' : ' pauschal' );
 		echo '<div class="cc-pricebox">';
-		echo '<div><span>Event und Platznutzung</span><span>' . esc_html( (float) $v['price'] > 0 ? $money( $v['price'], $v['price_gross'], $v['price_basis'] ) : 'kein Preis' ) . '</span></div>';
+		if ( ! $dl ) {
+			echo '<div><span>Event und Platznutzung</span><span>' . esc_html( (float) $v['price'] > 0 ? $money( $v['price'], $v['price_gross'], $v['price_basis'] ) : 'kein Preis' ) . '</span></div>';
+		}
 		foreach ( $asked as $it ) {
 			if ( ! (int) $it['available'] ) {
 				continue;
@@ -223,14 +250,14 @@ function fge_cc_venue_row( int $req, array $v ): void {
 	}
 
 	if ( '' === $mail ) {
-		echo '<span class="cc-warn">Keine Kontaktmail hinterlegt, dieser Platz geht nur telefonisch.</span>';
+		echo '<span class="cc-warn">Keine Kontaktmail hinterlegt, ' . ( $dl ? 'nur telefonisch erreichbar.' : 'dieser Platz geht nur telefonisch.' ) . '</span>';
 	}
 	// Kontakt ergänzen nur, wo die Mail fehlt; sonst stünde es an jeder
 	// Stammdaten-Zeile und der Platz käme nie aus der Liste heraus.
-	if ( '' === $mail ) {
+	if ( '' === $mail && ! $dl ) {
 		fge_cc_partner_contact_form( $pid, $req );
 	}
-	if ( function_exists( 'fge_venue_catalog_status_html' ) ) {
+	if ( ! $dl && function_exists( 'fge_venue_catalog_status_html' ) ) {
 		echo fge_venue_catalog_status_html( $v ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 	echo '</div>';
@@ -255,14 +282,17 @@ function fge_cc_venue_row( int $req, array $v ): void {
 	} else {
 		echo '<button type="button" class="cc-btn" data-cc-drawer-open="' . esc_attr( $drawer ) . '">Bearbeiten</button>';
 	}
-	if ( in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) && '' !== $mail && ! $booked ) {
+	if ( $dl && in_array( $status, [ 'angefragt', 'zugesagt', 'keine', 'abgesagt' ], true ) && ! $booked ) {
+		$more[] = [ 'fge_cc_venue_remove', 'Entfernen', [ 'venue_id' => $id ], 'Diesen Dienstleister aus der Anfrage nehmen? Er bekommt keine Mail.' ];
+	}
+	if ( ! $dl && in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) && '' !== $mail && ! $booked ) {
 		$sum_at = (string) ( $v['summary_at'] ?? '' ) ?: (string) ( $v['reservation_at'] ?? '' );
 		$more[] = [ 'fge_cc_venue_summary', '' !== $sum_at ? 'Bestätigung erneut senden' : 'Bestätigung senden', [ 'venue_id' => $id ], 'Dem Platz per Mail bestätigen, was wir notiert haben (Termine, Preise, offene Punkte), mit der Bitte zu reservieren?' ];
 	}
-	if ( 'zugesagt' === $status && ! $booked ) {
+	if ( ! $dl && 'zugesagt' === $status && ! $booked ) {
 		$more[] = [ 'fge_cc_venue_choose', 'Diesen Platz nehmen', [ 'venue_id' => $id ], $v['title'] . ' als Platz für diese Anfrage festlegen?' ];
 	}
-	if ( in_array( $status, [ 'angefragt', 'zugesagt' ], true ) && '' !== $mail ) {
+	if ( ! $dl && in_array( $status, [ 'angefragt', 'zugesagt' ], true ) && '' !== $mail ) {
 		$more[] = [ 'fge_cc_venue_decline', 'Absagen', [ 'venue_id' => $id ], 'Diesem Platz absagen?' ];
 	}
 	if ( $more ) {
@@ -279,14 +309,14 @@ function fge_cc_venue_row( int $req, array $v ): void {
 	// können"), auch beim gewählten oder schon zugesagten Platz.
 	if ( 'idee' === $status && '' !== $mail ) {
 		fge_cc_mail_drawer( $req, 'cc-ask-' . $id, 'Anfrage an ' . (string) $v['title'], 'fge_cc_venue_ask', [ 'venue_id' => $id, 'how' => 'mail' ],
-			[ [ (string) $v['title'], $mail ] ], fge_venue_request_defaults( $req ), 'Anfrage senden' );
+			[ [ (string) $v['title'], $mail ] ], $dl ? fge_provider_request_defaults( $req ) : fge_venue_request_defaults( $req ), 'Anfrage senden' );
 	}
 	if ( 'angefragt' === $status && '' !== $mail ) {
 		fge_cc_mail_drawer( $req, 'cc-fu-' . $id, 'Follow-up an ' . (string) $v['title'], 'fge_cc_venue_followup', [ 'venue_id' => $id ],
-			[ [ (string) $v['title'], $mail ] ], fge_venue_request_defaults( $req, true ), 'Follow-up senden' );
+			[ [ (string) $v['title'], $mail ] ], $dl ? fge_provider_request_defaults( $req, true ) : fge_venue_request_defaults( $req, true ), 'Follow-up senden' );
 	}
 	if ( 'idee' !== $status ) {
-		fge_cc_drawer_open( $drawer, 'Rückmeldung von ' . (string) $v['title'], implode( ' · ', array_filter( [ (string) get_post_meta( $pid, '_fge_main_contact_name', true ), $phone ] ) ) );
+		fge_cc_drawer_open( $drawer, 'Rückmeldung von ' . (string) $v['title'], implode( ' · ', array_filter( [ (string) get_post_meta( $pid, $dl ? '_fge_provider_contact' : '_fge_main_contact_name', true ), $phone ] ) ) );
 		fge_cc_venue_reply_form( $req, $v, true );
 		fge_cc_drawer_close();
 	}
@@ -522,7 +552,9 @@ function fge_cc_venue_reply_form( int $req, array $v, bool $bare = false ): void
 	}
 
 	$hint = function_exists( 'fge_venue_price_hint' ) ? fge_venue_price_hint( $pid, 'green_fee' ) : '';
-	echo '<div class="cc-fields">';
+	// Dienstleister haben keinen Grundpreis, nur ihre Leistungen.
+	$is_dl = 'dl' === (string) ( $v['kind'] ?? 'platz' );
+	echo '<div class="cc-fields"' . ( $is_dl ? ' hidden' : '' ) . '>';
 	echo '<label class="cc-field"><span>Preis Event und Platznutzung</span>';
 	// Gespeicherte Werte vorbelegen, damit Nachtragen nichts leert.
 	$cur_price = (float) $v['price'] > 0 ? number_format( (float) $v['price'], 2, ',', '.' ) : '';

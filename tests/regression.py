@@ -82,21 +82,35 @@ def pipeline_two_places(req):
     post_form(reps[1], {'price': '29,00', 'price_gross': '1', 'price_basis': 'person', 'date_avail[1]': '0', 'date_avail[2]': '1', 'note': 'B', **extra_b})
     ms = mails(clear=True)
     check(len(ms) == 2 and all('bitte reservieren bis' in m['subject'] for m in ms), 'Bestätigung mit Reservierungsbitte automatisch nach erster Zusage')
-    h = get(f'/control/anfragen/?req={req}').text
-    for f in [x for x in forms(h) if x['action'] == 'fge_cc_venue_calc']:
-        post_form(f)
-    h = get(f'/control/anfragen/?req={req}').text
-    of = find_form(h, 'fge_cc_offer_options_save')
     a, b = [r['fields']['venue_id'] for r in reps]
-    return h, of, a, b
+    return a, b
+
+def add_package(req, venue_id):
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_pkg_add'), {'venue_id': venue_id})
+
+def send_offer(req, overrides=None):
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_offer_send_options'), overrides or {})
+
+def accept_all(link, option='A', date=None):
+    """Annehmen wie ein Kunde: alle angebotenen Zusatzleistungen bleiben gewählt."""
+    C = requests.Session(); c = C.get(link).text; f = forms(c)[0]
+    data = [('fge_offer_token', f['fields']['fge_offer_token']), ('fge_offer_nonce', f['fields']['fge_offer_nonce']), ('fge_offer_agb', '1'), ('fge_offer_action', 'accept'), ('fge_offer_option', option)]
+    dates = re.findall(r'name="fge_offer_date_' + option + r'" value="(\d+)"', c)
+    if date or dates:
+        data.append(('fge_offer_date_' + option, date or dates[0]))
+    for n, v in re.findall(r'name="(fge_offer_extras(?:_' + option + r')?\[\])" value="(\d+)"', c):
+        data.append((n, v))
+    C.post(link, data=data, allow_redirects=True)
 
 def scenario_accept():
     print('\n[1] Optionen-Angebot, Kunde nimmt Option B mit Termin 2 an')
     req = new_request('Regressions GmbH (TEST)', 'kunde-regi@example.org', 'Holzgerlingen', ['2026-11-18', '2026-11-25', ''], [{'label': 'Abendessen', 'source': 'platz'}])
-    h, of, a, b = pipeline_two_places(req)
-    post_form(of, {f'opt_pos[{a}]': '1', f'opt_pos[{b}]': '2', 'opt_recommended': a, 'opt_recommendation': 'A liegt näher.'})
-    h = get(f'/control/anfragen/?req={req}').text
-    post_form([x for x in forms(h) if x['action'] == 'fge_cc_offer_send_options'][0])
+    a, b = pipeline_two_places(req)
+    add_package(req, a)
+    add_package(req, b)
+    send_offer(req)
     ms = mails(clear=True)
     offer = [m for m in ms if 'kunde-regi' in m['to'] and m['subject'].startswith('Euer Angebot')]
     check(len(offer) == 1 and any('pdf' in a for a in offer[0]['atts']), 'Angebotsmail mit PDF')
@@ -125,10 +139,9 @@ def scenario_accept():
 def scenario_decline():
     print('\n[2] Kunde lehnt ab, Plätze bekommen die Freigabe')
     req = new_request('Regressions AG (TEST)', 'kunde-regi2@example.org', 'Stuttgart', ['2026-12-02', '', ''], [], pax='6')
-    h, of, a, b = pipeline_two_places(req)
-    post_form(of, {f'opt_pos[{a}]': '1', 'opt_recommended': a})
-    h = get(f'/control/anfragen/?req={req}').text
-    post_form([x for x in forms(h) if x['action'] == 'fge_cc_offer_send_options'][0])
+    a, b = pipeline_two_places(req)
+    add_package(req, a)
+    send_offer(req)
     ms = mails(clear=True)
     offer = [m for m in ms if 'kunde-regi2' in m['to']]
     check(offer and 'Option A' not in offer[0]['text'], 'Eine Option ohne Optionsüberschrift')
@@ -172,13 +185,32 @@ def scenario_tools():
     mails(clear=True)
     h = get(f'/control/anfragen/?req={req}').text
     check('Feuerwerk (TEST)' in main_text(h), 'Extra Posten steht in Rückmeldung und Kalkulation')
-    for f in [x for x in forms(h) if x['action'] == 'fge_cc_venue_calc']:
-        post_form(f)
+    # Dienstleister: neu anlegen, anfragen, Rückmeldung, ins Angebot.
+    post_form(find_form(h, 'fge_cc_provider_create'), {'p_name': 'Regi Shuttle (TEST)', 'p_type': 'shuttle', 'p_contact': 'Sam Fahrer', 'p_region': 'Stuttgart', 'p_email': 'shuttle-regi3@example.org', 'p_phone': ''})
     h = get(f'/control/anfragen/?req={req}').text
-    post_form(find_form(h, 'fge_cc_offer_options_save'), {f'opt_pos[{a}]': '1', 'opt_recommended': a})
+    check('Regi Shuttle (TEST)' in main_text(h), 'Dienstleister angelegt und in der Anfrage')
+    ask = [x for x in forms(h) if x['action'] == 'fge_cc_venue_ask' and x['fields'].get('how') == 'mail']
+    post_form(ask[0])
+    ms = mails(clear=True)
+    check(len(ms) == 1 and 'shuttle-regi3' in ms[0]['to'] and ms[0]['subject'].startswith('Anfrage für ein Firmenevent') and 'Regressions KG' not in ms[0]['text'], 'Anfrage an den Dienstleister, ohne Firmenname')
+    h = get(f'/control/anfragen/?req={req}').text
+    prow = ask[0]['fields']['venue_id']
+    rep = [x for x in forms(h) if x['action'] == 'fge_cc_venue_reply' and x['fields']['venue_id'] == prow][0]
+    keys = [k[len('item_price['):-1] for k in rep['fields'] if k.startswith('item_price[')]
+    post_form(rep, {'answer': 'zusagt', 'date_avail[1]': '1', 'date_avail[2]': '1', **{f'item_price[{k}]': '300' for k in keys}, **{f'item_available[{k}]': '1' for k in keys}, **{f'item_basis[{k}]': 'pauschal' for k in keys}, **{f'item_gross[{k}]': '0' for k in keys}})
+    check(not mails(clear=True), 'Rückmeldung des Dienstleisters ohne Mail an ihn')
+    add_package(req, a)
+    h = get(f'/control/anfragen/?req={req}').text
+    pk = find_form(h, 'fge_cc_pkg_save')
+    post_form(pk, {'add': f'all:{prow}'})
+    h = get(f'/control/anfragen/?req={req}').text
+    pk = find_form(h, 'fge_cc_pkg_save')
+    check('Feuerwerk (TEST)' in pk['html'] and 'Regi Shuttle (TEST)' in pk['html'], 'Angebot A mit Extra Posten und Dienstleister-Position')
+    sale = [v for k, v in pk['fields'].items() if k.endswith('[sale]')]
+    check('360' in sale, 'Verkauf aus Einkauf plus 20 Prozent (300 netto zu 360)')
     h = get(f'/control/anfragen/?req={req}').text
     dl = wp("echo wp_date('Y-m-d', time() + 10 * DAY_IN_SECONDS);")
-    post_form(find_form(h, 'fge_cc_offer_send_options'), {'send_to': 'andere-regi3@example.org', 'send_deadline': dl, 'send_note': 'Persönliche Zeile (TEST).', 'send_remind': None})
+    send_offer(req, {'send_to': 'andere-regi3@example.org', 'send_deadline': dl, 'send_note': 'Persönliche Zeile (TEST).', 'send_remind': None})
     ms = mails(clear=True)
     offer = [m for m in ms if m['subject'].startswith('Euer Angebot')]
     check(offer and 'andere-regi3' in offer[0]['to'] and 'Persönliche Zeile (TEST).' in offer[0]['text'], 'Angebot an anderen Empfänger mit persönlicher Nachricht')
@@ -186,11 +218,9 @@ def scenario_tools():
     meta = wp(f"echo get_post_meta({req},'_fge_offer_remind_off',true) . '|' . wp_date('Y-m-d', (int) get_post_meta({req},'_fge_offer_deadline',true));")
     check(meta == '1|' + dl, 'Frist aus dem Dialog, Erinnerung aus')
     link = wp(f'echo fge_offer_link({req});')
-    C = requests.Session(); c = C.get(link).text; f = forms(c)[0]
-    data = [('fge_offer_token', f['fields']['fge_offer_token']), ('fge_offer_nonce', f['fields']['fge_offer_nonce']), ('fge_offer_agb', '1'), ('fge_offer_action', 'accept')]
-    data += [(k, v) for k, v in f['fields'].items() if k.startswith('fge_offer_date') or k == 'fge_offer_option']
-    C.post(link, data=data, allow_redirects=True)
-    mails(clear=True)
+    accept_all(link, 'A')
+    ms = mails(clear=True)
+    check(any('shuttle-regi3' in m['to'] and 'Auftragsbestätigung' in m['subject'] for m in ms), 'Dienstleister bekommt nach der Annahme den Auftrag')
     out = wp(f"$s=(array)get_post_meta({req},'_fge_offer_snapshot',true); $s['date']='Mo, 12.10.2026'; update_post_meta({req},'_fge_offer_snapshot',$s); echo get_post_meta({req},'_fge_offer_status',true) . '|' . fge_cc_auto_close() . '|' . get_post_meta({req},'_fge_request_status',true);")
     check(out.startswith('accepted|') and out.endswith('|abgeschlossen'), 'Am Tag nach dem Event automatisch abgeschlossen (' + out + ')')
     mails(clear=True)
@@ -199,7 +229,7 @@ def scenario_tools():
 def cleanup(reqs):
     # Auch liegengebliebene Testanfragen früherer Läufe (Firma mit „Regressions" und „(TEST)").
     ids = ','.join(str(r) for r in reqs) or '0'
-    print(wp(f'global $wpdb; $more=$wpdb->get_col("SELECT p.ID FROM {{$wpdb->posts}} p JOIN {{$wpdb->postmeta}} m ON m.post_id=p.ID AND m.meta_key=\'_fge_company_name\' WHERE p.post_type=\'firmengolf_request\' AND m.meta_value LIKE \'Regressions%(TEST)%\'"); foreach(array_unique(array_merge([{ids}], array_map("intval",$more))) as $r){{ if($r<=0) continue; foreach(fge_venues_get($r) as $v){{ $wpdb->delete(fge_venue_dates_table(),["venue_id"=>(int)$v["id"]]); fge_venue_delete((int)$v["id"]); }} $wpdb->delete($wpdb->prefix."fge_request_responses",["request_id"=>$r]); $wpdb->delete(fge_activity_table(),["request_id"=>$r]); if(function_exists("fge_mail_log_table")) $wpdb->delete(fge_mail_log_table(),["request_id"=>$r]); wp_delete_post($r,true); }} foreach([1613,1200] as $p){{ update_post_meta($p,"_fge_partner_status","stammdaten"); }} echo "Testdaten entfernt";'))
+    print(wp(f'global $wpdb; $more=$wpdb->get_col("SELECT p.ID FROM {{$wpdb->posts}} p JOIN {{$wpdb->postmeta}} m ON m.post_id=p.ID AND m.meta_key=\'_fge_company_name\' WHERE p.post_type=\'firmengolf_request\' AND m.meta_value LIKE \'Regressions%(TEST)%\'"); foreach(array_unique(array_merge([{ids}], array_map("intval",$more))) as $r){{ if($r<=0) continue; foreach(fge_venues_get($r,"all") as $v){{ $wpdb->delete(fge_venue_dates_table(),["venue_id"=>(int)$v["id"]]); fge_venue_delete((int)$v["id"]); }} $wpdb->delete($wpdb->prefix."fge_request_responses",["request_id"=>$r]); $wpdb->delete(fge_activity_table(),["request_id"=>$r]); if(function_exists("fge_mail_log_table")) $wpdb->delete(fge_mail_log_table(),["request_id"=>$r]); wp_delete_post($r,true); }} foreach([1613,1200] as $p){{ update_post_meta($p,"_fge_partner_status","stammdaten"); }} foreach(get_posts(["post_type"=>"firmengolf_provider","post_status"=>"any","numberposts"=>-1,"s"=>"(TEST)"]) as $pp){{ if(false!==strpos($pp->post_title,"(TEST)")) wp_delete_post($pp->ID,true); }} echo "Testdaten entfernt";'))
 
 if __name__ == '__main__':
     subprocess.run(['docker', 'compose', 'exec', '-T', 'wordpress', 'wp', 'user', 'create', 'audit-bot', 'audit-bot@example.org', '--role=administrator', '--user_pass=Audit-Bot-2026!', '--allow-root'], cwd=ROOT, capture_output=True)

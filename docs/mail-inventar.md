@@ -1,6 +1,6 @@
 # Mail-Inventar Firmengolf
 
-Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 15.10.2026, Version 1.9.304, 33 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
+Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 15.10.2026, Version 1.9.305, 35 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
 
 Gemeinsamer Stil: Rahmen `fge_email_wrap()`, Absender events@firmengolf-events.de (mail-config.php, auch Reply-To), Buttons `fge_email_button()`, Versand über WP Mail SMTP und Brevo, Protokoll je Versand in `wp_fge_mail_log` (mail-log.php, Zuordnung über die Vorgangsnummer im Betreff). Keine Gedankenstriche, Preise als „XX € p.P.“ oder „XX € netto“.
 
@@ -38,10 +38,12 @@ Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst lös
 | `day_info_partner` | Vortags-Info an den Platz | Morgen: Firmengolf-Event | Cron 07:00 am Vortag, oder Knopf (automatisch) | Firma und Personenzahl, Start und Treffpunkt, Kontakt beim Kunden, gebuchte Leistungen, keine Preise |
 | `catalog_proposal` | Vorschlag: Event dauerhaft anbieten | Wollt ihr das dauerhaft anbieten? | Knopf nach dem Event (Knopf) | Titel, Ort und Ablauf wie durchgeführt, Gruppengröße, euer Preis, Inklusivleistungen, Antwortlink ohne Login |
 
-## An Dienstleister (2)
+## An Dienstleister (4)
 
 | Schlüssel | Mail | Betreff | Auslöser | Inhalt |
 |---|---|---|---|---|
+| `provider_request` | Anfrage an einen Dienstleister | Anfrage für ein Firmenevent | Knopf „Per Mail anfragen" beim Dienstleister (Knopf) | Gruppe, Termine, Start, Region, angefragte Leistungen mit Notizen, Bitte um Preis und Terminzusage |
+| `provider_followup` | Nachfrage an einen Dienstleister ohne Antwort | Kurze Nachfrage: Anfrage für ein Firmenevent | Knopf „Follow-up senden" beim Dienstleister (Knopf) | kurze Nachfrage, derselbe Inhalt wie die Anfrage |
 | `provider_confirm` | Auftrag an den Dienstleister | Auftragsbestätigung Firmengolf | Kunde nimmt an, Position gebucht (automatisch) | Leistung, Termin, Ort, vereinbarter Einkaufspreis, Rechnungsadresse, nie Verkaufspreis |
 | `provider_cancel` | Absage an den Dienstleister | Absage Firmengolf | Position abgewählt oder Angebot abgelehnt (automatisch) | kein Auftrag, freundliche Absage |
 
