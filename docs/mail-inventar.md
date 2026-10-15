@@ -1,6 +1,6 @@
 # Mail-Inventar Firmengolf
 
-Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 15.10.2026, Version 1.9.309, 40 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
+Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 15.10.2026, Version 1.9.311, 40 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
 
 Gemeinsamer Stil: Rahmen `fge_email_wrap()`, Absender events@firmengolf-events.de (mail-config.php, auch Reply-To), Buttons `fge_email_button()`, Versand über WP Mail SMTP und Brevo, Protokoll je Versand in `wp_fge_mail_log` (mail-log.php, Zuordnung über die Vorgangsnummer im Betreff). Keine Gedankenstriche, Preise als „XX € p.P.“ oder „XX € netto“.
 
@@ -13,7 +13,7 @@ Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst lös
 | `request_customer_ack` | Eingangsbestätigung | Deine Anfrage bei Firmengolf ist eingegangen | Anfrage abgeschickt (automatisch) | Vorgangsnummer, wie es weitergeht, Link zur Statusseite |
 | `date_confirmed_customer` | Termin steht (nur wenn das Angebot hängt) | Euer Termin steht | Termin bestätigt, Angebot zurückgehalten (automatisch) | Termin ist fix, Angebot folgt |
 | `offer_customer` | Angebot an den Kunden | Euer Angebot für {Event} | Termin bestätigt und bepreist, oder Knopf „Angebot jetzt senden" (Knopf) | Positionen und Summen, Partnercode-Rabatt, Frist, Annehmen-Link, PDF im Anhang, BCC an dich |
-| `offer_reminder` | Angebotserinnerung | Erinnerung: euer Angebot | Cron, drei Tage ohne Reaktion (automatisch) | Frist läuft, Termin noch reserviert |
+| `offer_reminder` | Angebotserinnerung | Erinnerung: euer Angebot | Cron, drei Tage vor der Frist und als letzte Erinnerung am Fristtag (automatisch) | Frist läuft, Termin noch reserviert |
 | `booking_customer` | Buchungsbestätigung an den Kunden | Buchung bestätigt | Kunde nimmt an (automatisch) | Dank und Termin, PDF der Buchungsbestätigung, Link zur Buchung |
 | `day_info_customer` | Vortags-Info an den Kunden | Morgen ist es soweit | Cron 07:00 am Vortag, oder Knopf (automatisch) | Start, Treffpunkt, Adresse, Ansprechpartner vor Ort, Golflehrer und Ablauf, gebuchte Leistungen, Mobilnummer |
 | `review_customer` | Bewertungsbitte | Danke für euer Event mit Firmengolf | Status „Event durchgeführt" (automatisch) | Bitte um Google-Bewertung |

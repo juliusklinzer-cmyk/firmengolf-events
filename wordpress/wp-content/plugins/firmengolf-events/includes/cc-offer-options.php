@@ -519,7 +519,6 @@ function fge_cc_offer_send_drawer( int $req ): void {
 	$data   = fge_get_request_email_data( $req );
 	$opts   = function_exists( 'fge_offer_options_list' ) ? fge_offer_options_list( $req ) : [];
 	$days   = (int) apply_filters( 'fge_offer_response_days', 7 );
-	$rdays  = (int) apply_filters( 'fge_offer_reminder_days', 3 );
 	$first  = trim( (string) $data['first_name'] );
 
 	fge_cc_drawer_open( 'cc-sendoffer', 'Angebot online senden', 'Der Kunde nimmt online an oder lehnt ab' );
@@ -542,7 +541,7 @@ function fge_cc_offer_send_drawer( int $req ): void {
 	echo '<label class="cc-field"><span>Antwortfrist</span><input type="date" name="send_deadline" required min="' . esc_attr( wp_date( 'Y-m-d', time() + DAY_IN_SECONDS ) ) . '" max="' . esc_attr( wp_date( 'Y-m-d', time() + 60 * DAY_IN_SECONDS ) ) . '" value="' . esc_attr( wp_date( 'Y-m-d', time() + $days * DAY_IN_SECONDS ) ) . '"></label>';
 	echo '</div>';
 	echo '<label class="cc-field cc-field--wide"><span>Persönliche Nachricht (optional)</span><textarea name="send_note" rows="5" placeholder="' . esc_attr( 'Steht in der Mail nach „Hallo ' . ( '' !== $first ? $first : '…' ) . '“ und dem Satz zum Angebot.' ) . '"></textarea></label>';
-	echo '<label class="cc-checkline"><input type="checkbox" name="send_remind" value="1" checked><span><strong>Automatisches Follow-up</strong><span class="cc-muted">Eine Erinnerung an den Kunden ' . (int) $rdays . ' Tage nach dem Versand, solange die Frist läuft. Stoppt, sobald er antwortet.</span></span></label>';
+	echo '<label class="cc-checkline"><input type="checkbox" name="send_remind" value="1" checked><span><strong>Automatisches Follow-up</strong><span class="cc-muted">Eine Erinnerung an den Kunden drei Tage vor der Frist und eine letzte am Fristtag. Stoppt, sobald er antwortet.</span></span></label>';
 	if ( function_exists( 'fge_cc_action_preview' ) ) {
 		fge_cc_action_preview( 'offer_send', $req );
 	}

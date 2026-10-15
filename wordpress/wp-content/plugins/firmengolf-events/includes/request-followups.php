@@ -158,6 +158,31 @@ function fge_offer_hold_followups(): array {
 	return $stats;
 }
 
+/**
+ * Erinnerungen an den Kunden zu einem versendeten Angebot: [key, at, label, last].
+ * Mit Frist: drei Tage vorher (frühestens einen Tag nach dem Versand) und am
+ * Fristtag um Mitternacht. Ohne Frist: eine Erinnerung nach drei Tagen.
+ */
+function fge_offer_reminder_plan( int $req ): array {
+	$sent = (int) get_post_meta( $req, '_fge_offer_sent_at', true );
+	$dl   = (int) get_post_meta( $req, '_fge_offer_deadline', true );
+	if ( $sent <= 0 ) {
+		return [];
+	}
+	$days = (int) apply_filters( 'fge_offer_reminder_days', 3 );
+	if ( $dl <= 0 ) {
+		return [ [ 'key' => '_fge_offer_reminded', 'at' => $sent + $days * DAY_IN_SECONDS, 'label' => 'Erinnerung', 'last' => false ] ];
+	}
+	$day0  = (int) ( date_create_immutable( wp_date( 'Y-m-d', $dl ) . ' 00:00:00', wp_timezone() ) ?: new DateTimeImmutable() )->getTimestamp();
+	$first = max( $sent + DAY_IN_SECONDS, $day0 - $days * DAY_IN_SECONDS );
+	$plan  = [];
+	if ( $first < $day0 ) {
+		$plan[] = [ 'key' => '_fge_offer_reminded', 'at' => $first, 'label' => 'Erinnerung', 'last' => false ];
+	}
+	$plan[] = [ 'key' => '_fge_offer_reminded_last', 'at' => max( $day0, $sent + DAY_IN_SECONDS ), 'label' => 'Letzte Erinnerung', 'last' => true ];
+	return $plan;
+}
+
 // ── Angebots-Followups: Kunden-Erinnerung + Eskalation an Firmengolf ──────────
 add_action( 'fge_request_followups_cron', 'fge_offer_run_followups' );
 function fge_offer_run_followups(): array {
@@ -208,9 +233,22 @@ function fge_offer_run_followups(): array {
 		$deadline_r = (int) get_post_meta( $req, '_fge_offer_deadline', true );
 		// Im Senden-Dialog abgeschaltet (15.10.2026): keine Erinnerung.
 		$remind_off = '1' === (string) get_post_meta( $req, '_fge_offer_remind_off', true );
-		if ( ! $remind_off && time() >= $sent_at + $reminder_days * DAY_IN_SECONDS && ( $deadline_r <= 0 || time() < $deadline_r ) && '1' !== (string) get_post_meta( $req, '_fge_offer_reminded', true ) ) {
-			if ( function_exists( 'fge_send_offer_reminder' ) && fge_send_offer_reminder( $req ) ) {
-				update_post_meta( $req, '_fge_offer_reminded', 1 );
+		// Zwei Erinnerungen wie im Entwurf (15.10.2026): drei Tage vor der Frist und
+		// eine letzte am Fristtag. Fällig ist immer nur die späteste offene, eine
+		// verpasste frühere wird nicht nachgeschickt.
+		if ( ! $remind_off && ( $deadline_r <= 0 || time() < $deadline_r ) ) {
+			$due = null;
+			foreach ( fge_offer_reminder_plan( $req ) as $step ) {
+				if ( time() >= $step['at'] && '1' !== (string) get_post_meta( $req, $step['key'], true ) ) {
+					$due = $step;
+				}
+			}
+			if ( $due && function_exists( 'fge_send_offer_reminder' ) && fge_send_offer_reminder( $req, $due['last'] ) ) {
+				foreach ( fge_offer_reminder_plan( $req ) as $step ) {
+					if ( $step['at'] <= $due['at'] ) {
+						update_post_meta( $req, $step['key'], 1 );
+					}
+				}
 				$stats['offer_reminded']++;
 			}
 		}

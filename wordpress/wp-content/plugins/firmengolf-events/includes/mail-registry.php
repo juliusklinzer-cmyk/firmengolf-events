@@ -198,7 +198,7 @@ function fge_mail_registry(): array {
 			'party'   => 'kunde',
 			'subject' => 'Erinnerung: euer Angebot',
 			'auto'    => true,
-			'trigger' => 'Cron, drei Tage ohne Reaktion',
+			'trigger' => 'Cron, drei Tage vor der Frist und als letzte Erinnerung am Fristtag',
 			'content' => [ 'Frist läuft', 'Termin noch reserviert' ],
 		],
 		'offer_query_internal' => [

@@ -999,7 +999,7 @@ function fge_xs_cancel_providers( int $req ): void {
 }
 
 /** Erinnerung an den Kunden, wenn das Angebot noch offen ist. */
-function fge_send_offer_reminder( int $request_id ): bool {
+function fge_send_offer_reminder( int $request_id, bool $last = false ): bool {
 	$data = fge_get_request_email_data( $request_id );
 	$data['contact_email'] = fge_offer_recipient( $request_id );
 	if ( $data['contact_email'] === '' ) {
@@ -1010,11 +1010,12 @@ function fge_send_offer_reminder( int $request_id ): bool {
 	$snap = (array) get_post_meta( $request_id, '_fge_offer_snapshot', true );
 	$content = '
 		<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ',</p>
-		<p style="margin:0 0 16px;">euer Angebot für <strong>' . esc_html( (string) ( $snap['event_title'] ?? 'euer Event' ) ) . '</strong> am <strong>' . esc_html( (string) ( $snap['date'] ?? '' ) ) . '</strong> wartet noch auf eure Rückmeldung.</p>
+		<p style="margin:0 0 16px;">euer Angebot für <strong>' . esc_html( (string) ( $snap['event_title'] ?? 'euer Event' ) ) . '</strong> am <strong>' . esc_html( (string) ( $snap['date'] ?? '' ) ) . '</strong> wartet noch auf eure Rückmeldung.' . ( $last ? ' Heute ist der letzte Tag, danach können wir den Termin beim Platz nicht mehr halten.' : '' ) . '</p>
 		<p style="margin:0 0 22px;">' . fge_email_button( $link, 'Angebot ansehen & bestätigen' ) . '</p>
 		<p style="margin:0;color:#6C736E;font-size:13px;">Anfragenummer ' . esc_html( $ref ) . '</p>
 	';
-	return (bool) wp_mail( $data['contact_email'], 'Erinnerung: euer Angebot (' . $ref . ')', fge_email_wrap( 'Erinnerung: euer Angebot (' . $ref . ')', $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	$subject = ( $last ? 'Letzte Erinnerung: euer Angebot gilt noch heute (' : 'Erinnerung: euer Angebot (' ) . $ref . ')';
+	return (bool) wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
 
 function fge_send_onboarding_submitted_email( int $partner_id, string $temp_password = '' ): bool {

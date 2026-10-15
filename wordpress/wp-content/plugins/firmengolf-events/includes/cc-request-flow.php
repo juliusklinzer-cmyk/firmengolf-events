@@ -948,16 +948,13 @@ function fge_cc_flow_pane_offer( int $req, int $cur ): void {
 	$data     = fge_get_request_email_data( $req );
 	$net      = function_exists( 'fge_cc_offer_net' ) ? fge_cc_offer_net( $req ) : 0.0;
 
-	// Erinnerung an den Kunden: einmal nach drei Tagen, solange die Frist läuft.
-	$rem_days = (int) apply_filters( 'fge_offer_reminder_days', 3 );
+	// Erinnerungen an den Kunden wie im Entwurf: drei Tage vor der Frist, letzte am Fristtag.
 	if ( 'accepted' === $offer ) {
 		$rem = 'Beendet, Angebot angenommen';
 	} elseif ( '1' === (string) get_post_meta( $req, '_fge_offer_remind_off', true ) ) {
 		$rem = 'aus, beim Senden abgeschaltet';
-	} elseif ( '1' === (string) get_post_meta( $req, '_fge_offer_reminded', true ) ) {
-		$rem = 'Erinnerung gesendet';
-	} elseif ( $sent_at > 0 && 'pending' === $offer ) {
-		$rem = 'Erinnerung am ' . wp_date( 'd.m.Y', $sent_at + $rem_days * DAY_IN_SECONDS ) . ', geplant';
+	} elseif ( $sent_at > 0 && 'pending' === $offer && function_exists( 'fge_offer_reminder_plan' ) ) {
+		$rem = implode( ' · ', array_map( static fn( $s ) => $s['label'] . ' am ' . wp_date( 'd.m.', $s['at'] ) . ( '1' === (string) get_post_meta( $req, $s['key'], true ) ? ', gesendet' : ', geplant' ), fge_offer_reminder_plan( $req ) ) );
 	} else {
 		$rem = 'aus';
 	}

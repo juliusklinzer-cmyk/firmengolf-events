@@ -130,6 +130,11 @@ def scenario_accept():
     offer = [m for m in ms if 'kunde-regi' in m['to'] and m['subject'].startswith('Euer Angebot')]
     check(len(offer) == 1 and any('pdf' in a for a in offer[0]['atts']), 'Angebotsmail mit PDF')
     check('Option A' in offer[0]['text'] and 'Option B' in offer[0]['text'], 'Zwei Optionen in der Mail')
+    plan = wp(f'echo implode(",", array_map(fn($s)=>$s["label"], fge_offer_reminder_plan({req})));')
+    check(plan == 'Erinnerung,Letzte Erinnerung', 'Zwei Erinnerungen geplant (' + plan + ')')
+    wp(f'fge_send_offer_reminder({req}, true);')
+    ms = mails(clear=True)
+    check(any('kunde-regi' in m['to'] and 'Letzte Erinnerung' in m['subject'] and 'letzte Tag' in m['text'] for m in ms), 'Letzte Erinnerung am Fristtag')
     link = wp(f'echo fge_offer_link({req});')
     c = requests.get(link).text
     check(c.count('name="fge_offer_option"') == 2 and 'name="fge_offer_date_B"' in c, 'Angebotsseite mit Options- und Termin-Radios')
