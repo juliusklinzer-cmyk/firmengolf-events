@@ -266,6 +266,51 @@ def scenario_tools():
     mails(clear=True)
     return req
 
+def scenario_partner():
+    print('\n[4] Partner und Events prüfen im Control Center')
+    pid = int(wp('$id=wp_insert_post(["post_type"=>"firmengolf_partner","post_status"=>"publish","post_title"=>"Regressions-Platz (TEST)"]); foreach(["_fge_partner_type"=>"course","_fge_partner_status"=>"in_pruefung","_fge_city"=>"Teststadt","_fge_main_contact_name"=>"Tina Test","_fge_main_contact_email"=>"platz-regi@example.org","_fge_main_contact_phone"=>"0400 123","_fge_submitted_at"=>current_time("mysql")] as $k=>$v) update_post_meta($id,$k,$v); echo $id;'))
+    eid = int(wp(f'$e=wp_insert_post(["post_type"=>"firmengolf_event","post_status"=>"publish","post_title"=>"Regressions-Event (TEST)"]); update_post_meta($e,"_fge_assigned_partner_id",{pid}); update_post_meta($e,"_fge_event_status","zur_pruefung"); update_post_meta($e,"_fge_event_type","teamevent"); echo $e;'))
+    try:
+        h = get('/control/partner/').text
+        check('Regressions-Platz (TEST)' in h and 'Neue Partner zur Freigabe' in h, 'Liste zeigt neuen Partner zur Freigabe')
+        h = get(f'/control/partner/?pid={pid}&pruefen=1').text
+        check('fge_cc_preview=1' in h and 'Automatisch geprüft' in h, 'Prüfansicht mit Webansicht und Checks')
+        f = find_form(h, 'fge_cc_partner_review')
+        mails(clear=True)
+        r = post_form(f, {'decision': 'rueckfragen', 'message': 'Bitte noch drei Fotos hochladen.'})
+        ms = mails(clear=True)
+        check('p_asked' in r.url and any('platz-regi' in m['to'] and 'drei Fotos' in m['text'] for m in ms), 'Rückfrage mit deinem Text an den Partner')
+        h = get(f'/control/partner/?pid={pid}&pruefen=1').text
+        check('Deine Rückfrage' in h, 'Rückfrage bleibt sichtbar')
+        r = post_form(find_form(h, 'fge_cc_partner_review'), {'decision': 'aktiv'})
+        check('p_needcheck' in r.url, 'Freigabe nur mit drei Haken')
+        h = get(f'/control/partner/?pid={pid}&pruefen=1').text
+        r = post_form(find_form(h, 'fge_cc_partner_review'), {'decision': 'aktiv', 'check[0]': '1', 'check[1]': '1', 'check[2]': '1'})
+        ms = mails(clear=True)
+        st = wp(f'echo get_post_meta({pid},"_fge_partner_status",true),"|",get_post_meta({pid},"_fge_partner_since",true);')
+        check(st.startswith('aktiv|20') and any('platz-regi' in m['to'] and 'live' in m['subject'] for m in ms), 'Freigegeben, Willkommensmail, Partner seit gesetzt (' + st + ')')
+        # Event: Rückfrage, dann mit Anpassung freigeben.
+        h = get(f'/control/events/').text
+        f = find_form(h, 'fge_cc_event_review', contains=f'value="{eid}"')
+        r = post_form(f, {'decision': 'rueckfrage', 'message': 'Wie viele Simulatoren gibt es?'})
+        ms = mails(clear=True)
+        check('e_asked' in r.url and any('platz-regi' in m['to'] and 'Simulatoren' in m['text'] for m in ms) and wp(f'echo get_post_meta({eid},"_fge_event_status",true);') == 'zur_pruefung', 'Event-Rückfrage, Event bleibt in Prüfung')
+        h = get(f'/control/events/').text
+        check('Rückfrage offen' in h, 'Events-Liste zeigt Rückfrage offen')
+        f = find_form(h, 'fge_cc_event_review', contains=f'value="{eid}"')
+        r = post_form(f, {'decision': 'freigegeben', 'title': 'Regressions-Event angepasst (TEST)', 'price': '50'})
+        ms = mails(clear=True)
+        out = wp(f'echo get_post_meta({eid},"_fge_event_status",true),"|",get_the_title({eid}),"|",get_post_meta({eid},"_fge_price_gross",true);')
+        check(out.startswith('freigegeben|Regressions-Event angepasst (TEST)|50') and any('Freigegeben' in m['subject'] for m in ms), 'Event mit Anpassung freigegeben (' + out + ')')
+        h = get(f'/control/partner/?pid={pid}').text
+        post_form(find_form(h, 'fge_cc_partner_pstatus'), {'status': 'pausiert'})
+        check(wp(f'echo get_post_meta({eid},"_fge_event_status",true);') == 'pausiert', 'Partner pausiert nimmt Events offline')
+        h = get(f'/control/partner/?pid={pid}&tab=st').text
+        post_form(find_form(h, 'fge_cc_partner_save'), {'note': 'Nur vormittags anrufen'})
+        check(wp(f'echo get_post_meta({pid},"_fge_internal_note",true);') == 'Nur vormittags anrufen', 'Stammdaten speichern')
+    finally:
+        wp(f'wp_delete_post({eid},true); wp_delete_post({pid},true); global $wpdb; $wpdb->delete(fge_verzeichnis_table(),["partner_id"=>{pid},"ist_partner"=>1]);')
+
 def cleanup(reqs):
     # Auch liegengebliebene Testanfragen früherer Läufe (Firma mit „Regressions" und „(TEST)").
     ids = ','.join(str(r) for r in reqs) or '0'
@@ -281,6 +326,7 @@ if __name__ == '__main__':
         reqs.append(scenario_accept())
         reqs.append(scenario_decline())
         reqs.append(scenario_tools())
+        scenario_partner()
     finally:
         cleanup(reqs)
         wp('require_once ABSPATH."wp-admin/includes/user.php"; $u=get_user_by("login","audit-bot"); if($u) wp_delete_user($u->ID);')

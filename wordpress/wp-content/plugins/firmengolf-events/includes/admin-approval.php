@@ -209,18 +209,7 @@ function fge_handle_set_event_status(): void {
 		wp_die( 'Keine Berechtigung zum Freigeben.', '', [ 'response' => 403 ] );
 	}
 
-	$was_paused = '1' === (string) get_post_meta( $post_id, '_fge_was_paused', true );
-	if ( 'freigegeben' === $new_status && $was_paused ) {
-		// Event war vor der Bearbeitung vom Partner pausiert → Freigabe stellt Pausiert wieder her.
-		update_post_meta( $post_id, '_fge_event_status', 'pausiert' );
-		delete_post_meta( $post_id, '_fge_was_paused' );
-	} else {
-		update_post_meta( $post_id, '_fge_event_status', $new_status );
-		delete_post_meta( $post_id, '_fge_was_paused' );
-	}
-
-	// Partner über das Prüfergebnis informieren (freigegeben/abgelehnt).
-	do_action( 'fge_event_reviewed', $post_id, $new_status, $was_paused );
+	fge_event_apply_status( $post_id, $new_status );
 
 	wp_redirect( esc_url_raw( add_query_arg(
 		[ 'post_type' => 'firmengolf_event', 'fge_notice' => $new_status ],
@@ -380,6 +369,77 @@ function fge_partner_row_actions( array $actions, WP_Post $post ): array {
 	return $actions;
 }
 
+/**
+ * Partner-Status setzen, gemeinsamer Weg für WordPress und Control Center.
+ *
+ * $message: Text an den Partner bei Rückfrage oder Ablehnung (Julius, 15.10.2026),
+ * steht in der Mail und bleibt als „Deine Rückfrage" am Partner stehen.
+ */
+function fge_partner_apply_status( int $post_id, string $new_status, string $message = '' ): void {
+	$old_status = (string) get_post_meta( $post_id, '_fge_partner_status', true );
+	if ( in_array( $new_status, [ 'rueckfragen', 'abgelehnt' ], true ) && '' !== trim( $message ) ) {
+		update_post_meta( $post_id, '_fge_review_message', trim( $message ) );
+		update_post_meta( $post_id, '_fge_review_message_at', time() );
+	} elseif ( 'aktiv' === $new_status ) {
+		delete_post_meta( $post_id, '_fge_review_message' );
+		delete_post_meta( $post_id, '_fge_review_message_at' );
+	}
+	update_post_meta( $post_id, '_fge_partner_status', $new_status );
+
+	// Partner über Freischaltung, Rückfragen oder Ablehnung informieren. Eine
+	// zweite Rückfrage geht auch raus, wenn der Status schon „rueckfragen" ist.
+	if ( function_exists( 'fge_notify_partner_status_change' ) ) {
+		fge_notify_partner_status_change( $post_id, $old_status === $new_status && '' !== trim( $message ) ? '' : $old_status, $new_status );
+	}
+
+	// Golfplatz-Verzeichnis: Partner-Flag (blauer Pin / Partner-Badge) mitziehen.
+	if ( function_exists( 'fge_verzeichnis_sync_partner' ) ) {
+		fge_verzeichnis_sync_partner( $post_id, $new_status );
+	}
+
+	// When activating a partner, ensure portal is enabled and standard permissions are set.
+	if ( $new_status === 'aktiv' ) {
+		update_post_meta( $post_id, '_fge_partner_portal_enabled', 1 );
+		if ( get_post_meta( $post_id, '_fge_can_create_events', true ) === '' ) {
+			update_post_meta( $post_id, '_fge_can_create_events', 1 );
+			update_post_meta( $post_id, '_fge_can_edit_events', 1 );
+			update_post_meta( $post_id, '_fge_can_view_requests', 1 );
+			update_post_meta( $post_id, '_fge_can_view_statistics', 1 );
+		}
+		// „Partner seit" bei der ersten Freigabe, wenn leer (Julius, 15.10.2026).
+		if ( '' === (string) get_post_meta( $post_id, '_fge_partner_since', true ) ) {
+			update_post_meta( $post_id, '_fge_partner_since', wp_date( 'Y-m-d' ) );
+		}
+	}
+}
+
+/**
+ * Event-Status setzen, gemeinsamer Weg für WordPress und Control Center.
+ * Rückfrage ist kein eigener Status: das Event bleibt in Prüfung, die Nachricht
+ * steht am Event, bis der Partner neu einreicht.
+ */
+function fge_event_apply_status( int $post_id, string $new_status, string $message = '' ): void {
+	if ( 'abgelehnt' === $new_status && '' !== trim( $message ) ) {
+		update_post_meta( $post_id, '_fge_review_message', trim( $message ) );
+		update_post_meta( $post_id, '_fge_review_message_at', time() );
+	} elseif ( 'freigegeben' === $new_status ) {
+		delete_post_meta( $post_id, '_fge_review_message' );
+		delete_post_meta( $post_id, '_fge_review_message_at' );
+	}
+	$was_paused = '1' === (string) get_post_meta( $post_id, '_fge_was_paused', true );
+	if ( 'freigegeben' === $new_status && $was_paused ) {
+		// Event war vor der Bearbeitung vom Partner pausiert → Freigabe stellt Pausiert wieder her.
+		update_post_meta( $post_id, '_fge_event_status', 'pausiert' );
+		delete_post_meta( $post_id, '_fge_was_paused' );
+	} else {
+		update_post_meta( $post_id, '_fge_event_status', $new_status );
+		delete_post_meta( $post_id, '_fge_was_paused' );
+	}
+
+	// Partner über das Prüfergebnis informieren (freigegeben/abgelehnt).
+	do_action( 'fge_event_reviewed', $post_id, $new_status, $was_paused );
+}
+
 add_action( 'admin_action_fge_set_partner_status', 'fge_handle_set_partner_status' );
 
 function fge_handle_set_partner_status(): void {
@@ -404,29 +464,7 @@ function fge_handle_set_partner_status(): void {
 		wp_die( 'Ungültiger Status.', '', [ 'response' => 400 ] );
 	}
 
-	$old_status = (string) get_post_meta( $post_id, '_fge_partner_status', true );
-	update_post_meta( $post_id, '_fge_partner_status', $new_status );
-
-	// Partner über Freischaltung, Rückfragen oder Ablehnung informieren.
-	if ( function_exists( 'fge_notify_partner_status_change' ) ) {
-		fge_notify_partner_status_change( $post_id, $old_status, $new_status );
-	}
-
-	// Golfplatz-Verzeichnis: Partner-Flag (blauer Pin / Partner-Badge) mitziehen.
-	if ( function_exists( 'fge_verzeichnis_sync_partner' ) ) {
-		fge_verzeichnis_sync_partner( $post_id, $new_status );
-	}
-
-	// When activating a partner, ensure portal is enabled and standard permissions are set.
-	if ( $new_status === 'aktiv' ) {
-		update_post_meta( $post_id, '_fge_partner_portal_enabled', 1 );
-		if ( get_post_meta( $post_id, '_fge_can_create_events', true ) === '' ) {
-			update_post_meta( $post_id, '_fge_can_create_events', 1 );
-			update_post_meta( $post_id, '_fge_can_edit_events', 1 );
-			update_post_meta( $post_id, '_fge_can_view_requests', 1 );
-			update_post_meta( $post_id, '_fge_can_view_statistics', 1 );
-		}
-	}
+	fge_partner_apply_status( $post_id, $new_status );
 
 	wp_redirect( esc_url_raw( add_query_arg(
 		[ 'post_type' => 'firmengolf_partner', 'fge_partner_notice' => $new_status ],

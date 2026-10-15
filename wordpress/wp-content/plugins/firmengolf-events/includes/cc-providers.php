@@ -161,6 +161,11 @@ add_action( 'admin_post_fge_cc_provider_save', static function (): void {
 		}
 	}
 
+	// Aus der Partner-Detailseite gespeichert: dorthin zurück.
+	if ( ! empty( $_POST['back_partner'] ) ) {
+		wp_safe_redirect( fge_cc_url( 'partner', [ 'dl' => $id, 'tab' => 'st', 'msg' => 'p_saved' ] ) );
+		exit;
+	}
 	wp_safe_redirect( fge_cc_url( 'dienstleister', [ 'msg' => 'saved' ] ) );
 	exit;
 } );
@@ -263,7 +268,7 @@ function fge_cc_provider_row( int $id, bool $editing ): void {
 	echo '</div>';
 }
 
-function fge_cc_provider_form( int $id ): void {
+function fge_cc_provider_form( int $id, bool $back_to_partner = false ): void {
 	$v    = $id > 0 ? fge_provider_values( $id ) : array_fill_keys( array_keys( fge_provider_fields() ), '' );
 	$name = $id > 0 ? get_the_title( $id ) : '';
 
@@ -271,6 +276,9 @@ function fge_cc_provider_form( int $id ): void {
 	echo '<input type="hidden" name="action" value="fge_cc_provider_save">';
 	echo '<input type="hidden" name="provider_id" value="' . (int) $id . '">';
 	wp_nonce_field( 'fge_cc_provider_save_' . $id );
+	if ( $back_to_partner ) {
+		echo '<input type="hidden" name="back_partner" value="1">';
+	}
 
 	echo '<div class="cc-fields">';
 	echo '<label class="cc-field"><span>Name</span><input type="text" name="provider_name" value="' . esc_attr( $name ) . '" placeholder="z. B. Golfschule Weidenhof" required></label>';

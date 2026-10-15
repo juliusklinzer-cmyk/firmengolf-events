@@ -302,9 +302,40 @@
 		});
 	}
 
+	// Prüfen von Partnern und Events: Schnelltexte, drei Haken vor der Freigabe,
+	// Nachricht Pflicht für Rückfrage und Ablehnung, Leistung nur bei Dienstleistern.
+	function initReview() {
+		document.addEventListener('click', function (e) {
+			var q = e.target.closest && e.target.closest('[data-cc-quick]');
+			if (q) {
+				var ta = q.closest('form') && q.closest('form').querySelector('[data-cc-msg]');
+				if (ta) { ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + q.getAttribute('data-cc-quick'); ta.focus(); }
+				return;
+			}
+			var b = e.target.closest && e.target.closest('[data-cc-needmsg]');
+			if (b) {
+				var m = b.form && b.form.querySelector('[data-cc-msg]');
+				if (m && !m.value.trim()) { e.preventDefault(); m.focus(); m.setAttribute('placeholder', 'Bitte zuerst eine Nachricht an den Partner schreiben'); m.classList.add('is-invalid'); }
+			}
+		});
+		document.querySelectorAll('form').forEach(function (f) {
+			var checks = f.querySelectorAll('[data-cc-gate-check]'), btn = f.querySelector('[data-cc-gate-btn]'), hint = f.querySelector('[data-cc-gate-hint]');
+			if (!checks.length || !btn) { return; }
+			var upd = function () { var ok = Array.prototype.every.call(checks, function (c) { return c.checked; }); btn.disabled = !ok; if (hint) { hint.hidden = ok; } };
+			checks.forEach(function (c) { c.addEventListener('change', upd); });
+			upd();
+		});
+		document.querySelectorAll('[data-cc-kindsel]').forEach(function (s) {
+			var f = s.closest('form'), dl = f && f.querySelector('[data-cc-only-dl]');
+			var upd = function () { if (dl) { dl.hidden = s.value !== 'dl'; } };
+			s.addEventListener('change', upd); upd();
+		});
+	}
+
 	function init() {
 		initDialog();
 		initAutosubmit();
+		initReview();
 		initSearch();
 		initRequestTabs();
 		initDrawers();

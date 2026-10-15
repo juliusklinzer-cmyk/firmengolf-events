@@ -1450,7 +1450,9 @@ function fge_notify_event_reviewed( int $event_id, string $status, bool $was_pau
 	} else {
 		$subject = 'Rückmeldung zu deinem Angebot: ' . $title;
 		$content = '
-			<p style="margin:0 0 16px;">Wir konnten dein Angebot <strong>' . esc_html( $title ) . '</strong> so noch nicht freigeben. Meist fehlen nur Kleinigkeiten, wir melden uns dazu bei dir, oder du überarbeitest es direkt im Portal und reichst es neu ein.</p>
+			' . ( '' !== ( $msg = trim( (string) get_post_meta( $event_id, '_fge_review_message', true ) ) )
+				? '<p style="margin:0 0 16px;">Wir konnten dein Angebot <strong>' . esc_html( $title ) . '</strong> so leider nicht freigeben:</p>' . fge_review_message_block( $msg ) . '<p style="margin:0 0 16px;">Du kannst es im Portal überarbeiten und neu einreichen.</p>'
+				: '<p style="margin:0 0 16px;">Wir konnten dein Angebot <strong>' . esc_html( $title ) . '</strong> so noch nicht freigeben. Meist fehlen nur Kleinigkeiten, wir melden uns dazu bei dir, oder du überarbeitest es direkt im Portal und reichst es neu ein.</p>' ) . '
 			<p style="margin:0 0 16px;">' . fge_email_button( $portal, 'Angebot im Portal überarbeiten' ) . '</p>
 			<p style="margin:0;color:#6C736E;font-size:13px;">Fragen? Antworte einfach auf diese Mail.</p>
 		';
@@ -1476,6 +1478,39 @@ function fge_notify_partner_status_change( int $partner_id, string $old, string 
 }
 
 /** Name, Empfänger-Mail und Anrede eines Partners für Status-Mails. */
+/** Nachricht aus der Prüfung als abgesetzter Block in Partner-Mails. */
+function fge_review_message_block( string $msg ): string {
+	return '<div style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #4279D1;background:#F5F7FB;border-radius:6px;">' . nl2br( esc_html( $msg ) ) . '</div>';
+}
+
+/**
+ * Rückfrage zu einem eingereichten Event (Julius, 15.10.2026). Das Event bleibt
+ * in Prüfung, der Partner passt es im Portal an und reicht neu ein.
+ */
+function fge_send_event_question_email( int $event_id, string $msg ): bool {
+	$partner_id = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true );
+	if ( $partner_id <= 0 || '' === trim( $msg ) ) {
+		return false;
+	}
+	$to = (string) get_post_meta( $partner_id, '_fge_main_contact_email', true )
+		?: (string) get_post_meta( $partner_id, '_fge_event_contact_email', true );
+	if ( ! is_email( $to ) ) {
+		return false;
+	}
+	[ , , $greeting ] = fge_partner_mail_basics( $partner_id );
+	$title   = get_the_title( $event_id ) ?: 'dein Angebot';
+	$portal  = function_exists( 'fge_portal_page_url' ) ? fge_portal_page_url() . '?tab=angebote' : home_url( '/partnerportal/' );
+	$subject = 'Kurze Rückfrage zu deinem Angebot: ' . $title;
+	$content = '
+		<p style="margin:0 0 16px;">' . $greeting . '</p>
+		<p style="margin:0 0 16px;">bevor wir dein Angebot <strong>' . esc_html( $title ) . '</strong> freigeben, noch eine Rückfrage:</p>
+		' . fge_review_message_block( $msg ) . '
+		<p style="margin:0 0 16px;">Am einfachsten passt du es direkt im Portal an und reichst es neu ein. Du kannst auch einfach auf diese Mail antworten.</p>
+		<p style="margin:0;">' . fge_email_button( $portal, 'Angebot im Portal öffnen' ) . '</p>
+	';
+	return (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+}
+
 function fge_partner_mail_basics( int $partner_id ): array {
 	$name    = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
 	$email   = (string) get_post_meta( $partner_id, '_fge_main_contact_email', true );
@@ -1517,7 +1552,9 @@ function fge_send_partner_inquiry_email( int $partner_id ): bool {
 	$subject = 'Kurze Rückfragen zu deinem Golfplatz-Profil';
 	$content = '
 		<p>' . $greeting . '</p>
-		<p>bei der Prüfung von <strong>' . esc_html( $name ) . '</strong> sind ein paar Fragen aufgekommen. Wir melden uns dazu in Kürze per E-Mail oder Telefon bei dir.</p>
+		' . ( '' !== ( $msg = trim( (string) get_post_meta( $partner_id, '_fge_review_message', true ) ) )
+			? '<p>bei der Prüfung von <strong>' . esc_html( $name ) . '</strong> ist uns noch etwas aufgefallen:</p>' . fge_review_message_block( $msg ) . '<p>Sobald das erledigt ist, schalten wir dich frei.</p>'
+			: '<p>bei der Prüfung von <strong>' . esc_html( $name ) . '</strong> sind ein paar Fragen aufgekommen. Wir melden uns dazu in Kürze per E-Mail oder Telefon bei dir.</p>' ) . '
 		<p>Du kannst dein Profil in der Zwischenzeit jederzeit im Partner-Portal anpassen und ergänzen.</p>
 		<p style="margin-top:28px;">
 			' . fge_email_button( $portal, 'Zum Partner-Portal' ) . '
@@ -1537,6 +1574,7 @@ function fge_send_partner_rejected_email( int $partner_id ): bool {
 	$content = '
 		<p>' . $greeting . '</p>
 		<p>danke für dein Interesse an Firmengolf. Nach der Prüfung können wir <strong>' . esc_html( $name ) . '</strong> aktuell leider nicht freischalten.</p>
+		' . ( '' !== ( $msg = trim( (string) get_post_meta( $partner_id, '_fge_review_message', true ) ) ) ? fge_review_message_block( $msg ) : '' ) . '
 		<p>Wenn du die Gründe besprechen möchtest oder sich bei euch etwas ändert, melde dich jederzeit. Oft lässt sich gemeinsam ein Weg finden.</p>
 		<p style="font-size:13px;color:#888;">Antworte einfach auf diese E-Mail oder schreib an <a href="mailto:' . esc_attr( fge_company()['email_partner'] ) . '" style="color:#4279D1;">' . esc_html( fge_company()['email_partner'] ) . '</a>.</p>
 	';

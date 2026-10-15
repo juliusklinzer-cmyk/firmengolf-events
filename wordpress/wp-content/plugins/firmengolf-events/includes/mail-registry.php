@@ -332,6 +332,56 @@ function fge_mail_registry(): array {
 			'trigger' => 'Status „Event durchgeführt"',
 			'content' => [ 'Bitte um Google-Bewertung' ],
 		],
+
+		// ── Partner und Events: Prüfung im Control Center ─────────────────
+		'partner_approved' => [
+			'label'   => 'Partner freigeschaltet',
+			'party'   => 'platz',
+			'subject' => 'Dein Golfplatz ist jetzt live auf Firmengolf',
+			'auto'    => true,
+			'trigger' => 'Partner freigeben (Control Center oder WordPress)',
+			'content' => [ 'Profil ist live', 'Link zur öffentlichen Seite', 'erstes Event anlegen' ],
+		],
+		'partner_question' => [
+			'label'   => 'Rückfrage zur Partner-Anmeldung',
+			'party'   => 'platz',
+			'subject' => 'Kurze Rückfragen zu deinem Golfplatz-Profil',
+			'auto'    => true,
+			'trigger' => 'Rückfrage senden in der Prüfansicht',
+			'content' => [ 'deine Nachricht', 'Link ins Partnerportal' ],
+		],
+		'partner_rejected' => [
+			'label'   => 'Partner-Anmeldung abgelehnt',
+			'party'   => 'platz',
+			'subject' => 'Dein Golfplatz-Profil bei Firmengolf',
+			'auto'    => true,
+			'trigger' => 'Ablehnen in der Prüfansicht',
+			'content' => [ 'Absage', 'deine Nachricht' ],
+		],
+		'event_approved' => [
+			'label'   => 'Event freigegeben',
+			'party'   => 'platz',
+			'subject' => 'Freigegeben: {Event}',
+			'auto'    => true,
+			'trigger' => 'Event oder Änderung freigeben',
+			'content' => [ 'Event ist live', 'Link ins Portal' ],
+		],
+		'event_question' => [
+			'label'   => 'Rückfrage zu einem Event',
+			'party'   => 'platz',
+			'subject' => 'Kurze Rückfrage zu deinem Angebot: {Event}',
+			'auto'    => true,
+			'trigger' => 'Rückfrage in der Event-Prüfung',
+			'content' => [ 'deine Nachricht', 'Event bleibt in Prüfung', 'Link ins Portal' ],
+		],
+		'event_rejected' => [
+			'label'   => 'Event abgelehnt',
+			'party'   => 'platz',
+			'subject' => 'Rückmeldung zu deinem Angebot: {Event}',
+			'auto'    => true,
+			'trigger' => 'Ablehnen in der Event-Prüfung',
+			'content' => [ 'Absage', 'deine Nachricht', 'Link ins Portal' ],
+		],
 	];
 	return $reg;
 }

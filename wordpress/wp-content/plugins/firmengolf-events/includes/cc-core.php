@@ -141,6 +141,8 @@ function fge_cc_render( string $page ): void {
 	$req    = 'anfragen' === $page ? absint( $_GET['req'] ?? 0 ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$routes = [
 		'dashboard'     => 'fge_cc_page_dashboard',
+		'partner'       => 'fge_cc_page_partner_area',
+		'events'        => 'fge_cc_page_events',
 		'angebote'      => 'fge_cc_page_offers',
 		'verzeichnis'   => 'fge_cc_page_partners',
 		'kunden'        => 'fge_cc_page_customers',
@@ -166,7 +168,8 @@ function fge_cc_render( string $page ): void {
 	<?php fge_cc_sidebar( $page ); ?>
 	<main class="cc-main" id="cc-main">
 		<?php
-		echo '<div class="cc-body' . ( $req > 0 ? ' cc-body--wide' : '' ) . '">';
+		$wide = $req > 0 || ( 'partner' === $page && ( isset( $_GET['pid'] ) || isset( $_GET['dl'] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		echo '<div class="cc-body' . ( $wide ? ' cc-body--wide' : '' ) . '">';
 		if ( $req > 0 ) {
 			fge_cc_page_request( $req );
 		} else {
@@ -267,6 +270,8 @@ function fge_cc_sidebar( string $current ): void {
 function fge_cc_topbar( string $title, string $page = 'anfragen' ): void {
 	$targets = [
 		'anfragen'    => 'Firma oder FG-Nummer',
+		'partner'     => 'Name, Ort oder Ansprechpartner',
+		'events'      => 'Event oder Partner',
 		'verzeichnis' => 'Platz, Ort oder PLZ',
 		'kunden'      => 'Firma oder Mailadresse',
 	];
@@ -349,12 +354,6 @@ function fge_cc_empty( string $text ): void {
 function fge_cc_admin_links(): array {
 	$pc = defined( 'FGE_PC_POST_TYPE' ) ? FGE_PC_POST_TYPE : 'fge_partnercode';
 	return [
-		'partner'       => [ 3, 'Partner-Anmeldungen freischalten, Rückfragen und Pausieren, Profile je Partnertyp.', [
-			'Partner im WordPress-Admin' => admin_url( 'edit.php?post_type=firmengolf_partner' ),
-		] ],
-		'events'        => [ 3, 'Events aller Partner prüfen, freigeben und bearbeiten.', [
-			'Events im WordPress-Admin' => admin_url( 'edit.php?post_type=firmengolf_event' ),
-		] ],
 		'leads'         => [ 3, 'Leads aus dem Budget-Rechner und die Preise des Rechners.', [
 			'Anfragen im WordPress-Admin' => admin_url( 'edit.php?post_type=firmengolf_request' ),
 			'Budget-Rechner'              => admin_url( 'edit.php?post_type=firmengolf_event&page=fge-budget-calc' ),

@@ -1,6 +1,6 @@
 # Mail-Inventar Firmengolf
 
-Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 15.10.2026, Version 1.9.308, 34 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
+Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 15.10.2026, Version 1.9.309, 40 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
 
 Gemeinsamer Stil: Rahmen `fge_email_wrap()`, Absender events@firmengolf-events.de (mail-config.php, auch Reply-To), Buttons `fge_email_button()`, Versand über WP Mail SMTP und Brevo, Protokoll je Versand in `wp_fge_mail_log` (mail-log.php, Zuordnung über die Vorgangsnummer im Betreff). Keine Gedankenstriche, Preise als „XX € p.P.“ oder „XX € netto“.
 
@@ -18,7 +18,7 @@ Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst lös
 | `day_info_customer` | Vortags-Info an den Kunden | Morgen ist es soweit | Cron 07:00 am Vortag, oder Knopf (automatisch) | Start, Treffpunkt, Adresse, Ansprechpartner vor Ort, Golflehrer und Ablauf, gebuchte Leistungen, Mobilnummer |
 | `review_customer` | Bewertungsbitte | Danke für euer Event mit Firmengolf | Status „Event durchgeführt" (automatisch) | Bitte um Google-Bewertung |
 
-## An Golfplätze und Simulatoren (14)
+## An Golfplätze und Simulatoren (20)
 
 | Schlüssel | Mail | Betreff | Auslöser | Inhalt |
 |---|---|---|---|---|
@@ -36,6 +36,12 @@ Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst lös
 | `venue_details_reminder` | Erinnerung an den Platz: Details für den Eventtag | Kurze Bitte: Details für den Eventtag | Cron, drei Tage nach der Buchung ohne Eintrag, nur vor dem Termin (automatisch) | Termin und Gruppe, welche Angaben fehlen, Link zum Formular ohne Login, bis wann |
 | `day_info_partner` | Vortags-Info an den Platz | Morgen: Firmengolf-Event | Cron 07:00 am Vortag, oder Knopf (automatisch) | Firma und Personenzahl, Start und Treffpunkt, Kontakt beim Kunden, gebuchte Leistungen, keine Preise |
 | `catalog_proposal` | Vorschlag: Event dauerhaft anbieten | Wollt ihr das dauerhaft anbieten? | Knopf nach dem Event (Knopf) | Titel, Ort und Ablauf wie durchgeführt, Gruppengröße, euer Preis, Inklusivleistungen, Antwortlink ohne Login |
+| `partner_approved` | Partner freigeschaltet | Dein Golfplatz ist jetzt live auf Firmengolf | Partner freigeben (Control Center oder WordPress) (automatisch) | Profil ist live, Link zur öffentlichen Seite, erstes Event anlegen |
+| `partner_question` | Rückfrage zur Partner-Anmeldung | Kurze Rückfragen zu deinem Golfplatz-Profil | Rückfrage senden in der Prüfansicht (automatisch) | deine Nachricht, Link ins Partnerportal |
+| `partner_rejected` | Partner-Anmeldung abgelehnt | Dein Golfplatz-Profil bei Firmengolf | Ablehnen in der Prüfansicht (automatisch) | Absage, deine Nachricht |
+| `event_approved` | Event freigegeben | Freigegeben: {Event} | Event oder Änderung freigeben (automatisch) | Event ist live, Link ins Portal |
+| `event_question` | Rückfrage zu einem Event | Kurze Rückfrage zu deinem Angebot: {Event} | Rückfrage in der Event-Prüfung (automatisch) | deine Nachricht, Event bleibt in Prüfung, Link ins Portal |
+| `event_rejected` | Event abgelehnt | Rückmeldung zu deinem Angebot: {Event} | Ablehnen in der Event-Prüfung (automatisch) | Absage, deine Nachricht, Link ins Portal |
 
 ## An Dienstleister (4)
 
