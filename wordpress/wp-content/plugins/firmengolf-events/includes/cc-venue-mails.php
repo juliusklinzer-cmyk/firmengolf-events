@@ -99,12 +99,39 @@ function fge_venue_greeting( int $partner_id ): string {
 }
 
 /**
+ * Betreff und Einleitung der Platz-Anfrage, so wie sie ohne Änderung rausgehen.
+ * Das Control Center zeigt beides vor dem Senden zum Bearbeiten (15.10.2026).
+ */
+function fge_venue_request_defaults( int $req, bool $followup = false ): array {
+	$f = fge_venue_mail_facts( $req );
+	if ( $followup ) {
+		return [
+			'subject' => 'Kurze Nachfrage: Firmenanfrage ' . ( $f['dates'] ? 'für ' . $f['dates'][0] . ' ' : '' ) . '(' . $f['ref'] . ')',
+			'intro'   => 'ich wollte kurz nachhaken, ob unsere Anfrage bei euch angekommen ist. Hier noch einmal alles auf einen Blick.',
+		];
+	}
+	return [
+		'subject' => 'Passt das bei euch? Firmenanfrage ' . ( $f['dates'] ? 'für ' . $f['dates'][0] : '' ) . ' (' . $f['ref'] . ')',
+		'intro'   => 'wir haben eine Firmenanfrage und schauen gerade, welcher Platz am besten passt.',
+	];
+}
+
+/** Notiz zu einer Leistung aus dem Bedarf (z. B. „Grillbuffet"), leer ohne. */
+function fge_need_note( int $req, string $label ): string {
+	$notes = (array) get_post_meta( $req, '_fge_need_notes', true );
+	return trim( (string) ( $notes[ mb_strtolower( trim( $label ) ) ] ?? '' ) );
+}
+
+/**
  * Anfrage an einen Platz: passt der Termin, und was kostet es.
  *
  * Fragt ausdrücklich alle Positionen ab, die der Kunde gewünscht hat, damit
  * die Angebote mehrerer Plätze vergleichbar werden und nicht nur beim Green Fee.
+ *
+ * $opts: subject, intro (aus dem Dialog im Control Center), followup (Nachfrage
+ * an einen schon angefragten Platz: gleicher Inhalt, Stand bleibt „angefragt").
  */
-function fge_venue_send_request( int $req, int $venue_id ): bool {
+function fge_venue_send_request( int $req, int $venue_id, array $opts = [] ): bool {
 	$row = fge_venue_get( $venue_id );
 	if ( ! $row ) {
 		return false;
@@ -166,15 +193,21 @@ function fge_venue_send_request( int $req, int $venue_id ): bool {
 	$list  = '';
 	foreach ( $items as $it ) {
 		$hint  = fge_venue_price_hint( $partner_id, (string) $it['wish_key'] );
+		$note  = 'green_fee' === (string) $it['wish_key'] ? '' : fge_need_note( $req, (string) $it['label'] );
 		$list .= '<li style="margin-bottom:4px;">' . esc_html( (string) $it['label'] )
+			. ( '' !== $note ? ': ' . esc_html( $note ) : '' )
 			. ( '' !== $hint ? ' <span style="color:#6C736E;">(bei uns notiert: ' . esc_html( $hint ) . ')</span>' : '' )
 			. '</li>';
 	}
 
-	$subject = 'Passt das bei euch? Firmenanfrage ' . ( $f['dates'] ? 'für ' . $f['dates'][0] : '' ) . ' (' . $f['ref'] . ')';
-	$content = '
+	$followup = ! empty( $opts['followup'] );
+	$defaults = fge_venue_request_defaults( $req, $followup );
+	$subject  = trim( (string) ( $opts['subject'] ?? '' ) ) ?: $defaults['subject'];
+	$intro    = trim( (string) ( $opts['intro'] ?? '' ) ) ?: $defaults['intro'];
+	$intro_h  = implode( '', array_map( static fn( $p ) => '<p style="margin:0 0 16px;">' . nl2br( esc_html( $p ) ) . '</p>', preg_split( '/\R{2,}/', $intro ) ) );
+	$content  = '
 		<p style="margin:0 0 16px;">' . esc_html( fge_venue_greeting( $partner_id ) ) . '</p>
-		<p style="margin:0 0 16px;">wir haben eine Firmenanfrage und schauen gerade, welcher Platz am besten passt.</p>
+		' . $intro_h . '
 		' . $program_html . '
 		<p style="margin:0 0 4px;font-weight:600;">Eckdaten</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
@@ -189,11 +222,14 @@ function fge_venue_send_request( int $req, int $venue_id ): bool {
 		$headers[] = 'Bcc: ' . $co['email_owner'];
 	}
 
-	fge_mail_log_context( $req, 'venue_request' );
+	fge_mail_log_context( $req, $followup ? 'venue_followup' : 'venue_request' );
 	$ok = (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), $headers );
 	fge_mail_log_context_clear();
 
-	if ( $ok ) {
+	if ( $ok && $followup ) {
+		fge_venue_update( $venue_id, [ 'followup_at' => current_time( 'mysql' ) ] );
+		fge_activity_add( $req, 'venue', sprintf( 'Nachfrage an %s gesendet', get_the_title( $partner_id ) ) );
+	} elseif ( $ok ) {
 		fge_venue_update( $venue_id, [
 			'status'   => 'angefragt',
 			'channel'  => 'mail',

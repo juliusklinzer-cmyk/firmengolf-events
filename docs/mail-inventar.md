@@ -1,6 +1,6 @@
 # Mail-Inventar Firmengolf
 
-Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 07.10.2026, Version 1.9.301, 32 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
+Erzeugt aus `includes/mail-registry.php` (eine Quelle für Folgen-Vorschau, Postausgang, Phasenleiste und dieses Dokument). Stand: 15.10.2026, Version 1.9.304, 33 Mails. Neu erzeugen nach jeder Änderung an der Registry: `bash tests/mail-inventar.sh`.
 
 Gemeinsamer Stil: Rahmen `fge_email_wrap()`, Absender events@firmengolf-events.de (mail-config.php, auch Reply-To), Buttons `fge_email_button()`, Versand über WP Mail SMTP und Brevo, Protokoll je Versand in `wp_fge_mail_log` (mail-log.php, Zuordnung über die Vorgangsnummer im Betreff). Keine Gedankenstriche, Preise als „XX € p.P.“ oder „XX € netto“.
 
@@ -19,13 +19,14 @@ Spalte „Auslöser“: automatisch heißt Hook oder Cron ohne Klick, sonst lös
 | `day_info_customer` | Vortags-Info an den Kunden | Morgen ist es soweit | Cron 07:00 am Vortag, oder Knopf (automatisch) | Start, Treffpunkt, Adresse, Ansprechpartner vor Ort, Golflehrer und Ablauf, gebuchte Leistungen, Mobilnummer |
 | `review_customer` | Bewertungsbitte | Danke für euer Event mit Firmengolf | Status „Event durchgeführt" (automatisch) | Bitte um Google-Bewertung |
 
-## An Golfplätze und Simulatoren (13)
+## An Golfplätze und Simulatoren (14)
 
 | Schlüssel | Mail | Betreff | Auslöser | Inhalt |
 |---|---|---|---|---|
 | `request_contact_dates` | Terminabstimmung an die Platz-Kontakte | Eine Firmenanfrage wartet auf deine Rückmeldung | Anfrage mit zugeordnetem Platz (automatisch) | Wunschtermine, persönlicher Zusage-Link, kein Login nötig |
 | `request_partner_availability` | Verfügbarkeitsanfrage (Fallback) | Neue Verfügbarkeitsanfrage für ein Firmengolf Event | Platz ohne Terminkontakte (automatisch) | Bitte um Prüfung der Verfügbarkeit |
 | `venue_request` | Anfrage an einen Platz | Passt das bei euch? Firmenanfrage | Knopf in der Platz-Pipeline (Knopf) | Was angefragt ist: Beschreibung, Dauer, Paketinhalt, Ablauf, Gruppe mit Personenzahl, Niveau und Essenswünschen, Wunschtermin oder Wunschtermine, Liste der Positionen mit Preisfrage, bei uns notierte Vorpreise |
+| `venue_followup` | Nachfrage an einen Platz ohne Antwort | Kurze Nachfrage: Firmenanfrage | Knopf „Follow-up senden" in der Platz-Pipeline (Knopf) | kurze Nachfrage, ob die Anfrage angekommen ist, derselbe Inhalt wie die Anfrage an den Platz |
 | `venue_decline` | Absage an einen nicht gewählten Platz | Doch woanders: Firmenanfrage | Knopf nach der Platzwahl (Knopf) | persönliche Absage, ehrlicher Grund, Einladung für die nächste Anfrage, Einladung, das Angebot dauerhaft anzubieten |
 | `venue_summary` | Absprache bestätigt: so haben wir es notiert | Danke für die Rückmeldung: Firmenanfrage | Knopf in der Pipeline-Zeile nach der erfassten Antwort (Knopf) | freie Termine und Alternativvorschlag, Preise je Position wie besprochen, nicht angebotene Positionen, Bitte, die Termine vorläufig freizuhalten |
 | `venue_reservation` | Reservierungsbitte: Angebot ist beim Kunden | Bitte reservieren bis <Frist>: Firmenanfrage | Versand eines Angebots mit Optionen, an jeden Platz im Angebot (automatisch) | Entscheidungsfrist des Kunden, Termine, die reserviert bleiben sollen, Preise je Position wie besprochen |

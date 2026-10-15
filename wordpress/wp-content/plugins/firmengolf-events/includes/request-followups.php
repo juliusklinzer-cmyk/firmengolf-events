@@ -206,7 +206,9 @@ function fge_offer_run_followups(): array {
 
 		// Einmalige Erinnerung an den Kunden, nur solange die Frist läuft (Audit 18.09.).
 		$deadline_r = (int) get_post_meta( $req, '_fge_offer_deadline', true );
-		if ( time() >= $sent_at + $reminder_days * DAY_IN_SECONDS && ( $deadline_r <= 0 || time() < $deadline_r ) && '1' !== (string) get_post_meta( $req, '_fge_offer_reminded', true ) ) {
+		// Im Senden-Dialog abgeschaltet (15.10.2026): keine Erinnerung.
+		$remind_off = '1' === (string) get_post_meta( $req, '_fge_offer_remind_off', true );
+		if ( ! $remind_off && time() >= $sent_at + $reminder_days * DAY_IN_SECONDS && ( $deadline_r <= 0 || time() < $deadline_r ) && '1' !== (string) get_post_meta( $req, '_fge_offer_reminded', true ) ) {
 			if ( function_exists( 'fge_send_offer_reminder' ) && fge_send_offer_reminder( $req ) ) {
 				update_post_meta( $req, '_fge_offer_reminded', 1 );
 				$stats['offer_reminded']++;

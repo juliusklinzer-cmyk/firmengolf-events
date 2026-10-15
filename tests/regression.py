@@ -48,6 +48,20 @@ def new_request(company, email, city, dates, wishes, pax='7'):
 def pipeline_two_places(req):
     h = get(f'/control/anfragen/?req={req}').text
     check('Angefragt' in text(h) and 'Wunschtermine' in text(h), 'Cockpit zeigt Block „Angefragt"')
+    # Bedarf (seit 1.9.304): Plätze erst nach „Bedarf ist geklärt", offene Fragen sperren.
+    check(not [x for x in forms(h) if x['action'] == 'fge_cc_venue_add'], 'Plätze erst nach geklärtem Bedarf')
+    post_form(find_form(h, 'fge_cc_question_add'), {'question': 'Vegetarisch gewünscht?'})
+    h = get(f'/control/anfragen/?req={req}').text
+    need = find_form(h, 'fge_cc_need_save')
+    notes = {k: ('Grillbuffet' if 'abendessen' in k else '') for k in need['fields'] if k.startswith('note[')}
+    r = post_form(need, {'need_done': '1', 'save_only': None, **notes})
+    check('need_blocked' in r.url, 'Offene Frage sperrt „Bedarf ist geklärt"')
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_question_toggle'))
+    h = get(f'/control/anfragen/?req={req}').text
+    r = post_form(find_form(h, 'fge_cc_need_save'), {'need_done': '1', 'save_only': None})
+    check('need_done' in r.url, 'Bedarf geklärt')
+    h = get(f'/control/anfragen/?req={req}').text
     for pid in ('1613', '1200'):
         post_form(find_form(h, 'fge_cc_venue_add'), {'partner_id': pid})
     h = get(f'/control/anfragen/?req={req}').text
@@ -56,6 +70,8 @@ def pipeline_two_places(req):
     ms = mails(clear=True)
     check(len(ms) == 2 and all('Sagt uns bitte' in m['text'] and 'Termin' in m['text'] for m in ms), 'Preisanfragen mit Terminliste an beide Plätze')
     check(not any('Regressions GmbH' in m['text'] for m in ms), 'Preisanfrage ohne Firmenname')
+    if notes:
+        check(all('Abendessen: Grillbuffet' in m['text'] for m in ms), 'Notiz zur Leistung in der Preisanfrage')
     h = get(f'/control/anfragen/?req={req}').text
     reps = sorted([x for x in forms(h) if x['action'] == 'fge_cc_venue_reply'], key=lambda f: int(f['fields']['venue_id']))
     keys = [k for k in reps[0]['fields'] if k.startswith('item_available[')]
@@ -125,6 +141,61 @@ def scenario_decline():
     check('Abgelehnt' in main_text(h)[:400], 'Cockpit zeigt Abgelehnt')
     return req
 
+def scenario_tools():
+    print('\n[3] Sammelanfrage, Follow-up, keine Antwort, Extra Posten, Senden-Dialog, Abschluss')
+    req = new_request('Regressions KG (TEST)', 'kunde-regi3@example.org', 'Stuttgart', ['2026-12-09', '2026-12-16', ''], [], pax='8')
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_need_save'), {'need_done': '1', 'save_only': None})
+    h = get(f'/control/anfragen/?req={req}').text
+    for pid in ('1613', '1200'):
+        post_form(find_form(h, 'fge_cc_venue_add'), {'partner_id': pid})
+    h = get(f'/control/anfragen/?req={req}').text
+    bulk = find_form(h, 'fge_cc_venue_ask_bulk')
+    ids = re.findall(r'name="venue_ids\[\]" value="(\d+)"', bulk['html'])
+    post_form(bulk, {'venue_ids[]': ids, 'mail_subject': 'Eigener Betreff (TEST)', 'mail_intro': 'Eigene Einleitung (TEST).'})
+    ms = mails(clear=True)
+    check(len(ms) == 2 and all(m['subject'] == 'Eigener Betreff (TEST)' and 'Eigene Einleitung (TEST).' in m['text'] for m in ms), 'Sammelanfrage mit eigenem Betreff und Text an beide')
+    h = get(f'/control/anfragen/?req={req}').text
+    fus = sorted([x for x in forms(h) if x['action'] == 'fge_cc_venue_followup'], key=lambda f: int(f['fields']['venue_id']))
+    a, b = fus[0]['fields']['venue_id'], fus[1]['fields']['venue_id']
+    post_form(fus[0])
+    ms = mails(clear=True)
+    check(len(ms) == 1 and ms[0]['subject'].startswith('Kurze Nachfrage'), 'Follow-up an einen Platz')
+    h = get(f'/control/anfragen/?req={req}').text
+    check('Follow-up am' in main_text(h), 'Zeile zeigt Follow-up am')
+    post_form(find_form(h, 'fge_cc_venue_noanswer', f'value="{b}"'))
+    h = get(f'/control/anfragen/?req={req}').text
+    check(not mails(clear=True) and 'Keine Antwort nach Anfrage' in main_text(h), 'Keine Antwort ohne Mail an den Platz')
+    rep = [x for x in forms(h) if x['action'] == 'fge_cc_venue_reply' and x['fields']['venue_id'] == a][0]
+    post_form(rep, {'answer': 'zusagt', 'price': '40,00', 'price_gross': '1', 'price_basis': 'person', 'date_avail[1]': '1', 'date_avail[2]': '0',
+                    'extra_label[]': 'Feuerwerk (TEST)', 'extra_price[]': '450', 'extra_gross[]': '0', 'extra_basis[]': 'pauschal'})
+    mails(clear=True)
+    h = get(f'/control/anfragen/?req={req}').text
+    check('Feuerwerk (TEST)' in main_text(h), 'Extra Posten steht in Rückmeldung und Kalkulation')
+    for f in [x for x in forms(h) if x['action'] == 'fge_cc_venue_calc']:
+        post_form(f)
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_offer_options_save'), {f'opt_pos[{a}]': '1', 'opt_recommended': a})
+    h = get(f'/control/anfragen/?req={req}').text
+    dl = wp("echo wp_date('Y-m-d', time() + 10 * DAY_IN_SECONDS);")
+    post_form(find_form(h, 'fge_cc_offer_send_options'), {'send_to': 'andere-regi3@example.org', 'send_deadline': dl, 'send_note': 'Persönliche Zeile (TEST).', 'send_remind': None})
+    ms = mails(clear=True)
+    offer = [m for m in ms if m['subject'].startswith('Euer Angebot')]
+    check(offer and 'andere-regi3' in offer[0]['to'] and 'Persönliche Zeile (TEST).' in offer[0]['text'], 'Angebot an anderen Empfänger mit persönlicher Nachricht')
+    check('Feuerwerk (TEST)' in offer[0]['text'] if offer else False, 'Extra Posten im Angebot')
+    meta = wp(f"echo get_post_meta({req},'_fge_offer_remind_off',true) . '|' . wp_date('Y-m-d', (int) get_post_meta({req},'_fge_offer_deadline',true));")
+    check(meta == '1|' + dl, 'Frist aus dem Dialog, Erinnerung aus')
+    link = wp(f'echo fge_offer_link({req});')
+    C = requests.Session(); c = C.get(link).text; f = forms(c)[0]
+    data = [('fge_offer_token', f['fields']['fge_offer_token']), ('fge_offer_nonce', f['fields']['fge_offer_nonce']), ('fge_offer_agb', '1'), ('fge_offer_action', 'accept')]
+    data += [(k, v) for k, v in f['fields'].items() if k.startswith('fge_offer_date') or k == 'fge_offer_option']
+    C.post(link, data=data, allow_redirects=True)
+    mails(clear=True)
+    out = wp(f"$s=(array)get_post_meta({req},'_fge_offer_snapshot',true); $s['date']='Mo, 12.10.2026'; update_post_meta({req},'_fge_offer_snapshot',$s); echo get_post_meta({req},'_fge_offer_status',true) . '|' . fge_cc_auto_close() . '|' . get_post_meta({req},'_fge_request_status',true);")
+    check(out.startswith('accepted|') and out.endswith('|abgeschlossen'), 'Am Tag nach dem Event automatisch abgeschlossen (' + out + ')')
+    mails(clear=True)
+    return req
+
 def cleanup(reqs):
     # Auch liegengebliebene Testanfragen früherer Läufe (Firma mit „Regressions" und „(TEST)").
     ids = ','.join(str(r) for r in reqs) or '0'
@@ -139,6 +210,7 @@ if __name__ == '__main__':
     try:
         reqs.append(scenario_accept())
         reqs.append(scenario_decline())
+        reqs.append(scenario_tools())
     finally:
         cleanup(reqs)
         wp('require_once ABSPATH."wp-admin/includes/user.php"; $u=get_user_by("login","audit-bot"); if($u) wp_delete_user($u->ID);')

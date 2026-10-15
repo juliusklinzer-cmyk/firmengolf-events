@@ -58,6 +58,18 @@ function fge_cc_messages(): array {
 		'contact_invalid' => [ 'err', 'Die Mailadresse sieht nicht gültig aus, Kontakt nicht gespeichert.' ],
 		'calc_saved'      => [ 'ok', 'Kalkulation gespeichert.' ],
 		'need_saved'      => [ 'ok', 'Bedarf gespeichert.' ],
+		'need_done'       => [ 'ok', 'Bedarf geklärt. Jetzt Golfplätze anfragen.' ],
+		'need_open'       => [ 'ok', 'Bedarf wieder offen.' ],
+		'need_blocked'    => [ 'err', 'Noch nicht alles beisammen: Wunschtermin, Personenzahl, Leistung oder offene Fragen fehlen.' ],
+		'question_added'  => [ 'ok', 'Frage notiert.' ],
+		'question_done'   => [ 'ok', 'Frage abgehakt.' ],
+		'question_open'   => [ 'ok', 'Frage wieder offen.' ],
+		'question_removed' => [ 'ok', 'Frage entfernt.' ],
+		'venues_asked'    => [ 'ok', 'Anfragen sind raus.' ],
+		'venue_followup'  => [ 'ok', 'Nachfrage ist beim Platz.' ],
+		'venue_noanswer'  => [ 'ok', 'Platz steht auf keine Antwort.' ],
+		'offer_deadline'  => [ 'err', 'Die Antwortfrist muss in der Zukunft liegen, höchstens 60 Tage.' ],
+		'offer_to'        => [ 'err', 'Die Empfänger-Adresse sieht nicht gültig aus.' ],
 	];
 }
 
@@ -402,7 +414,53 @@ add_action( 'admin_post_fge_cc_venue_ask', static function (): void {
 		fge_cc_redirect( $req, 'venue_asked' );
 	}
 
-	fge_cc_redirect( $req, fge_venue_send_request( $req, (int) $venue['id'] ) ? 'venue_asked' : 'venue_nomail' );
+	fge_cc_redirect( $req, fge_venue_send_request( $req, (int) $venue['id'], fge_cc_mail_opts_from_post() ) ? 'venue_asked' : 'venue_nomail' );
+} );
+
+/** Betreff und Einleitung aus dem Mail-Dialog des Control Centers. */
+function fge_cc_mail_opts_from_post(): array {
+	// phpcs:disable WordPress.Security.NonceVerification.Missing -- Aufrufer prüft per fge_cc_guard.
+	return [
+		'subject' => mb_substr( sanitize_text_field( wp_unslash( $_POST['mail_subject'] ?? '' ) ), 0, 200 ),
+		'intro'   => mb_substr( sanitize_textarea_field( wp_unslash( $_POST['mail_intro'] ?? '' ) ), 0, 3000 ),
+	];
+	// phpcs:enable
+}
+
+// Mehrere Entwürfe auf einmal per Mail anfragen, Anrede je Platz.
+add_action( 'admin_post_fge_cc_venue_ask_bulk', static function (): void {
+	$req  = fge_cc_guard( 'fge_cc_venue_ask_bulk' );
+	$opts = fge_cc_mail_opts_from_post();
+	$ids  = array_map( 'absint', (array) wp_unslash( $_POST['venue_ids'] ?? [] ) );
+	$sent = 0;
+	foreach ( fge_venues_get( $req ) as $v ) {
+		if ( in_array( (int) $v['id'], $ids, true ) && 'idee' === (string) $v['status'] && fge_venue_send_request( $req, (int) $v['id'], $opts ) ) {
+			$sent++;
+		}
+	}
+	fge_cc_redirect( $req, $sent > 0 ? 'venues_asked' : 'venue_nomail' );
+} );
+
+// Nachfrage an einen Platz, der nicht antwortet. Stand bleibt „angefragt".
+add_action( 'admin_post_fge_cc_venue_followup', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_followup' );
+	$venue = fge_cc_venue_from_post( $req );
+	if ( 'angefragt' !== (string) $venue['status'] ) {
+		fge_cc_redirect( $req, 'nothing' );
+	}
+	fge_cc_redirect( $req, fge_venue_send_request( $req, (int) $venue['id'], fge_cc_mail_opts_from_post() + [ 'followup' => true ] ) ? 'venue_followup' : 'venue_nomail' );
+} );
+
+// Platz hat nie geantwortet: ablegen, ohne ihm eine Absage zu schreiben.
+add_action( 'admin_post_fge_cc_venue_noanswer', static function (): void {
+	$req   = fge_cc_guard( 'fge_cc_venue_noanswer' );
+	$venue = fge_cc_venue_from_post( $req );
+	if ( 'angefragt' !== (string) $venue['status'] ) {
+		fge_cc_redirect( $req, 'nothing' );
+	}
+	fge_venue_update( (int) $venue['id'], [ 'status' => 'keine', 'replied_at' => current_time( 'mysql' ) ] );
+	fge_activity_add( $req, 'venue', sprintf( '%s auf keine Antwort gesetzt', get_the_title( (int) $venue['partner_id'] ) ) );
+	fge_cc_redirect( $req, 'venue_noanswer' );
 } );
 
 add_action( 'admin_post_fge_cc_venue_reply', static function (): void {
@@ -435,6 +493,26 @@ add_action( 'admin_post_fge_cc_venue_reply', static function (): void {
 			'price_basis' => 'pauschal' === sanitize_key( wp_unslash( $_POST['item_basis'][ $key ] ?? '' ) ) ? 'pauschal' : 'person',
 			'price_gross' => '0' === (string) ( $_POST['item_gross'][ $key ] ?? '1' ) ? 0 : 1,
 		] );
+	}
+
+	// Extra-Posten, die der Platz von sich aus anbietet (z. B. Feuerwerk), 15.10.2026.
+	// Sie werden normale Positionen und laufen so in Kalkulation und Angebot.
+	if ( $yes ) {
+		$x_labels = (array) wp_unslash( $_POST['extra_label'] ?? [] );
+		foreach ( $x_labels as $n => $label ) {
+			$label = mb_substr( sanitize_text_field( (string) $label ), 0, 120 );
+			$price = fge_xs_parse_num( sanitize_text_field( wp_unslash( (string) ( $_POST['extra_price'][ $n ] ?? '' ) ) ) );
+			if ( '' === trim( $label ) || $price <= 0 ) {
+				continue;
+			}
+			fge_venue_item_set( (int) $venue['id'], 'extra_' . substr( md5( mb_strtolower( $label ) ), 0, 10 ), [
+				'label'       => $label,
+				'available'   => 1,
+				'price'       => $price,
+				'price_basis' => 'person' === sanitize_key( wp_unslash( (string) ( $_POST['extra_basis'][ $n ] ?? '' ) ) ) ? 'person' : 'pauschal',
+				'price_gross' => '0' === (string) ( $_POST['extra_gross'][ $n ] ?? '1' ) ? 0 : 1,
+			] );
+		}
 	}
 
 	// Verfügbarkeit je Wunschtermin: 1 geht, 0 geht nicht, leer bleibt offen.
@@ -470,7 +548,7 @@ add_action( 'admin_post_fge_cc_venue_reply', static function (): void {
 	// Nur beim Wechsel von „angefragt" zu „zugesagt". Spätere Korrekturen lösen keine Mail
 	// aus (Julius, 28.09.: GolfKultur ist fix und soll nur die Auftragsbestätigung bekommen),
 	// dafür gibt es den Knopf „Bestätigung erneut senden".
-	$first_reply = in_array( (string) $venue['status'], [ 'idee', 'angefragt' ], true ) && '' === (string) ( $venue['summary_at'] ?? '' ) && '' === (string) ( $venue['reservation_at'] ?? '' );
+	$first_reply = in_array( (string) $venue['status'], [ 'idee', 'angefragt', 'keine' ], true ) && '' === (string) ( $venue['summary_at'] ?? '' ) && '' === (string) ( $venue['reservation_at'] ?? '' );
 	if ( $yes && $first_reply && function_exists( 'fge_venue_send_summary' ) && '' !== fge_venue_partner_email( (int) $venue['partner_id'] )
 		&& ! ( function_exists( 'fge_request_is_booked' ) && fge_request_is_booked( $req ) ) ) {
 		fge_cc_redirect( $req, fge_venue_send_summary( $req, (int) $venue['id'], 'absprache' ) ? 'venue_reply_sent' : 'venue_reply' );

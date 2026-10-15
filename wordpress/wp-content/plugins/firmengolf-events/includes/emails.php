@@ -483,8 +483,21 @@ function fge_send_date_confirmation_email( int $request_id, int $date_index ): b
 // ── Angebots-Mail an den Kunden ───────────────────────────────────────────────
 
 /** Schickt dem Kunden das automatisch erzeugte Angebot mit Annehmen/Ablehnen-Link. */
+/**
+ * Empfänger des Angebots: was im Senden-Dialog eingetragen wurde, sonst die
+ * Kontaktadresse der Anfrage (15.10.2026). Gilt auch für die Erinnerung.
+ */
+function fge_offer_recipient( int $request_id ): string {
+	$to = (string) get_post_meta( $request_id, '_fge_offer_send_to', true );
+	if ( is_email( $to ) ) {
+		return $to;
+	}
+	return (string) fge_get_request_email_data( $request_id )['contact_email'];
+}
+
 function fge_send_offer_email( int $request_id ): bool {
 	$data = fge_get_request_email_data( $request_id );
+	$data['contact_email'] = fge_offer_recipient( $request_id );
 	if ( $data['contact_email'] === '' ) {
 		return false;
 	}
@@ -519,6 +532,10 @@ function fge_send_offer_email( int $request_id ): bool {
 
 	$wishes = array_merge( (array) ( $snap['wishes_platz'] ?? [] ), (array) ( $snap['wishes_firmengolf'] ?? [] ) );
 
+	// Persönliche Nachricht aus dem Senden-Dialog, als eigener Absatz.
+	$note      = trim( (string) get_post_meta( $request_id, '_fge_offer_send_note', true ) );
+	$note_html = '' !== $note ? implode( '', array_map( static fn( $p ) => '<p style="margin:0 0 18px;">' . nl2br( esc_html( $p ) ) . '</p>', preg_split( '/\R{2,}/', $note ) ) ) : '';
+
 	// Wurde das Angebot neu aufgelegt, steht die Fassung im Betreff, damit der
 	// Kunde das ersetzte nicht mit dem gültigen verwechselt.
 	$subject = 'Euer Angebot ' . $ref . ': ' . ( (string) ( $snap['event_title'] ?? 'euer Event' ) )
@@ -532,6 +549,7 @@ function fge_send_offer_email( int $request_id ): bool {
 				: ( ! empty( $snap['options'] )
 					? 'hier ist euer Angebot <strong>' . esc_html( $ref ) . '</strong>' . ( count( (array) ( $snap['options'][0]['dates'] ?? [] ) ) > 1 ? '. Wählt online euren Termin und nehmt mit einem Klick an.' : ', ihr könnt es online mit einem Klick annehmen.' )
 					: 'der Termin steht. Hier ist euer Angebot <strong>' . esc_html( $ref ) . '</strong>, ihr könnt es online mit einem Klick annehmen.' ) ) ) . ( '' !== $pdf ? ' Als PDF findet ihr es auch im Anhang.' : '' ) . '</p>
+		' . $note_html . '
 		' . $table . '
 		' . ( ! empty( $extras ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Zusatzleistungen könnt ihr auf der Angebotsseite einzeln abwählen, die Summe passt sich an.</p>' : '' ) . '
 		' . ( ! empty( $snap['discount']['percent'] ) ? '<p style="margin:0 0 6px;color:#555;font-size:12px;">Der Rabatt über euren Partnercode ist bereits abgezogen.</p>' : '' ) . '
@@ -983,6 +1001,7 @@ function fge_xs_cancel_providers( int $req ): void {
 /** Erinnerung an den Kunden, wenn das Angebot noch offen ist. */
 function fge_send_offer_reminder( int $request_id ): bool {
 	$data = fge_get_request_email_data( $request_id );
+	$data['contact_email'] = fge_offer_recipient( $request_id );
 	if ( $data['contact_email'] === '' ) {
 		return false;
 	}

@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const FGE_VENUES_DB_VERSION = '1.4.0';
+const FGE_VENUES_DB_VERSION = '1.5.0';
 
 function fge_venues_table(): string {
 	global $wpdb;
@@ -76,6 +76,7 @@ function fge_venues_install(): void {
 		summary_at DATETIME NULL DEFAULT NULL,
 		reservation_at DATETIME NULL DEFAULT NULL,
 		reserved_until DATE NULL DEFAULT NULL,
+		followup_at DATETIME NULL DEFAULT NULL,
 		PRIMARY KEY (id),
 		UNIQUE KEY req_partner (request_id, partner_id),
 		KEY request_id (request_id),
@@ -130,6 +131,8 @@ function fge_venue_statuses(): array {
 		'zugesagt'  => 'Zugesagt',
 		'abgesagt'  => 'Abgesagt',
 		'gewaehlt'  => 'Gewählt',
+		// Seit 15.10.2026: angefragt, nie geantwortet, ohne Absage-Mail abgelegt.
+		'keine'     => 'Keine Antwort',
 	];
 }
 
@@ -161,7 +164,7 @@ function fge_venues_get( int $req ): array {
 	$t = fge_venues_table();
 	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	$rows = $wpdb->get_results( $wpdb->prepare(
-		"SELECT * FROM {$t} WHERE request_id = %d ORDER BY FIELD(status,'gewaehlt','zugesagt','angefragt','idee','abgesagt'), id ASC",
+		"SELECT * FROM {$t} WHERE request_id = %d ORDER BY FIELD(status,'gewaehlt','zugesagt','angefragt','idee','keine','abgesagt'), id ASC",
 		$req
 	), ARRAY_A ) ?: [];
 
@@ -225,7 +228,7 @@ function fge_venue_add( int $req, int $partner_id ): int {
 /** Felder einer Pipeline-Zeile ändern. */
 function fge_venue_update( int $id, array $data ): bool {
 	global $wpdb;
-	$allowed = [ 'status', 'channel', 'asked_at', 'replied_at', 'reason', 'price', 'price_basis', 'price_gross', 'note', 'contact_id', 'catalog_token', 'catalog_answer', 'catalog_answered_at', 'catalog_event_id', 'catalog_note', 'markup_percent', 'sale_price', 'in_offer', 'option_text', 'detail_token', 'details_at', 'summary_at', 'reservation_at', 'reserved_until' ];
+	$allowed = [ 'status', 'channel', 'asked_at', 'replied_at', 'reason', 'price', 'price_basis', 'price_gross', 'note', 'contact_id', 'catalog_token', 'catalog_answer', 'catalog_answered_at', 'catalog_event_id', 'catalog_note', 'markup_percent', 'sale_price', 'in_offer', 'option_text', 'detail_token', 'details_at', 'summary_at', 'reservation_at', 'reserved_until', 'followup_at' ];
 	$set     = array_intersect_key( $data, array_flip( $allowed ) );
 	if ( ! $set || $id <= 0 ) {
 		return false;

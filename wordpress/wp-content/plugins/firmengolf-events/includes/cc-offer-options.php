@@ -197,8 +197,13 @@ function fge_offer_options_active( int $req ): bool {
 
 // ── Versand ──────────────────────────────────────────────────────────────────
 
-/** Angebot mit Optionen senden. Leer bei Erfolg, sonst der Grund. */
-function fge_offer_send_options( int $req ): string {
+/**
+ * Angebot mit Optionen senden. Leer bei Erfolg, sonst der Grund.
+ *
+ * $args aus dem Senden-Dialog (15.10.2026): to (Empfänger), deadline (Zeitstempel
+ * Fristende), note (persönliche Nachricht), remind (automatische Erinnerung).
+ */
+function fge_offer_send_options( int $req, array $args = [] ): string {
 	$blocker = fge_offer_options_blocker( $req );
 	if ( '' !== $blocker ) {
 		return $blocker;
@@ -212,9 +217,19 @@ function fge_offer_send_options( int $req ): string {
 	update_post_meta( $req, '_fge_offer_options_mode', 1 );
 	delete_post_meta( $req, '_fge_offer_date_index' );
 	update_post_meta( $req, '_fge_offer_status', 'pending' );
-	$days = (int) apply_filters( 'fge_offer_response_days', 7 );
-	update_post_meta( $req, '_fge_offer_deadline', time() + $days * DAY_IN_SECONDS );
+	$days     = (int) apply_filters( 'fge_offer_response_days', 7 );
+	$deadline = (int) ( $args['deadline'] ?? 0 );
+	update_post_meta( $req, '_fge_offer_deadline', $deadline > time() ? $deadline : time() + $days * DAY_IN_SECONDS );
 	update_post_meta( $req, '_fge_offer_sent_at', time() );
+	if ( array_key_exists( 'to', $args ) ) {
+		update_post_meta( $req, '_fge_offer_send_to', (string) $args['to'] );
+	}
+	if ( array_key_exists( 'note', $args ) ) {
+		update_post_meta( $req, '_fge_offer_send_note', (string) $args['note'] );
+	}
+	if ( array_key_exists( 'remind', $args ) ) {
+		update_post_meta( $req, '_fge_offer_remind_off', $args['remind'] ? 0 : 1 );
+	}
 	update_post_meta( $req, '_fge_offer_review_done', 1 );
 	fge_send_offer_email( $req );
 	fge_request_set_status( $req, 'angebot_versendet' );
@@ -403,8 +418,28 @@ add_action( 'admin_post_fge_cc_offer_options_save', static function (): void {
 } );
 
 add_action( 'admin_post_fge_cc_offer_send_options', static function (): void {
-	$req = fge_cc_guard( 'fge_cc_offer_send_options' );
-	$err = fge_offer_send_options( $req );
+	$req  = fge_cc_guard( 'fge_cc_offer_send_options' );
+	$args = [];
+	// phpcs:disable WordPress.Security.NonceVerification.Missing -- fge_cc_guard prüft die Nonce.
+	if ( isset( $_POST['send_to'] ) ) {
+		$to = sanitize_email( wp_unslash( $_POST['send_to'] ) );
+		if ( ! is_email( $to ) ) {
+			fge_cc_redirect( $req, 'offer_to' );
+		}
+		$dl  = sanitize_text_field( wp_unslash( $_POST['send_deadline'] ?? '' ) );
+		$end = preg_match( '/^\d{4}-\d{2}-\d{2}$/', $dl ) ? (int) ( date_create_immutable( $dl . ' 23:59:59', wp_timezone() ) ?: new DateTimeImmutable() )->getTimestamp() : 0;
+		if ( $end <= time() || $end > time() + 60 * DAY_IN_SECONDS ) {
+			fge_cc_redirect( $req, 'offer_deadline' );
+		}
+		$args = [
+			'to'       => $to,
+			'deadline' => $end,
+			'note'     => mb_substr( sanitize_textarea_field( wp_unslash( $_POST['send_note'] ?? '' ) ), 0, 3000 ),
+			'remind'   => ! empty( $_POST['send_remind'] ),
+		];
+	}
+	// phpcs:enable
+	$err = fge_offer_send_options( $req, $args );
 	if ( '' !== $err ) {
 		fge_activity_add( $req, 'system', 'Angebot mit Optionen nicht gesendet: ' . $err );
 		fge_cc_redirect( $req, 'nothing' );
@@ -467,15 +502,42 @@ function fge_cc_offer_options_panel( int $req ): void {
 	} elseif ( '' !== $blocker ) {
 		echo '<p class="cc-hint cc-hint--warn">' . esc_html( $blocker ) . '</p>';
 	} else {
-		echo '<div class="cc-venue-actions">';
-		fge_cc_button( 'fge_cc_offer_send_options', $req, 'Angebot mit Optionen senden', [
-			'class'   => 'cc-btn cc-btn--primary',
-			'confirm' => 'Das Angebot geht jetzt mit allen markierten Optionen und PDF an den Kunden. Fortfahren?',
-		] );
-		if ( function_exists( 'fge_cc_action_preview' ) ) {
-			fge_cc_action_preview( 'offer_send', $req );
-		}
-		echo '</div>';
+		echo '<div class="cc-stepfoot"><button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-open="cc-sendoffer">Angebot online senden</button></div>';
+		fge_cc_offer_send_drawer( $req );
 	}
 	echo '</div>';
+}
+
+/**
+ * Senden-Dialog (15.10.2026): Empfänger, Antwortfrist, persönliche Nachricht
+ * und Erinnerung, dazu die Folgen-Vorschau. Ersetzt die blinde Bestätigung.
+ */
+function fge_cc_offer_send_drawer( int $req ): void {
+	$data   = fge_get_request_email_data( $req );
+	$venues = fge_offer_options_venues( $req );
+	$days   = (int) apply_filters( 'fge_offer_response_days', 7 );
+	$rdays  = (int) apply_filters( 'fge_offer_reminder_days', 3 );
+	$first  = trim( (string) $data['first_name'] );
+
+	fge_cc_drawer_open( 'cc-sendoffer', 'Angebot online senden', 'Der Kunde nimmt online an oder lehnt ab' );
+	echo '<form class="cc-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+	echo '<input type="hidden" name="action" value="fge_cc_offer_send_options"><input type="hidden" name="request_id" value="' . (int) $req . '">';
+	wp_nonce_field( 'fge_cc_offer_send_options_' . $req );
+	echo '<div class="cc-sendlist">';
+	foreach ( $venues as $i => $v ) {
+		echo '<div><strong>Option ' . esc_html( fge_offer_option_key( $i + 1 ) ) . '</strong> · ' . esc_html( (string) $v['title'] ) . '</div>';
+	}
+	echo '</div>';
+	echo '<div class="cc-fields cc-fields--send">';
+	echo '<label class="cc-field"><span>An</span><input type="email" name="send_to" required value="' . esc_attr( fge_offer_recipient( $req ) ) . '"></label>';
+	echo '<label class="cc-field"><span>Antwortfrist</span><input type="date" name="send_deadline" required min="' . esc_attr( wp_date( 'Y-m-d', time() + DAY_IN_SECONDS ) ) . '" max="' . esc_attr( wp_date( 'Y-m-d', time() + 60 * DAY_IN_SECONDS ) ) . '" value="' . esc_attr( wp_date( 'Y-m-d', time() + $days * DAY_IN_SECONDS ) ) . '"></label>';
+	echo '</div>';
+	echo '<label class="cc-field cc-field--wide"><span>Persönliche Nachricht (optional)</span><textarea name="send_note" rows="5" placeholder="' . esc_attr( 'Steht in der Mail nach „Hallo ' . ( '' !== $first ? $first : '…' ) . '“ und dem Satz zum Angebot.' ) . '"></textarea></label>';
+	echo '<label class="cc-checkline"><input type="checkbox" name="send_remind" value="1" checked><span><strong>Automatisches Follow-up</strong><span class="cc-muted">Eine Erinnerung an den Kunden ' . (int) $rdays . ' Tage nach dem Versand, solange die Frist läuft. Stoppt, sobald er antwortet.</span></span></label>';
+	if ( function_exists( 'fge_cc_action_preview' ) ) {
+		fge_cc_action_preview( 'offer_send', $req );
+	}
+	echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn" data-cc-drawer-close>Abbrechen</button><button type="submit" class="cc-btn cc-btn--primary">Jetzt senden</button></div>';
+	echo '</form>';
+	fge_cc_drawer_close();
 }

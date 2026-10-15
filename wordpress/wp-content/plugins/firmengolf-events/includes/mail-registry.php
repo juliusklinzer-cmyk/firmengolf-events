@@ -77,6 +77,15 @@ function fge_mail_registry(): array {
 			'trigger'   => 'Knopf in der Platz-Pipeline',
 			'content'   => [ 'Was angefragt ist: Beschreibung, Dauer, Paketinhalt, Ablauf', 'Gruppe mit Personenzahl, Niveau und Essenswünschen', 'Wunschtermin oder Wunschtermine', 'Liste der Positionen mit Preisfrage', 'bei uns notierte Vorpreise' ],
 		],
+		'venue_followup' => [
+			'label'     => 'Nachfrage an einen Platz ohne Antwort',
+			'party'     => 'platz',
+			'per_venue' => true,
+			'subject'   => 'Kurze Nachfrage: Firmenanfrage',
+			'auto'      => false,
+			'trigger'   => 'Knopf „Follow-up senden" in der Platz-Pipeline',
+			'content'   => [ 'kurze Nachfrage, ob die Anfrage angekommen ist', 'derselbe Inhalt wie die Anfrage an den Platz' ],
+		],
 		'venue_decline' => [
 			'label'     => 'Absage an einen nicht gewählten Platz',
 			'party'     => 'platz',

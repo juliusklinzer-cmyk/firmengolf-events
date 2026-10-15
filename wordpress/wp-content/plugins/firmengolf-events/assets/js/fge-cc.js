@@ -223,11 +223,29 @@
 		});
 	}
 
+	// ── Zeile duplizieren (Extra Posten in der Rückmeldung) ──────────────
+	function initClone() {
+		document.addEventListener('click', function (e) {
+			var b = e.target.closest ? e.target.closest('[data-cc-clone]') : null;
+			if (!b) { return; }
+			var form = b.closest('form');
+			var wrap = form && form.querySelector('[data-cc-clone-wrap]');
+			var rows = wrap ? wrap.querySelectorAll('[data-cc-clone-row]') : [];
+			if (!rows.length) { return; }
+			var row = rows[rows.length - 1].cloneNode(true);
+			row.querySelectorAll('input').forEach(function (i) { i.value = ''; });
+			wrap.appendChild(row);
+			var first = row.querySelector('input');
+			if (first) { first.focus(); }
+		});
+	}
+
 	function init() {
 		initDialog();
 		initSearch();
 		initRequestTabs();
 		initDrawers();
+		initClone();
 		initNav();
 	}
 	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
