@@ -331,7 +331,7 @@ def scenario_pages():
         r = post_form(find_form(get('/control/leads/').text, 'fge_cc_lead', contains='umgewandelt'))
         check('lead_conv' in r.url and wp(f'echo get_post_meta({lead},"_fge_request_type",true);') == 'general_event_request', 'Lead in Anfrage umgewandelt')
     finally:
-        wp(f'wp_delete_post({lead},true);')
+        wp(f'wp_delete_post({lead},true); global $wpdb; $wpdb->delete(fge_activity_table(),["request_id"=>{lead}]);')
     h = get('/control/partnercodes/').text
     r = post_form(find_form(h, 'fge_cc_pc_save'), {'holder': 'Regressions Verband (TEST)', 'code': 'REGTEST', 'eur': '40,00'})
     pc = wp('echo fge_pc_find("REGTEST");')

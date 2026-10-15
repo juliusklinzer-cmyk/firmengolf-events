@@ -516,7 +516,7 @@ function fge_cc_worklist_panel( string $id, array $rows, string $empty, string $
 	if ( ! $rows ) {
 		fge_cc_empty( $empty );
 	} else {
-		echo '<div class="cc-wl-head" aria-hidden="true"><span>Firma</span><span>Nächste Aufgabe</span><span>Dringlichkeit</span><span>Eventdatum</span><span>Alter</span></div>';
+		echo '<div class="cc-wl-head" aria-hidden="true"><span>Firma</span><span>Nächster Schritt</span><span>Dringlichkeit</span><span>Eventdatum</span><span>Alter</span></div>';
 		foreach ( $rows as $r ) {
 			fge_cc_worklist_row( $r );
 		}
@@ -536,7 +536,7 @@ function fge_cc_worklist_row( array $r ): void {
 
 	echo '<a class="cc-row cc-wl-row" href="' . esc_url( fge_cc_request_url( $req ) ) . '">';
 	echo '<span class="cc-row-main"><span class="cc-row-top"><span class="cc-company">' . esc_html( $r['company'] ?: 'ohne Firma' ) . '</span></span>';
-	echo '<span class="cc-more"><span class="cc-ref">' . esc_html( $r['ref'] ) . '</span>' . ( '' !== $contact ? ' · ' . esc_html( $contact ) : '' ) . ' · ' . esc_html( $r['phase'] ) . '</span></span>';
+	echo '<span class="cc-more"><span class="cc-ref">' . esc_html( $r['ref'] ) . '</span>' . ( '' !== $contact ? ' · ' . esc_html( $contact ) : '' ) . ' · ' . esc_html( function_exists( 'fge_cc_flow' ) ? fge_cc_flow( (int) $r['req'] )['label'] : $r['phase'] ) . '</span></span>';
 	echo '<span class="cc-row-main">';
 	if ( $lead ) {
 		echo '<span class="cc-next">' . esc_html( $lead['text'] ) . '</span>';
@@ -557,10 +557,10 @@ function fge_cc_platform_panel(): void {
 	$todo   = [];
 
 	if ( $badges['partner'] > 0 ) {
-		$todo[] = [ 'Neue Partner-Anmeldungen', $badges['partner'], 'Status In Prüfung', admin_url( 'edit.php?post_type=firmengolf_partner' ) ];
+		$todo[] = [ 'Neue Partner-Anmeldungen', $badges['partner'], 'Status In Prüfung', fge_cc_url( 'partner' ) ];
 	}
 	if ( $badges['events'] > 0 ) {
-		$todo[] = [ 'Events zur Prüfung', $badges['events'], 'neu eingereicht oder geändert', admin_url( 'edit.php?post_type=firmengolf_event' ) ];
+		$todo[] = [ 'Events zur Prüfung', $badges['events'], 'neu eingereicht oder geändert', fge_cc_url( 'events', [ 'tab' => 'pruefung' ] ) ];
 	}
 	$expiring = 0;
 	$pending  = fge_cc_query_requests( [ 'meta_query' => [ [ 'key' => '_fge_offer_status', 'value' => 'pending' ] ] ], 300 );
@@ -760,7 +760,7 @@ function fge_cc_request_lex_tab( int $req ): void {
 	fge_cc_fact( 'HubSpot', trim( $m( 'hubspot_status' ) . ' ' . $m( 'hubspot_contact_id' ) ) );
 	echo '</dl></section>';
 	echo '</div>';
-	echo '<p class="cc-muted">Diese Felder werden derzeit im WordPress-Admin gepflegt: <a href="' . esc_url( get_edit_post_link( $req, 'raw' ) ) . '">Anfrage im WordPress-Admin öffnen</a>.</p>';
+	echo '<p class="cc-muted">Die Rechnungsnummer trägst du oben bei „Rechnung gestellt" ein. Angebotsnummer und Tracking stehen im <a href="' . esc_url( get_edit_post_link( $req, 'raw' ) ) . '">WordPress</a>.</p>';
 }
 
 /**
