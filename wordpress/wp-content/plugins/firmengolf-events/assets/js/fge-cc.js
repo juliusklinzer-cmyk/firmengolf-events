@@ -292,8 +292,19 @@
 		});
 	}
 
+	// Auswahl speichert sofort, wie im Entwurf (Leistung im Bedarf).
+	function initAutosubmit() {
+		document.addEventListener('change', function (e) {
+			var el = e.target;
+			if (el && el.matches && el.matches('[data-cc-autosubmit]') && el.value && el.form) {
+				if (el.form.requestSubmit) { el.form.requestSubmit(); } else { el.form.submit(); }
+			}
+		});
+	}
+
 	function init() {
 		initDialog();
+		initAutosubmit();
 		initSearch();
 		initRequestTabs();
 		initDrawers();

@@ -59,6 +59,7 @@ function fge_cc_messages(): array {
 		'calc_saved'      => [ 'ok', 'Kalkulation gespeichert.' ],
 		'need_saved'      => [ 'ok', 'Bedarf gespeichert.' ],
 		'need_done'       => [ 'ok', 'Bedarf geklärt. Jetzt Golfplätze anfragen.' ],
+		'need_updated'    => [ 'ok', 'Bedarf angepasst.' ],
 		'need_open'       => [ 'ok', 'Bedarf wieder offen.' ],
 		'need_blocked'    => [ 'err', 'Noch nicht alles beisammen: Wunschtermin, Personenzahl, Leistung oder offene Fragen fehlen.' ],
 		'question_added'  => [ 'ok', 'Frage notiert.' ],

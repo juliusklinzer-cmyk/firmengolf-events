@@ -380,25 +380,58 @@ function fge_cc_need_dates_locked( int $req ): bool {
 	return false;
 }
 
-/** Leistungen des Bedarfs: Häkchen aus dem Wizard plus Wünsche aus dem Formular. */
+/**
+ * Leistungen des Bedarfs: Häkchen aus dem Wizard, Wünsche aus dem Event-Dialog
+ * und Freitextwünsche zeilenweise. Dieselben Quellen wie fge_venue_wishlist(),
+ * damit der Bedarf genau das zeigt, was die Plätze gefragt werden.
+ */
 function fge_cc_need_services( int $req ): array {
 	$out   = [];
 	$wants = fge_catalog_wish_labels();
 	foreach ( $wants as $k => $l ) {
 		if ( '1' === (string) get_post_meta( $req, '_fge_' . $k, true ) ) {
-			$out[ mb_strtolower( $l ) ] = [ 'label' => $l, 'want' => $k ];
+			$out[ mb_strtolower( $l ) ] = [ 'label' => $l, 'want' => $k, 'src' => 'want' ];
 		}
 	}
 	foreach ( [ '_fge_wishes_platz', '_fge_wishes_firmengolf' ] as $mk ) {
 		foreach ( (array) get_post_meta( $req, $mk, true ) as $w ) {
 			$w = trim( (string) $w );
 			if ( '' !== $w && ! isset( $out[ mb_strtolower( $w ) ] ) ) {
-				$key                          = (string) array_search( $w, $wants, true );
-				$out[ mb_strtolower( $w ) ] = [ 'label' => $w, 'want' => $key ];
+				$key                        = (string) array_search( $w, $wants, true );
+				$out[ mb_strtolower( $w ) ] = [ 'label' => $w, 'want' => $key, 'src' => 'wish' ];
 			}
 		}
 	}
+	foreach ( fge_cc_need_free_lines( $req ) as $w ) {
+		if ( ! isset( $out[ mb_strtolower( $w ) ] ) ) {
+			$out[ mb_strtolower( $w ) ] = [ 'label' => $w, 'want' => '', 'src' => 'frei' ];
+		}
+	}
 	return $out;
+}
+
+/** Freitextwünsche aus dem Formular, je Zeile oder Komma ein Wunsch. */
+function fge_cc_need_free_lines( int $req ): array {
+	$extra = (string) get_post_meta( $req, '_fge_additional_wishes', true );
+	return array_values( array_filter( array_map( static fn( $w ) => mb_substr( trim( $w ), 0, 120 ), preg_split( '/\r\n|\r|\n|,/', $extra ) ), 'strlen' ) );
+}
+
+/** Wer die Leistung liefern kann, als Hinweis in der Zeile. */
+function fge_cc_need_who( string $label ): string {
+	foreach ( function_exists( 'fge_provider_type_keywords' ) ? fge_provider_type_keywords() : [] as $words ) {
+		foreach ( $words as $w ) {
+			if ( false !== mb_stripos( $label, $w ) ) {
+				return 'Golfplatz oder Dienstleister';
+			}
+		}
+	}
+	return 'Golfplatz';
+}
+
+/** Positionsschlüssel einer Leistung: Katalogschlüssel, sonst aus dem Text. */
+function fge_cc_need_item_key( string $label ): string {
+	$k = array_search( $label, fge_catalog_wish_labels(), true );
+	return false !== $k ? (string) $k : fge_provider_item_key( $label );
 }
 
 /** Offene Fragen an den Kunden, je [id, t, done]. */
@@ -425,10 +458,22 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	$sent   = '1' === (string) get_post_meta( $req, '_fge_offer_sent', true );
 	$locked = fge_cc_need_dates_locked( $req );
 	$done   = (int) get_post_meta( $req, '_fge_need_done', true ) > 0;
+	$flash  = sanitize_key( wp_unslash( $_GET['msg'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	// Nach Hinzufügen, Entfernen oder einer Frage bleibt die Bearbeitung offen.
+	$keep   = in_array( $flash, [ 'need_saved', 'need_blocked', 'question_added', 'question_done', 'question_open', 'question_removed' ], true );
 
 	if ( '' !== $msg ) {
 		echo '<div class="cc-quote"><span class="cc-label">Nachricht des Kunden</span><p>' . nl2br( esc_html( $msg ) ) . '</p></div>';
 	}
+
+	// Geklärt: Zusammenfassung wie im Entwurf, „Anpassen" klappt die Bearbeitung auf.
+	if ( $done ) {
+		echo '<div class="cc-needsum">';
+		fge_cc_need_readonly( $req, $f );
+		echo '</div>';
+		echo '<details class="cc-neededit"' . ( $keep ? ' open' : '' ) . '><summary class="cc-btn"><span class="cc-neededit-closed">Anpassen</span><span class="cc-neededit-open">Schließen</span></summary>';
+	}
+
 	$catering = trim( (string) get_post_meta( $req, '_fge_catering_notes', true ) );
 	echo '<dl class="cc-factgrid cc-factgrid--wide">';
 	foreach ( [
@@ -443,15 +488,11 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	}
 	echo '</dl>';
 
-	if ( $sent ) {
-		echo '<p class="cc-muted">Das Angebot ist verschickt, der Bedarf ist damit festgeschrieben. Änderungen laufen über „Zurückziehen und neu auflegen" im Schritt Angebot.</p>';
-		fge_cc_need_readonly( $req, $f );
-		return;
-	}
-
 	echo '<form class="cc-form cc-needform" id="cc-needform" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 	echo '<input type="hidden" name="action" value="fge_cc_need_save"><input type="hidden" name="request_id" value="' . (int) $req . '">';
 	wp_nonce_field( 'fge_cc_need_save_' . $req );
+	// Enter in einem Textfeld speichert nur und trifft nicht das erste „×".
+	echo '<button type="submit" name="save_only" value="1" class="cc-sr" tabindex="-1" aria-hidden="true">Speichern</button>';
 
 	echo '<div class="cc-fields cc-fields--4">';
 	echo '<label class="cc-field"><span>Personen</span><input type="text" inputmode="numeric" name="pax" value="' . ( $f['pax'] > 0 ? (int) $f['pax'] : '' ) . '"></label>';
@@ -459,21 +500,24 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	echo '<label class="cc-field cc-field--span2"><span>Budget</span><input type="text" name="budget" value="' . esc_attr( (string) get_post_meta( $req, '_fge_budget_range', true ) ) . '" placeholder="z. B. ca. 3.000 €"></label>';
 	echo '</div>';
 
-	echo '<div class="cc-block"><h3>Wunschtermine</h3>';
-	if ( $locked ) {
-		$labels = function_exists( 'fge_request_wish_date_labels' ) ? fge_request_wish_date_labels( $req ) : [];
-		echo '<p class="cc-plain">' . esc_html( $labels ? implode( ' · ', $labels ) : 'keine angegeben' ) . '</p>';
-		echo '<p class="cc-muted">Die Termine sind schon bei Plätzen angefragt und an deren Antworten gebunden. Ein neuer Termin heißt: neu anfragen.</p>';
-	} else {
-		echo '<div class="cc-dateinputs">';
-		for ( $i = 1; $i <= 3; $i++ ) {
-			echo '<input type="text" name="date[' . $i . ']" value="' . esc_attr( (string) get_post_meta( $req, '_fge_preferred_date_' . $i, true ) ) . '" placeholder="TT.MM.JJJJ" aria-label="Wunschtermin ' . $i . '">';
+	// Wunschtermine: angefragte Termine sind an die Antworten der Plätze gebunden,
+	// freie Felder lassen sich jederzeit füllen.
+	echo '<div class="cc-block"><h3>Wunschtermine</h3><div class="cc-dateinputs">';
+	for ( $i = 1; $i <= 3; $i++ ) {
+		$val = (string) get_post_meta( $req, '_fge_preferred_date_' . $i, true );
+		if ( $locked && '' !== trim( $val ) ) {
+			echo '<span class="cc-datefixed" title="Schon bei Partnern angefragt">' . esc_html( $val ) . '</span>';
+			continue;
 		}
-		echo '</div>';
+		echo '<input type="text" name="date[' . $i . ']" value="' . esc_attr( $val ) . '" placeholder="TT.MM.JJJJ" aria-label="Wunschtermin ' . $i . '">';
+	}
+	echo '</div>';
+	if ( $locked ) {
+		echo '<p class="cc-muted">Angefragte Termine sind an die Antworten gebunden. Ein neuer Termin in einem freien Feld geht nur an Partner, die du danach anfragst.</p>';
 	}
 	echo '</div>';
 
-	// Leistungen mit Notiz je Zeile. Die Notiz steht in der Anfrage an die Plätze.
+	// Leistungen: jede Zeile geht genau so in die Anfrage an die Partner.
 	$services = fge_cc_need_services( $req );
 	$wants    = fge_catalog_wish_labels();
 	echo '<div class="cc-block"><h3>Leistungen</h3>';
@@ -482,23 +526,23 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	}
 	foreach ( $services as $lk => $sv ) {
 		echo '<div class="cc-svcrow">';
-		echo '<span class="cc-svcrow-label"><strong>' . esc_html( $sv['label'] ) . '</strong><span class="cc-muted">' . esc_html( '' !== $sv['want'] ? 'aus dem Leistungskatalog' : 'Wunsch aus der Anfrage' ) . '</span></span>';
+		echo '<span class="cc-svcrow-label"><strong>' . esc_html( $sv['label'] ) . '</strong><span class="cc-muted">' . esc_html( fge_cc_need_who( $sv['label'] ) ) . '</span></span>';
 		echo '<input type="text" name="note[' . esc_attr( $lk ) . ']" value="' . esc_attr( fge_need_note( $req, $sv['label'] ) ) . '" placeholder="Details für die Anfrage, z. B. Menüwunsch, Abholort" aria-label="' . esc_attr( 'Details zu ' . $sv['label'] ) . '">';
-		echo '<label class="cc-svcrow-x" title="Leistung entfernen"><input type="checkbox" name="remove[]" value="' . esc_attr( $sv['label'] ) . '"><span aria-hidden="true">×</span><span class="cc-sr">' . esc_html( $sv['label'] . ' entfernen' ) . '</span></label>';
+		echo '<button type="submit" name="remove_one" value="' . esc_attr( $sv['label'] ) . '" class="cc-svcrow-x" title="Leistung entfernen"><span aria-hidden="true">×</span><span class="cc-sr">' . esc_html( $sv['label'] . ' entfernen' ) . '</span></button>';
 		echo '</div>';
 	}
 	$free = array_filter( $wants, static fn( $l ) => ! isset( $services[ mb_strtolower( $l ) ] ) );
 	echo '<div class="cc-svcadd">';
 	if ( $free ) {
-		echo '<select name="add_want" aria-label="Leistung auswählen"><option value="">Leistung auswählen</option>';
+		echo '<select name="add_want" aria-label="Leistung auswählen" data-cc-autosubmit><option value="">Leistung auswählen</option>';
 		foreach ( $free as $k => $l ) {
 			echo '<option value="' . esc_attr( $k ) . '">' . esc_html( $l ) . '</option>';
 		}
 		echo '</select>';
 	}
-	echo '<input type="text" name="add_custom" placeholder="Sonderwunsch, z. B. Fotograf" aria-label="Sonderwunsch">';
+	echo '<input type="text" name="add_custom" placeholder="Sonderwunsch, z. B. Feuerwerk" aria-label="Sonderwunsch">';
+	echo '<button type="submit" name="add_btn" value="1" class="cc-btn">Hinzufügen</button>';
 	echo '</div>';
-	echo '<label class="cc-field cc-field--wide cc-field--top"><span>Weitere Wünsche</span><textarea name="extra" rows="2">' . esc_textarea( $f['extra'] ) . '</textarea></label>';
 	echo '</div>';
 
 	// Offene Fragen an den Kunden: eigene kleine Formulare über das form-Attribut,
@@ -516,7 +560,7 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	echo '<div class="cc-qadd"><input type="text" name="question" form="cc-q-add" placeholder="Neue Frage notieren" aria-label="Neue Frage an den Kunden"><button type="submit" form="cc-q-add" class="cc-btn">Hinzufügen</button></div>';
 	echo '</div>';
 
-	// Fuß: Prüfpunkte, Hinweis, Speichern oder „Bedarf ist geklärt".
+	// Fuß: Prüfpunkte, Hinweis, „Bedarf ist geklärt" oder „Änderungen speichern".
 	$checks = fge_cc_need_checks( $req );
 	$ok     = ! array_filter( $checks, static fn( $c ) => ! $c[1] );
 	echo '<div class="cc-stepfoot cc-stepfoot--need">';
@@ -525,17 +569,21 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 		echo '<li class="' . ( $pass ? 'is-ok' : '' ) . '"><span aria-hidden="true">' . ( $pass ? '✓' : '!' ) . '</span>' . esc_html( $label ) . '</li>';
 	}
 	echo '</ul>';
-	if ( $locked ) {
-		echo '<span class="cc-note-warn">Bereits angefragte Plätze bekommen Änderungen nicht automatisch. Bei Bedarf erneut anfragen.</span>';
+	if ( $sent ) {
+		echo '<span class="cc-note-warn">Das Angebot ist schon beim Kunden. Änderungen am Bedarf ändern das Angebot nicht.</span>';
+	} elseif ( $locked ) {
+		echo '<span class="cc-note-warn">Bereits angefragte Partner bekommen Änderungen nicht automatisch. Bei Bedarf erneut anfragen.</span>';
 	}
 	if ( $done ) {
-		echo '<button type="submit" class="cc-btn cc-btn--primary">Änderungen speichern</button>';
+		echo '<button type="submit" name="need_close" value="1" class="cc-btn cc-btn--primary">Änderungen speichern</button>';
 	} else {
-		echo '<button type="submit" name="save_only" value="1" class="cc-btn">Speichern</button>';
 		echo '<button type="submit" name="need_done" value="1" class="cc-btn cc-btn--primary"' . ( $ok ? '' : ' title="Erst alle Punkte links erfüllen, ungespeicherte Änderungen zählen mit"' ) . '>Bedarf ist geklärt</button>';
 	}
 	echo '</div>';
 	echo '</form>';
+	if ( $done ) {
+		echo '</details>';
+	}
 
 	foreach ( $qs as $q ) {
 		$qid = sanitize_key( (string) $q['id'] );
@@ -562,7 +610,6 @@ function fge_cc_need_readonly( int $req, array $f ): void {
 		'Budget'          => (string) get_post_meta( $req, '_fge_budget_range', true ),
 		'Wunschtermine'   => implode( ' · ', $labels ),
 		'Leistungen'      => implode( ', ', $services ),
-		'Weitere Wünsche' => $f['extra'],
 	] as $k => $v ) {
 		if ( '' !== trim( (string) $v ) ) {
 			echo '<div><dt>' . esc_html( $k ) . '</dt><dd>' . esc_html( (string) $v ) . '</dd></div>';
@@ -573,9 +620,6 @@ function fge_cc_need_readonly( int $req, array $f ): void {
 
 add_action( 'admin_post_fge_cc_need_save', static function (): void {
 	$req = fge_cc_guard( 'fge_cc_need_save' );
-	if ( '1' === (string) get_post_meta( $req, '_fge_offer_sent', true ) ) {
-		fge_cc_redirect( $req, 'already_sent' );
-	}
 	// phpcs:disable WordPress.Security.NonceVerification.Missing -- fge_cc_guard prüft die Nonce.
 	$changes = [];
 	$set     = static function ( string $key, string $label, $new ) use ( $req, &$changes ): void {
@@ -585,16 +629,25 @@ add_action( 'admin_post_fge_cc_need_save', static function (): void {
 			$changes[] = $label . ( '' !== $old ? ' ' . $old . ' → ' : ' ' ) . ( '' !== (string) $new ? $new : 'leer' );
 		}
 	};
+	$before = array_map( 'strval', fge_venue_wishlist( $req ) );
 
 	$pax = absint( wp_unslash( $_POST['pax'] ?? 0 ) );
 	$set( '_fge_expected_participants', 'Personen', $pax > 0 ? (string) $pax : '' );
 	$set( '_fge_start_time', 'Start', sanitize_text_field( wp_unslash( $_POST['start'] ?? '' ) ) );
 	$set( '_fge_budget_range', 'Budget', sanitize_text_field( wp_unslash( $_POST['budget'] ?? '' ) ) );
 
-	if ( ! fge_cc_need_dates_locked( $req ) && isset( $_POST['date'] ) && is_array( $_POST['date'] ) ) {
-		$raw = array_map( static fn( $d ) => sanitize_text_field( (string) $d ), wp_unslash( $_POST['date'] ) );
+	if ( isset( $_POST['date'] ) && is_array( $_POST['date'] ) ) {
+		$locked = fge_cc_need_dates_locked( $req );
+		$raw    = array_map( static fn( $d ) => sanitize_text_field( (string) $d ), wp_unslash( $_POST['date'] ) );
 		for ( $i = 1; $i <= 3; $i++ ) {
-			$d = trim( (string) ( $raw[ $i ] ?? '' ) );
+			if ( ! array_key_exists( $i, $raw ) ) {
+				continue;
+			}
+			// Schon angefragte Termine bleiben, nur freie Felder dürfen dazukommen.
+			if ( $locked && '' !== trim( (string) get_post_meta( $req, '_fge_preferred_date_' . $i, true ) ) ) {
+				continue;
+			}
+			$d = trim( (string) $raw[ $i ] );
 			// TT.MM.JJJJ wie im Formular bekommt den Wochentag dazu.
 			if ( preg_match( '/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $d, $m ) && checkdate( (int) $m[2], (int) $m[1], (int) $m[3] ) ) {
 				$d = fge_format_wish_date( sprintf( '%04d-%02d-%02d', $m[3], $m[2], $m[1] ) );
@@ -605,10 +658,10 @@ add_action( 'admin_post_fge_cc_need_save', static function (): void {
 		}
 	}
 
-	// Leistungen: entfernen, aus dem Katalog dazunehmen, Sonderwunsch, Notizen.
-	$wants  = fge_catalog_wish_labels();
-	$remove = array_map( static fn( $l ) => sanitize_text_field( (string) $l ), (array) wp_unslash( $_POST['remove'] ?? [] ) );
-	foreach ( $remove as $label ) {
+	// Leistungen: eine entfernen, aus dem Katalog dazunehmen, Sonderwunsch, Notizen.
+	$wants = fge_catalog_wish_labels();
+	$label = sanitize_text_field( (string) wp_unslash( $_POST['remove_one'] ?? '' ) );
+	if ( '' !== $label ) {
 		$k = array_search( $label, $wants, true );
 		if ( false !== $k ) {
 			update_post_meta( $req, '_fge_' . $k, 0 );
@@ -620,6 +673,11 @@ add_action( 'admin_post_fge_cc_need_save', static function (): void {
 				update_post_meta( $req, $mk, $keep );
 			}
 		}
+		$lines = fge_cc_need_free_lines( $req );
+		$keep  = array_values( array_filter( $lines, static fn( $x ) => mb_strtolower( $x ) !== mb_strtolower( $label ) ) );
+		if ( count( $keep ) !== count( $lines ) ) {
+			update_post_meta( $req, '_fge_additional_wishes', implode( "\n", $keep ) );
+		}
 		$changes[] = $label . ' raus';
 	}
 	$add = sanitize_key( wp_unslash( $_POST['add_want'] ?? '' ) );
@@ -629,9 +687,14 @@ add_action( 'admin_post_fge_cc_need_save', static function (): void {
 	}
 	$custom = mb_substr( trim( sanitize_text_field( wp_unslash( $_POST['add_custom'] ?? '' ) ) ), 0, 120 );
 	if ( '' !== $custom && ! isset( fge_cc_need_services( $req )[ mb_strtolower( $custom ) ] ) ) {
-		$list   = array_values( array_filter( array_map( 'strval', (array) get_post_meta( $req, '_fge_wishes_platz', true ) ), 'strlen' ) );
-		$list[] = $custom;
-		update_post_meta( $req, '_fge_wishes_platz', $list );
+		$k = array_search( mb_strtolower( $custom ), array_map( 'mb_strtolower', $wants ), true );
+		if ( false !== $k ) {
+			update_post_meta( $req, '_fge_' . $k, 1 );
+		} else {
+			$list   = array_values( array_filter( array_map( 'strval', (array) get_post_meta( $req, '_fge_wishes_platz', true ) ), 'strlen' ) );
+			$list[] = $custom;
+			update_post_meta( $req, '_fge_wishes_platz', $list );
+		}
 		$changes[] = 'Sonderwunsch ' . $custom . ' dazu';
 	}
 	$notes_in = (array) wp_unslash( $_POST['note'] ?? [] );
@@ -650,9 +713,13 @@ add_action( 'admin_post_fge_cc_need_save', static function (): void {
 		update_post_meta( $req, '_fge_need_notes', $notes );
 		$changes[] = 'Notizen zu Leistungen';
 	}
-	$set( '_fge_additional_wishes', 'Weitere Wünsche', sanitize_textarea_field( wp_unslash( $_POST['extra'] ?? '' ) ) );
-	$want_done = ! empty( $_POST['need_done'] );
+	$want_done  = ! empty( $_POST['need_done'] );
+	$want_close = ! empty( $_POST['need_close'] );
 	// phpcs:enable
+
+	// Der Bedarf bestimmt die Anfrage: noch nicht angefragte Partner übernehmen
+	// neue Leistungen und verlieren entfernte.
+	fge_cc_need_sync_drafts( $req, $before, array_map( 'strval', fge_venue_wishlist( $req ) ) );
 
 	if ( $changes ) {
 		fge_activity_add( $req, 'note', 'Bedarf angepasst: ' . implode( ', ', $changes ) );
@@ -666,8 +733,38 @@ add_action( 'admin_post_fge_cc_need_save', static function (): void {
 		fge_activity_add( $req, 'status', 'Bedarf geklärt' );
 		fge_cc_redirect( $req, 'need_done' );
 	}
-	fge_cc_redirect( $req, $changes ? 'need_saved' : 'nothing' );
+	fge_cc_redirect( $req, $want_close ? 'need_updated' : 'need_saved' );
 } );
+
+/**
+ * Leistungen, die im Bedarf dazukommen oder rausfliegen, in alle noch nicht
+ * angefragten Golfplätze übernehmen. Dienstleister wählen ihre Leistungen
+ * selbst über die Chips, angefragte Partner bleiben wie angefragt.
+ */
+function fge_cc_need_sync_drafts( int $req, array $before, array $after ): void {
+	$low     = static fn( array $l ) => array_map( 'mb_strtolower', $l );
+	$added   = array_diff( $low( $after ), $low( $before ) );
+	$removed = array_diff( $low( $before ), $low( $after ) );
+	if ( ! $added && ! $removed ) {
+		return;
+	}
+	global $wpdb;
+	foreach ( fge_venues_get( $req, 'platz' ) as $v ) {
+		if ( 'idee' !== (string) $v['status'] ) {
+			continue;
+		}
+		foreach ( fge_venue_items_get( (int) $v['id'] ) as $it ) {
+			if ( 'green_fee' !== (string) $it['wish_key'] && in_array( mb_strtolower( (string) $it['label'] ), $removed, true ) ) {
+				$wpdb->delete( fge_venue_items_table(), [ 'id' => (int) $it['id'] ] );
+			}
+		}
+		foreach ( $after as $label ) {
+			if ( in_array( mb_strtolower( $label ), $added, true ) ) {
+				fge_venue_item_set( (int) $v['id'], fge_cc_need_item_key( $label ), [ 'label' => $label ] );
+			}
+		}
+	}
+}
 
 // Offene Fragen an den Kunden: notieren, abhaken, entfernen.
 add_action( 'admin_post_fge_cc_question_add', static function (): void {
@@ -713,6 +810,22 @@ add_action( 'admin_post_fge_cc_question_remove', static function (): void {
 // ── Schritt 2: Golfplätze anfragen ──────────────────────────────────────────
 
 function fge_cc_flow_pane_partners( int $req, int $cur ): void {
+	// Wie im Entwurf: Leistungen aus dem Bedarf, die bei keinem Partner in der Liste stehen.
+	if ( 'accepted' !== (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
+		$covered = [];
+		foreach ( fge_venues_get( $req, 'all' ) as $v ) {
+			if ( in_array( (string) $v['status'], [ 'abgesagt', 'keine' ], true ) ) {
+				continue;
+			}
+			foreach ( (array) $v['items'] as $it ) {
+				$covered[ mb_strtolower( (string) $it['label'] ) ] = true;
+			}
+		}
+		$missing = array_values( array_filter( array_map( static fn( $sv ) => $sv['label'], fge_cc_need_services( $req ) ), static fn( $l ) => ! isset( $covered[ mb_strtolower( $l ) ] ) ) );
+		if ( $missing ) {
+			echo '<div class="cc-hint cc-hint--box">Für diese Leistungen ist noch niemand angefragt: <strong>' . esc_html( implode( ', ', $missing ) ) . '</strong></div>';
+		}
+	}
 	if ( function_exists( 'fge_cc_venues_panel' ) ) {
 		fge_cc_venues_panel( $req );
 	}

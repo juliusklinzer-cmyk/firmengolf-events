@@ -64,6 +64,21 @@ def pipeline_two_places(req):
     h = get(f'/control/anfragen/?req={req}').text
     for pid in ('1613', '1200'):
         post_form(find_form(h, 'fge_cc_venue_add'), {'partner_id': pid})
+    # Bedarf bestimmt die Anfrage (1.9.306): Sonderwunsch landet in noch nicht
+    # angefragten Plätzen, Entfernen nimmt ihn wieder raus, Chips schalten je Platz.
+    items = lambda: wp(f"foreach (fge_venues_get({req}) as $v) {{ echo $v['partner_id'], ':', implode('|', array_map(fn($i) => $i['label'], $v['items'])), ';'; }}")
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_need_save'), {'add_custom': 'Feuerwerk TEST', 'save_only': None})
+    check(items().count('Feuerwerk TEST') == 2, 'Neue Leistung im Bedarf geht an beide Platz-Entwürfe')
+    h = get(f'/control/anfragen/?req={req}').text
+    check('noch niemand angefragt' not in text(h), 'Kein Hinweis auf fehlende Leistung, solange Entwürfe sie haben')
+    chip = [x for x in forms(h) if x['action'] == 'fge_cc_provider_item' and x['fields'].get('label') == 'Feuerwerk TEST']
+    check(len(chip) == 2, 'Golfplatz-Entwurf zeigt Leistungen als Chips')
+    post_form(chip[0])
+    check(items().count('Feuerwerk TEST') == 1, 'Chip wählt Leistung bei einem Platz ab')
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_need_save'), {'remove_one': 'Feuerwerk TEST', 'save_only': None})
+    check('Feuerwerk TEST' not in items() and 'note[feuerwerk test]' not in get(f'/control/anfragen/?req={req}').text, 'Entfernen im Bedarf nimmt Leistung überall raus')
     h = get(f'/control/anfragen/?req={req}').text
     for f in [x for x in forms(h) if x['action'] == 'fge_cc_venue_ask' and x['fields'].get('how') == 'mail']:
         post_form(f)

@@ -256,19 +256,23 @@ add_action( 'admin_post_fge_cc_provider_item', static function (): void {
 	$req   = fge_cc_guard( 'fge_cc_provider_item' );
 	$row   = fge_cc_venue_from_post( $req );
 	$label = mb_substr( trim( sanitize_text_field( wp_unslash( $_POST['label'] ?? '' ) ) ), 0, 120 ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-	if ( 'dl' !== (string) $row['kind'] || 'idee' !== (string) $row['status'] || '' === $label ) {
+	if ( 'idee' !== (string) $row['status'] || '' === $label ) {
 		fge_cc_redirect( $req, 'nothing' );
 	}
+	// An- oder abwählen über den Text, die Schlüssel stammen aus verschiedenen Quellen.
 	global $wpdb;
-	$key = fge_provider_item_key( $label );
-	$has = false;
+	$hit = null;
 	foreach ( fge_venue_items_get( (int) $row['id'] ) as $it ) {
-		$has = $has || (string) $it['wish_key'] === $key;
+		if ( 'green_fee' !== (string) $it['wish_key'] && mb_strtolower( (string) $it['label'] ) === mb_strtolower( $label ) ) {
+			$hit = $it;
+		}
 	}
-	if ( $has ) {
-		$wpdb->delete( fge_venue_items_table(), [ 'venue_id' => (int) $row['id'], 'wish_key' => $key ] );
+	if ( $hit ) {
+		$wpdb->delete( fge_venue_items_table(), [ 'id' => (int) $hit['id'] ] );
+	} elseif ( 'dl' === (string) $row['kind'] ) {
+		fge_venue_item_set( (int) $row['id'], fge_provider_item_key( $label ), [ 'label' => $label, 'price_basis' => 'pauschal' ] );
 	} else {
-		fge_venue_item_set( (int) $row['id'], $key, [ 'label' => $label, 'price_basis' => 'pauschal' ] );
+		fge_venue_item_set( (int) $row['id'], fge_cc_need_item_key( $label ), [ 'label' => $label ] );
 	}
 	fge_cc_redirect( $req, 'saved' );
 } );

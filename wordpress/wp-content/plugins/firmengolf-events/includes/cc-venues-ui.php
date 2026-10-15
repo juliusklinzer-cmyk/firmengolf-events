@@ -205,14 +205,23 @@ function fge_cc_venue_row( int $req, array $v ): void {
 	// Angefragte Leistungen als Chips.
 	$asked = array_values( array_filter( (array) $v['items'], static fn( $it ) => 'green_fee' !== (string) $it['wish_key'] ) );
 	echo '<div class="cc-minichips">';
-	if ( $dl && 'idee' === $status ) {
-		// Noch nicht angefragt: Leistungen an- und abwählen, wie im Entwurf.
+	if ( 'idee' === $status ) {
+		// Noch nicht angefragt: Leistungen an- und abwählen, wie im Entwurf. Zur
+		// Wahl steht alles aus dem Bedarf, auch was der Platz nicht hinterlegt hat.
+		if ( ! $dl ) {
+			echo '<span class="cc-minichip is-on">Event und Platznutzung</span>';
+		}
 		$on_labels = array_map( static fn( $it ) => mb_strtolower( (string) $it['label'] ), $asked );
 		$choices   = array_map( static fn( $it ) => (string) $it['label'], $asked );
 		foreach ( function_exists( 'fge_cc_need_services' ) ? fge_cc_need_services( $req ) : [] as $sv ) {
 			$choices[] = $sv['label'];
 		}
-		foreach ( array_unique( $choices ) as $label ) {
+		$seen = [];
+		foreach ( $choices as $label ) {
+			if ( isset( $seen[ mb_strtolower( $label ) ] ) ) {
+				continue;
+			}
+			$seen[ mb_strtolower( $label ) ] = true;
 			$on = in_array( mb_strtolower( $label ), $on_labels, true );
 			fge_cc_button( 'fge_cc_provider_item', $req, $label, [ 'class' => 'cc-minichip cc-minichip--btn' . ( $on ? ' is-on' : ' is-off-soft' ), 'fields' => [ 'venue_id' => $id, 'label' => $label ] ] );
 		}
