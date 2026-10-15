@@ -54,7 +54,7 @@ def pipeline_two_places(req):
     for f in [x for x in forms(h) if x['action'] == 'fge_cc_venue_ask' and x['fields'].get('how') == 'mail']:
         post_form(f)
     ms = mails(clear=True)
-    check(len(ms) == 2 and all('Sagt uns bitte je Termin' in m['text'] for m in ms), 'Preisanfragen mit Terminliste an beide Plätze')
+    check(len(ms) == 2 and all('Sagt uns bitte' in m['text'] and 'Termin' in m['text'] for m in ms), 'Preisanfragen mit Terminliste an beide Plätze')
     check(not any('Regressions GmbH' in m['text'] for m in ms), 'Preisanfrage ohne Firmenname')
     h = get(f'/control/anfragen/?req={req}').text
     reps = sorted([x for x in forms(h) if x['action'] == 'fge_cc_venue_reply'], key=lambda f: int(f['fields']['venue_id']))
@@ -103,7 +103,7 @@ def scenario_accept():
     ms = mails(clear=True)
     check(any('kunde-regi' in m['to'] and 'Ablauf' in m['subject'] for m in ms), 'Ablauf-Info an den Kunden nach Platzdetails')
     h = get(f'/control/anfragen/?req={req}').text
-    check('Vorbereitung' in main_text(h)[:600], 'Cockpit in Phase Vorbereitung')
+    check('Gebucht' in main_text(h)[:900], 'Cockpit zeigt Gebucht')
     return req
 
 def scenario_decline():

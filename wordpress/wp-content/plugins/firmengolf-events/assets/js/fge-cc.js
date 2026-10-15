@@ -144,12 +144,15 @@
 		});
 	}
 
-	// ── Reiter der Anfrage ───────────────────────────────────────────────
+	// ── Schritte der Anfrage ─────────────────────────────────────────────
+	// Merkt sich den gewählten Schritt, aber nur solange die Anfrage nicht
+	// weitergerückt ist: nach einem Fortschritt springt sie auf den neuen.
 	function initRequestTabs() {
 		var bar = document.querySelector('[data-cc-rtabs]');
 		if (!bar) { return; }
-		var key = 'fgeCCtab:' + bar.dataset.ccRtabs;
-		function show(id) {
+		var key = 'fgeCCstep:' + bar.dataset.ccRtabs;
+		var cur = bar.dataset.ccCur || '';
+		function show(id, remember) {
 			var found = false;
 			bar.querySelectorAll('[data-cc-rtab]').forEach(function (b) {
 				var on = b.dataset.ccRtab === id;
@@ -159,16 +162,55 @@
 			});
 			if (!found) { return false; }
 			document.querySelectorAll('[data-cc-rpane]').forEach(function (p) { p.hidden = p.dataset.ccRpane !== id; });
-			try { sessionStorage.setItem(key, id); } catch (e) { /* privat */ }
+			if (remember) {
+				try { sessionStorage.setItem(key, JSON.stringify({ t: id, cur: cur })); } catch (e) { /* privat */ }
+			}
 			return true;
 		}
-		bar.addEventListener('click', function (e) {
-			var b = e.target.closest('[data-cc-rtab]');
-			if (b) { show(b.dataset.ccRtab); }
+		document.addEventListener('click', function (e) {
+			var b = e.target.closest ? e.target.closest('[data-cc-rtab], [data-cc-rtab-go]') : null;
+			if (!b) { return; }
+			show(b.dataset.ccRtab || b.dataset.ccRtabGo, true);
+			if (b.dataset.ccRtabGo) { bar.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
 		});
+		// Alte Sprungmarken aus Mails und Knöpfen auf die neuen Schritte.
+		var legacy = { angebot: 's3', daten: 's1', prozess: '', lex: 's6', mails: '' };
 		var start = (location.hash || '').replace('#', '');
-		if (!start) { try { start = sessionStorage.getItem(key) || ''; } catch (e) { start = ''; } }
-		if (!start || !show(start)) { show('prozess'); }
+		if (legacy.hasOwnProperty(start)) { start = legacy[start]; }
+		if (!start) {
+			try {
+				var saved = JSON.parse(sessionStorage.getItem(key) || 'null');
+				if (saved && saved.cur === cur) { start = saved.t; }
+			} catch (e) { start = ''; }
+		}
+		if (start) { show(start, false); }
+	}
+
+	// ── Seitenpanel ──────────────────────────────────────────────────────
+	function initDrawers() {
+		var drawers = document.querySelectorAll('dialog.cc-drawer');
+		if (!drawers.length) { return; }
+		function open(d) {
+			if (!d || typeof d.showModal !== 'function' || d.open) { return; }
+			d.showModal();
+		}
+		document.addEventListener('click', function (e) {
+			var o = e.target.closest ? e.target.closest('[data-cc-drawer-open]') : null;
+			if (o) { open(document.getElementById(o.dataset.ccDrawerOpen)); return; }
+			var c = e.target.closest ? e.target.closest('[data-cc-drawer-close]') : null;
+			if (c) { var d = c.closest('dialog'); if (d) { d.close(); } return; }
+			// Klick auf die abgedunkelte Fläche schließt.
+			if (e.target.matches && e.target.matches('dialog.cc-drawer')) { e.target.close(); }
+		});
+		drawers.forEach(function (d) {
+			if (d.hasAttribute('data-cc-drawer-auto')) {
+				// Der Schritt muss sichtbar sein, sonst öffnet das Panel ins Leere.
+				var pane = d.closest('[data-cc-rpane]');
+				var tab = pane && document.querySelector('[data-cc-rtab="' + pane.dataset.ccRpane + '"]');
+				if (tab) { tab.click(); }
+				open(d);
+			}
+		});
 	}
 
 	// ── Menü auf dem Telefon ─────────────────────────────────────────────
@@ -185,6 +227,7 @@
 		initDialog();
 		initSearch();
 		initRequestTabs();
+		initDrawers();
 		initNav();
 	}
 	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }

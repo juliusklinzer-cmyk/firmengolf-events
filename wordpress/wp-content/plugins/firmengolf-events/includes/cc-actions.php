@@ -57,6 +57,7 @@ function fge_cc_messages(): array {
 		'contact_saved'   => [ 'ok', 'Kontakt beim Platz ergänzt.' ],
 		'contact_invalid' => [ 'err', 'Die Mailadresse sieht nicht gültig aus, Kontakt nicht gespeichert.' ],
 		'calc_saved'      => [ 'ok', 'Kalkulation gespeichert.' ],
+		'need_saved'      => [ 'ok', 'Bedarf gespeichert.' ],
 	];
 }
 

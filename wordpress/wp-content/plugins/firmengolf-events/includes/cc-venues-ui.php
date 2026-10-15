@@ -11,59 +11,64 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/** Die ganze Pipeline als Karte. */
+/**
+ * Seitenpanel von rechts (Design 15.10.2026). Ein <dialog>, damit Fokus,
+ * Escape und Hintergrund-Sperre vom Browser kommen. Geöffnet über einen Knopf
+ * mit data-cc-drawer-open="ID", ohne Skript bleibt der Inhalt unerreichbar,
+ * deshalb liegt jeder Weg dorthin auch als normaler Link oder Formular vor.
+ */
+function fge_cc_drawer_open( string $id, string $title, string $sub = '', bool $auto = false ): void {
+	echo '<dialog class="cc-drawer" id="' . esc_attr( $id ) . '" aria-labelledby="' . esc_attr( $id ) . '-t"' . ( $auto ? ' data-cc-drawer-auto' : '' ) . '>';
+	echo '<div class="cc-drawer-head"><div><h2 id="' . esc_attr( $id ) . '-t">' . esc_html( $title ) . '</h2>';
+	if ( '' !== $sub ) {
+		echo '<p>' . esc_html( $sub ) . '</p>';
+	}
+	echo '</div><button type="button" class="cc-drawer-x" data-cc-drawer-close aria-label="Schließen">×</button></div>';
+	// Fokus auf den Inhalt statt auf das X, sonst steht beim Öffnen ein Ring darum.
+	echo '<div class="cc-drawer-body" tabindex="-1" autofocus>';
+}
+
+function fge_cc_drawer_close(): void {
+	echo '</div></dialog>';
+}
+
+/** Entfernung Kundenstandort zu Platz in km, -1 ohne Koordinaten. */
+function fge_cc_venue_km( int $req, int $pid ): float {
+	static $anchors = [];
+	if ( ! isset( $anchors[ $req ] ) ) {
+		$anchors[ $req ] = function_exists( 'fge_request_geo_anchor' ) ? fge_request_geo_anchor( $req ) : [ 'source' => 'none' ];
+	}
+	$a = $anchors[ $req ];
+	if ( 'none' === ( $a['source'] ?? 'none' ) || ! function_exists( 'fge_geo_distance' ) || $pid <= 0 ) {
+		return -1.0;
+	}
+	$lat = (float) get_post_meta( $pid, '_fge_latitude', true );
+	$lng = (float) get_post_meta( $pid, '_fge_longitude', true );
+	if ( ( 0.0 === $lat || 0.0 === $lng ) && function_exists( 'fge_geo_lookup_plz' ) ) {
+		$plz = (string) get_post_meta( $pid, '_fge_postal_code', true );
+		$geo = '' !== $plz ? fge_geo_lookup_plz( $plz ) : null;
+		[ $lat, $lng ] = $geo ? [ (float) $geo[0], (float) $geo[1] ] : [ 0.0, 0.0 ];
+	}
+	return ( 0.0 !== $lat && 0.0 !== $lng ) ? fge_geo_distance( (float) $a['lat'], (float) $a['lng'], $lat, $lng ) : -1.0;
+}
+
+/** Die Plätze einer Anfrage als Zeilen, wie im Entwurf „Anfragen". */
 function fge_cc_venues_panel( int $req ): void {
 	$venues = function_exists( 'fge_venues_get' ) ? fge_venues_get( $req ) : [];
 	$chosen = (int) get_post_meta( $req, '_fge_assigned_partner_id', true );
+	$msg    = sanitize_key( wp_unslash( $_GET['msg'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$auto   = isset( $_GET['vs'] ) || in_array( $msg, [ 'venue_added', 'venue_dupe', 'venue_exists', 'geo_saved' ], true ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-	echo '<section class="cc-card"><h2>Plätze</h2>';
-
+	echo '<div class="cc-block">';
+	echo '<div class="cc-block-head"><h3>Golfplätze</h3>';
+	echo '<button type="button" class="cc-btn" data-cc-drawer-open="cc-addvenue">Golfplatz hinzufügen</button></div>';
 	if ( ! $venues ) {
-		echo '<p class="cc-muted">Noch kein Platz in der Liste. Nimm die Plätze auf, die für diese Anfrage in Frage kommen, dann stehen ihre Preise nebeneinander.</p>';
+		echo '<p class="cc-rowempty">Noch kein Golfplatz. Plätze in der Nähe findest du über „Golfplatz hinzufügen".</p>';
 	}
-	// Als Tafel nach Stand, wie im Design vom 07.10.2026. Abgesagte liegen
-	// darunter, damit die laufenden Plätze vorne stehen.
-	if ( $venues ) {
-		$cols = [
-			'idee'      => [ 'Vorschläge', 'neutral', [] ],
-			'angefragt' => [ 'Angefragt', 'warn', [] ],
-			'zugesagt'  => [ 'Zugesagt', 'good', [] ],
-		];
-		$off = [];
-		foreach ( $venues as $v ) {
-			$st = (string) $v['status'];
-			if ( 'abgesagt' === $st ) {
-				$off[] = $v;
-			} else {
-				$cols[ 'gewaehlt' === $st ? 'zugesagt' : ( isset( $cols[ $st ] ) ? $st : 'idee' ) ][2][] = $v;
-			}
-		}
-		echo '<div class="cc-board">';
-		foreach ( $cols as $key => [ $label, $tone, $list ] ) {
-			echo '<div class="cc-board-col cc-board-col--' . esc_attr( $tone ) . '"><p class="cc-board-head"><span class="cc-dot"></span>' . esc_html( $label ) . '<span class="cc-count">' . (int) count( $list ) . '</span></p>';
-			if ( ! $list ) {
-				echo '<p class="cc-muted cc-board-empty">Keine.</p>';
-			}
-			foreach ( $list as $v ) {
-				fge_cc_venue_row( $req, $v );
-			}
-			echo '</div>';
-		}
-		echo '</div>';
-		if ( $off ) {
-			echo '<details class="cc-details"><summary>Abgesagt (' . (int) count( $off ) . ')</summary>';
-			foreach ( $off as $v ) {
-				fge_cc_venue_row( $req, $v );
-			}
-			echo '</details>';
-		}
+	foreach ( $venues as $v ) {
+		fge_cc_venue_row( $req, $v );
 	}
-
-	// Nähe-Liste und Suche stören, sobald die Plätze stehen: ab drei Plätzen eingeklappt.
-	echo '<details class="cc-details cc-more-venues"' . ( count( $venues ) < 3 ? ' open' : '' ) . '><summary>Weitere Plätze aufnehmen (Nähe und Suche)</summary>';
-	fge_cc_venue_nearby_block( $req );
-	fge_cc_venue_add_form( $req, $venues );
-	echo '</details>';
+	echo '</div>';
 
 	$rest = function_exists( 'fge_venues_to_decline' ) ? fge_venues_to_decline( $req ) : [];
 	if ( $chosen > 0 && $rest ) {
@@ -72,84 +77,125 @@ function fge_cc_venues_panel( int $req ): void {
 		fge_cc_button( 'fge_cc_venue_decline_all', $req, 'Allen übrigen absagen', [
 			'confirm' => 'Allen übrigen Plätzen eine freundliche Absage schicken?',
 		] );
-		echo '<p class="cc-muted">Persönlich formuliert, mit dem Hinweis, dass wir wieder anfragen. Einzeln absagen geht oben je Platz.</p>';
+		echo '<p class="cc-muted">Persönlich formuliert, mit dem Hinweis, dass wir wieder anfragen. Einzeln absagen geht je Platz unter „Mehr".</p>';
 		echo '</div>';
 	}
-	echo '</section>';
+
+	$city = (string) get_post_meta( $req, '_fge_company_city', true );
+	fge_cc_drawer_open( 'cc-addvenue', 'Golfplatz hinzufügen', 'Plätze sortiert nach Entfernung' . ( '' !== $city ? ' zu ' . $city : '' ), $auto );
+	fge_cc_venue_nearby_block( $req );
+	fge_cc_venue_add_form( $req, $venues );
+	echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-close>Fertig</button></div>';
+	fge_cc_drawer_close();
 }
 
-/** Eine Zeile der Pipeline. */
+/** Eine Zeile: wer, was angefragt, wie ist der Stand, was jetzt. */
 function fge_cc_venue_row( int $req, array $v ): void {
-	$id     = (int) $v['id'];
-	$pid    = (int) $v['partner_id'];
-	$status = (string) $v['status'];
-	$mail   = function_exists( 'fge_cc_partner_email' ) ? fge_cc_partner_email( $pid ) : '';
-	$tones  = [ 'gewaehlt' => 'good', 'zugesagt' => 'good', 'angefragt' => 'warn', 'abgesagt' => 'bad', 'idee' => 'neutral' ];
-	$stamm  = function_exists( 'fge_partner_is_stammdaten' ) && fge_partner_is_stammdaten( $pid );
+	$id      = (int) $v['id'];
+	$pid     = (int) $v['partner_id'];
+	$status  = (string) $v['status'];
+	$mail    = function_exists( 'fge_cc_partner_email' ) ? fge_cc_partner_email( $pid ) : '';
+	$stamm   = function_exists( 'fge_partner_is_stammdaten' ) && fge_partner_is_stammdaten( $pid );
+	$booked  = function_exists( 'fge_request_is_booked' ) && fge_request_is_booked( $req );
+	$types   = function_exists( 'fge_catalog_partner_types' ) ? fge_catalog_partner_types() : [];
+	$type    = function_exists( 'fge_partner_type' ) ? fge_partner_type( $pid ) : 'course';
+	$tlabel  = is_array( $types[ $type ] ?? null ) ? (string) ( $types[ $type ]['label'] ?? 'Golfplatz' ) : (string) ( $types[ $type ] ?? 'Golfplatz' );
+	$km      = fge_cc_venue_km( $req, $pid );
+	$phone   = (string) get_post_meta( $pid, '_fge_event_contact_phone', true ) ?: (string) get_post_meta( $pid, '_fge_main_contact_phone', true );
+	$sub     = implode( ' · ', array_filter( [ 'course' === $type ? 'Golfplatz' : $tlabel, (string) get_post_meta( $pid, '_fge_city', true ), $km >= 0 ? number_format_i18n( round( $km ) ) . ' km' : '' ] ) );
+	$labels  = function_exists( 'fge_request_wish_date_labels' ) ? fge_request_wish_date_labels( $req ) : [];
+	$dates   = function_exists( 'fge_venue_dates_get' ) ? fge_venue_dates_get( $id ) : [];
 
-	echo '<article class="cc-venue is-' . esc_attr( $status ) . '">';
-	echo '<div class="cc-venue-head">';
-	echo '<span class="cc-venue-name">' . esc_html( (string) $v['title'] ) . '</span>';
-	echo fge_cc_pill( fge_venue_statuses()[ $status ] ?? $status, $tones[ $status ] ?? 'neutral' ); // phpcs:ignore WordPress.Security.EscapeOutput
+	// Stand in Worten, wie im Entwurf.
+	$meta_cls = '';
+	if ( 'idee' === $status ) {
+		$meta = 'Noch nicht angefragt';
+		$tag  = [ 'Entwurf', 'neutral' ];
+	} elseif ( 'angefragt' === $status ) {
+		$at   = (int) strtotime( (string) $v['asked_at'] );
+		$days = $at > 0 ? (int) floor( ( fge_cc_today() - fge_cc_local_ts( wp_date( 'Y-m-d', $at ) ) ) / DAY_IN_SECONDS ) : 0;
+		$how  = [ 'telefon' => 'telefonisch', 'portal' => 'über das Partnerportal' ][ (string) $v['channel'] ] ?? 'per Mail';
+		$meta = 'Angefragt ' . $how
+			. ( $at > 0 ? ' am ' . wp_date( 'd.m.', $at ) : '' ) . ( $days >= 2 ? ' · seit ' . $days . ' Tagen ohne Antwort' : '' );
+		$meta_cls = $days >= 4 ? ' is-warn' : '';
+		$tag  = [ 'Angefragt', 'warn' ];
+	} elseif ( in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) ) {
+		$free = [];
+		foreach ( $labels as $idx => $label ) {
+			if ( 1 === ( $dates[ $idx ]['available'] ?? null ) ) {
+				$free[] = $label;
+			}
+		}
+		$alt  = trim( (string) ( $dates[ $labels ? (int) min( array_keys( $labels ) ) : 1 ]['note'] ?? '' ) );
+		$meta = 'Frei am ' . ( $free ? implode( ', ', $free ) : 'keinem Wunschtermin' ) . ( '' !== $alt ? ' · Alternative: ' . $alt : '' );
+		if ( '' !== (string) ( $v['reserved_until'] ?? '' ) ) {
+			$meta .= ' · reserviert bis ' . wp_date( 'd.m.Y', (int) strtotime( (string) $v['reserved_until'] ) );
+		}
+		$tag = 'gewaehlt' === $status ? [ $booked ? 'Gebucht' : 'Gewählt', 'good' ] : [ 'Zusage', 'good' ];
+	} else {
+		$meta = 'Abgesagt' . ( '' !== trim( (string) $v['reason'] ) ? ': ' . trim( (string) $v['reason'] ) : '' );
+		$tag  = [ 'Absage', 'bad' ];
+	}
+
+	echo '<article class="cc-prow is-' . esc_attr( $status ) . '">';
+	echo '<div class="cc-prow-main">';
+	echo '<div class="cc-prow-top"><span class="cc-prow-name">' . esc_html( (string) $v['title'] ) . '</span>';
+	echo '<span class="cc-muted">' . esc_html( $sub ) . '</span>';
+	if ( '' !== $phone ) {
+		echo '<a class="cc-prow-tel" href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', $phone ) ) . '">' . esc_html( $phone ) . '</a>';
+	}
 	if ( $stamm ) {
 		echo fge_cc_pill( 'Stammdaten', 'neutral' ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
-	if ( (float) $v['price'] > 0 ) {
-		echo '<span class="cc-venue-price">' . esc_html(
-			number_format_i18n( (float) $v['price'], 2 ) . ' € '
-			. ( (int) $v['price_gross'] ? 'brutto' : 'netto' ) . ' '
-			. ( 'person' === $v['price_basis'] ? 'p.P.' : 'pauschal' )
-		) . '</span>';
-	}
-	if ( '' !== (string) $v['asked_at'] ) {
-		echo '<span class="cc-muted">angefragt ' . esc_html( wp_date( 'd.m.', (int) strtotime( (string) $v['asked_at'] ) ) )
-			. ( '' !== (string) $v['channel'] ? ', ' . esc_html( (string) ( fge_venue_channels()[ $v['channel'] ] ?? '' ) ) : '' )
-			. '</span>';
+	echo '</div>';
+
+	// Angefragte Leistungen als Chips.
+	$asked = array_values( array_filter( (array) $v['items'], static fn( $it ) => 'green_fee' !== (string) $it['wish_key'] ) );
+	echo '<div class="cc-minichips"><span class="cc-minichip is-on">Event und Platznutzung</span>';
+	foreach ( $asked as $it ) {
+		$off = in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) && ! (int) $it['available'];
+		echo '<span class="cc-minichip' . ( $off ? ' is-off' : ' is-on' ) . '"' . ( $off ? ' title="bietet der Platz nicht an"' : '' ) . '>' . esc_html( (string) $it['label'] ) . '</span>';
 	}
 	echo '</div>';
 
-	if ( '' === $mail ) {
-		echo '<p class="cc-warn">Keine Kontaktmail hinterlegt, dieser Platz geht nur telefonisch.</p>';
+	echo '<span class="cc-prow-meta' . esc_attr( $meta_cls ) . '">' . esc_html( $meta ) . '</span>';
+
+	if ( in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) ) {
+		$money = static fn( $p, $gross, $basis ) => number_format_i18n( (float) $p, 2 ) . ' € ' . ( (int) $gross ? 'brutto' : 'netto' ) . ( 'person' === $basis ? ' p. P.' : ' pauschal' );
+		echo '<div class="cc-pricebox">';
+		echo '<div><span>Event und Platznutzung</span><span>' . esc_html( (float) $v['price'] > 0 ? $money( $v['price'], $v['price_gross'], $v['price_basis'] ) : 'kein Preis' ) . '</span></div>';
+		foreach ( $asked as $it ) {
+			if ( ! (int) $it['available'] ) {
+				continue;
+			}
+			echo '<div><span>' . esc_html( (string) $it['label'] ) . '</span><span>' . esc_html( (float) $it['price'] > 0 ? $money( $it['price'], $it['price_gross'], $it['price_basis'] ) : 'kein Preis genannt' ) . '</span></div>';
+		}
+		if ( '' !== trim( (string) $v['note'] ) ) {
+			echo '<p>' . esc_html( (string) $v['note'] ) . '</p>';
+		}
+		echo '</div>';
+	} elseif ( '' !== trim( (string) $v['note'] ) ) {
+		echo '<span class="cc-muted">' . esc_html( (string) $v['note'] ) . '</span>';
 	}
-	if ( $stamm || '' === $mail ) {
+
+	if ( '' === $mail ) {
+		echo '<span class="cc-warn">Keine Kontaktmail hinterlegt, dieser Platz geht nur telefonisch.</span>';
+	}
+	// Kontakt ergänzen nur, wo die Mail fehlt; sonst stünde es an jeder
+	// Stammdaten-Zeile und der Platz käme nie aus der Liste heraus.
+	if ( '' === $mail ) {
 		fge_cc_partner_contact_form( $pid, $req );
 	}
-	if ( '' !== trim( (string) $v['reason'] ) ) {
-		echo '<p class="cc-venue-reason">' . esc_html( (string) $v['reason'] ) . '</p>';
-	}
-	if ( '' !== trim( (string) $v['note'] ) ) {
-		echo '<p class="cc-muted">' . esc_html( (string) $v['note'] ) . '</p>';
-	}
-	fge_cc_venue_dates_line( $req, $v );
 	if ( function_exists( 'fge_venue_catalog_status_html' ) ) {
 		echo fge_venue_catalog_status_html( $v ); // phpcs:ignore WordPress.Security.EscapeOutput
 	}
+	echo '</div>';
 
-	// Das Green Fee steht schon in der Kopfzeile, hier stünde es sonst doppelt
-	// und ohne Preis, weil es auf der Zeile selbst gespeichert ist.
-	$items = array_values( array_filter( (array) $v['items'], static fn( $it ) => 'green_fee' !== (string) $it['wish_key'] ) );
-	if ( $items && in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) ) {
-		echo '<ul class="cc-venue-items">';
-		foreach ( $items as $it ) {
-			$price = (float) $it['price'];
-			echo '<li>' . esc_html( (string) $it['label'] ) . ' ';
-			if ( ! (int) $it['available'] ) {
-				echo '<span class="cc-muted">bietet der Platz nicht an (steht nach der Platzwahl im Angebot als nicht möglich)</span>';
-			} elseif ( $price > 0 ) {
-				echo '<strong>' . esc_html( number_format_i18n( $price, 2 ) . ' €' ) . '</strong> '
-					. '<span class="cc-muted">' . esc_html(
-						( (int) $it['price_gross'] ? 'brutto' : 'netto' ) . ' '
-						. ( 'person' === $it['price_basis'] ? 'p.P.' : 'pauschal' )
-					) . '</span>';
-			} else {
-				echo '<span class="cc-muted">kein Preis genannt</span>';
-			}
-			echo '</li>';
-		}
-		echo '</ul>';
-	}
-
-	echo '<div class="cc-venue-actions">';
+	// Rechts: Stand, Hauptaktion, Nebenaktion, Mehr.
+	echo '<div class="cc-prow-act">';
+	echo fge_cc_pill( $tag[0], $tag[1] ); // phpcs:ignore WordPress.Security.EscapeOutput
+	$drawer = 'cc-reply-' . $id;
+	$more   = [];
 	if ( 'idee' === $status ) {
 		if ( '' !== $mail ) {
 			fge_cc_button( 'fge_cc_venue_ask', $req, 'Per Mail anfragen', [
@@ -158,49 +204,40 @@ function fge_cc_venue_row( int $req, array $v ): void {
 				'confirm' => 'Anfrage an ' . $v['title'] . ' senden?',
 			] );
 		}
-		fge_cc_button( 'fge_cc_venue_ask', $req, 'Telefonisch angefragt', [
-			'fields' => [ 'venue_id' => $id, 'how' => 'telefon' ],
-		] );
-		fge_cc_button( 'fge_cc_venue_remove', $req, 'Entfernen', [
-			'fields'  => [ 'venue_id' => $id ],
-			'confirm' => 'Diesen Platz aus der Liste nehmen?',
-		] );
+		$more[] = [ 'fge_cc_venue_ask', 'Telefonisch angefragt', [ 'venue_id' => $id, 'how' => 'telefon' ], '' ];
+		$more[] = [ 'fge_cc_venue_remove', 'Entfernen', [ 'venue_id' => $id ], 'Diesen Platz aus der Liste nehmen?' ];
+	} elseif ( 'angefragt' === $status ) {
+		echo '<button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-open="' . esc_attr( $drawer ) . '">Rückmeldung erfassen</button>';
+	} else {
+		echo '<button type="button" class="cc-btn" data-cc-drawer-open="' . esc_attr( $drawer ) . '">Bearbeiten</button>';
 	}
-	if ( in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) && '' !== $mail && ! ( function_exists( 'fge_request_is_booked' ) && fge_request_is_booked( $req ) ) ) {
-		// Nach Telefonat oder Mail: dem Platz schriftlich bestätigen, was wir notiert haben.
+	if ( in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) && '' !== $mail && ! $booked ) {
 		$sum_at = (string) ( $v['summary_at'] ?? '' ) ?: (string) ( $v['reservation_at'] ?? '' );
-		fge_cc_button( 'fge_cc_venue_summary', $req, '' !== $sum_at ? 'Bestätigung erneut senden' : 'Bestätigung senden', [
-			'fields'  => [ 'venue_id' => $id ],
-			'confirm' => 'Dem Platz per Mail bestätigen, was wir notiert haben (Termine, Preise, offene Punkte), mit der Bitte zu reservieren?',
-		] );
-		if ( '' !== (string) ( $v['reserved_until'] ?? '' ) ) {
-			echo '<span class="cc-muted">Reserviert bis ' . esc_html( wp_date( 'd.m.Y', (int) strtotime( (string) $v['reserved_until'] ) ) ) . ( '' !== $sum_at ? ', bestätigt ' . esc_html( wp_date( 'd.m. H:i', (int) strtotime( $sum_at ) ) ) : '' ) . '</span>';
-		}
+		$more[] = [ 'fge_cc_venue_summary', '' !== $sum_at ? 'Bestätigung erneut senden' : 'Bestätigung senden', [ 'venue_id' => $id ], 'Dem Platz per Mail bestätigen, was wir notiert haben (Termine, Preise, offene Punkte), mit der Bitte zu reservieren?' ];
 	}
-	if ( 'zugesagt' === $status && ! ( function_exists( 'fge_request_is_booked' ) && fge_request_is_booked( $req ) ) ) {
-		fge_cc_button( 'fge_cc_venue_choose', $req, 'Diesen Platz nehmen', [
-			'class'   => 'cc-btn cc-btn--primary',
-			'fields'  => [ 'venue_id' => $id ],
-			'confirm' => $v['title'] . ' als Platz für diese Anfrage festlegen?',
-		] );
+	if ( 'zugesagt' === $status && ! $booked ) {
+		$more[] = [ 'fge_cc_venue_choose', 'Diesen Platz nehmen', [ 'venue_id' => $id ], $v['title'] . ' als Platz für diese Anfrage festlegen?' ];
 	}
 	if ( in_array( $status, [ 'angefragt', 'zugesagt' ], true ) && '' !== $mail ) {
-		fge_cc_button( 'fge_cc_venue_decline', $req, 'Absagen', [
-			'fields'  => [ 'venue_id' => $id ],
-			'confirm' => 'Diesem Platz absagen?',
-		] );
+		$more[] = [ 'fge_cc_venue_decline', 'Absagen', [ 'venue_id' => $id ], 'Diesem Platz absagen?' ];
+	}
+	if ( $more ) {
+		echo '<details class="cc-menu"><summary class="cc-btn">Mehr</summary><div class="cc-menu-list">';
+		foreach ( $more as [ $action, $label, $fields, $confirm ] ) {
+			fge_cc_button( $action, $req, $label, [ 'class' => 'cc-menu-item', 'fields' => $fields, 'confirm' => $confirm ] );
+		}
+		echo '</div></details>';
 	}
 	echo '</div>';
+	echo '</article>';
 
 	// Antwort ist jederzeit änderbar (Julius, 28.09.: „das müsste ich immer anpassen
 	// können"), auch beim gewählten oder schon zugesagten Platz.
 	if ( 'idee' !== $status ) {
-		fge_cc_venue_reply_form( $req, $v );
+		fge_cc_drawer_open( $drawer, 'Rückmeldung von ' . (string) $v['title'], implode( ' · ', array_filter( [ (string) get_post_meta( $pid, '_fge_main_contact_name', true ), $phone ] ) ) );
+		fge_cc_venue_reply_form( $req, $v, true );
+		fge_cc_drawer_close();
 	}
-	if ( in_array( $status, [ 'zugesagt', 'gewaehlt' ], true ) ) {
-		fge_cc_venue_calc_form( $req, $v );
-	}
-	echo '</article>';
 }
 
 /**
@@ -251,7 +288,7 @@ function fge_cc_venue_dates_line( int $req, array $v ): void {
  * Kalkulation je Platz: Einkauf, Netto, Vorschlag mit Aufschlag, Verkaufspreis
  * und wer die Position organisiert. Nur für Plätze, die zugesagt haben.
  */
-function fge_cc_venue_calc_form( int $req, array $v ): void {
+function fge_cc_venue_calc_form( int $req, array $v, bool $open = false ): void {
 	if ( ! function_exists( 'fge_venue_sale_from_cost' ) ) {
 		return;
 	}
@@ -271,7 +308,7 @@ function fge_cc_venue_calc_form( int $req, array $v ): void {
 	$mult = $pax > 0 ? $pax : 1;
 	$sum  = 0.0;
 
-	echo '<details class="cc-details cc-calc"><summary>Kalkulation</summary>';
+	echo $open ? '<div class="cc-calc">' : '<details class="cc-details cc-calc"><summary>Kalkulation</summary>';
 	echo '<form class="cc-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 	echo '<input type="hidden" name="action" value="fge_cc_venue_calc">';
 	echo '<input type="hidden" name="request_id" value="' . (int) $req . '">';
@@ -348,7 +385,7 @@ function fge_cc_venue_calc_form( int $req, array $v ): void {
 		. '</p>';
 	echo '<p class="cc-muted">Aufschlag, Marge und Verkaufspreis hängen zusammen: ändere eines, die anderen ziehen nach. Verkaufspreise auf volle Euro.</p>';
 	echo '<p><button type="submit" class="cc-btn cc-btn--primary">Kalkulation speichern</button></p>';
-	echo '</form></details>';
+	echo '</form>' . ( $open ? '</div>' : '</details>' );
 
 	static $script_done = false;
 	if ( ! $script_done ) {
@@ -389,12 +426,14 @@ function fge_cc_venue_calc_form( int $req, array $v ): void {
 }
 
 /** Antwort des Platzes festhalten, mit Preis je Position. */
-function fge_cc_venue_reply_form( int $req, array $v ): void {
+function fge_cc_venue_reply_form( int $req, array $v, bool $bare = false ): void {
 	$id  = (int) $v['id'];
 	$pid = (int) $v['partner_id'];
 
 	$answered = in_array( (string) $v['status'], [ 'zugesagt', 'gewaehlt', 'abgesagt' ], true );
-	echo '<details class="cc-details cc-venue-reply"><summary>' . ( $answered ? 'Antwort bearbeiten (Termine, Preise, Positionen)' : 'Antwort festhalten' ) . '</summary>';
+	if ( ! $bare ) {
+		echo '<details class="cc-details cc-venue-reply"><summary>' . ( $answered ? 'Antwort bearbeiten (Termine, Preise, Positionen)' : 'Antwort festhalten' ) . '</summary>';
+	}
 	echo '<form class="cc-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 	echo '<input type="hidden" name="action" value="fge_cc_venue_reply">';
 	echo '<input type="hidden" name="request_id" value="' . (int) $req . '">';
@@ -475,6 +514,11 @@ function fge_cc_venue_reply_form( int $req, array $v ): void {
 	echo '<label class="cc-field cc-field--wide"><span>Notiz aus dem Gespräch</span>';
 	echo '<textarea name="note" rows="2" placeholder="Was sonst noch gesagt wurde">' . esc_textarea( (string) $v['note'] ) . '</textarea></label>';
 
+	if ( $bare ) {
+		echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn" data-cc-drawer-close>Abbrechen</button><button type="submit" class="cc-btn cc-btn--primary">Rückmeldung speichern</button></div>';
+		echo '</form>';
+		return;
+	}
 	echo '<p><button type="submit" class="cc-btn cc-btn--primary">Antwort speichern</button></p>';
 	echo '</form></details>';
 }
