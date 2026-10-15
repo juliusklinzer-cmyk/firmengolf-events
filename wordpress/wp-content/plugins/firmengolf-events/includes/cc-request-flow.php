@@ -60,10 +60,14 @@ function fge_cc_flow( int $req ): array {
 		$step = 1;
 	}
 
+	// Phasen nach dem Event (Julius, 15.10.2026): durchgeführt, Rechnung gestellt,
+	// bezahlt und damit abgeschlossen. Erst „abgeschlossen" verlässt „Gebucht".
 	if ( 'abgeschlossen' === $status ) {
 		$out = [ 7, 'Abgeschlossen', 'neutral', 'fertig' ];
-	} elseif ( in_array( $status, [ 'event_durchgefuehrt', 'rechnung_in_lexoffice_erstellt' ], true ) ) {
-		$out = [ 6, 'event_durchgefuehrt' === $status ? 'Durchgeführt' : 'Rechnung geschrieben', 'neutral', 'fertig' ];
+	} elseif ( 'rechnung_in_lexoffice_erstellt' === $status ) {
+		$out = [ 6, 'Rechnung gestellt', 'brand', 'gebucht' ];
+	} elseif ( 'event_durchgefuehrt' === $status ) {
+		$out = [ 6, 'Durchgeführt', 'warn', 'gebucht' ];
 	} elseif ( 'verloren' === $status ) {
 		$out = [ $step, 'Verloren', 'bad', 'fertig' ];
 	} elseif ( 5 <= $step ) {
@@ -201,7 +205,8 @@ function fge_cc_page_request( int $req ): void {
 	];
 	foreach ( $panes as $n => $fn ) {
 		echo '<div class="cc-rpane" data-cc-rpane="s' . (int) $n . '"' . ( $n === min( $cur, 6 ) ? '' : ' hidden' ) . '>';
-		$open = $n <= $cur;
+		// Abrechnung geht schon ab der Buchung, manche Kunden zahlen vorab.
+		$open = $n <= $cur || ( 6 === $n && $cur >= 5 );
 		echo '<section class="cc-card cc-stepcard' . ( $open ? '' : ' is-later' ) . '">';
 		fge_cc_flow_pane_head( $req, $n, $cur );
 		if ( ! $open ) {
@@ -213,9 +218,9 @@ function fge_cc_page_request( int $req ): void {
 		echo '</div></section></div>';
 	}
 
-	// Unter den Schritten: Aufgaben, Verlauf, Mails, Schlummern zum Aufklappen.
+	// Unter den Schritten: Verlauf, Mails, Schlummern zum Aufklappen. Aufgaben
+	// sind raus (Julius, 15.10.2026), Erinnerungen und Tagesmail reichen.
 	echo '<div class="cc-folds">';
-	fge_cc_flow_fold_tasks( $req );
 	fge_cc_flow_fold( 'Verlauf', function_exists( 'fge_activity_for_request' ) ? count( fge_activity_for_request( $req, 40 ) ) . ' Einträge' : '', static function () use ( $req ) {
 		fge_cc_request_timeline( $req );
 	} );
@@ -242,7 +247,22 @@ function fge_cc_flow_header( int $req, array $flow ): void {
 	echo '<div class="cc-headcard-top"><div class="cc-headcard-title">';
 	echo '<span class="cc-head-kicker">Anfrage ' . esc_html( fge_request_number( $req ) . ' · eingegangen ' . get_the_date( 'd.m.Y', $req ) ) . '</span>';
 	echo '<h1>' . esc_html( (string) get_post_meta( $req, '_fge_company_name', true ) ?: ( $name ?: 'Ohne Firma' ) ) . '</h1>';
-	echo '</div>' . fge_cc_pill( $flow['label'], $flow['tone'] ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '</div><div class="cc-headcard-side">' . fge_cc_pill( $flow['label'], $flow['tone'] ); // phpcs:ignore WordPress.Security.EscapeOutput
+	// Verloren ist eine Phase wie jede andere: jederzeit ablegen, solange nichts gebucht ist.
+	$status = (string) get_post_meta( $req, '_fge_request_status', true );
+	$booked = 'accepted' === (string) get_post_meta( $req, '_fge_offer_status', true );
+	if ( 'verloren' === $status ) {
+		fge_cc_button( 'fge_cc_status', $req, 'Wieder aufnehmen', [ 'class' => 'cc-btn', 'fields' => [ 'status' => 'in_uebernahme' ] ] );
+	} elseif ( ! $booked && 'abgeschlossen' !== $status ) {
+		echo '<details class="cc-menu"><summary class="cc-btn">Mehr</summary><div class="cc-menu-list">';
+		fge_cc_button( 'fge_cc_status', $req, 'Als verloren ablegen', [
+			'class'   => 'cc-menu-item',
+			'fields'  => [ 'status' => 'verloren' ],
+			'confirm' => 'Anfrage als verloren ablegen? Sie wandert in „Abgeschlossen" und lässt sich wieder aufnehmen.',
+		] );
+		echo '</div></details>';
+	}
+	echo '</div></div>';
 	echo '<div class="cc-headcard-contact"><span class="cc-label">Ansprechpartner</span><strong>' . esc_html( $name ?: 'ohne Namen' ) . '</strong>';
 	echo '<span class="cc-headcard-links">';
 	if ( '' !== trim( (string) $data['phone'] ) ) {
@@ -255,7 +275,6 @@ function fge_cc_flow_header( int $req, array $flow ): void {
 	echo '</section>';
 
 	$place  = (string) get_post_meta( $req, '_fge_company_city', true ) ?: (string) get_post_meta( $req, '_fge_desired_region', true );
-	$wishes = array_merge( $f['platz'], $f['fg'] );
 	$facts  = [
 		'Event'         => $f['event'],
 		'Wunschtermine' => '' !== $f['dates'] ? preg_replace( '/\d\. /', '', $f['dates'] ) : 'offen',
@@ -263,7 +282,7 @@ function fge_cc_flow_header( int $req, array $flow ): void {
 		'Start'         => '' !== $f['start'] ? $f['start'] : 'offen',
 		'Ort'           => $place,
 		'Budget'        => (string) get_post_meta( $req, '_fge_budget_range', true ) ?: 'offen',
-		'Leistungen'    => $wishes ? implode( ', ', $wishes ) : 'keine',
+		'Leistungen'    => ( $need = array_map( static fn( $sv ) => $sv['label'], fge_cc_need_services( $req ) ) ) ? implode( ', ', $need ) : 'keine',
 	];
 	echo '<section class="cc-card cc-headcard"><h2 class="cc-h-small">Angefragt</h2><dl class="cc-factgrid">';
 	foreach ( $facts as $k => $v ) {
@@ -342,9 +361,13 @@ function fge_cc_flow_summary( int $req, int $n, int $cur ): string {
 			return $done ? $txt . ' durchgeführt' : ( $now ? $txt : 'Sobald der Kunde ein Angebot annimmt' );
 		case 6:
 			if ( $done ) {
-				return 'Abgeschlossen';
+				return 'Rechnung bezahlt, abgeschlossen';
 			}
-			return $now ? 'Rechnung in Lexoffice schreiben und den Vorgang abschließen.' : 'Nach dem Event';
+			$st = (string) get_post_meta( $req, '_fge_request_status', true );
+			if ( 'rechnung_in_lexoffice_erstellt' === $st ) {
+				return 'Rechnung gestellt, wartet auf Zahlung.';
+			}
+			return $now ? 'Rechnung in Lexoffice stellen, Zahlung abhaken, fertig.' : 'Nach der Buchung';
 	}
 	return '';
 }
@@ -355,14 +378,6 @@ function fge_cc_flow_fold( string $title, string $meta, callable $body, bool $op
 		. '<span class="cc-fold-meta">' . esc_html( $meta ) . '</span></summary><div class="cc-fold-body">';
 	$body();
 	echo '</div></details>';
-}
-
-function fge_cc_flow_fold_tasks( int $req ): void {
-	$tasks = fge_cc_tasks( $req );
-	$mine  = count( array_filter( $tasks, static fn( $t ) => 'me' === $t['who'] ) );
-	fge_cc_flow_fold( 'Aufgaben', $tasks ? count( $tasks ) . ' offen' . ( $mine ? ', ' . $mine . ' bei dir' : '' ) : 'nichts offen', static function () use ( $req ) {
-		fge_cc_request_tasks( $req );
-	}, $mine > 0 );
 }
 
 // ── Schritt 1: Bedarf ────────────────────────────────────────────────────────
@@ -477,7 +492,6 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	$catering = trim( (string) get_post_meta( $req, '_fge_catering_notes', true ) );
 	echo '<dl class="cc-factgrid cc-factgrid--wide">';
 	foreach ( [
-		'Event'                    => $f['event'],
 		'Niveau'                   => $f['level'],
 		'Preis auf der Eventseite' => $f['price'],
 		'Essenswünsche'            => $catering,
@@ -494,6 +508,7 @@ function fge_cc_flow_pane_need( int $req, int $cur ): void {
 	// Enter in einem Textfeld speichert nur und trifft nicht das erste „×".
 	echo '<button type="submit" name="save_only" value="1" class="cc-sr" tabindex="-1" aria-hidden="true">Speichern</button>';
 
+	echo '<label class="cc-field cc-field--wide"><span>Event</span><input type="text" name="event" value="' . esc_attr( (string) get_post_meta( $req, '_fge_need_event', true ) ) . '" placeholder="' . esc_attr( $f['event'] ) . '"></label>';
 	echo '<div class="cc-fields cc-fields--4">';
 	echo '<label class="cc-field"><span>Personen</span><input type="text" inputmode="numeric" name="pax" value="' . ( $f['pax'] > 0 ? (int) $f['pax'] : '' ) . '"></label>';
 	echo '<label class="cc-field"><span>Start</span><input type="text" name="start" value="' . esc_attr( (string) get_post_meta( $req, '_fge_start_time', true ) ) . '" placeholder="' . esc_attr( '' !== $f['start'] ? $f['start'] : 'z. B. 14:00' ) . '"></label>';
@@ -631,6 +646,9 @@ add_action( 'admin_post_fge_cc_need_save', static function (): void {
 	};
 	$before = array_map( 'strval', fge_venue_wishlist( $req ) );
 
+	if ( isset( $_POST['event'] ) ) {
+		$set( '_fge_need_event', 'Event', mb_substr( sanitize_text_field( wp_unslash( $_POST['event'] ) ), 0, 140 ) );
+	}
 	$pax = absint( wp_unslash( $_POST['pax'] ?? 0 ) );
 	$set( '_fge_expected_participants', 'Personen', $pax > 0 ? (string) $pax : '' );
 	$set( '_fge_start_time', 'Start', sanitize_text_field( wp_unslash( $_POST['start'] ?? '' ) ) );
@@ -1018,7 +1036,7 @@ function fge_cc_flow_pane_date( int $req, int $cur ): void {
 		echo '<p class="cc-muted">Eventtag-Felder: ' . (int) $filled . ' von ' . (int) count( fge_day_fields() ) . ' ausgefüllt.</p>';
 	}
 	if ( $date > 0 && ! in_array( $status, [ 'abgeschlossen', 'verloren' ], true ) ) {
-		echo '<p class="cc-muted">Der Status wechselt am ' . esc_html( wp_date( 'd.m.Y', $date + DAY_IN_SECONDS ) ) . ' um 7:00 Uhr automatisch auf Abgeschlossen.</p>';
+		echo '<p class="cc-muted">Der Status wechselt am ' . esc_html( wp_date( 'd.m.Y', $date + DAY_IN_SECONDS ) ) . ' um 7:00 Uhr automatisch auf durchgeführt. Abgeschlossen ist der Vorgang, wenn die Rechnung bezahlt ist.</p>';
 	}
 	fge_cc_phase_booked( $req );
 }
@@ -1027,28 +1045,50 @@ function fge_cc_flow_pane_date( int $req, int $cur ): void {
 
 function fge_cc_flow_pane_billing( int $req, int $cur ): void {
 	$status = (string) get_post_meta( $req, '_fge_request_status', true );
-	if ( 'abgeschlossen' !== $status ) {
-		echo '<div class="cc-venue-actions">';
-		foreach ( fge_cc_status_actions() as $slug => $slabel ) {
-			if ( $slug === $status ) {
-				continue;
-			}
-			fge_cc_button( 'fge_cc_status', $req, $slabel, [
-				'class'   => 'abgeschlossen' === $slug ? 'cc-btn cc-btn--primary' : 'cc-btn',
+	$order  = [ 'event_durchgefuehrt' => 1, 'rechnung_in_lexoffice_erstellt' => 2, 'abgeschlossen' => 3 ];
+	$at     = $order[ $status ] ?? 0;
+	$date   = fge_cc_event_date( $req );
+	$net    = function_exists( 'fge_cc_offer_net' ) ? fge_cc_offer_net( $req ) : 0.0;
+
+	// Drei Haken, ohne Lexoffice-Anbindung: die Rechnung entsteht dort von Hand.
+	$steps = [
+		1 => [ 'Event durchgeführt', $date > 0 ? ( $date < fge_cc_today() ? 'Am ' . wp_date( 'd.m.Y', $date + DAY_IN_SECONDS ) . ' automatisch gesetzt' : 'Geht am ' . wp_date( 'd.m.Y', $date + DAY_IN_SECONDS ) . ' automatisch' ) : 'Sobald der Termin vorbei ist', 'event_durchgefuehrt' ],
+		2 => [ 'Rechnung gestellt', 'In Lexoffice schreiben' . ( $net > 0 ? ', ' . number_format_i18n( $net, 2 ) . ' € netto laut Angebot' : '' ), 'rechnung_in_lexoffice_erstellt' ],
+		3 => [ 'Rechnung bezahlt', 'Damit ist der Vorgang abgeschlossen', 'abgeschlossen' ],
+	];
+	echo '<ol class="cc-billsteps">';
+	foreach ( $steps as $n => [ $label, $hint, $slug ] ) {
+		$done = $at >= $n;
+		echo '<li class="' . ( $done ? 'is-done' : ( $at + 1 === $n ? 'is-now' : '' ) ) . '">';
+		echo '<span class="cc-billsteps-dot" aria-hidden="true">' . ( $done ? '✓' : (int) $n ) . '</span>';
+		echo '<span class="cc-billsteps-text"><strong>' . esc_html( $label ) . '</strong><span class="cc-muted">' . esc_html( $hint ) . '</span></span>';
+		if ( ! $done && $n >= 2 && ( 'verloren' !== $status ) ) {
+			fge_cc_button( 'fge_cc_status', $req, 3 === $n ? 'Bezahlt, abschließen' : 'Rechnung gestellt', [
+				'class'   => $at + 1 === $n || $n === 2 ? 'cc-btn cc-btn--primary' : 'cc-btn',
 				'fields'  => [ 'status' => $slug ],
-				'confirm' => 'Status auf „' . $slabel . '" setzen?',
+				'confirm' => 3 === $n ? 'Zahlung eingegangen und Vorgang abschließen?' : 'Rechnung als gestellt markieren?',
+			] );
+		} elseif ( $done && $n >= 2 && $at === $n ) {
+			// Versehen zurücknehmen: eine Stufe zurück.
+			$back = 3 === $n ? 'rechnung_in_lexoffice_erstellt' : ( $date > 0 && $date < fge_cc_today() ? 'event_durchgefuehrt' : 'angebot_angenommen' );
+			fge_cc_button( 'fge_cc_status', $req, 'Zurücknehmen', [
+				'class'   => 'cc-btn cc-btn--text',
+				'fields'  => [ 'status' => $back ],
+				'confirm' => 'Den Haken bei „' . $label . '" zurücknehmen?',
 			] );
 		}
-		echo '</div>';
+		echo '</li>';
 	}
+	echo '</ol>';
 	fge_cc_request_lex_tab( $req );
 }
 
-// ── Am Tag nach dem Event automatisch abschließen (Julius, 15.10.2026) ───────
+// ── Am Tag nach dem Event automatisch auf durchgeführt (Julius, 15.10.2026) ──
 
 /**
  * Läuft mit der Tagesmail um 07:00. Gebuchte Vorgänge, deren Event vor heute
- * lag, gehen auf „abgeschlossen". Der Statuswechsel löst wie von Hand die
+ * lag, gehen auf „durchgeführt". Abgeschlossen wird erst mit der Zahlung
+ * (Schritt Abrechnung). Der Statuswechsel löst wie von Hand die
  * Danke-Mail mit Bewertungsbitte aus (review-request.php), einmal je Anfrage,
  * aber nur für Events der letzten sieben Tage.
  */
@@ -1067,7 +1107,7 @@ function fge_cc_auto_close(): int {
 			continue;
 		}
 		$status = (string) get_post_meta( $req, '_fge_request_status', true );
-		if ( in_array( $status, [ 'abgeschlossen', 'verloren' ], true ) ) {
+		if ( in_array( $status, [ 'event_durchgefuehrt', 'rechnung_in_lexoffice_erstellt', 'abgeschlossen', 'verloren' ], true ) ) {
 			continue;
 		}
 		$date = fge_cc_event_date( (int) $req );
@@ -1082,8 +1122,8 @@ function fge_cc_auto_close(): int {
 			update_post_meta( $req, '_fge_review_mail_sent', '1' );
 			update_post_meta( $req, '_fge_review_mail_skipped', 'auto_close_late' );
 		}
-		fge_request_set_status( (int) $req, 'abgeschlossen' );
-		fge_activity_add( (int) $req, 'system', 'Am Tag nach dem Event automatisch abgeschlossen' . ( $late ? ' (Event lag über eine Woche zurück, ohne Danke-Mail)' : '' ) );
+		fge_request_set_status( (int) $req, 'event_durchgefuehrt' );
+		fge_activity_add( (int) $req, 'system', 'Am Tag nach dem Event automatisch auf durchgeführt gesetzt' . ( $late ? ' (Event lag über eine Woche zurück, ohne Danke-Mail)' : '' ) );
 		$n++;
 	}
 	return $n;

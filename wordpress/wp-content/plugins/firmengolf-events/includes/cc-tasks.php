@@ -32,7 +32,7 @@ function fge_cc_status_label( string $status ): string {
 		'angebot_angenommen'            => 'Gebucht',
 		'angebot_abgelehnt'             => 'Abgelehnt',
 		'event_durchgefuehrt'           => 'Event durchgeführt',
-		'rechnung_in_lexoffice_erstellt' => 'Rechnung geschrieben',
+		'rechnung_in_lexoffice_erstellt' => 'Rechnung gestellt',
 		'abgeschlossen'                 => 'Abgeschlossen',
 		'verloren'                      => 'Verloren',
 	];

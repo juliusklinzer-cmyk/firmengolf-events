@@ -192,7 +192,8 @@ function fge_event_day_info_run(): array {
 		if ( '' !== (string) get_post_meta( $req, '_fge_day_info_sent', true ) ) {
 			continue;
 		}
-		if ( in_array( (string) get_post_meta( $req, '_fge_request_status', true ), [ 'verloren', 'abgeschlossen', 'event_durchgefuehrt', 'angebot_abgelehnt' ], true ) ) {
+		// Bezahlt vor dem Event (abgeschlossen) bekommt die Vortags-Info trotzdem.
+		if ( in_array( (string) get_post_meta( $req, '_fge_request_status', true ), [ 'verloren', 'event_durchgefuehrt', 'angebot_abgelehnt' ], true ) ) {
 			continue;
 		}
 		$date = fge_day_event_date( $req );
@@ -234,8 +235,11 @@ add_action( 'admin_notices', static function () {
 
 /**
  * Schickt die drei Vortags-Mails. $is_today: Termin ist heute (Nachholer), Wortwahl „heute".
+ * $early: von Hand vor dem Vortag, z. B. weil der Kunde nach dem Ablauf fragt. Dann
+ * geht nur die Kundenmail, ohne Platz und intern, und die automatische Vortags-Info
+ * am Vortag bleibt geplant (Julius, 15.10.2026).
  */
-function fge_send_day_info( int $req, bool $is_today = false ): bool {
+function fge_send_day_info( int $req, bool $is_today = false, bool $early = false ): bool {
 	$data = fge_get_request_email_data( $req );
 	$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
 	if ( '' === $data['contact_email'] || empty( $snap ) ) {
@@ -244,9 +248,9 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 	$co    = function_exists( 'fge_company' ) ? fge_company() : [];
 	$v     = fge_day_values( $req );
 	$ref   = fge_request_number( $req );
-	$when  = $is_today ? 'heute' : 'morgen';
-	$Whend = $is_today ? 'Heute' : 'Morgen';
 	$date  = (string) ( $snap['date'] ?? '' );
+	$when  = $early ? 'am ' . $date : ( $is_today ? 'heute' : 'morgen' );
+	$Whend = $early ? 'Am ' . $date : ( $is_today ? 'Heute' : 'Morgen' );
 	$title = (string) ( $snap['event_title'] ?? 'euer Event' );
 	$pax   = function_exists( 'fge_request_pax_current' ) ? fge_request_pax_current( $req ) : (int) ( $snap['participants'] ?? 0 );
 	$loc   = (string) ( $snap['location'] ?? '' );
@@ -313,17 +317,23 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 		. $row( 'Ablauf', $sched )
 		. $row( 'Teilnehmer', $pax > 0 ? $pax . ' Personen' : '' )
 		. $row( 'Hinweise', $notes );
-	$subject_c = $Whend . ' ist es soweit: ' . $title . ' am ' . $date;
+	$subject_c = $early ? 'Alles für euren Eventtag: ' . $title . ' am ' . $date : $Whend . ' ist es soweit: ' . $title . ' am ' . $date;
 	$content_c = '
 		<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ',</p>
-		<p style="margin:0 0 16px;">' . $when . ' ist es soweit, wir freuen uns auf euch! Hier noch einmal alles Wichtige für den Tag:</p>
+		<p style="margin:0 0 16px;">' . $Whend . ' ist es soweit, wir freuen uns auf euch! Hier ' . ( $early ? '' : 'noch einmal ' ) . 'alles Wichtige für den Tag:</p>
 		<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:0 0 16px;">' . $rows . '</table>
 		' . ( '' !== $booked_html ? '<p style="margin:0 0 4px;font-weight:600;">Gebucht und bestätigt</p><ul style="margin:0 0 16px;padding-left:20px;">' . $booked_html . '</ul>' : '' ) . '
 		<p style="margin:0 0 16px;">Wenn ' . $when . ' etwas dazwischenkommt oder ihr Fragen habt: ' . esc_html( $fg_contact ) . '.</p>
-		<p style="margin:0 0 16px;">Bis ' . $when . ' und viel Spaß!</p>
+		<p style="margin:0 0 16px;">' . ( $early ? 'Bis bald' : 'Bis ' . $when ) . ' und viel Spaß!</p>
 		' . ( function_exists( 'fge_offer_link' ) ? '<p style="margin:0;color:#6C736E;font-size:13px;">Eure Buchung im Überblick: <a href="' . esc_url( fge_offer_link( $req ) ) . '" style="color:#4279D1;">Angebot ' . esc_html( $ref ) . '</a></p>' : '' ) . '
 	';
 	$results['kunde'] = (bool) wp_mail( $data['contact_email'], $subject_c, fge_email_wrap( $subject_c, $content_c ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	if ( $early ) {
+		if ( $results['kunde'] && function_exists( 'fge_activity_add' ) ) {
+			fge_activity_add( $req, 'mail', 'Infos zum Eventtag vorab an den Kunden gesendet, die Vortags-Info bleibt geplant' );
+		}
+		return $results['kunde'];
+	}
 
 	// 2) Golfplatz
 	$results['platz'] = null;
@@ -393,6 +403,26 @@ function fge_send_day_info( int $req, bool $is_today = false ): bool {
 		update_post_meta( $req, '_fge_day_info_customer_failed', 1 );
 	}
 	return $results['kunde'];
+}
+
+/* Ort und Adresse in einer Zeile, für die Vortags-Mails. */
+function fge_day_location_line( string $loc, string $addr ): string {
+	$loc  = trim( $loc );
+	$addr = trim( $addr, " \t\n\r\0\x0B," );
+	if ( '' === $addr ) {
+		return esc_html( $loc );
+	}
+	if ( '' === $loc ) {
+		return esc_html( $addr );
+	}
+	// Steht die Postleitzahl oder die Straße schon im Ort, reicht der Ort.
+	$haystack = mb_strtolower( $loc );
+	foreach ( preg_split( '/[,\s]+/', mb_strtolower( $addr ) ) as $part ) {
+		if ( mb_strlen( $part ) >= 4 && false !== mb_strpos( $haystack, $part ) ) {
+			return esc_html( $loc );
+		}
+	}
+	return esc_html( $loc ) . '<br>' . esc_html( $addr );
 }
 
 // ── Vortags-Info: einzige Info-Mail vor dem Event ────────────────────────────

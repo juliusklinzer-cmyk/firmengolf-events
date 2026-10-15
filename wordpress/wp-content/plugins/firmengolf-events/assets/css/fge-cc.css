@@ -1880,3 +1880,11 @@ dialog.cc-drawer:has(.cc-doc) .cc-drawer-body { background: var(--cc-bg); }
 .cc-neededit-open, .cc-neededit[open] .cc-neededit-closed { display: none; }
 .cc-neededit[open] .cc-neededit-open { display: inline; }
 .cc-stepcard-body:has(.cc-neededit[open]) .cc-needsum { display: none; }
+.cc-headcard-side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+/* Abrechnung in drei Haken (1.9.308) */
+.cc-billsteps { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.cc-billsteps li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--cc-line); flex-wrap: wrap; }
+.cc-billsteps-dot { flex: none; width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; font-size: 12px; font-weight: 600; background: var(--cc-hover); color: var(--cc-muted); }
+.cc-billsteps li.is-done .cc-billsteps-dot { background: var(--cc-good, #1F7A45); color: #fff; }
+.cc-billsteps li.is-now .cc-billsteps-dot { background: var(--cc-accent); color: #fff; }
+.cc-billsteps-text { flex: 1 1 220px; display: flex; flex-direction: column; }

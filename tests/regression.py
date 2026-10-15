@@ -150,7 +150,13 @@ def scenario_accept():
     check(not any('kunde-regi' in m['to'] for m in ms), 'Keine Mail an den Kunden nach Platzdetails')
     check(any('events@' in m['to'] and 'Vortags-Info an Kunde und Platz geht am' in m['text'] for m in ms), 'Interne Mail nennt den Tag der Vortags-Info')
     h = get(f'/control/anfragen/?req={req}').text
-    check(not [x for x in forms(h) if x['action'] in ('fge_cc_day_info', 'fge_cc_day_plan')], 'Vor dem Vortag kein Knopf für Info-Mails')
+    early = [x for x in forms(h) if x['action'] == 'fge_cc_day_info']
+    check(len(early) == 1 and not [x for x in forms(h) if x['action'] == 'fge_cc_day_plan'], 'Vor dem Vortag nur der Knopf „Infos zum Eventtag"')
+    mails(clear=True)
+    r = post_form(early[0])
+    ms = mails(clear=True)
+    check('day_info_early' in r.url and len(ms) == 1 and 'kunde-regi' in ms[0]['to'] and 'Alles für euren Eventtag' in ms[0]['subject'], 'Infos zum Eventtag von Hand nur an den Kunden')
+    check(wp(f"echo get_post_meta({req}, '_fge_day_info_sent', true);") == '', 'Vortags-Info bleibt danach geplant')
     check('Gebucht' in main_text(h)[:900], 'Cockpit zeigt Gebucht')
     return req
 
@@ -170,6 +176,12 @@ def scenario_decline():
     check(sum(1 for m in ms if 'Termin wird frei' in m['subject']) == 2, 'Freigabe an beide Plätze nach Ablehnung')
     h = get(f'/control/anfragen/?req={req}').text
     check('Abgelehnt' in main_text(h)[:400], 'Cockpit zeigt Abgelehnt')
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_status', contains='value="verloren"'))
+    h = get(f'/control/anfragen/?req={req}').text
+    check('Verloren' in main_text(h)[:900], 'Als verloren abgelegt aus dem Kopf der Anfrage')
+    post_form(find_form(h, 'fge_cc_status', contains='in_uebernahme'))
+    check(wp(f"echo get_post_meta({req}, '_fge_request_status', true);") == 'in_uebernahme', 'Wieder aufgenommen')
     return req
 
 def scenario_tools():
@@ -239,8 +251,18 @@ def scenario_tools():
     accept_all(link, 'A')
     ms = mails(clear=True)
     check(any('shuttle-regi3' in m['to'] and 'Auftragsbestätigung' in m['subject'] for m in ms), 'Dienstleister bekommt nach der Annahme den Auftrag')
+    # Vortags-Info läuft automatisch am Tag vor dem Event, an Kunde, Platz und intern.
+    mails(clear=True)
+    wp(f"$s=(array)get_post_meta({req},'_fge_offer_snapshot',true); $s['date']=wp_date('D, d.m.Y', strtotime('+1 day', current_datetime()->getTimestamp())); update_post_meta({req},'_fge_offer_snapshot',$s); fge_event_day_info_run();")
+    ms = mails(clear=True)
+    check(any('Morgen ist es soweit' in m['subject'] for m in ms) and any('events@' in m['to'] and 'Vortags-Info verschickt' in m['subject'] for m in ms), 'Vortags-Info am Vortag automatisch (' + str(len(ms)) + ' Mails)')
     out = wp(f"$s=(array)get_post_meta({req},'_fge_offer_snapshot',true); $s['date']='Mo, 12.10.2026'; update_post_meta({req},'_fge_offer_snapshot',$s); echo get_post_meta({req},'_fge_offer_status',true) . '|' . fge_cc_auto_close() . '|' . get_post_meta({req},'_fge_request_status',true);")
-    check(out.startswith('accepted|') and out.endswith('|abgeschlossen'), 'Am Tag nach dem Event automatisch abgeschlossen (' + out + ')')
+    check(out.startswith('accepted|') and out.endswith('|event_durchgefuehrt'), 'Am Tag nach dem Event automatisch durchgeführt (' + out + ')')
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_status', contains='rechnung_in_lexoffice_erstellt'))
+    h = get(f'/control/anfragen/?req={req}').text
+    post_form(find_form(h, 'fge_cc_status', contains='abgeschlossen'))
+    check(wp(f"echo get_post_meta({req}, '_fge_request_status', true);") == 'abgeschlossen', 'Rechnung gestellt, bezahlt, abgeschlossen')
     mails(clear=True)
     return req
 

@@ -22,7 +22,8 @@ const FGE_CC_REWRITE_VERSION = '1.2.0';
 /**
  * Seiten des Control Centers: slug => [Label, Gruppe].
  *
- * Reihenfolge und Gruppen nach dem finalen Design (07.10.2026). Seiten, deren
+ * Reihenfolge und Gruppen nach dem finalen Design (07.10.2026), Kalender und
+ * Aufgaben sind seit 15.10.2026 raus (Kalender-Abo unter Einstellungen). Seiten, deren
  * Inhalt noch im WordPress-Admin liegt, zeigen bis zu ihrer Etappe einen
  * Hinweis mit Direktlink dorthin (fge_cc_admin_links()).
  */
@@ -31,8 +32,6 @@ function fge_cc_pages(): array {
 		'dashboard'     => [ 'Dashboard', 'arbeit' ],
 		'anfragen'      => [ 'Anfragen', 'arbeit' ],
 		'angebote'      => [ 'Angebote', 'arbeit' ],
-		'kalender'      => [ 'Kalender', 'arbeit' ],
-		'aufgaben'      => [ 'Aufgaben', 'arbeit' ],
 		'partner'       => [ 'Partner', 'partner' ],
 		'events'        => [ 'Events', 'partner' ],
 		'verzeichnis'   => [ 'Verzeichnis', 'partner' ],
@@ -143,8 +142,6 @@ function fge_cc_render( string $page ): void {
 	$routes = [
 		'dashboard'     => 'fge_cc_page_dashboard',
 		'angebote'      => 'fge_cc_page_offers',
-		'kalender'      => 'fge_cc_page_calendar',
-		'aufgaben'      => 'fge_cc_page_tasks',
 		'verzeichnis'   => 'fge_cc_page_partners',
 		'kunden'        => 'fge_cc_page_customers',
 		'finanzen'      => 'fge_cc_page_money',
@@ -1000,6 +997,11 @@ function fge_cc_phase_booked( int $req ): void {
 		fge_cc_button( 'fge_cc_day_info', $req, '' !== $info_sent ? 'Vortags-Info erneut senden' : 'Vortags-Info senden', [
 			'confirm' => 'Vortags-Info an Kunde, Platz und events@ senden?',
 		] );
+	} else {
+		// Fragt der Kunde vorher nach dem Ablauf: dieselbe Mail von Hand, nur an ihn.
+		fge_cc_button( 'fge_cc_day_info', $req, 'Infos zum Eventtag jetzt an den Kunden', [
+			'confirm' => 'Infos zum Eventtag jetzt an den Kunden senden? Die Vortags-Info am Vortag geht trotzdem automatisch.',
+		] );
 	}
 	fge_cc_action_preview( 'day_info', $req );
 	echo '</div>';
@@ -1158,7 +1160,8 @@ function fge_cc_request_fact_data( int $req ): array {
 	}
 
 	$cache[ $req ] = [
-		'event'       => $event_id > 0 ? get_the_title( $event_id ) : (string) get_post_meta( $req, '_fge_event_type', true ),
+		// Im Bedarf angepasster Name geht vor (Julius, 15.10.2026: der Bedarf ist die Anfrage).
+		'event'       => trim( (string) get_post_meta( $req, '_fge_need_event', true ) ) ?: ( $event_id > 0 ? get_the_title( $event_id ) : (string) get_post_meta( $req, '_fge_event_type', true ) ),
 		'dates'       => implode( ' · ', $d_txt ),
 		'pax'         => $pax,
 		'level'       => (string) get_post_meta( $req, '_fge_group_experience', true ),

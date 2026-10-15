@@ -517,6 +517,7 @@ function fge_cc_package_card( int $req, int $i, array $p, array $golf, array $pr
 	echo '<div class="cc-pkg-foot"><div class="cc-pkg-add">';
 	echo '<select name="add" aria-label="Position hinzufügen"><option value="">Position hinzufügen</option>';
 	foreach ( array_merge( $v ? [ $v ] : [], $provs ) as $row ) {
+		$row['title'] = (string) ( $row['title'] ?? get_the_title( (int) $row['partner_id'] ) );
 		$items = array_values( array_filter( fge_venue_items_get( (int) $row['id'] ), static fn( $x ) => 'green_fee' !== (string) $x['wish_key'] && (int) $x['available'] ) );
 		if ( ! $items ) {
 			continue;

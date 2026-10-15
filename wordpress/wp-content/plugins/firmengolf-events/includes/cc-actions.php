@@ -21,7 +21,9 @@ function fge_cc_messages(): array {
 	return [
 		'offer_sent'   => [ 'ok', 'Angebot ist raus. Der Kunde hat Mail und PDF, du das BCC.' ],
 		'day_info'     => [ 'ok', 'Vortags-Info gesendet.' ],
-		'day_info_early' => [ 'err', 'Die Vortags-Info geht erst am Tag vor dem Event raus.' ],
+		'status_lost'     => [ 'ok', 'Als verloren abgelegt. Über „Wieder aufnehmen" kommt die Anfrage zurück.' ],
+		'status_reopened' => [ 'ok', 'Anfrage wieder aufgenommen.' ],
+		'day_info_early' => [ 'ok', 'Infos zum Eventtag an den Kunden gesendet. Die Vortags-Info an Kunde und Platz bleibt geplant.' ],
 		'status'       => [ 'ok', 'Status geändert.' ],
 		'note'         => [ 'ok', 'Notiz gespeichert.' ],
 		'saved'        => [ 'ok', 'Gespeichert.' ],
@@ -212,12 +214,10 @@ add_action( 'admin_post_fge_cc_offer_relaunch', static function (): void {
 
 add_action( 'admin_post_fge_cc_day_info', static function (): void {
 	$req  = fge_cc_guard( 'fge_cc_day_info' );
-	if ( ! fge_day_info_open( $req ) ) {
-		fge_cc_redirect( $req, 'day_info_early' );
-	}
 	$date = fge_day_event_date( $req );
-	$ok   = fge_send_day_info( $req, null !== $date && $date === wp_date( 'Y-m-d' ) );
-	fge_cc_redirect( $req, $ok ? 'day_info' : 'mail_failed' );
+	// Vor dem Vortag nur von Hand und nur an den Kunden, der Vortag bleibt automatisch.
+	$ok   = fge_send_day_info( $req, null !== $date && $date === wp_date( 'Y-m-d' ), ! fge_day_info_open( $req ) );
+	fge_cc_redirect( $req, $ok ? ( fge_day_info_open( $req ) ? 'day_info' : 'day_info_early' ) : 'mail_failed' );
 } );
 
 // ── Eventtag-Felder direkt im Cockpit ────────────────────────────────────────
@@ -242,9 +242,12 @@ add_action( 'admin_post_fge_cc_day_save', static function (): void {
 /** Statuswechsel, die im Control Center angeboten werden. */
 function fge_cc_status_actions(): array {
 	return [
-		'event_durchgefuehrt' => 'Event durchgeführt',
-		'abgeschlossen'       => 'Abgeschlossen',
-		'verloren'            => 'Verloren',
+		'angebot_angenommen'             => 'Gebucht',
+		'event_durchgefuehrt'            => 'Event durchgeführt',
+		'rechnung_in_lexoffice_erstellt' => 'Rechnung gestellt',
+		'abgeschlossen'                  => 'Abgeschlossen',
+		'verloren'                       => 'Verloren',
+		'in_uebernahme'                  => 'Wieder aufgenommen',
 	];
 }
 
@@ -254,8 +257,15 @@ add_action( 'admin_post_fge_cc_status', static function (): void {
 	if ( ! isset( fge_cc_status_actions()[ $status ] ) ) {
 		fge_cc_redirect( $req, 'nothing' );
 	}
-	fge_request_set_status( $req, $status );
-	fge_cc_redirect( $req, 'status' );
+	// Gebucht zurück geht nur, wenn wirklich ein angenommenes Angebot da ist.
+	if ( 'angebot_angenommen' === $status && 'accepted' !== (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
+		fge_cc_redirect( $req, 'nothing' );
+	}
+	fge_request_set_status( $req, $status ); // Verlauf schreibt fge_activity_log_status mit.
+	if ( in_array( $status, [ 'rechnung_in_lexoffice_erstellt', 'abgeschlossen' ], true ) ) {
+		update_post_meta( $req, '_fge_lexoffice_invoice_created', 1 ); // gleiches Häkchen wie im WordPress
+	}
+	fge_cc_redirect( $req, 'verloren' === $status ? 'status_lost' : ( 'in_uebernahme' === $status ? 'status_reopened' : 'status' ) );
 } );
 
 // ── Notiz und Telefonnotiz ───────────────────────────────────────────────────
