@@ -753,7 +753,7 @@ function fge_cc_partner_listing(): void {
 	$n = static fn( string $k ) => count( array_filter( $all, static fn( $r ) => $r['kind'] === $k ) );
 	echo '<p class="cc-top-sub cc-sub-under">' . esc_html( count( array_filter( $all, static fn( $r ) => 'aktiv' === $r['status'] ) ) . ' aktiv · ' . $n( 'course' ) . ' Golfplätze · ' . $n( 'coach' ) . ' Golflehrer · ' . $n( 'indoor' ) . ' Indoor · ' . $n( 'dl' ) . ' Dienstleister' ) . '</p>';
 
-	echo '<div class="cc-toolbar"><button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-open="cc-pnew">Partner anlegen</button></div>';
+	echo '<div class="cc-toolbar"><button type="button" class="cc-btn" data-cc-drawer-open="cc-pnew">Partner anlegen</button></div>';
 
 	// Neue Partner zur Freigabe: erst die, die auf dich warten, dann die mit Rückfrage.
 	$rev = array_filter( $all, static fn( $r ) => in_array( $r['status'], [ 'in_pruefung', 'rueckfragen' ], true ) );
@@ -878,7 +878,7 @@ function fge_cc_partner_detail( int $id ): void {
 	echo '<div class="cc-headcard-side">' . fge_cc_pill( $sl, $stone ) . ( $isdl ? '' : fge_cc_pill( $live . ' live', 0 === $live ? 'neutral' : ( $live <= 3 ? 'warn' : 'good' ) ) ) . '</div></div>'; // phpcs:ignore WordPress.Security.EscapeOutput
 	echo '<div class="cc-btnrow">';
 	if ( in_array( $r['status'], [ 'in_pruefung', 'rueckfragen' ], true ) ) {
-		echo '<a class="cc-btn cc-btn--primary" href="' . esc_url( fge_cc_url( 'partner', [ 'pid' => $id, 'pruefen' => 1 ] ) ) . '">In der Webansicht prüfen</a>';
+		echo '<a class="cc-btn" href="' . esc_url( fge_cc_url( 'partner', [ 'pid' => $id, 'pruefen' => 1 ] ) ) . '">In der Webansicht prüfen</a>';
 	}
 	if ( ! $isdl && in_array( $r['status'], [ 'aktiv', 'pausiert' ], true ) ) {
 		fge_cc_obj_form_open( 'fge_cc_partner_pstatus', $id, 'cc-inline' );
@@ -972,7 +972,7 @@ function fge_cc_event_line( int $eid, string $from, bool $with_partner ): void {
 	echo fge_cc_pill( $label, $tone ); // phpcs:ignore WordPress.Security.EscapeOutput
 	echo '<span class="cc-evline-act">';
 	if ( $review ) {
-		echo '<button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-open="cc-evr-' . (int) $eid . '">Prüfen</button>';
+		echo '<button type="button" class="cc-btn" data-cc-drawer-open="cc-evr-' . (int) $eid . '">Prüfen</button>';
 	}
 	echo '<a class="cc-btn cc-btn--text" href="' . esc_url( fge_cc_public_link( $eid ) ) . '" target="_blank" rel="noopener">Ansehen</a>';
 	echo '<button type="button" class="cc-btn" data-cc-drawer-open="cc-ev-' . (int) $eid . '">Bearbeiten</button>';

@@ -184,7 +184,7 @@ add_action( 'admin_post_fge_cc_lead', static function (): void {
 	$req = fge_cc_guard( 'fge_cc_lead' );
 	$to  = sanitize_key( wp_unslash( $_POST['to'] ?? '' ) );
 	if ( 'budget_lead' !== (string) get_post_meta( $req, '_fge_request_type', true ) || ! isset( fge_cc_lead_statuses()[ $to ] ) ) {
-		wp_safe_redirect( fge_cc_url( 'leads', [ 'msg' => 'nothing' ] ) );
+		wp_safe_redirect( fge_cc_url( 'kunden', [ 'ansicht' => 'leads', 'msg' => 'nothing' ] ) );
 		exit;
 	}
 	if ( 'umgewandelt' === $to ) {
@@ -196,7 +196,7 @@ add_action( 'admin_post_fge_cc_lead', static function (): void {
 	}
 	update_post_meta( $req, '_fge_lead_status', $to );
 	fge_activity_add( $req, 'note', 'Lead: ' . fge_cc_lead_statuses()[ $to ][0] );
-	wp_safe_redirect( fge_cc_url( 'leads', [ 'msg' => 'lead_set' ] ) );
+	wp_safe_redirect( fge_cc_url( 'kunden', [ 'ansicht' => 'leads', 'msg' => 'lead_set' ] ) );
 	exit;
 } );
 
@@ -421,7 +421,7 @@ add_action( 'admin_post_fge_cc_user', static function (): void {
 	// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce oben geprüft.
 	$do   = sanitize_key( wp_unslash( $_POST['do'] ?? '' ) );
 	$back = static function ( string $msg ): void {
-		wp_safe_redirect( fge_cc_url( 'nutzer', [ 'msg' => $msg ] ) );
+		wp_safe_redirect( fge_cc_url( 'einstellungen', [ 'bereich' => 'nutzer', 'msg' => $msg ] ) );
 		exit;
 	};
 	// Nutzerverwaltung braucht dieselben Rechte wie im WordPress (Audit 15.10.2026).
@@ -565,7 +565,7 @@ function fge_cc_page_settings(): void {
 	fge_cc_fact( 'Allgemein', $co['email_general'] ?? '' );
 	fge_cc_fact( 'Tagesmail', 'täglich 7:00 Uhr an ' . ( function_exists( 'fge_company_internal_email' ) ? fge_company_internal_email() : '' ) );
 	fge_cc_fact( 'Vortags-Info', 'am Tag vor dem Event um 7:00 Uhr' );
-	echo '</dl><p class="cc-muted">Welche Mail wann an wen geht, steht im <a href="' . esc_url( fge_cc_url( 'postausgang' ) ) . '">Postausgang</a>.</p></section>';
+	echo '</dl><p class="cc-muted">Welche Mail wann an wen geht, steht im <a href="' . esc_url( fge_cc_url( 'einstellungen', [ 'bereich' => 'postausgang' ] ) ) . '">Postausgang</a>.</p></section>';
 
 	echo '<section class="cc-card"><h2 class="cc-h-small">Kalkulation</h2><dl class="cc-facts">';
 	fge_cc_fact( 'Aufschlag', number_format_i18n( function_exists( 'fge_xs_default_margin' ) ? fge_xs_default_margin() : 20, 0 ) . ' % auf den Einkauf netto' );

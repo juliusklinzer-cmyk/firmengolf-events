@@ -118,7 +118,7 @@ add_action( 'admin_post_fge_cc_provider_save', static function (): void {
 
 	$name = sanitize_text_field( wp_unslash( $_POST['provider_name'] ?? '' ) );
 	if ( '' === trim( $name ) ) {
-		wp_safe_redirect( fge_cc_url( 'dienstleister', [ 'msg' => 'noname' ] ) );
+		wp_safe_redirect( fge_cc_url( 'partner', [ 'art' => 'dl', 'msg' => 'noname' ] ) );
 		exit;
 	}
 
@@ -132,7 +132,7 @@ add_action( 'admin_post_fge_cc_provider_save', static function (): void {
 		] );
 	}
 	if ( $id <= 0 ) {
-		wp_safe_redirect( fge_cc_url( 'dienstleister', [ 'msg' => 'failed' ] ) );
+		wp_safe_redirect( fge_cc_url( 'partner', [ 'art' => 'dl', 'msg' => 'failed' ] ) );
 		exit;
 	}
 
@@ -166,7 +166,7 @@ add_action( 'admin_post_fge_cc_provider_save', static function (): void {
 		wp_safe_redirect( fge_cc_url( 'partner', [ 'dl' => $id, 'tab' => 'st', 'msg' => 'p_saved' ] ) );
 		exit;
 	}
-	wp_safe_redirect( fge_cc_url( 'dienstleister', [ 'msg' => 'saved' ] ) );
+	wp_safe_redirect( fge_cc_url( 'partner', [ 'art' => 'dl', 'msg' => 'saved' ] ) );
 	exit;
 } );
 
@@ -179,7 +179,7 @@ add_action( 'admin_post_fge_cc_provider_delete', static function (): void {
 	if ( $id > 0 && 'firmengolf_provider' === get_post_type( $id ) ) {
 		wp_trash_post( $id );
 	}
-	wp_safe_redirect( fge_cc_url( 'dienstleister', [ 'msg' => 'deleted' ] ) );
+	wp_safe_redirect( fge_cc_url( 'partner', [ 'art' => 'dl', 'msg' => 'deleted' ] ) );
 	exit;
 } );
 
@@ -264,7 +264,7 @@ function fge_cc_provider_row( int $id, bool $editing ): void {
 	if ( '' !== $v['provider_note'] ) {
 		echo '<p class="cc-muted">' . esc_html( $v['provider_note'] ) . '</p>';
 	}
-	echo '<p class="cc-dir-links"><a href="' . esc_url( fge_cc_url( 'dienstleister', [ 'edit' => $id ] ) ) . '">Bearbeiten</a></p>';
+	echo '<p class="cc-dir-links"><a href="' . esc_url( fge_cc_url( 'partner', [ 'art' => 'dl', 'edit' => $id ] ) ) . '">Bearbeiten</a></p>';
 	echo '</div>';
 }
 

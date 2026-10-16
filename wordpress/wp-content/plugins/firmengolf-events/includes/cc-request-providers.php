@@ -372,6 +372,6 @@ function fge_cc_provider_add_drawer( int $req, array $rows, bool $auto ): void {
 	echo '<p class="cc-muted">Name und Mail oder Telefon reichen. Der Eintrag landet auch im Verzeichnis unter Dienstleister.</p>';
 	echo '<p><button type="submit" class="cc-btn cc-btn--primary">Anlegen und hinzufügen</button></p>';
 	echo '</form>';
-	echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-close>Fertig</button></div>';
+	echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn" data-cc-drawer-close>Fertig</button></div>';
 	fge_cc_drawer_close();
 }

@@ -124,7 +124,7 @@ function fge_cc_venues_panel( int $req ): void {
 	fge_cc_drawer_open( 'cc-addvenue', 'Golfplatz hinzufügen', 'Plätze sortiert nach Entfernung' . ( '' !== $city ? ' zu ' . $city : '' ), $auto );
 	fge_cc_venue_nearby_block( $req );
 	fge_cc_venue_add_form( $req, $venues );
-	echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-close>Fertig</button></div>';
+	echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn" data-cc-drawer-close>Fertig</button></div>';
 	fge_cc_drawer_close();
 }
 

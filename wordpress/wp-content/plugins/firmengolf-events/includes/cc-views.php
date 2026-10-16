@@ -312,7 +312,7 @@ function fge_cc_page_outbox(): void {
 	$failed = function_exists( 'fge_mail_log_recent' ) ? count( fge_mail_log_recent( 200, 'failed' ) ) : 0;
 
 	echo '<div class="cc-filters">';
-	echo '<a class="cc-chip' . ( '' === $filter ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'postausgang' ) ) . '">Alle</a>';
+	echo '<a class="cc-chip' . ( '' === $filter ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'einstellungen', [ 'bereich' => 'postausgang' ] ) ) . '">Alle</a>';
 	echo '<a class="cc-chip' . ( 'failed' === $filter ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'postausgang', [ 'filter' => 'failed' ] ) ) . '">Nicht zugestellt ' . (int) $failed . '</a>';
 	echo '</div>';
 

@@ -20,48 +20,50 @@ if ( ! defined( 'ABSPATH' ) ) {
 const FGE_CC_REWRITE_VERSION = '1.2.0';
 
 /**
- * Seiten des Control Centers: slug => [Label, Gruppe].
+ * Seiten des Control Centers: slug => [Label, Menüpunkt].
  *
- * Reihenfolge und Gruppen nach dem finalen Design (07.10.2026), Kalender und
- * Aufgaben sind seit 15.10.2026 raus (Kalender-Abo unter Einstellungen). Seiten, deren
- * Inhalt noch im WordPress-Admin liegt, zeigen bis zu ihrer Etappe einen
- * Hinweis mit Direktlink dorthin (fge_cc_admin_links()).
+ * Menü nach „Control Center Redesign“ (Julius, 16.10.2026): sieben flache
+ * Punkte ohne Gruppen. Events und Verzeichnis sind Unterseiten von „Partner
+ * und Events“, Angebote laufen in den Anfragen, Leads unter Kunden,
+ * Rechnungen unter Finanzen, Nutzer und Postausgang unter Einstellungen.
  */
 function fge_cc_pages(): array {
 	return [
-		'dashboard'     => [ 'Dashboard', 'arbeit' ],
-		'anfragen'      => [ 'Anfragen', 'arbeit' ],
-		'angebote'      => [ 'Angebote', 'arbeit' ],
-		'partner'       => [ 'Partner', 'partner' ],
+		'dashboard'     => [ 'Heute', 'dashboard' ],
+		'anfragen'      => [ 'Anfragen', 'anfragen' ],
+		'partner'       => [ 'Partner und Events', 'partner' ],
+		'kunden'        => [ 'Kunden', 'kunden' ],
+		'partnercodes'  => [ 'Partnercodes', 'partnercodes' ],
+		'finanzen'      => [ 'Finanzen', 'finanzen' ],
+		'einstellungen' => [ 'Einstellungen', 'einstellungen' ],
+		// Unterseiten, nicht im Menü.
 		'events'        => [ 'Events', 'partner' ],
 		'verzeichnis'   => [ 'Verzeichnis', 'partner' ],
-		'kunden'        => [ 'Kunden', 'kunden' ],
-		'leads'         => [ 'Leads', 'kunden' ],
-		'partnercodes'  => [ 'Partnercodes', 'kunden' ],
-		'finanzen'      => [ 'Finanzen', 'geld' ],
-		'rechnungen'    => [ 'Rechnungen', 'geld' ],
-		'dienstleister' => [ 'Dienstleister', 'stamm' ],
-		'postausgang'   => [ 'Postausgang', 'stamm' ],
-		'nutzer'        => [ 'Nutzer', 'system' ],
-		'einstellungen' => [ 'Einstellungen', 'system' ],
 	];
 }
 
-/** Gruppen der Seitenleiste. */
-function fge_cc_groups(): array {
-	return [
-		'arbeit'  => 'Arbeit',
-		'partner' => 'Partner',
-		'kunden'  => 'Kunden',
-		'geld'    => 'Geld',
-		'stamm'   => 'Stamm',
-		'system'  => 'System',
-	];
+/** Menüpunkt, unter dem eine Seite leuchtet. */
+function fge_cc_nav_parent( string $page ): string {
+	return fge_cc_pages()[ $page ][1] ?? 'dashboard';
 }
 
-/** Alte Adressen vor dem Umbau, damit Lesezeichen und Mail-Links weiter gehen. */
+/**
+ * Alte Adressen, damit Lesezeichen und Mail-Links weiter gehen:
+ * slug => [Ziel, feste Parameter].
+ */
 function fge_cc_legacy_pages(): array {
-	return [ 'plaetze' => 'verzeichnis', 'geld' => 'finanzen' ];
+	return [
+		'plaetze'       => [ 'verzeichnis', [] ],
+		'geld'          => [ 'finanzen', [] ],
+		'rechnungen'    => [ 'finanzen', [] ],
+		'angebote'      => [ 'anfragen', [ 'tab' => 'kunde' ] ],
+		'leads'         => [ 'kunden', [ 'ansicht' => 'leads' ] ],
+		'nutzer'        => [ 'einstellungen', [ 'bereich' => 'nutzer' ] ],
+		'postausgang'   => [ 'einstellungen', [ 'bereich' => 'postausgang' ] ],
+		'dienstleister' => [ 'partner', [ 'art' => 'dl' ] ],
+		'kalender'      => [ 'einstellungen', [ 'bereich' => 'verbindungen' ] ],
+		'aufgaben'      => [ 'dashboard', [] ],
+	];
 }
 
 /** Darf der aktuelle Nutzer ins Control Center? */
@@ -107,9 +109,17 @@ add_action( 'template_redirect', static function (): void {
 	}
 	$legacy = fge_cc_legacy_pages();
 	if ( isset( $legacy[ $page ] ) && fge_cc_can() ) {
+		[ $to, $fixed ] = $legacy[ $page ];
 		$args = array_map( 'sanitize_text_field', wp_unslash( $_GET ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		unset( $args['fge_cc'] );
-		wp_safe_redirect( fge_cc_url( $legacy[ $page ], $args ), 301 );
+		if ( 'dienstleister' === $page && ! empty( $args['edit'] ) ) {
+			$fixed = [ 'dl' => absint( $args['edit'] ) ]; // Bearbeiten eines Dienstleisters = seine Detailseite
+			unset( $args['edit'] );
+		}
+		if ( 'rechnungen' === $page || 'angebote' === $page ) {
+			unset( $args['tab'], $args['filter'] ); // alte Tabs gibt es dort nicht mehr
+		}
+		wp_safe_redirect( fge_cc_url( $to, $fixed + $args ), 302 );
 		exit;
 	}
 	if ( ! isset( fge_cc_pages()[ $page ] ) ) {
@@ -144,17 +154,11 @@ function fge_cc_render( string $page ): void {
 		'dashboard'     => 'fge_cc_page_dashboard',
 		'partner'       => 'fge_cc_page_partner_area',
 		'events'        => 'fge_cc_page_events',
-		'rechnungen'    => 'fge_cc_page_invoices',
-		'leads'         => 'fge_cc_page_leads',
-		'partnercodes'  => 'fge_cc_page_partnercodes',
-		'nutzer'        => 'fge_cc_page_users',
-		'einstellungen' => 'fge_cc_page_settings',
-		'angebote'      => 'fge_cc_page_offers',
 		'verzeichnis'   => 'fge_cc_page_partners',
 		'kunden'        => 'fge_cc_page_customers',
+		'partnercodes'  => 'fge_cc_page_partnercodes',
 		'finanzen'      => 'fge_cc_page_money',
-		'dienstleister' => 'fge_cc_page_providers',
-		'postausgang'   => 'fge_cc_page_outbox',
+		'einstellungen' => 'fge_cc_page_settings',
 	];
 	?>
 <!doctype html>
@@ -213,8 +217,9 @@ function fge_cc_nav_badges(): array {
 		] );
 		return (int) $q->found_posts;
 	};
-	$badges['partner'] = $count_meta( 'firmengolf_partner', '_fge_partner_status', 'in_pruefung' );
 	$badges['events']  = $count_meta( 'firmengolf_event', '_fge_event_status', [ 'zur_pruefung', 'aenderung_in_pruefung' ] );
+	// „Partner und Events“ zählt alle offenen Freigaben, wie im Entwurf.
+	$badges['partner'] = $count_meta( 'firmengolf_partner', '_fge_partner_status', 'in_pruefung' ) + $badges['events'];
 
 	$failed = function_exists( 'fge_mail_log_recent' ) ? fge_mail_log_recent( 50, 'failed' ) : [];
 	$since  = time() - 7 * DAY_IN_SECONDS;
@@ -226,40 +231,38 @@ function fge_cc_sidebar( string $current ): void {
 	$badges = fge_cc_nav_badges();
 	$user   = wp_get_current_user();
 	$name   = trim( $user->first_name . ' ' . $user->last_name ) ?: $user->display_name;
+	$ini    = mb_strtoupper( implode( '', array_map( static fn( $w ) => mb_substr( $w, 0, 1 ), array_slice( preg_split( '/\s+/', trim( $name ) ) ?: [], 0, 2 ) ) ) );
 	$logo   = plugins_url( 'assets/logo/firmengolf-logo.svg', FGE_DIR . 'firmengolf-events.php' );
+	$on     = fge_cc_nav_parent( $current );
 
 	echo '<aside class="cc-side">';
-	echo '<a class="cc-brand" href="' . esc_url( fge_cc_url() ) . '"><img src="' . esc_url( $logo ) . '" alt="Firmengolf" width="140" height="28"><span>Control Center</span></a>';
+	echo '<a class="cc-brand" href="' . esc_url( fge_cc_url() ) . '"><img src="' . esc_url( $logo ) . '" alt="Firmengolf" width="130" height="26"><span>Control Center</span></a>';
 
 	echo '<div class="cc-gsearch" data-cc-gsearch data-endpoint="' . esc_url( admin_url( 'admin-ajax.php' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'fge_cc_search' ) ) . '">';
-	echo '<input type="search" placeholder="Suchen" aria-label="Alles durchsuchen" autocomplete="off">';
+	echo '<input type="search" placeholder="Firma, Nummer, Partner" aria-label="Alles durchsuchen" autocomplete="off">';
 	echo '<div class="cc-gsearch-list" hidden></div>';
 	echo '</div>';
 
 	echo '<button class="cc-navtoggle" type="button" aria-expanded="false" data-cc-navtoggle>Menü</button>';
 	echo '<nav class="cc-nav" aria-label="Control Center">';
-	foreach ( fge_cc_groups() as $g => $label ) {
-		echo '<div class="cc-nav-group"><p class="cc-nav-head">' . esc_html( $label ) . '</p>';
-		foreach ( fge_cc_pages() as $slug => [ $title, $group ] ) {
-			if ( $group !== $g ) {
-				continue;
-			}
-			$badge = (int) ( $badges[ $slug ] ?? 0 );
-			printf(
-				'<a class="cc-nav-item%s" href="%s"%s><span>%s</span>%s</a>',
-				$slug === $current ? ' is-on' : '',
-				esc_url( fge_cc_url( $slug ) ),
-				$slug === $current ? ' aria-current="page"' : '',
-				esc_html( $title ),
-				$badge > 0 ? '<span class="cc-badge">' . $badge . '</span>' : ''
-			);
+	foreach ( fge_cc_pages() as $slug => [ $title, $parent ] ) {
+		if ( $parent !== $slug ) {
+			continue; // Unterseite
 		}
-		echo '</div>';
+		$badge = (int) ( $badges[ $slug ] ?? 0 );
+		printf(
+			'<a class="cc-nav-item%s" href="%s"%s><span>%s</span>%s</a>',
+			$slug === $on ? ' is-on' : '',
+			esc_url( fge_cc_url( $slug ) ),
+			$slug === $current ? ' aria-current="page"' : '',
+			esc_html( $title ),
+			$badge > 0 ? '<span class="cc-badge">' . $badge . '</span>' : ''
+		);
 	}
 	echo '</nav>';
 
 	echo '<div class="cc-side-foot">';
-	echo '<p class="cc-side-user"><strong>' . esc_html( $name ) . '</strong><span>Administrator</span></p>';
+	echo '<div class="cc-side-user"><span class="cc-avatar" aria-hidden="true">' . esc_html( $ini ) . '</span><span class="cc-side-who"><strong>' . esc_html( $name ) . '</strong><span>Admin</span></span></div>';
 	echo '<p class="cc-side-links"><a href="' . esc_url( home_url( '/' ) ) . '" target="_blank" rel="noopener">Zur Website</a>';
 	echo '<a href="' . esc_url( admin_url() ) . '">WordPress</a>';
 	echo '<a class="cc-side-out" href="' . esc_url( wp_logout_url( home_url( '/' ) ) ) . '">Abmelden</a></p>';
@@ -464,7 +467,7 @@ function fge_cc_month_kpis_panel(): void {
 	$pct = static fn( int $n ) => $k['reqs'] > 0 ? round( $n / $k['reqs'] * 100 ) . ' % der Anfragen' : 'noch keine Anfragen';
 	$items = [
 		[ 'Anfragen', (string) $k['reqs'], 'eingegangen seit dem 1.', fge_cc_url( 'anfragen' ) ],
-		[ 'Angebote', (string) $k['offers'], $pct( $k['offers'] ), fge_cc_url( 'angebote' ) ],
+		[ 'Angebote', (string) $k['offers'], $pct( $k['offers'] ), fge_cc_url( 'anfragen', [ 'tab' => 'kunde' ] ) ],
 		[ 'Buchungen', (string) $k['book'], 'angenommen im Monat', '' ],
 		[ 'Gebucht netto', number_format_i18n( $k['net'], 0 ) . ' €', 'Summe der Annahmen', fge_cc_url( 'finanzen' ) ],
 		[
@@ -560,10 +563,10 @@ function fge_cc_platform_panel(): void {
 		}
 	}
 	if ( $expiring > 0 ) {
-		$todo[] = [ 'Angebote, deren Frist bald abläuft', $expiring, 'in den nächsten 2 Tagen', fge_cc_url( 'angebote' ) ];
+		$todo[] = [ 'Angebote, deren Frist bald abläuft', $expiring, 'in den nächsten 2 Tagen', fge_cc_url( 'anfragen', [ 'tab' => 'kunde' ] ) ];
 	}
 	if ( $badges['postausgang'] > 0 ) {
-		$todo[] = [ 'Fehlgeschlagene Mails', $badges['postausgang'], 'nicht zugestellt, letzte 7 Tage', fge_cc_url( 'postausgang' ) ];
+		$todo[] = [ 'Fehlgeschlagene Mails', $badges['postausgang'], 'nicht zugestellt, letzte 7 Tage', fge_cc_url( 'einstellungen', [ 'bereich' => 'postausgang' ] ) ];
 	}
 	$no_mail = 0;
 	foreach ( get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => [ 'publish', 'draft', 'pending' ], 'numberposts' => -1, 'fields' => 'ids' ] ) as $pid ) {
@@ -670,7 +673,7 @@ function fge_cc_failed_mails_panel(): void {
 		echo '<div class="cc-list">';
 		foreach ( $failed as $f ) {
 			$req = (int) ( $f['request_id'] ?? 0 );
-			$url = $req > 0 ? fge_cc_request_url( $req ) : fge_cc_url( 'postausgang' );
+			$url = $req > 0 ? fge_cc_request_url( $req ) : fge_cc_url( 'einstellungen', [ 'bereich' => 'postausgang' ] );
 			echo '<a class="cc-row" href="' . esc_url( $url ) . '"><span class="cc-row-main"><span class="cc-company">' . esc_html( mb_substr( (string) $f['subject'], 0, 80 ) ) . '</span>';
 			echo '<span class="cc-more">An ' . esc_html( (string) $f['recipient'] ) . ' · ' . esc_html( fge_cc_ago( (string) $f['sent_at'] ) ) . '</span></span>';
 			echo '<span class="cc-row-meta"><span class="cc-btn">Ansehen</span></span></a>';
