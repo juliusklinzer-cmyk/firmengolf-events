@@ -289,6 +289,11 @@ function fge_cc_topbar( string $title, string $page = 'anfragen' ): void {
 		'events'      => 'Event oder Partner',
 		'verzeichnis' => 'Platz, Ort oder PLZ',
 		'kunden'      => 'Firma oder Mailadresse',
+		'partnercodes' => 'Suchen',
+	];
+	// Knöpfe rechts im Kopf, wie im Entwurf.
+	$buttons = [
+		'partnercodes' => '<button type="button" class="cc-btn" data-cc-drawer-open="cc-pc-new">Code anlegen</button>',
 	];
 	$sub    = '';
 	$kicker = '';
@@ -314,7 +319,13 @@ function fge_cc_topbar( string $title, string $page = 'anfragen' ): void {
 			echo '<input type="hidden" name="fge_cc" value="' . esc_attr( $page ) . '">';
 		}
 		echo '<input type="search" name="s" placeholder="' . esc_attr( $targets[ $page ] ) . '" value="' . esc_attr( wp_unslash( $_GET['s'] ?? '' ) ) . '" aria-label="Suche">'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( 'kunden' === $page && 'leads' === ( $_GET['ansicht'] ?? '' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			echo '<input type="hidden" name="ansicht" value="leads">';
+		}
 		echo '</form>';
+	}
+	if ( isset( $buttons[ $page ] ) ) {
+		echo $buttons[ $page ]; // phpcs:ignore WordPress.Security.EscapeOutput -- feste Knöpfe oben
 	}
 	echo '</header>';
 }

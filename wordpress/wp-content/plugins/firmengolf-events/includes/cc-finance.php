@@ -17,6 +17,11 @@ function fge_cc_invoice_terms(): int {
 	return 14;
 }
 
+/** Monatskürzel ohne Punkt wie im Entwurf (Jan, Feb, Mär). */
+function fge_cc_mon( int $ts ): string {
+	return [ 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez' ][ (int) wp_date( 'n', $ts ) - 1 ];
+}
+
 /** Betrag auf volle Euro für Kennzahlen. */
 function fge_cc_eur0( float $v ): string {
 	return number_format_i18n( round( $v ), 0 ) . ' €';

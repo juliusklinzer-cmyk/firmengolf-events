@@ -220,26 +220,29 @@ function fge_cc_partner_row( array $r ): void {
 /**
  * Firmen aus den Anfragen verdichten.
  *
- * Bewusst kein eigener Stammdatensatz: Kunden entstehen aus Anfragen, und
- * solange es kaum Wiederkäufer gibt, wäre eine zweite Datenhaltung nur Ballast.
+ * Bewusst kein eigener Stammdatensatz: Kunden entstehen aus Anfragen. Der
+ * Schlüssel ist der Firmenname klein geschrieben, ohne Namen die Mailadresse.
+ * Die interne Notiz liegt unter diesem Schlüssel in fge_customer_notes
+ * (Freigabe Julius, 16.10.2026).
  */
-function fge_cc_page_customers(): void {
-	$search = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
-	$result = fge_cc_query_requests( [], 600 );
-	$ids    = $result['ids'];
-
+function fge_cc_customers(): array {
+	static $out = null;
+	if ( null !== $out ) {
+		return $out;
+	}
+	$result    = fge_cc_query_requests( [], 600 );
 	$companies = [];
 	$by_mail   = [];
-
-	foreach ( $ids as $req ) {
-		$name  = trim( (string) get_post_meta( $req, '_fge_company_name', true ) );
-		$mail  = strtolower( trim( (string) get_post_meta( $req, '_fge_contact_email', true ) ) );
-		$key   = '' !== $name ? mb_strtolower( $name ) : ( '' !== $mail ? $mail : 'ohne-' . $req );
-		$accepted = 'accepted' === (string) get_post_meta( $req, '_fge_offer_status', true );
-
+	foreach ( $result['ids'] as $req ) {
+		$req      = (int) $req;
+		$name     = trim( (string) get_post_meta( $req, '_fge_company_name', true ) );
+		$mail     = strtolower( trim( (string) get_post_meta( $req, '_fge_contact_email', true ) ) );
+		$key      = fge_cc_customer_key( $name, $mail, $req );
+		$accepted = 'accepted' === (string) get_post_meta( $req, '_fge_offer_status', true ) && 'verloren' !== (string) get_post_meta( $req, '_fge_request_status', true );
+		$ts       = (int) get_post_time( 'U', false, $req );
 		if ( ! isset( $companies[ $key ] ) ) {
 			$companies[ $key ] = [
+				'key'      => $key,
 				'name'     => $name ?: 'Ohne Firmennamen',
 				'city'     => (string) get_post_meta( $req, '_fge_company_city', true ),
 				'contact'  => trim( (string) get_post_meta( $req, '_fge_contact_first_name', true ) . ' ' . (string) get_post_meta( $req, '_fge_contact_last_name', true ) ),
@@ -249,78 +252,237 @@ function fge_cc_page_customers(): void {
 				'bookings' => 0,
 				'revenue'  => 0.0,
 				'last'     => 0,
+				'first'    => $ts,
 			];
 		}
-		$companies[ $key ]['requests'][] = $req;
+		$c = &$companies[ $key ];
+		$c['requests'][] = $req;
 		if ( $accepted ) {
-			$companies[ $key ]['bookings']++;
-			$snap = (array) get_post_meta( $req, '_fge_offer_snapshot', true );
-			$sel  = function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $req ) : [];
-			$tot  = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap, $sel ) : [ 'net' => 0 ];
-			$companies[ $key ]['revenue'] += (float) ( $tot['net'] ?? 0 );
+			$c['bookings']++;
+			$c['revenue'] += fge_cc_offer_net( $req );
 		}
-		$ts = (int) get_post_time( 'U', false, $req );
-		if ( $ts > $companies[ $key ]['last'] ) {
-			$companies[ $key ]['last'] = $ts;
+		if ( $ts > $c['last'] ) {
+			// Kontaktdaten von der neuesten Anfrage, die alten können veraltet sein.
+			$c['last'] = $ts;
+			foreach ( [ 'city' => '_fge_company_city', 'mail' => '_fge_contact_email', 'phone' => '_fge_contact_phone' ] as $k => $mk ) {
+				$v = (string) get_post_meta( $req, $mk, true );
+				if ( '' !== $v ) {
+					$c[ $k ] = $v;
+				}
+			}
+			$cn = trim( (string) get_post_meta( $req, '_fge_contact_first_name', true ) . ' ' . (string) get_post_meta( $req, '_fge_contact_last_name', true ) );
+			if ( '' !== $cn ) {
+				$c['contact'] = $cn;
+			}
 		}
+		$c['first'] = min( $c['first'], $ts );
+		unset( $c );
 		if ( '' !== $mail ) {
 			$by_mail[ $mail ][ $key ] = true;
 		}
 	}
-
 	// Dubletten: dieselbe Mailadresse unter verschiedenen Firmennamen.
-	$dupes = [];
 	foreach ( $by_mail as $mail => $keys ) {
 		if ( count( $keys ) > 1 ) {
 			foreach ( array_keys( $keys ) as $k ) {
-				$dupes[ $k ] = $mail;
+				$companies[ $k ]['dupe'] = $mail;
 			}
 		}
 	}
+	return $out = [ 'rows' => $companies, 'result' => $result ];
+}
 
-	uasort( $companies, static fn( $a, $b ) => $b['last'] <=> $a['last'] );
+/** Schlüssel eines Kunden (Notiz, Link). */
+function fge_cc_customer_key( string $name, string $mail, int $req = 0 ): string {
+	$name = trim( $name );
+	return '' !== $name ? mb_strtolower( $name ) : ( '' !== $mail ? strtolower( $mail ) : 'ohne-' . $req );
+}
 
-	if ( '' !== $search ) {
-		$companies = array_filter( $companies, static fn( $c ) => false !== mb_stripos( $c['name'] . ' ' . $c['mail'], $search ) );
+/** Interne Notiz zu einem Kunden. */
+function fge_cc_customer_note( string $key ): string {
+	$all = (array) get_option( 'fge_customer_notes', [] );
+	return (string) ( $all[ $key ] ?? '' );
+}
+
+add_action( 'admin_post_fge_cc_customer_note', static function (): void {
+	if ( ! fge_cc_can() ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
 	}
-
-	fge_cc_truncation_note( $result, 'Anfragen' );
-
-	if ( $dupes ) {
-		echo '<p class="cc-msg cc-msg--err">' . (int) count( $dupes ) . ' Einträge teilen sich eine Mailadresse unter verschiedenen Firmennamen. Vermutlich Dubletten.</p>';
+	check_admin_referer( 'fge_cc_customer_note' );
+	// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce oben geprüft.
+	$key  = mb_substr( sanitize_text_field( wp_unslash( $_POST['key'] ?? '' ) ), 0, 190 );
+	$note = mb_substr( sanitize_textarea_field( wp_unslash( $_POST['note'] ?? '' ) ), 0, 4000 );
+	// phpcs:enable
+	if ( '' !== $key ) {
+		$all = (array) get_option( 'fge_customer_notes', [] );
+		if ( '' === trim( $note ) ) {
+			unset( $all[ $key ] );
+		} else {
+			$all[ $key ] = $note;
+		}
+		update_option( 'fge_customer_notes', $all, false );
 	}
+	wp_safe_redirect( fge_cc_url( 'kunden', [ 'kunde' => $key, 'msg' => 'note_saved' ] ) );
+	exit;
+} );
 
-	if ( ! $companies ) {
-		fge_cc_empty( 'Kein Kunde gefunden.' );
+/** Kopfzeile einer sortierbaren Spalte. */
+function fge_cc_sort_th( string $page, string $key, string $label, string $cur, string $dir, array $keep, bool $num = false ): void {
+	$on   = $key === $cur;
+	$next = $on ? ( 'asc' === $dir ? 'desc' : 'asc' ) : ( $num ? 'desc' : 'asc' );
+	echo '<th' . ( $num ? ' class="cc-num"' : '' ) . ( $on ? ' aria-sort="' . ( 'asc' === $dir ? 'ascending' : 'descending' ) . '"' : '' ) . '>';
+	echo '<a class="cc-sortth' . ( $on ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( $page, array_filter( [ 'sort' => $key, 'dir' => $next ] + $keep ) ) ) . '">' . esc_html( $label ) . '<span aria-hidden="true">' . ( $on ? ( 'asc' === $dir ? '↑' : '↓' ) : '' ) . '</span></a></th>';
+}
+
+function fge_cc_page_customers(): void {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended
+	$search = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
+	$view   = 'leads' === sanitize_key( wp_unslash( $_GET['ansicht'] ?? '' ) ) ? 'leads' : 'kunden';
+	$open   = sanitize_text_field( wp_unslash( $_GET['kunde'] ?? '' ) );
+	$sort   = sanitize_key( wp_unslash( $_GET['sort'] ?? 'last' ) );
+	$dir    = 'asc' === ( $_GET['dir'] ?? '' ) ? 'asc' : 'desc';
+	// phpcs:enable
+	fge_cc_message();
+	$data  = fge_cc_customers();
+	$rows  = $data['rows'];
+	$leads = function_exists( 'fge_cc_lead_rows' ) ? fge_cc_lead_rows() : [];
+	$new   = count( array_filter( $leads, static fn( $l ) => 'neu' === $l['status'] ) );
+
+	echo '<p class="cc-top-sub cc-sub-under">' . esc_html( count( $rows ) . ' Firmenkunden · ' . $new . ( 1 === $new ? ' neuer Lead' : ' neue Leads' ) ) . '</p>';
+	fge_cc_seglinks( 'kunden', 'ansicht', [ 'kunden' => 'Kunden', 'leads' => 'Leads' ], $view, [ 'kunden' => count( $rows ), 'leads' => count( $leads ) ], [ 's' => $search ] );
+
+	if ( 'leads' === $view ) {
+		fge_cc_customers_leads( $leads, $search );
 		return;
 	}
 
-	echo '<div class="cc-tablewrap"><table class="cc-table">';
-	echo '<thead><tr><th>Firma</th><th>Ansprechpartner</th><th>Kontakt</th><th class="cc-num">Anfragen</th><th class="cc-num">Buchungen</th><th class="cc-num">Umsatz netto</th><th>Zuletzt</th></tr></thead><tbody>';
-	foreach ( $companies as $key => $c ) {
-		echo '<tr>';
-		echo '<td><strong>' . esc_html( $c['name'] ) . '</strong>';
-		if ( '' !== $c['city'] ) {
-			echo '<br><span class="cc-muted">' . esc_html( $c['city'] ) . '</span>';
-		}
-		if ( isset( $dupes[ $key ] ) ) {
-			echo '<br><span class="cc-dupe">Dublette?</span>';
-		}
-		echo '</td>';
-		echo '<td>' . esc_html( $c['contact'] ?: '—' ) . '</td>';
-		echo '<td>';
-		if ( '' !== $c['phone'] ) {
-			echo '<a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', $c['phone'] ) ) . '">' . esc_html( $c['phone'] ) . '</a><br>';
-		}
-		if ( '' !== $c['mail'] ) {
-			echo '<a href="mailto:' . esc_attr( $c['mail'] ) . '">' . esc_html( $c['mail'] ) . '</a>';
-		}
-		echo '</td>';
-		echo '<td class="cc-num">' . (int) count( $c['requests'] ) . '</td>';
-		echo '<td class="cc-num">' . (int) $c['bookings'] . '</td>';
-		echo '<td class="cc-num">' . esc_html( $c['revenue'] > 0 ? number_format_i18n( $c['revenue'], 0 ) . ' €' : '—' ) . '</td>';
-		echo '<td class="cc-muted">' . esc_html( $c['last'] > 0 ? wp_date( 'd.m.Y', $c['last'] ) : '—' ) . '</td>';
-		echo '</tr>';
+	fge_cc_truncation_note( $data['result'], 'Anfragen' );
+	if ( '' !== $search ) {
+		$rows = array_filter( $rows, static fn( $c ) => false !== mb_stripos( $c['name'] . ' ' . $c['contact'] . ' ' . $c['city'] . ' ' . $c['mail'], $search ) );
 	}
-	echo '</tbody></table></div>';
+	$dupes = count( array_filter( $rows, static fn( $c ) => ! empty( $c['dupe'] ) ) );
+	if ( $dupes ) {
+		echo '<p class="cc-msg cc-msg--err">' . (int) $dupes . ' Einträge teilen sich eine Mailadresse unter verschiedenen Firmennamen. Vermutlich Dubletten.</p>';
+	}
+	$val = static function ( array $c ) use ( $sort ) {
+		switch ( $sort ) {
+			case 'company':
+				return mb_strtolower( $c['name'] );
+			case 'contact':
+				return mb_strtolower( $c['contact'] );
+			case 'city':
+				return mb_strtolower( $c['city'] );
+			case 'n':
+				return count( $c['requests'] );
+			case 'revenue':
+				return $c['revenue'];
+			default:
+				return $c['last'];
+		}
+	};
+	uasort( $rows, static function ( $a, $b ) use ( $val, $dir ) {
+		$x = $val( $a );
+		$y = $val( $b );
+		$r = is_string( $x ) ? strcoll( $x, $y ) : $x <=> $y;
+		return 'asc' === $dir ? $r : -$r;
+	} );
+
+	$keep = [ 's' => $search ];
+	echo '<section class="cc-tablewrap"><table class="cc-table cc-custtable"><thead><tr>';
+	fge_cc_sort_th( 'kunden', 'company', 'Firma', $sort, $dir, $keep );
+	fge_cc_sort_th( 'kunden', 'contact', 'Ansprechpartner', $sort, $dir, $keep );
+	fge_cc_sort_th( 'kunden', 'city', 'Ort', $sort, $dir, $keep );
+	fge_cc_sort_th( 'kunden', 'n', 'Anfragen', $sort, $dir, $keep, true );
+	fge_cc_sort_th( 'kunden', 'revenue', 'Umsatz netto', $sort, $dir, $keep, true );
+	fge_cc_sort_th( 'kunden', 'last', 'Letzte Anfrage', $sort, $dir, $keep );
+	echo '</tr></thead><tbody>';
+	foreach ( $rows as $c ) {
+		$url = fge_cc_url( 'kunden', array_filter( [ 'kunde' => $c['key'], 's' => $search, 'sort' => $sort, 'dir' => $dir ] ) );
+		echo '<tr onclick="location.href=\'' . esc_js( $url ) . '\'"><td><a href="' . esc_url( $url ) . '"><strong>' . esc_html( $c['name'] ) . '</strong></a>' . ( ! empty( $c['dupe'] ) ? ' <span class="cc-dupe">Dublette?</span>' : '' ) . '</td>';
+		echo '<td>' . esc_html( $c['contact'] ) . '</td><td>' . esc_html( $c['city'] ) . '</td>';
+		echo '<td class="cc-num">' . (int) count( $c['requests'] ) . '</td>';
+		echo '<td class="cc-num">' . esc_html( fge_cc_eur0( $c['revenue'] ) ) . '</td>';
+		echo '<td class="cc-tnum cc-muted">' . esc_html( $c['last'] > 0 ? wp_date( 'd.m.Y', $c['last'] ) : '' ) . '</td></tr>';
+	}
+	if ( ! $rows ) {
+		echo '<tr class="is-empty"><td colspan="6">Kein Kunde gefunden.</td></tr>';
+	}
+	echo '</tbody></table></section>';
+
+	if ( '' !== $open && isset( $data['rows'][ $open ] ) ) {
+		fge_cc_customer_drawer( $data['rows'][ $open ] );
+	}
+}
+
+/** Seitenfenster eines Kunden: Kontakt, Umsatz, alle Anfragen, Notiz. */
+function fge_cc_customer_drawer( array $c ): void {
+	fge_cc_drawer_open( 'cc-cust', $c['name'], implode( ' · ', array_filter( [ $c['city'], $c['first'] > 0 ? 'erste Anfrage ' . wp_date( 'm.Y', $c['first'] ) : '' ] ) ), true );
+	echo '<div class="cc-custfacts">';
+	foreach ( [ 'Ansprechpartner' => $c['contact'], 'Telefon' => $c['phone'], 'E-Mail' => $c['mail'], 'Umsatz netto' => fge_cc_eur0( $c['revenue'] ) ] as $k => $v ) {
+		$val = esc_html( '' !== $v ? $v : 'nicht hinterlegt' );
+		if ( 'Telefon' === $k && '' !== $v ) {
+			$val = '<a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', $v ) ) . '">' . esc_html( $v ) . '</a>';
+		} elseif ( 'E-Mail' === $k && is_email( $v ) ) {
+			$val = '<a href="mailto:' . esc_attr( $v ) . '">' . esc_html( $v ) . '</a>';
+		}
+		echo '<div><span>' . esc_html( $k ) . '</span><strong>' . $val . '</strong></div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	}
+	echo '</div>';
+	echo '<div class="cc-custreqs"><h3>Anfragen</h3>';
+	$reqs = $c['requests'];
+	usort( $reqs, static fn( $a, $b ) => (int) get_post_time( 'U', false, $b ) <=> (int) get_post_time( 'U', false, $a ) );
+	foreach ( $reqs as $req ) {
+		$f    = fge_cc_request_fact_data( $req );
+		$d    = fge_cc_event_date( $req );
+		$acc  = 'accepted' === (string) get_post_meta( $req, '_fge_offer_status', true );
+		$flow = fge_cc_flow( $req );
+		echo '<a class="cc-custreq" href="' . esc_url( fge_cc_request_url( $req ) ) . '"><span class="cc-mono">' . esc_html( fge_request_number( $req ) ) . '</span>';
+		echo '<span>' . esc_html( (string) ( $f['event'] ?? '' ) ) . '</span><span class="cc-tnum">' . esc_html( $d > 0 ? wp_date( 'd.m.Y', $d ) : 'offen' ) . '</span>';
+		echo '<span class="cc-num">' . ( $acc ? esc_html( fge_cc_eur0( fge_cc_offer_net( $req ) ) ) : fge_cc_pill( $flow['label'], $flow['tone'] ) ) . '</span></a>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	}
+	echo '</div>';
+	echo '<form class="cc-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="fge_cc_customer_note"><input type="hidden" name="key" value="' . esc_attr( $c['key'] ) . '">';
+	wp_nonce_field( 'fge_cc_customer_note' );
+	echo '<label class="cc-field cc-field--wide"><span>Interne Notiz</span><textarea name="note" rows="3" placeholder="Nur für dich, der Kunde sieht das nicht">' . esc_textarea( fge_cc_customer_note( $c['key'] ) ) . '</textarea></label>';
+	echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn" data-cc-drawer-close>Schließen</button><button type="submit" class="cc-btn">Notiz speichern</button>';
+	echo '<a class="cc-btn cc-btn--primary" href="' . esc_url( fge_cc_url( 'anfragen', [ 'tab' => 'alle', 's' => 'Ohne Firmennamen' === $c['name'] ? $c['mail'] : $c['name'] ] ) ) . '">Anfragen ansehen</a></div></form>';
+	fge_cc_drawer_close();
+}
+
+/** Tab Leads: wie im Entwurf eine Zeile je Lead mit Umwandeln und Status. */
+function fge_cc_customers_leads( array $leads, string $search ): void {
+	if ( '' !== $search ) {
+		$leads = array_filter( $leads, static fn( $l ) => false !== mb_stripos( $l['company'] . ' ' . $l['name'] . ' ' . $l['mail'], $search ) );
+	}
+	echo '<p class="cc-muted cc-leads-note">Leute, die im Budget-Rechner den Richtwert freigeschaltet haben. Noch keine Anfrage, aber eine warme Adresse.</p>';
+	echo '<section class="cc-card cc-leadlist">';
+	// Töne wie im Entwurf: neu blau, kontaktiert gelb, verloren grau, umgewandelt grün.
+	$tags = [ 'neu' => [ 'Neu', 'brand' ], 'kontaktiert' => [ 'Kontaktiert', 'warn' ], 'verloren' => [ 'Verloren', 'neutral' ], 'umgewandelt' => [ 'Anfrage angelegt', 'good' ] ];
+	foreach ( $leads as $l ) {
+		$id   = (int) $l['id'];
+		$conv = 'umgewandelt' === $l['status'];
+		[ $label, $tone ] = $tags[ $l['status'] ] ?? $tags['neu'];
+		$wish = implode( ', ', array_filter( [ $l['type'], $l['pax'] > 0 ? $l['pax'] . ' Personen' : '', '' !== $l['budget'] ? 'Budget ' . $l['budget'] : '' ] ) );
+		echo '<div class="cc-leadrow"><div class="cc-leadrow-main"><strong>' . esc_html( $l['company'] ) . '</strong><span>' . esc_html( implode( ' · ', array_filter( [ $l['name'], $l['source'], $l['date'] ] ) ) ) . '</span></div>';
+		echo '<span class="cc-leadrow-wish">' . esc_html( $wish ) . '</span>';
+		echo fge_cc_pill( $label, $tone ); // phpcs:ignore WordPress.Security.EscapeOutput
+		echo '<div class="cc-leadrow-act">';
+		if ( $conv ) {
+			echo '<a class="cc-btn" href="' . esc_url( fge_cc_request_url( $id ) ) . '">Zur Anfrage</a>';
+		} else {
+			fge_cc_button( 'fge_cc_lead', $id, 'In Anfrage umwandeln', [ 'fields' => [ 'to' => 'umgewandelt' ] ] );
+			echo '<form class="cc-actform" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="fge_cc_lead"><input type="hidden" name="request_id" value="' . $id . '">';
+			wp_nonce_field( 'fge_cc_lead_' . $id );
+			echo '<select name="to" class="cc-pillselect" data-cc-autosubmit aria-label="Status des Leads">';
+			foreach ( [ 'neu' => 'Neu', 'kontaktiert' => 'Kontaktiert', 'verloren' => 'Verloren' ] as $k => $t ) {
+				echo '<option value="' . esc_attr( $k ) . '"' . selected( $l['status'], $k, false ) . '>' . esc_html( $t ) . '</option>';
+			}
+			echo '</select><noscript><button type="submit" class="cc-btn">Setzen</button></noscript></form>';
+		}
+		echo '</div></div>';
+	}
+	if ( ! $leads ) {
+		echo '<p class="cc-tgroup-empty">Keine Leads.</p>';
+	}
+	echo '</section>';
 }

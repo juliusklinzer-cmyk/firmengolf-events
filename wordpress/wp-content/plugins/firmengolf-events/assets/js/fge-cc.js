@@ -358,8 +358,19 @@
 		document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !document.querySelector('dialog[open]')) { show(''); } });
 	}
 
+	// Text in die Zwischenablage, Knopf zeigt kurz „Kopiert“.
+	function initCopy() {
+		document.addEventListener('click', function (e) {
+			var b = e.target.closest('[data-cc-copy]');
+			if (!b) { return; }
+			var done = function () { var o = b.textContent; b.textContent = 'Kopiert'; setTimeout(function () { b.textContent = o; }, 1500); };
+			if (navigator.clipboard) { navigator.clipboard.writeText(b.dataset.ccCopy).then(done, function () {}); }
+		});
+	}
+
 	function init() {
 		initToday();
+		initCopy();
 		initDialog();
 		initAutosubmit();
 		initReview();

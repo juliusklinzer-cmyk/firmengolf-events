@@ -22,6 +22,7 @@ function fge_cc_admin_messages(): array {
 		'mail_resend_fail' => [ 'err', 'Die Mail ging wieder nicht raus. Empfänger im Postausgang prüfen.' ],
 		'inv_remind_fail' => [ 'err', 'Die Zahlungserinnerung ging nicht raus. Hat der Kunde eine Mailadresse?' ],
 		'lead_set'     => [ 'ok', 'Lead aktualisiert.' ],
+		'note_saved'   => [ 'ok', 'Notiz gespeichert.' ],
 		'lead_conv'    => [ 'ok', 'Lead ist jetzt eine Anfrage. Weiter mit dem Bedarf.' ],
 		'pc_saved'     => [ 'ok', 'Partnercode gespeichert.' ],
 		'pc_taken'     => [ 'err', 'Diesen Code gibt es schon, der bisherige bleibt.' ],
@@ -135,72 +136,6 @@ function fge_cc_lead_rows(): array {
 	return $rows;
 }
 
-function fge_cc_page_leads(): void {
-	fge_cc_message();
-	$st   = sanitize_key( wp_unslash( $_GET['tab'] ?? 'offen' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	// Direkt per SQL: eine OR-Metaabfrage würde vom Demo-Filter (demo-portal.php)
-	// um eine weitere ODER-Bedingung ergänzt und zeigte dann alle Anfragen (Audit).
-	global $wpdb;
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-	$all = array_map( 'intval', $wpdb->get_col(
-		"SELECT DISTINCT p.ID FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} m ON m.post_id = p.ID
-		 WHERE p.post_type = 'firmengolf_request' AND p.post_status IN ('publish','draft')
-		 AND ( ( m.meta_key = '_fge_request_type' AND m.meta_value = 'budget_lead' ) OR m.meta_key = '_fge_lead_status' )
-		 ORDER BY p.post_date DESC LIMIT 500"
-	) );
-	if ( function_exists( 'fge_is_demo_request' ) ) {
-		$all = array_values( array_filter( $all, static fn( $id ) => ! fge_is_demo_request( $id ) ) );
-	}
-	$map  = fge_cc_lead_statuses();
-	$of   = static fn( int $id ) => (string) get_post_meta( $id, '_fge_lead_status', true ) ?: 'neu';
-	$tabs = [ 'offen' => 'Offen', 'umgewandelt' => 'Umgewandelt', 'verloren' => 'Verloren', 'alle' => 'Alle' ];
-	$in   = static fn( int $id, string $t ) => 'alle' === $t || ( 'offen' === $t ? in_array( $of( $id ), [ 'neu', 'kontaktiert' ], true ) : $of( $id ) === $t );
-	$counts = [];
-	foreach ( $tabs as $k => $l ) {
-		$counts[ $k ] = count( array_filter( $all, static fn( $id ) => $in( (int) $id, $k ) ) );
-	}
-	if ( ! isset( $tabs[ $st ] ) ) {
-		$st = 'offen';
-	}
-	echo '<p class="cc-top-sub cc-sub-under">Leute, die im Budget-Rechner den Richtwert freigeschaltet haben. Noch keine Anfrage, aber eine warme Adresse.</p>';
-	echo '<div class="cc-toolbar"><a class="cc-btn" href="' . esc_url( admin_url( 'edit.php?post_type=firmengolf_event&page=fge-budget-calc' ) ) . '">Preise des Rechners im WordPress</a></div>';
-	fge_cc_seglinks( 'leads', 'tab', $tabs, $st, $counts, [] );
-	echo '<section class="cc-tablewrap"><table class="cc-table"><thead><tr><th>Eingang</th><th>E-Mail</th><th>Was gerechnet</th><th class="cc-num">Richtwert</th><th>Status</th><th></th></tr></thead><tbody>';
-	$n = 0;
-	foreach ( $all as $id ) {
-		$id = (int) $id;
-		if ( ! $in( $id, $st ) ) {
-			continue;
-		}
-		$n++;
-		$bc    = (array) get_post_meta( $id, '_fge_budget_calc', true );
-		$mail  = (string) get_post_meta( $id, '_fge_contact_email', true );
-		[ $l, $tone ] = $map[ $of( $id ) ];
-		$what  = implode( ' · ', array_filter( [ (string) ( $bc['type'] ?? get_post_meta( $id, '_fge_occasion', true ) ), ! empty( $bc['participants'] ) ? (int) $bc['participants'] . ' Personen' : ( (int) get_post_meta( $id, '_fge_expected_participants', true ) > 0 ? (int) get_post_meta( $id, '_fge_expected_participants', true ) . ' Personen' : '' ), (string) ( $bc['range'] ?? '' ), (string) ( $bc['services'] ?? '' ) ] ) );
-		echo '<tr><td class="cc-tnum">' . esc_html( get_the_date( 'd.m.Y', $id ) ) . '</td>';
-		echo '<td><a href="mailto:' . esc_attr( $mail ) . '">' . esc_html( $mail ) . '</a></td>';
-		echo '<td><span class="cc-td-sub cc-td-sub--plain">' . esc_html( $what ) . '</span></td>';
-		echo '<td class="cc-num">' . ( ! empty( $bc['total'] ) ? esc_html( fge_cc_eur( (float) $bc['total'] ) ) : '' ) . '</td>';
-		echo '<td>' . fge_cc_pill( $l, $tone ) . '</td><td class="cc-td-act">'; // phpcs:ignore WordPress.Security.EscapeOutput
-		if ( 'umgewandelt' === $of( $id ) ) {
-			echo '<a class="cc-btn cc-btn--tiny" href="' . esc_url( fge_cc_request_url( $id ) ) . '">Zur Anfrage</a>';
-		} else {
-			if ( 'neu' === $of( $id ) ) {
-				fge_cc_button( 'fge_cc_lead', $id, 'Kontaktiert', [ 'class' => 'cc-btn cc-btn--tiny', 'fields' => [ 'to' => 'kontaktiert' ] ] );
-			}
-			fge_cc_button( 'fge_cc_lead', $id, 'In Anfrage umwandeln', [ 'class' => 'cc-btn cc-btn--tiny cc-btn--primary', 'fields' => [ 'to' => 'umgewandelt' ] ] );
-			if ( 'verloren' !== $of( $id ) ) {
-				fge_cc_button( 'fge_cc_lead', $id, 'Verloren', [ 'class' => 'cc-btn cc-btn--text', 'fields' => [ 'to' => 'verloren' ] ] );
-			}
-		}
-		echo '</td></tr>';
-	}
-	if ( ! $n ) {
-		echo '<tr class="is-empty"><td colspan="6">Keine Leads in dieser Ansicht.</td></tr>';
-	}
-	echo '</tbody></table></section>';
-}
-
 // ── Partnercodes ─────────────────────────────────────────────────────────────
 
 /** Rechte und Nonce für Partnercode-Aktionen, liefert die Code-ID (0 = neu). */
@@ -285,64 +220,210 @@ function fge_cc_pc_drawer( int $id, bool $auto ): void {
 	fge_cc_drawer_close();
 }
 
+/**
+ * Kennzahlen eines Codes für Liste und Detail: Anfragen, Buchungen, Umsatz,
+ * gewährter Rabatt, Buchungen je Monat und die letzten Buchungen.
+ */
+function fge_cc_pc_data( int $id ): array {
+	$reqs  = fge_pc_requests( $id );
+	$book  = [];
+	$rev   = 0.0;
+	$given = 0.0;
+	foreach ( $reqs as $r ) {
+		if ( 'accepted' !== (string) get_post_meta( $r, '_fge_offer_status', true ) ) {
+			continue;
+		}
+		$snap = (array) get_post_meta( $r, '_fge_offer_snapshot', true );
+		$tot  = function_exists( 'fge_offer_totals' ) ? fge_offer_totals( $snap, function_exists( 'fge_offer_selected_extras' ) ? fge_offer_selected_extras( $r ) : [] ) : [ 'net' => 0, 'discount' => 0 ];
+		$at   = (int) strtotime( (string) get_post_meta( $r, '_fge_offer_accepted_at', true ) ) ?: (int) get_post_time( 'U', false, $r );
+		$rev   += (float) ( $tot['net'] ?? 0 );
+		$given += (float) ( $tot['discount'] ?? 0 );
+		$book[] = [ 'req' => $r, 'at' => $at, 'company' => (string) get_post_meta( $r, '_fge_company_name', true ), 'net' => (float) ( $tot['net'] ?? 0 ) ];
+	}
+	usort( $book, static fn( $a, $b ) => $b['at'] <=> $a['at'] );
+	$st = (string) get_post_meta( $id, '_fge_pc_status', true );
+	return [
+		'id'       => $id,
+		'code'     => (string) get_post_meta( $id, '_fge_pc_code', true ),
+		'owner'    => get_the_title( $id ),
+		'contact'  => (string) get_post_meta( $id, '_fge_pc_contact_name', true ),
+		'percent'  => fge_pc_percent( $id ),
+		'usable'   => fge_pc_is_usable( $id ),
+		'status'   => fge_pc_is_usable( $id ) ? 'aktiv' : ( 'pausiert' === $st ? 'pausiert' : 'abgelaufen' ),
+		'requests' => count( $reqs ),
+		'uses'     => count( $book ),
+		'revenue'  => $rev,
+		'given'    => $given,
+		'book'     => $book,
+		'created'  => (int) get_post_time( 'U', false, $id ),
+		'stats'    => fge_pc_stats( $id ),
+	];
+}
+
+// Code pausieren oder wieder aktivieren, aus dem Detail.
+add_action( 'admin_post_fge_cc_pc_status', static function (): void {
+	$id = fge_cc_pc_guard( 'fge_cc_pc_status' );
+	if ( FGE_PC_POST_TYPE === get_post_type( $id ) ) {
+		update_post_meta( $id, '_fge_pc_status', 'pausiert' === ( $_POST['status'] ?? '' ) ? 'pausiert' : 'aktiv' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	}
+	wp_safe_redirect( fge_cc_url( 'partnercodes', [ 'code' => $id, 'msg' => 'pc_saved' ] ) );
+	exit;
+} );
+
 function fge_cc_page_partnercodes(): void {
 	fge_cc_message();
 	if ( ! defined( 'FGE_PC_POST_TYPE' ) ) {
 		fge_cc_empty( 'Partnercodes sind nicht aktiv.' );
 		return;
 	}
-	$open  = absint( $_GET['code'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$codes = get_posts( [ 'post_type' => FGE_PC_POST_TYPE, 'post_status' => 'publish', 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC', 'fields' => 'ids' ] );
-	echo '<p class="cc-top-sub cc-sub-under">Multiplikatoren wie Verbände oder Creator. Der Kunde bekommt Rabatt, der Inhaber eine feste Provision je angenommenem Angebot.</p>';
-	echo '<div class="cc-toolbar"><button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-open="cc-pc-new">Partnercode anlegen</button></div>';
-	echo '<section class="cc-tablewrap"><table class="cc-table"><thead><tr><th>Inhaber</th><th>Code</th><th>Status</th><th class="cc-num">Rabatt</th><th class="cc-num">Provision</th><th class="cc-num">Anfragen</th><th class="cc-num">Buchungen</th><th class="cc-num">Provision offen</th></tr></thead><tbody>';
-	foreach ( $codes as $id ) {
-		$s    = fge_pc_stats( (int) $id );
-		$url  = fge_cc_url( 'partnercodes', [ 'code' => $id ] );
-		$use  = fge_pc_is_usable( (int) $id );
-		echo '<tr onclick="location.href=\'' . esc_js( $url ) . '\'"><td><a href="' . esc_url( $url ) . '"><strong>' . esc_html( get_the_title( $id ) ) . '</strong></a></td>';
-		echo '<td class="cc-mono">' . esc_html( (string) get_post_meta( $id, '_fge_pc_code', true ) ) . '</td>';
-		echo '<td>' . fge_cc_pill( $use ? 'Aktiv' : ( 'pausiert' === get_post_meta( $id, '_fge_pc_status', true ) ? 'Pausiert' : 'Abgelaufen' ), $use ? 'good' : 'neutral' ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
-		echo '<td class="cc-num">' . (int) fge_pc_percent( (int) $id ) . ' %</td>';
-		echo '<td class="cc-num">' . esc_html( fge_cc_eur( (float) get_post_meta( $id, '_fge_pc_commission_eur', true ) ) ) . '</td>';
-		echo '<td class="cc-num">' . (int) $s['requests'] . '</td><td class="cc-num">' . (int) $s['bookings'] . '</td><td class="cc-num">' . ( $s['open'] > 0 ? '<strong>' . esc_html( fge_cc_eur( $s['open'] ) ) . '</strong>' : '' ) . '</td></tr>';
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended
+	$open = absint( $_GET['code'] ?? 0 );
+	$q    = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
+	$sort = sanitize_key( wp_unslash( $_GET['sort'] ?? 'uses' ) );
+	$dir  = 'asc' === ( $_GET['dir'] ?? '' ) ? 'asc' : 'desc';
+	$edit = isset( $_GET['bearbeiten'] );
+	// phpcs:enable
+	$ids  = get_posts( [ 'post_type' => FGE_PC_POST_TYPE, 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ] );
+	$all  = array_map( static fn( $id ) => fge_cc_pc_data( (int) $id ), $ids );
+	$act  = array_filter( $all, static fn( $c ) => $c['usable'] );
+
+	echo '<p class="cc-top-sub cc-sub-under">' . esc_html( count( $act ) . ' aktive Codes · ' . array_sum( array_column( $all, 'uses' ) ) . ' Buchungen · ' . fge_cc_eur0( array_sum( array_column( $all, 'revenue' ) ) ) . ' Umsatz netto. Klick auf einen Code zeigt die Details.' ) . '</p>';
+	if ( '' !== $q ) {
+		$all = array_filter( $all, static fn( $c ) => false !== mb_stripos( $c['code'] . ' ' . $c['owner'] . ' ' . $c['contact'], $q ) );
 	}
-	if ( ! $codes ) {
-		echo '<tr class="is-empty"><td colspan="8">Noch keine Partnercodes.</td></tr>';
+	$val = static fn( array $c ) => match ( $sort ) {
+		'code'     => mb_strtolower( $c['code'] ),
+		'owner'    => mb_strtolower( $c['owner'] ),
+		'discount' => $c['percent'],
+		'reqs'     => $c['requests'],
+		'revenue'  => $c['revenue'],
+		'status'   => $c['status'],
+		default    => $c['uses'],
+	};
+	usort( $all, static function ( $a, $b ) use ( $val, $dir ) {
+		$x = $val( $a );
+		$y = $val( $b );
+		$r = is_string( $x ) ? strcoll( $x, $y ) : $x <=> $y;
+		return 'asc' === $dir ? $r : -$r;
+	} );
+
+	$sel  = null;
+	foreach ( $all as $c ) {
+		if ( $c['id'] === $open ) {
+			$sel = $c;
+		}
+	}
+	$keep = array_filter( [ 's' => $q ] );
+	echo '<div class="cc-pcgrid' . ( $sel ? ' has-sel' : '' ) . '">';
+	echo '<section class="cc-tablewrap"><table class="cc-table cc-pctable"><thead><tr>';
+	fge_cc_sort_th( 'partnercodes', 'code', 'Code', $sort, $dir, $keep );
+	fge_cc_sort_th( 'partnercodes', 'owner', 'Inhaber', $sort, $dir, $keep );
+	fge_cc_sort_th( 'partnercodes', 'discount', 'Rabatt', $sort, $dir, $keep, true );
+	fge_cc_sort_th( 'partnercodes', 'reqs', 'Anfragen', $sort, $dir, $keep, true );
+	fge_cc_sort_th( 'partnercodes', 'uses', 'Genutzt', $sort, $dir, $keep, true );
+	fge_cc_sort_th( 'partnercodes', 'revenue', 'Umsatz netto', $sort, $dir, $keep, true );
+	fge_cc_sort_th( 'partnercodes', 'status', 'Status', $sort, $dir, $keep );
+	echo '</tr></thead><tbody>';
+	foreach ( $all as $c ) {
+		$on  = $c['id'] === $open;
+		$url = fge_cc_url( 'partnercodes', array_filter( [ 'code' => $on ? 0 : $c['id'], 's' => $q, 'sort' => $sort, 'dir' => $dir ] ) );
+		echo '<tr class="' . ( $on ? 'is-on' : '' ) . '" onclick="location.href=\'' . esc_js( $url ) . '\'"><td class="cc-mono"><a href="' . esc_url( $url ) . '">' . esc_html( $c['code'] ) . '</a></td>';
+		echo '<td><span class="cc-pcowner"><strong>' . esc_html( $c['owner'] ) . '</strong>' . ( '' !== $c['contact'] ? '<span>' . esc_html( $c['contact'] ) . '</span>' : '' ) . '</span></td>';
+		echo '<td class="cc-num">' . (int) $c['percent'] . ' %</td><td class="cc-num">' . (int) $c['requests'] . '</td><td class="cc-num">' . (int) $c['uses'] . '</td>';
+		echo '<td class="cc-num">' . esc_html( fge_cc_eur0( $c['revenue'] ) ) . '</td>';
+		echo '<td>' . fge_cc_pill( [ 'aktiv' => 'Aktiv', 'pausiert' => 'Pausiert', 'abgelaufen' => 'Abgelaufen' ][ $c['status'] ], 'aktiv' === $c['status'] ? 'good' : 'neutral' ) . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	}
+	if ( ! $all ) {
+		echo '<tr class="is-empty"><td colspan="7">' . ( '' !== $q ? 'Kein Code gefunden.' : 'Noch keine Partnercodes.' ) . '</td></tr>';
 	}
 	echo '</tbody></table></section>';
 
-	// Detail eines Codes: Anfragen mit Provision, abrechnen.
-	if ( $open > 0 && FGE_PC_POST_TYPE === get_post_type( $open ) ) {
-		$reqs = fge_pc_requests( $open );
-		$s    = fge_pc_stats( $open );
-		echo '<section class="cc-card cc-pcdetail"><div class="cc-block-head"><div><h2 class="cc-h-small">' . esc_html( get_the_title( $open ) . ' · ' . get_post_meta( $open, '_fge_pc_code', true ) ) . '</h2>';
-		echo '<span class="cc-muted">' . esc_html( 'Offen ' . fge_cc_eur( $s['open'] ) . ' · abgerechnet ' . fge_cc_eur( $s['settled'] ) . ' · storniert ' . fge_cc_eur( $s['cancelled'] ) ) . '</span></div><div class="cc-btnrow">';
-		echo '<button type="button" class="cc-btn" data-cc-drawer-open="cc-pc-' . (int) $open . '">Bearbeiten</button>';
-		if ( $s['open'] > 0 ) {
-			fge_cc_pc_form_open( 'fge_cc_pc_settle', $open );
-			echo '<button type="submit" class="cc-btn cc-btn--primary" onclick="return confirm(\'Alle offenen Provisionen als abgerechnet markieren?\')">Alle offenen abrechnen</button></form>';
-		}
-		echo '</div></div>';
-		echo '<table class="cc-table cc-table--plain"><thead><tr><th>Anfrage</th><th>Firma</th><th>Status</th><th class="cc-num">Provision</th><th></th></tr></thead><tbody>';
-		foreach ( $reqs as $r ) {
-			$cs = (string) get_post_meta( $r, '_fge_pc_commission_status', true );
-			echo '<tr><td class="cc-mono"><a href="' . esc_url( fge_cc_request_url( $r ) ) . '">' . esc_html( fge_request_number( $r ) ) . '</a></td><td>' . esc_html( (string) get_post_meta( $r, '_fge_company_name', true ) ) . '</td>';
-			echo '<td>' . fge_cc_pill( fge_cc_flow( $r )['label'], fge_cc_flow( $r )['tone'] ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
-			echo '<td class="cc-num">' . ( '' !== $cs ? esc_html( fge_cc_eur( (float) get_post_meta( $r, '_fge_pc_commission_amount', true ) ) . ' ' . $cs ) : '' ) . '</td><td class="cc-td-act">';
-			if ( 'offen' === $cs ) {
-				fge_cc_pc_form_open( 'fge_cc_pc_settle', $open );
-				echo '<input type="hidden" name="req" value="' . (int) $r . '"><button type="submit" class="cc-btn cc-btn--tiny">Abrechnen</button></form>';
-			}
-			echo '</td></tr>';
-		}
-		if ( ! $reqs ) {
-			echo '<tr class="is-empty"><td colspan="5">Noch keine Anfrage mit diesem Code.</td></tr>';
-		}
-		echo '</tbody></table></section>';
-		fge_cc_pc_drawer( $open, false );
+	if ( $sel ) {
+		fge_cc_pc_detail( $sel, $q, $sort, $dir );
+	}
+	echo '</div>';
+	if ( $sel ) {
+		fge_cc_pc_drawer( $sel['id'], $edit );
 	}
 	fge_cc_pc_drawer( 0, false );
+}
+
+/** Detailfeld eines Codes rechts neben der Tabelle. */
+function fge_cc_pc_detail( array $c, string $q, string $sort, string $dir ): void {
+	$on    = $c['usable'];
+	$book  = $c['book'];
+	$last  = $book ? $book[0]['at'] : time();
+	$mons  = [];
+	for ( $i = 5; $i >= 0; $i-- ) {
+		$m      = strtotime( wp_date( 'Y-m-01', $last ) . " -$i months" );
+		$key    = wp_date( 'Y-m', $m );
+		$mons[] = [ fge_cc_mon( $m ), count( array_filter( $book, static fn( $b ) => wp_date( 'Y-m', $b['at'] ) === $key ) ) ];
+	}
+	$max   = max( 1, ...array_column( $mons, 1 ) );
+	$close = fge_cc_url( 'partnercodes', array_filter( [ 's' => $q, 'sort' => $sort, 'dir' => $dir ] ) );
+	echo '<aside class="cc-card cc-pcdetail">';
+	echo '<div class="cc-pcdetail-head"><div><div class="cc-pcdetail-code"><span class="cc-mono">' . esc_html( $c['code'] ) . '</span>' . fge_cc_pill( $on ? 'Aktiv' : ( 'pausiert' === $c['status'] ? 'Pausiert' : 'Abgelaufen' ), $on ? 'good' : 'neutral' ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '<span class="cc-muted">' . esc_html( implode( ' · ', array_filter( [ $c['owner'], $c['contact'] ] ) ) ) . '</span></div>';
+	echo '<a class="cc-tdetail-x" href="' . esc_url( $close ) . '">Schließen</a></div>';
+
+	echo '<div class="cc-pckpis">';
+	foreach ( [
+		'Anfragen mit Code' => (string) $c['requests'],
+		'Gebucht'           => (string) $c['uses'],
+		'Quote'             => $c['requests'] ? round( $c['uses'] / $c['requests'] * 100 ) . ' %' : 'keine',
+		'Umsatz netto'      => fge_cc_eur0( $c['revenue'] ),
+		'Ø pro Buchung'     => $c['uses'] ? fge_cc_eur0( $c['revenue'] / $c['uses'] ) : 'keine',
+		'Rabatt gewährt'    => fge_cc_eur0( $c['given'] ),
+	] as $k => $v ) {
+		echo '<div><span>' . esc_html( $k ) . '</span><strong>' . esc_html( $v ) . '</strong></div>';
+	}
+	echo '</div>';
+
+	echo '<div class="cc-pcbars-wrap"><span class="cc-pcsub">Buchungen pro Monat</span><div class="cc-pcbars">';
+	foreach ( $mons as [ $m, $n ] ) {
+		echo '<div class="cc-pcbar"><span>' . (int) $n . '</span><div style="height:' . esc_attr( $n ? max( $n / $max * 100, 8 ) : 2 ) . '%"></div></div>';
+	}
+	echo '</div><div class="cc-pcbars-x">';
+	foreach ( $mons as [ $m ] ) {
+		echo '<span>' . esc_html( $m ) . '</span>';
+	}
+	echo '</div></div>';
+
+	echo '<div class="cc-pcbook"><span class="cc-pcsub">Letzte Buchungen</span>';
+	foreach ( array_slice( $book, 0, 6 ) as $b ) {
+		echo '<a href="' . esc_url( fge_cc_request_url( $b['req'] ) ) . '"><span class="cc-tnum">' . esc_html( wp_date( 'd.m.Y', $b['at'] ) ) . '</span><span>' . esc_html( $b['company'] ) . '</span><span class="cc-tnum">' . esc_html( fge_cc_eur0( $b['net'] ) ) . '</span></a>';
+	}
+	if ( ! $book ) {
+		echo '<p class="cc-muted">Noch nicht genutzt.</p>';
+	}
+	echo '</div>';
+
+	$s = $c['stats'];
+	echo '<dl class="cc-tfacts">';
+	foreach ( [
+		'Rabatt'          => $c['percent'] . ' %',
+		'Provision'       => fge_cc_eur( (float) get_post_meta( $c['id'], '_fge_pc_commission_eur', true ) ) . ' je Buchung',
+		'Provision offen' => fge_cc_eur( $s['open'] ) . ( $s['settled'] > 0 ? ', abgerechnet ' . fge_cc_eur( $s['settled'] ) : '' ),
+		'Gültig bis'      => '' !== ( $until = (string) get_post_meta( $c['id'], '_fge_pc_valid_until', true ) ) ? wp_date( 'd.m.Y', fge_cc_local_ts( $until ) ) . ( 'abgelaufen' === $c['status'] ? ', abgelaufen' : '' ) : 'unbegrenzt',
+		'Angelegt am'     => $c['created'] > 0 ? wp_date( 'd.m.Y', $c['created'] ) : '',
+		'Zuletzt genutzt' => $book ? wp_date( 'd.m.Y', $book[0]['at'] ) : 'noch nie',
+	] as $k => $v ) {
+		echo '<div><dt>' . esc_html( $k ) . '</dt><dd>' . esc_html( $v ) . '</dd></div>';
+	}
+	echo '</dl>';
+
+	echo '<div class="cc-tdetail-act">';
+	echo '<button type="button" class="cc-btn cc-btn--primary" data-cc-copy="' . esc_attr( $c['code'] ) . '">Code kopieren</button>';
+	if ( 'abgelaufen' !== $c['status'] ) {
+		fge_cc_pc_form_open( 'fge_cc_pc_status', $c['id'] );
+		echo '<input type="hidden" name="status" value="' . ( $on ? 'pausiert' : 'aktiv' ) . '"><button type="submit" class="cc-btn">' . ( $on ? 'Code pausieren' : 'Code aktivieren' ) . '</button></form>';
+	}
+	echo '<button type="button" class="cc-btn cc-btn--text" data-cc-drawer-open="cc-pc-' . (int) $c['id'] . '">Bearbeiten</button>';
+	if ( $s['open'] > 0 ) {
+		fge_cc_pc_form_open( 'fge_cc_pc_settle', $c['id'] );
+		echo '<button type="submit" class="cc-btn cc-btn--text" onclick="return confirm(\'Alle offenen Provisionen als abgerechnet markieren?\')">Provision abrechnen</button></form>';
+	}
+	echo '</div></aside>';
 }
 
 // ── Nutzer ───────────────────────────────────────────────────────────────────

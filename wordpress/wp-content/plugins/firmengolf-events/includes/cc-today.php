@@ -310,7 +310,7 @@ function fge_cc_page_dashboard(): void {
 	echo '<section class="cc-card cc-tnext"><h2>Nächste Events</h2>';
 	$evs = fge_cc_today_events();
 	foreach ( $evs as [ $req, $d, $company, $sub ] ) {
-		echo '<a class="cc-tnext-row" href="' . esc_url( fge_cc_request_url( $req ) ) . '"><span class="cc-tnext-date"><strong>' . esc_html( wp_date( 'j', $d ) ) . '</strong><span>' . esc_html( wp_date( 'M', $d ) ) . '</span></span>';
+		echo '<a class="cc-tnext-row" href="' . esc_url( fge_cc_request_url( $req ) ) . '"><span class="cc-tnext-date"><strong>' . esc_html( wp_date( 'j', $d ) ) . '</strong><span>' . esc_html( fge_cc_mon( $d ) ) . '</span></span>';
 		echo '<span class="cc-tnext-main"><strong>' . esc_html( $company ?: 'Ohne Firma' ) . '</strong><span>' . esc_html( $sub ) . '</span></span></a>';
 	}
 	if ( ! $evs ) {
