@@ -214,10 +214,18 @@ function fge_bc_config(): array {
 	};
 
 	$saved_types = $by_id( $saved['types'] ?? [] );
+	$known       = array_column( $def['services'], 'id' );
 	foreach ( $def['types'] as &$t ) {
 		$s = $saved_types[ $t['id'] ] ?? [];
 		if ( isset( $s['label'] ) && $s['label'] !== '' ) {
 			$t['label'] = (string) $s['label'];
+		}
+		// Zuordnung Typ zu Leistungen, seit 16.10.2026 im Control Center änderbar.
+		// Pflicht-Leistungen bleiben immer drin, Voreinstellungen nur aus der Auswahl.
+		if ( isset( $s['services'] ) && is_array( $s['services'] ) ) {
+			$list           = array_values( array_intersect( array_unique( array_merge( $t['required'], array_map( 'strval', $s['services'] ) ) ), $known ) );
+			$t['services']  = $list;
+			$t['default_on'] = array_values( array_intersect( $t['default_on'], $list ) );
 		}
 	}
 	unset( $t );
@@ -264,8 +272,10 @@ function fge_bc_handle_save(): void {
 	$def = fge_bc_defaults();
 
 	$types = [];
+	$cur   = fge_bc_config(); // Zuordnung aus dem Control Center nicht überschreiben
+	$curt  = array_column( $cur['types'], 'services', 'id' );
 	foreach ( $def['types'] as $t ) {
-		$types[] = [ 'id' => $t['id'], 'label' => sanitize_text_field( wp_unslash( $_POST['type_label'][ $t['id'] ] ?? $t['label'] ) ) ];
+		$types[] = [ 'id' => $t['id'], 'label' => sanitize_text_field( wp_unslash( $_POST['type_label'][ $t['id'] ] ?? $t['label'] ) ), 'services' => $curt[ $t['id'] ] ?? $t['services'] ];
 	}
 	$services = [];
 	foreach ( $def['services'] as $s ) {

@@ -23,6 +23,9 @@ function fge_cc_admin_messages(): array {
 		'inv_remind_fail' => [ 'err', 'Die Zahlungserinnerung ging nicht raus. Hat der Kunde eine Mailadresse?' ],
 		'lead_set'     => [ 'ok', 'Lead aktualisiert.' ],
 		'note_saved'   => [ 'ok', 'Notiz gespeichert.' ],
+		'bc_saved'     => [ 'ok', 'Budgetrechner gespeichert. Neue Berechnungen auf der Website nutzen die Werte sofort.' ],
+		'co_saved'     => [ 'ok', 'Firmendaten gespeichert.' ],
+		'co_badmail'   => [ 'err', 'Gespeichert, eine Mailadresse war ungültig und wurde nicht übernommen.' ],
 		'lead_conv'    => [ 'ok', 'Lead ist jetzt eine Anfrage. Weiter mit dem Bedarf.' ],
 		'pc_saved'     => [ 'ok', 'Partnercode gespeichert.' ],
 		'pc_taken'     => [ 'err', 'Diesen Code gibt es schon, der bisherige bleibt.' ],
@@ -496,41 +499,211 @@ function fge_cc_user_form_open( int $uid, string $do ): void {
 	wp_nonce_field( 'fge_cc_user_' . $uid );
 }
 
-function fge_cc_page_users(): void {
+// ── Einstellungen ────────────────────────────────────────────────────────────
+// Fünf Bereiche nach „Control Center Redesign“ (16.10.2026): Budgetrechner,
+// Postausgang, Nutzer, Verbindungen, Firmendaten.
+
+function fge_cc_settings_areas(): array {
+	return [ 'budgetrechner' => 'Budgetrechner', 'postausgang' => 'Postausgang', 'nutzer' => 'Nutzer', 'verbindungen' => 'Verbindungen', 'firmendaten' => 'Firmendaten' ];
+}
+
+function fge_cc_page_settings(): void {
+	$area  = sanitize_key( wp_unslash( $_GET['bereich'] ?? 'budgetrechner' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$areas = fge_cc_settings_areas();
+	$area  = isset( $areas[ $area ] ) ? $area : 'budgetrechner';
 	fge_cc_message();
+	echo '<p class="cc-top-sub cc-sub-under">Budgetrechner, Mails, Nutzer und Verbindungen</p>';
+	$failed = count( array_filter( function_exists( 'fge_mail_log_recent' ) ? fge_mail_log_recent( 50, 'failed' ) : [], static fn( $m ) => (int) strtotime( (string) $m['sent_at'] ) >= time() - 14 * DAY_IN_SECONDS ) );
+	echo '<nav class="cc-areatabs" aria-label="Bereich">';
+	foreach ( $areas as $k => $label ) {
+		echo '<a class="cc-areatab' . ( $k === $area ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'einstellungen', [ 'bereich' => $k ] ) ) . '"' . ( $k === $area ? ' aria-current="page"' : '' ) . '>' . esc_html( $label );
+		if ( 'postausgang' === $k && $failed > 0 ) {
+			echo '<span class="cc-areatab-badge">' . (int) $failed . '</span>';
+		}
+		echo '</a>';
+	}
+	echo '</nav>';
+	call_user_func( 'fge_cc_settings_' . $area );
+}
+
+// ── Budgetrechner ────────────────────────────────────────────────────────────
+
+/** Einheit einer Leistung: Person oder pauschal, dazu je Nacht oder Tag. */
+function fge_cc_bc_unit( array $sv ): array {
+	$pp   = array_sum( $sv['pp'] ) > 0 || array_sum( $sv['flat'] ) <= 0;
+	$per  = [ 'night' => ' und Nacht', 'day' => ' und Tag' ][ $sv['per'] ?? '' ] ?? '';
+	return [ $pp ? 'pp' : 'flat', $pp ? 'pro Person' . $per : 'pauschal' . ( '' !== $per ? $per : '' ) ];
+}
+
+add_action( 'admin_post_fge_cc_bc_save', static function (): void {
+	if ( ! fge_cc_can() ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
+	}
+	check_admin_referer( 'fge_cc_bc_save' );
+	// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce oben geprüft.
+	$type  = sanitize_key( wp_unslash( $_POST['typ'] ?? '' ) );
+	$on    = array_map( 'sanitize_key', (array) wp_unslash( $_POST['on'] ?? [] ) );
+	$price = (array) wp_unslash( $_POST['price'] ?? [] );
+	// phpcs:enable
+	$cfg   = fge_bc_config();
+	$def   = fge_bc_defaults();
+	$known = array_column( $def['services'], 'id' );
+
+	// Preise je Leistung, nur die Einheit, die die Leistung hat.
+	$services = [];
+	foreach ( $cfg['services'] as $sv ) {
+		[ $unit ] = fge_cc_bc_unit( $sv );
+		if ( isset( $price[ $sv['id'] ] ) && is_array( $price[ $sv['id'] ] ) ) {
+			for ( $i = 0; $i < 3; $i++ ) {
+				$raw = (string) ( $price[ $sv['id'] ][ $i ] ?? '' );
+				if ( '' !== trim( $raw ) ) {
+					$sv[ $unit ][ $i ] = max( 0, function_exists( 'fge_parse_de_amount' ) ? fge_parse_de_amount( $raw ) : (float) str_replace( ',', '.', $raw ) );
+				}
+			}
+		}
+		$services[] = [ 'id' => $sv['id'], 'label' => $sv['label'], 'pp' => $sv['pp'], 'flat' => $sv['flat'] ];
+	}
+	// Leistungen des gewählten Typs in Katalog-Reihenfolge.
+	$types = [];
+	foreach ( $cfg['types'] as $t ) {
+		$list = $t['services'];
+		if ( $t['id'] === $type ) {
+			$list = array_values( array_intersect( $known, array_unique( array_merge( $on, $t['required'] ) ) ) );
+		}
+		$types[] = [ 'id' => $t['id'], 'label' => $t['label'], 'services' => $list ];
+	}
+	update_option( FGE_BC_OPTION, [ 'v' => $def['v'], 'types' => $types, 'services' => $services, 'round_to' => (int) $cfg['round_to'] ] );
+	wp_safe_redirect( fge_cc_url( 'einstellungen', [ 'bereich' => 'budgetrechner', 'typ' => $type, 'msg' => 'bc_saved' ] ) );
+	exit;
+} );
+
+function fge_cc_settings_budgetrechner(): void {
+	if ( ! function_exists( 'fge_bc_config' ) ) {
+		fge_cc_empty( 'Der Budgetrechner ist nicht aktiv.' );
+		return;
+	}
+	$cfg   = fge_bc_config();
+	$types = array_column( $cfg['types'], null, 'id' );
+	$typ   = sanitize_key( wp_unslash( $_GET['typ'] ?? (string) ( $cfg['start']['type'] ?? 'teamevent' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$typ   = isset( $types[ $typ ] ) ? $typ : array_key_first( $types );
+	$t     = $types[ $typ ];
+	$cats  = $cfg['cats'];
+	$on    = $t['services'];
+
+	echo '<form class="cc-card cc-bc" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="fge_cc_bc_save"><input type="hidden" name="typ" value="' . esc_attr( $typ ) . '">';
+	wp_nonce_field( 'fge_cc_bc_save' );
+	echo '<div class="cc-bc-head"><div class="cc-chart-head"><h2>Budgetrechner auf der Website</h2><span class="cc-muted">Preise netto, Änderungen gelten sofort für neue Berechnungen</span></div>';
+	echo '<div class="cc-bc-types">';
+	foreach ( $types as $id => $ty ) {
+		echo '<a class="cc-bc-type' . ( $id === $typ ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'einstellungen', [ 'bereich' => 'budgetrechner', 'typ' => $id ] ) ) . '">' . esc_html( $ty['label'] ) . '</a>';
+	}
+	echo '</div><span class="cc-bc-sub">' . esc_html( count( $on ) . ' Positionen im Rechner für ' . $t['label'] . '. Haken setzen oder entfernen, Preise direkt eintragen.' ) . '</span></div>';
+
+	$rows = $cfg['services'];
+	usort( $rows, static fn( $a, $b ) => (int) in_array( $b['id'], $on, true ) <=> (int) in_array( $a['id'], $on, true ) );
+	echo '<div class="cc-bc-scroll"><div class="cc-bc-table"><div class="cc-bc-row cc-bc-row--head"><span>Aktiv</span><span>Position</span><span>Einheit</span><span class="cc-num">Günstig</span><span class="cc-num">Standard</span><span class="cc-num">Premium</span></div>';
+	$sum = 0.0;
+	$pax = 20;
+	foreach ( $rows as $sv ) {
+		$active = in_array( $sv['id'], $on, true );
+		$req    = in_array( $sv['id'], $t['required'], true );
+		[ $unit, $ulabel ] = fge_cc_bc_unit( $sv );
+		if ( $active ) {
+			$sum += 'pp' === $unit ? $sv['pp'][1] * $pax : $sv['flat'][1];
+		}
+		echo '<div class="cc-bc-row' . ( $active ? '' : ' is-off' ) . '">';
+		echo '<span><input type="checkbox" name="on[]" value="' . esc_attr( $sv['id'] ) . '"' . checked( $active, true, false ) . ( $req ? ' disabled title="Pflicht für diesen Typ"' : '' ) . ' aria-label="' . esc_attr( $sv['label'] . ' im Rechner' ) . '">' . ( $req ? '<input type="hidden" name="on[]" value="' . esc_attr( $sv['id'] ) . '">' : '' ) . '</span>';
+		echo '<span class="cc-bc-label"><strong>' . esc_html( $sv['label'] ) . '</strong><span>' . esc_html( (string) ( $cats[ $sv['cat'] ]['label'] ?? '' ) . ( $req ? ' · Pflicht' : '' ) . ( isset( $sv['zero_label'] ) ? ' · ohne Preis: ' . $sv['zero_label'] : '' ) ) . '</span></span>';
+		echo '<span class="cc-bc-unit">' . esc_html( $ulabel ) . '</span>';
+		for ( $i = 0; $i < 3; $i++ ) {
+			$v = (float) $sv[ $unit ][ $i ];
+			echo '<input type="text" inputmode="decimal" name="price[' . esc_attr( $sv['id'] ) . '][' . $i . ']" value="' . esc_attr( number_format( $v, abs( $v - round( $v ) ) > 0.004 ? 2 : 0, ',', '.' ) ) . '" aria-label="' . esc_attr( $sv['label'] . ', ' . [ 'Günstig', 'Standard', 'Premium' ][ $i ] ) . '">';
+		}
+		echo '</div>';
+	}
+	echo '</div></div>';
+	echo '<div class="cc-bc-foot"><span class="cc-muted">' . esc_html( 'Beispiel ' . $t['label'] . ' mit ' . $pax . ' Personen, Stufe Standard' ) . '</span><strong>' . esc_html( fge_cc_eur0( $sum ) ) . '</strong><button type="submit" class="cc-btn cc-btn--primary">Speichern</button></div>';
+	echo '</form>';
+}
+
+// ── Postausgang ──────────────────────────────────────────────────────────────
+
+function fge_cc_settings_postausgang(): void {
+	$only = 'fehler' === sanitize_key( wp_unslash( $_GET['filter'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$rows = function_exists( 'fge_mail_log_recent' ) ? fge_mail_log_recent( 200, $only ? 'failed' : '' ) : [];
+	$nf   = function_exists( 'fge_mail_log_recent' ) ? count( fge_mail_log_recent( 200, 'failed' ) ) : 0;
+	fge_cc_seglinks( 'einstellungen', 'filter', [ '' => 'Alle', 'fehler' => 'Nicht zugestellt' ], $only ? 'fehler' : '', [ '' => count( function_exists( 'fge_mail_log_recent' ) ? fge_mail_log_recent( 200 ) : [] ), 'fehler' => $nf ], [ 'bereich' => 'postausgang' ] );
+	echo '<section class="cc-card cc-outbox">';
+	foreach ( $rows as $m ) {
+		$req  = (int) $m['request_id'];
+		$st   = (string) $m['status'];
+		$tag  = 'failed' === $st ? [ 'Fehlgeschlagen', 'bad' ] : ( 'resent' === $st ? [ 'Erneut gesendet', 'neutral' ] : [ 'Gesendet', 'good' ] );
+		$name = function_exists( 'fge_mail_label' ) && '' !== (string) $m['mail_key'] ? fge_mail_label( (string) $m['mail_key'] ) : '';
+		echo '<div class="cc-outrow"><span class="cc-outrow-tag">' . fge_cc_pill( $tag[0], $tag[1] ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput
+		echo '<div class="cc-outrow-main"><strong>' . esc_html( (string) $m['subject'] ) . '</strong><span>An ' . esc_html( (string) $m['recipient'] ) . ( $req > 0 ? ' · <a href="' . esc_url( fge_cc_request_url( $req ) ) . '">' . esc_html( fge_request_number( $req ) ) . '</a>' : '' ) . ( '' !== $name ? ' · ' . esc_html( $name ) : '' ) . '</span>';
+		if ( 'failed' === $st && '' !== (string) $m['error'] ) {
+			echo '<span class="cc-outrow-err">' . esc_html( mb_substr( (string) $m['error'], 0, 160 ) ) . '</span>';
+		}
+		echo '</div><span class="cc-outrow-at">' . esc_html( wp_date( 'd.m. H:i', (int) strtotime( (string) $m['sent_at'] ) ) ) . '</span>';
+		if ( 'failed' === $st ) {
+			fge_mail_log_retry_button( $m );
+		}
+		echo '</div>';
+	}
+	if ( ! $rows ) {
+		echo '<p class="cc-tgroup-empty">' . esc_html( $only ? 'Alle Mails sind raus.' : 'Noch nichts protokolliert.' ) . '</p>';
+	}
+	echo '</section>';
+}
+
+// ── Nutzer ───────────────────────────────────────────────────────────────────
+
+// Letzte Anmeldung merken, für „zuletzt“ in der Nutzerliste.
+add_action( 'wp_login', static function ( string $login, WP_User $user ): void {
+	update_user_meta( $user->ID, 'fge_last_login', time() );
+}, 10, 2 );
+
+function fge_cc_settings_nutzer(): void {
 	$tab   = sanitize_key( wp_unslash( $_GET['tab'] ?? 'team' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$tabs  = [ 'team' => 'Firmengolf', 'partner' => 'Partner-Zugänge', 'alle' => 'Alle' ];
-	$tab   = isset( $tabs[ $tab ] ) ? $tab : 'team';
-	$all   = get_users( [ 'orderby' => 'registered', 'order' => 'DESC', 'number' => 500 ] );
+	$all   = get_users( [ 'orderby' => 'registered', 'order' => 'ASC', 'number' => 500 ] );
 	$is_t  = static fn( WP_User $u ) => in_array( 'administrator', (array) $u->roles, true );
 	$is_p  = static fn( WP_User $u ) => in_array( 'firmengolf_partner', (array) $u->roles, true );
-	$counts = [ 'team' => count( array_filter( $all, $is_t ) ), 'partner' => count( array_filter( $all, $is_p ) ), 'alle' => count( $all ) ];
-	$rows   = array_filter( $all, 'team' === $tab ? $is_t : ( 'partner' === $tab ? $is_p : '__return_true' ) );
+	$team  = 'partner' !== $tab;
+	$rows  = array_values( array_filter( $all, $team ? $is_t : $is_p ) );
+	$me    = get_current_user_id();
+	$ago   = static function ( int $ts ): string {
+		if ( $ts <= 0 ) {
+			return 'noch nie';
+		}
+		$d = (int) floor( ( fge_cc_today() - current_datetime()->setTimestamp( $ts )->setTime( 0, 0 )->getTimestamp() ) / DAY_IN_SECONDS );
+		return 0 >= $d ? 'heute' : ( 1 === $d ? 'gestern' : 'am ' . wp_date( 'd.m.Y', $ts ) );
+	};
 
-	echo '<p class="cc-top-sub cc-sub-under">Wer ins Control Center und ins Partnerportal kommt. Passwörter setzt jeder selbst über den Link per Mail.</p>';
-	echo '<div class="cc-toolbar"><button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-open="cc-user-new">Zugang für das Team anlegen</button></div>';
-	fge_cc_seglinks( 'nutzer', 'tab', $tabs, $tab, $counts, [] );
-	echo '<section class="cc-tablewrap"><table class="cc-table"><thead><tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th>Verknüpft mit</th><th>Seit</th><th></th></tr></thead><tbody>';
+	fge_cc_seglinks( 'einstellungen', 'tab', [ 'team' => 'Control Center', 'partner' => 'Partner-Zugänge' ], $team ? 'team' : 'partner', [ 'team' => count( array_filter( $all, $is_t ) ), 'partner' => count( array_filter( $all, $is_p ) ) ], [ 'bereich' => 'nutzer' ] );
+	echo '<section class="cc-card cc-users"><div class="cc-users-head"><h2>' . ( $team ? 'Zugang zum Control Center' : 'Zugänge zum Partnerportal' ) . '</h2>';
+	if ( $team ) {
+		echo '<button type="button" class="cc-btn" data-cc-drawer-open="cc-user-new">Person einladen</button>';
+	}
+	echo '</div>';
 	foreach ( $rows as $u ) {
-		$pid = 0;
-		if ( $is_p( $u ) ) {
+		$name = trim( $u->first_name . ' ' . $u->last_name ) ?: $u->display_name;
+		$ini  = mb_strtoupper( implode( '', array_map( static fn( $w ) => mb_substr( $w, 0, 1 ), array_slice( preg_split( '/\s+/', $name ) ?: [], 0, 2 ) ) ) );
+		$pid  = 0;
+		if ( ! $team ) {
 			$q   = get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => 'any', 'numberposts' => 1, 'fields' => 'ids', 'meta_key' => '_fge_assigned_wp_user_id', 'meta_value' => $u->ID ] ); // phpcs:ignore WordPress.DB.SlowDBQuery
 			$pid = $q ? (int) $q[0] : 0;
 		}
-		echo '<tr><td><strong>' . esc_html( $u->display_name ) . '</strong><span class="cc-td-sub">' . esc_html( $u->user_login ) . '</span></td>';
-		echo '<td><a href="mailto:' . esc_attr( $u->user_email ) . '">' . esc_html( $u->user_email ) . '</a></td>';
-		echo '<td>' . esc_html( $is_t( $u ) ? 'Control Center' : ( $is_p( $u ) ? 'Partnerportal' : implode( ', ', (array) $u->roles ) ) ) . '</td>';
-		echo '<td>' . ( $pid > 0 ? '<a href="' . esc_url( fge_cc_url( 'partner', [ 'pid' => $pid ] ) ) . '">' . esc_html( function_exists( 'fge_cc_partner_name' ) ? fge_cc_partner_name( $pid ) : get_the_title( $pid ) ) . '</a>' : '' ) . '</td>';
-		echo '<td class="cc-tnum">' . esc_html( wp_date( 'd.m.Y', strtotime( $u->user_registered ) ) ) . '</td><td class="cc-td-act">';
+		echo '<div class="cc-userrow"><span class="cc-avatar" aria-hidden="true">' . esc_html( $ini ) . '</span>';
+		echo '<div class="cc-userrow-main"><strong>' . esc_html( $name ) . ( $u->ID === $me ? ' <span class="cc-muted">(du)</span>' : '' ) . '</strong><span>' . esc_html( $u->user_email . ' · zuletzt ' . $ago( (int) get_user_meta( $u->ID, 'fge_last_login', true ) ) ) . ( $pid > 0 ? ' · <a href="' . esc_url( fge_cc_url( 'partner', [ 'pid' => $pid ] ) ) . '">' . esc_html( fge_cc_partner_name( $pid ) ) . '</a>' : '' ) . '</span></div>';
+		echo '<span class="cc-userrow-role">' . esc_html( $team ? 'Admin' : 'Partner' ) . '</span><div class="cc-userrow-act">';
 		fge_cc_user_form_open( $u->ID, 'reset' );
 		echo '<button type="submit" class="cc-btn cc-btn--tiny" onclick="return confirm(' . esc_attr( wp_json_encode( 'Link zum Setzen des Passworts an ' . $u->user_email . ' senden?' ) ) . ')">Passwort-Link senden</button></form>';
-		echo '<button type="button" class="cc-btn cc-btn--text" data-cc-drawer-open="cc-user-' . (int) $u->ID . '">Mail ändern</button>';
-		echo '</td></tr>';
+		echo '<button type="button" class="cc-btn cc-btn--text" data-cc-drawer-open="cc-user-' . (int) $u->ID . '">Mail ändern</button></div></div>';
 	}
 	if ( ! $rows ) {
-		echo '<tr class="is-empty"><td colspan="6">Keine Nutzer in dieser Ansicht.</td></tr>';
+		echo '<p class="cc-tgroup-empty">Keine Zugänge.</p>';
 	}
-	echo '</tbody></table></section>';
+	echo '</section>';
 
 	foreach ( $rows as $u ) {
 		fge_cc_drawer_open( 'cc-user-' . $u->ID, 'Mailadresse ändern', $u->display_name );
@@ -540,61 +713,73 @@ function fge_cc_page_users(): void {
 		echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn" data-cc-drawer-close>Abbrechen</button><button type="submit" class="cc-btn cc-btn--primary">Ändern</button></div></form>';
 		fge_cc_drawer_close();
 	}
-	fge_cc_drawer_open( 'cc-user-new', 'Zugang für das Team anlegen', 'Volle Rechte im Control Center und im WordPress' );
+	fge_cc_drawer_open( 'cc-user-new', 'Person einladen', 'Bekommt eine Mail mit Link zum Anmelden' );
 	fge_cc_user_form_open( 0, 'create' );
 	echo '<label class="cc-field cc-field--wide"><span>Name</span><input type="text" name="name"></label>';
 	echo '<label class="cc-field cc-field--wide"><span>E-Mail</span><input type="email" name="email" required></label>';
-	echo '<p class="cc-muted">Die Person bekommt eine Mail mit einem Link, über den sie ihr Passwort selbst setzt. Partner-Zugänge entstehen weiter über die Anmeldung als Partner.</p>';
-	echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn" data-cc-drawer-close>Abbrechen</button><button type="submit" class="cc-btn cc-btn--primary">Anlegen und einladen</button></div></form>';
+	echo '<p class="cc-muted">Volle Rechte im Control Center und im WordPress. Das Passwort setzt die Person selbst über den Link. Partner-Zugänge entstehen über die Anmeldung als Partner.</p>';
+	echo '<div class="cc-drawer-foot"><button type="button" class="cc-btn" data-cc-drawer-close>Abbrechen</button><button type="submit" class="cc-btn cc-btn--primary">Einladung senden</button></div></form>';
 	fge_cc_drawer_close();
 }
 
-// ── Einstellungen ────────────────────────────────────────────────────────────
+// ── Verbindungen ─────────────────────────────────────────────────────────────
 
-function fge_cc_page_settings(): void {
-	$co = function_exists( 'fge_company' ) ? fge_company() : [];
-	echo '<p class="cc-top-sub cc-sub-under">Diese Werte stehen fest im Plugin. Für eine Änderung kurz Bescheid geben, dann gehen sie mit dem nächsten Update raus.</p>';
-	echo '<div class="cc-cols cc-cols--even">';
+function fge_cc_settings_verbindungen(): void {
+	$co   = fge_company();
+	$sent = function_exists( 'fge_mail_log_recent' ) ? fge_mail_log_recent( 1, 'sent' ) : [];
+	$fail = function_exists( 'fge_mail_log_recent' ) ? count( array_filter( fge_mail_log_recent( 50, 'failed' ), static fn( $m ) => (int) strtotime( (string) $m['sent_at'] ) >= time() - 7 * DAY_IN_SECONDS ) ) : 0;
+	echo '<section class="cc-conns">';
 
-	echo '<section class="cc-card"><h2 class="cc-h-small">Firma</h2><dl class="cc-facts">';
-	foreach ( [
-		'Firma'             => $co['legal_name'] ?? '',
-		'Marke'             => $co['brand'] ?? '',
-		'Geschäftsführer'   => $co['managing_director'] ?? '',
-		'Sitz'              => trim( ( $co['hq_street'] ?? '' ) . ', ' . ( $co['hq_zip'] ?? '' ) . ' ' . ( $co['hq_city'] ?? '' ), ', ' ),
-		'Büro'              => trim( ( $co['office_name'] ?? '' ) . ', ' . ( $co['office_street'] ?? '' ) . ', ' . ( $co['office_zip'] ?? '' ) . ' ' . ( $co['office_city'] ?? '' ), ', ' ),
-		'Register'          => trim( ( $co['register_court'] ?? '' ) . ' ' . ( $co['register_no'] ?? '' ) ),
-		'USt-IdNr.'         => $co['ust_id'] ?? '',
-		'Steuernummer'      => $co['tax_no'] ?? '',
-		'Telefon'           => $co['phone_display'] ?? '',
-		'WhatsApp'          => $co['whatsapp_display'] ?? '',
-	] as $k => $v ) {
-		fge_cc_fact( $k, (string) $v );
+	echo '<div class="cc-card cc-conn"><div class="cc-conn-head"><strong>Outlook-Kalender</strong>' . fge_cc_pill( 'Verbunden', 'good' ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '<p>Gebuchte Events, Optionen, Fristen und fällige Erinnerungen erscheinen als Kalender-Abo in Outlook. Die Adresse einmal in Outlook unter Kalender hinzufügen, aus dem Internet eintragen.</p>';
+	if ( function_exists( 'fge_cc_ics_url' ) ) {
+		echo '<div class="cc-conn-url"><input type="text" readonly value="' . esc_attr( fge_cc_ics_url() ) . '" aria-label="Kalender-Adresse für Outlook" onclick="this.select()"><button type="button" class="cc-btn" data-cc-copy="' . esc_attr( fge_cc_ics_url() ) . '">Kopieren</button></div>';
 	}
-	echo '</dl></section>';
+	echo '<p class="cc-muted">Outlook holt abonnierte Kalender alle paar Stunden neu. Der Link enthält einen geheimen Schlüssel, bitte nicht weitergeben.</p></div>';
 
-	echo '<section class="cc-card"><h2 class="cc-h-small">Mails</h2><dl class="cc-facts">';
-	fge_cc_fact( 'Absender', ( $co['brand'] ?? '' ) . ' <' . ( $co['email_events'] ?? '' ) . '>' );
-	fge_cc_fact( 'Interne Mails an', function_exists( 'fge_company_internal_email' ) ? fge_company_internal_email() : '' );
-	fge_cc_fact( 'Kopie Angebote an', $co['email_owner'] ?? '' );
-	fge_cc_fact( 'Partner-Postfach', $co['email_partner'] ?? '' );
-	fge_cc_fact( 'Allgemein', $co['email_general'] ?? '' );
-	fge_cc_fact( 'Tagesmail', 'täglich 7:00 Uhr an ' . ( function_exists( 'fge_company_internal_email' ) ? fge_company_internal_email() : '' ) );
-	fge_cc_fact( 'Vortags-Info', 'am Tag vor dem Event um 7:00 Uhr' );
-	echo '</dl><p class="cc-muted">Welche Mail wann an wen geht, steht im <a href="' . esc_url( fge_cc_url( 'einstellungen', [ 'bereich' => 'postausgang' ] ) ) . '">Postausgang</a>.</p></section>';
+	echo '<div class="cc-card cc-conn"><div class="cc-conn-head"><strong>Mailversand</strong>' . fge_cc_pill( $fail ? $fail . ' nicht zugestellt' : 'Läuft', $fail ? 'bad' : 'good' ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '<p>Mails gehen über ' . esc_html( (string) ( $co['email_events'] ?? '' ) ) . ' raus. Antworten landen in deinem Postfach. Tagesmail und Vortags-Info jeweils um 7:00 Uhr.</p>';
+	echo '<p class="cc-muted">' . esc_html( $sent ? 'Zuletzt zugestellt: ' . wp_date( 'd.m.Y H:i', (int) strtotime( (string) $sent[0]['sent_at'] ) ) : 'Noch keine Mail protokolliert.' ) . ' · <a href="' . esc_url( fge_cc_url( 'einstellungen', [ 'bereich' => 'postausgang' ] ) ) . '">Postausgang</a></p></div>';
 
-	echo '<section class="cc-card"><h2 class="cc-h-small">Kalkulation</h2><dl class="cc-facts">';
-	fge_cc_fact( 'Aufschlag', number_format_i18n( function_exists( 'fge_xs_default_margin' ) ? fge_xs_default_margin() : 20, 0 ) . ' % auf den Einkauf netto' );
-	fge_cc_fact( 'Umsatzsteuer', number_format_i18n( function_exists( 'fge_xs_vat_percent' ) ? fge_xs_vat_percent() : 19, 0 ) . ' %' );
-	fge_cc_fact( 'Preise auf der Website', 'enden auf 4 oder 9, Stufen 5 € p. P. und 50 € pauschal' );
-	fge_cc_fact( 'Positionen im Angebot', 'auf volle Euro aufgerundet' );
-	fge_cc_fact( 'Antwortfrist Angebot', 'im Senden-Dialog wählbar, höchstens 60 Tage' );
-	echo '</dl><p class="cc-muted">Preise des Budget-Rechners: <a href="' . esc_url( admin_url( 'edit.php?post_type=firmengolf_event&page=fge-budget-calc' ) ) . '">im WordPress</a>.</p></section>';
+	echo '<div class="cc-card cc-conn"><div class="cc-conn-head"><strong>Lexoffice</strong>' . fge_cc_pill( 'Von Hand', 'neutral' ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '<p>Keine Anbindung. Die Rechnung schreibst du in Lexoffice und trägst Nummer, Datum und Fälligkeit in der Anfrage ein. Zahlungen hakst du unter Finanzen ab.</p></div>';
 
-	if ( function_exists( 'fge_cc_ics_panel' ) ) {
-		fge_cc_ics_panel(); // eigene Karte, seit 15.10.2026 hier statt unter Kalender
+	echo '</section>';
+}
+
+// ── Firmendaten ──────────────────────────────────────────────────────────────
+
+add_action( 'admin_post_fge_cc_company_save', static function (): void {
+	if ( ! fge_cc_can() ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
 	}
+	check_admin_referer( 'fge_cc_company_save' );
+	$over = [];
+	$bad  = false;
+	foreach ( fge_company_editable_keys() as $k ) {
+		$v = trim( sanitize_text_field( wp_unslash( $_POST['co'][ $k ] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( str_starts_with( $k, 'email_' ) && '' !== $v && ! is_email( $v ) ) {
+			$bad = true;
+			continue; // ungültige Adresse nicht übernehmen
+		}
+		$over[ $k ] = $v;
+	}
+	// Nur speichern, was vom Wert im Plugin abweicht. Leere Felder heißen: Wert aus dem Plugin.
+	$base = fge_company_base();
+	update_option( 'fge_company_overrides', array_filter( $over, static fn( $v, $k ) => '' !== $v && $v !== (string) ( $base[ $k ] ?? '' ), ARRAY_FILTER_USE_BOTH ), false );
+	wp_safe_redirect( fge_cc_url( 'einstellungen', [ 'bereich' => 'firmendaten', 'msg' => $bad ? 'co_badmail' : 'co_saved' ] ) );
+	exit;
+} );
 
-	echo '</div>';
-	echo '<p class="cc-muted"><a href="' . esc_url( admin_url( 'options-general.php' ) ) . '">Allgemeine Einstellungen im WordPress</a></p>';
+function fge_cc_settings_firmendaten(): void {
+	$co = fge_company();
+	echo '<form class="cc-card cc-firm" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="fge_cc_company_save">';
+	wp_nonce_field( 'fge_cc_company_save' );
+	echo '<div class="cc-chart-head"><h2>Firmendaten für Angebote, Mails und Rechnungen</h2><span class="cc-muted">Gilt nach dem Speichern sofort, auch im Impressum</span></div>';
+	echo '<div class="cc-firm-grid">';
+	foreach ( fge_company_editable_fields() as $k => $label ) {
+		$type = str_starts_with( $k, 'email_' ) ? 'email' : 'text';
+		echo '<label class="cc-firm-f"><span>' . esc_html( $label ) . '</span><input type="' . $type . '" name="co[' . esc_attr( $k ) . ']" value="' . esc_attr( (string) ( $co[ $k ] ?? '' ) ) . '"></label>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	}
+	echo '</div><div class="cc-bc-foot"><span class="cc-muted">Kalkulation fest im Plugin: Aufschlag ' . esc_html( number_format_i18n( function_exists( 'fge_xs_default_margin' ) ? fge_xs_default_margin() : 20, 0 ) ) . ' % auf den Einkauf netto, Umsatzsteuer ' . esc_html( number_format_i18n( function_exists( 'fge_xs_vat_percent' ) ? fge_xs_vat_percent() : 19, 0 ) ) . ' %, Zahlungsziel ' . (int) fge_cc_invoice_terms() . ' Tage.</span><button type="submit" class="cc-btn cc-btn--primary">Speichern</button></div></form>';
 }

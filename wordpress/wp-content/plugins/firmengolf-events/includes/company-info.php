@@ -14,6 +14,33 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return array<string,string> Firmen- & Kontaktdaten.
  */
 function fge_company(): array {
+	static $merged = null;
+	if ( null !== $merged ) {
+		return $merged;
+	}
+	$base = fge_company_base();
+	// Firmendaten aus dem Control Center (Einstellungen, Freigabe Julius
+	// 16.10.2026) überschreiben fge_company_base(), nur die freigegebenen Schlüssel.
+	$over = function_exists( 'get_option' ) ? (array) get_option( 'fge_company_overrides', [] ) : [];
+	foreach ( array_intersect_key( $over, array_flip( fge_company_editable_keys() ) ) as $k => $v ) {
+		if ( is_string( $v ) && '' !== trim( $v ) ) {
+			$base[ $k ] = trim( $v );
+		}
+	}
+	// Abgeleitete Werte passend zur Anzeige halten.
+	if ( ! empty( $over['phone_display'] ) ) {
+		$base['phone_tel'] = preg_replace( '/[^0-9+]/', '', str_replace( '(0)', '', $base['phone_display'] ) );
+	}
+	if ( ! empty( $over['whatsapp_display'] ) ) {
+		$num                     = ltrim( preg_replace( '/[^0-9+]/', '', str_replace( '(0)', '', $base['whatsapp_display'] ) ), '+' );
+		$base['whatsapp_number'] = $num;
+		$base['whatsapp_url']    = 'https://wa.me/' . $num;
+	}
+	return $merged = $base;
+}
+
+/** Werte im Plugin, ohne Änderungen aus dem Control Center. */
+function fge_company_base(): array {
 	return [
 		// Telefon / WhatsApp
 		'phone_display'    => '+49 (0) 89 1225 1010',
@@ -60,6 +87,37 @@ function fge_company(): array {
 		'finanzamt_phone'  => '089/1252-1583',
 		'vbg_no'           => '3408 0142 6665 001',
 	];
+}
+
+/** Schlüssel, die im Control Center unter Firmendaten änderbar sind, mit Label. */
+function fge_company_editable_fields(): array {
+	return [
+		'legal_name'        => 'Firma',
+		'brand'             => 'Marke',
+		'managing_director' => 'Geschäftsführer',
+		'hq_street'         => 'Sitz, Straße',
+		'hq_zip'            => 'Sitz, PLZ',
+		'hq_city'           => 'Sitz, Ort',
+		'office_name'       => 'Büro',
+		'office_street'     => 'Büro, Straße',
+		'office_zip'        => 'Büro, PLZ',
+		'office_city'       => 'Büro, Ort',
+		'office_floor'      => 'Büro, Stockwerk',
+		'register_court'    => 'Registergericht',
+		'register_no'       => 'Handelsregister',
+		'ust_id'            => 'USt-IdNr.',
+		'tax_no'            => 'Steuernummer',
+		'phone_display'     => 'Telefon',
+		'whatsapp_display'  => 'WhatsApp',
+		'email_events'      => 'Absender-Mail und interne Mails',
+		'email_general'     => 'Allgemeine Mail',
+		'email_partner'     => 'Partner-Mail',
+		'email_owner'       => 'Kopie der Angebote an',
+	];
+}
+
+function fge_company_editable_keys(): array {
+	return array_keys( fge_company_editable_fields() );
 }
 
 /** Empfänger interner Admin-Benachrichtigungen (Hauptadresse). */
