@@ -266,12 +266,23 @@ def scenario_tools():
     out = wp(f"$s=(array)get_post_meta({req},'_fge_offer_snapshot',true); $s['date']='Mo, 12.10.2026'; update_post_meta({req},'_fge_offer_snapshot',$s); echo get_post_meta({req},'_fge_offer_status',true) . '|' . fge_cc_auto_close() . '|' . get_post_meta({req},'_fge_request_status',true);")
     check(out.startswith('accepted|') and out.endswith('|event_durchgefuehrt'), 'Am Tag nach dem Event automatisch durchgeführt (' + out + ')')
     h = get(f'/control/anfragen/?req={req}').text
-    post_form(find_form(h, 'fge_cc_invoice', contains='value="set"'), {'invoice_number': 'RE-TEST-1'})
-    h = get('/control/rechnungen/?tab=offen').text
-    check('RE-TEST-1' in h, 'Rechnungen zeigt gestellte Rechnung mit Nummer')
+    post_form(find_form(h, 'fge_cc_invoice', contains='value="set"'), {'invoice_number': 'RE-TEST-1', 'invoice_date': '2026-09-01', 'invoice_due': ''})
+    out = wp(f"echo get_post_meta({req},'_fge_invoice_date',true),'|',get_post_meta({req},'_fge_invoice_due',true);")
+    check(out == '2026-09-01|2026-09-15', 'Rechnung gestellt mit Datum, Fälligkeit 14 Tage (' + out + ')')
+    h = get('/control/finanzen/?tab=ueber').text
+    check('RE-TEST-1' in h and 'Überfällig' in h, 'Finanzen zeigt die überfällige Rechnung')
+    h = get('/control/').text
+    check('RE-TEST-1' in h and 'Tage überfällig' in h, 'Heute zeigt die Zahlung unter Zahlungen')
+    mails(clear=True)
+    r = post_form(find_form(get('/control/finanzen/?tab=ueber').text, 'fge_cc_invoice', contains='value="remind"'))
+    ms = mails(clear=True)
+    check('inv_reminded' in r.url and any('Zahlungserinnerung zur Rechnung RE-TEST-1' in m['subject'] and 'andere-regi3' in m['to'] and '15.09.2026' in m['text'] for m in ms), 'Zahlungserinnerung an den Angebotsempfänger mit Fälligkeit')
+    check('—' not in ''.join(m['text'] for m in ms) and '–' not in ''.join(m['text'] for m in ms), 'Zahlungserinnerung ohne Gedankenstriche')
     h = get(f'/control/anfragen/?req={req}').text
     post_form(find_form(h, 'fge_cc_invoice', contains='value="paid"'))
-    check(wp(f"echo get_post_meta({req}, '_fge_request_status', true);") == 'abgeschlossen', 'Rechnung gestellt, bezahlt, abgeschlossen')
+    out = wp(f"echo get_post_meta({req}, '_fge_request_status', true),'|',get_post_meta({req},'_fge_invoice_paid_at',true),'|',get_post_meta({req},'_fge_invoice_reminded',true);")
+    check(out.startswith('abgeschlossen|20') and out.count('|20') == 2, 'Bezahlt, abgeschlossen, Zahlung und Erinnerung vermerkt (' + out + ')')
+    check('RE-TEST-1' in get('/control/finanzen/?tab=bezahlt').text, 'Finanzen führt die Rechnung als bezahlt')
     mails(clear=True)
     return req
 
@@ -326,19 +337,30 @@ def scenario_partner():
         wp(f'wp_delete_post({eid},true); wp_delete_post({pid},true); global $wpdb; $wpdb->delete(fge_verzeichnis_table(),["partner_id"=>{pid},"ist_partner"=>1]);')
 
 def scenario_pages():
-    print('\n[5] Übrige Menüpunkte: Leads, Partnercodes, Nutzer, Einstellungen')
-    for page, needle in [('dashboard', 'Anfragen'), ('rechnungen', 'Zu stellen'), ('leads', 'Budget-Rechner'), ('partnercodes', 'Partnercode anlegen'), ('nutzer', 'Passwort-Link senden'), ('einstellungen', 'In Outlook abonnieren'), ('finanzen', ''), ('kunden', ''), ('verzeichnis', ''), ('dienstleister', ''), ('postausgang', ''), ('angebote', '')]:
-        r = get(f'/control/{page}/')
-        check(r.status_code == 200 and needle in r.text and 'Kommt in Etappe' not in r.text, f'Seite {page} ist fertig')
+    print('\n[5] Übrige Menüpunkte: Heute, Kunden, Partnercodes, Finanzen, Einstellungen')
+    for page, needle in [('dashboard', 'Zahlungen'), ('anfragen', ''), ('partner', 'Partner anlegen'), ('events', 'Events'), ('kunden', 'Leads'), ('partnercodes', 'Code anlegen'), ('finanzen', 'Umsatz netto'), ('einstellungen', 'Budgetrechner auf der Website'), ('einstellungen/?bereich=postausgang', 'Nicht zugestellt'), ('einstellungen/?bereich=nutzer', 'Passwort-Link senden'), ('einstellungen/?bereich=verbindungen', 'Outlook-Kalender'), ('einstellungen/?bereich=firmendaten', 'Firmendaten für Angebote'), ('verzeichnis', '')]:
+        r = get(f'/control/{page}' + ('' if '?' in page else '/'))
+        check(r.status_code == 200 and needle in r.text and 'Diese Seite gibt es nicht' not in r.text, f'Seite {page} ist fertig')
+    for old, want in [('rechnungen', '/control/finanzen/'), ('leads', 'ansicht=leads'), ('nutzer', 'bereich=nutzer'), ('postausgang', 'bereich=postausgang'), ('angebote', 'tab=kunde'), ('dienstleister', 'art=dl')]:
+        r = get(f'/control/{old}/')
+        check(r.status_code == 200 and want in r.url, f'Alte Seite {old} leitet um ({r.url.replace(BASE, "")})')
+    nav = re.findall(r'class="cc-nav-item[^"]*"[^>]*><span>([^<]+)</span>', get('/control/').text)
+    check(nav == ['Heute', 'Anfragen', 'Partner und Events', 'Kunden', 'Partnercodes', 'Finanzen', 'Einstellungen'], 'Menü wie im Entwurf (' + ', '.join(nav) + ')')
     lead = int(wp('$id=wp_insert_post(["post_type"=>"firmengolf_request","post_status"=>"publish","post_title"=>"Lead (TEST)"]); update_post_meta($id,"_fge_request_type","budget_lead"); update_post_meta($id,"_fge_contact_email","lead-regi@example.org"); update_post_meta($id,"_fge_company_name","Regressions Lead (TEST)"); echo $id;'))
     try:
         check('lead-regi' not in get('/control/anfragen/?tab=alle').text, 'Offener Lead steht nicht in den Anfragen')
-        h = get('/control/leads/').text
-        post_form(find_form(h, 'fge_cc_lead', contains=f'value="{lead}"'))
-        r = post_form(find_form(get('/control/leads/').text, 'fge_cc_lead', contains='umgewandelt'))
+        check('Regressions Lead (TEST)' in get('/control/').text, 'Heute zeigt den neuen Lead')
+        h = get('/control/kunden/?ansicht=leads').text
+        post_form(find_form(h, 'fge_cc_lead', contains='cc-pillselect'), {'to': 'kontaktiert'})
+        check(wp(f'echo get_post_meta({lead},"_fge_lead_status",true);') == 'kontaktiert', 'Lead als kontaktiert markiert')
+        r = post_form(find_form(get('/control/kunden/?ansicht=leads').text, 'fge_cc_lead', contains='value="umgewandelt"'))
         check('lead_conv' in r.url and wp(f'echo get_post_meta({lead},"_fge_request_type",true);') == 'general_event_request', 'Lead in Anfrage umgewandelt')
+        h = get('/control/kunden/?kunde=regressions+lead+(test)').text
+        check('Interne Notiz' in h, 'Kunde öffnet das Seitenfenster')
+        post_form(find_form(h, 'fge_cc_customer_note'), {'note': 'Zahlt immer pünktlich'})
+        check(wp('echo get_option("fge_customer_notes")["regressions lead (test)"] ?? "";') == 'Zahlt immer pünktlich', 'Kundennotiz gespeichert')
     finally:
-        wp(f'wp_delete_post({lead},true); global $wpdb; $wpdb->delete(fge_activity_table(),["request_id"=>{lead}]);')
+        wp(f'wp_delete_post({lead},true); global $wpdb; $wpdb->delete(fge_activity_table(),["request_id"=>{lead}]); $n=(array)get_option("fge_customer_notes",[]); unset($n["regressions lead (test)"]); update_option("fge_customer_notes",$n,false);')
     lost = int(wp('$id=wp_insert_post(["post_type"=>"firmengolf_request","post_status"=>"publish","post_title"=>"Verloren (TEST)"]); update_post_meta($id,"_fge_offer_status","pending"); update_post_meta($id,"_fge_company_name","Regressions Verloren (TEST)"); echo $id;'))
     try:
         h = get(f'/control/anfragen/?req={lost}').text
@@ -351,7 +373,39 @@ def scenario_pages():
     r = post_form(find_form(h, 'fge_cc_pc_save'), {'holder': 'Regressions Verband (TEST)', 'code': 'REGTEST', 'eur': '40,00'})
     pc = wp('echo fge_pc_find("REGTEST");')
     check('pc_saved' in r.url and pc not in ('', '0') and wp(f'echo get_post_meta({pc},"_fge_pc_commission_eur",true);') == '40', 'Partnercode angelegt')
+    h = get(f'/control/partnercodes/?code={pc}').text
+    check('Buchungen pro Monat' in h and 'data-cc-copy="REGTEST"' in h, 'Partnercode zeigt das Detailfeld')
+    post_form(find_form(h, 'fge_cc_pc_status'))
+    check(wp(f'echo get_post_meta({pc},"_fge_pc_status",true);') == 'pausiert', 'Partnercode pausiert')
     wp(f'wp_delete_post({pc or 0},true);')
+    # Budgetrechner: Leistungen je Typ und Preise, danach Zustand zurück.
+    backup = wp('echo wp_json_encode(get_option("fge_budget_calc", null));')
+    try:
+        h = get('/control/einstellungen/?bereich=budgetrechner&typ=teamevent').text
+        post_form(find_form(h, 'fge_cc_bc_save'), {'on[]': ['golfkurs', 'mittagessen'], 'price[golfkurs][1]': '44'})
+        out = wp('$c=fge_bc_config(); $t=array_column($c["types"],null,"id")["teamevent"]; $g=array_column($c["services"],null,"id")["golfkurs"]; echo implode(",",$t["services"]),"|",$g["pp"][1];')
+        check(out == 'golfkurs,mittagessen|44', 'Budgetrechner speichert Leistungen und Preis (' + out + ')')
+    finally:
+        wp('$b=json_decode(' + json.dumps(backup) + ',true); if(null===$b) delete_option("fge_budget_calc"); else update_option("fge_budget_calc",$b);')
+    # Firmendaten: Änderung wirkt auf fge_company(), leeres Feld heißt Wert aus dem Plugin.
+    try:
+        h = get('/control/einstellungen/?bereich=firmendaten').text
+        post_form(find_form(h, 'fge_cc_company_save'), {'co[phone_display]': '+49 (0) 89 999 000'})
+        out = wp('echo fge_company()["phone_display"],"|",fge_company()["phone_tel"],"|",count((array)get_option("fge_company_overrides"));')
+        check(out == '+49 (0) 89 999 000|+4989999000|1', 'Firmendaten überschreiben nur den geänderten Wert (' + out + ')')
+    finally:
+        wp('delete_option("fge_company_overrides");')
+    # Postausgang: fehlgeschlagene Mail erneut senden.
+    mid = wp('global $wpdb; $wpdb->insert(fge_mail_log_table(),["request_id"=>0,"mail_key"=>"","recipient"=>"retry-regi@example.org","subject"=>"Regressions Retry (TEST)","status"=>"failed","error"=>"Test","sent_at"=>current_time("mysql"),"payload"=>wp_json_encode(["to"=>"retry-regi@example.org","subject"=>"Regressions Retry (TEST)","message"=>"Hallo","headers"=>[],"attachments"=>[]])]); echo $wpdb->insert_id;')
+    try:
+        mails(clear=True)
+        h = get('/control/einstellungen/?bereich=postausgang&filter=fehler').text
+        post_form(find_form(h, 'fge_cc_mail_retry', contains=f'value="{mid}"'))
+        ms = mails(clear=True)
+        st = wp(f'echo fge_mail_log_get({mid})["status"] ?? "";')
+        check(st == 'resent' and any('retry-regi' in m['to'] for m in ms), 'Fehlgeschlagene Mail erneut gesendet (' + st + ')')
+    finally:
+        wp(f'global $wpdb; $wpdb->delete(fge_mail_log_table(),["id"=>{mid or 0}]); $wpdb->delete(fge_mail_log_table(),["recipient"=>"retry-regi@example.org"]);')
 
 def cleanup(reqs):
     # Auch liegengebliebene Testanfragen früherer Läufe (Firma mit „Regressions" und „(TEST)").

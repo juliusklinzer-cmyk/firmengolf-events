@@ -3,7 +3,8 @@
  * Control Center: Bausteine des Grundgerüsts (Design vom 07.10.2026).
  *
  * Globale Suche in der Seitenleiste und der Bestätigungsdialog. Beide lesen
- * nur vorhandene Daten: Anfragen, Partner, Events, Partnercodes.
+ * nur vorhandene Daten: Anfragen, Kunden, Rechnungen, Partner, Events,
+ * Partnercodes.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -53,6 +54,37 @@ function fge_cc_search( string $q ): array {
 		];
 	}
 
+	// Kunden: Firmen aus den gefundenen Anfragen, einmal je Firma.
+	$seen = [];
+	foreach ( $req_ids as $id ) {
+		$company = trim( (string) get_post_meta( (int) $id, '_fge_company_name', true ) );
+		$key     = function_exists( 'fge_cc_customer_key' ) ? fge_cc_customer_key( $company, (string) get_post_meta( (int) $id, '_fge_contact_email', true ), (int) $id ) : '';
+		if ( '' === $company || isset( $seen[ $key ] ) || false === mb_stripos( $company, $q ) ) {
+			continue;
+		}
+		$seen[ $key ] = true;
+		$out[]        = [
+			'kind'  => 'Kunde',
+			'title' => $company,
+			'sub'   => (string) get_post_meta( (int) $id, '_fge_company_city', true ),
+			'url'   => fge_cc_url( 'kunden', [ 'kunde' => $key ] ),
+		];
+	}
+
+	// Rechnungen: Nummer aus Lexoffice.
+	$inv_ids = $wpdb->get_col( $wpdb->prepare(
+		"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_fge_lexoffice_invoice_number' AND meta_value LIKE %s LIMIT 3",
+		$like
+	) );
+	foreach ( $inv_ids as $id ) {
+		$out[] = [
+			'kind'  => 'Rechnung',
+			'title' => (string) get_post_meta( (int) $id, '_fge_lexoffice_invoice_number', true ),
+			'sub'   => (string) get_post_meta( (int) $id, '_fge_company_name', true ),
+			'url'   => fge_cc_request_url( (int) $id ),
+		];
+	}
+
 	// Partner (ohne Stammdaten-Verzeichnis, das hat seine eigene Suche).
 	$partner_ids = $wpdb->get_col( $wpdb->prepare(
 		"SELECT DISTINCT p.ID FROM {$wpdb->posts} p
@@ -73,7 +105,7 @@ function fge_cc_search( string $q ): array {
 			'kind'  => 'Partner',
 			'title' => get_the_title( $id ),
 			'sub'   => trim( get_post_meta( $id, '_fge_postal_code', true ) . ' ' . get_post_meta( $id, '_fge_city', true ) ),
-			'url'   => fge_cc_url( 'verzeichnis', [ 's' => get_the_title( $id ) ] ),
+			'url'   => fge_cc_url( 'partner', [ 'pid' => $id ] ),
 		];
 		if ( ++$n >= 4 ) {
 			break;
@@ -94,7 +126,7 @@ function fge_cc_search( string $q ): array {
 			'kind'  => 'Event',
 			'title' => get_the_title( $id ),
 			'sub'   => $partner > 0 ? get_the_title( $partner ) : '',
-			'url'   => (string) get_edit_post_link( $id, 'raw' ),
+			'url'   => fge_cc_url( 'events', [ 'edit' => $id ] ),
 		];
 	}
 
@@ -115,7 +147,7 @@ function fge_cc_search( string $q ): array {
 				'kind'  => 'Partnercode',
 				'title' => (string) get_post_meta( $id, '_fge_pc_code', true ),
 				'sub'   => get_the_title( $id ),
-				'url'   => (string) get_edit_post_link( $id, 'raw' ),
+				'url'   => fge_cc_url( 'partnercodes', [ 'code' => $id ] ),
 			];
 		}
 	}

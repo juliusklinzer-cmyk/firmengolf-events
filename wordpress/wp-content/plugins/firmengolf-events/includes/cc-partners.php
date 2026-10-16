@@ -737,6 +737,15 @@ function fge_cc_page_partner_area(): void {
 	fge_cc_partner_listing();
 }
 
+/** Umschalter Partner und Events, wie im Entwurf oben auf beiden Seiten. */
+function fge_cc_partner_switch( string $on ): void {
+	echo '<nav class="cc-areatabs" aria-label="Ansicht">';
+	foreach ( [ 'partner' => 'Partner', 'events' => 'Events' ] as $k => $label ) {
+		echo '<a class="cc-areatab' . ( $k === $on ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( $k ) ) . '"' . ( $k === $on ? ' aria-current="page"' : '' ) . '>' . esc_html( $label ) . '</a>';
+	}
+	echo '</nav>';
+}
+
 function fge_cc_partner_listing(): void {
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
 	$q    = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
@@ -744,6 +753,7 @@ function fge_cc_partner_listing(): void {
 	$st   = sanitize_key( wp_unslash( $_GET['status'] ?? 'alle' ) );
 	$neu  = isset( $_GET['neu'] );
 	// phpcs:enable
+	fge_cc_partner_switch( 'partner' );
 	$all    = fge_cc_partner_list();
 	$events = fge_cc_events_by_partner();
 	$book   = fge_cc_bookings_index();
@@ -1066,6 +1076,7 @@ function fge_cc_page_events(): void {
 	$edit = absint( $_GET['edit'] ?? 0 );
 	// phpcs:enable
 	fge_cc_message();
+	fge_cc_partner_switch( 'events' );
 	$by  = fge_cc_events_by_partner();
 	$all = [];
 	foreach ( $by as $pid => $ids ) {

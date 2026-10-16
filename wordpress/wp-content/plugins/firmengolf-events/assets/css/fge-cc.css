@@ -2226,3 +2226,7 @@ body.cc a.cc-bc-type.is-on { background: var(--cc-ink); color: #fff; box-shadow:
 	.cc-areatabs { border-radius: 16px; }
 	.cc-outrow-tag { width: auto; }
 }
+@media (max-width: 720px) {
+	.cc-fkpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.cc-fkpi-value { font-size: 20px; }
+}
