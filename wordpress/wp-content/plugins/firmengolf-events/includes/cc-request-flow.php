@@ -1099,8 +1099,17 @@ function fge_cc_flow_pane_billing( int $req, int $cur ): void {
 		} elseif ( ! $done && 3 === $n && 2 === $at ) {
 			fge_cc_paid_button( $req );
 		}
-		if ( $done && 2 === $n && '' !== ( $no = (string) get_post_meta( $req, '_fge_lexoffice_invoice_number', true ) ) ) {
-			echo '<span class="cc-mono">' . esc_html( $no ) . '</span>';
+		if ( $done && 2 === $n && function_exists( 'fge_cc_invoice_row' ) ) {
+			$inv = fge_cc_invoice_row( $req );
+			echo '<span class="cc-billsteps-inv">' . esc_html( implode( ' · ', array_filter( [
+				$inv['no'],
+				$inv['date'] > 0 ? 'vom ' . wp_date( 'd.m.Y', $inv['date'] ) : '',
+				$inv['due'] > 0 ? 'fällig ' . wp_date( 'd.m.Y', $inv['due'] ) : '',
+				$inv['reminded'] > 0 ? 'erinnert ' . wp_date( 'd.m.', $inv['reminded'] ) : '',
+			] ) ) ) . '</span>';
+			if ( 2 === $at ) {
+				fge_cc_remind_button( $req, '', '', $inv['overdue'] ? 'Zahlungserinnerung senden' : 'Erinnern' );
+			}
 		}
 		if ( $done && $n >= 2 && $at === $n ) {
 			// Versehen zurücknehmen: eine Stufe zurück.

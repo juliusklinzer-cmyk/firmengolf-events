@@ -1018,6 +1018,44 @@ function fge_send_offer_reminder( int $request_id, bool $last = false ): bool {
 	return (bool) wp_mail( $data['contact_email'], $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
 }
 
+/**
+ * Zahlungserinnerung an den Kunden, nur von Hand über „Erinnern“ im Control
+ * Center (Text freigegeben von Julius, 16.10.2026).
+ */
+function fge_send_payment_reminder( int $request_id ): bool {
+	$to = fge_offer_recipient( $request_id );
+	if ( ! is_email( $to ) ) {
+		return false;
+	}
+	$data  = fge_get_request_email_data( $request_id );
+	$co    = function_exists( 'fge_company' ) ? fge_company() : [];
+	$name  = strtok( (string) ( $co['managing_director'] ?? '' ), ' ' ) ?: (string) ( $co['brand'] ?? 'Firmengolf' );
+	$no    = (string) get_post_meta( $request_id, '_fge_lexoffice_invoice_number', true );
+	$date  = function_exists( 'fge_cc_invoice_date' ) ? fge_cc_invoice_date( $request_id ) : 0;
+	$due   = function_exists( 'fge_cc_invoice_due' ) ? fge_cc_invoice_due( $request_id ) : 0;
+	$net   = function_exists( 'fge_cc_offer_net' ) ? fge_cc_offer_net( $request_id ) : 0.0;
+	$gross = function_exists( 'fge_cc_vat_factor' ) ? round( $net * fge_cc_vat_factor(), 2 ) : $net;
+
+	$which = ( '' !== $no ? 'die Rechnung <strong>' . esc_html( $no ) . '</strong>' : 'eure Rechnung' )
+		. ( $date > 0 ? ' vom ' . esc_html( wp_date( 'd.m.Y', $date ) ) : '' )
+		. ( $gross > 0 ? ' über <strong>' . esc_html( number_format_i18n( $gross, 2 ) ) . ' €</strong>' : '' );
+	$content = '
+		<p style="margin:0 0 16px;">Hallo ' . esc_html( $data['first_name'] ?: '' ) . ',</p>
+		<p style="margin:0 0 16px;">vielen Dank noch einmal, dass ihr euer Teamevent mit uns gefeiert habt. Für ' . $which . ' sehen wir bisher noch keinen Zahlungseingang.' . ( $due > 0 ? ' Sie war am ' . esc_html( wp_date( 'd.m.Y', $due ) ) . ' fällig.' : '' ) . '</p>
+		<p style="margin:0 0 16px;">Falls die Zahlung schon unterwegs ist, ist diese Mail einfach erledigt. Sonst freuen wir uns über die Überweisung in den nächsten Tagen. Bei Fragen meldet euch gern direkt bei mir.</p>
+		<p style="margin:0;">Viele Grüße<br>' . esc_html( $name ) . '</p>
+	';
+	$subject = '' !== $no ? 'Zahlungserinnerung zur Rechnung ' . $no : 'Zahlungserinnerung (' . fge_request_number( $request_id ) . ')';
+	if ( function_exists( 'fge_mail_log_context' ) ) {
+		fge_mail_log_context( $request_id, 'payment_reminder' );
+	}
+	$ok = (bool) wp_mail( $to, $subject, fge_email_wrap( $subject, $content ), [ 'Content-Type: text/html; charset=UTF-8' ] );
+	if ( function_exists( 'fge_mail_log_context_clear' ) ) {
+		fge_mail_log_context_clear();
+	}
+	return $ok;
+}
+
 function fge_send_onboarding_submitted_email( int $partner_id, string $temp_password = '' ): bool {
 	$name       = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
 	$email      = (string) get_post_meta( $partner_id, '_fge_main_contact_email', true );

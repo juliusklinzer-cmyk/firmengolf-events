@@ -1,6 +1,7 @@
 <?php
 /**
- * Control Center: Rechnungen, Leads, Partnercodes, Nutzer, Einstellungen
+ * Control Center: Leads, Partnercodes, Nutzer, Einstellungen (Rechnungen seit
+ * 16.10.2026 in cc-finance.php)
  * (Julius, 15.10.2026: „baue das ganze Control Center fertig“, Design folgt je
  * Menüpunkt). Alles auf vorhandenen Daten, Lexoffice bleibt manuell.
  *
@@ -16,6 +17,10 @@ function fge_cc_admin_messages(): array {
 	return [
 		'inv_set'      => [ 'ok', 'Rechnung als gestellt markiert.' ],
 		'inv_paid'     => [ 'ok', 'Bezahlt, der Vorgang ist abgeschlossen.' ],
+		'inv_reminded' => [ 'ok', 'Zahlungserinnerung ist raus.' ],
+		'mail_resent'  => [ 'ok', 'Mail ist erneut raus.' ],
+		'mail_resend_fail' => [ 'err', 'Die Mail ging wieder nicht raus. Empfänger im Postausgang prüfen.' ],
+		'inv_remind_fail' => [ 'err', 'Die Zahlungserinnerung ging nicht raus. Hat der Kunde eine Mailadresse?' ],
 		'lead_set'     => [ 'ok', 'Lead aktualisiert.' ],
 		'lead_conv'    => [ 'ok', 'Lead ist jetzt eine Anfrage. Weiter mit dem Bedarf.' ],
 		'pc_saved'     => [ 'ok', 'Partnercode gespeichert.' ],
@@ -35,122 +40,6 @@ function fge_cc_admin_messages(): array {
 /** Eine Zahl als Euro, ohne Nachkommastellen wenn rund. */
 function fge_cc_eur( float $v ): string {
 	return function_exists( 'fge_cc_money' ) ? fge_cc_money( $v ) : number_format_i18n( $v, 2 ) . ' €';
-}
-
-// ── Rechnungen ───────────────────────────────────────────────────────────────
-
-/** Phase eines gebuchten Vorgangs für die Rechnungsliste. */
-function fge_cc_invoice_bucket( int $req ): string {
-	$st = (string) get_post_meta( $req, '_fge_request_status', true );
-	if ( 'abgeschlossen' === $st ) {
-		return 'bezahlt';
-	}
-	if ( 'rechnung_in_lexoffice_erstellt' === $st ) {
-		return 'offen';
-	}
-	$date = fge_cc_event_date( $req );
-	return ( 'event_durchgefuehrt' === $st || ( $date > 0 && $date < fge_cc_today() ) ) ? 'stellen' : 'spaeter';
-}
-
-// Rechnung gestellt (mit Nummer) oder bezahlt, von der Rechnungsliste oder der Anfrage.
-add_action( 'admin_post_fge_cc_invoice', static function (): void {
-	$req  = fge_cc_guard( 'fge_cc_invoice' );
-	$step = sanitize_key( wp_unslash( $_POST['step'] ?? '' ) );
-	$back = sanitize_key( wp_unslash( $_POST['back'] ?? '' ) );
-	$no   = trim( sanitize_text_field( wp_unslash( $_POST['invoice_number'] ?? '' ) ) );
-	if ( 'accepted' !== (string) get_post_meta( $req, '_fge_offer_status', true ) ) {
-		fge_cc_redirect( $req, 'nothing' );
-	}
-	if ( '' !== $no ) {
-		update_post_meta( $req, '_fge_lexoffice_invoice_number', mb_substr( $no, 0, 40 ) );
-	}
-	update_post_meta( $req, '_fge_lexoffice_invoice_created', 1 );
-	fge_request_set_status( $req, 'paid' === $step ? 'abgeschlossen' : 'rechnung_in_lexoffice_erstellt' );
-	$msg = 'paid' === $step ? 'inv_paid' : 'inv_set';
-	if ( 'rechnungen' === $back ) {
-		wp_safe_redirect( fge_cc_url( 'rechnungen', [ 'tab' => sanitize_key( wp_unslash( $_POST['tab'] ?? 'stellen' ) ), 'msg' => $msg ] ) );
-		exit;
-	}
-	fge_cc_redirect( $req, $msg );
-} );
-
-/** Knopf „Rechnung gestellt“ mit Feld für die Lexoffice-Nummer. */
-function fge_cc_invoice_form( int $req, string $back = '', string $tab = '' ): void {
-	echo '<form class="cc-actform cc-invform" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-	echo '<input type="hidden" name="action" value="fge_cc_invoice"><input type="hidden" name="request_id" value="' . (int) $req . '"><input type="hidden" name="step" value="set">';
-	echo '<input type="hidden" name="back" value="' . esc_attr( $back ) . '"><input type="hidden" name="tab" value="' . esc_attr( $tab ) . '">';
-	wp_nonce_field( 'fge_cc_invoice_' . $req );
-	echo '<input type="text" name="invoice_number" value="' . esc_attr( (string) get_post_meta( $req, '_fge_lexoffice_invoice_number', true ) ) . '" placeholder="Rechnungsnr." aria-label="Rechnungsnummer aus Lexoffice">';
-	echo '<button type="submit" class="cc-btn cc-btn--primary">Rechnung gestellt</button></form>';
-}
-
-function fge_cc_paid_button( int $req, string $back = '', string $tab = '' ): void {
-	fge_cc_button( 'fge_cc_invoice', $req, 'Bezahlt, abschließen', [
-		'class'   => 'cc-btn cc-btn--primary',
-		'fields'  => [ 'step' => 'paid', 'back' => $back, 'tab' => $tab ],
-		'confirm' => 'Zahlung eingegangen und Vorgang abschließen?',
-	] );
-}
-
-function fge_cc_page_invoices(): void {
-	fge_cc_message();
-	$tab  = sanitize_key( wp_unslash( $_GET['tab'] ?? 'stellen' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$tabs = [ 'stellen' => 'Zu stellen', 'offen' => 'Gestellt, offen', 'bezahlt' => 'Bezahlt', 'spaeter' => 'Event steht noch an' ];
-	if ( ! isset( $tabs[ $tab ] ) ) {
-		$tab = 'stellen';
-	}
-	$res  = fge_cc_query_requests( [ 'meta_query' => [ [ 'key' => '_fge_offer_status', 'value' => 'accepted' ] ] ], 1500 ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-	$rows = array_fill_keys( array_keys( $tabs ), [] );
-	$sum  = array_fill_keys( array_keys( $tabs ), 0.0 );
-	foreach ( $res['ids'] as $req ) {
-		$b             = fge_cc_invoice_bucket( (int) $req );
-		$net           = fge_cc_offer_net( (int) $req );
-		$rows[ $b ][]  = [ (int) $req, $net ];
-		$sum[ $b ]    += $net;
-	}
-	if ( ! isset( $_GET['tab'] ) && ! $rows[ $tab ] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		foreach ( array_keys( $tabs ) as $k ) {
-			if ( $rows[ $k ] ) {
-				$tab = $k;
-				break;
-			}
-		}
-	}
-	fge_cc_truncation_note( $res, 'Buchungen' );
-	echo '<p class="cc-top-sub cc-sub-under">Rechnungen schreibst du in Lexoffice, hier hältst du nach, was gestellt und bezahlt ist.</p>';
-
-	$vat = function_exists( 'fge_xs_vat_percent' ) ? fge_xs_vat_percent() : 19.0;
-	echo '<div class="cc-kpis">';
-	foreach ( [ 'stellen' => 'Noch zu stellen', 'offen' => 'Gestellt, nicht bezahlt', 'bezahlt' => 'Bezahlt' ] as $k => $l ) {
-		echo '<a class="cc-kpi" href="' . esc_url( fge_cc_url( 'rechnungen', [ 'tab' => $k ] ) ) . '"><span class="cc-kpi-label">' . esc_html( $l ) . '</span><span class="cc-kpi-value">' . esc_html( fge_cc_eur( $sum[ $k ] ) ) . '</span><span class="cc-kpi-sub">' . esc_html( count( $rows[ $k ] ) . ' Vorgänge, netto' ) . '</span></a>';
-	}
-	echo '</div>';
-
-	fge_cc_seglinks( 'rechnungen', 'tab', $tabs, $tab, array_map( 'count', $rows ), [] );
-	echo '<section class="cc-tablewrap"><table class="cc-table"><thead><tr><th>Anfrage</th><th>Kunde</th><th>Termin</th><th>Rechnungsnr.</th><th class="cc-num">Netto</th><th class="cc-num">Brutto</th><th>Status</th><th></th></tr></thead><tbody>';
-	usort( $rows[ $tab ], static fn( $a, $b ) => fge_cc_event_date( $a[0] ) <=> fge_cc_event_date( $b[0] ) );
-	foreach ( $rows[ $tab ] as [ $req, $net ] ) {
-		$url  = fge_cc_request_url( $req );
-		$date = fge_cc_event_date( $req );
-		$flow = fge_cc_flow( $req );
-		echo '<tr><td class="cc-mono"><a href="' . esc_url( $url ) . '">' . esc_html( fge_request_number( $req ) ) . '</a></td>';
-		echo '<td>' . esc_html( (string) get_post_meta( $req, '_fge_company_name', true ) ) . '</td>';
-		echo '<td class="cc-tnum">' . ( $date > 0 ? esc_html( wp_date( 'd.m.Y', $date ) ) : 'offen' ) . '</td>';
-		echo '<td class="cc-mono">' . esc_html( (string) get_post_meta( $req, '_fge_lexoffice_invoice_number', true ) ) . '</td>';
-		echo '<td class="cc-num">' . esc_html( fge_cc_eur( $net ) ) . '</td><td class="cc-num">' . esc_html( fge_cc_eur( round( $net * ( 1 + $vat / 100 ), 2 ) ) ) . '</td>';
-		echo '<td>' . fge_cc_pill( $flow['label'], $flow['tone'] ) . '</td><td class="cc-td-act">'; // phpcs:ignore WordPress.Security.EscapeOutput
-		if ( in_array( $tab, [ 'stellen', 'spaeter' ], true ) ) {
-			fge_cc_invoice_form( $req, 'rechnungen', $tab );
-		} elseif ( 'offen' === $tab ) {
-			fge_cc_paid_button( $req, 'rechnungen', $tab );
-		}
-		echo '</td></tr>';
-	}
-	if ( ! $rows[ $tab ] ) {
-		echo '<tr class="is-empty"><td colspan="8">Nichts in dieser Ansicht.</td></tr>';
-	}
-	echo '</tbody></table></section>';
-	echo '<p class="cc-muted">Eingangsrechnungen von Plätzen und Dienstleistern stehen unter <a href="' . esc_url( fge_cc_url( 'finanzen' ) ) . '">Finanzen</a>.</p>';
 }
 
 // ── Leads ────────────────────────────────────────────────────────────────────
@@ -196,9 +85,55 @@ add_action( 'admin_post_fge_cc_lead', static function (): void {
 	}
 	update_post_meta( $req, '_fge_lead_status', $to );
 	fge_activity_add( $req, 'note', 'Lead: ' . fge_cc_lead_statuses()[ $to ][0] );
-	wp_safe_redirect( fge_cc_url( 'kunden', [ 'ansicht' => 'leads', 'msg' => 'lead_set' ] ) );
+	$back = sanitize_key( wp_unslash( $_POST['back'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	wp_safe_redirect( 'heute' === $back ? fge_cc_url( 'dashboard', [ 'msg' => 'lead_set' ] ) : fge_cc_url( 'kunden', [ 'ansicht' => 'leads', 'msg' => 'lead_set' ] ) );
 	exit;
 } );
+
+/**
+ * Alle Leads als Zeilen für Kunden und Heute, neueste zuerst. Leads sind
+ * Budget-Rechner-Anfragen (_fge_request_type budget_lead) und umgewandelte.
+ */
+function fge_cc_lead_rows(): array {
+	static $rows = null;
+	if ( null !== $rows ) {
+		return $rows;
+	}
+	// Direkt per SQL: eine OR-Metaabfrage würde vom Demo-Filter (demo-portal.php)
+	// um eine weitere ODER-Bedingung ergänzt und zeigte dann alle Anfragen (Audit).
+	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$ids = array_map( 'intval', $wpdb->get_col(
+		"SELECT DISTINCT p.ID FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} m ON m.post_id = p.ID
+		 WHERE p.post_type = 'firmengolf_request' AND p.post_status IN ('publish','draft')
+		 AND ( ( m.meta_key = '_fge_request_type' AND m.meta_value = 'budget_lead' ) OR m.meta_key = '_fge_lead_status' )
+		 ORDER BY p.post_date DESC LIMIT 500"
+	) );
+	$rows = [];
+	foreach ( $ids as $id ) {
+		if ( function_exists( 'fge_is_demo_request' ) && fge_is_demo_request( $id ) ) {
+			continue;
+		}
+		$bc    = (array) get_post_meta( $id, '_fge_budget_calc', true );
+		$mail  = (string) get_post_meta( $id, '_fge_contact_email', true );
+		$name  = trim( (string) get_post_meta( $id, '_fge_contact_first_name', true ) . ' ' . (string) get_post_meta( $id, '_fge_contact_last_name', true ) );
+		$pax   = ! empty( $bc['participants'] ) ? (int) $bc['participants'] : (int) get_post_meta( $id, '_fge_expected_participants', true );
+		$rows[] = [
+			'id'      => $id,
+			'status'  => (string) get_post_meta( $id, '_fge_lead_status', true ) ?: 'neu',
+			'source'  => 'Budgetrechner',
+			'company' => (string) get_post_meta( $id, '_fge_company_name', true ) ?: $mail,
+			'type'    => (string) ( $bc['type'] ?? get_post_meta( $id, '_fge_occasion', true ) ),
+			'name'    => $name,
+			'mail'    => $mail,
+			'pax'     => $pax,
+			'budget'  => ! empty( $bc['total'] ) ? fge_cc_eur( (float) $bc['total'] ) : (string) ( $bc['range'] ?? '' ),
+			'what'    => (string) ( $bc['services'] ?? '' ),
+			'date'    => get_the_date( 'd.m.Y', $id ),
+		];
+	}
+	return $rows;
+}
 
 function fge_cc_page_leads(): void {
 	fge_cc_message();

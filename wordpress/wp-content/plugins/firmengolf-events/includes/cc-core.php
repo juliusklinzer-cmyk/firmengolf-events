@@ -205,6 +205,12 @@ function fge_cc_render( string $page ): void {
 /** Zähler in der Seitenleiste, nur aus vorhandenen Daten. */
 function fge_cc_nav_badges(): array {
 	$badges = [ 'dashboard' => fge_cc_badge_count() ];
+	if ( function_exists( 'fge_cc_invoices_overdue' ) ) {
+		$badges['finanzen'] = count( fge_cc_invoices_overdue() );
+	}
+	if ( function_exists( 'fge_cc_bucket_counts' ) ) {
+		$badges['anfragen'] = fge_cc_bucket_counts()['offen'];
+	}
 
 	$count_meta = static function ( string $type, string $key, $value ): int {
 		$q = new WP_Query( [
@@ -284,18 +290,20 @@ function fge_cc_topbar( string $title, string $page = 'anfragen' ): void {
 		'verzeichnis' => 'Platz, Ort oder PLZ',
 		'kunden'      => 'Firma oder Mailadresse',
 	];
-	$sub = '';
+	$sub    = '';
+	$kicker = '';
 	if ( 'dashboard' === $page ) {
-		$user  = wp_get_current_user();
-		$first = $user->first_name ?: $user->display_name;
-		$hour  = (int) wp_date( 'G' );
-		$title = ( $hour < 11 ? 'Guten Morgen' : ( $hour < 18 ? 'Hallo' : 'Guten Abend' ) ) . ', ' . $first;
-		$n     = fge_cc_badge_count();
-		$sub   = wp_date( 'l, j. F Y' ) . ' · ' . ( $n > 0 ? $n . ( 1 === $n ? ' Vorgang wartet' : ' Vorgänge warten' ) . ' auf dich' : 'nichts wartet auf dich' );
+		$user   = wp_get_current_user();
+		$first  = $user->first_name ?: $user->display_name;
+		$hour   = (int) wp_date( 'G' );
+		$title  = ( $hour < 11 ? 'Guten Morgen' : ( $hour < 18 ? 'Guten Tag' : 'Guten Abend' ) ) . ', ' . $first;
+		$n      = fge_cc_badge_count();
+		$kicker = wp_date( 'l, j. F Y' );
+		$sub    = $n > 0 ? $n . ( 1 === $n ? ' Sache wartet auf dich.' : ' Dinge warten auf dich.' ) . ' Das Wichtigste steht oben.' : 'Alles erledigt. Schönen Tag.';
 	}
 
 	echo '<header class="cc-top">';
-	echo '<div class="cc-top-text"><h1>' . esc_html( $title ) . '</h1>';
+	echo '<div class="cc-top-text">' . ( '' !== $kicker ? '<span class="cc-top-kicker">' . esc_html( $kicker ) . '</span>' : '' ) . '<h1>' . esc_html( $title ) . '</h1>';
 	if ( '' !== $sub ) {
 		echo '<p class="cc-top-sub">' . esc_html( $sub ) . '</p>';
 	}
@@ -313,15 +321,9 @@ function fge_cc_topbar( string $title, string $page = 'anfragen' ): void {
 
 // ── Bausteine ────────────────────────────────────────────────────────────────
 
-/** Anzahl der Vorgänge, die auf Julius warten (Zahl in der Seitenleiste). */
+/** Wie viel unter „Heute“ wartet (Zahl in der Seitenleiste). */
 function fge_cc_badge_count(): int {
-	$n = 0;
-	foreach ( fge_cc_worklist() as $row ) {
-		if ( $row['mine'] && ! $row['snoozed'] && ! $row['cold'] ) {
-			$n++;
-		}
-	}
-	return $n;
+	return function_exists( 'fge_cc_today_total' ) ? fge_cc_today_total() : 0;
 }
 
 /** Status-Pille. */
@@ -368,321 +370,6 @@ function fge_cc_page_stub( string $page ): void {
 	echo '<section class="cc-card cc-stub"><p class="cc-muted">Diese Seite gibt es nicht.</p></section>';
 }
 
-// ── Dashboard ────────────────────────────────────────────────────────────────
-
-function fge_cc_page_dashboard(): void {
-	$rows = fge_cc_worklist();
-
-	if ( ! empty( $GLOBALS['fge_cc_worklist_truncated'] ) ) {
-		echo '<p class="cc-msg cc-msg--err">Es sind mehr offene Vorgänge da, als hier passen. '
-			. 'Schließe Erledigtes ab oder setze Liegengebliebenes auf „verloren“, damit die Liste die Wahrheit sagt.</p>';
-	}
-
-	fge_cc_month_kpis_panel();
-
-	$mine = $others = $soon = $cold = [];
-	foreach ( $rows as $r ) {
-		if ( $r['snoozed'] ) {
-			continue;
-		}
-		$d = $r['date'];
-		if ( $d > 0 && $d >= fge_cc_today() && $d <= ( fge_cc_today() + 2 * DAY_IN_SECONDS - 1 ) ) {
-			$soon[] = $r;
-		}
-		if ( $r['cold'] ) {
-			$cold[] = $r;
-		} elseif ( $r['mine'] ) {
-			$mine[] = $r;
-		} else {
-			$others[] = $r;
-		}
-	}
-
-	echo '<section class="cc-section">';
-	echo '<div class="cc-section-head"><h2>Anfragen<span class="cc-count">' . (int) ( count( $mine ) + count( $others ) ) . '</span></h2></div>';
-	echo '<div class="cc-tabs" role="tablist">';
-	fge_cc_tab( 'mine', 'Wartet auf mich', count( $mine ), true );
-	fge_cc_tab( 'others', 'Wartet auf andere', count( $others ), false );
-	fge_cc_tab( 'soon', 'Heute und morgen', count( $soon ), false );
-	fge_cc_tab( 'cold', 'Verstaubt', count( $cold ), false );
-	echo '</div>';
-	fge_cc_worklist_panel( 'mine', $mine, 'Nichts offen. Alles, was zu tun war, ist getan.' );
-	fge_cc_worklist_panel( 'others', $others, 'Es wartet gerade nichts auf andere.' );
-	fge_cc_worklist_panel( 'soon', $soon, 'Heute und morgen steht kein Event an.' );
-	fge_cc_worklist_panel( 'cold', $cold, 'Nichts ist liegen geblieben.', 'Seit mehr als ' . (int) fge_cc_cold_days() . ' Tagen ohne Fortschritt und ohne Termin. Nachfassen oder auf „verloren“ setzen, damit die Liste ehrlich bleibt.' );
-	echo '</section>';
-
-	echo '<div class="cc-cols cc-cols--even">';
-	fge_cc_platform_panel();
-	fge_cc_recent_panel();
-	echo '</div>';
-
-	fge_cc_upcoming_panel( $rows );
-	fge_cc_failed_mails_panel();
-
-	fge_cc_tabs_script();
-}
-
-/**
- * Kennzahlen des laufenden Monats, nur aus vorhandenen Daten.
- *
- * Anfragen und Angebote zählen nach Eingang im Monat (wie bisher der
- * Trichter), Buchungen, Umsatz und Marge nach Annahme im Monat (wie „Finanzen“).
- */
-function fge_cc_month_kpis(): array {
-	$since = fge_cc_local_ts( wp_date( 'Y-m-01' ) );
-	$ids   = get_posts( [
-		'post_type'   => 'firmengolf_request',
-		'post_status' => [ 'publish', 'draft' ],
-		'numberposts' => 400,
-		'fields'      => 'ids',
-		'post__not_in' => function_exists( 'fge_cc_open_lead_ids' ) ? fge_cc_open_lead_ids() : [],
-		'date_query'  => [ [ 'after' => wp_date( 'Y-m-d', $since - 1 ) ] ],
-	] );
-	$k = [ 'reqs' => count( $ids ), 'offers' => 0, 'book' => 0, 'net' => 0.0, 'margin' => 0.0, 'margin_base' => 0.0 ];
-	foreach ( $ids as $id ) {
-		if ( '1' === (string) get_post_meta( $id, '_fge_offer_sent', true ) ) {
-			$k['offers']++;
-		}
-	}
-	$acc = fge_cc_query_requests( [ 'meta_query' => [ [ 'key' => '_fge_offer_status', 'value' => 'accepted' ] ] ], 400 );
-	foreach ( $acc['ids'] as $req ) {
-		if ( (int) strtotime( (string) get_post_meta( $req, '_fge_offer_accepted_at', true ) ) < $since ) {
-			continue;
-		}
-		$net = function_exists( 'fge_cc_offer_net' ) ? fge_cc_offer_net( $req ) : 0.0;
-		$k['book']++;
-		$k['net'] += $net;
-		$cost = function_exists( 'fge_cc_partner_cost_net' ) ? fge_cc_partner_cost_net( $req ) + fge_cc_extras_cost_net( $req ) : 0.0;
-		if ( $cost > 0 ) {
-			$k['margin']      += $net - $cost;
-			$k['margin_base'] += $net;
-		}
-	}
-	return $k;
-}
-
-function fge_cc_month_kpis_panel(): void {
-	$k   = fge_cc_month_kpis();
-	$pct = static fn( int $n ) => $k['reqs'] > 0 ? round( $n / $k['reqs'] * 100 ) . ' % der Anfragen' : 'noch keine Anfragen';
-	$items = [
-		[ 'Anfragen', (string) $k['reqs'], 'eingegangen seit dem 1.', fge_cc_url( 'anfragen' ) ],
-		[ 'Angebote', (string) $k['offers'], $pct( $k['offers'] ), fge_cc_url( 'anfragen', [ 'tab' => 'kunde' ] ) ],
-		[ 'Buchungen', (string) $k['book'], 'angenommen im Monat', '' ],
-		[ 'Gebucht netto', number_format_i18n( $k['net'], 0 ) . ' €', 'Summe der Annahmen', fge_cc_url( 'finanzen' ) ],
-		[
-			'Marge',
-			$k['margin_base'] > 0 ? number_format_i18n( $k['margin'], 0 ) . ' €' : 'unbekannt',
-			$k['margin_base'] > 0 ? round( $k['margin'] / $k['margin_base'] * 100 ) . ' % vom Umsatz' : 'kein Einkauf hinterlegt',
-			fge_cc_url( 'finanzen' ),
-		],
-	];
-	echo '<section class="cc-section"><div class="cc-section-head"><h2>Kennzahlen im ' . esc_html( wp_date( 'F' ) ) . '</h2></div>';
-	echo '<div class="cc-kpis">';
-	foreach ( $items as [ $label, $value, $sub, $url ] ) {
-		$tag = '' !== $url ? 'a href="' . esc_url( $url ) . '"' : 'div';
-		echo '<' . $tag . ' class="cc-kpi"><span class="cc-kpi-label">' . esc_html( $label ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput
-		echo '<span class="cc-kpi-value">' . esc_html( $value ) . '</span>';
-		echo '<span class="cc-kpi-sub">' . esc_html( $sub ) . '</span></' . ( '' !== $url ? 'a' : 'div' ) . '>';
-	}
-	echo '</div></section>';
-}
-
-function fge_cc_tab( string $id, string $label, int $count, bool $on ): void {
-	printf(
-		'<button class="cc-tab%s" data-cc-tab="%s" role="tab" aria-selected="%s" type="button"><span class="cc-tab-n">%d</span>%s</button>',
-		$on ? ' is-on' : '',
-		esc_attr( $id ),
-		$on ? 'true' : 'false',
-		$count,
-		esc_html( $label )
-	);
-}
-
-function fge_cc_worklist_panel( string $id, array $rows, string $empty, string $note = '' ): void {
-	echo '<div class="cc-panel" data-cc-pane="' . esc_attr( $id ) . '"' . ( 'mine' === $id ? '' : ' hidden' ) . '>';
-	if ( '' !== $note && $rows ) {
-		echo '<p class="cc-section-sub cc-panel-note">' . esc_html( $note ) . '</p>';
-	}
-	echo '<div class="cc-list cc-wl">';
-	if ( ! $rows ) {
-		fge_cc_empty( $empty );
-	} else {
-		echo '<div class="cc-wl-head" aria-hidden="true"><span>Firma</span><span>Nächster Schritt</span><span>Dringlichkeit</span><span>Eventdatum</span><span>Alter</span></div>';
-		foreach ( $rows as $r ) {
-			fge_cc_worklist_row( $r );
-		}
-	}
-	echo '</div></div>';
-}
-
-function fge_cc_worklist_row( array $r ): void {
-	$tasks = array_values( array_filter( $r['tasks'], static fn( $t ) => 'me' === $t['who'] ) );
-	if ( ! $tasks ) {
-		$tasks = $r['tasks'];
-	}
-	$lead    = $tasks[0] ?? null;
-	$req     = (int) $r['req'];
-	$contact = trim( get_post_meta( $req, '_fge_contact_first_name', true ) . ' ' . get_post_meta( $req, '_fge_contact_last_name', true ) );
-	$urg     = [ 'now' => [ 'jetzt', 'bad' ], 'soon' => [ 'bald', 'warn' ], 'wait' => [ 'warten', 'neutral' ] ][ $r['urgency'] ?? 'wait' ] ?? [ 'warten', 'neutral' ];
-
-	echo '<a class="cc-row cc-wl-row" href="' . esc_url( fge_cc_request_url( $req ) ) . '">';
-	echo '<span class="cc-row-main"><span class="cc-row-top"><span class="cc-company">' . esc_html( $r['company'] ?: 'ohne Firma' ) . '</span></span>';
-	echo '<span class="cc-more"><span class="cc-ref">' . esc_html( $r['ref'] ) . '</span>' . ( '' !== $contact ? ' · ' . esc_html( $contact ) : '' ) . ' · ' . esc_html( function_exists( 'fge_cc_flow' ) ? fge_cc_flow( (int) $r['req'] )['label'] : $r['phase'] ) . '</span></span>';
-	echo '<span class="cc-row-main">';
-	if ( $lead ) {
-		echo '<span class="cc-next">' . esc_html( $lead['text'] ) . '</span>';
-	}
-	if ( count( $tasks ) > 1 ) {
-		echo '<span class="cc-more">und ' . (int) ( count( $tasks ) - 1 ) . ' weitere</span>';
-	}
-	echo '</span>';
-	echo '<span>' . fge_cc_pill( $urg[0], $urg[1] ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput
-	echo '<span class="cc-when">' . esc_html( $r['date'] > 0 ? wp_date( 'D, d.m.', (int) $r['date'] ) : 'offen' ) . '</span>';
-	echo '<span class="cc-age">' . (int) $r['age'] . ( 1 === (int) $r['age'] ? ' Tag' : ' Tage' ) . '</span>';
-	echo '</a>';
-}
-
-/** Was außer Anfragen noch wartet: nur Zähler aus vorhandenen Daten. */
-function fge_cc_platform_panel(): void {
-	$badges = fge_cc_nav_badges();
-	$todo   = [];
-
-	if ( $badges['partner'] > 0 ) {
-		$todo[] = [ 'Neue Partner-Anmeldungen', $badges['partner'], 'Status In Prüfung', fge_cc_url( 'partner' ) ];
-	}
-	if ( $badges['events'] > 0 ) {
-		$todo[] = [ 'Events zur Prüfung', $badges['events'], 'neu eingereicht oder geändert', fge_cc_url( 'events', [ 'tab' => 'pruefung' ] ) ];
-	}
-	$expiring = 0;
-	$pending  = fge_cc_query_requests( [ 'meta_query' => [ [ 'key' => '_fge_offer_status', 'value' => 'pending' ] ] ], 300 );
-	foreach ( $pending['ids'] as $req ) {
-		$ts = (int) get_post_meta( $req, '_fge_offer_deadline', true );
-		if ( $ts >= time() && $ts <= time() + 2 * DAY_IN_SECONDS ) {
-			$expiring++;
-		}
-	}
-	if ( $expiring > 0 ) {
-		$todo[] = [ 'Angebote, deren Frist bald abläuft', $expiring, 'in den nächsten 2 Tagen', fge_cc_url( 'anfragen', [ 'tab' => 'kunde' ] ) ];
-	}
-	if ( $badges['postausgang'] > 0 ) {
-		$todo[] = [ 'Fehlgeschlagene Mails', $badges['postausgang'], 'nicht zugestellt, letzte 7 Tage', fge_cc_url( 'einstellungen', [ 'bereich' => 'postausgang' ] ) ];
-	}
-	$no_mail = 0;
-	foreach ( get_posts( [ 'post_type' => 'firmengolf_partner', 'post_status' => [ 'publish', 'draft', 'pending' ], 'numberposts' => -1, 'fields' => 'ids' ] ) as $pid ) {
-		if ( function_exists( 'fge_partner_is_stammdaten' ) && fge_partner_is_stammdaten( (int) $pid ) ) {
-			continue;
-		}
-		if ( function_exists( 'fge_cc_partner_email' ) && '' === fge_cc_partner_email( (int) $pid ) ) {
-			$no_mail++;
-		}
-	}
-	if ( $no_mail > 0 ) {
-		$todo[] = [ 'Partner ohne Kontaktmail', $no_mail, 'Anfragen gehen nicht automatisch raus', fge_cc_url( 'verzeichnis', [ 'filter' => 'ohne_mail' ] ) ];
-	}
-
-	echo '<section class="cc-section"><div class="cc-section-head"><h2>Plattform</h2></div>';
-	echo '<div class="cc-list">';
-	if ( ! $todo ) {
-		fge_cc_empty( 'Bei Partnern, Events, Angeboten und Mails ist alles erledigt.' );
-	}
-	foreach ( $todo as [ $label, $n, $sub, $url ] ) {
-		echo '<a class="cc-row" href="' . esc_url( $url ) . '"><span class="cc-row-main"><span class="cc-company">' . esc_html( $label ) . '</span>';
-		echo '<span class="cc-more">' . esc_html( $sub ) . '</span></span>';
-		echo '<span class="cc-row-meta"><strong class="cc-todo-n">' . (int) $n . '</strong><span class="cc-btn">Öffnen</span></span></a>';
-	}
-	echo '</div></section>';
-}
-
-/** Was seit gestern passiert ist. */
-function fge_cc_recent_panel(): void {
-	$acts = function_exists( 'fge_activity_recent' ) ? fge_activity_recent( 12 ) : [];
-	echo '<section class="cc-section"><div class="cc-section-head"><h2>Seit gestern<span class="cc-count">' . (int) count( $acts ) . '</span></h2></div>';
-	echo '<div class="cc-card">';
-	if ( ! $acts ) {
-		fge_cc_empty( 'Noch keine Ereignisse aufgezeichnet.' );
-	}
-	foreach ( $acts as $a ) {
-		$req = (int) $a['request_id'];
-		echo '<p class="cc-feed-item">';
-		if ( $req > 0 ) {
-			echo '<a href="' . esc_url( fge_cc_request_url( $req ) ) . '">' . esc_html( fge_request_number( $req ) ) . '</a> ';
-		}
-		echo esc_html( mb_substr( (string) $a['text'], 0, 90 ) );
-		echo '<br><span class="cc-muted">' . esc_html( fge_cc_ago( (string) $a['created_at'] ) ) . '</span></p>';
-	}
-	echo '</div></section>';
-}
-
-/** Gebuchte Events der nächsten sieben Tage, sonst die nächsten drei. */
-function fge_cc_upcoming_panel( array $rows ): void {
-	$today  = fge_cc_today();
-	$booked = [];
-	$acc    = fge_cc_query_requests( [ 'meta_query' => [ [ 'key' => '_fge_offer_status', 'value' => 'accepted' ] ] ], 300 );
-	foreach ( $acc['ids'] as $req ) {
-		$d = fge_cc_event_date( $req );
-		if ( $d >= $today ) {
-			$booked[] = [ $req, $d ];
-		}
-	}
-	usort( $booked, static fn( $a, $b ) => $a[1] <=> $b[1] );
-	$week = array_values( array_filter( $booked, static fn( $x ) => $x[1] <= $today + 7 * DAY_IN_SECONDS ) );
-	$list = $week ?: array_slice( $booked, 0, 3 );
-
-	echo '<section class="cc-section"><div class="cc-section-head"><h2>' . ( $week ? 'Nächste Events, 7 Tage' : 'Nächste Events' ) . '</h2></div>';
-	if ( ! $week && $list ) {
-		echo '<p class="cc-section-sub">In den nächsten 7 Tagen steht nichts an. Danach:</p>';
-	}
-	if ( ! $list ) {
-		echo '<div class="cc-list">';
-		fge_cc_empty( 'Kein gebuchtes Event in Sicht.' );
-		echo '</div></section>';
-		return;
-	}
-	echo '<div class="cc-tablewrap"><table class="cc-table"><thead><tr><th>Datum</th><th>Uhrzeit</th><th>Firma</th><th>Partner</th><th class="cc-num">Personen</th><th>Vortags-Info</th><th>Es fehlt noch</th></tr></thead><tbody>';
-	foreach ( $list as [ $req, $d ] ) {
-		$days    = (int) round( ( $d - $today ) / DAY_IN_SECONDS );
-		$start   = trim( (string) get_post_meta( $req, '_fge_day_start_time', true ) );
-		$missing = [];
-		foreach ( [ 'day_start_time' => 'Startzeit', 'day_meeting_point' => 'Treffpunkt', 'day_onsite_name' => 'Ansprechpartner' ] as $k => $l ) {
-			if ( '' === trim( (string) get_post_meta( $req, '_fge_' . $k, true ) ) ) {
-				$missing[] = $l;
-			}
-		}
-		$partner = (int) get_post_meta( $req, '_fge_assigned_partner_id', true );
-		$pax     = function_exists( 'fge_request_pax_current' ) ? fge_request_pax_current( $req ) : (int) get_post_meta( $req, '_fge_expected_participants', true );
-		$info    = '' !== (string) get_post_meta( $req, '_fge_day_info_sent', true );
-		echo '<tr onclick="location.href=\'' . esc_js( fge_cc_request_url( $req ) ) . '\'">';
-		echo '<td><strong>' . esc_html( wp_date( 'D, d.m.', $d ) ) . '</strong><span class="cc-td-sub">' . esc_html( 0 === $days ? 'heute' : ( 1 === $days ? 'morgen' : 'in ' . $days . ' Tagen' ) ) . '</span></td>';
-		echo '<td>' . esc_html( '' !== $start ? $start : 'offen' ) . '</td>';
-		echo '<td><a href="' . esc_url( fge_cc_request_url( $req ) ) . '">' . esc_html( (string) get_post_meta( $req, '_fge_company_name', true ) ) . '</a></td>';
-		echo '<td>' . esc_html( $partner > 0 ? get_the_title( $partner ) : '' ) . '</td>';
-		echo '<td class="cc-num">' . (int) $pax . '</td>';
-		echo '<td>' . fge_cc_pill( $info ? 'gesendet' : 'noch nicht', $info ? 'good' : 'neutral' ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
-		echo '<td' . ( $missing ? ' class="cc-td-warn"' : '' ) . '>' . esc_html( $missing ? implode( ', ', $missing ) : 'alles da' ) . '</td>';
-		echo '</tr>';
-	}
-	echo '</tbody></table></div></section>';
-}
-
-/** Nicht zugestellte Mails, eingeklappt wenn alles ankam. */
-function fge_cc_failed_mails_panel(): void {
-	$failed = function_exists( 'fge_mail_log_recent' ) ? fge_mail_log_recent( 5, 'failed' ) : [];
-	echo '<section class="cc-section"><details class="cc-fold"' . ( $failed ? ' open' : '' ) . '><summary class="cc-section-head"><h2>Mails</h2><span class="cc-muted">' . esc_html( $failed ? count( $failed ) . ' nicht zugestellt' : 'alle angekommen' ) . '</span></summary>';
-	if ( $failed ) {
-		echo '<div class="cc-list">';
-		foreach ( $failed as $f ) {
-			$req = (int) ( $f['request_id'] ?? 0 );
-			$url = $req > 0 ? fge_cc_request_url( $req ) : fge_cc_url( 'einstellungen', [ 'bereich' => 'postausgang' ] );
-			echo '<a class="cc-row" href="' . esc_url( $url ) . '"><span class="cc-row-main"><span class="cc-company">' . esc_html( mb_substr( (string) $f['subject'], 0, 80 ) ) . '</span>';
-			echo '<span class="cc-more">An ' . esc_html( (string) $f['recipient'] ) . ' · ' . esc_html( fge_cc_ago( (string) $f['sent_at'] ) ) . '</span></span>';
-			echo '<span class="cc-row-meta"><span class="cc-btn">Ansehen</span></span></a>';
-		}
-		echo '</div>';
-	}
-	echo '</details></section>';
-}
-
 /** „vor 3 Stunden“ statt Zeitstempel. */
 function fge_cc_ago( string $mysql ): string {
 	$ts = (int) strtotime( $mysql );
@@ -697,26 +384,6 @@ function fge_cc_ago( string $mysql ): string {
 		return 'vor ' . (int) round( $diff / 3600 ) . ' Std';
 	}
 	return wp_date( 'd.m.Y H:i', $ts );
-}
-
-function fge_cc_tabs_script(): void {
-	?>
-	<script>
-	document.addEventListener('click', function (e) {
-		var b = e.target.closest ? e.target.closest('[data-cc-tab]') : null;
-		if (!b) { return; }
-		var id = b.dataset.ccTab;
-		document.querySelectorAll('[data-cc-tab]').forEach(function (t) {
-			var on = t === b;
-			t.classList.toggle('is-on', on);
-			t.setAttribute('aria-selected', on ? 'true' : 'false');
-		});
-		document.querySelectorAll('[data-cc-pane]').forEach(function (p) {
-			p.hidden = p.dataset.ccPane !== id;
-		});
-	});
-	</script>
-	<?php
 }
 
 // ── Einzelne Anfrage ─────────────────────────────────────────────────────────

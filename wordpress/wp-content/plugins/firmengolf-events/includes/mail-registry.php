@@ -201,6 +201,14 @@ function fge_mail_registry(): array {
 			'trigger' => 'Cron, drei Tage vor der Frist und als letzte Erinnerung am Fristtag',
 			'content' => [ 'Frist läuft', 'Termin noch reserviert' ],
 		],
+		'payment_reminder' => [
+			'label'   => 'Zahlungserinnerung',
+			'party'   => 'kunde',
+			'subject' => 'Zahlungserinnerung zur Rechnung {Nummer}',
+			'auto'    => false,
+			'trigger' => 'Von Hand über „Erinnern“ unter Finanzen oder in der Anfrage',
+			'content' => [ 'Rechnungsnummer, Datum, Betrag brutto', 'Fälligkeit', 'Bitte um Überweisung' ],
+		],
 		'offer_query_internal' => [
 			'label'   => 'Rückfrage des Kunden (intern)',
 			'party'   => 'intern',

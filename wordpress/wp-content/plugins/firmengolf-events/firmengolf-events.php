@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'FGE_VERSION', '1.9.314' );
+define( 'FGE_VERSION', '1.9.315' );
 define( 'FGE_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FGE_DIR . 'includes/post-types.php';
@@ -93,6 +93,8 @@ require_once FGE_DIR . 'includes/cc-request-flow.php';
 require_once FGE_DIR . 'includes/cc-request-providers.php';
 require_once FGE_DIR . 'includes/cc-partners.php';
 require_once FGE_DIR . 'includes/cc-admin-pages.php';
+require_once FGE_DIR . 'includes/cc-finance.php';
+require_once FGE_DIR . 'includes/cc-today.php';
 require_once FGE_DIR . 'includes/cc-venue-details.php';
 require_once FGE_DIR . 'includes/cc-positions.php';
 require_once FGE_DIR . 'includes/cc-actions.php';

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const FGE_MAIL_LOG_DB_VERSION = '1.0.0';
+const FGE_MAIL_LOG_DB_VERSION = '1.1.0'; // 1.1.0: payload für „Erneut senden“ (16.10.2026)
 
 /** Voll qualifizierter Tabellenname. */
 function fge_mail_log_table(): string {
@@ -41,6 +41,7 @@ function fge_mail_log_install(): void {
 		status VARCHAR(10) NOT NULL DEFAULT 'sent',
 		error TEXT NULL,
 		sent_at DATETIME NULL DEFAULT NULL,
+		payload LONGTEXT NULL,
 		PRIMARY KEY (id),
 		KEY request_id (request_id),
 		KEY sent_at (sent_at),
@@ -115,7 +116,7 @@ function fge_mail_log_recipients( $to ): string {
 }
 
 /** Eine Zeile schreiben. */
-function fge_mail_log_add( array $mail, string $status, string $error = '' ): void {
+function fge_mail_log_add( array $mail, string $status, string $error = '' ): int {
 	global $wpdb;
 	$subject = mb_substr( (string) ( $mail['subject'] ?? '' ), 0, 255 );
 	$ctx     = fge_mail_log_current_context();
@@ -132,7 +133,16 @@ function fge_mail_log_add( array $mail, string $status, string $error = '' ): vo
 		'status'     => $status,
 		'error'      => '' !== $error ? mb_substr( $error, 0, 2000 ) : null,
 		'sent_at'    => current_time( 'mysql' ),
+		// Nur fehlgeschlagene Mails behalten ihren Inhalt, damit „Erneut senden“ geht.
+		'payload'    => 'failed' === $status ? wp_json_encode( [
+			'to'          => $mail['to'] ?? '',
+			'subject'     => (string) ( $mail['subject'] ?? '' ),
+			'message'     => (string) ( $mail['message'] ?? '' ),
+			'headers'     => $mail['headers'] ?? [],
+			'attachments' => array_values( (array) ( $mail['attachments'] ?? [] ) ),
+		] ) : null,
 	] );
+	return (int) $wpdb->insert_id;
 }
 
 add_action( 'wp_mail_succeeded', 'fge_mail_log_on_success' );
@@ -190,4 +200,78 @@ function fge_mail_log_has( int $request_id, string $mail_key ): bool {
 		$request_id,
 		$mail_key
 	) );
+}
+
+// ── Erneut senden ────────────────────────────────────────────────────────────
+
+/** Eine Zeile des Protokolls. */
+function fge_mail_log_get( int $id ): array {
+	global $wpdb;
+	$table = fge_mail_log_table();
+	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A ) ?: [];
+}
+
+/**
+ * Kann diese fehlgeschlagene Mail noch einmal raus? Leer = ja, sonst der Grund.
+ * Ohne gespeicherten Inhalt (vor 1.9.315) oder ohne Anhang geht es nicht.
+ */
+function fge_mail_log_retry_blocker( array $row ): string {
+	if ( 'failed' !== (string) ( $row['status'] ?? '' ) ) {
+		return 'schon erledigt';
+	}
+	$p = json_decode( (string) ( $row['payload'] ?? '' ), true );
+	if ( ! is_array( $p ) || '' === (string) ( $p['message'] ?? '' ) ) {
+		return 'Inhalt nicht gespeichert, bitte aus der Anfrage neu auslösen';
+	}
+	foreach ( (array) ( $p['attachments'] ?? [] ) as $file ) {
+		if ( ! is_string( $file ) || ! file_exists( $file ) ) {
+			return 'Anhang fehlt, bitte aus der Anfrage neu auslösen';
+		}
+	}
+	return '';
+}
+
+/** Fehlgeschlagene Mail neu senden; die alte Zeile wird „erneut gesendet“. */
+function fge_mail_log_retry( int $id ): bool {
+	$row = fge_mail_log_get( $id );
+	if ( ! $row || '' !== fge_mail_log_retry_blocker( $row ) ) {
+		return false;
+	}
+	$p = json_decode( (string) $row['payload'], true );
+	fge_mail_log_context( (int) $row['request_id'], (string) $row['mail_key'] );
+	$ok = (bool) wp_mail( $p['to'], (string) $p['subject'], (string) $p['message'], $p['headers'] ?? [], (array) ( $p['attachments'] ?? [] ) );
+	fge_mail_log_context_clear();
+	if ( $ok ) {
+		global $wpdb;
+		$wpdb->update( fge_mail_log_table(), [ 'status' => 'resent', 'payload' => null ], [ 'id' => $id ] );
+	}
+	return $ok;
+}
+
+add_action( 'admin_post_fge_cc_mail_retry', static function (): void {
+	$id = absint( $_POST['mail_id'] ?? 0 );
+	if ( ! function_exists( 'fge_cc_can' ) || ! fge_cc_can() ) {
+		wp_die( 'Keine Berechtigung.', '', [ 'response' => 403 ] );
+	}
+	check_admin_referer( 'fge_cc_mail_retry_' . $id );
+	$ok   = fge_mail_log_retry( $id );
+	$back = sanitize_key( wp_unslash( $_POST['back'] ?? '' ) );
+	$args = [ 'msg' => $ok ? 'mail_resent' : 'mail_resend_fail' ];
+	wp_safe_redirect( 'heute' === $back ? fge_cc_url( 'dashboard', $args ) : fge_cc_url( 'einstellungen', [ 'bereich' => 'postausgang' ] + $args ) );
+	exit;
+} );
+
+/** Knopf „Erneut senden“ für eine Zeile, sonst der Grund, warum es nicht geht. */
+function fge_mail_log_retry_button( array $row, string $back = '' ): void {
+	$why = fge_mail_log_retry_blocker( $row );
+	if ( '' !== $why ) {
+		echo '<span class="cc-muted">' . esc_html( $why ) . '</span>';
+		return;
+	}
+	$id = (int) $row['id'];
+	echo '<form class="cc-actform" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+	echo '<input type="hidden" name="action" value="fge_cc_mail_retry"><input type="hidden" name="mail_id" value="' . $id . '"><input type="hidden" name="back" value="' . esc_attr( $back ) . '">';
+	wp_nonce_field( 'fge_cc_mail_retry_' . $id );
+	echo '<button type="submit" class="cc-btn" onclick="return confirm(' . esc_attr( wp_json_encode( 'Mail noch einmal an ' . $row['recipient'] . ' senden?' ) ) . ')">Erneut senden</button></form>';
 }

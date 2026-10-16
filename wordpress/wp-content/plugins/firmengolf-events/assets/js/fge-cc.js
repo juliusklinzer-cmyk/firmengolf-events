@@ -334,7 +334,32 @@
 		});
 	}
 
+	// Heute: Klick auf eine Zeile zeigt rechts das Detailfeld (Redesign 16.10.2026).
+	function initToday() {
+		var root = document.querySelector('[data-cc-today]');
+		if (!root) { return; }
+		var def = root.querySelector('[data-cc-default]');
+		var show = function (key) {
+			root.querySelectorAll('[data-cc-pick]').forEach(function (r) { r.classList.toggle('is-on', r.dataset.ccPick === key); });
+			var hit = null;
+			root.querySelectorAll('[data-cc-detail]').forEach(function (d) { var on = d.dataset.ccDetail === key; d.hidden = !on; if (on) { hit = d; } });
+			if (def) { def.hidden = !!hit; }
+			if (hit && window.matchMedia('(max-width: 960px)').matches) { hit.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+		};
+		root.addEventListener('click', function (e) {
+			var row = e.target.closest('[data-cc-pick]');
+			if (row && !e.metaKey && !e.ctrlKey) {
+				e.preventDefault();
+				show(row.classList.contains('is-on') ? '' : row.dataset.ccPick);
+				return;
+			}
+			if (e.target.closest('[data-cc-unpick]')) { show(''); }
+		});
+		document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !document.querySelector('dialog[open]')) { show(''); } });
+	}
+
 	function init() {
+		initToday();
 		initDialog();
 		initAutosubmit();
 		initReview();
