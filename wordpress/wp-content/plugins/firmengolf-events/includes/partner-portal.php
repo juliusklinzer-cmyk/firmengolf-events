@@ -4523,8 +4523,8 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<div class="fg-form-row">
 							<label class="fg-form-label" for="fge_card_description">Kurzbeschreibung</label>
 							<div class="fg-form-field">
-								<textarea class="fg-form-textarea" id="fge_card_description" name="fge_card_description" rows="2" maxlength="200" placeholder="Was erwartet die Gäste in einem Satz?"><?php echo esc_textarea( $saved['fge_card_description'] ?? '' ); ?></textarea>
-								<p class="fp-help">Maximal 160 Zeichen empfohlen. Erscheint als Vorschau in den Suchergebnissen.</p>
+								<textarea class="fg-form-textarea" id="fge_card_description" name="fge_card_description" rows="5" maxlength="800" placeholder="Was erwartet die Gäste? Ein paar Sätze zu Ablauf, Stimmung und Besonderheiten."><?php echo esc_textarea( $saved['fge_card_description'] ?? '' ); ?></textarea>
+								<p class="fp-help">Bis zu 800 Zeichen. Steht oben auf eurer Eventseite, auf den Eventkarten erscheinen die ersten zwei Zeilen.</p>
 							</div>
 						</div>
 					</div>

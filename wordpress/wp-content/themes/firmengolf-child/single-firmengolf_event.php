@@ -491,6 +491,15 @@ get_header();
 
 			<div class="fg-detail-main">
 
+				<?php /* Kurzbeschreibung oben, höchstens bis zur Höhe des Anfrage-Knopfs rechts,
+				   länger wird mit „Weiterlesen“ aufgeklappt (Julius, 20.10.2026). */ ?>
+				<?php if ( trim( (string) $description ) !== '' ) : ?>
+				<div class="fg-detail-lead" data-fg-lead>
+					<p class="fg-detail-lead-t"><?php echo esc_html( trim( (string) $description ) ); ?></p>
+					<button type="button" class="fg-detail-lead-more" data-fg-lead-more hidden>Weiterlesen</button>
+				</div>
+				<?php endif; ?>
+
 				<?php /* Info-Box: von Firmengolf organisiert + Orientierungspreis */ ?>
 				<?php if ( $is_self ) : ?>
 				<div class="fg-selfbox">
@@ -514,10 +523,9 @@ get_header();
 					}
 				}
 				?>
-				<?php if ( $dayflow_parts || $description ) : ?>
+				<?php if ( $dayflow_parts ) : ?>
 				<section class="fg-sec-dayflow">
 					<div class="fg-section-eyebrow">So läuft der Tag</div>
-					<?php if ( $dayflow_parts ) : ?>
 						<ol class="fg-dayflow">
 							<?php foreach ( $dayflow_parts as $dp ) : ?>
 							<li class="fg-dayflow-step">
@@ -529,9 +537,6 @@ get_header();
 							</li>
 							<?php endforeach; ?>
 						</ol>
-					<?php else : ?>
-						<p class="fg-detail-summary"><?php echo esc_html( $description ); ?></p>
-					<?php endif; ?>
 				</section>
 				<?php endif; ?>
 
@@ -864,6 +869,37 @@ get_header();
 			</aside>
 
 		</div><?php /* .fg-detail-body */ ?>
+		<script>
+		/* Kurzbeschreibung kappen: Desktop bis zur Unterkante von „Wunschtermin anfragen“,
+		   mobil auf sieben Zeilen; der Rest klappt mit „Weiterlesen“ auf. */
+		(function () {
+			var lead = document.querySelector('[data-fg-lead]');
+			if (!lead) return;
+			var t = lead.querySelector('.fg-detail-lead-t'), more = lead.querySelector('[data-fg-lead-more]');
+			var btn = document.getElementById('open-modal-btn'), rail = document.querySelector('.fg-detail-rail');
+			var open = false;
+			function fit() {
+				if (open) return;
+				t.style.maxHeight = '';
+				lead.classList.remove('is-clamped');
+				var lh = parseFloat(getComputedStyle(t).lineHeight) || 26;
+				var side = rail && btn && rail.getBoundingClientRect().left >= t.getBoundingClientRect().right;
+				var max = side ? btn.getBoundingClientRect().bottom - t.getBoundingClientRect().top : lh * 7;
+				max = Math.max(lh * 3, Math.floor(max / lh) * lh);
+				var clamp = t.scrollHeight > max + 2;
+				if (clamp) { t.style.maxHeight = max + 'px'; lead.classList.add('is-clamped'); }
+				more.hidden = !clamp;
+			}
+			more.addEventListener('click', function () {
+				open = !open;
+				if (open) { t.style.maxHeight = ''; lead.classList.remove('is-clamped'); more.textContent = 'Weniger anzeigen'; }
+				else { more.textContent = 'Weiterlesen'; fit(); }
+			});
+			window.addEventListener('load', fit);
+			window.addEventListener('resize', fit);
+			fit();
+		})();
+		</script>
 
 	</article>
 

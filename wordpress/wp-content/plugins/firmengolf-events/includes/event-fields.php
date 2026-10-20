@@ -86,8 +86,8 @@ function fge_render_mb_basisdaten( WP_Post $post ) {
 		<tr>
 			<th scope="row"><label for="fge_card_description">Kurzbeschreibung</label></th>
 			<td>
-				<textarea id="fge_card_description" name="fge_card_description" rows="3" class="large-text"><?php echo esc_textarea( $card_description ); ?></textarea>
-				<p class="description">Wird später auf Eventkarten angezeigt.</p>
+				<textarea id="fge_card_description" name="fge_card_description" rows="5" maxlength="800" class="large-text"><?php echo esc_textarea( $card_description ); ?></textarea>
+				<p class="description">Bis zu 800 Zeichen. Steht oben auf der Eventseite (höchstens bis zur Höhe des Anfrage-Knopfs, Rest per „Weiterlesen“), auf Eventkarten die ersten zwei Zeilen.</p>
 			</td>
 		</tr>
 	</table>

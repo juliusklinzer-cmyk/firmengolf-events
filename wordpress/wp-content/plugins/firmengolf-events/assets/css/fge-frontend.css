@@ -7595,3 +7595,14 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
   .fg-mosaic .fg-mosaic-tile:first-child { grid-row: auto; grid-column: span 2; aspect-ratio: 16 / 10; }
   .fg-mosaic--n2 .fg-mosaic-tile:nth-child(2), .fg-mosaic--n4 .fg-mosaic-tile:nth-child(4) { grid-column: span 2; aspect-ratio: 16 / 9; }
 }
+
+/* ── Kurzbeschreibung oben auf der Eventseite, 20.10.2026 ─────────────────────
+   Höchstens bis zur Höhe von „Wunschtermin anfragen“ (Skript in
+   single-firmengolf_event.php), darüber Verlauf plus „Weiterlesen“ (Text-Button). */
+.fg-detail-lead { margin: 0 0 8px; max-width: 680px; }
+.fg-detail-lead-t { margin: 0; font-size: var(--fs-body-lg); line-height: 1.6; color: var(--ink-800); text-wrap: pretty; white-space: pre-line; overflow: hidden; }
+.fg-detail-lead.is-clamped .fg-detail-lead-t { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 3em), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 3em), transparent); }
+.fg-detail-lead .fg-detail-lead-more { margin-top: 8px; padding: 6px 0; background: none; border: 0; font: inherit; font-size: 15px; color: var(--ink-600); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.fg-detail-lead .fg-detail-lead-more:hover, .fg-detail-lead .fg-detail-lead-more:focus-visible { color: var(--ink-900); }
+.fg-detail-lead .fg-detail-lead-more[hidden] { display: none; }
+@media (max-width: 768px) { .fg-detail-lead { margin-bottom: 4px; } .fg-detail-lead-t { font-size: 16px; } }
