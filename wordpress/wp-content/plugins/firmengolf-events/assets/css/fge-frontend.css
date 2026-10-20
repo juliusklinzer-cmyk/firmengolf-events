@@ -7606,3 +7606,15 @@ html.cty-io .cty-reveal.is-in .gp-pack-chip:nth-child(4n) { transition-delay: 21
 .fg-detail-lead .fg-detail-lead-more:hover, .fg-detail-lead .fg-detail-lead-more:focus-visible { color: var(--ink-900); }
 .fg-detail-lead .fg-detail-lead-more[hidden] { display: none; }
 @media (max-width: 768px) { .fg-detail-lead { margin-bottom: 4px; } .fg-detail-lead-t { font-size: 16px; } }
+
+/* ── Freigabe-Leiste für Partner auf der Eventseite, 20.10.2026 ──────────────
+   Erscheint nur mit gültigem ?freigabe=-Schlüssel (event-partner-approval.php). */
+.fg-pa-bar { background: var(--fairway-100); border-bottom: 1px solid var(--fairway-200); }
+.fg-pa-in { max-width: var(--width-page, 1200px); margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.fg-pa-t { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-800); }
+.fg-pa-act { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.fg-pa-act form { margin: 0; }
+.fg-pa-alt { font-size: 15px; color: var(--ink-600); text-decoration: underline; text-underline-offset: 3px; }
+.fg-pa-alt:hover, .fg-pa-alt:focus-visible { color: var(--ink-900); }
+@media (max-width: 640px) { .fg-pa-in { padding: 14px 16px; } .fg-pa-act { width: 100%; justify-content: space-between; } }
+.fp-pa-wait { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--fairway-100); color: var(--fairway-800); font-size: 13px; line-height: 1.5; }

@@ -4485,7 +4485,9 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 		</div>
 
 		<?php if ( null !== $cc && ! empty( $cc['saved'] ) ) : ?>
-			<div class="fg-portal-global-notice" role="status">Gespeichert. Die Änderungen sind sofort auf der Eventseite sichtbar, der Status bleibt unverändert.</div>
+			<div class="fg-portal-global-notice" role="status"><?php echo 'ask' === $cc['saved']
+				? 'Gespeichert und Partner um Freigabe gebeten. Die Mail ist raus, du siehst den Stand unter „Zur Freigabe“.'
+				: ( 'nomail' === $cc['saved'] ? 'Gespeichert, aber die Mail an den Partner ging nicht raus: Beim Partner ist keine Kontaktmail hinterlegt.' : 'Gespeichert. Die Änderungen sind sofort auf der Eventseite sichtbar, der Status bleibt unverändert.' ); ?></div>
 		<?php endif; ?>
 
 		<?php if ( ! empty( $errors ) ) : ?>
@@ -5080,6 +5082,13 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 								? 'Gespeicherte Änderungen gehen erneut in Prüfung.'
 								: 'Nach dem Einreichen wird dein Angebot von Firmengolf geprüft und dann freigegeben.' ); ?>
 						</p>
+						<?php if ( null !== $cc && $partner_id > 0 && function_exists( 'fge_pa_pending' ) ) : ?>
+							<?php if ( fge_pa_pending( $event_id ) ) : ?>
+								<p class="fp-pa-wait">Wartet auf Freigabe durch den Partner seit <?php echo esc_html( wp_date( 'd.m.Y', (int) get_post_meta( $event_id, '_fge_pa_sent_at', true ) ) ); ?>.</p>
+							<?php endif; ?>
+							<button type="submit" form="fp-event-form" name="fge_cc_after" value="ask_partner" class="fp-btn fp-btn-ghost" style="margin-top:12px;width:100%;justify-content:center;">Speichern und Partner um Freigabe bitten</button>
+							<p style="font-size:12px;color:var(--ink-500);margin-top:8px;line-height:1.5;">Der Partner bekommt eine Mail mit Link, sieht das Event wie online und gibt es mit einem Klick frei.</p>
+						<?php endif; ?>
 						<?php
 						$lc_status = $event_id ? (string) get_post_meta( $event_id, '_fge_event_status', true ) : '';
 						if ( null === $cc && $is_edit && in_array( $lc_status, [ 'freigegeben', 'pausiert' ], true ) ) :

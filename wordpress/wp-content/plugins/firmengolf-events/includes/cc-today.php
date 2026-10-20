@@ -95,13 +95,13 @@ function fge_cc_today_groups(): array {
 	$events = get_posts( [ 'post_type' => 'firmengolf_event', 'post_status' => [ 'publish', 'draft', 'pending', 'private' ], 'numberposts' => 100, 'fields' => 'ids', 'orderby' => 'modified', 'order' => 'ASC', 'meta_query' => [ [ 'key' => '_fge_event_status', 'value' => [ 'zur_pruefung', 'aenderung_in_pruefung' ], 'compare' => 'IN' ] ] ] ); // phpcs:ignore WordPress.DB.SlowDBQuery
 	foreach ( $events as $eid ) {
 		$eid = (int) $eid;
-		if ( '' !== (string) get_post_meta( $eid, '_fge_review_message', true ) ) {
-			continue;
+		if ( '' !== (string) get_post_meta( $eid, '_fge_review_message', true ) || ( function_exists( 'fge_pa_pending' ) && fge_pa_pending( $eid ) ) ) {
+			continue; // der Partner ist dran
 		}
 		$change = 'aenderung_in_pruefung' === (string) get_post_meta( $eid, '_fge_event_status', true );
 		$pid    = (int) get_post_meta( $eid, '_fge_assigned_partner_id', true );
 		$sub    = implode( ' · ', array_filter( [ $pid > 0 ? fge_cc_partner_name( $pid ) : 'Firmengolf', function_exists( 'fge_cc_event_sub' ) ? fge_cc_event_sub( $eid ) : '' ] ) );
-		$url    = fge_cc_url( 'events', [ 'ev' => $eid ] );
+		$url    = function_exists( 'fge_cc_event_review_url' ) ? fge_cc_event_review_url( $eid ) : fge_cc_url( 'events', [ 'ev' => $eid ] );
 		$rev_rows[] = [
 			'key'     => 'e' . $eid,
 			'tag'     => $change ? [ 'Änderung', 'neutral' ] : [ 'Neues Event', 'warn' ],
@@ -110,6 +110,26 @@ function fge_cc_today_groups(): array {
 			'url'     => $url,
 			'facts'   => [ [ 'Art', $change ? 'Änderung an einem Event' : 'Neues Event' ], [ 'Details', $sub ] ],
 			'actions' => [ static fn() => print( fge_cc_today_link( 'Prüfen', $url, true ) ) ], // phpcs:ignore WordPress.Security.EscapeOutput
+		];
+	}
+
+	// Partner-Freigabe nach drei Werktagen ohne Antwort: nachhaken (Julius, 20.10.2026).
+	foreach ( function_exists( 'fge_pa_pending_events' ) ? fge_pa_pending_events() : [] as $eid ) {
+		if ( ! fge_pa_overdue( $eid ) ) {
+			continue;
+		}
+		$pid   = (int) get_post_meta( $eid, '_fge_assigned_partner_id', true );
+		$phone = (string) get_post_meta( $pid, '_fge_main_contact_phone', true );
+		$sent  = (int) get_post_meta( $eid, '_fge_pa_sent_at', true );
+		$url   = fge_cc_event_edit_url( $eid );
+		$rev_rows[] = [
+			'key'     => 'pa' . $eid,
+			'tag'     => [ 'Partner antwortet nicht', 'bad' ],
+			'title'   => get_the_title( $eid ),
+			'sub'     => implode( ' · ', array_filter( [ fge_cc_partner_name( $pid ), 'um Freigabe gebeten am ' . wp_date( 'd.m.', $sent ), '' !== (string) get_post_meta( $eid, '_fge_pa_reminded_at', true ) ? 'Erinnerung raus' : '' ] ) ),
+			'url'     => $url,
+			'facts'   => [ [ 'Art', 'Freigabe durch den Partner offen' ], [ 'Gefragt am', wp_date( 'd.m.Y', $sent ) ], [ 'Telefon', '' !== $phone ? $phone : 'nicht hinterlegt' ] ],
+			'actions' => [ static fn() => print( fge_cc_today_link( 'Event öffnen', $url, true ) ) ], // phpcs:ignore WordPress.Security.EscapeOutput
 		];
 	}
 

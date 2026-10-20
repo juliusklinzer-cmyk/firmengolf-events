@@ -48,6 +48,9 @@ function fge_cc_estatus( int $eid ): array {
 	if ( $ask && in_array( $st, [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) ) {
 		return [ 'rueckfrage', 'Rückfrage offen', 'brand' ];
 	}
+	if ( function_exists( 'fge_pa_pending' ) && fge_pa_pending( $eid ) ) {
+		return [ 'partner', 'freigegeben' === $st ? 'Live, Partner prüft' : 'Wartet auf Partner', 'brand' ];
+	}
 	$map = [
 		'freigegeben'           => [ 'Live', 'good' ],
 		'zur_pruefung'          => [ 'Zur Prüfung', 'warn' ],
@@ -582,12 +585,12 @@ function fge_cc_kindtag( string $label, string $tone ): string {
 }
 
 /** Freigabe-Zeile (Partner oder Event) wie im Entwurf. */
-function fge_cc_review_row( string $tag, string $tone, string $title, string $sub, int $date, bool $wait, string $btn_html ): void {
+function fge_cc_review_row( string $tag, string $tone, string $title, string $sub, int $date, bool $wait, string $btn_html, string $wait_label = 'Rückfrage offen' ): void {
 	echo '<div class="cc-revrow">';
 	echo '<span class="cc-revrow-tag">' . fge_cc_pill( $tag, $tone ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput
 	echo '<span class="cc-revrow-main"><strong>' . esc_html( $title ) . '</strong><span class="cc-muted">' . esc_html( $sub ) . '</span></span>';
 	echo '<span class="cc-revrow-date cc-muted">' . ( $date > 0 ? esc_html( 'eingereicht ' . wp_date( 'd.m.', $date ) ) : '' ) . '</span>';
-	echo $wait ? fge_cc_pill( 'Rückfrage offen', 'brand' ) : '<span></span>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo $wait ? fge_cc_pill( $wait_label, 'brand' ) : '<span></span>'; // phpcs:ignore WordPress.Security.EscapeOutput
 	echo $btn_html; // phpcs:ignore WordPress.Security.EscapeOutput
 	echo '</div>';
 }
@@ -1112,9 +1115,9 @@ function fge_cc_page_events(): void {
 	echo '<p class="cc-top-sub cc-sub-under">' . esc_html( $live_n . ' live · ' . ( count( $all ) - count( $by[0] ?? [] ) ) . ' Partner-Events bei ' . $partner . ' Partnern · ' . count( $by[0] ?? [] ) . ' Platzhalter' ) . '</p>';
 
 	$st  = static fn( int $e ) => (string) get_post_meta( $e, '_fge_event_status', true );
-	$rev = array_filter( array_keys( $all ), static fn( $e ) => in_array( $st( $e ), [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) );
+	$rev = array_filter( array_keys( $all ), static fn( $e ) => in_array( $st( $e ), [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) || ( function_exists( 'fge_pa_pending' ) && fge_pa_pending( $e ) ) );
 	if ( $rev ) {
-		$ask = static fn( int $e ) => '' !== (string) get_post_meta( $e, '_fge_review_message', true );
+		$ask = static fn( int $e ) => '' !== (string) get_post_meta( $e, '_fge_review_message', true ) || ( function_exists( 'fge_pa_pending' ) && fge_pa_pending( $e ) );
 		usort( $rev, static fn( $a, $b ) => $ask( $a ) <=> $ask( $b ) );
 		$wait = count( array_filter( $rev, $ask ) );
 		echo '<section class="cc-card cc-revcard"><div class="cc-revcard-head"><h2>Zur Freigabe</h2><span class="cc-muted">' . esc_html( ( count( $rev ) - $wait ) . ' warten auf dich' . ( $wait ? ', ' . $wait . ' auf den Partner' : '' ) ) . '</span></div>';
@@ -1122,8 +1125,14 @@ function fge_cc_page_events(): void {
 			$pid    = $all[ $eid ];
 			$change = 'aenderung_in_pruefung' === $st( $eid );
 			$types  = function_exists( 'fge_get_event_formats_flat' ) ? fge_get_event_formats_flat() : [];
-			$btn    = '<a class="cc-btn' . ( $ask( $eid ) ? '' : ' cc-btn--primary' ) . '" href="' . esc_url( fge_cc_event_review_url( $eid ) ) . '">' . ( $ask( $eid ) ? 'Ansehen' : 'Prüfen' ) . '</a>';
-			fge_cc_review_row( $change ? 'Änderung' : 'Neues Event', $change ? 'neutral' : 'warn', get_the_title( $eid ), implode( ' · ', array_filter( [ $pid > 0 ? fge_cc_partner_name( $pid ) : 'Firmengolf', (string) ( $types[ (string) get_post_meta( $eid, '_fge_event_type', true ) ] ?? '' ) ] ) ), (int) get_post_modified_time( 'U', true, $eid ), $ask( $eid ), $btn );
+			$pa     = function_exists( 'fge_pa_pending' ) && fge_pa_pending( $eid );
+			$live   = 'freigegeben' === $st( $eid );
+			// Live-Event mit offener Partner-Freigabe hat keine Prüfseite, dort geht es in die Maske.
+			$href   = $pa && $live ? fge_cc_event_edit_url( $eid ) : fge_cc_event_review_url( $eid );
+			$btn    = '<a class="cc-btn' . ( $ask( $eid ) ? '' : ' cc-btn--primary' ) . '" href="' . esc_url( $href ) . '">' . ( $ask( $eid ) ? 'Ansehen' : 'Prüfen' ) . '</a>';
+			$sent   = $pa ? (int) get_post_meta( $eid, '_fge_pa_sent_at', true ) : 0;
+			$extra  = $pa ? 'Partner gefragt am ' . wp_date( 'd.m.', $sent ) . ( '' !== (string) get_post_meta( $eid, '_fge_pa_reminded_at', true ) ? ', erinnert' : '' ) : '';
+			fge_cc_review_row( $pa && $live ? 'Live, überarbeitet' : ( $change ? 'Änderung' : 'Neues Event' ), $change || $live ? 'neutral' : 'warn', get_the_title( $eid ), implode( ' · ', array_filter( [ $pid > 0 ? fge_cc_partner_name( $pid ) : 'Firmengolf', (string) ( $types[ (string) get_post_meta( $eid, '_fge_event_type', true ) ] ?? '' ), $extra ] ) ), (int) get_post_modified_time( 'U', true, $eid ), $ask( $eid ), $btn, $pa ? 'Wartet auf Partner' : 'Rückfrage offen' );
 		}
 		echo '</section>';
 	}

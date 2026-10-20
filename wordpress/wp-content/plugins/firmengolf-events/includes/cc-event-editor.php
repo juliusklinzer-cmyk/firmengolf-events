@@ -49,7 +49,7 @@ add_action( 'template_redirect', static function (): void {
 		wp_die( 'Unbekanntes Event.', '', [ 'response' => 404 ] );
 	}
 	nocache_headers();
-	fge_cc_event_editor_ctx( $eid, [ 'saved' => ! empty( $_GET['gespeichert'] ) ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	fge_cc_event_editor_ctx( $eid, [ 'saved' => sanitize_key( wp_unslash( $_GET['gespeichert'] ?? '' ) ) ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$pid = (int) $GLOBALS['fge_cc_event_ctx']['partner'];
 
 	add_action( 'wp_enqueue_scripts', static function () use ( $pid ): void {
@@ -102,7 +102,11 @@ add_action( 'admin_post_fge_cc_event_full_save', static function (): void {
 	if ( $pid > 0 && function_exists( 'fge_event_save_images' ) ) {
 		fge_event_save_images( $eid, $pid, wp_unslash( $_POST ) );
 	}
-	wp_safe_redirect( fge_cc_event_editor_frame_url( $eid, [ 'gespeichert' => 1 ] ) );
+	$done = 1;
+	if ( $pid > 0 && 'ask_partner' === sanitize_key( wp_unslash( $_POST['fge_cc_after'] ?? '' ) ) && function_exists( 'fge_pa_request' ) ) {
+		$done = fge_pa_request( $eid ) ? 'ask' : 'nomail';
+	}
+	wp_safe_redirect( fge_cc_event_editor_frame_url( $eid, [ 'gespeichert' => $done ] ) );
 	exit;
 } );
 

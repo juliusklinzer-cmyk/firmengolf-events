@@ -341,6 +341,27 @@ def scenario_partner():
         r = post_form(f, {'fge_card_description': 'Kurzbeschreibung aus dem Control Center (TEST)', 'fge_event_dayflow': 'Start\nBegrüßung (TEST)', 'fge_event_addons': 'Fotograf (TEST)'})
         out = wp(f'echo get_post_meta({eid},"_fge_card_description",true),"|",get_post_meta({eid},"_fge_event_dayflow",true),"|",get_post_meta({eid},"_fge_event_addons",true),"|",get_post_meta({eid},"_fge_event_status",true),"|",get_post_meta({eid},"_fge_region",true);')
         check('gespeichert=1' in r.url and out.startswith('Kurzbeschreibung aus dem Control Center (TEST)|Start') and 'Fotograf (TEST)' in out and out.endswith(st0) and not mails(clear=True), 'Volle Maske speichert Inhalte, Status/Region bleiben, keine Mail (' + out.replace('\n', ' ') + ')')
+        # Partner um Freigabe bitten (20.10.2026): erst als neue Einreichung (nicht öffentlich), dann live.
+        wp(f'update_post_meta({eid},"_fge_event_status","zur_pruefung");')
+        h = get(f'/?fge_cc_event_edit={eid}&fge_cc_preview=1').text
+        f = find_form(h, 'fge_cc_event_full_save', contains=f'value="{eid}"')
+        r = post_form(f, {'fge_cc_after': 'ask_partner'})
+        ms = mails(clear=True)
+        pm = [m for m in ms if 'platz-regi' in m['to'] and 'fast online' in m['subject']]
+        check('gespeichert=ask' in r.url and len(pm) == 1, 'Partner bekommt die Freigabe-Mail')
+        link = html.unescape(re.search(r'href="([^"]*freigabe=[^"]+)"', pm[0]['html'] if pm else '').group(1)) if pm else ''
+        A = requests.Session()
+        c = A.get(link).text if link else ''
+        check('fg-pa-bar' in c and 'Passt, Event freigeben' in c, 'Freigabe-Link zeigt das nicht öffentliche Event mit Freigabe-Leiste')
+        h = get('/control/events/').text
+        check('Wartet auf Partner' in h, 'Zur Freigabe zeigt: wartet auf Partner')
+        f = [x for x in forms(c) if x['action'] == 'fge_pa_approve'][0] if c else None
+        if f:
+            A.post(BASE + '/wp-admin/admin-post.php', data=f['fields'])
+        ms = mails(clear=True)
+        st = wp(f'echo get_post_meta({eid},"_fge_event_status",true),"|",(get_post_meta({eid},"_fge_pa_done_at",true)?"done":"open");')
+        check(st == 'freigegeben|done' and any('Partner hat freigegeben' in m['subject'] for m in ms) and not any('platz-regi' in m['to'] for m in ms), 'Partner gibt frei: live, Info an uns, keine Mail an den Partner (' + st + ')')
+        wp(f'foreach(["_fge_pa_token","_fge_pa_sent_at","_fge_pa_done_at","_fge_pa_reminded_at"] as $k) delete_post_meta({eid},$k);')
         h = get(f'/control/partner/?pid={pid}').text
         post_form(find_form(h, 'fge_cc_partner_pstatus'), {'status': 'pausiert'})
         check(wp(f'echo get_post_meta({eid},"_fge_event_status",true);') == 'pausiert', 'Partner pausiert nimmt Events offline')
