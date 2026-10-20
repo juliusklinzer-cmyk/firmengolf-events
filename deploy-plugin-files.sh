@@ -13,7 +13,7 @@ for f in "$@"; do
     wp-content/*) rel="$f" ;;
     *)            rel="wp-content/plugins/firmengolf-events/$f" ;;
   esac
-  curl -s --ssl-reqd --user "$USER_:$PASS" -T "wordpress/$rel" "ftp://$HOST/$rel" && echo "hochgeladen: $rel"
+  curl -s --ssl-reqd --ftp-create-dirs --user "$USER_:$PASS" -T "wordpress/$rel" "ftp://$HOST/$rel" && echo "hochgeladen: $rel"
 done
 sleep 2
 echo -n "lokal:  "; grep -oE "FGE_VERSION', '[0-9.]+" wordpress/wp-content/plugins/firmengolf-events/firmengolf-events.php | grep -oE "[0-9.]+$"
