@@ -1083,6 +1083,7 @@ function fge_cc_page_events(): void {
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
 	$q    = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
 	$tab  = sanitize_key( wp_unslash( $_GET['tab'] ?? 'alle' ) );
+	$art  = sanitize_key( wp_unslash( $_GET['art'] ?? 'alle' ) );
 	$open = absint( $_GET['ev'] ?? 0 );
 	$edit = absint( $_GET['edit'] ?? 0 );
 	// phpcs:enable
@@ -1104,7 +1105,7 @@ function fge_cc_page_events(): void {
 	_prime_post_caches( array_keys( $all ), false, true );
 	$live_n  = count( array_filter( array_keys( $all ), 'fge_cc_event_is_live' ) );
 	$partner = count( array_filter( array_keys( $by ), static fn( $p ) => $p > 0 ) );
-	echo '<p class="cc-top-sub cc-sub-under">' . esc_html( $live_n . ' live · ' . count( $all ) . ' angelegt bei ' . $partner . ' Partnern und Firmengolf' ) . '</p>';
+	echo '<p class="cc-top-sub cc-sub-under">' . esc_html( $live_n . ' live · ' . ( count( $all ) - count( $by[0] ?? [] ) ) . ' Partner-Events bei ' . $partner . ' Partnern · ' . count( $by[0] ?? [] ) . ' Platzhalter' ) . '</p>';
 
 	$st  = static fn( int $e ) => (string) get_post_meta( $e, '_fge_event_status', true );
 	$rev = array_filter( array_keys( $all ), static fn( $e ) => in_array( $st( $e ), [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) );
@@ -1136,13 +1137,27 @@ function fge_cc_page_events(): void {
 	}
 	$match = array_filter( array_keys( $all ), static function ( $e ) use ( $q, $all ) {
 		$p = $all[ $e ];
-		return '' === $q || false !== mb_stripos( get_the_title( $e ) . ' ' . ( $p > 0 ? fge_cc_partner_name( $p ) : 'Firmengolf' ), $q );
+		return '' === $q || false !== mb_stripos( get_the_title( $e ) . ' ' . ( $p > 0 ? fge_cc_partner_name( $p ) : 'Firmengolf Platzhalter' ), $q );
 	} );
+	// Herkunft (Julius, 20.10.2026): Partner-Events haben einen Partner, Platzhalter
+	// keinen (gleiche Regel wie fge_offer_event_is_placeholder).
+	$arts = [ 'alle' => 'Alle', 'partner' => 'Partner-Events', 'platzhalter' => 'Platzhalter' ];
+	if ( ! isset( $arts[ $art ] ) ) {
+		$art = 'alle';
+	}
+	$by_art = [
+		'alle'        => static fn( $e ) => true,
+		'partner'     => static fn( $e ) => $all[ $e ] > 0,
+		'platzhalter' => static fn( $e ) => $all[ $e ] <= 0,
+	];
+	$art_counts = array_map( static fn( $fn ) => count( array_filter( $match, $fn ) ), $by_art );
+	$match      = array_filter( $match, $by_art[ $art ] );
+	fge_cc_seglinks( 'events', 'art', $arts, $art, $art_counts, [ 's' => $q, 'tab' => 'alle' !== $tab ? $tab : '' ] );
 	$counts = [];
 	foreach ( $groups as $k => $fn ) {
 		$counts[ $k ] = count( array_filter( $match, $fn ) );
 	}
-	fge_cc_seglinks( 'events', 'tab', $tabs, $tab, $counts, [ 's' => $q ] );
+	fge_cc_seglinks( 'events', 'tab', $tabs, $tab, $counts, [ 's' => $q, 'art' => 'alle' !== $art ? $art : '' ] );
 	$rows  = array_values( array_filter( $match, $groups[ $tab ] ) );
 	// Seiten zu 100, sonst wird „Alle“ mit fast 400 Events sehr lang.
 	$per   = 100;
@@ -1158,12 +1173,12 @@ function fge_cc_page_events(): void {
 		$pr  = function_exists( 'fge_event_pricing' ) ? fge_event_pricing( $eid ) : [ 'gross' => 0 ];
 		[ , $label, $tone ] = fge_cc_estatus( $eid );
 		echo '<tr><td><strong class="cc-ellipsis">' . esc_html( get_the_title( $eid ) ) . '</strong></td>';
-		echo '<td>' . ( $pid > 0 ? '<a href="' . esc_url( fge_cc_url( 'partner', [ 'pid' => $pid ] ) ) . '">' . esc_html( fge_cc_partner_name( $pid ) ) . '</a>' : '<span class="cc-muted">Firmengolf</span>' ) . '</td>';
+		echo '<td>' . ( $pid > 0 ? '<a href="' . esc_url( fge_cc_url( 'partner', [ 'pid' => $pid ] ) ) . '">' . esc_html( fge_cc_partner_name( $pid ) ) . '</a>' : fge_cc_pill( 'Platzhalter', 'neutral' ) ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		echo '<td>' . esc_html( (string) ( $types[ (string) get_post_meta( $eid, '_fge_event_type', true ) ] ?? '' ) ) . '</td>';
 		echo '<td class="cc-num">' . ( (float) $pr['gross'] > 0 ? esc_html( fge_cc_money( (float) $pr['gross'] ) ) : '<span class="cc-muted">auf Anfrage</span>' ) . '</td>';
 		echo '<td>' . fge_cc_pill( $label, $tone ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		echo '<td class="cc-td-act"><a class="cc-btn cc-btn--text" href="' . esc_url( fge_cc_public_link( $eid ) ) . '" target="_blank" rel="noopener">Ansehen</a>'
-			. '<a class="cc-btn cc-btn--tiny" href="' . esc_url( fge_cc_url( 'events', array_filter( [ 'tab' => 'alle' !== $tab ? $tab : '', 's' => $q, 'edit' => $eid ] ) ) ) . '">Bearbeiten</a></td></tr>';
+			. '<a class="cc-btn cc-btn--tiny" href="' . esc_url( fge_cc_url( 'events', array_filter( [ 'tab' => 'alle' !== $tab ? $tab : '', 'art' => 'alle' !== $art ? $art : '', 's' => $q, 'edit' => $eid ] ) ) ) . '">Bearbeiten</a></td></tr>';
 	}
 	if ( ! $rows ) {
 		echo '<tr class="is-empty"><td colspan="6">Keine Events in dieser Ansicht.</td></tr>';
@@ -1172,7 +1187,7 @@ function fge_cc_page_events(): void {
 	if ( $pages > 1 ) {
 		echo '<nav class="cc-pager" aria-label="Seiten"><span class="cc-muted">' . esc_html( ( ( $pg - 1 ) * $per + 1 ) . ' bis ' . min( $total, $pg * $per ) . ' von ' . $total ) . '</span>';
 		for ( $i = 1; $i <= $pages; $i++ ) {
-			echo '<a class="cc-seg' . ( $i === $pg ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'events', array_filter( [ 'tab' => 'alle' !== $tab ? $tab : '', 's' => $q, 'seite' => $i > 1 ? $i : '' ] ) ) ) . '">' . (int) $i . '</a>';
+			echo '<a class="cc-seg' . ( $i === $pg ? ' is-on' : '' ) . '" href="' . esc_url( fge_cc_url( 'events', array_filter( [ 'tab' => 'alle' !== $tab ? $tab : '', 'art' => 'alle' !== $art ? $art : '', 's' => $q, 'seite' => $i > 1 ? $i : '' ] ) ) ) . '">' . (int) $i . '</a>';
 		}
 		echo '</nav>';
 	}
