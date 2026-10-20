@@ -232,12 +232,20 @@ get_header();
 			</section>
 			<?php endif; ?>
 
-			<?php if ( $gallery ) : ?>
+			<?php
+			// Galerie als Kachel-Raster statt Vollbild-Reihe (Julius, 20.10.2026): großes
+			// erstes Bild, bis zu vier kleine, Klick öffnet die Vollbild-Galerie.
+			$gal_ids = array_values( array_filter( $gallery, static fn( $g ) => (bool) wp_get_attachment_image_url( (int) $g, 'large' ) ) );
+			$gal_n   = count( $gal_ids );
+			if ( $gal_n ) : ?>
 			<section class="section" id="galerie">
 				<div class="section-head"><div><div class="eyebrow">Eindrücke</div><h2>So sieht es bei <em>uns</em> aus</h2></div></div>
-				<div class="gal-grid">
-					<?php foreach ( array_slice( $gallery, 0, 6 ) as $gi => $att ) : ?>
-						<img src="<?php echo esc_url( (string) wp_get_attachment_image_url( (int) $att, 'large' ) ); ?>" alt="<?php echo esc_attr( $name . ' Foto ' . ( $gi + 1 ) ); ?>" loading="lazy">
+				<div class="fg-mosaic fg-mosaic--n<?php echo (int) min( $gal_n, 5 ); ?>">
+					<?php foreach ( array_slice( $gal_ids, 0, 5 ) as $gi => $att ) : ?>
+						<button type="button" class="fg-mosaic-tile" data-gp-open data-gp-index="<?php echo (int) $gi; ?>" aria-label="<?php echo esc_attr( 'Foto ' . ( $gi + 1 ) . ' von ' . $gal_n . ' vergrößern' ); ?>">
+							<img src="<?php echo esc_url( (string) wp_get_attachment_image_url( (int) $att, 0 === $gi ? 'large' : 'medium_large' ) ); ?>" alt="<?php echo esc_attr( $name . ' Foto ' . ( $gi + 1 ) ); ?>" loading="lazy">
+							<?php if ( 4 === $gi && $gal_n > 5 ) : ?><span class="fg-mosaic-more">+<?php echo (int) ( $gal_n - 5 ); ?> Fotos</span><?php endif; ?>
+						</button>
 					<?php endforeach; ?>
 				</div>
 			</section>
@@ -288,5 +296,6 @@ get_header();
 
 		</div>
 	</div>
+	<?php if ( ! empty( $gal_ids ) ) { get_template_part( 'template-parts/fge-gallery-lightbox', null, [ 'ids' => $gal_ids ] ); } ?>
 </div>
 <?php get_footer(); ?>

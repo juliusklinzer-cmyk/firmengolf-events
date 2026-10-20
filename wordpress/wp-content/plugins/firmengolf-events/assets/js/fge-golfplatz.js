@@ -1,4 +1,4 @@
-/* Golf-course page gallery lightbox. Opened by [data-gp-open]; images from data-images. */
+/* Partner page gallery lightbox. Opened by [data-gp-open] (start image via data-gp-index); images from data-images. */
 ( function () {
 	'use strict';
 	var box = document.querySelector( '[data-gp-lightbox]' );
@@ -35,7 +35,7 @@
 		document.documentElement.classList.remove('fg-drawer-lock');
 	}
 
-	openers.forEach( function ( b ) { b.addEventListener( 'click', function () { open( 0 ); } ); } );
+	openers.forEach( function ( b ) { b.addEventListener( 'click', function () { open( parseInt( b.getAttribute( 'data-gp-index' ) || '0', 10 ) || 0 ); } ); } );
 	box.querySelector( '[data-gp-next]' ).addEventListener( 'click', function ( e ) { e.stopPropagation(); show( i + 1 ); } );
 	box.querySelector( '[data-gp-prev]' ).addEventListener( 'click', function ( e ) { e.stopPropagation(); show( i - 1 ); } );
 	box.querySelector( '[data-gp-close]' ).addEventListener( 'click', close );
