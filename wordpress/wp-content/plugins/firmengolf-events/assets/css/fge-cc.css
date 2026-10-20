@@ -1532,6 +1532,7 @@ body.cc a.cc-seg.is-on { background: var(--cc-ink); color: #fff; box-shadow: non
 .cc-headcard-contact { display: flex; flex-direction: column; gap: 3px; padding-top: 14px; border-top: 1px solid var(--cc-line-soft); }
 .cc-headcard-contact strong { font-size: 15px; }
 .cc-headcard-links { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13.5px; }
+.cc-headcard-foot { display: flex; justify-content: flex-end; font-size: 13.5px; }
 .cc-h-small { margin: 0; font-size: 14px; font-weight: 600; }
 .cc-factgrid { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 20px; }
 .cc-factgrid--wide { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }

@@ -969,3 +969,14 @@ function fge_cc_request_mails( int $req ): void {
 	}
 	echo '</section>';
 }
+
+// Sprung ins Control Center aus dem WP-Backend: oben in der Admin-Leiste und
+// ganz oben im Menü links, nur für Admins (Julius, 20.10.2026).
+add_action( 'admin_bar_menu', static function ( WP_Admin_Bar $bar ): void {
+	if ( current_user_can( 'manage_options' ) ) {
+		$bar->add_node( [ 'id' => 'fge-cc', 'title' => 'Control Center', 'href' => fge_cc_url() ] );
+	}
+}, 31 );
+add_action( 'admin_menu', static function (): void {
+	add_menu_page( 'Control Center', 'Control Center', 'manage_options', fge_cc_url(), '', 'dashicons-flag', 1 );
+} );

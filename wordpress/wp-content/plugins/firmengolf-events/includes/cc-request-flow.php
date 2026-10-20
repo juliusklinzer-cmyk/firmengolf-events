@@ -323,7 +323,13 @@ function fge_cc_flow_header( int $req, array $flow ): void {
 			echo '<div><dt>' . esc_html( $k ) . '</dt><dd>' . esc_html( (string) $v ) . '</dd></div>';
 		}
 	}
-	echo '</dl></section>';
+	echo '</dl>';
+	// Link zum angefragten Event, neuer Tab (Julius, 20.10.2026).
+	$ev_id = (int) get_post_meta( $req, '_fge_assigned_event_id', true );
+	if ( $ev_id > 0 && 'firmengolf_event' === get_post_type( $ev_id ) && ( $ev_url = get_permalink( $ev_id ) ) ) {
+		echo '<div class="cc-headcard-foot"><a href="' . esc_url( $ev_url ) . '" target="_blank" rel="noopener">Angefragtes Event öffnen ↗</a></div>';
+	}
+	echo '</section>';
 	echo '</div>';
 }
 
