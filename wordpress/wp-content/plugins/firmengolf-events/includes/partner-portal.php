@@ -722,6 +722,21 @@ function fge_portal_page_url(): string {
 	return $page ? trailingslashit( get_permalink( $page->ID ) ) : trailingslashit( home_url( '/partnerportal/' ) );
 }
 
+/**
+ * Event-Maske im Control Center (Julius, 20.10.2026): dieselbe Maske wie im Portal,
+ * aber im Namen des Event-Partners (0 = Platzhalter), nicht des Musterplatzes.
+ * Gesetzt von cc-event-editor.php, sonst null.
+ */
+function fge_portal_cc_ctx(): ?array {
+	return isset( $GLOBALS['fge_cc_event_ctx'] ) && is_array( $GLOBALS['fge_cc_event_ctx'] ) ? $GLOBALS['fge_cc_event_ctx'] : null;
+}
+
+/** Partner, in dessen Namen die Event-Maske arbeitet. */
+function fge_portal_acting_partner(): int {
+	$ctx = fge_portal_cc_ctx();
+	return null !== $ctx ? (int) $ctx['partner'] : fge_portal_get_partner_id();
+}
+
 function fge_portal_get_partner_id(): int {
 	if ( current_user_can( 'manage_options' ) ) {
 		// Musterumgebung: Admins agieren im Portal auf dem Muster-Platz — dadurch
@@ -890,10 +905,11 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	}
 	// Standort kommt vom Platz: Suche läuft über PLZ/Entfernung, nicht über Region-Freitext.
 	$loc_partner = (int) get_post_meta( $post_id, '_fge_assigned_partner_id', true );
-	if ( $loc_partner <= 0 ) {
+	if ( $loc_partner <= 0 && null === fge_portal_cc_ctx() ) {
 		$loc_partner = fge_portal_get_partner_id();
 	}
-	if ( $loc_partner > 0 ) {
+	// Im Control Center bleiben Standort und Region, wie sie sind (Stadt-Seiten hängen daran).
+	if ( $loc_partner > 0 && null === fge_portal_cc_ctx() ) {
 		$lp_name = (string) get_post_meta( $loc_partner, '_fge_public_golfclub_name', true ) ?: get_the_title( $loc_partner );
 		$lp_city = (string) get_post_meta( $loc_partner, '_fge_city', true );
 		update_post_meta( $post_id, '_fge_event_location', trim( $lp_name . ( '' !== $lp_city ? ', ' . $lp_city : '' ) ) );
@@ -936,7 +952,7 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	// ── Termin-Freigabe: Modus + Event-Ansprechpartner (inkl. Quick-Add neuer Kontakte) ──
 	update_post_meta( $post_id, '_fge_release_mode', in_array( $_POST['fge_release_mode'] ?? '', [ 'us', 'approve' ], true ) ? $_POST['fge_release_mode'] : 'us' );
 	$responders = array_values( array_filter( array_map( 'absint', (array) ( $_POST['fge_event_responders'] ?? [] ) ) ) );
-	$rp_partner = fge_portal_get_partner_id();
+	$rp_partner = fge_portal_acting_partner();
 	if ( $rp_partner > 0 && function_exists( 'fge_contact_add' ) ) {
 		$n_names = (array) ( $_POST['fge_new_responder_name'] ?? [] );
 		$n_roles = (array) ( $_POST['fge_new_responder_role'] ?? [] );
@@ -979,8 +995,8 @@ function fge_portal_save_event_meta( int $post_id ): void {
 	// ── Preismodell + Inhalt (rev. 2) ──
 	// Brutto-Eingabe (Julius, 02.09.): Partner tippt Brutto, intern Netto speichern.
 	// Divisor je Partner (regelbesteuert 1,19 / Kleinunternehmer 1,0).
-	$price_pid = fge_portal_get_partner_id();
-	if ( $price_pid <= 0 ) { $price_pid = (int) get_post_meta( $post_id, '_fge_assigned_partner_id', true ); }
+	$price_pid = fge_portal_acting_partner();
+	if ( $price_pid <= 0 && null === fge_portal_cc_ctx() ) { $price_pid = (int) get_post_meta( $post_id, '_fge_assigned_partner_id', true ); }
 	$price_mode = in_array( $_POST['fge_price_mode'] ?? '', [ 'gesamt', 'einzel' ], true ) ? $_POST['fge_price_mode'] : 'gesamt';
 	update_post_meta( $post_id, '_fge_price_mode', $price_mode );
 	$amount_gross = fge_parse_de_amount( wp_unslash( $_POST['fge_price_amount'] ?? '' ) );
@@ -2258,32 +2274,7 @@ function fge_portal_section_angebote( int $partner_id ): void {
 		if ( ! empty( $errors ) ) {
 			$saved = $err_data;
 		} else {
-			$post  = get_post( $event_id );
-			$m     = static function( string $key ) use ( $event_id ): string {
-				return (string) get_post_meta( $event_id, '_fge_' . $key, true );
-			};
-			$saved = [
-				'fge_post_title'                 => $post ? $post->post_title : '',
-				'fge_post_content'               => $post ? $post->post_content : '',
-				'fge_event_type'                 => $m( 'event_type' ),
-				'fge_card_description'           => $m( 'card_description' ),
-				'fge_participants_min'            => $m( 'participants_min' ),
-				'fge_participants_max'            => $m( 'participants_max' ),
-				'fge_duration'                   => $m( 'duration' ),
-				'fge_season'                     => $m( 'season' ),
-				'fge_region'                     => $m( 'region' ),
-				'fge_event_location'             => $m( 'event_location' ),
-				'fge_public_price_label'         => $m( 'public_price_label' ),
-				'fge_price_note'                 => $m( 'price_note' ),
-				'fge_availability_contact_name'  => $m( 'availability_contact_name' ),
-				'fge_availability_contact_email' => $m( 'availability_contact_email' ),
-				'fge_availability_contact_phone' => $m( 'availability_contact_phone' ),
-				'fge_additional_services'        => $m( 'additional_services' ),
-				'fge_available_weekdays'         => get_post_meta( $event_id, '_fge_available_weekdays', true ) ?: [],
-			];
-			foreach ( [ 'has_golf_teacher', 'has_range_usage', 'has_rental_clubs', 'has_range_balls', 'has_putting_shortgame', 'has_meeting_room', 'has_breakfast', 'has_lunch', 'has_dinner', 'has_shuttle', 'has_branding' ] as $key ) {
-				$saved[ 'fge_' . $key ] = $m( $key );
-			}
+			$saved = fge_portal_event_form_values( $event_id );
 		}
 
 		fge_portal_render_event_form( $partner_id, $saved, $errors, $event_id );
@@ -4381,9 +4372,43 @@ function fge_portal_section_stats( int $partner_id ): void {
 // EVENT FORM (new + edit)
 // ══════════════════════════════════════════════════════════════════════════════
 
+/** Formularwerte eines bestehenden Events (Portal und Control Center). */
+function fge_portal_event_form_values( int $event_id ): array {
+	$post  = get_post( $event_id );
+	$m     = static function( string $key ) use ( $event_id ): string {
+		return (string) get_post_meta( $event_id, '_fge_' . $key, true );
+	};
+	$saved = [
+		'fge_post_title'                 => $post ? $post->post_title : '',
+		'fge_post_content'               => $post ? $post->post_content : '',
+		'fge_event_type'                 => $m( 'event_type' ),
+		'fge_card_description'           => $m( 'card_description' ),
+		'fge_participants_min'            => $m( 'participants_min' ),
+		'fge_participants_max'            => $m( 'participants_max' ),
+		'fge_duration'                   => $m( 'duration' ),
+		'fge_season'                     => $m( 'season' ),
+		'fge_region'                     => $m( 'region' ),
+		'fge_event_location'             => $m( 'event_location' ),
+		'fge_public_price_label'         => $m( 'public_price_label' ),
+		'fge_price_note'                 => $m( 'price_note' ),
+		'fge_availability_contact_name'  => $m( 'availability_contact_name' ),
+		'fge_availability_contact_email' => $m( 'availability_contact_email' ),
+		'fge_availability_contact_phone' => $m( 'availability_contact_phone' ),
+		'fge_additional_services'        => $m( 'additional_services' ),
+		'fge_available_weekdays'         => get_post_meta( $event_id, '_fge_available_weekdays', true ) ?: [],
+	];
+	foreach ( [ 'has_golf_teacher', 'has_range_usage', 'has_rental_clubs', 'has_range_balls', 'has_putting_shortgame', 'has_meeting_room', 'has_breakfast', 'has_lunch', 'has_dinner', 'has_shuttle', 'has_branding' ] as $key ) {
+		$saved[ 'fge_' . $key ] = $m( $key );
+	}
+	return $saved;
+}
+
 function fge_portal_render_event_form( int $partner_id, array $saved = [], array $errors = [], int $event_id = 0 ): void {
 	$is_edit = $event_id > 0;
 	$base    = fge_portal_page_url();
+	// Control Center: gleiche Maske, eigenes Ziel, Platzhalter ohne Partner (cc-event-editor.php).
+	$cc      = fge_portal_cc_ctx();
+	$cc_ph   = null !== $cc && $partner_id <= 0;
 
 	$v = static function( string $key ) use ( $saved ): string {
 		return esc_attr( $saved[ $key ] ?? '' );
@@ -4401,7 +4426,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 	$event_types = fge_get_event_formats()['standard'];
 	// Indoor Golf nur anbieten, wenn der Partner Indoor in der Ausstattung hat
 	// (oder das Event den Typ schon trägt, damit Bestand editierbar bleibt).
-	if ( ! fge_partner_has_indoor( $partner_id ) && 'indoor-golf' !== (string) ( $saved['fge_event_type'] ?? '' ) ) {
+	if ( ! $cc_ph && ! fge_partner_has_indoor( $partner_id ) && 'indoor-golf' !== (string) ( $saved['fge_event_type'] ?? '' ) ) {
 		unset( $event_types['indoor-golf'] );
 	}
 	$weekdays       = [ 'monday' => 'Mo', 'tuesday' => 'Di', 'wednesday' => 'Mi', 'thursday' => 'Do', 'friday' => 'Fr', 'saturday' => 'Sa', 'sunday' => 'So' ];
@@ -4449,7 +4474,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 				</div>
 			</div>
 			<div class="fp-edit-actions">
-				<a href="<?php echo esc_url( $base . '?tab=angebote' ); ?>" class="fp-btn fp-btn-ghost">
+				<a href="<?php echo esc_url( $cc['back_url'] ?? $base . '?tab=angebote' ); ?>" class="fp-btn fp-btn-ghost"<?php echo null !== $cc ? ' target="_top"' : ''; ?>>
 					<?php echo fge_icon_arrow_left(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 					Zurück
 				</a>
@@ -4459,16 +4484,27 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 			</div>
 		</div>
 
+		<?php if ( null !== $cc && ! empty( $cc['saved'] ) ) : ?>
+			<div class="fg-portal-global-notice" role="status">Gespeichert. Die Änderungen sind sofort auf der Eventseite sichtbar, der Status bleibt unverändert.</div>
+		<?php endif; ?>
+
 		<?php if ( ! empty( $errors ) ) : ?>
 			<div class="fg-form-errors-banner" role="alert">
 				<strong>Bitte prüf deine Eingaben.</strong> Einige Felder sind noch nicht korrekt ausgefüllt.
 			</div>
 		<?php endif; ?>
 
+		<?php if ( null !== $cc ) : ?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" novalidate id="fp-event-form">
+			<input type="hidden" name="action" value="fge_cc_event_full_save">
+			<input type="hidden" name="fge_event_id" value="<?php echo esc_attr( $event_id ); ?>">
+			<?php wp_nonce_field( 'fge_cc_event_full_save_' . $event_id, 'fge_cc_nonce' ); ?>
+		<?php else : ?>
 		<form method="post" action="<?php echo esc_url( $base ); ?>" enctype="multipart/form-data" novalidate id="fp-event-form">
 			<input type="hidden" name="fge_action" value="<?php echo $is_edit ? 'portal_edit_event' : 'portal_new_event'; ?>">
 			<?php if ( $is_edit ) : ?><input type="hidden" name="fge_event_id" value="<?php echo esc_attr( $event_id ); ?>"><?php endif; ?>
 			<?php wp_nonce_field( $is_edit ? 'fge_portal_edit_event' : 'fge_portal_new_event', 'fge_portal_nonce' ); ?>
+		<?php endif; ?>
 
 			<div class="fp-edit-grid">
 
@@ -4499,12 +4535,16 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					<!-- Eventbilder: Auswahl aus der Platz-Galerie -->
 					<div class="fp-form-sec">
 						<h3>Eventbilder</h3>
+						<?php if ( $cc_ph ) : ?>
+						<p class="fp-help">Platzhalter-Events haben keine eigene Galerie. Sie zeigen automatisch passende Fotos aus dem Bildpool zur Eventart.</p>
+						<?php else : ?>
 						<p class="fp-help">Wähle Bilder aus deiner Platz-Galerie. Das Titelbild erscheint auf der Angebotskarte; weitere Fotos auf der Detailseite.</p>
 						<?php
 						$rest_ids     = $is_edit ? array_filter( array_map( 'absint', explode( ',', (string) get_post_meta( $event_id, '_fge_event_gallery_ids', true ) ) ) ) : [];
 						$selected_ids = $cover_id > 0 ? array_merge( [ $cover_id ], $rest_ids ) : $rest_ids;
 						fge_event_picker_render( $cover_id, implode( ',', $selected_ids ) );
 						?>
+						<?php endif; ?>
 					</div>
 
 					<!-- Titel & Beschreibung -->
@@ -4538,11 +4578,11 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						// Brutto-Eingabe (Julius, 02.09.): Der Partner tippt seinen gewohnten
 						// Endkundenpreis (brutto). Intern bleibt alles Netto. Divisor je Partner
 						// (regelbesteuert 1,19 / Kleinunternehmer 1,0).
-						$editor_pid = fge_portal_get_partner_id();
-						if ( $editor_pid <= 0 && $event_id ) { $editor_pid = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true ); }
-						$tax_div = ( function_exists( 'fge_partner_tax_divisor' ) && $editor_pid > 0 )
+						$editor_pid = fge_portal_acting_partner();
+						if ( $editor_pid <= 0 && $event_id && null === $cc ) { $editor_pid = (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true ); }
+						$tax_div = $cc_ph ? 1.0 : ( ( function_exists( 'fge_partner_tax_divisor' ) && $editor_pid > 0 )
 							? fge_partner_tax_divisor( $editor_pid )
-							: ( 1 + ( defined( 'FGE_VAT_PERCENT' ) ? FGE_VAT_PERCENT : 19 ) / 100 );
+							: ( 1 + ( defined( 'FGE_VAT_PERCENT' ) ? FGE_VAT_PERCENT : 19 ) / 100 ) );
 						// Brutto-Wert für die Anzeige formatieren (Komma, ohne Trailing-Nullen).
 						$fmt_gross = static function ( float $g ): string {
 							return $g > 0 ? rtrim( rtrim( number_format( $g, 2, ',', '' ), '0' ), ',' ) : '';
@@ -4561,7 +4601,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						}
 						$pbasis  = (string) ( $saved['fge_price_basis'] ?? '' ) ?: ( $event_id ? ( get_post_meta( $event_id, '_fge_price_basis', true ) ?: 'person' ) : 'person' );
 						// Pro Box & Stunde nur für Indoor-Anlagen (und Bestand, der es schon nutzt).
-						$pbox_pid     = fge_portal_get_partner_id();
+						$pbox_pid     = fge_portal_acting_partner();
 						$pbox_allowed = 'box' === $pbasis || ( $pbox_pid > 0 && function_exists( 'fge_partner_type' ) && 'indoor' === fge_partner_type( $pbox_pid ) );
 						$pbox_persons = (int) ( $saved['fge_box_persons'] ?? 0 ) ?: ( $event_id ? (int) get_post_meta( $event_id, '_fge_box_persons', true ) : 0 ) ?: 6;
 						$pbox_hours   = (float) ( $saved['fge_box_hours'] ?? 0 ) ?: ( $event_id ? (float) get_post_meta( $event_id, '_fge_box_hours', true ) : 0 ) ?: 2;
@@ -4586,7 +4626,11 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						}
 						$markup  = defined( 'FGE_MARKUP_PERCENT' ) ? (int) FGE_MARKUP_PERCENT : 20;
 						?>
+						<?php if ( $cc_ph ) : ?>
+						<p class="fp-help">Platzhalter ohne Partner: Trag den Einkaufspreis netto ein, so wie wir ihn beim Platz erwarten. Unser Aufschlag und die MwSt. kommen für die Eventseite automatisch dazu.</p>
+						<?php else : ?>
 						<p class="fp-help">Hinterlege deinen gewohnten <strong>Endkundenpreis (brutto)</strong>, so wie du ihn auch einem normalen Gast berechnest. Wir rechnen den Rest: dein Netto, die Vermittlung von Firmengolf (<?php echo (int) $markup; ?> %) oben drauf, und dem Firmenkunden zeigen wir netto. Du bekommst immer exakt dein Netto.</p>
+						<?php endif; ?>
 
 						<input type="hidden" name="fge_price_mode" id="fge_price_mode" value="<?php echo esc_attr( $pmode ); ?>">
 						<div class="fp-price-modes" role="tablist">
@@ -4597,7 +4641,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						<div id="fp-price-gesamt" style="<?php echo 'gesamt' === $pmode ? '' : 'display:none;'; ?>">
 							<div class="fg-form-row fg-form-row--2col">
 								<div>
-									<label class="fg-form-label" for="fge_price_amount">Dein Endkundenpreis, brutto (€)</label>
+									<label class="fg-form-label" for="fge_price_amount"><?php echo $cc_ph ? 'Einkaufspreis netto (€), unser Aufschlag kommt automatisch dazu' : 'Dein Endkundenpreis, brutto (€)'; ?></label>
 									<input class="fg-form-input" type="text" inputmode="decimal" id="fge_price_amount" name="fge_price_amount" value="<?php echo esc_attr( $pamount ); ?>" placeholder="2400">
 								</div>
 								<div>
@@ -4755,7 +4799,10 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 
 						$cur_includes = isset( $saved['fge_event_includes'] )
 							? array_values( array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $saved['fge_event_includes'] ) ) ) )
-							: ( $event_id ? array_map( 'strval', (array) get_post_meta( $event_id, '_fge_event_includes', true ) ) : [] );
+							: ( $event_id ? array_values( array_filter( array_map( 'trim', ( static function ( $raw ): array {
+								// Platzhalter speichern die Liste als Text mit Zeilen, Portal-Events als Array.
+								return is_array( $raw ) ? array_map( 'strval', $raw ) : preg_split( '/\r?\n/', (string) $raw );
+							} )( get_post_meta( $event_id, '_fge_event_includes', true ) ) ) ) ) : [] );
 						?>
 						<div class="fp-inc-chips" id="fp-inc-chips">
 							<?php foreach ( $cur_includes as $inc ) : ?>
@@ -4816,6 +4863,18 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 							</div>
 							<textarea class="fg-form-textarea" id="fge_event_dayflow" name="fge_event_dayflow" rows="9" placeholder="Ankunft &amp; Begrüßung&#10;Treffpunkt ist der Pro-Shop. Wir begrüßen euch und stellen Platz und Anlage kurz vor.&#10;&#10;Schnupperkurs auf der Range&#10;Ca. 1 Stunde mit unseren Golflehrern: Abschlag, Grundtechnik und die ersten Erfolgserlebnisse."><?php echo esc_textarea( (string) ( $saved['fge_event_dayflow'] ?? ( $event_id ? get_post_meta( $event_id, '_fge_event_dayflow', true ) : '' ) ) ); ?></textarea>
 						</div>
+						<?php if ( null !== $cc ) : ?>
+						<?php
+						// „Optional zubuchbar“ der Eventseite, im Portal (noch) nicht pflegbar (Julius, 20.10.2026).
+						$cc_addons = $saved['fge_event_addons'] ?? ( $event_id ? get_post_meta( $event_id, '_fge_event_addons', true ) : '' );
+						$cc_addons = is_array( $cc_addons ) ? implode( "\n", $cc_addons ) : (string) $cc_addons;
+						?>
+						<div class="fg-form-row" style="margin-top:24px;">
+							<label class="fg-form-label" for="fge_event_addons">Optional zubuchbar</label>
+							<p class="fp-help" style="margin-bottom:12px;">Eine Leistung pro Zeile, z. B. Fotograf oder Abholservice. Erscheint auf der Eventseite unter „Optional zubuchbar“.</p>
+							<textarea class="fg-form-textarea" id="fge_event_addons" name="fge_event_addons" rows="5"><?php echo esc_textarea( $cc_addons ); ?></textarea>
+						</div>
+						<?php endif; ?>
 						<script>
 						(function(){
 							var src = document.getElementById('fge_event_dayflow');
@@ -4895,6 +4954,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					</div>
 
 					<!-- Terminabstimmung -->
+					<?php if ( ! $cc_ph ) : ?>
 					<div class="fp-form-sec">
 						<h3>Terminabstimmung</h3>
 						<p class="fp-help">Wenn ein Unternehmen anfragt, schickt es bis zu drei Wunschtermine mit. Hier legst du fest, wer diese Termine für dieses Event bestätigt.</p>
@@ -5000,6 +5060,7 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 						})();
 						</script>
 					</div>
+					<?php endif; ?>
 
 				</div><!-- /left -->
 
@@ -5013,13 +5074,15 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 							<?php echo esc_html( $status_label ); ?>
 						</span>
 						<p style="font-size:13px;color:var(--ink-500);margin-top:12px;line-height:1.5;">
-							<?php echo $is_edit
+							<?php echo null !== $cc
+								? 'Speichern im Control Center ändert den Status nicht und schickt keine Mail an den Partner.'
+								: ( $is_edit
 								? 'Gespeicherte Änderungen gehen erneut in Prüfung.'
-								: 'Nach dem Einreichen wird dein Angebot von Firmengolf geprüft und dann freigegeben.'; ?>
+								: 'Nach dem Einreichen wird dein Angebot von Firmengolf geprüft und dann freigegeben.' ); ?>
 						</p>
 						<?php
 						$lc_status = $event_id ? (string) get_post_meta( $event_id, '_fge_event_status', true ) : '';
-						if ( $is_edit && in_array( $lc_status, [ 'freigegeben', 'pausiert' ], true ) ) :
+						if ( null === $cc && $is_edit && in_array( $lc_status, [ 'freigegeben', 'pausiert' ], true ) ) :
 							$lc_action = $lc_status === 'freigegeben' ? 'pause' : 'reactivate';
 							$lc_label  = $lc_status === 'freigegeben' ? 'Angebot pausieren' : 'Angebot reaktivieren';
 							$lc_url    = wp_nonce_url( add_query_arg( [ 'tab' => 'angebote', 'portal_action' => $lc_action, 'event_id' => $event_id ], fge_portal_page_url() ), 'fge_portal_lifecycle_' . $event_id );
@@ -5029,9 +5092,9 @@ function fge_portal_render_event_form( int $partner_id, array $saved = [], array
 					</div>
 
 					<?php
-					$pv_name   = (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id );
+					$pv_name   = $cc_ph ? (string) ( get_post_meta( $event_id, '_fge_event_location', true ) ?: 'Firmengolf' ) : ( (string) get_post_meta( $partner_id, '_fge_public_golfclub_name', true ) ?: get_the_title( $partner_id ) );
 					$pv_rating = (string) get_post_meta( $partner_id, '_fge_rating', true );
-					$pv_cover  = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : '';
+					$pv_cover  = $cover_id > 0 ? (string) wp_get_attachment_image_url( $cover_id, 'large' ) : ( $cc_ph && function_exists( 'fge_event_cover_url' ) ? fge_event_cover_url( $event_id ) : '' );
 					?>
 					<div class="fp-rail-card">
 						<h4>Live-Vorschau</h4>

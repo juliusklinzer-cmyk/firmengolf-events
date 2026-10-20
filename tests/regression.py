@@ -331,6 +331,16 @@ def scenario_partner():
         h = get(f'/control/events/?edit={eid}').text
         post_form(find_form(h, 'fge_cc_event_save', contains=f'value="{eid}"'), {'price': ''})
         check(wp(f'echo get_post_meta({eid},"_fge_price_amount",true);') == '125', 'Event speichern ohne Preis lässt den Preis stehen')
+        # Volle Maske wie im Partnerportal (20.10.2026): Status bleibt, keine Mail, Standort bleibt.
+        h = get(f'/control/events/?s=Regressions').text
+        check(f'bearbeiten={eid}' in h, 'Events-Liste verlinkt die volle Bearbeiten-Maske')
+        st0 = wp(f'echo get_post_meta({eid},"_fge_event_status",true),"|",get_post_meta({eid},"_fge_region",true);')
+        mails(clear=True)
+        h = get(f'/?fge_cc_event_edit={eid}&fge_cc_preview=1').text
+        f = find_form(h, 'fge_cc_event_full_save', contains=f'value="{eid}"')
+        r = post_form(f, {'fge_card_description': 'Kurzbeschreibung aus dem Control Center (TEST)', 'fge_event_dayflow': 'Start\nBegrüßung (TEST)', 'fge_event_addons': 'Fotograf (TEST)'})
+        out = wp(f'echo get_post_meta({eid},"_fge_card_description",true),"|",get_post_meta({eid},"_fge_event_dayflow",true),"|",get_post_meta({eid},"_fge_event_addons",true),"|",get_post_meta({eid},"_fge_event_status",true),"|",get_post_meta({eid},"_fge_region",true);')
+        check('gespeichert=1' in r.url and out.startswith('Kurzbeschreibung aus dem Control Center (TEST)|Start') and 'Fotograf (TEST)' in out and out.endswith(st0) and not mails(clear=True), 'Volle Maske speichert Inhalte, Status/Region bleiben, keine Mail (' + out.replace('\n', ' ') + ')')
         h = get(f'/control/partner/?pid={pid}').text
         post_form(find_form(h, 'fge_cc_partner_pstatus'), {'status': 'pausiert'})
         check(wp(f'echo get_post_meta({eid},"_fge_event_status",true);') == 'pausiert', 'Partner pausiert nimmt Events offline')

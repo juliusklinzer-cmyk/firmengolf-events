@@ -719,7 +719,8 @@ function fge_cc_event_review_page( int $eid, string $from ): void {
 	}
 	fge_cc_obj_form_open( 'fge_cc_event_review', $eid, 'cc-form cc-reviewform' );
 	echo '<input type="hidden" name="from" value="' . esc_attr( $from ) . '">';
-	echo '<details class="cc-reviewblock cc-reviewedit"><summary class="cc-label">Vor der Freigabe anpassen</summary>';
+	echo '<p class="cc-muted">Alles inhaltlich ändern: <a href="' . esc_url( fge_cc_event_edit_url( $eid ) ) . '">in der vollen Maske bearbeiten</a>. Danach hier freigeben.</p>';
+	echo '<details class="cc-reviewblock cc-reviewedit"><summary class="cc-label">Schnell anpassen: Titel, Art, Preis, Personen</summary>';
 	fge_cc_event_fields( $eid, false );
 	echo '</details>';
 	echo '<div class="cc-reviewblock"><span class="cc-label">Nachricht an den Partner</span><textarea name="message" rows="4" placeholder="Für Rückfrage oder Ablehnung, z. B. Bitte noch drei Fotos vom Platz hochladen." aria-label="Nachricht an den Partner" data-cc-msg></textarea></div>';
@@ -978,9 +979,6 @@ function fge_cc_partner_events_tab( int $pid, array $evs, int $live ): void {
 	}
 	echo '</section>';
 	fge_cc_event_drawer( 0, $pid, 'partner' );
-	foreach ( $evs as $eid ) {
-		fge_cc_event_drawer( $eid, $pid, 'partner' );
-	}
 }
 
 /** Event als Zeile mit Status und Knöpfen. */
@@ -996,7 +994,7 @@ function fge_cc_event_line( int $eid, string $from, bool $with_partner ): void {
 		echo '<a class="cc-btn" href="' . esc_url( fge_cc_event_review_url( $eid, $from ) ) . '">Prüfen</a>';
 	}
 	echo '<a class="cc-btn cc-btn--text" href="' . esc_url( fge_cc_public_link( $eid ) ) . '" target="_blank" rel="noopener">Ansehen</a>';
-	echo '<button type="button" class="cc-btn" data-cc-drawer-open="cc-ev-' . (int) $eid . '">Bearbeiten</button>';
+	echo '<a class="cc-btn" href="' . esc_url( fge_cc_event_edit_url( $eid ) ) . '">Bearbeiten</a>';
 	echo '</span></div>';
 }
 
@@ -1088,6 +1086,12 @@ function fge_cc_page_events(): void {
 	$edit = absint( $_GET['edit'] ?? 0 );
 	// phpcs:enable
 	fge_cc_message();
+	// Bearbeiten in der Maske aus dem Partnerportal (Julius, 20.10.2026).
+	$full = absint( $_GET['bearbeiten'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( $full > 0 && 'firmengolf_event' === get_post_type( $full ) ) {
+		fge_cc_event_edit_page( $full );
+		return;
+	}
 	if ( $open > 0 && isset( $_GET['pruefen'] ) && 'firmengolf_event' === get_post_type( $open ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		&& in_array( (string) get_post_meta( $open, '_fge_event_status', true ), [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) ) {
 		fge_cc_event_review_page( $open, 'partner' === sanitize_key( wp_unslash( $_GET['from'] ?? '' ) ) ? 'partner' : 'events' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -1178,7 +1182,7 @@ function fge_cc_page_events(): void {
 		echo '<td class="cc-num">' . ( (float) $pr['gross'] > 0 ? esc_html( fge_cc_money( (float) $pr['gross'] ) ) : '<span class="cc-muted">auf Anfrage</span>' ) . '</td>';
 		echo '<td>' . fge_cc_pill( $label, $tone ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		echo '<td class="cc-td-act"><a class="cc-btn cc-btn--text" href="' . esc_url( fge_cc_public_link( $eid ) ) . '" target="_blank" rel="noopener">Ansehen</a>'
-			. '<a class="cc-btn cc-btn--tiny" href="' . esc_url( fge_cc_url( 'events', array_filter( [ 'tab' => 'alle' !== $tab ? $tab : '', 'art' => 'alle' !== $art ? $art : '', 's' => $q, 'edit' => $eid ] ) ) ) . '">Bearbeiten</a></td></tr>';
+			. '<a class="cc-btn cc-btn--tiny" href="' . esc_url( fge_cc_event_edit_url( $eid ) ) . '">Bearbeiten</a></td></tr>';
 	}
 	if ( ! $rows ) {
 		echo '<tr class="is-empty"><td colspan="6">Keine Events in dieser Ansicht.</td></tr>';
