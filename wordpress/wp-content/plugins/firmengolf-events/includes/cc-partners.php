@@ -546,7 +546,7 @@ add_action( 'admin_post_fge_cc_event_review', static function (): void {
 	$decision = sanitize_key( wp_unslash( $_POST['decision'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	$msg      = trim( sanitize_textarea_field( wp_unslash( $_POST['message'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	if ( in_array( $decision, [ 'rueckfrage', 'abgelehnt' ], true ) && '' === $msg ) {
-		fge_cc_obj_back( $back[0], $back[1] + [ 'ev' => $eid ], 'p_needmsg' );
+		fge_cc_obj_back( 'events', [ 'ev' => $eid, 'pruefen' => 1, 'from' => $from ], 'p_needmsg' );
 	}
 	if ( 'freigegeben' === $decision ) {
 		fge_cc_event_apply_form( $eid );
@@ -687,31 +687,46 @@ function fge_cc_event_drawer( int $eid, int $pid, string $from, bool $auto = fal
 	fge_cc_drawer_close();
 }
 
-/** Seitenpanel: Event prüfen, mit Anpassen vor der Freigabe. */
-function fge_cc_event_review_drawer( int $eid, string $from, bool $auto = false ): void {
+/** Link zur Prüfseite eines eingereichten Events. */
+function fge_cc_event_review_url( int $eid, string $from = 'events' ): string {
+	return fge_cc_url( 'events', [ 'ev' => $eid, 'pruefen' => 1 ] + ( 'partner' === $from ? [ 'from' => 'partner' ] : [] ) );
+}
+
+/**
+ * Prüfansicht eines Events wie bei der Partner-Freigabe (Julius, 20.10.2026):
+ * echte Eventseite links, Prüfung rechts, Anpassen vor der Freigabe aufklappbar.
+ */
+function fge_cc_event_review_page( int $eid, string $from ): void {
 	$pid    = (int) get_post_meta( $eid, '_fge_assigned_partner_id', true );
 	$change = 'aenderung_in_pruefung' === (string) get_post_meta( $eid, '_fge_event_status', true );
 	$when   = (int) get_post_modified_time( 'U', true, $eid );
-	fge_cc_drawer_open( 'cc-evr-' . $eid, ( $change ? 'Änderung: ' : 'Neues Event: ' ) . get_the_title( $eid ), ( $pid > 0 ? fge_cc_partner_name( $pid ) : 'Firmengolf' ) . ' · eingereicht am ' . wp_date( 'd.m.Y', $when ), $auto );
-	$fid = 'cc-evrf-' . $eid;
-	$q   = (string) get_post_meta( $eid, '_fge_review_message', true );
+	$link   = fge_cc_public_link( $eid );
+	$back   = 'partner' === $from && $pid > 0 ? fge_cc_url( 'partner', [ 'pid' => $pid ] ) : fge_cc_url( 'events' );
+	$q      = (string) get_post_meta( $eid, '_fge_review_message', true );
+
+	echo '<div class="cc-backrow"><p class="cc-back"><a href="' . esc_url( $back ) . '">Zurück zu ' . esc_html( 'partner' === $from && $pid > 0 ? fge_cc_partner_name( $pid ) : 'Events' ) . '</a></p>';
+	echo '<span class="cc-review-note">' . fge_cc_pill( $change ? 'Änderung' : 'Neues Event', $change ? 'neutral' : 'warn' ) . ' So sieht das Event auf ' . esc_html( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) . ' aus. <a href="' . esc_url( $link ) . '" target="_blank" rel="noopener">In neuem Tab</a></span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+
+	echo '<div class="cc-reviewgrid">';
+	echo '<div class="cc-reviewframe"><iframe src="' . esc_url( add_query_arg( 'fge_cc_preview', 1, $link ) ) . '" title="Eventseite ' . esc_attr( get_the_title( $eid ) ) . '" loading="lazy"></iframe></div>';
+	echo '<aside class="cc-card cc-reviewpanel">';
+	echo '<div><h2 class="cc-h-small">' . ( $change ? 'Änderung prüfen' : 'Event prüfen' ) . '</h2><span class="cc-muted">' . esc_html( get_the_title( $eid ) . ' · ' . ( $pid > 0 ? fge_cc_partner_name( $pid ) : 'Firmengolf' ) . ' · eingereicht am ' . wp_date( 'd.m.Y', $when ) ) . '</span></div>';
 	if ( '' !== $q ) {
 		echo '<div class="cc-quote"><span class="cc-label">Deine Rückfrage</span><p>' . nl2br( esc_html( $q ) ) . '</p></div>';
 	}
 	if ( $change ) {
 		echo '<p class="cc-hint cc-hint--box">Die Änderung ist schon live. Ein Vorher und Nachher gibt es nicht, du siehst die aktuelle Fassung.</p>';
 	}
-	fge_cc_obj_form_open( 'fge_cc_event_review', $eid, 'cc-form cc-drawer-form', $fid );
+	fge_cc_obj_form_open( 'fge_cc_event_review', $eid, 'cc-form cc-reviewform' );
 	echo '<input type="hidden" name="from" value="' . esc_attr( $from ) . '">';
-	echo '<p class="cc-label">Vor der Freigabe anpassen</p>';
+	echo '<details class="cc-reviewblock cc-reviewedit"><summary class="cc-label">Vor der Freigabe anpassen</summary>';
 	fge_cc_event_fields( $eid, false );
-	echo '<label class="cc-field cc-field--wide"><span>Nachricht an den Partner, für Rückfrage oder Ablehnung</span><textarea name="message" rows="3" placeholder="z. B. Bitte noch drei Fotos vom Platz hochladen." data-cc-msg></textarea></label>';
-	echo '<div class="cc-drawer-foot cc-drawer-foot--review">';
-	echo '<button type="submit" name="decision" value="abgelehnt" class="cc-btn cc-btn--text cc-btn--danger" data-cc-needmsg formnovalidate>Ablehnen</button>';
-	echo '<button type="submit" name="decision" value="rueckfrage" class="cc-btn" data-cc-needmsg formnovalidate>Rückfrage senden</button>';
-	echo '<button type="submit" name="decision" value="freigegeben" class="cc-btn cc-btn--primary">' . ( $change ? 'Änderung freigeben' : 'Event freigeben' ) . '</button>';
-	echo '</div></form>';
-	fge_cc_drawer_close();
+	echo '</details>';
+	echo '<div class="cc-reviewblock"><span class="cc-label">Nachricht an den Partner</span><textarea name="message" rows="4" placeholder="Für Rückfrage oder Ablehnung, z. B. Bitte noch drei Fotos vom Platz hochladen." aria-label="Nachricht an den Partner" data-cc-msg></textarea></div>';
+	echo '<button type="submit" name="decision" value="freigegeben" class="cc-btn cc-btn--primary cc-btn--block">' . ( $change ? 'Änderung freigeben' : 'Event freigeben' ) . '</button>';
+	echo '<div class="cc-btnrow"><button type="submit" name="decision" value="rueckfrage" class="cc-btn cc-grow" data-cc-needmsg formnovalidate>Rückfrage senden</button>';
+	echo '<button type="submit" name="decision" value="abgelehnt" class="cc-btn cc-btn--text cc-btn--danger" data-cc-needmsg formnovalidate>Ablehnen</button></div>';
+	echo '</form></aside></div>';
 }
 
 // ── Seite: Partner ───────────────────────────────────────────────────────────
@@ -953,7 +968,6 @@ function fge_cc_partner_detail( int $id ): void {
 }
 
 function fge_cc_partner_events_tab( int $pid, array $evs, int $live ): void {
-	$open = absint( $_GET['ev'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	echo '<section class="cc-card"><div class="cc-block-head"><div><h2 class="cc-h-small">Events</h2><span class="cc-muted">' . esc_html( $live . ' live von ' . count( $evs ) . ' angelegt' . ( $live >= 4 ? '' : '. Ab 4 Live-Events steht der Partner auf Grün.' ) ) . '</span></div>';
 	echo '<button type="button" class="cc-btn cc-btn--primary" data-cc-drawer-open="cc-ev-new">Event anlegen</button></div>';
 	if ( ! $evs ) {
@@ -966,9 +980,6 @@ function fge_cc_partner_events_tab( int $pid, array $evs, int $live ): void {
 	fge_cc_event_drawer( 0, $pid, 'partner' );
 	foreach ( $evs as $eid ) {
 		fge_cc_event_drawer( $eid, $pid, 'partner' );
-		if ( in_array( (string) get_post_meta( $eid, '_fge_event_status', true ), [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) ) {
-			fge_cc_event_review_drawer( $eid, 'partner', $open === $eid );
-		}
 	}
 }
 
@@ -982,7 +993,7 @@ function fge_cc_event_line( int $eid, string $from, bool $with_partner ): void {
 	echo fge_cc_pill( $label, $tone ); // phpcs:ignore WordPress.Security.EscapeOutput
 	echo '<span class="cc-evline-act">';
 	if ( $review ) {
-		echo '<button type="button" class="cc-btn" data-cc-drawer-open="cc-evr-' . (int) $eid . '">Prüfen</button>';
+		echo '<a class="cc-btn" href="' . esc_url( fge_cc_event_review_url( $eid, $from ) ) . '">Prüfen</a>';
 	}
 	echo '<a class="cc-btn cc-btn--text" href="' . esc_url( fge_cc_public_link( $eid ) ) . '" target="_blank" rel="noopener">Ansehen</a>';
 	echo '<button type="button" class="cc-btn" data-cc-drawer-open="cc-ev-' . (int) $eid . '">Bearbeiten</button>';
@@ -1076,6 +1087,11 @@ function fge_cc_page_events(): void {
 	$edit = absint( $_GET['edit'] ?? 0 );
 	// phpcs:enable
 	fge_cc_message();
+	if ( $open > 0 && isset( $_GET['pruefen'] ) && 'firmengolf_event' === get_post_type( $open ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		&& in_array( (string) get_post_meta( $open, '_fge_event_status', true ), [ 'zur_pruefung', 'aenderung_in_pruefung' ], true ) ) {
+		fge_cc_event_review_page( $open, 'partner' === sanitize_key( wp_unslash( $_GET['from'] ?? '' ) ) ? 'partner' : 'events' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return;
+	}
 	fge_cc_partner_switch( 'events' );
 	$by  = fge_cc_events_by_partner();
 	$all = [];
@@ -1101,7 +1117,7 @@ function fge_cc_page_events(): void {
 			$pid    = $all[ $eid ];
 			$change = 'aenderung_in_pruefung' === $st( $eid );
 			$types  = function_exists( 'fge_get_event_formats_flat' ) ? fge_get_event_formats_flat() : [];
-			$btn    = '<button type="button" class="cc-btn' . ( $ask( $eid ) ? '' : ' cc-btn--primary' ) . '" data-cc-drawer-open="cc-evr-' . (int) $eid . '">' . ( $ask( $eid ) ? 'Ansehen' : 'Prüfen' ) . '</button>';
+			$btn    = '<a class="cc-btn' . ( $ask( $eid ) ? '' : ' cc-btn--primary' ) . '" href="' . esc_url( fge_cc_event_review_url( $eid ) ) . '">' . ( $ask( $eid ) ? 'Ansehen' : 'Prüfen' ) . '</a>';
 			fge_cc_review_row( $change ? 'Änderung' : 'Neues Event', $change ? 'neutral' : 'warn', get_the_title( $eid ), implode( ' · ', array_filter( [ $pid > 0 ? fge_cc_partner_name( $pid ) : 'Firmengolf', (string) ( $types[ (string) get_post_meta( $eid, '_fge_event_type', true ) ] ?? '' ) ] ) ), (int) get_post_modified_time( 'U', true, $eid ), $ask( $eid ), $btn );
 		}
 		echo '</section>';
@@ -1164,8 +1180,5 @@ function fge_cc_page_events(): void {
 	// Bearbeiten öffnet nur das eine Panel, bei fast 400 Events wäre die Seite sonst riesig.
 	if ( $edit > 0 && isset( $all[ $edit ] ) ) {
 		fge_cc_event_drawer( $edit, $all[ $edit ], 'events', true );
-	}
-	foreach ( $rev as $eid ) {
-		fge_cc_event_review_drawer( $eid, 'events', $open === $eid );
 	}
 }

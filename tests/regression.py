@@ -311,12 +311,16 @@ def scenario_partner():
         check(st.startswith('aktiv|20') and any('platz-regi' in m['to'] and 'live' in m['subject'] for m in ms), 'Freigegeben, Willkommensmail, Partner seit gesetzt (' + st + ')')
         # Event: Rückfrage, dann mit Anpassung freigeben.
         h = get(f'/control/events/').text
+        check(f'ev={eid}&#038;pruefen=1' in h, 'Freigabe-Liste verlinkt die Prüfseite')
+        h = get(f'/control/events/?ev={eid}&pruefen=1').text
+        check('fge_cc_preview=1' in h and '<iframe' in h, 'Prüfseite zeigt das Event als Vorschau')
         f = find_form(h, 'fge_cc_event_review', contains=f'value="{eid}"')
         r = post_form(f, {'decision': 'rueckfrage', 'message': 'Wie viele Simulatoren gibt es?'})
         ms = mails(clear=True)
         check('e_asked' in r.url and any('platz-regi' in m['to'] and 'Simulatoren' in m['text'] for m in ms) and wp(f'echo get_post_meta({eid},"_fge_event_status",true);') == 'zur_pruefung', 'Event-Rückfrage, Event bleibt in Prüfung')
         h = get(f'/control/events/').text
         check('Rückfrage offen' in h, 'Events-Liste zeigt Rückfrage offen')
+        h = get(f'/control/events/?ev={eid}&pruefen=1').text
         f = find_form(h, 'fge_cc_event_review', contains=f'value="{eid}"')
         r = post_form(f, {'decision': 'freigegeben', 'title': 'Regressions-Event angepasst (TEST)', 'price': '50'})
         ms = mails(clear=True)
