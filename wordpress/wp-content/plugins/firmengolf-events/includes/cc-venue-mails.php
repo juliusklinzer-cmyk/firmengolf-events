@@ -186,8 +186,14 @@ function fge_venue_request_body( int $req, int $venue_id = 0, bool $followup = f
 
 /** Schlichter Mailtext als HTML: Absätze und Zeilenumbrüche, keine Box, kein Logo. */
 function fge_plain_mail_html( string $text ): string {
-	$paras = array_filter( array_map( 'trim', preg_split( '/\R{2,}/', trim( $text ) ) ) );
-	$html  = implode( '', array_map( static fn( $p ) => '<p style="margin:0 0 14px;">' . nl2br( esc_html( $p ) ) . '</p>', $paras ) );
+	$paras = array_values( array_filter( array_map( 'trim', preg_split( '/\R{2,}/', trim( $text ) ) ) ) );
+	$paras = array_map( static fn( $p ) => nl2br( esc_html( $p ) ), $paras );
+	// Im Gruß wird „Firmengolf Events“ zum Link auf die Website (Julius, 22.10.2026).
+	$last = count( $paras ) - 1;
+	if ( $last >= 0 ) {
+		$paras[ $last ] = (string) preg_replace( '/Firmengolf Events/', '<a href="' . esc_url( home_url( '/' ) ) . '" style="color:#1a1a1a;">Firmengolf Events</a>', $paras[ $last ], 1 );
+	}
+	$html = implode( '', array_map( static fn( $p ) => '<p style="margin:0 0 14px;">' . make_clickable( $p ) . '</p>', $paras ) );
 	return '<!doctype html><html><body style="margin:0;padding:16px;"><div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#1a1a1a;max-width:640px;">' . $html . '</div></body></html>';
 }
 
