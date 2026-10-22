@@ -34,11 +34,12 @@ function fge_cc_drawer_close(): void {
 
 /**
  * Mail an einen oder mehrere Plätze, vor dem Senden lesbar und änderbar.
- * Betreff und Einleitung sind frei, Termine, Eckdaten und Leistungen setzt
- * die Mail selbst ein, die Anrede je Platz auch.
+ * Plätze: Betreff und der ganze Mailtext sind frei (Julius, 22.10.2026), die
+ * Anrede setzt die Mail je Platz ein. Dienstleister: Betreff und Einleitung.
  */
 function fge_cc_mail_drawer( int $req, string $id, string $title, string $action, array $fields, array $to, array $defaults, string $ok_label ): void {
-	fge_cc_drawer_open( $id, $title, 'Wunschtermine, Eckdaten und Leistungen setzt die Mail selbst ein.' );
+	$full = isset( $defaults['body'] );
+	fge_cc_drawer_open( $id, $title, $full ? 'So geht die Mail raus. Du kannst alles ändern, die Anrede setzt die Mail selbst ein.' : 'Wunschtermine, Eckdaten und Leistungen setzt die Mail selbst ein.' );
 	echo '<form class="cc-form" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 	echo '<input type="hidden" name="action" value="' . esc_attr( $action ) . '"><input type="hidden" name="request_id" value="' . (int) $req . '">';
 	wp_nonce_field( $action . '_' . $req );
@@ -53,7 +54,11 @@ function fge_cc_mail_drawer( int $req, string $id, string $title, string $action
 	}
 	echo '</div>';
 	echo '<label class="cc-field cc-field--wide"><span>Betreff</span><input type="text" name="mail_subject" value="' . esc_attr( $defaults['subject'] ) . '"></label>';
-	echo '<label class="cc-field cc-field--wide"><span>Einleitung nach der Anrede</span><textarea name="mail_intro" rows="5">' . esc_textarea( $defaults['intro'] ) . '</textarea></label>';
+	if ( $full ) {
+		echo '<label class="cc-field cc-field--wide"><span>Mailtext nach der Anrede</span><textarea name="mail_body" rows="22">' . esc_textarea( $defaults['body'] ) . '</textarea></label>';
+	} else {
+		echo '<label class="cc-field cc-field--wide"><span>Einleitung nach der Anrede</span><textarea name="mail_intro" rows="5">' . esc_textarea( $defaults['intro'] ) . '</textarea></label>';
+	}
 	if ( count( $to ) > 1 ) {
 		echo '<p class="cc-muted">Die Anrede wird je Platz eingesetzt.</p>';
 	}
@@ -318,11 +323,11 @@ function fge_cc_venue_row( int $req, array $v ): void {
 	// können"), auch beim gewählten oder schon zugesagten Platz.
 	if ( 'idee' === $status && '' !== $mail ) {
 		fge_cc_mail_drawer( $req, 'cc-ask-' . $id, 'Anfrage an ' . (string) $v['title'], 'fge_cc_venue_ask', [ 'venue_id' => $id, 'how' => 'mail' ],
-			[ [ (string) $v['title'], $mail ] ], $dl ? fge_provider_request_defaults( $req ) : fge_venue_request_defaults( $req ), 'Anfrage senden' );
+			[ [ (string) $v['title'], $mail ] ], $dl ? fge_provider_request_defaults( $req ) : fge_venue_request_defaults( $req, false, $id ), 'Anfrage senden' );
 	}
 	if ( 'angefragt' === $status && '' !== $mail ) {
 		fge_cc_mail_drawer( $req, 'cc-fu-' . $id, 'Follow-up an ' . (string) $v['title'], 'fge_cc_venue_followup', [ 'venue_id' => $id ],
-			[ [ (string) $v['title'], $mail ] ], $dl ? fge_provider_request_defaults( $req, true ) : fge_venue_request_defaults( $req, true ), 'Follow-up senden' );
+			[ [ (string) $v['title'], $mail ] ], $dl ? fge_provider_request_defaults( $req, true ) : fge_venue_request_defaults( $req, true, $id ), 'Follow-up senden' );
 	}
 	if ( 'idee' !== $status ) {
 		fge_cc_drawer_open( $drawer, 'Rückmeldung von ' . (string) $v['title'], implode( ' · ', array_filter( [ (string) get_post_meta( $pid, $dl ? '_fge_provider_contact' : '_fge_main_contact_name', true ), $phone ] ) ) );

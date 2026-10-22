@@ -75,7 +75,7 @@ function fge_mail_registry(): array {
 			'subject'   => 'Passt das bei euch? Firmenanfrage',
 			'auto'      => false,
 			'trigger'   => 'Knopf in der Platz-Pipeline',
-			'content'   => [ 'Was angefragt ist: Beschreibung, Dauer, Paketinhalt, Ablauf', 'Gruppe mit Personenzahl, Niveau und Essenswünschen', 'Wunschtermin oder Wunschtermine', 'Liste der Positionen mit Preisfrage', 'bei uns notierte Vorpreise' ],
+			'content'   => [ 'Schlichter Text ohne Box, vor dem Senden komplett änderbar', 'Eckdaten: Gruppe, Anlass, Wunschtermine mit Startzeit, Dauer, Ablauf grob', 'Zusatzleistungen des Kunden mit bei uns notierten Vorpreisen', 'Frage nach Termin und Kosten pro Person oder pauschal', 'Julius Handynummer und Mail' ],
 		],
 		'venue_followup' => [
 			'label'     => 'Nachfrage an einen Platz ohne Antwort',

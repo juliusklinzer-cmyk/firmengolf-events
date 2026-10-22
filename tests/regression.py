@@ -202,9 +202,9 @@ def scenario_tools():
     h = get(f'/control/anfragen/?req={req}').text
     bulk = find_form(h, 'fge_cc_venue_ask_bulk')
     ids = re.findall(r'name="venue_ids\[\]" value="(\d+)"', bulk['html'])
-    post_form(bulk, {'venue_ids[]': ids, 'mail_subject': 'Eigener Betreff (TEST)', 'mail_intro': 'Eigene Einleitung (TEST).'})
+    post_form(bulk, {'venue_ids[]': ids, 'mail_subject': 'Eigener Betreff (TEST)', 'mail_body': 'Eigene Einleitung (TEST).\n\nGruppe: Test'})
     ms = mails(clear=True)
-    check(len(ms) == 2 and all(m['subject'] == 'Eigener Betreff (TEST)' and 'Eigene Einleitung (TEST).' in m['text'] for m in ms), 'Sammelanfrage mit eigenem Betreff und Text an beide')
+    check(len(ms) == 2 and all(m['subject'] == 'Eigener Betreff (TEST)' and 'Eigene Einleitung (TEST).' in m['text'] and 'Hallo' in m['text'] for m in ms), 'Sammelanfrage mit eigenem Betreff und eigenem Mailtext an beide, Anrede je Platz')
     h = get(f'/control/anfragen/?req={req}').text
     fus = sorted([x for x in forms(h) if x['action'] == 'fge_cc_venue_followup'], key=lambda f: int(f['fields']['venue_id']))
     a, b = fus[0]['fields']['venue_id'], fus[1]['fields']['venue_id']

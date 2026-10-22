@@ -458,12 +458,13 @@ add_action( 'admin_post_fge_cc_venue_ask', static function (): void {
 	fge_cc_redirect( $req, fge_venue_send_request( $req, (int) $venue['id'], fge_cc_mail_opts_from_post() ) ? 'venue_asked' : 'venue_nomail' );
 } );
 
-/** Betreff und Einleitung aus dem Mail-Dialog des Control Centers. */
+/** Betreff, Einleitung oder ganzer Mailtext aus dem Mail-Dialog des Control Centers. */
 function fge_cc_mail_opts_from_post(): array {
 	// phpcs:disable WordPress.Security.NonceVerification.Missing -- Aufrufer prüft per fge_cc_guard.
 	return [
 		'subject' => mb_substr( sanitize_text_field( wp_unslash( $_POST['mail_subject'] ?? '' ) ), 0, 200 ),
 		'intro'   => mb_substr( sanitize_textarea_field( wp_unslash( $_POST['mail_intro'] ?? '' ) ), 0, 3000 ),
+		'body'    => mb_substr( sanitize_textarea_field( wp_unslash( $_POST['mail_body'] ?? '' ) ), 0, 8000 ),
 	];
 	// phpcs:enable
 }
