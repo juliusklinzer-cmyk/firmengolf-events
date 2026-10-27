@@ -237,6 +237,11 @@ $xr_cfg = $xr_variants[ $xr_v ];
 					form.querySelector('[data-xmas-ref]').textContent = res.data.ref || '';
 					rails.forEach(function (r) { r.classList.add('done'); });
 					showStep(2);
+					window.dataLayer = window.dataLayer || [];
+					window.dataLayer.push({ event: 'event_anfrage' });
+					<?php if ( function_exists( 'fge_gads_send_to' ) && fge_gads_send_to() ) : ?>
+					if (window.gtag) { try { gtag('event', 'conversion', { send_to: <?php echo wp_json_encode( fge_gads_send_to() ); ?> }); } catch (x) {} }
+					<?php endif; ?>
 					if (window.fbq && res.data && res.data.fb_event_id) { try { fbq('track', 'Lead', { content_name: <?php echo wp_json_encode( $xr_cfg['lead'] ); ?> }, { eventID: res.data.fb_event_id }); } catch (x) {} }
 				})
 				.catch(function (x) { err(1, x.message); btn.disabled = false; btn.textContent = orig; });
