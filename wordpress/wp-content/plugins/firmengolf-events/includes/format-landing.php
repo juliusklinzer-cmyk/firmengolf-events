@@ -327,6 +327,26 @@ function fge_format_occasion( string $slug ): string {
 	return $map[ $slug ] ?? '';
 }
 
+/** Event eines Partners (kein Platzhalter von Firmengolf)? */
+function fge_event_is_partner( int $event_id ): bool {
+	return (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true ) > 0;
+}
+
+/**
+ * Listen-Abfragen mit 'fge_partner_first' => true sortieren Partner-Events vor
+ * die Platzhalter, danach gilt die übrige Sortierung (Eventliste „Empfohlen“).
+ */
+add_filter( 'posts_clauses', static function ( array $c, WP_Query $q ): array {
+	if ( ! $q->get( 'fge_partner_first' ) ) {
+		return $c;
+	}
+	global $wpdb;
+	$c['join']   .= " LEFT JOIN {$wpdb->postmeta} fge_pf ON ( fge_pf.post_id = {$wpdb->posts}.ID AND fge_pf.meta_key = '_fge_assigned_partner_id' )";
+	$c['groupby'] = $c['groupby'] ?: "{$wpdb->posts}.ID";
+	$c['orderby'] = 'MAX( CAST( COALESCE( fge_pf.meta_value, 0 ) AS SIGNED ) > 0 ) DESC' . ( $c['orderby'] ? ', ' . $c['orderby'] : '' );
+	return $c;
+}, 10, 2 );
+
 /**
  * Öffentliche Events, die einem Format-Hub zugeordnet sind.
  *
@@ -340,7 +360,7 @@ function fge_format_events( array $format, int $limit = 6 ): array {
 	$posts = get_posts( [
 		'post_type'      => 'firmengolf_event',
 		'post_status'    => 'publish',
-		'posts_per_page' => max( $limit * 3, 12 ),
+		'posts_per_page' => -1, // alle holen: sonst fehlen Partner-Events vor dem Sortieren
 		'meta_query'     => [
 			'relation' => 'AND',
 			[ 'key' => '_fge_event_status', 'value' => fge_public_event_statuses(), 'compare' => 'IN' ],
@@ -357,10 +377,12 @@ function fge_format_events( array $format, int $limit = 6 ): array {
 	// „auch buchbar als"-Events (z. B. Teamevents in der After-Work-Kategorie,
 	// Julius 2026-08-20). Erst sortieren, dann kappen, sonst faellt das
 	// namensgebende Event bei vielen Treffern aus der Auswahl.
+	// Innerhalb eines Typs stehen Events unserer Partner vor den Platzhaltern
+	// (Julius, 27.10.2026: „Partner weiter oben anzeigen“).
 	usort( $out, static function ( $a, $b ) use ( $types ) {
 		$ia = array_search( get_post_meta( $a->ID, '_fge_event_type', true ), $types, true );
 		$ib = array_search( get_post_meta( $b->ID, '_fge_event_type', true ), $types, true );
-		return ( false === $ia ? PHP_INT_MAX : $ia ) <=> ( false === $ib ? PHP_INT_MAX : $ib );
+		return [ false === $ia ? PHP_INT_MAX : $ia, fge_event_is_partner( $b->ID ) ] <=> [ false === $ib ? PHP_INT_MAX : $ib, fge_event_is_partner( $a->ID ) ];
 	} );
 	return array_slice( $out, 0, $limit );
 }

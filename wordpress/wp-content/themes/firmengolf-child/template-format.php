@@ -253,6 +253,8 @@ get_header();
 		usort( $xl_items, static fn( $a, $b ) => $a['dist'] <=> $b['dist'] );
 		$xl_near = array_values( array_filter( $xl_items, static fn( $it ) => $it['dist'] <= $xl_radius ) );
 		if ( $xl_near ) {
+			// Im Umkreis: Partner-Events zuerst, dann nach Entfernung (Julius, 27.10.2026).
+			usort( $xl_near, static fn( $a, $b ) => [ (int) fge_event_is_partner( $b['id'] ), $a['dist'] ] <=> [ (int) fge_event_is_partner( $a['id'] ), $b['dist'] ] );
 			$xl_items = $xl_near;
 		} else {
 			$xl_fallback = true; // nichts im Umkreis: die nächstgelegenen zeigen

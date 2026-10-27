@@ -141,7 +141,8 @@ if ( $geo_active ) {
 			usort( $event_items, static fn( $a, $b ) => (int) get_post_meta( $b['id'], '_fge_participants_max', true ) <=> (int) get_post_meta( $a['id'], '_fge_participants_max', true ) );
 			break;
 		default:
-			usort( $event_items, static fn( $a, $b ) => $a['dist'] <=> $b['dist'] );
+			// Partner-Events im Umkreis zuerst, dann nach Entfernung (Julius, 27.10.2026).
+			usort( $event_items, static fn( $a, $b ) => [ (int) fge_event_is_partner( $b['id'] ), $a['dist'] ] <=> [ (int) fge_event_is_partner( $a['id'] ), $b['dist'] ] );
 	}
 	$total = count( $event_items );
 } else {
@@ -164,8 +165,9 @@ if ( $geo_active ) {
 			$query_args['order']    = 'DESC';
 			break;
 		default:
-			$query_args['orderby'] = 'menu_order';
-			$query_args['order']   = 'ASC';
+			$query_args['orderby']           = 'menu_order';
+			$query_args['order']             = 'ASC';
+			$query_args['fge_partner_first'] = true; // Partner-Events vor den Platzhaltern
 	}
 	$events_query = new WP_Query( $query_args );
 	foreach ( $events_query->posts as $p ) {
