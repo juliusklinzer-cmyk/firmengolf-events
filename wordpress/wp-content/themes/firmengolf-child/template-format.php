@@ -66,7 +66,10 @@ if ( ! function_exists( 'fge_format_ico' ) ) {
 
 // ── SEO head injection ────────────────────────────────────────────────────────
 add_filter( 'pre_get_document_title', static fn() => $seo_title );
-add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonical, $f_name, $faqs ) {
+// Vorschaubild für Google und Social: eigenes Motiv des Formats statt Standardbild (Ads-Start 27.10.).
+$f_og_key = $format['og_img'] ?? $format['hero_img'] ?? '';
+$f_og_img = ( $f_og_key && function_exists( 'fge_get_placeholder_image_url' ) ) ? fge_get_placeholder_image_url( $f_og_key ) : '';
+add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonical, $f_name, $faqs, $f_og_img ) {
 	$GLOBALS['fge_seo_meta_done'] = true;
 	echo '<meta name="description" content="' . esc_attr( $seo_desc ) . '">' . "\n";
 	echo '<link rel="canonical" href="' . esc_url( $canonical ) . '">' . "\n";
@@ -74,7 +77,7 @@ add_action( 'wp_head', static function () use ( $seo_title, $seo_desc, $canonica
 	echo '<meta property="og:title" content="' . esc_attr( $seo_title ) . '">' . "\n";
 	echo '<meta property="og:description" content="' . esc_attr( $seo_desc ) . '">' . "\n";
 	echo '<meta property="og:url" content="' . esc_url( $canonical ) . '">' . "\n";
-	$og_img = function_exists( 'fge_default_og_image_url' ) ? fge_default_og_image_url() : '';
+	$og_img = $f_og_img ?: ( function_exists( 'fge_default_og_image_url' ) ? fge_default_og_image_url() : '' );
 	if ( $og_img ) { echo '<meta property="og:image" content="' . esc_url( $og_img ) . '">' . "\n"; }
 
 	$graph = [
@@ -253,8 +256,8 @@ get_header();
 		usort( $xl_items, static fn( $a, $b ) => $a['dist'] <=> $b['dist'] );
 		$xl_near = array_values( array_filter( $xl_items, static fn( $it ) => $it['dist'] <= $xl_radius ) );
 		if ( $xl_near ) {
-			// Im Umkreis: Partner-Events zuerst, dann nach Entfernung (Julius, 27.10.2026).
-			usort( $xl_near, static fn( $a, $b ) => [ (int) fge_event_is_partner( $b['id'] ), $a['dist'] ] <=> [ (int) fge_event_is_partner( $a['id'] ), $b['dist'] ] );
+			// Partner am Ort zuerst, sonst nach Entfernung (fge_geo_partner_cmp).
+			usort( $xl_near, 'fge_geo_partner_cmp' );
 			$xl_items = $xl_near;
 		} else {
 			$xl_fallback = true; // nichts im Umkreis: die nächstgelegenen zeigen

@@ -148,6 +148,7 @@ function fge_get_event_format_pages(): array {
 			],
 			'types'   => [ 'weihnachtsfeier', 'indoor-golf' ],
 			'hero_img'  => 'onboarding-indoor-lounge.jpg',
+			'og_img'    => 'pool/indoor-bier-und-simulator.jpg',
 			// Saison-Seite (Julius, 07.09.): Kurz-Anfrage, Spielformate und Simulator-
 			// Karte werden im Template nur für dieses Format gerendert.
 			'xmas'      => true,
@@ -330,6 +331,18 @@ function fge_format_occasion( string $slug ): string {
 /** Event eines Partners (kein Platzhalter von Firmengolf)? */
 function fge_event_is_partner( int $event_id ): bool {
 	return (int) get_post_meta( $event_id, '_fge_assigned_partner_id', true ) > 0;
+}
+
+/**
+ * Sortierung mit Standort: nach Entfernung, nur Partner-Events direkt am Ort
+ * (bis 25 km) springen nach vorn (Julius, 27.10.2026: „wenn ein Augsburger
+ * sucht, nicht ganz oben, außer wir haben ein Angebot aus Augsburg“).
+ * Erwartet Einträge mit 'id' und 'dist'.
+ */
+function fge_geo_partner_cmp( array $a, array $b ): int {
+	$ka = fge_event_is_partner( (int) $a['id'] ) && (float) $a['dist'] <= 25 ? 0 : 1;
+	$kb = fge_event_is_partner( (int) $b['id'] ) && (float) $b['dist'] <= 25 ? 0 : 1;
+	return [ $ka, (float) $a['dist'] ] <=> [ $kb, (float) $b['dist'] ];
 }
 
 /**

@@ -141,8 +141,8 @@ if ( $geo_active ) {
 			usort( $event_items, static fn( $a, $b ) => (int) get_post_meta( $b['id'], '_fge_participants_max', true ) <=> (int) get_post_meta( $a['id'], '_fge_participants_max', true ) );
 			break;
 		default:
-			// Partner-Events im Umkreis zuerst, dann nach Entfernung (Julius, 27.10.2026).
-			usort( $event_items, static fn( $a, $b ) => [ (int) fge_event_is_partner( $b['id'] ), $a['dist'] ] <=> [ (int) fge_event_is_partner( $a['id'] ), $b['dist'] ] );
+			// Partner am Ort zuerst, sonst nach Entfernung (fge_geo_partner_cmp).
+			usort( $event_items, 'fge_geo_partner_cmp' );
 	}
 	$total = count( $event_items );
 } else {

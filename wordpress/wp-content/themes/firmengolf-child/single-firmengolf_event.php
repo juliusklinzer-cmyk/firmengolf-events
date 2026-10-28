@@ -264,7 +264,17 @@ if ( ! $seo_title ) {
 	$seo_base = str_replace( ' · ', ' in ', get_the_title() );
 	// „Raum München" nur anhängen, wenn München selbst nicht schon im Titel steht (Review 07.09.).
 	$seo_city_core = trim( (string) preg_replace( '/^Raum\s+/u', '', (string) $seo_city ) );
-	if ( $seo_city_core && stripos( $seo_base, $seo_city_core ) === false ) {
+	// Ort „Anlage, Stadt“: steckt die Anlage schon im Titel („Weihnachtsfeier im RUFF“), nur die Stadt anhängen.
+	if ( str_contains( $seo_city, ',' ) ) {
+		[ $seo_venue, $seo_town ] = array_map( 'trim', explode( ',', $seo_city, 2 ) );
+		$seo_venue_key = (string) strtok( $seo_venue, ' ' );
+		if ( mb_strlen( $seo_venue_key ) >= 3 && mb_stripos( $seo_base, $seo_venue_key ) !== false ) {
+			$seo_city = $seo_city_core = $seo_town;
+		}
+	}
+	// Stadt am Ende des Orts („Indoor-Golf-Lounge im Raum Kempten“) schon im Titel: nichts anhängen.
+	$seo_city_last = preg_match( '/(\S+)$/u', $seo_city_core, $m_last ) ? $m_last[1] : '';
+	if ( $seo_city_core && stripos( $seo_base, $seo_city_core ) === false && ( mb_strlen( $seo_city_last ) < 3 || mb_stripos( $seo_base, $seo_city_last ) === false ) ) {
 		$seo_base .= ' in ' . $seo_city;
 	}
 	$seo_title = $seo_base . ' | Firmengolf';
@@ -273,7 +283,8 @@ $seo_desc = fge_get_event_meta( $post_id, 'meta_description' );
 if ( ! $seo_desc ) {
 	$seo_base = $description ?: ( $format_label . ' auf dem Golfplatz' . ( $seo_city ? ' in ' . $seo_city : '' ) );
 	$seo_tail = ' Jetzt bei Firmengolf anfragen.';
-	$seo_body = wp_strip_all_tags( (string) $seo_base );
+	// Gedankenstriche aus Partnertexten im Google-Snippet durch Komma ersetzen.
+	$seo_body = (string) preg_replace( '/\s+[–—]\s+/u', ', ', wp_strip_all_tags( (string) $seo_base ) );
 	$seo_max  = 150 - mb_strlen( $seo_tail );
 	if ( mb_strlen( $seo_body ) > $seo_max ) {
 		$seo_body = mb_substr( $seo_body, 0, $seo_max );
